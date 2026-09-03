@@ -73,7 +73,7 @@ namespace Belos {
   //@}
 
 
-template<class ScalarType, class MV, class OP, class DM>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class MinresIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:

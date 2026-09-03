@@ -49,7 +49,7 @@ namespace Belos {
    *
    * This struct is utilized by CGSingleRedIteration::initialize() and CGSingleRedIteration::getState().
    */
-  template <class ScalarType, class MV, class DM>
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
   class CGSingleRedIterationState : public CGIterationStateBase<ScalarType, MV, DM> {
 
   public:
@@ -122,7 +122,7 @@ namespace Belos {
 
   };
 
-template<class ScalarType, class MV, class OP, class DM>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
 
   public:

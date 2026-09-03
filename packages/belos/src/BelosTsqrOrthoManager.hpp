@@ -43,7 +43,7 @@ namespace Belos {
 /// However, if you handle Tsqr(Mat)OrthoManager through this mixin,
 /// you can exploit TSQR's unique interface to avoid copying back and
 /// forth between scratch space.
-template<class Scalar, class MV, class DM>
+template<class Scalar, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
 class OutOfPlaceNormalizerMixin {
 public:
   typedef Scalar scalar_type;
@@ -101,7 +101,7 @@ public:
 ///
 /// Subclass of OrthoManager, implemented using TsqrOrthoManagerImpl
 /// (TSQR + Block Gram-Schmidt).
-template<class Scalar, class MV, class DM>
+template<class Scalar, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
 class TsqrOrthoManager :
     public OrthoManager<Scalar, MV, DM>,
     public OutOfPlaceNormalizerMixin<Scalar, MV, DM>
@@ -341,7 +341,7 @@ private:
 /// TSQR uses multivector scratch space.  However, scratch space
 /// initialization is "lazy," so scratch space will not be allocated
 /// if TSQR is not used.
-template<class Scalar, class MV, class OP, class DM>
+template<class Scalar, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class TsqrMatOrthoManager :
     public MatOrthoManager<Scalar, MV, OP, DM>,
     public OutOfPlaceNormalizerMixin<Scalar, MV, DM>

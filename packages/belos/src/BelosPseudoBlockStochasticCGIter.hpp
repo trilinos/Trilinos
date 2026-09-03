@@ -48,7 +48,7 @@
 
 namespace Belos {
   
-  template<class ScalarType, class MV, class OP, class DM>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   class PseudoBlockStochasticCGIter : virtual public StochasticCGIteration<ScalarType,MV,OP,DM> {
     
   public:
