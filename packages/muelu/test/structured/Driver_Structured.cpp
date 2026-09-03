@@ -195,7 +195,17 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   // size. For example, np=14 will give a 7-by-2 distribution.
   // If you don't want Galeri to do this, specify mx or my on the galeriList.
   std::string matrixType = galeriParameters.GetMatrixType();
-  int numDimensions      = 0;
+
+  Teuchos::ParameterList& rapList =
+      paramList.sublist("Factories").sublist("myRAPFact");
+
+  const std::string rapFactory = rapList.get<std::string>("factory", "");
+  const bool isStructuredRAPFactory =
+      rapFactory == "StructuredRAPFactory";
+  if (isStructuredRAPFactory)
+    rapList.set("rap: matrix type", matrixType);
+
+  int numDimensions = 0;
   Teuchos::Array<LO> lNodesPerDim(3);
 
   // Create map and coordinates
@@ -302,6 +312,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     userParamList.set<double>("double cfl", 1.0);
     userParamList.set<double>("double deltaT", 1.0);
     userParamList.set("Mdiag", Mdiag);
+    userParamList.set<std::string>("string matrixType", matrixType);
 
     H = MueLu::CreateXpetraPreconditioner(A, paramList);
 

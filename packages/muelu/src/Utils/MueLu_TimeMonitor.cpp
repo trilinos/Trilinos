@@ -67,9 +67,9 @@ TimeMonitor::TimeMonitor(const BaseClass& object, const std::string& msg, MsgTyp
         } else {
           timer_ = it->second;
           // Start the timer (this is what is done by Teuchos::TimeMonitor)
-          timer_->incrementNumCalls();
-          timer_->start();
         }
+        timer_->incrementNumCalls();
+        timer_->start();
       }
     } else {
       timer_ = rcp(new Teuchos::Time(label_));
