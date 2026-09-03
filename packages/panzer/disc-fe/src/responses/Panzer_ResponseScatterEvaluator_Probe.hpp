@@ -88,6 +88,13 @@ public:
   // Should be protected, but is public for cuda lambda support
   bool findCellAndComputeBasisValues(typename Traits::EvalData d);
 
+  /** Index of the product vector block holding the probed field, or 0 when the
+    * global indexer is not blocked. The response evaluator factory selects the
+    * scatter's indexer with this same index, so the two must agree or the
+    * derivative is scattered into the wrong block.
+    */
+  int getProductVectorBlockIndex() const;
+
 protected:
   typedef typename EvalT::ScalarT ScalarT;
 

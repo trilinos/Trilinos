@@ -45,18 +45,24 @@ buildAndRegisterEvaluators(const std::string & responseName,
 
    // build scatter evaluator
    {
-     // If blocked, pull out the local indexer for the particular field
+     std::string field = (fieldName_=="" ? responseName : fieldName_);
+
+     // If blocked, pull out the local indexer for the particular field. This
+     // must resolve the field name the same way the scatter evaluator does, so
+     // that the indexer and the block it scatters into agree.
      auto tmp_global_indexer = globalIndexer_;
      auto blocked_dof_manager = Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager>(globalIndexer_);
      if (nonnull(blocked_dof_manager)) {
-       int field_number = blocked_dof_manager->getFieldNum(this->fieldName_);
+       int field_number = blocked_dof_manager->getFieldNum(field);
+       TEUCHOS_TEST_FOR_EXCEPTION(field_number < 0,std::logic_error,
+         "ResponseEvaluatorFactory_Probe: field \"" << field << "\" was not "
+         "found in the blocked DOF manager.");
        int product_vector_block_index = blocked_dof_manager->getFieldBlock(field_number);
        tmp_global_indexer = (blocked_dof_manager->getFieldDOFManagers()[product_vector_block_index]);
      }
 
      Teuchos::RCP<ProbeScatterBase> scatterObj =
          (tmp_global_indexer != Teuchos::null) ?  Teuchos::rcp(new ProbeScatter<LO,GO>(tmp_global_indexer)) : Teuchos::null;
-     std::string field = (fieldName_=="" ? responseName : fieldName_);
 
      // Get basis and integration rule associated with field
      std::vector<panzer::StrPureBasisPair> blockFields = physicsBlock.getProvidedDOFs();
