@@ -104,16 +104,16 @@ template <typename EvalT,typename LO,typename GO>
 bool ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 typeSupported() const
 {
-  // TODO BWR does this need to happen??
-  if(   PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>()// ||
-        //PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>()
+  // A Tangent response accumulates Fad-valued scalars and needs no linear
+  // object factory, so it must not be gated on one: responses registered
+  // through the plain addResponse() path never get a factory, and gating it
+  // there silently drops DgDp instead of failing.
+  if(   PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>() ||
+        PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>()
     )
     return true;
 
   if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Jacobian>())
-    return linearObjFactory_!=Teuchos::null;
-
-  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>())
     return linearObjFactory_!=Teuchos::null;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
