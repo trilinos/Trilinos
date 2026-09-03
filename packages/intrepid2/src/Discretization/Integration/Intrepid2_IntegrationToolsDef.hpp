@@ -127,7 +127,7 @@ namespace Intrepid2 {
         const bool allocateFadStorage = !(std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value);  
         if (allocateFadStorage)
         {
-          fad_size_output_ = Sacado::dimension_scalar(integralView_);
+          fad_size_output_ = get_dimension_scalar(integralView_);
         }
         
         const int R = numTensorComponents_ - 1;
@@ -1067,7 +1067,7 @@ namespace Intrepid2 {
         const bool allocateFadStorage = !(std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value);
         if (allocateFadStorage)
         {
-          fad_size_output_ = Sacado::dimension_scalar(integralView_);
+          fad_size_output_ = get_dimension_scalar(integralView_);
         }
       }
 
@@ -2256,7 +2256,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> &integrals,
                 const bool allocateFadStorage = !(std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value);
                 if (allocateFadStorage)
                 {
-                  auto fad_size_output = Sacado::dimension_scalar(integrals.getUnderlyingView());
+                  auto fad_size_output = get_dimension_scalar(integrals.getUnderlyingView());
                   componentIntegralView = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields, fad_size_output);
                 }
                 else
