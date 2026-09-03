@@ -149,8 +149,10 @@ endif()
 # -k NNN - keep going until NNN jobs fail. 0 == infinity
 # -l N   - might be an interesting option to reduce # of jobs based on LOAD AVERAGE
 #          but load average is dependent on the # of cores on a system.
-set(CTEST_BUILD_FLAGS "-j${PARALLEL_LEVEL} -k 0")
-
+set(CTEST_BUILD_FLAGS "-j${PARALLEL_LEVEL}")
+if(CTEST_CMAKE_GENERATOR STREQUAL "Ninja")
+  string(APPEND CTEST_BUILD_FLAGS " -k 0")
+endif()
 
 
 
