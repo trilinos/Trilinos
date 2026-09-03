@@ -8,6 +8,17 @@ TRIBITS_INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/bcstrategy)
 
 SET(UNIT_TEST_DRIVER ${PANZER_UNIT_TEST_MAIN})
 
+# Runs on Tpetra, so it is available in Epetra-free builds.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  thyra_model_evaluator
+  SOURCES thyra_model_evaluator.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  )
+
+# The tests below still build against the Epetra stack.
+IF (PANZER_HAVE_EPETRA_STACK)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   model_evaluator
   SOURCES model_evaluator.cpp ${UNIT_TEST_DRIVER}
@@ -20,13 +31,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES model_evaluator_mass_check.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 1
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  thyra_model_evaluator
-  SOURCES thyra_model_evaluator.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 4
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -58,3 +62,5 @@ IF(${PARENT_PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT)
      NUM_MPI_PROCS 4
      )
 ENDIF()
+
+ENDIF (PANZER_HAVE_EPETRA_STACK)

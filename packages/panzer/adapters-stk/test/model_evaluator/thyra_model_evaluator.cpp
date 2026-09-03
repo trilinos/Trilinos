@@ -24,6 +24,7 @@ using Teuchos::rcp;
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
@@ -541,14 +542,9 @@ namespace panzer {
 
       out << "evalModel(fd)" << std::endl;
       OutArgs outArgs_delta = me->createOutArgs();
-      // TODO BWR Why does this Vp_StV operation ultimately cause the segfault?
-      // TODO BWR Potentially because these are no longer the same spaces?
-      // TODO BWR is the p space is ghosted? x is not
-      // TODO BWR For the gatherTangent step we need ghosted containers
-      // TODO BWR Recall that the x_space does not actually propagate to solution gather
-      // TODO BWR but rather a ghostedContainer is set up (I believe in the assembly engine)
-      std::cout << std::boolalpha << x->space()->isCompatible(*(v->space())) << std::endl;
-      std::cout << " DIMS " << x->space()->dim() << " " << v->space()->dim() << std::endl;
+      // The tangent vector must live in the same space as x for this update to
+      // be meaningful; assert it rather than discovering it as a segfault.
+      TEST_ASSERT(x->space()->isCompatible(*(v->space())));
       Thyra::Vp_StV(x.ptr(),1.0,*v); // x = x + 1 * v
       Thyra::put_scalar(6.0,p.ptr());// p = p + 1
       outArgs_delta.set_f(fd);
@@ -708,6 +704,16 @@ namespace panzer {
 
 
   }
+
+  // These two distributed-parameter tests require a linear object factory with
+  // different range and domain indexers, which is not yet supported on Tpetra:
+  //   - the non-blocked case gathers the domain with the range indexer, because
+  //     TpetraLinearObjFactory ignores its colGidProvider_ in
+  //     getDomainGlobalIndexer()/buildGatherDomain();
+  //   - the blocked case is rejected outright by
+  //     cloneWithNewRangeAndDomain() in Panzer_LinearObjFactory_Utilities.cpp.
+  // Until that support lands they can only run against the Epetra stack.
+#ifdef PANZER_HAVE_EPETRA_STACK
 
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(thyra_model_evaluator, distro_parameters_dgdp)
@@ -959,6 +965,8 @@ namespace panzer {
       TEST_ASSERT(a || b || c);
     }
   }
+
+#endif // PANZER_HAVE_EPETRA_STACK
 
   // Testing that nominal values are correctly built and initialized
   //    specifically testing that adding distributed parameters doesn't wipe out

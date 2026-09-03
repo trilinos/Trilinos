@@ -1,13 +1,18 @@
 IF (PANZER_HAVE_EPETRA_STACK)
     ADD_SUBDIRECTORY(assembly_engine)
     ADD_SUBDIRECTORY(field_manager_builder)
-    ADD_SUBDIRECTORY(model_evaluator)
     ADD_SUBDIRECTORY(solver)
     ADD_SUBDIRECTORY(ip_coordinates)
     ADD_SUBDIRECTORY(bcstrategy)
     ADD_SUBDIRECTORY(periodic_bcs)
     ADD_SUBDIRECTORY(initial_condition_builder)
 ENDIF (PANZER_HAVE_EPETRA_STACK)
+
+# The model evaluator tests are being migrated off the Epetra stack. This
+# directory is configured unconditionally so the tests that already run on
+# Tpetra provide coverage in Epetra-free builds; the ones still tied to Epetra
+# are guarded individually inside it.
+ADD_SUBDIRECTORY(model_evaluator)
 
 ADD_SUBDIRECTORY(stk_interface_test)
 ADD_SUBDIRECTORY(stk_connmngr)
