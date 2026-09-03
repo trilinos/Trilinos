@@ -271,6 +271,7 @@ class NumPacketsAndOffsetsFunctorRestricted {
     auto error_h = Kokkos::create_mirror_view(error_);
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
     Kokkos::deep_copy(execution_space(), error_h, error_);
+    execution_space().fence();
     return error_h();
   }
 
