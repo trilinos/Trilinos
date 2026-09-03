@@ -96,20 +96,6 @@ void InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     Ainv                      = MatrixFactory::Build(D);
   } else if (method == "sparseapproxinverse") {
     RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedGraph(A, tol);
-    auto maxRowEntries            = sparsityPattern->getLocalMaxNumRowEntries();
-    // too many nonzeros per row will cause us to exceed L1 memory space size
-    // lets increase threshold to reduce nnzs per row
-    while (maxRowEntries > 200) {
-      if (tol == 0.0)
-        tol = .005;
-      else
-        tol *= 1.5;
-      if (IsPrint(Statistics1)) {
-        GetOStream(Statistics1) << "MueLu_InverseApproximationFactory: Too many NNZs per row (" << maxRowEntries << "). Reducing NNZs per row by increasing drop threshold to " << tol << std::endl;
-      }
-      sparsityPattern = Utilities::GetThresholdedGraph(A, tol);
-      maxRowEntries   = sparsityPattern->getLocalMaxNumRowEntries();
-    }
     if (IsPrint(Statistics1)) {
       sparsityPattern->computeGlobalConstants();
       GetOStream(Statistics1) << "NNZ Graph(A): " << A->getCrsGraph()->getGlobalNumEntries() << " , NNZ Tresholded Graph(A): " << sparsityPattern->getGlobalNumEntries() << std::endl;
@@ -122,21 +108,6 @@ void InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     }
   } else if (method == "factoredsparseapproxinverse") {
     RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedLowerTriangularGraph(A, tol);
-    auto maxRowEntries            = sparsityPattern->getLocalMaxNumRowEntries();
-    // too many nonzeros per row will cause us to exceed L1 memory space size
-    // lets increase threshold to reduce nnzs per row
-    while (maxRowEntries > 200) {
-      if (tol == 0.0)
-        tol = .005;
-      else
-        tol *= 1.5;
-      if (IsPrint(Statistics1)) {
-        GetOStream(Statistics1) << "MueLu_InverseApproximationFactory: Too many NNZs per row (" << maxRowEntries << "). Reducing NNZs per row by increasing drop threshold to " << tol << std::endl;
-      }
-      sparsityPattern = Utilities::GetThresholdedLowerTriangularGraph(A, tol);
-      maxRowEntries   = sparsityPattern->getLocalMaxNumRowEntries();
-    }
-
     if (IsPrint(Statistics1)) {
       sparsityPattern->computeGlobalConstants();
       GetOStream(Statistics1) << "NNZ Graph(A): " << A->getCrsGraph()->getGlobalNumEntries() << " , NNZ Tresholded Graph(triLower(A)): " << sparsityPattern->getGlobalNumEntries() << std::endl;
