@@ -54,6 +54,22 @@ class NestedBlockGS : public BlockImplicitLinearOp {
       productDomain_;  ///< Domain vector space.
 };
 
+/** \brief A block Gauss-Seidel preconditioner that groups the sub-blocks
+ *        hierarchically before sweeping.
+ *
+ * Unlike the flat BlockGaussSeidelPreconditionerFactory, this factory lets you
+ * collect the operator's row blocks into a smaller number of coarse "hierarchical"
+ * blocks and then performs a block Gauss-Seidel sweep over those groups. Each
+ * hierarchical block gets its own inverse factory (and optional preconditioner
+ * factory); the diagonal solves reuse their inverses across rebuilds via the
+ * BlockPreconditionerState. The sweep direction (upper- or lower-triangular) is
+ * selectable. The actual application is carried out by the NestedBlockGS implicit
+ * operator.
+ *
+ * This is the factory behind the <tt>"Hierarchical Block Gauss-Seidel"</tt> type;
+ * see the \ref teko_block_reference "Block Preconditioner Reference" for its
+ * parameters (<tt>"Included Subblocks"</tt> and the per-block <tt>"Inverse Type"</tt>).
+ */
 class HierarchicalGaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
  public:
   ~HierarchicalGaussSeidelPreconditionerFactory() override = default;

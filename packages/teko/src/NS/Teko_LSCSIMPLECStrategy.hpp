@@ -17,14 +17,17 @@ namespace NS {
 
 class LSCPrecondState;  // forward declration
 
-/** \brief A strategy that takes a single inverse factory and
- *        uses that for all inverses. If no mass matrix is
- *        passed in the diagonal of the 1,1 block is used.
+/** \brief SIMPLEC-style LSC strategy: approximate the velocity mass matrix by a
+ *        diagonal of the velocity block \f$F\f$.
  *
- * A strategy that takes a single inverse factory and uses that
- * for all inverses. Optionally the mass matrix can be passed
- * in, if it is the diagonal is extracted and that is used to
- * form the inverse approximation.
+ * A least-squares-commutator strategy in the spirit of SIMPLEC. Instead of
+ * requiring a separately supplied velocity mass matrix, it approximates
+ * \f$Q_u^{-1}\f$ by a diagonal extracted from \f$F\f$ (the diagonal form is
+ * selectable via the shared "Scaling Type" / DiagonalType option), and uses that
+ * to form the \f$BQ_u^{-1}B^T\f$ Schur-complement approximation. One inverse
+ * factory is used for the velocity block \f$F\f$ and one for the Schur
+ * complement. Optionally the full LDU decomposition can be used instead of the
+ * upper-triangular approximation.
  */
 class LSCSIMPLECStrategy : public LSCStrategy {
  public:
