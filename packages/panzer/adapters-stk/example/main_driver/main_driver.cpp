@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
     bool pointCalculation = false;
     bool printTimers = false;
     bool printInputPL = false;
+    std::string assemblyMode = "input file";
     {
       Teuchos::CommandLineProcessor clp;
 
@@ -97,6 +98,7 @@ int main(int argc, char *argv[])
       clp.setOption("point-calc","disable-point-calc", &pointCalculation, "Enable the probe evaluator unit test.");
       clp.setOption("time","no-time", &printTimers, "Print the timing information.");
       clp.setOption("pl","no-pl", &printInputPL, "Print the input ParameterList at the start of the run.");
+      clp.setOption("assembly", &assemblyMode, "Which assembly path to use for the Jacobian. Valid values are \"fe\", \"classic\" and \"input file\" (default). \"fe\" assembles into a Tpetra::FECrsMatrix; \"classic\" assembles into separate owned/ghosted matrices joined by an explicit export. Both override the Assembly sublist's \"Use FE Assembly\" entry in the input file. \"input file\" leaves that entry alone, so the input file decides; if the input file does not set it, classic is used. FE assembly requires a Tpetra problem, flat or blocked.");
 
       Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
 	clp.parse(argc,argv,&std::cerr);
@@ -115,6 +117,34 @@ int main(int argc, char *argv[])
     // Parse the input file and broadcast to other processes
     Teuchos::RCP<Teuchos::ParameterList> input_params = Teuchos::rcp(new Teuchos::ParameterList("User_App Parameters"));
     Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
+
+    // Resolve the assembly path. "fe" and "classic" override whatever the input file says;
+    // "input file" defers to it, falling back to classic when the input file is silent. The
+    // ModelEvaluatorFactory rejects FE assembly outright for problem setups that have no FE
+    // path (non-Tpetra), so asking for FE and not getting it fails loudly rather than
+    // silently running the classic path.
+    {
+      Teuchos::ParameterList& assembly_pl = input_params->sublist("Assembly");
+      const char* source = "command line";
+      if (assemblyMode == "fe")
+        assembly_pl.set<bool>("Use FE Assembly",true);
+      else if (assemblyMode == "classic")
+        assembly_pl.set<bool>("Use FE Assembly",false);
+      else if (assemblyMode == "input file") {
+        source = "input file";
+        if (!assembly_pl.isParameter("Use FE Assembly")) {
+          assembly_pl.set<bool>("Use FE Assembly",false);
+          source = "default";
+        }
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "Invalid --assembly=\"" << assemblyMode << "\". Valid values are \"fe\", \"classic\" and \"input file\".");
+      }
+
+      *out << "Assembly mode (from " << source << "): "
+           << (assembly_pl.get<bool>("Use FE Assembly") ? "FE (Tpetra::FECrsMatrix)" : "classic") << std::endl;
+    }
 
     if (printInputPL)
       *out << *input_params << std::endl;
@@ -382,7 +412,15 @@ int main(int argc, char *argv[])
 
             TEUCHOS_ASSERT(response!=Teuchos::null); // should not be null!
 
-            *out << "Response Value \"" << responseIndexToName[i] << "\": " << Thyra::get_ele(*response,0) << std::endl;
+            // Print at full double precision, restoring the stream afterwards. The default
+            // 6 significant digits are not enough for a regression test to compare response
+            // values against an analytic answer at a tight tolerance: 0.5000004 and 0.5
+            // both print as "0.5", so a check any finer than ~1e-6 would be illusory.
+            {
+              const std::streamsize prev_precision = out->precision(16);
+              *out << "Response Value \"" << responseIndexToName[i] << "\": " << Thyra::get_ele(*response,0) << std::endl;
+              out->precision(prev_precision);
+            }
          }
       }
 

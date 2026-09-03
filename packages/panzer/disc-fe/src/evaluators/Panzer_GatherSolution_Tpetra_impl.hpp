@@ -144,11 +144,11 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
-   Teuchos::RCP<typename LOC::VectorType> x;
+   Teuchos::RCP<typename LOC::MultiVectorType> x;
    if (useTimeDerivativeSolutionVector_)
-     x = tpetraContainer_->get_dxdt();
+     x = tpetraContainer_->get_dxdt_mv();
    else
-     x = tpetraContainer_->get_x();
+     x = tpetraContainer_->get_x_mv();
 
    auto x_data = x->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
@@ -311,11 +311,11 @@ evaluateFields(typename TRAITS::EvalData workset)
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
 
-   Teuchos::RCP<typename LOC::VectorType> x;
+   Teuchos::RCP<typename LOC::MultiVectorType> x;
    if (useTimeDerivativeSolutionVector_)
-     x = tpetraContainer_->get_dxdt();
+     x = tpetraContainer_->get_dxdt_mv();
    else
-     x = tpetraContainer_->get_x();
+     x = tpetraContainer_->get_x_mv();
 
    typedef typename PHX::MDField<ScalarT,Cell,NODE>::array_type::reference_type reference_type;
    auto cellLocalIdsKokkos = this->wda(workset).getLocalCellIDs();
@@ -495,9 +495,9 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
     if(tpetraContainer!=Teuchos::null) {
       if (useTimeDerivativeSolutionVector_)
-        x_vector = tpetraContainer->get_dxdt();
+        x_vector = tpetraContainer->get_dxdt_mv();
       else
-        x_vector = tpetraContainer->get_x();
+        x_vector = tpetraContainer->get_x_mv();
 
       return; // epetraContainer was found
     }

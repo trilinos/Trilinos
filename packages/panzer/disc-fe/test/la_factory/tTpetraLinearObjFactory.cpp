@@ -15,6 +15,9 @@
 
 #include <string>
 #include <iostream>
+#include <set>
+#include <algorithm>
+#include <cmath>
 
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
@@ -37,6 +40,7 @@
 #include "Tpetra_MultiVector.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -700,6 +704,619 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, initializeContainer)
       TEST_ASSERT(tGhostedContainer->get_dxdt()!=Teuchos::null);
       TEST_ASSERT(tGhostedContainer->get_f()!=Teuchos::null);
       TEST_ASSERT(tGhostedContainer->get_A()!=Teuchos::null);
+   }
+}
+
+TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_opt_in)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+   #else
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
+   #endif
+
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
+
+   RCP<panzer::GlobalIndexer> indexer
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
+
+   typedef panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> LOFType;
+
+   // default construction: FE assembly is not enabled, so the FE accessors must throw
+   {
+      Teuchos::RCP<LOFType> la_factory
+            = Teuchos::rcp(new LOFType(tComm.getConst(),indexer));
+
+      TEST_ASSERT(!la_factory->useFEAssembly());
+      TEST_THROW(la_factory->getFEGraph(),std::logic_error);
+      TEST_THROW(la_factory->getFEMatrix(),std::logic_error);
+      TEST_THROW(la_factory->getFEMultiVector(),std::logic_error);
+   }
+
+   // opt in to FE assembly
+   {
+      Teuchos::RCP<LOFType> la_factory
+            = Teuchos::rcp(new LOFType(tComm.getConst(),indexer,true));
+
+      TEST_ASSERT(la_factory->useFEAssembly());
+
+      // getFEGraph() returns the graph in the ACTIVE_OWNED state. Tpetra::FECrsGraph/
+      // FECrsMatrix have no public accessor to ask "what state are you in" (activeCrsGraph_/
+      // activeCrsMatrix_ are private, toggled only by the private switchActiveCrsGraph()/
+      // switchActiveCrsMatrix(), invoked from the public beginAssembly()/endAssembly()), so
+      // this is known from control flow, not queried: buildFEGraph() (the function backing
+      // getFEGraph()) itself calls feGraph->endAssembly() right before returning the graph --
+      // that call is what performs the ACTIVE_OWNED_PLUS_SHARED -> ACTIVE_OWNED toggle. So by
+      // the time this test ever sees the graph, the toggle has already happened; nothing here
+      // does it. The isSameAs() check just below is a deliberate, direct proof of that (rather
+      // than just trusting the comment) -- if the graph were still owned+shared, its row map
+      // would be the larger ghosted map and this would fail outright.
+      RCP<LOFType::FECrsGraphType> feGraph = la_factory->getFEGraph();
+      TEST_ASSERT(feGraph!=Teuchos::null);
+      TEST_ASSERT(feGraph->isFillComplete());
+      TEST_ASSERT(feGraph->getRowMap()->isSameAs(*la_factory->getMap()));
+
+      // the FE graph (built via the V2 FECrsGraph constructor) must have the same
+      // sparsity pattern as the "old" owned graph built via buildGraph()/buildGhostedGraph().
+      // Both graphs perform the same cross-rank structural merge by this point (the FE graph
+      // via FECrsGraph::endFill()'s self-export; the legacy graph via buildGraph()'s explicit
+      // doExport(INSERT) from the ghosted graph), so this must be an EXACT match, row for row,
+      // GID for GID -- not just matching entry counts.
+      RCP<LOFType::CrsGraphType> oldGraph = la_factory->getGraph();
+      TEST_EQUALITY(feGraph->getGlobalNumRows(),oldGraph->getGlobalNumRows());
+      TEST_EQUALITY(feGraph->getGlobalNumEntries(),oldGraph->getGlobalNumEntries());
+
+      RCP<const Map> ownedMap = feGraph->getRowMap();
+      RCP<const Map> feColMap = feGraph->getColMap();
+      RCP<const Map> oldColMap = oldGraph->getColMap();
+      for(size_t lclRow=0;lclRow<ownedMap->getLocalNumElements();lclRow++) {
+         LOFType::CrsGraphType::local_inds_host_view_type feIndices, oldIndices;
+         feGraph->getLocalRowView(lclRow,feIndices);
+         oldGraph->getLocalRowView(lclRow,oldIndices);
+
+         std::set<panzer::GlobalOrdinal> feGids, oldGids;
+         for(std::size_t k=0;k<feIndices.size();k++)
+            feGids.insert(feColMap->getGlobalElement(feIndices(k)));
+         for(std::size_t k=0;k<oldIndices.size();k++)
+            oldGids.insert(oldColMap->getGlobalElement(oldIndices(k)));
+
+         TEST_EQUALITY(feGids.size(),oldGids.size());
+         TEST_ASSERT(feGids==oldGids);
+      }
+
+      // getFEGraph() is cached -- repeated calls must return the same object
+      TEST_EQUALITY(la_factory->getFEGraph().get(),feGraph.get());
+
+      // getFEMatrix() presents the OWNED_PLUS_SHARED (ghosted) view -- but unlike feGraph
+      // above, that's not because anything here (or in getFEMatrix()) calls beginAssembly()/
+      // endAssembly() -- getFEMatrix() just does `new FECrsMatrixType(getFEGraph())`, no
+      // assembly call at all. The starting state is a Tpetra::FECrsMatrix CONSTRUCTOR
+      // default: it reads an optional "start owned" ParameterList entry (defaulting to
+      // false when, as here, no params are passed), and starts in OWNED_PLUS_SHARED unless
+      // that's explicitly set true. So this state comes from construction, not a toggle.
+      // The graph-level checks above already verify the FE sparsity pattern matches the
+      // non-FE path exactly, so these are just sanity/non-null checks on the thin wrappers
+      // (see fe_owned_shared_matches_ghosted for a real content check of this ghosted state).
+      RCP<LOFType::FECrsMatrixType> feMatrix = la_factory->getFEMatrix();
+      TEST_ASSERT(feMatrix!=Teuchos::null);
+      TEST_ASSERT(feMatrix->getLocalNumRows()>0);
+
+      // Unlike the graph, the matrix is NOT cached: every call allocates a fresh one, so a
+      // caller that needs several independent Jacobians gets them. Only the values are
+      // reallocated -- the graph underneath is shared.
+      TEST_ASSERT(la_factory->getFEMatrix().get()!=feMatrix.get());
+      TEST_ASSERT(la_factory->getTpetraMatrix().get()!=feMatrix.get());
+
+      // There is no ghosted matrix to hand out: the ghosted container borrows the owned
+      // container's at beginFill(ghosted,owned).
+      TEST_THROW(la_factory->getGhostedTpetraMatrix(),std::logic_error);
+
+      // A range-space (residual-side) FE multivector's owned+shared view must be over the
+      // ghosted ROW map exactly -- that is the map the scatter evaluators index with the
+      // GlobalIndexer's local ids, and the source map getGhostedExport() migrates from.
+      // isSameAs, not merely isLocallyFitted: anything weaker would not be a legal source
+      // for that export.
+      RCP<LOFType::FEMultiVectorType> feVec = la_factory->getFEMultiVector();
+      TEST_ASSERT(feVec!=Teuchos::null);
+      TEST_EQUALITY(feVec->getNumVectors(),static_cast<std::size_t>(1));
+      TEST_ASSERT(feVec->getLocalLength()>0);
+      TEST_ASSERT(feVec->getMap()->isSameAs(*la_factory->getGhostedMap()));
+      TEST_EQUALITY(feVec->getLocalLength(),la_factory->getGhostedMap()->getLocalNumElements());
+
+      // It must specifically NOT be the FE graph's column map, which the cross-rank clique
+      // merge widens beyond the ghosted row map. Building the residual over that map was the
+      // original bug this asserts against.
+      TEST_ASSERT(!feVec->getMap()->isSameAs(*feGraph->getColMap()));
+
+      // The domain-space counterpart is over the ghosted COLUMN map. With no separate column
+      // GlobalIndexer the col maps fall back to the row maps, so here the two agree; the
+      // accessors are still distinct so a rectangular/blocked setup gets the right one.
+      RCP<LOFType::FEMultiVectorType> feColVec = la_factory->getFEColMultiVector();
+      TEST_ASSERT(feColVec!=Teuchos::null);
+      TEST_ASSERT(feColVec->getMap()->isSameAs(*la_factory->getGhostedColMap()));
+   }
+}
+
+TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_owned_shared_matches_ghosted)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+   #else
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
+   #endif
+
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
+
+   RCP<panzer::GlobalIndexer> indexer
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
+
+   typedef panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> LOFType;
+
+   Teuchos::RCP<LOFType> la_factory
+         = Teuchos::rcp(new LOFType(tComm.getConst(),indexer,true));
+
+   // A freshly built Tpetra::FECrsMatrix starts life presenting the owned+shared
+   // ("ghosted") active view -- this is exactly the view local element-loop assembly
+   // (beginAssembly()/scatter/endAssembly()) writes into.
+   //
+   // It is NOT expected to be byte-identical, row for row, to the traditional ghosted
+   // Tpetra::CrsMatrix built by the non-FE path (getGhostedTpetraMatrix()/getGhostedGraph()).
+   // FECrsGraph::endFill() performs a genuine cross-rank STRUCTURAL merge as part of
+   // finishing the graph (FECrsGraph::doOwnedPlusSharedToOwned(), a self-export with
+   // Tpetra::ADD): for every row this rank OWNS, it unions in whatever entries ANY other
+   // rank locally inserted for that same row (e.g. two elements on different ranks sharing
+   // an interface node). The traditional ghosted graph never does this merge -- it only ever
+   // reflects what THIS rank's own local elements inserted; cross-rank merging is deferred to
+   // a separate, later VALUE-level Export (ghostToGlobalTpetraMatrix). So:
+   //   - For rows NOT owned by this rank (pure ghost rows): FECrsGraph never touches them
+   //     during the merge (the reverse direction, doOwnedToOwnedPlusShared(), is a documented
+   //     no-op), so they must match the traditional ghosted row EXACTLY.
+   //   - For rows OWNED by this rank: the FE row is the traditional row PLUS whatever any
+   //     other rank's elements also contributed to that row, i.e. a (non-strict) superset.
+   // This is by design, and is exactly what makes it correct to use FE's owned+shared matrix
+   // as the local assembly target: each rank still only ever scatters its own elements' data
+   // using its own ghosted LIDs, and the pre-sized structure is what lets the matrix's own
+   // endAssembly() correctly sum in every rank's contribution afterward, without the
+   // legacy path's separate explicit ghostToGlobalContainer export step.
+   RCP<LOFType::FECrsMatrixType> feMatrix = la_factory->getFEMatrix();
+   RCP<const LOFType::CrsGraphType> feMatrixGraph = feMatrix->getCrsGraph();
+   RCP<const LOFType::CrsGraphType> oldGhostedGraph = la_factory->getGhostedGraph();
+
+   // Row maps must match exactly: both are built directly from getGhostedMap(), with no
+   // Tpetra-internal reordering involved (unlike column maps, row maps are supplied
+   // directly rather than derived from the insertion pattern).
+   RCP<const Map> feRowMap = feMatrixGraph->getRowMap();
+   RCP<const Map> oldRowMap = oldGhostedGraph->getRowMap();
+   TEST_ASSERT(feRowMap->isSameAs(*oldRowMap));
+
+   // Column maps need NOT be identical: the FE graph was built with the "V2" FECrsGraph
+   // constructor, which only guarantees that its column map is *locally fitted* to the
+   // owned+shared domain map supplied at construction (getGhostedColMap()) -- i.e. the
+   // traditional ghosted column map's global ids must appear, in the same order, as a
+   // leading prefix of the FE column map. Any additional columns beyond that prefix
+   // (from the cross-rank merge described above) are appended afterward by Tpetra and are
+   // not part of the guarantee. This ordering is the entire reason V2 was chosen over V1: it
+   // is what lets local (ghosted) element assembly use the GlobalIndexer's own local ids
+   // directly as FE matrix local column indices.
+   RCP<const Map> feColMap = feMatrixGraph->getColMap();
+   RCP<const Map> oldColMap = oldGhostedGraph->getColMap();
+   TEST_ASSERT(feColMap->isLocallyFitted(*oldColMap));
+
+   // Per row: exact match for rows this rank doesn't own, superset for rows it does (see the
+   // explanation above). Order within a row is not checked: a row's local storage order is an
+   // internal CrsGraph implementation detail, not a documented guarantee -- the per-column
+   // *map* ordering checked above (isLocallyFitted) is the property that actually matters for
+   // local-index-based assembly, not row-local storage order.
+   std::vector<panzer::GlobalOrdinal> ownedIndices;
+   indexer->getOwnedIndices(ownedIndices);
+   std::set<panzer::GlobalOrdinal> ownedSet(ownedIndices.begin(),ownedIndices.end());
+
+   for(size_t lclRow=0;lclRow<feRowMap->getLocalNumElements();lclRow++) {
+      LOFType::CrsGraphType::local_inds_host_view_type feIndices, oldIndices;
+      feMatrixGraph->getLocalRowView(lclRow,feIndices);
+      oldGhostedGraph->getLocalRowView(lclRow,oldIndices);
+
+      std::set<panzer::GlobalOrdinal> feGids, oldGids;
+      for(std::size_t k=0;k<feIndices.size();k++)
+         feGids.insert(feColMap->getGlobalElement(feIndices(k)));
+      for(std::size_t k=0;k<oldIndices.size();k++)
+         oldGids.insert(oldColMap->getGlobalElement(oldIndices(k)));
+
+      const panzer::GlobalOrdinal rowGid = feRowMap->getGlobalElement(lclRow);
+      if(ownedSet.count(rowGid)>0) {
+         // owned row: FE row must be at least the traditional row's entries (superset)
+         TEST_ASSERT(std::includes(feGids.begin(),feGids.end(),oldGids.begin(),oldGids.end()));
+      }
+      else {
+         // ghost-only row: FE never touches it during the merge, so it must match exactly
+         TEST_EQUALITY(feGids.size(),oldGids.size());
+         TEST_ASSERT(feGids==oldGids);
+      }
+   }
+}
+
+// Verifies that an FE matrix placed in a container is actually VISIBLE through the
+// container's accessors and DETECTED by the factory's beginFill()/endFill(). This is the
+// coverage for the FE branch added to beginFill()/endFill(): those guard on
+// `A != null` and then rcp_dynamic_cast<FECrsMatrixType>, so if either step silently
+// yielded null the FE state machine would never be driven and ghost-row contributions
+// would never migrate to the owned rows -- a silent wrong answer rather than an error.
+TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_container_visibility)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+   #else
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
+   #endif
+
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
+
+   RCP<panzer::GlobalIndexer> indexer
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
+
+   typedef panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> LOFType;
+   typedef panzer::TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> LOCType;
+
+   Teuchos::RCP<LOFType> la_factory
+         = Teuchos::rcp(new LOFType(tComm.getConst(),indexer,true));
+
+   RCP<LinearObjContainer> loc = la_factory->buildGhostedLinearObjContainer();
+   RCP<LOCType> tloc = rcp_dynamic_cast<LOCType>(loc);
+   TEST_ASSERT(tloc!=Teuchos::null);
+
+   // Place FE objects into the container. set_A() takes RCP<CrsMatrixType>; an
+   // RCP<FECrsMatrixType> converts implicitly since FECrsMatrix IS-A CrsMatrix, so no
+   // container type change was needed for the matrix (unlike the vectors).
+   RCP<LOFType::FECrsMatrixType> feMatrix = la_factory->getFEMatrix();
+   RCP<LOFType::FEMultiVectorType> feVec = la_factory->getFEMultiVector();
+   tloc->set_A(feMatrix);
+   tloc->set_f(feVec);
+
+   // The matrix must survive the round trip through the container's CrsMatrix-typed
+   // storage: non-null, and still dynamic_cast-able back to FECrsMatrix. If either failed,
+   // beginFill()/endFill() would silently fall through to the plain-CrsMatrix branch.
+   TEST_ASSERT(tloc->get_A()!=Teuchos::null);
+   TEST_ASSERT(Teuchos::rcp_dynamic_cast<LOFType::FECrsMatrixType>(tloc->get_A())!=Teuchos::null);
+   TEST_EQUALITY(tloc->get_A().get(),static_cast<LOFType::CrsMatrixType*>(feMatrix.get()));
+
+   // The FEMultiVector is visible through the _mv() accessor...
+   TEST_ASSERT(tloc->get_f_mv()!=Teuchos::null);
+   TEST_EQUALITY(tloc->get_f_mv().get(),static_cast<LOFType::MultiVectorType*>(feVec.get()));
+   // The Thyra bridge must survive an FEMultiVector rather than throwing, because
+   // panzer::ModelEvaluator calls get_f_th() on the GHOSTED container to zero the residual.
+   // Critically it must hand back a VIEW: Thyra::assign(...,0.0) through the wrapper has to
+   // reach the real FE data, or the residual would silently carry stale values into the
+   // next assembly. Seed a nonzero value, zero it through Thyra, and read the FE object back.
+   {
+      feVec->putScalar(3.5);
+      Teuchos::RCP<Thyra::VectorBase<double> > f_th;
+      TEST_NOTHROW(f_th = tloc->get_f_th());
+      TEST_ASSERT(f_th!=Teuchos::null);
+
+      Thyra::assign(f_th.ptr(),0.0);
+
+      auto host = feVec->getLocalViewHost(Tpetra::Access::ReadOnly);
+      double maxAbs = 0.0;
+      for(size_t i=0;i<feVec->getLocalLength();i++)
+         maxAbs = std::max(maxAbs,std::fabs(host(i,0)));
+      TEST_FLOATING_EQUALITY(maxAbs,0.0,1e-14);
+   }
+
+   // ...and the narrowing get_f() throws loudly rather than silently returning null,
+   // since an FEMultiVector is not a Tpetra::Vector.
+   TEST_THROW(tloc->get_f(),std::bad_cast);
+
+   // Finally, drive the fill cycle the AssemblyEngine would: beginFill() must put the FE
+   // matrix into its owned+shared assembly state, and endFill() must run the owned+shared
+   // -> owned migration. Neither should throw, and the FE state machine asserts internally
+   // if they are called out of order, so completing this round trip is itself the check.
+   // Before assembly the FE matrix presents its owned+shared view, whose row map is exactly
+   // getGhostedMap() -- this is what lets the scatter evaluators keep writing through the
+   // GlobalIndexer's ghosted LIDs with no change.
+   TEST_ASSERT(feMatrix->getRowMap()->isSameAs(*la_factory->getGhostedMap()));
+
+   // The range-space FE multivector is over the ghosted ROW map, so it IS a legal source for
+   // getGhostedExport() and is indexed by the same local ids the scatter evaluators use.
+   TEST_ASSERT(feVec->getMap()->isSameAs(*la_factory->getGhostedMap()));
+
+   // Drive the fill cycle: beginFill() puts the FE matrix into its owned+shared assembly
+   // state, endFill() runs the owned+shared -> owned migration and switches the active view.
+   TEST_NOTHROW(la_factory->beginFill(*tloc));
+   TEST_NOTHROW(la_factory->endFill(*tloc));
+   TEST_ASSERT(feMatrix->getRowMap()->isSameAs(*la_factory->getMap()));
+}
+
+// The core Step 3 test: in FE mode the owned and ghosted containers must hold the SAME
+// FECrsMatrix, and a full AssemblyEngine-style fill cycle over that shared object must
+// produce a correctly cross-rank-summed owned Jacobian -- WITHOUT the traditional manual
+// ghost->global matrix export, which endAssembly() replaces.
+TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_shared_matrix_assembly_cycle)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+   #else
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
+   #endif
+
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
+
+   RCP<panzer::GlobalIndexer> indexer
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
+
+   typedef panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> LOFType;
+   typedef panzer::TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> LOCType;
+   typedef panzer::LinearObjContainer LOC;
+
+   Teuchos::RCP<LOFType> la_factory
+         = Teuchos::rcp(new LOFType(tComm.getConst(),indexer,true));
+
+   // Build both containers exactly as AssemblyEngine/ModelEvaluator would.
+   RCP<LinearObjContainer> gLoc = la_factory->buildLinearObjContainer();
+   RCP<LinearObjContainer> ghLoc = la_factory->buildGhostedLinearObjContainer();
+   la_factory->initializeContainer(LOC::Mat,*gLoc);
+   la_factory->initializeGhostedContainer(LOC::Mat,*ghLoc);
+
+   RCP<LOCType> gt = rcp_dynamic_cast<LOCType>(gLoc);
+   RCP<LOCType> ght = rcp_dynamic_cast<LOCType>(ghLoc);
+
+   // The owned container gets its matrix via getTpetraMatrix() -- the same route
+   // ModelEvaluator::create_W_op takes to hand NOX its W operator. The ghosted container
+   // gets none of its own.
+   TEST_ASSERT(gt->get_A()!=Teuchos::null);
+   TEST_ASSERT(ght->get_A()==Teuchos::null);
+
+   // --- AssemblyEngine-style cycle ---------------------------------------------------
+   // 1) begin fill on the ghosted container, handing it the owned container. THE key
+   //    structural property of the FE path -- one object, two views -- is established
+   //    right here, and only here.
+   la_factory->beginFill(*ghLoc,*gLoc);
+   TEST_EQUALITY(gt->get_A().get(),ght->get_A().get());
+
+   RCP<LOFType::FECrsMatrixType> feA
+      = Teuchos::rcp_dynamic_cast<LOFType::FECrsMatrixType>(ght->get_A());
+   TEST_ASSERT(feA!=Teuchos::null);
+
+   // 2) "scatter": every rank sums 1.0 into the diagonal of each row it can see through its
+   //    GHOSTED map -- i.e. exactly what a local element loop does with ghosted LIDs. Rows
+   //    that two ranks both see (the shared interface DOFs) therefore receive 1.0 twice and
+   //    must end up at 2.0 only if the cross-rank merge actually happened.
+   {
+      std::vector<panzer::GlobalOrdinal> ghosted;
+      indexer->getOwnedAndGhostedIndices(ghosted);
+      Teuchos::Array<panzer::GlobalOrdinal> cols(1);
+      Teuchos::Array<double> vals(1); vals[0] = 1.0;
+      for(std::size_t i=0;i<ghosted.size();i++) {
+         cols[0] = ghosted[i];
+         feA->sumIntoGlobalValues(ghosted[i],cols,vals);
+      }
+   }
+
+   // 3) ghost->global. For the shared FE matrix this must be a NO-OP: the migration is done
+   //    in place by endAssembly() below. If this instead attempted the traditional export it
+   //    would be exporting the object into itself.
+   TEST_NOTHROW(la_factory->ghostToGlobalContainer(*ghLoc,*gLoc,LOC::Mat));
+
+   // 4) the remaining begin/end pair AssemblyEngine issues on the global container, then the
+   //    ghosted one. Only one begin/end may actually reach the FE state machine.
+   TEST_NOTHROW(la_factory->beginFill(*gLoc));
+   TEST_NOTHROW(la_factory->endFill(*gLoc));
+   TEST_NOTHROW(la_factory->endFill(*ghLoc,*gLoc));
+
+   // The borrow lasts only for the assembly: the ghosted container hands the matrix back,
+   // so it does not pin the caller's Jacobian alive afterwards. The owned container -- which
+   // actually owns it -- keeps it.
+   TEST_ASSERT(ght->get_A()==Teuchos::null);
+   TEST_ASSERT(gt->get_A()!=Teuchos::null);
+
+   // --- verify the assembled OWNED Jacobian -------------------------------------------
+   // The matrix now presents its owned view.
+   TEST_ASSERT(feA->getRowMap()->isSameAs(*la_factory->getMap()));
+
+   // Which owned rows are also visible (ghosted) on the other rank? In the 2-rank mock those
+   // are the shared interface DOFs; each is summed into by BOTH ranks, so its diagonal must
+   // be 2.0. Rows only this rank sees must be 1.0. Getting 1.0 everywhere would mean the
+   // cross-rank merge silently did not happen.
+   std::vector<panzer::GlobalOrdinal> ownedIdx;
+   indexer->getOwnedIndices(ownedIdx);
+   std::set<panzer::GlobalOrdinal> sharedGids;
+   if(myRank==0) { sharedGids.insert(2); sharedGids.insert(3); }
+   else          { sharedGids.insert(4); sharedGids.insert(5); }
+
+   RCP<const Map> ownedMap = feA->getRowMap();
+   for(std::size_t i=0;i<ownedIdx.size();i++) {
+      panzer::GlobalOrdinal gid = ownedIdx[i];
+      LOFType::CrsMatrixType::nonconst_global_inds_host_view_type inds("inds",feA->getNumEntriesInGlobalRow(gid));
+      LOFType::CrsMatrixType::nonconst_values_host_view_type vals("vals",feA->getNumEntriesInGlobalRow(gid));
+      size_t numEnt = 0;
+      feA->getGlobalRowCopy(gid,inds,vals,numEnt);
+
+      double diag = 0.0;
+      for(size_t k=0;k<numEnt;k++)
+         if(inds(k)==gid) diag = vals(k);
+
+      const double expected = (sharedGids.find(gid)!=sharedGids.end()) ? 2.0 : 1.0;
+      TEST_FLOATING_EQUALITY(diag,expected,1e-14);
+   }
+   TEST_ASSERT(ownedMap->getLocalNumElements()>0);
+}
+
+// The range-space FE multivector must be a legal, correct source for the traditional
+// ghost->global export. This is the point of building it over getGhostedImport() rather than
+// the FE graph's (column-map) importer: with the column map its local length exceeds the
+// ghosted map's and getGhostedExport() -- whose source map is getGhostedMap() -- cannot
+// consume it. Here it is filled through ghosted local ids exactly as a scatter evaluator
+// would, then migrated, and the cross-rank sums are checked.
+TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_multivector_exports_like_ghosted)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+   #else
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
+   #endif
+
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
+
+   RCP<panzer::GlobalIndexer> indexer
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
+
+   typedef panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> LOFType;
+   typedef panzer::TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> LOCType;
+   typedef panzer::LinearObjContainer LOC;
+
+   Teuchos::RCP<LOFType> la_factory
+         = Teuchos::rcp(new LOFType(tComm.getConst(),indexer,true));
+
+   // ghosted container gets the FE residual; the global container keeps a plain owned vector
+   // (which is what NOX supplies in practice, since f_out comes from the Thyra vector space).
+   RCP<LinearObjContainer> gLoc = la_factory->buildLinearObjContainer();
+   RCP<LinearObjContainer> ghLoc = la_factory->buildGhostedLinearObjContainer();
+   la_factory->initializeContainer(LOC::F,*gLoc);
+
+   RCP<LOCType> gt = rcp_dynamic_cast<LOCType>(gLoc);
+   RCP<LOCType> ght = rcp_dynamic_cast<LOCType>(ghLoc);
+
+   RCP<LOFType::FEMultiVectorType> feF = la_factory->getFEMultiVector();
+   ght->set_f(feF);
+   feF->putScalar(0.0);
+   gt->get_f_mv()->putScalar(0.0);
+
+   // "scatter": write 1.0 at every ghosted local id, exactly as an element loop would.
+   {
+      auto host = feF->getLocalViewHost(Tpetra::Access::ReadWrite);
+      for(size_t i=0;i<feF->getLocalLength();i++)
+         host(i,0) = 1.0;
+   }
+
+   // migrate ghosted -> owned through the factory's normal path
+   TEST_NOTHROW(la_factory->ghostToGlobalContainer(*ghLoc,*gLoc,LOC::F));
+
+   // Owned entries also visible (ghosted) on the other rank were written by both ranks, so
+   // they must sum to 2.0; rank-local entries stay at 1.0. Getting 1.0 everywhere would mean
+   // the export silently moved nothing.
+   std::vector<panzer::GlobalOrdinal> ownedIdx;
+   indexer->getOwnedIndices(ownedIdx);
+   std::set<panzer::GlobalOrdinal> sharedGids;
+   if(myRank==0) { sharedGids.insert(2); sharedGids.insert(3); }
+   else          { sharedGids.insert(4); sharedGids.insert(5); }
+
+   RCP<const Map> ownedMap = la_factory->getMap();
+   auto ownedHost = gt->get_f_mv()->getLocalViewHost(Tpetra::Access::ReadOnly);
+   for(std::size_t i=0;i<ownedIdx.size();i++) {
+      panzer::GlobalOrdinal gid = ownedIdx[i];
+      int lid = ownedMap->getLocalElement(gid);
+      TEST_ASSERT(lid>=0);
+      const double expected = (sharedGids.find(gid)!=sharedGids.end()) ? 2.0 : 1.0;
+      TEST_FLOATING_EQUALITY(ownedHost(lid,0),expected,1e-14);
+   }
+}
+
+// Assembling twice with the matrix zeroed in between must give the same answer both times.
+//
+// This is not obviously true for an FECrsMatrix. Its owned view aliases only the LEADING
+// CHUNK of the owned+shared values array (see Tpetra_FECrsMatrix_def.hpp, "we'll grab the
+// first chunk of the Owned+Shared matrix's values array"). After the first cycle the matrix
+// rests in its owned view, so panzer::ModelEvaluator's usual pre-assembly
+// initializeMatrix(0.0) -- which is a bare setAllToScalar -- reaches owned rows only and
+// leaves the GHOST rows holding the previous cycle's contributions. endAssembly() does not
+// clear them either: it is a combining self-export, which leaves its source untouched. The
+// second cycle then sums onto stale data and inflates every shared-interface dof.
+//
+// Nothing else in Panzer catches this. The classic path cannot exhibit it at all: there the
+// ghosted matrix is an ordinary CrsMatrix whose rows are every one of them locally owned, so
+// setAllToScalar zeroes the whole thing. That is what the multi-Newton-step tests exercise --
+// main_driver_energy-ss-tp-delay-prec, for one, drives a nonlinear "T Squared Source". The two
+// tests that do opt into FE assembly (main_driver_energy-ss-tp-FEAssembly and PoissonExample
+// with --use-fe-assembly) are both linear and converge in a single Newton step. So no existing
+// test both selects the FE path and assembles twice.
+TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_repeated_assembly_is_not_polluted)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+   #else
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
+   #endif
+
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
+
+   RCP<panzer::GlobalIndexer> indexer
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
+
+   typedef panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> LOFType;
+   typedef panzer::TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> LOCType;
+   typedef panzer::LinearObjContainer LOC;
+
+   Teuchos::RCP<LOFType> la_factory
+         = Teuchos::rcp(new LOFType(tComm.getConst(),indexer,true));
+
+   RCP<LinearObjContainer> gLoc = la_factory->buildLinearObjContainer();
+   RCP<LinearObjContainer> ghLoc = la_factory->buildGhostedLinearObjContainer();
+   la_factory->initializeContainer(LOC::Mat,*gLoc);
+   la_factory->initializeGhostedContainer(LOC::Mat,*ghLoc);
+
+   RCP<LOCType> gt = rcp_dynamic_cast<LOCType>(gLoc);
+   RCP<LOCType> ght = rcp_dynamic_cast<LOCType>(ghLoc);
+   RCP<LOFType::FECrsMatrixType> feA
+      = Teuchos::rcp_dynamic_cast<LOFType::FECrsMatrixType>(gt->get_A());
+   TEST_ASSERT(feA!=Teuchos::null);
+
+   std::vector<panzer::GlobalOrdinal> ghosted, ownedIdx;
+   indexer->getOwnedAndGhostedIndices(ghosted);
+   indexer->getOwnedIndices(ownedIdx);
+
+   // One AssemblyEngine-style cycle: sum 1.0 into the diagonal of every row this rank can
+   // see through its ghosted map, then migrate. Returns the resulting owned diagonals.
+   auto runCycleAndCollectOwnedDiagonals = [&]() {
+      la_factory->beginFill(*ghLoc,*gLoc);
+      {
+         Teuchos::Array<panzer::GlobalOrdinal> cols(1);
+         Teuchos::Array<double> vals(1); vals[0] = 1.0;
+         for(std::size_t i=0;i<ghosted.size();i++) {
+            cols[0] = ghosted[i];
+            feA->sumIntoGlobalValues(ghosted[i],cols,vals);
+         }
+      }
+      la_factory->ghostToGlobalContainer(*ghLoc,*gLoc,LOC::Mat);
+      la_factory->beginFill(*gLoc);
+      la_factory->endFill(*gLoc);
+      la_factory->endFill(*ghLoc,*gLoc);
+
+      std::vector<double> diags;
+      for(std::size_t i=0;i<ownedIdx.size();i++) {
+         panzer::GlobalOrdinal gid = ownedIdx[i];
+         size_t numEnt = feA->getNumEntriesInGlobalRow(gid);
+         LOFType::CrsMatrixType::nonconst_global_inds_host_view_type inds("inds",numEnt);
+         LOFType::CrsMatrixType::nonconst_values_host_view_type vals("vals",numEnt);
+         size_t n = 0;
+         feA->getGlobalRowCopy(gid,inds,vals,n);
+         double d = 0.0;
+         for(size_t k=0;k<n;k++)
+            if(inds(k)==gid) d = vals(k);
+         diags.push_back(d);
+      }
+      return diags;
+   };
+
+   std::vector<double> firstPass = runCycleAndCollectOwnedDiagonals();
+
+   // Exactly what panzer::ModelEvaluator does before the next Jacobian evaluation. Under
+   // FE assembly the ghosted container holds no matrix at this point -- the borrow lasts
+   // only for the assembly -- so this is a no-op and beginFill() is what must clear the
+   // matrix. That is precisely the pollution this test guards against.
+   ght->initializeMatrix(0.0);
+
+   std::vector<double> secondPass = runCycleAndCollectOwnedDiagonals();
+
+   TEST_EQUALITY(firstPass.size(),secondPass.size());
+   for(std::size_t i=0;i<firstPass.size();i++) {
+      out << "  owned gid " << ownedIdx[i]
+          << ": first=" << firstPass[i] << " second=" << secondPass[i] << std::endl;
+      TEST_FLOATING_EQUALITY(secondPass[i],firstPass[i],1e-14);
    }
 }
 
