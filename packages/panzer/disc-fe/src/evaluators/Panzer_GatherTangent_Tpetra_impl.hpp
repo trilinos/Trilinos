@@ -17,6 +17,7 @@
 #include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
+#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 #include "Panzer_DOFManager.hpp"
@@ -99,21 +100,37 @@ preEvaluate(typename TRAITS::PreEvalData d)
   using Teuchos::rcp_dynamic_cast;
 
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+  typedef TpetraVector_ReadOnly_GlobalEvaluationData<double,LO,GO,NodeT> RO_GED;
 
-  // try to extract linear object container
-  if (d.gedc->containsDataObject(globalDataKey_)) {
-    RCP<GlobalEvaluationData> ged = d.gedc->getDataObject(globalDataKey_);
+  if (!d.gedc->containsDataObject(globalDataKey_))
+    return;
+
+  RCP<GlobalEvaluationData> ged = d.gedc->getDataObject(globalDataKey_);
+
+  // try to extract a linear object container, possibly wrapped in a LOCPair
+  {
+    RCP<LOC> tpetraContainer = rcp_dynamic_cast<LOC>(ged);
     RCP<LOCPair_GlobalEvaluationData> loc_pair =
       rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
 
-    if(loc_pair!=Teuchos::null) {
-      Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
-      tpetraContainer_ = rcp_dynamic_cast<LOC>(loc,true);
-    }
+    if(loc_pair!=Teuchos::null)
+      tpetraContainer = rcp_dynamic_cast<LOC>(loc_pair->getGhostedLOC(),true);
 
-    if(tpetraContainer_==Teuchos::null) {
-      tpetraContainer_ = rcp_dynamic_cast<LOC>(ged,true);
+    if(tpetraContainer!=Teuchos::null) {
+      if (useTimeDerivativeSolutionVector_)
+        x_vector_ = tpetraContainer->get_dxdt_mv();
+      else
+        x_vector_ = tpetraContainer->get_x_mv();
+
+      return;
     }
+  }
+
+  // otherwise it must be a read-only ghosted vector, which is what the model
+  // evaluator hands out for the tangent gather containers (throws if not)
+  {
+    RCP<RO_GED> ro_ged = rcp_dynamic_cast<RO_GED>(ged,true);
+    x_vector_ = ro_ged->getGhostedVector_Tpetra();
   }
 }
 
@@ -122,20 +139,15 @@ template<typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherTangent_Tpetra<EvalT, TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-  // If tpetraContainer_ was not initialized, then no global evaluation data
+  // If x_vector_ was not initialized, then no global evaluation data
   // container was set, in which case this evaluator becomes a no-op
-  if (tpetraContainer_ == Teuchos::null)
+  if (x_vector_ == Teuchos::null)
     return;
 
-  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
   // for convenience pull out some objects from workset
   std::string blockId = this->wda(workset).block_id;
 
-  Teuchos::RCP<typename LOC::MultiVectorType> x;
-  if (useTimeDerivativeSolutionVector_)
-    x = tpetraContainer_->get_dxdt_mv();
-  else
-    x = tpetraContainer_->get_x_mv();
+  auto x = x_vector_;
 
   auto cellLocalIdsKokkos = this->wda(workset).getLocalCellIDs();
   auto lids = globalIndexer_->getLIDs();
