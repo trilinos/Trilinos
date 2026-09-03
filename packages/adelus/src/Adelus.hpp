@@ -18,6 +18,7 @@
 #include <Adelus_global_comm.hpp>
 #include <Adelus_defines.h>
 #include <Adelus_distribute.hpp>
+#include <Adelus_mpi_behavior.hpp>
 #include <Adelus_xlu_solve.hpp>
 #include <Adelus_x_factor.hpp>
 #include <Adelus_x_solve.hpp>

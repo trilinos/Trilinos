@@ -161,8 +161,8 @@ options can be found below.
 * ```Adelus_ENABLE_TIMING```
   * Whether to enable internal solver timing
   * ```BOOL``` Default: OFF
-* ```Adelus_ENABLE_HOSTPINNEDMEM```
-  * Whether to use Cuda/HIP Host Pinned memory for MPI
+* ```Adelus_USE_GPU_AWARE_MPI```
+  * Whether to use GPU-aware MPI
   * ```BOOL``` Default: OFF
 * ```Adelus_ENABLE_USEDEEPCOPY```
   * Whether to Use Kokkos::deep_copy for BLAS copy
@@ -170,6 +170,12 @@ options can be found below.
 * ```Adelus_ENABLE_PRINTSTATUS```
   * Whether to enable status prints
   * ```BOOL``` Default: OFF
+
+ Users can tell Adelus whether it uses GPU-aware MPI via the environment variable
+ ```ADELUS_USE_GPU_AWARE_MPI``` (```export ADELUS_USE_GPU_AWARE_MPI=1``` to enable or
+```export ADELUS_USE_GPU_AWARE_MPI=0``` to disable). The CMake build flag
+```-D Adelus_USE_GPU_AWARE_MPI:BOOL=ON/OFF``` sets up the default behavior for Adelus
+at the compile time, while the environment variable acts as a runtime override. 
 
  We refer readers to Trilinos', Kokkos', and Kokkos Kernels' documentations for
 further details of building Trilinos, Kokkos, and Kokkos Kernels.
@@ -236,7 +242,7 @@ cmake \
 \
 -D Adelus_ENABLE_ZCPLX:BOOL=ON \
 -D Adelus_ENABLE_TIMING:BOOL=ON \
--D Adelus_ENABLE_HOSTPINNEDMEM:BOOL=OFF \
+-D Adelus_USE_GPU_AWARE_MPI:BOOL=ON \
 -D Adelus_ENABLE_PRINTSTATUS:BOOL=ON \
 \
 ${TRILINOS_HOME}/Trilinos

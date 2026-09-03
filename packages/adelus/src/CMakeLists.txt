@@ -58,6 +58,7 @@ IF (TPL_ENABLE_MPI)
     Adelus_distribute.hpp
     Adelus_factor.hpp
     Adelus_forward.hpp
+    Adelus_mpi_behavior.hpp    
     Adelus_perm1.hpp
     Adelus_perm_mat.hpp
     Adelus_perm_rhs.hpp
@@ -74,6 +75,7 @@ IF (TPL_ENABLE_MPI)
 
   APPEND_SET(SOURCES
     Adelus_distribute.cpp
+    Adelus_mpi_behavior.cpp
     )
 
   #
@@ -105,8 +107,8 @@ IF(Adelus_ENABLE_ZCPLX)
   IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
   ENDIF()
-  IF(Adelus_ENABLE_HOSTPINNEDMEM)
-    MESSAGE("     ... use Cuda/HIP Host Pinned memory for MPI")
+  IF(Adelus_USE_GPU_AWARE_MPI)
+    MESSAGE("     ... with GPU-aware MPI")
   ENDIF()
   IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
@@ -125,8 +127,8 @@ ELSEIF(Adelus_ENABLE_SCPLX)
   IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
   ENDIF()
-  IF(Adelus_ENABLE_HOSTPINNEDMEM)
-    MESSAGE("     ... use Cuda/HIP Host Pinned memory for MPI")
+  IF(Adelus_USE_GPU_AWARE_MPI)
+    MESSAGE("     ... with GPU-aware MPI")
   ENDIF()
   IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
@@ -145,8 +147,8 @@ ELSEIF(Adelus_ENABLE_SREAL)
   IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
   ENDIF()
-  IF(Adelus_ENABLE_HOSTPINNEDMEM)
-    MESSAGE("     ... use Cuda/HIP Host Pinned memory for MPI")
+  IF(Adelus_USE_GPU_AWARE_MPI)
+    MESSAGE("     ... with GPU-aware MPI")
   ENDIF()
   IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")
@@ -165,8 +167,8 @@ ELSEIF(Adelus_ENABLE_DREAL)
   IF(Adelus_ENABLE_TIMING)
     MESSAGE("     ... with timing")
   ENDIF()
-  IF(Adelus_ENABLE_HOSTPINNEDMEM)
-    MESSAGE("     ... use Cuda/HIP Host Pinned memory for MPI")
+  IF(Adelus_USE_GPU_AWARE_MPI)
+    MESSAGE("     ... with GPU-aware MPI")
   ENDIF()
   IF(Adelus_ENABLE_USEDEEPCOPY)
     MESSAGE("     ... use Kokkos::deep_copy for BLAS copy")

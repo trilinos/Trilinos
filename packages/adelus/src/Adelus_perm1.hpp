@@ -270,11 +270,8 @@ namespace Adelus {
     int ptr1_idx, myfirstrow;
 
   #ifdef GET_TIMING
-  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-    double t1, copyhostpinnedtime;
-  #endif
-    double t2;
-    double totalpermtime;
+    double t1, t2;
+    double copyhostpinnedtime, totalpermtime;
   #endif
 
   #ifdef GET_TIMING
@@ -288,20 +285,27 @@ namespace Adelus {
     typedef typename ZDView::device_type::memory_space memory_space;
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewMatrixType;
 
-  #ifdef ADELUS_HOST_PINNED_MEM_MPI
   #if defined(KOKKOS_ENABLE_CUDA)
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View2DHostPinnType;//CudaHostPinnedSpace
   #elif defined(KOKKOS_ENABLE_HIP)
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace> View2DHostPinnType;//HIPHostPinnedSpace
+  #else
+    typedef Kokkos::View<value_type**, Kokkos::LayoutLeft> View2DHostPinnType;//fallback placeholder
   #endif
+
+    constexpr bool isOnDeviceSpace =
+  #if defined( KOKKOS_ENABLE_CUDA )
+      std::is_same_v<memory_space, Kokkos::CudaSpace>;
+  #elif defined( KOKKOS_ENABLE_HIP )
+      std::is_same_v<memory_space, Kokkos::HIPSpace>;
+  #else
+      false;
   #endif
 
     if (my_rhs_ > 0) {
 
       ViewMatrixType rhs_temp ( "rhs_temp", nrows_matrix, my_rhs_ );//allocate full-size RHS vectors
-  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-      View2DHostPinnType h_rhs_temp( "h_rhs_temp", nrows_matrix, my_rhs_ );
-  #endif
+      View2DHostPinnType h_rhs_temp;
 
       Kokkos::deep_copy(rhs_temp, 0);//initialize with 0s
 
@@ -343,29 +347,30 @@ namespace Adelus {
 
   //Workaround for GPU-aware MPI issue on HIP: fence here to make sure "zcopy_wr_global_index"
   //                                           completes before MPI_Allreduce
-  #if defined(KOKKOS_ENABLE_HIP) && !defined(ADELUS_HOST_PINNED_MEM_MPI)
-      Kokkos::fence();
-  #endif
+      if (ahandle.get_gpuawarempi_behavior() && isOnDeviceSpace)
+        Kokkos::fence();
 
-  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+      if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
   #ifdef GET_TIMING
-      t1 = MPI_Wtime();
+        t1 = MPI_Wtime();
   #endif
-      Kokkos::deep_copy(h_rhs_temp,rhs_temp);
+        h_rhs_temp = View2DHostPinnType( Kokkos::view_alloc(Kokkos::WithoutInitializing, "h_rhs_temp"), nrows_matrix, my_rhs_ );
+        Kokkos::deep_copy(h_rhs_temp,rhs_temp);
   #ifdef GET_TIMING
-      copyhostpinnedtime = (MPI_Wtime()-t1);
+        copyhostpinnedtime = (MPI_Wtime()-t1);
   #endif
 
-      MPI_Allreduce( MPI_IN_PLACE, h_rhs_temp.data(), nrows_matrix*my_rhs_, ADELUS_MPI_DATA_TYPE, MPI_SUM, col_comm);
+        MPI_Allreduce( MPI_IN_PLACE, h_rhs_temp.data(), nrows_matrix*my_rhs_, ADELUS_MPI_DATA_TYPE, MPI_SUM, col_comm);
 
-      Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)),
-                         subview(h_rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
-  #else //GPU-aware MPI
-      MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, ADELUS_MPI_DATA_TYPE, MPI_SUM, col_comm);
+        Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)),
+                           subview(h_rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
+      }
+      else { //GPU-aware MPI
+        MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, ADELUS_MPI_DATA_TYPE, MPI_SUM, col_comm);
 
-      Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)),
-                         subview(rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
-  #endif
+        Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)),
+                           subview(rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
+      }
     }
 
   #ifdef GET_TIMING
@@ -373,10 +378,9 @@ namespace Adelus {
   #endif
 
   #ifdef GET_TIMING
-  #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-    showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
-             "Time to copy dev mem --> host pinned mem", &copyhostpinnedtime);
-  #endif
+    if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace)
+      showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+               "Time to copy dev mem --> host pinned mem", &copyhostpinnedtime);
     showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
              "Total time in perm", &totalpermtime);
   #endif
