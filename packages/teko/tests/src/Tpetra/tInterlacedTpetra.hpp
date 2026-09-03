@@ -39,6 +39,7 @@ class tInterlacedTpetra : public UnitTest {
   bool test_buildMaps(int verbosity, std::ostream& os);
   bool test_one2many(int verbosity, std::ostream& os);
   bool test_many2one(int verbosity, std::ostream& os);
+  bool test_buildSubBlock(int verbosity, std::ostream& os);
 
  protected:
   ST tolerance_;
