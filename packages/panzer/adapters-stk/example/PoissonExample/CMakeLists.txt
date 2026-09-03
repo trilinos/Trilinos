@@ -8,6 +8,7 @@ SET(ASSEMBLY_EXAMPLE_SOURCES
 TRIBITS_ADD_EXECUTABLE(
   PoissonExample
   SOURCES ${ASSEMBLY_EXAMPLE_SOURCES}
+  CATEGORIES BASIC PERFORMANCE
   )
 
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -160,4 +161,32 @@ TRIBITS_ADD_ADVANCED_TEST(
          "H1 Error"
     PASS_REGULAR_EXPRESSION "Test Passed"
   COMM mpi
+  )
+
+# Performance tests: a mesh large enough to be worth timing, run through both
+# Jacobian assembly paths so the FECrsMatrix path can be compared against the
+# classic owned/ghosted path, and so assembly cost can be compared across
+# platforms. The assembly is repeated to keep the timing out of the noise; the
+# exodus write is off so file I/O does not swamp the measurement. RUN_SERIAL
+# keeps the two runs off each other's cores (and off each other's output files).
+TRIBITS_ADD_TEST(
+  PoissonExample
+  NAME PoissonExample-Performance-FEAssembly
+  ARGS "--cell=Quad --x-elements=400 --y-elements=400 --basis-order=2 --use-fe-assembly --assembly-loops=10 --no-exodus-output --stacked-timer --test-name=\"Panzer PoissonExample FE Assembly\""
+  PASS_REGULAR_EXPRESSION "ALL PASSED"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  CATEGORIES PERFORMANCE
+  RUN_SERIAL
+  )
+
+TRIBITS_ADD_TEST(
+  PoissonExample
+  NAME PoissonExample-Performance-ClassicAssembly
+  ARGS "--cell=Quad --x-elements=400 --y-elements=400 --basis-order=2 --use-classic-assembly --assembly-loops=10 --no-exodus-output --stacked-timer --test-name=\"Panzer PoissonExample Classic Assembly\""
+  PASS_REGULAR_EXPRESSION "ALL PASSED"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  CATEGORIES PERFORMANCE
+  RUN_SERIAL
   )

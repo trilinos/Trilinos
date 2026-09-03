@@ -80,9 +80,9 @@ int main(int argc,char * argv[])
    using panzer::StrPureBasisPair;
    using panzer::StrPureBasisComp;
 
-   const auto stackedTimer = Teuchos::rcp(new Teuchos::StackedTimer("Panzer MixedPoisson Test"));
+   const auto stackedTimer = Teuchos::rcp(new Teuchos::StackedTimer("Panzer Poisson Example"));
    Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
-   stackedTimer->start("Mixed Poisson");
+   stackedTimer->start("Poisson Example");
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    Kokkos::initialize(argc,argv);
@@ -99,6 +99,10 @@ int main(int argc,char * argv[])
    std::string mesh_name = "";
    std::string problem_name = "rectangle";
    bool use_fe_assembly = false;
+   bool exodus_output = true;
+   bool report_stacked_timer = false;
+   int assembly_loops = 1;
+   std::string test_name = "Panzer Poisson Example";
    Teuchos::CommandLineProcessor clp;
    clp.throwExceptions(false);
    clp.setDocString("This example solves a Poisson problem with Quad and Tri inline mesh on a square domain"
@@ -114,6 +118,17 @@ int main(int argc,char * argv[])
                  "Assemble the Jacobian into a Tpetra::FECrsMatrix (owned+shared views of one "
                  "object, migrated by endAssembly) instead of the classic separate owned/ghosted "
                  "matrices joined by an explicit export. Results should be identical.");
+   clp.setOption("exodus-output","no-exodus-output",&exodus_output,
+                 "Write the solution to an exodus file. Disable for performance runs where "
+                 "the file write would dominate the timings.");
+   clp.setOption("assembly-loops",&assembly_loops,
+                 "Number of times to repeat the Jacobian assembly. Every pass assembles the same "
+                 "system, so the solve below is unaffected; repeats exist to get a stable "
+                 "assembly timing in performance runs.");
+   clp.setOption("stacked-timer","no-stacked-timer",&report_stacked_timer,
+                 "Report the stacked timers to screen and, if WATCHR_PERF_DIR is set in the "
+                 "environment, write a Watchr XML performance report.");
+   clp.setOption("test-name",&test_name,"Name of the test used to label the Watchr output.");
 
    // parse commandline argument
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
@@ -375,8 +390,18 @@ int main(int argc,char * argv[])
    input.alpha = 0;
    input.beta = 1;
 
-   // evaluate physics: This does both the Jacobian and residual at once
-   ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+   // evaluate physics: This does both the Jacobian and residual at once. The loop
+   // reassembles into the same containers, so every pass does the same work and the
+   // system handed to the solver below is the same one a single pass produces.
+   stackedTimer->start("Jacobian Assembly");
+   for (int loop=0; loop < assembly_loops; ++loop) {
+     if (loop > 0) {
+       ghostCont->initialize();
+       container->initialize();
+     }
+     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+   }
+   stackedTimer->stop("Jacobian Assembly");
 
    // solve linear system
    /////////////////////////////////////////////////////////////
@@ -445,7 +470,7 @@ int main(int argc,char * argv[])
    }
 
    // write out solution to matrix
-   if (true) {
+   if (exodus_output) {
      stackedTimer->start("Write Solution to Exodus");
      panzer::AssemblyEngineInArgs respInput(ghostCont,container);
      respInput.alpha = 0;
@@ -515,7 +540,7 @@ int main(int argc,char * argv[])
       stackedTimer->stop("Compute Responses");
    }
 
-   stackedTimer->stop("Mixed Poisson");
+   stackedTimer->stop("Poisson Example");
    stackedTimer->stopBaseTimer();
    if (true) {
      std::ostringstream filename;
@@ -529,6 +554,17 @@ int main(int argc,char * argv[])
      options.output_histogram = false;
      options.num_histogram = 5;
      stackedTimer->report(timing_stream, Teuchos::DefaultComm<int>::getComm(), options);
+   }
+
+   if (report_stacked_timer) {
+     Teuchos::StackedTimer::OutputOptions options;
+     options.output_fraction = true;
+     options.output_minmax = true;
+     options.output_histogram = false;
+     stackedTimer->report(out, tComm, options);
+     const auto xmlOut = stackedTimer->reportWatchrXML(test_name + ' ' + std::to_string(tComm->getSize()) + " ranks", tComm);
+     if (xmlOut.length())
+       out << "\nAlso created Watchr performance report " << xmlOut << std::endl;
    }
 
    // all done!
