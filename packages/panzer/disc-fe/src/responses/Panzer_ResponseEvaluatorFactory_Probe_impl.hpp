@@ -91,34 +91,16 @@ template <typename EvalT,typename LO,typename GO>
 bool ResponseEvaluatorFactory_Probe<EvalT,LO,GO>::
 typeSupported() const
 {
-  // TODO BWR does this need to happen??
-  if(   PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>()// ||
-        //PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>()
+  // There is no Hessian scatter evaluator for a probe response, so Hessian is
+  // deliberately absent here; claiming it would build a response object that
+  // nothing ever fills.
+  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>()  ||
+     PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>() ||
+     PHX::print<EvalT>()==PHX::print<panzer::Traits::Jacobian>()
     )
     return true;
 
-  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Jacobian>())
-    return linearObjFactory_!=Teuchos::null;
-
-  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>())
-    return linearObjFactory_!=Teuchos::null;
-
-#ifdef Panzer_BUILD_HESSIAN_SUPPORT
-  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Hessian>()) {
-    return linearObjFactory_!=Teuchos::null;
-  }
-#endif
-
   return false;
-
-  // TODO BWR REMOVE ME IF WE KEEP ABOVE
-//  if(PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>()  ||
-//     PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>() ||
-//     PHX::print<EvalT>()==PHX::print<panzer::Traits::Jacobian>()
-//    )
-//    return true;
-//
-//  return false;
 }
 
 }
