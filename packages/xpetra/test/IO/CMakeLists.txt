@@ -10,5 +10,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIO_cp
-  SOURCE_FILES test.mtx test.mtx.bin
+  SOURCE_FILES test.mtx
 )
