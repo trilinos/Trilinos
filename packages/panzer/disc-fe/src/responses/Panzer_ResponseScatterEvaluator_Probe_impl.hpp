@@ -30,6 +30,7 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
+#include "Panzer_BlockedDOFManager.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
@@ -95,6 +96,25 @@ postRegistrationSetup(typename Traits::SetupData sd,
     if (haveProbe_)
       break;
   }
+}
+
+template<typename EvalT, typename Traits, typename LO, typename GO>
+int ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
+getProductVectorBlockIndex() const
+{
+  auto blockedDOFManager =
+    Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager>(globalIndexer_);
+
+  if (Teuchos::is_null(blockedDOFManager))
+    return 0;
+
+  const std::string field = (fieldName_=="" ? responseName_ : fieldName_);
+  const int fieldNum = blockedDOFManager->getFieldNum(field);
+  TEUCHOS_TEST_FOR_EXCEPTION(fieldNum < 0,std::logic_error,
+    "ResponseScatterEvaluator_Probe: field \"" << field << "\" was not found "
+    "in the blocked DOF manager.");
+
+  return blockedDOFManager->getFieldBlock(fieldNum);
 }
 
 template<typename EvalT, typename Traits, typename LO, typename GO>
@@ -277,8 +297,12 @@ evaluateFields(panzer::Traits::EvalData d)
   RCP<SpmdVectorBase<double> > dgdx =
     rcp_dynamic_cast<SpmdVectorBase<double> >(this->responseObj_->getGhostedVector());
   if (dgdx.is_null()) {
-    auto blocked = rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(this->responseObj_->getGhostedVector());
-    dgdx = rcp_dynamic_cast<SpmdVectorBase<double> >(blocked->getNonconstVectorBlock(0));
+    // Blocked system: scatter into the block that owns the probed field, which
+    // is the block the scatter object's indexer was taken from.
+    auto blocked = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(
+      this->responseObj_->getGhostedVector(),true);
+    dgdx = rcp_dynamic_cast<SpmdVectorBase<double> >(
+      blocked->getNonconstVectorBlock(this->getProductVectorBlockIndex()),true);
   }
   dgdx->getNonconstLocalData(ptrFromRef(local_dgdx));
   TEUCHOS_ASSERT(!local_dgdx.is_null());

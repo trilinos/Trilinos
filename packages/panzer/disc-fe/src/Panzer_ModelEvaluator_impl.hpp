@@ -669,33 +669,25 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
           if(resp->supportsDerivative()) {
             outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
 
-
-            // TODO BWR this seems incorrect should be tangent type? should be removed?
-            //for(std::size_t p=0;p<parameters_.size();p++) {
-            //  if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
-            //    outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
-            //  if(!parameters_[p]->is_distributed)
-            //    outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
-            //}
+            // dg/dp for a distributed parameter is evaluated through that
+            // parameter's own response library, which fills the Jacobian type
+            // response, so it needs the same derivative support as dg/dx.
+            for(std::size_t p=0;p<parameters_.size();p++) {
+              if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
+                outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+            }
           }
         }
       }
-      // TODO BWR is this needed?
       {
         typedef panzer::Traits::Tangent RespEvalT;
 
-        // check dg/dp and add it in if appropriate
+        // dg/dp for a scalar parameter is evaluated from the Tangent response,
+        // so it only requires that the response has a Tangent type.
         Teuchos::RCP<panzer::ResponseBase> respTanBase
             = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
         if(respTanBase!=Teuchos::null) {
-          Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
-             = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respTanBase);
-
-          // TODO BWR should these match dfdp below?
-          // TODO BWR not sure what to pick here
           for(std::size_t p=0;p<parameters_.size();p++) {
-            if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
-              outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
             if(!parameters_[p]->is_distributed)
               outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
           }
