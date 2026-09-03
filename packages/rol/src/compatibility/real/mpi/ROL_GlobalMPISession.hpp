@@ -47,24 +47,27 @@ struct GlobalMPISession {
   GlobalMPISession( const GlobalMPISession& ) = delete;
   GlobalMPISession& operator=( const GlobalMPISession& ) = delete;
 
-  static void abort() { MPI_Abort( MPI_COMM_WORLD, -1 ); }
+  // GlobalMPISession is global by construction, so these operate on the world
+  // communicator by design (as Teuchos::GlobalMPISession does); the trailing markers
+  // whitelist the intentional use for the package-source MPI_COMM_WORLD check.
+  static void abort() { MPI_Abort( MPI_COMM_WORLD, -1 ); } // CHECK: ALLOW MPI_COMM_WORLD
 
-  static void barrier() { if( initialized() ) MPI_Barrier( MPI_COMM_WORLD ); }
+  static void barrier() { if( initialized() ) MPI_Barrier( MPI_COMM_WORLD ); } // CHECK: ALLOW MPI_COMM_WORLD
 
   static int getNProc() {
     if( !initialized() ) return 1;
-    int n = 1; MPI_Comm_size( MPI_COMM_WORLD, &n ); return n;
+    int n = 1; MPI_Comm_size( MPI_COMM_WORLD, &n ); return n; // CHECK: ALLOW MPI_COMM_WORLD
   }
 
   // TRUE rank (serial stub wrongly returned the constant 1).
   static int getRank() {
     if( !initialized() ) return 0;
-    int r = 0; MPI_Comm_rank( MPI_COMM_WORLD, &r ); return r;
+    int r = 0; MPI_Comm_rank( MPI_COMM_WORLD, &r ); return r; // CHECK: ALLOW MPI_COMM_WORLD
   }
 
   static int sum( int localVal ) {
     if( !initialized() ) return localVal;
-    int g = 0; MPI_Allreduce( &localVal, &g, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
+    int g = 0; MPI_Allreduce( &localVal, &g, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD ); // CHECK: ALLOW MPI_COMM_WORLD
     return g;
   }
 
