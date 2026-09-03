@@ -14,6 +14,10 @@ banner("START configure step")
 message(">>> CTEST_SOURCE_DIRECTORY: ${CTEST_SOURCE_DIRECTORY}")
 message(">>> CTEST_BINARY_DIRECTORY: ${CTEST_BINARY_DIRECTORY}")
 
+# Remove CMakeFiles/ and CMakeCache.txt before configuring
+file(REMOVE_RECURSE "${CTEST_BINARY_DIRECTORY}/CMakeFiles")
+file(REMOVE "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
+
 ctest_configure(SOURCE ${CTEST_SOURCE_DIRECTORY}
                 BUILD  ${CTEST_BINARY_DIRECTORY}
                 RETURN_VALUE configure_error
