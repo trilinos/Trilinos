@@ -6,7 +6,7 @@ Teko is a Trilinos package for the development and application of <b>block and
 physics-based preconditioners</b>. It provides tools to assemble and manipulate block
 linear operators, to decompose a fully coupled operator into its physical sub-blocks, and
 to build approximate inverses of those blocks using the full complement of Trilinos solvers
-and preconditioners (Ifpack2, MueLu, ML, Amesos2, Belos, and others). On top of that
+and preconditioners (Ifpack2, MueLu, Amesos2, Belos, and others). On top of that
 infrastructure Teko ships a library of generic block preconditioners (block Jacobi, block
 Gauss-Seidel, LU 2x2) and physics-based preconditioners for the incompressible
 Navier-Stokes equations (SIMPLE, LSC, PCD).
@@ -29,6 +29,8 @@ The pages below document how to configure and use Teko, with a focus on the
   - \subpage teko_examples "Examples" &mdash; walkthroughs of the in-tree example drivers.
   - \subpage teko_advanced "Advanced Topics" &mdash; the RequestHandler callback system,
     reordering, operator reuse, and writing your own factory.
+  - \subpage teko_cookbook "Cookbook" &mdash; common blocking, solver-composition, reuse,
+    and multiphysics patterns.
 
 \section teko_mainpage_refs References
 

@@ -53,6 +53,7 @@ INPUT                  = mainpage.doxygen \
                          guide/05-navier-stokes.md \
                          guide/06-examples.md \
                          guide/07-advanced.md \
+                         guide/08-cookbook.md \
                          ../src
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = *.x *.o *.out

@@ -12,5 +12,3 @@ echo "Generating main Teko doxygen documentation ..."
 echo
 
 doxygen Doxyfile
-
-make -C Build-Preconditioner

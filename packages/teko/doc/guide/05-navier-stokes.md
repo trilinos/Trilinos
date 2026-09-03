@@ -33,7 +33,7 @@ inverse of a diagonal of \f$F\f$ when forming the Schur complement.
 
 | Parameter | Type | Default | Meaning |
 |-----------|------|---------|---------|
-| `"Inverse Type"` | inverse name | Amesos/Amesos2 | Default inverse for both sub-solves. |
+| `"Inverse Type"` | inverse name | Amesos2 if enabled, else empty | Default inverse for both sub-solves. |
 | `"Inverse Velocity Type"` | inverse name | — | Override for the velocity (\f$F\f$) solve. |
 | `"Preconditioner Velocity Type"` | inverse name | — | Optional preconditioner for the velocity solve. |
 | `"Inverse Pressure Type"` | inverse name | — | Override for the pressure (Schur) solve. |

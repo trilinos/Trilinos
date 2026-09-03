@@ -9,19 +9,29 @@ runnable version).
 
 ## Core objects
 
-Teko is layered on top of [Thyra](https://trilinos.github.io/thyra.html). Its central types
-are typedefs into the Thyra abstractions:
+Teko is layered on top of [Thyra](https://trilinos.github.io/thyra.html). Its central
+operator and vector types are `Teuchos::RCP` handles around Thyra abstractions:
 
-| Teko type | Thyra type | Role |
-|-----------|-----------|------|
-| `Teko::LinearOp` | `Thyra::LinearOpBase<double>` (const) | Any linear operator — a single block or a whole blocked system. |
+| Teko type | Underlying Thyra object held by the `RCP` | Role |
+|-----------|------------------------------------------|------|
+| `Teko::LinearOp` | `const Thyra::LinearOpBase<double>` | Any linear operator — a single block or a whole blocked system. |
 | `Teko::BlockedLinearOp` | `Thyra::PhysicallyBlockedLinearOpBase<double>` | A block operator you assemble block-by-block. |
 | `Teko::MultiVector` | `Thyra::MultiVectorBase<double>` | Solution/right-hand-side vectors, possibly blocked. |
+| `Teko::BlockedMultiVector` | `Thyra::ProductMultiVectorBase<double>` | A product multi-vector with one component per block. |
+| `Teko::VectorSpace` | `const Thyra::VectorSpaceBase<double>` | Domain/range space metadata for operators and vectors. |
 | `Teko::InverseFactory` | — | Produces an operator approximating the inverse of a `LinearOp`. |
 | `Teko::InverseLibrary` | — | A registry of *named* `InverseFactory` objects, built from a parameter list. |
 
 Because Teko works on the Thyra layer, you wrap your native Tpetra matrices with
 `Thyra::tpetraLinearOp` once, then work exclusively with `Teko::LinearOp`.
+
+Two factory patterns are central to Teko. A `BlockPreconditionerFactory` knows how to build a
+block preconditioner for a particular blocked operator, but it is reusable: the same factory can
+be applied to different operators with the same mathematical structure. An `InverseFactory`
+plays the same role for sub-solves. Block methods such as Jacobi, Gauss-Seidel, SIMPLE, and LSC
+ask inverse factories to approximate the inverse of diagonal blocks or Schur-complement
+operators without hard-coding whether that inverse is a direct solve, Krylov solve, single-level
+preconditioner, or multigrid preconditioner.
 
 ## Step 1 — Build a blocked operator
 
@@ -39,10 +49,9 @@ Teko::LinearOp A = Thyra::block2x2(thMat, thZero, thZero, thMat);
 
 For an arbitrary grid of blocks, use `Teko::zeroBlockedOp` / `Teko::setBlock` /
 `Teko::endBlockFill` (see [Advanced Topics](07-advanced.md)). If instead you start from a
-single *monolithic* matrix whose unknowns are interleaved per node, you do not assemble
-blocks by hand — you let Teko split it for you using **strided blocking** (see the
-[Configuration Model](02-configuration-model.md) and the
-[strided-operator examples](06-examples.md)).
+single *monolithic* matrix, let Teko split it for you: use **strided blocking** for regular
+interleaved fields, or `BlockedTpetraOperator` for arbitrary field-to-GID maps (see below and
+[Examples](06-examples.md)).
 
 ## Step 2 — Define named inverses
 
@@ -130,6 +139,53 @@ prec.buildPreconditioner(sA);    // prec is now a Tpetra::Operator you can hand 
 ```
 
 This is the pattern in `examples/BuildPreconditioner/example-driver.cpp`.
+
+### Native Tpetra with arbitrary block membership
+
+Use `StridedTpetraOperator` when a fixed per-node stride describes the fields. If your
+monolithic matrix uses another ordering — for example, application-owned GIDs for velocity,
+pressure, temperature, or material fields are not regularly interleaved — use
+`Teko::TpetraHelpers::BlockedTpetraOperator` instead. Its constructor takes a
+`std::vector<std::vector<GO>>`: the outer vector is the Teko block number, and each inner
+vector lists the monolithic global IDs owned by this MPI rank that belong to that block.
+
+```cpp
+#include "Teko_BlockedTpetraOperator.hpp"
+
+using GO = Teko::GO;
+using LO = Teko::LO;
+
+std::vector<std::vector<GO>> blockGIDs(3);  // block 0, block 1, block 2
+const auto baseMap = A->getDomainMap();     // for square systems, also the range map
+
+for (size_t localRow = 0; localRow < baseMap->getLocalNumElements(); ++localRow) {
+  const GO gid = baseMap->getGlobalElement(static_cast<LO>(localRow));
+
+  if (isFluidVelocity(gid)) {
+    blockGIDs[0].push_back(gid);  // Teko block 0: velocity rows/columns
+  } else if (isFluidPressure(gid)) {
+    blockGIDs[1].push_back(gid);  // Teko block 1: pressure rows/columns
+  } else if (isTemperature(gid)) {
+    blockGIDs[2].push_back(gid);  // Teko block 2: temperature rows/columns
+  }
+}
+
+auto blockedA = Teuchos::rcp(
+    new Teko::TpetraHelpers::BlockedTpetraOperator(blockGIDs, A, "A"));
+
+Teko::TpetraHelpers::TpetraBlockPreconditioner prec(precFact);
+prec.buildPreconditioner(blockedA);
+```
+
+Across all MPI ranks, the inner vectors should partition the monolithic domain/range map for
+ordinary non-overlapping field splits. `BlockedTpetraOperator` assumes a square operator with
+matching domain and range maps. The GIDs in an inner vector do **not** need to be contiguous or
+strided; Teko builds contiguous block-local maps internally for each block. The wrapper remains
+a `Tpetra::Operator`, so it can be passed to `TpetraBlockPreconditioner::buildPreconditioner`
+and then to Belos in the same way as the strided wrapper. Useful diagnostics include
+`blockedA->GetBlock(i,j)`, `blockedA->WriteBlocks(prefix)`,
+`blockedA->testAgainstFullOperator(count,tol)`, `blockedA->Reorder(manager)`, and
+`blockedA->RebuildOps()` after matrix values change with the same block structure.
 
 ## Where to go next
 

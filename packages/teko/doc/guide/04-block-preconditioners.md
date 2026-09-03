@@ -41,7 +41,7 @@ each: \f$M^{-1} = \operatorname{diag}(A_{00}^{-1}, A_{11}^{-1}, \dots)\f$.
 
 | Parameter | Type | Default | Meaning |
 |-----------|------|---------|---------|
-| `"Inverse Type"` | inverse name | Amesos/Amesos2 | Inverse applied to every diagonal block. |
+| `"Inverse Type"` | inverse name | Amesos2 if enabled, else empty | Inverse applied to every diagonal block. |
 | `"Inverse Type <N>"` | inverse name | — | Override for diagonal block `<N>` (1-based). |
 | `"Preconditioner Type"` | inverse name | — | Optional preconditioner factory for every block. |
 | `"Preconditioner Type <N>"` | inverse name | — | Per-block preconditioner override. |
@@ -55,7 +55,7 @@ A block triangular sweep using the diagonal-block inverses. Lower-triangular by 
 
 | Parameter | Type | Default | Meaning |
 |-----------|------|---------|---------|
-| `"Inverse Type"` | inverse name | Amesos/Amesos2 | Inverse for every diagonal block. |
+| `"Inverse Type"` | inverse name | Amesos2 if enabled, else empty | Inverse for every diagonal block. |
 | `"Inverse Type <N>"` | inverse name | — | Per-block override (1-based). |
 | `"Preconditioner Type"` / `"Preconditioner Type <N>"` | inverse name | — | Optional per-block preconditioner factories. |
 | `"Use Upper Triangle"` | bool | `false` | Use the upper-triangular sweep instead of lower. |

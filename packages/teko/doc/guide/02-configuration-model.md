@@ -40,7 +40,7 @@ typos.
 
 | Parameter | Type | Default | Meaning |
 |-----------|------|---------|---------|
-| `"Inverse Type"` | string | `"Amesos"` or `"Amesos2"` if enabled, else `""` | Name of the inverse applied to the full blocked system. Either a Stratimikos default name or a label defined in `"Inverse Factory Library"`. |
+| `"Inverse Type"` | string | `"Amesos2"` if enabled, else `""` | Name of the inverse applied to the full blocked system. Either an available Stratimikos default name or a label defined in `"Inverse Factory Library"`. |
 | `"Strided Blocking"` | string | `"1"` | How to split the operator into blocks. `"3 1 1"` groups the first 3 unknowns/node together, then two singletons — see below. |
 | `"Reorder Type"` | string | `""` (no reorder) | Nested reordering of the blocks, e.g. `"[2 [0 1]]"`. See below. |
 | `"Test Block Operator"` | bool | `false` | Diagnostic: apply the segregated operator and compare against the original. |
@@ -77,10 +77,12 @@ grammar is the nested-bracket form parsed by `Teko::blockedReorderFromString`
 Every entry of `"Inverse Factory Library"` is a sublist whose *name is a label you choose*
 and whose mandatory `"Type"` selects a backend. Three kinds of backend exist:
 
-- **Stratimikos solvers** — `"Belos"`, `"Amesos"`, `"Amesos2"`, `"AztecOO"` (a full linear
-  solve as the "inverse").
-- **Stratimikos preconditioners** — `"Ifpack"`, `"Ifpack2"`, `"ML"`, `"MueLu"`,
-  `"Neumann Series"` (a single-level/multilevel preconditioner as the "inverse").
+- **Stratimikos solvers** — commonly `"Belos"` and `"Amesos2"` (a full linear solve as the
+  "inverse"). The exact set is whatever the configured `Stratimikos::DefaultLinearSolverBuilder`
+  reports as enabled.
+- **Stratimikos preconditioners** — commonly `"Ifpack2"`, `"MueLu"`, and
+  `"Neumann Series"` (a single-level/multilevel preconditioner as the "inverse"). The exact set
+  is likewise taken from the active Stratimikos builder.
 - **Teko block preconditioners** — `"Block Jacobi"`, `"Block Gauss-Seidel"`, `"NS SIMPLE"`,
   `"NS LSC"`, `"Block LU2x2"`, … (the block methods in the
   [reference](04-block-preconditioners.md)).

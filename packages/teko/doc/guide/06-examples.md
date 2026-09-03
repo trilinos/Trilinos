@@ -59,6 +59,44 @@ block structure in code."
 
 ---
 
+## Arbitrary Tpetra blocking — field blocks from monolithic GIDs
+
+The strided examples assume a regular nodal ordering such as `[u v p]` at every mesh node. For
+application orderings that are not regular strides, use
+`Teko::TpetraHelpers::BlockedTpetraOperator`. It takes an explicit list of monolithic global
+IDs for each Teko block:
+
+```cpp
+#include "Teko_BlockedTpetraOperator.hpp"
+
+std::vector<std::vector<Teko::GO>> blockGIDs(3);
+const auto baseMap = A->getDomainMap();
+
+for (size_t lid = 0; lid < baseMap->getLocalNumElements(); ++lid) {
+  const Teko::GO gid = baseMap->getGlobalElement(static_cast<Teko::LO>(lid));
+  if (gidBelongsToVelocity(gid)) {
+    blockGIDs[0].push_back(gid);
+  } else if (gidBelongsToPressure(gid)) {
+    blockGIDs[1].push_back(gid);
+  } else {
+    blockGIDs[2].push_back(gid);
+  }
+}
+
+auto blockedA = Teuchos::rcp(
+    new Teko::TpetraHelpers::BlockedTpetraOperator(blockGIDs, A, "A"));
+```
+
+The outer vector entry is the Teko block number (`blockGIDs[0]` becomes block 0, and so on).
+Each inner vector is this MPI rank's owned monolithic GID list for that block. The wrapped
+operator is assumed to be square, with matching domain and range maps. The unit test
+`tests/src/Tpetra/tBlockedTpetraOperator.cpp` is the current in-tree reference for constructing
+these lists, checking `BlockedTpetraOperator::testAgainstFullOperator`, rebuilding after matrix
+value changes, and applying reorder managers. A small runnable example built from that test
+would be a useful addition to `examples/`.
+
+---
+
 ## AddMultiplyPrecs — composing preconditioners
 
 `examples/AddMultiplyPrecs/Driver.cpp` builds a block Gauss–Seidel factory and a block Jacobi
@@ -124,7 +162,8 @@ Key utilities on display (all in `Teko_Utilities.hpp`): `blockRowCount`/`blockCo
 `example-test.cpp` shows how to assemble four Tpetra sub-blocks, wrap them with
 `Thyra::tpetraLinearOp`, combine with `Teko::block2x2`, and apply the resulting
 preconditioner. See [Advanced Topics](07-advanced.md) for how to register such a factory
-so it can be selected by a `"Type"` string.
+so it can be selected by a `"Type"` string, and for the state/rebuild pattern that extends
+this example to cache inverse and explicit operators across nonlinear or time-step updates.
 
 **Full source** (the custom factory):
 \include ExamplePreconditionerFactory.cpp

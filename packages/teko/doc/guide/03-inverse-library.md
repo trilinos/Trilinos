@@ -27,15 +27,20 @@ You then reference the label wherever an inverse is expected: at the top level
 
 ## The three backend classes
 
-`"Type"` is matched, in this order, against three internal lists (seeded in the
-`InverseLibrary` constructor and extended with whatever the live Stratimikos builder
-reports):
+`"Type"` is matched, in this order, against the Stratimikos preconditioner list, the
+Stratimikos solver list, and then Teko's block-preconditioner list. When a live
+`Stratimikos::DefaultLinearSolverBuilder` is supplied, the first two lists come from the
+solver and preconditioner types enabled in that Trilinos build.
 
-| Class | Seeded names | What Teko builds | Extra settings are… |
-|-------|-------------|------------------|---------------------|
-| **Stratimikos preconditioner** | `ML`, `Ifpack`, `Ifpack2`, `MueLu`, `Neumann Series` | a `PreconditionerInverseFactory` wrapping a `Thyra::PreconditionerFactoryBase` | that backend's own preconditioner parameters |
-| **Stratimikos solver** | `Belos`, `Amesos`, `Amesos2`, `AztecOO` | a `SolveInverseFactory` (a full linear solve used as the inverse) | that solver's parameters (plus `"Use Preconditioner"`, below) |
+| Class | Typical names | What Teko builds | Extra settings are… |
+|-------|---------------|------------------|---------------------|
+| **Stratimikos preconditioner** | commonly `Ifpack2`, `MueLu`, `Neumann Series` | a `PreconditionerInverseFactory` wrapping a `Thyra::PreconditionerFactoryBase` | that backend's own preconditioner parameters |
+| **Stratimikos solver** | commonly `Belos`, `Amesos2` | a `SolveInverseFactory` (a full linear solve used as the inverse) | that solver's parameters (plus `"Use Preconditioner"`, below) |
 | **Teko block preconditioner** | `Block Jacobi`, `Block Gauss-Seidel`, `NS SIMPLE`, `NS LSC`, `Block LU2x2`, … | the corresponding block factory | that factory's options ([reference](04-block-preconditioners.md)) |
+
+The Stratimikos columns above are examples, not a hard-coded promise: when an
+`InverseLibrary` is constructed from a live Stratimikos builder, Teko asks that builder for the
+solver and preconditioner names enabled in the current Trilinos configuration.
 
 If a `"Type"` matches none of the three, or a referenced label does not exist,
 `getInverseFactory` prints the list of available names and aborts — a useful way to discover

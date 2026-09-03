@@ -3,7 +3,7 @@
 Teko is a Trilinos package for **block and physics-based preconditioning**. It provides
 tools to assemble and manipulate block linear operators, to decompose a fully coupled
 operator into its physical sub-blocks, and to build approximate inverses of those blocks
-using the full complement of Trilinos solvers and preconditioners (Ifpack2, MueLu, ML,
+using the full complement of Trilinos solvers and preconditioners (Ifpack2, MueLu,
 Amesos2, Belos, …). On top of that infrastructure Teko ships a library of generic block
 preconditioners (block Jacobi, block Gauss–Seidel, LU 2×2) and physics-based
 preconditioners for the Navier–Stokes equations (SIMPLE, LSC, PCD).
@@ -30,6 +30,7 @@ preconditioner) and **worked examples** that show how the pieces fit together.
 | [Navier–Stokes Preconditioners](05-navier-stokes.md) | SIMPLE, LSC, PCD, and the operators they require from the application. |
 | [Examples](06-examples.md) | Walkthroughs of the in-tree example drivers, with run instructions. |
 | [Advanced Topics](07-advanced.md) | The RequestHandler callback system, reordering, operator reuse, and writing your own factory. |
+| [Cookbook](08-cookbook.md) | Common blocking, solver-composition, reuse, debugging, and multiphysics recipes. |
 
 ## Glossary
 
@@ -64,8 +65,9 @@ XML). There are three layers, from the outside in:
    system (`"Inverse Type"`).
 2. **Inverse Factory Library.** A sublist named `"Inverse Factory Library"` defines every
    *named* inverse. Each entry has a mandatory `"Type"` that selects a backend — either a
-   Stratimikos solver/preconditioner (`Belos`, `Amesos2`, `Ifpack2`, `MueLu`, …) or a Teko
-   block preconditioner (`"Block Gauss-Seidel"`, `"NS SIMPLE"`, …).
+   Stratimikos solver/preconditioner (`Belos`, `Amesos2`, `Ifpack2`, `MueLu`,
+   `Neumann Series`, …) or a Teko block preconditioner (`"Block Gauss-Seidel"`,
+   `"NS SIMPLE"`, …).
 3. **Per-factory options.** Each Teko block preconditioner reads its own keys (which
    sub-solve to use for each block, relaxation factors, Schur-complement strategy, …).
    These reference other names defined in the library, so preconditioners nest arbitrarily.
