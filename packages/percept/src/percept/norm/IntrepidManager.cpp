@@ -235,7 +235,7 @@
     IntrepidManager::IntegrandValuesDOF::
     copyFrom(MDArray& mda)
     {
-      Kokkos::deep_copy(*this, mda);
+      Kokkos::deep_copy(static_cast<MDArray>(*this), mda);
     }
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -250,13 +250,13 @@
     IntrepidManager::IntegrandValues::
     copyFrom(MDArray& mda)
     {
-     Kokkos::deep_copy(*this, mda);
+     Kokkos::deep_copy(static_cast<MDArray>(*this), mda);
     }
     void
     IntrepidManager::IntegrandValues::
     copyFrom(IntrepidManager& im, MDArray& mda, int iDof)
     {
-      Kokkos::deep_copy(*this, Kokkos::subview(mda, std::make_pair(0, im.m_Elements_Tag.num),  std::make_pair(0, im.m_Cub_Points_Tag.num), iDof));
+      Kokkos::deep_copy(static_cast<MDArray>(*this), Kokkos::subview(mda, std::make_pair(0, im.m_Elements_Tag.num),  std::make_pair(0, im.m_Cub_Points_Tag.num), iDof));
     }
 
     //------------------------------------------------------------------------------------------------------------------------

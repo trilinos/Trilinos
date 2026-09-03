@@ -167,7 +167,7 @@ using namespace Intrepid2;
         MDArray copy(const std::string& label)
         {
           MDArray a(Kokkos::view_alloc(label, Kokkos::WithoutInitializing), m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          Kokkos::deep_copy(a, *this);
+          Kokkos::deep_copy(a, static_cast<MDArray>(*this));
           return a;
         }
 
@@ -211,12 +211,11 @@ using namespace Intrepid2;
         MDArray copy(const std::string& label)
         {
           MDArray a(Kokkos::view_alloc(label, Kokkos::WithoutInitializing), m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          Kokkos::deep_copy(a, *this);
+          Kokkos::deep_copy(a, static_cast<MDArray>(*this));
           return a;
         }
         
-	using BaseType::operator();
-
+        using BaseType::operator();
       };
 
       /// ([C], [P], [D], [D])
@@ -232,7 +231,7 @@ using namespace Intrepid2;
         MDArray copy(const std::string& label)
         {
           MDArray a(Kokkos::view_alloc(label, Kokkos::WithoutInitializing), m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num, m_im.m_Spatial_Dim_Tag.num);
-          Kokkos::deep_copy(a, *this);
+          Kokkos::deep_copy(a, static_cast<MDArray>(*this));
           return a;
         }
 
