@@ -20,6 +20,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "BelosDenseSolver.hpp"
+#include <vector>
 
 namespace Belos {
 
@@ -51,7 +52,12 @@ namespace Belos {
   class DenseMatTraits 
   {
   public:
-    
+
+    using ST = Teuchos::ScalarTraits<ScalarType>;
+    using MagnitudeType = typename ST::magnitudeType;
+    // using MDM = Teuchos::SerialDenseMatrix<int, MagnitudeType>;
+    // using MDMT = DenseMatTraits<MagnitudeType, MDM>;
+
     //@{ \name Creation methods
 
     /*! \brief Creates a new empty \c DM with no dimension.
@@ -181,6 +187,10 @@ View(const pointer_type &ptr, const IntType&... indices)
     static void Add( DM& thisDM, const DM& sourceDM)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
+    //!  \brief Add source to diagonal entries of dest
+    static void AddDiag( DM& dest, ScalarType source)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
     //!  \brief Fill all entries with \c value. Value is zero if not specified.
     static void PutScalar( DM& dm, ScalarType value = Teuchos::ScalarTraits<ScalarType>::zero()) 
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
@@ -189,13 +199,29 @@ View(const pointer_type &ptr, const IntType&... indices)
     static void Scale( DM& dm, ScalarType value)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
+    //!  \brief Multiply two dense matrices. C = beta*C + alpha*op(A)*op(B)
+    static void Multiply( bool transposeA, bool transposeB, ScalarType alpha, const DM& A, const DM &B, ScalarType beta, DM& C)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
     //!  \brief Fill the DM with random entries.
     //!   Entries are assumed to be the same on each MPI rank (each matrix copy). 
     static void Randomize( DM& dm)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
-    //!  \brief Copies entries of sourceDM to thisDM (deep copy). 
+    //!  \brief Assign source to diagonal entries of dest
+    static void AssignDiag( DM& dest, ScalarType source)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Assign source to diagonal entries of dest
+    static void AssignDiag( DM& dest, const DM& source)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Copies entries of sourceDM to thisDM (deep copy).
     static void Assign( DM& thisDM, const DM& sourceDM)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Assign upper triangular entries of source to dest
+    static void AssignUpperTri(DM &dest, const DM &source)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
     //!  \brief Returns the Frobenius norm of the dense matrix.
@@ -213,7 +239,22 @@ View(const pointer_type &ptr, const IntType&... indices)
     static Teuchos::RCP<DenseSolver<ScalarType, DM>> createDenseSolver()
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }
     //@}
- 
+
+    static void trsm(const char side[], const char uplo[], const char trans[], const char diag[],
+                   const ScalarType& alpha, const DM& A, DM& B)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    static void nrm2(std::vector<MagnitudeType>&R, const DM &X)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    static void geqrf(DM &A, DM &tau)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    static void ungqr(const int k, DM& A, const DM& tau)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    // static void updateLSQR(DM &H, DM &z, MDM&cs, DM &sn, DM&beta, int dim, int blockSize)
+    // { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
   };
 
 } // namespace Belos

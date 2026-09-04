@@ -26,7 +26,6 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
 
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -139,6 +138,8 @@ namespace Belos {
     typedef DenseMatTraits<ScalarType,DM>    DMT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
+    using MDM = typename DMT::MDM;
+    using MDMT = DenseMatTraits<MagnitudeType,MDM>;
     
     //! @name Constructors/Destructor
     //@{ 
@@ -309,8 +310,8 @@ namespace Belos {
         recycledBlocks_ = recycledBlocks;
       if ( numBlocks_ != numBlocks ) {
         numBlocks_ = numBlocks;
-        cs_.resize( numBlocks_+1 );
-        sn_.resize( numBlocks_+1 );
+        cs_ = MDMT::Create( numBlocks_+1, 1, false );
+        sn_ = DMT::Create( numBlocks_+1, 1, false );
         z_ = DMT::Create( numBlocks_+1, 1, false );
         R_ = DMT::Create( numBlocks_+1, numBlocks, false );
       }
@@ -345,8 +346,8 @@ namespace Belos {
     int recycledBlocks_; 
    
     // Storage for QR factorization of the least squares system.
-    std::vector<ScalarType> sn_;
-    std::vector<MagnitudeType> cs_;
+    Teuchos::RCP<DM> sn_;
+    Teuchos::RCP<MDM> cs_;
 
     // 
     // Current solver state
@@ -421,8 +422,8 @@ namespace Belos {
 
     numBlocks_ = nb;
     recycledBlocks_ = rb;
-    cs_.resize( numBlocks_+1 );
-    sn_.resize( numBlocks_+1 );
+    cs_ = MDMT::Create( numBlocks_+1, 1, false );
+    sn_ = DMT::Create( numBlocks_+1, 1, false );
     z_ = DMT::Create( numBlocks_+1, 1, false );
     R_ = DMT::Create( numBlocks_+1, numBlocks_, false );
 
@@ -442,21 +443,15 @@ namespace Belos {
     } else {
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
       const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-      Teuchos::BLAS<int,ScalarType> blas;
       currentUpdate = MVT::Clone( *V_, 1 );
       //
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
       //
       Teuchos::RCP<DM> y = DMT::SubviewCopy(*z_, curDim_, 1);
-      DMT::SyncDeviceToHost( *y );
-      DMT::SyncDeviceToHost( *R_ );
       //
       //  Solve the least squares problem.
       //
-      blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-		 Teuchos::NON_UNIT_DIAG, curDim_, 1, one,  
-		 DMT::GetConstRawHostPtr(*R_), DMT::GetStride(*R_), 
-		 DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
+      DMT::trsm("L", "U", "N", "N", one, *DMT::SubviewConst(*R_, curDim_, curDim_), *y);
       //
       //  Compute the current update from the Krylov basis; V(:,1:curDim_)*y.
       //
@@ -469,13 +464,10 @@ namespace Belos {
       //
       if (U_ != Teuchos::null) {
 	Teuchos::RCP<DM> z = DMT::Create( recycledBlocks_, 1 );
-	DMT::SyncDeviceToHost( *H2_ );
-        blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, recycledBlocks_, 1, curDim_, one, 
-		   DMT::GetConstRawHostPtr(*B_), DMT::GetStride(*B_),
-		   DMT::GetConstRawHostPtr(*y), DMT::GetStride(*y),
-		   zero, DMT::GetRawHostPtr(*z), DMT::GetStride(*z));
-        DMT::SyncHostToDevice( *z );
-        MVT::MvTimesMatAddMv( -one, *U_, *z, one, *currentUpdate );
+
+        DMT::Multiply(false, false, one, *DMT::SubviewConst(*B_, recycledBlocks_, curDim_), *y, zero, *z);
+
+	MVT::MvTimesMatAddMv( -one, *U_, *z, one, *currentUpdate );
       }
     }
     std::vector<MagnitudeType> normUpdate( 1 );
@@ -691,46 +683,15 @@ namespace Belos {
   template<class ScalarType, class MV, class OP, class DM>
   void GCRODRIter<ScalarType,MV,OP,DM>::updateLSQR( int dim ) {
 
-    int i;
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-   
     // Get correct dimension based on input "dim"
     // Remember that ortho failures result in an exit before updateLSQR() is called.
     // Therefore, it is possible that dim == curDim_.
     int curDim = curDim_;
     if ( (dim >= curDim_) && (dim < getMaxSubspaceDim()) )
       curDim = dim;
-    
-    Teuchos::BLAS<int, ScalarType> blas;
-    //
-    // Apply previous transformations and compute new transformation to reduce upper-Hessenberg
-    // system to upper-triangular form.
-    //
-    // QR factorization of Least-Squares system with Givens rotations
-    //
-    DMT::SyncDeviceToHost(*R_);
-    DMT::SyncDeviceToHost(*z_);
-    //
-    for (i=0; i<curDim; i++) {
-      //
-      // Apply previous Givens rotations to new column of Hessenberg matrix
-      //
-      blas.ROT( 1, &(DMT::Value(*R_,i,curDim)), 1, &(DMT::Value(*R_,i+1, curDim)), 1, &cs_[i], &sn_[i] );
- 
-    }
-    //
-    // Calculate new Givens rotation
-    //
-    blas.ROTG( &(DMT::Value(*R_,curDim,curDim)), &(DMT::Value(*R_,curDim+1,curDim)), &cs_[curDim], &sn_[curDim] );
-    DMT::Value(*R_,curDim+1,curDim) = zero;
-    //
-    // Update RHS w/ new transformation
-    //
-    blas.ROT( 1, &(DMT::Value(*z_,curDim,0)), 1, &(DMT::Value(*z_,curDim+1,0)), 1, &cs_[curDim], &sn_[curDim] );
-    //
-    DMT::SyncHostToDevice(*R_);
-    DMT::SyncHostToDevice(*z_);
-    //
+
+    DMT::updateLSQR(*R_, *z_, cs_, sn_, Teuchos::null, curDim, 1);
+
   } // end updateLSQR()
 
 } // end Belos namespace

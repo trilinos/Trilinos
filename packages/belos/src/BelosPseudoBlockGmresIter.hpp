@@ -27,7 +27,6 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
 
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -60,6 +59,8 @@ namespace Belos {
     typedef DenseMatTraits<ScalarType,DM>    DMT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
+    using MDM = typename DMT::MDM;
+    using MDMT = DenseMatTraits<MagnitudeType,MDM>;
     
     //! @name Constructors/Destructor
     //@{ 
@@ -268,8 +269,8 @@ namespace Belos {
     int numBlocks_; 
     
     // Storage for QR factorization of the least squares system.
-    std::vector<Teuchos::RCP<std::vector<ScalarType> > > sn_;
-    std::vector<Teuchos::RCP<std::vector<MagnitudeType> > > cs_;
+    std::vector<Teuchos::RCP<DM> > sn_;
+    std::vector<Teuchos::RCP<MDM> > cs_;
     
     // Pointers to a work vector used to improve aggregate performance.
     Teuchos::RCP<MV> U_vec_, AU_vec_;    
@@ -367,8 +368,7 @@ namespace Belos {
       }
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
       const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-      Teuchos::BLAS<int,ScalarType> blas;
-      
+
       for (int i=0; i<numRHS_; ++i) {
         index[0] = i;
         Teuchos::RCP<MV> cur_block_copy_vec = MVT::CloneViewNonConst( *currentUpdate, index );
@@ -376,19 +376,12 @@ namespace Belos {
         //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
         //
         Teuchos::RCP<DM> y = DMT::SubviewCopy(*Z_[i], curDim_, 1);
-        DMT::SyncDeviceToHost( *y );
-        DMT::SyncDeviceToHost( *H_[i] );
         //
         //  Solve the least squares problem and compute current solutions.
         //
-        blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-	           Teuchos::NON_UNIT_DIAG, curDim_, 1, one,  
-		   DMT::GetConstRawHostPtr(*H_[i]), DMT::GetStride(*H_[i]), 
-                   DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
+        DMT::trsm("L", "U", "N", "N", one, *DMT::SubviewConst(*H_[i], curDim_, curDim_), *y);
 
-        DMT::SyncHostToDevice( *y ); 	
-        DMT::SyncHostToDevice( *H_[i] ); 	
-	Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_[i], index2 );
+        Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_[i], index2 );
 	MVT::MvTimesMatAddMv( one, *Vjp1, *y, zero, *cur_block_copy_vec );
       }
     }
@@ -596,23 +589,27 @@ namespace Belos {
     // Copy over rotation angles if they exist
     if ((int)newstate.cs.size() == numRHS_ && (int)newstate.sn.size() == numRHS_) {
       for (int i=0; i<numRHS_; ++i) {
-        if (cs_[i] != newstate.cs[i])
-          cs_[i] = Teuchos::rcp( new std::vector<MagnitudeType>(*newstate.cs[i]) );
-        if (sn_[i] != newstate.sn[i])
-          sn_[i] = Teuchos::rcp( new std::vector<ScalarType>(*newstate.sn[i]) );
+        if (cs_[i] != newstate.cs[i]) {
+          cs_[i] = MDMT::Create(numBlocks_+1, 1);
+          MDMT::Assign(*MDMT::Subview(*cs_[i], MDMT::GetNumRows(*newstate.cs[i]), 1), *newstate.cs[i]);
+        }
+        if (sn_[i] != newstate.sn[i]) {
+          sn_[i] = DMT::Create(numBlocks_+1, 1);
+          DMT::Assign(*DMT::Subview(*sn_[i], DMT::GetNumRows(*newstate.sn[i]), 1), *newstate.sn[i]);
+        }
       }
     } 
       
     // Resize or create the vectors as necessary
     for (int i=0; i<numRHS_; ++i) {
       if (cs_[i] == Teuchos::null) 
-        cs_[i] = Teuchos::rcp( new std::vector<MagnitudeType>(numBlocks_+1) );
+        cs_[i] = MDMT::Create(numBlocks_+1, 1);
       else
-        cs_[i]->resize(numBlocks_+1);
+        MDMT::Reshape(*cs_[i], numBlocks_+1, 1);
       if (sn_[i] == Teuchos::null)
-        sn_[i] = Teuchos::rcp( new std::vector<ScalarType>(numBlocks_+1) );
+        sn_[i] = DMT::Create(numBlocks_+1, 1);
       else
-        sn_[i]->resize(numBlocks_+1);
+        DMT::Reshape(*sn_[i], numBlocks_+1, 1);
     }
 
     // the solver is initialized
@@ -743,43 +740,13 @@ namespace Belos {
     if (dim >= curDim_ && dim < getMaxSubspaceDim()) {
       curDim = dim;
     }
-    
-    int i, j;
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
-    Teuchos::BLAS<int, ScalarType> blas;
-    
-    for (i=0; i<numRHS_; ++i) {
+    for (int i=0; i<numRHS_; ++i) {
       //
       // Update the least-squares QR for each linear system.
       //
-      // QR factorization of Least-Squares system with Givens rotations
-      //
-      DMT::SyncDeviceToHost(*H_[i]);
-      DMT::SyncDeviceToHost(*Z_[i]);
-      // 
-      for (j=0; j<curDim; j++) {
-	//
-	// Apply previous Givens rotations to new column of Hessenberg matrix
-	//
-	blas.ROT( 1, &(DMT::Value(*H_[i],j,curDim)), 1, &(DMT::Value(*H_[i],j+1, curDim)), 
-                  1, &(*cs_[i])[j], &(*sn_[i])[j] );
-      }
-      //
-      // Calculate new Givens rotation
-      //
-      blas.ROTG( &(DMT::Value(*H_[i],curDim,curDim)), &(DMT::Value(*H_[i],curDim+1,curDim)), 
-                 &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
-      DMT::Value(*H_[i],curDim+1,curDim) = zero;
-      //
-      // Update RHS w/ new transformation
-      //
-      blas.ROT( 1, &(DMT::Value(*Z_[i],curDim,0)), 1, &(DMT::Value(*Z_[i],curDim+1,0)), 
-                1, &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
-      //
-      DMT::SyncHostToDevice(*H_[i]);
-      DMT::SyncHostToDevice(*Z_[i]);
-      // 
+
+      DMT::updateLSQR(*H_[i], *Z_[i], cs_[i], sn_[i], Teuchos::null, curDim, 1);
     }
 
   } // end updateLSQR()

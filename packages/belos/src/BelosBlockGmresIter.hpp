@@ -26,8 +26,7 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
 
-#include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -62,6 +61,8 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
+  using MDM = typename DMT::MDM;
+  using MDMT = DenseMatTraits<MagnitudeType,MDM>;
 
   //! @name Constructors/Destructor
   //@{
@@ -271,8 +272,10 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   int numBlocks_;
 
   // Storage for QR factorization of the least squares system.
-  std::vector<ScalarType> beta, sn;
-  std::vector<MagnitudeType> cs;
+  Teuchos::RCP<DM> beta;
+  Teuchos::RCP<DM> sn;
+  // std::vector<MagnitudeType> cs;
+  Teuchos::RCP<MDM> cs;
 
   //
   // Current solver state
@@ -406,11 +409,11 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         int newsd = blockSize_*(numBlocks_+1);
 
         if (blockSize_==1) {
-          cs.resize( newsd );
-          sn.resize( newsd );
+          cs = MDMT::Create(newsd, 1);
+          sn = DMT::Create(newsd, 1);
         }
         else {
-          beta.resize( newsd );
+          beta = DMT::Create(newsd, 1);
         }
 
         // Initialize the state storage
@@ -494,7 +497,6 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     } else {
       const ScalarType one  = SCT::one();
       const ScalarType zero = SCT::zero();
-      Teuchos::BLAS<int,ScalarType> blas;
       currentUpdate = MVT::Clone( *V_, blockSize_ );
       //
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
@@ -503,11 +505,8 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       //
       //  Solve the least squares problem.
       //
-      blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-                 Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
-                 DMT::GetRawHostPtr(*R_), DMT::GetStride(*R_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
-      DMT::SyncHostToDevice(*y);
-      //
+      DMT::trsm("L", "U", "N", "N", one, *DMT::SubviewConst(*R_, curDim_, curDim_), *y);
+
       //  Compute the current update.
       //
       std::vector<int> index(curDim_);
@@ -533,14 +532,9 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     if ( norms && (int)norms->size() < blockSize_ )
       norms->resize( blockSize_ );
 
-    if (norms) {
-      Teuchos::BLAS<int,ScalarType> blas;
-      DMT::SyncDeviceToHost(*z_);
-      for (int j=0; j<blockSize_; j++) {
-        Teuchos::RCP<DM> z_j = DMT::Subview(*z_, blockSize_, 1, curDim_, j);
-        (*norms)[j] = blas.NRM2( blockSize_, DMT::GetRawHostPtr(*z_j), 1);
-      }
-    }
+    if (norms)
+      DMT::nrm2(*norms, *DMT::Subview(*z_, blockSize_, blockSize_, curDim_, 0));
+
     return Teuchos::null;
   }
 
@@ -699,7 +693,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       // subH needs to be a new rcp to an abstract dense. No, keep subH how it is.
       // Then make a subHAbstract that grabs the pointer from subH, making it an abstract dense guy. 
       // Then AsubH can be a Teuchos::Array
-      // of the abstract dense guys. 
+      // of the abstract dense guys.
       int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subH2,AVprev);
 
       // Copy over the coefficients if we are saving the upper Hessenberg matrix,
@@ -750,10 +744,6 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   template<class ScalarType, class MV, class OP, class DM>
   void BlockGmresIter<ScalarType,MV,OP,DM>::updateLSQR( int dim )
   {
-    int i, j, maxidx;
-    ScalarType sigma, mu, vscale, maxelem;
-    const ScalarType zero = SCT::zero();
-
     // Get correct dimension based on input "dim"
     // Remember that ortho failures result in an exit before updateLSQR() is called.
     // Therefore, it is possible that dim == curDim_.
@@ -762,87 +752,12 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       curDim = dim;
     }
 
-    Teuchos::BLAS<int, ScalarType> blas;
     //
     // Apply previous transformations and compute new transformation to reduce upper-Hessenberg
     // system to upper-triangular form.
     //
-    DMT::SyncDeviceToHost(*R_);
-    DMT::SyncDeviceToHost(*z_);
 
-    if (blockSize_ == 1) {
-      //
-      // QR factorization of Least-Squares system with Givens rotations
-      //
-      for (i=0; i<curDim; i++) {
-        //
-        // Apply previous Givens rotations to new column of Hessenberg matrix
-        //
-        blas.ROT( 1, &DMT::Value(*R_,i,curDim), 1, &DMT::Value(*R_,i+1, curDim), 1, &cs[i], &sn[i] );
-      }
-      //
-      // Calculate new Givens rotation
-      //
-      blas.ROTG( &DMT::Value(*R_,curDim,curDim), &DMT::Value(*R_,curDim+1,curDim), &cs[curDim], &sn[curDim] );
-      DMT::Value(*R_,curDim+1,curDim) = zero;
-      //
-      // Update RHS w/ new transformation
-      //
-      blas.ROT( 1, &DMT::Value(*z_,curDim,0), 1, &DMT::Value(*z_,curDim+1,0), 1, &cs[curDim], &sn[curDim] );
-    }
-    else {
-      //
-      // QR factorization of Least-Squares system with Householder reflectors
-      //
-      for (j=0; j<blockSize_; j++) {
-        //
-        // Apply previous Householder reflectors to new block of Hessenberg matrix
-        //
-        for (i=0; i<curDim+j; i++) {
-          sigma = blas.DOT( blockSize_, &DMT::Value(*R_,i+1,i), 1, &DMT::Value(*R_,i+1,curDim+j), 1);
-          sigma += DMT::ValueConst(*R_,i,curDim+j);
-          sigma *= SCT::conjugate(beta[i]);
-          blas.AXPY(blockSize_, ScalarType(-sigma), &DMT::Value(*R_,i+1,i), 1, &DMT::Value(*R_,i+1,curDim+j), 1);
-          DMT::Value(*R_,i,curDim+j) -= sigma;
-        }
-        //
-        // Compute new Householder reflector
-        //
-        maxidx = blas.IAMAX( blockSize_+1, &DMT::Value(*R_,curDim+j,curDim+j), 1 );
-        maxelem = SCT::magnitude(DMT::Value(*R_,curDim+j+maxidx-1,curDim+j));
-        for (i=0; i<blockSize_+1; i++)
-          DMT::Value(*R_,curDim+j+i,curDim+j) /= maxelem;
-        sigma = blas.DOT( blockSize_, &DMT::Value(*R_,curDim+j+1,curDim+j), 1,
-                          &DMT::Value(*R_,curDim+j+1,curDim+j), 1 );
-        MagnitudeType sign_Rjj = -SCT::real(DMT::Value(*R_,curDim+j,curDim+j)) /
-                 SCT::magnitude(SCT::real((DMT::Value(*R_,curDim+j,curDim+j))));
-        if (sigma == zero) {
-          beta[curDim + j] = zero;
-        } else {
-          mu = SCT::squareroot(SCT::conjugate(DMT::Value(*R_,curDim+j,curDim+j))*DMT::Value(*R_,curDim+j,curDim+j)+sigma);
-          vscale = DMT::ValueConst(*R_,curDim+j,curDim+j) - Teuchos::as<ScalarType>(sign_Rjj)*mu;
-          beta[curDim+j] = -Teuchos::as<ScalarType>(sign_Rjj) * vscale / mu;
-          DMT::Value(*R_,curDim+j,curDim+j) = Teuchos::as<ScalarType>(sign_Rjj)*maxelem*mu;
-          for (i=0; i<blockSize_; i++)
-            DMT::Value(*R_,curDim+j+1+i,curDim+j) /= vscale;
-        }
-        //
-        // Apply new Householder reflector to rhs
-        //
-        for (i=0; i<blockSize_; i++) {
-          sigma = blas.DOT( blockSize_, &DMT::Value(*R_,curDim+j+1,curDim+j),
-                            1, &DMT::Value(*z_,curDim+j+1,i), 1);
-          sigma += DMT::ValueConst(*z_,curDim+j,i);
-          sigma *= SCT::conjugate(beta[curDim+j]);
-          blas.AXPY(blockSize_, ScalarType(-sigma), &DMT::Value(*R_,curDim+j+1,curDim+j),
-                    1, &DMT::Value(*z_,curDim+j+1,i), 1);
-          DMT::Value(*z_,curDim+j,i) -= sigma;
-        }
-      }
-    } // end if (blockSize_ == 1)
-
-    DMT::SyncHostToDevice(*z_); 
-    DMT::SyncHostToDevice(*R_); 
+    DMT::updateLSQR(*R_, *z_, cs, sn, beta, curDim, blockSize_);
 
     // If the least-squares problem is updated wrt "dim" then update the curDim_.
     if (dim >= curDim_ && dim < getMaxSubspaceDim()) {

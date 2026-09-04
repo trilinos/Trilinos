@@ -27,7 +27,6 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp" // includes Teuchos_ConfigDefs.hpp
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
 
@@ -514,7 +513,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     Teuchos::RCP<DM> H_;
     Teuchos::RCP<DM> PP_;
     Teuchos::RCP<DM> HP_;
-    std::vector<ScalarType> tau_;
+    Teuchos::RCP<DM> tau_;
     std::vector<ScalarType> work_;
     Teuchos::RCP<DM> R_;
     std::vector<int> ipiv_;
@@ -1339,7 +1338,7 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
         r_ = MVT::Clone( *rhsMV, 1 );
 
       // Size of tau_ will change during computation, so just be sure it starts with appropriate size
-      tau_.resize(recycledBlocks_+1);
+      tau_ = DMT::Create(recycledBlocks_+1, 1);
 
       // Size of work_ will change during computation, so just be sure it starts with appropriate size
       work_.resize(recycledBlocks_+1);
@@ -1481,6 +1480,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // GCRODR solver
 
+  ortho_->setMaxNumBlocksHint(numBlocks_);
+  ortho_->setMaxBlockSizeHint(1);
   RCP<GCRODRIteration<ScalarType,MV,OP,DM> > gcrodr_iter;
   if (isFlexible_) {
     gcrodr_iter = rcp(new FGCRODRIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist));
@@ -1722,67 +1723,26 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           // First, compute [Q, R] = qr(H*P);
 
           // Step #1: Form HP = H*P
-	  DMT::SyncDeviceToHost( *HP_ );
 
           RCP<DM> Htmp = DMT::Subview( *H2_, p+1, p, recycledBlocks_+1,recycledBlocks_+1 );
           RCP<DM> HPtmp = DMT::Subview( *HP_, p+1, keff );
 
-          Teuchos::BLAS<int,ScalarType> blas;
-	  blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, p+1, keff, p, one,
-                   DMT::GetConstRawHostPtr(*Htmp), DMT::GetStride(*Htmp),
-                   DMT::GetConstRawHostPtr(*PPtmp), DMT::GetStride(*PPtmp),
-                   zero, DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp));
-
-	  // Step #1.5: Perform workspace size query for QR
-          // factorization of HP.  On input, lwork must be -1.
-          // _GEQRF will put the workspace size in work_[0].
-          int lwork = -1;
-          tau_.resize (keff);
-          lapack.GEQRF (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetRawHostPtr(*HPtmp),
-                        DMT::GetStride(*HPtmp), &tau_[0], &work_[0], lwork, &info);
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve:"
-            " LAPACK's _GEQRF failed to compute a workspace size.");
+          DMT::Multiply(false, false, one, *Htmp, *PPtmp, zero, *HPtmp);
 
           // Step #2: Compute QR factorization of HP
-          //
-          // NOTE (mfh 17 Apr 2014) LAPACK promises that the value of
-          // work_[0] after the workspace query will fit in int.  This
-          // justifies the cast.  We call real() first because
-          // static_cast from std::complex to int doesn't work.
-          lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work_[0])));
-          work_.resize (lwork); // Allocate workspace for the QR factorization
-          lapack.GEQRF (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetRawHostPtr(*HPtmp),
-                        DMT::GetStride(*HPtmp), &tau_[0], &work_[0], lwork, &info);
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve:"
-            " LAPACK's _GEQRF failed to compute a QR factorization.");
+
+          DMT::Reshape(*tau_, keff, 1);
+          DMT::geqrf(*HPtmp, *tau_);
 
           // Step #3: Explicitly construct Q and R factors
           // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
           // Synchronize R_ before and after copying over diagonal of HP
-	  DMT::SyncDeviceToHost( *R_ );
           RCP<DM> Rtmp = DMT::Subview( *R_, keff, keff );
-          for (int ii = 0; ii < keff; ++ii) {
-            for (int jj = ii; jj < keff; ++jj) {
-              DMT::Value(*Rtmp,ii,jj) = DMT::ValueConst(*HPtmp,ii,jj);
-	    }
-          }
-          DMT::SyncHostToDevice( *R_ );
-	  // NOTE (mfh 17 Apr 2014): Teuchos::LAPACK's wrapper for
-          // UNGQR dispatches to the correct Scalar-specific routine.
-          // It calls {S,D}ORGQR if Scalar is real, and {C,Z}UNGQR if
-          // Scalar is complex.
-          lapack.UNGQR (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetNumCols(*HPtmp),
-                        DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp), &tau_[0], &work_[0],
-                        lwork, &info);
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
-            "LAPACK's _UNGQR failed to construct the Q factor.");
+          DMT::AssignUpperTri(*Rtmp, *DMT::SubviewConst( *HP_, keff, keff ));
 
-          // Now we have [Q,R] = qr(H*P)
-          // Synchronize HP_ after call to LAPACK
-	  DMT::SyncHostToDevice( *HP_ );
+          DMT::ungqr(DMT::GetNumCols(*HPtmp), *HPtmp, *tau_);
+
+	  // Now we have [Q,R] = qr(H*P)
 
           // Now compute C = V(:,1:p+1) * Q
           index.resize (p + 1);
@@ -1797,6 +1757,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           // backsolve capabilities don't exist in the Belos::MultiVec class
 
           // Step #1: First, compute LU factorization of R
+          DMT::SyncDeviceToHost( *R_ );
           ipiv_.resize(DMT::GetNumRows(*Rtmp));
           lapack.GETRF(DMT::GetNumRows(*Rtmp), DMT::GetNumCols(*Rtmp), DMT::GetRawHostPtr(*Rtmp),
 		       DMT::GetStride(*Rtmp), &ipiv_[0], &info);
@@ -1811,9 +1772,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           // distributed MultiVector).
 
           // Step #2: Form inv(R)
-          lwork = DMT::GetNumRows(*Rtmp);
+          int lwork = DMT::GetNumRows(*Rtmp);
           work_.resize(lwork);
-          lapack.GETRI(DMT::GetNumRows(*Rtmp), DMT::GetRawHostPtr(*Rtmp), DMT::GetStride(*Rtmp), 
+          lapack.GETRI(DMT::GetNumRows(*Rtmp), DMT::GetRawHostPtr(*Rtmp), DMT::GetStride(*Rtmp),
 		       &ipiv_[0], &work_[0], lwork, &info);
           TEUCHOS_TEST_FOR_EXCEPTION(
             info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
@@ -2173,58 +2134,23 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
   }
 
   // Form HP = H*P
-  DMT::SyncDeviceToHost( *HP_ );
   Teuchos::RCP<DM> HPtmp = DMT::Subview( *HP_, p+keff+1, keff_new );
   {
-    DMT::SyncDeviceToHost( *PP_ );
     Teuchos::RCP<DM> PPtmp = DMT::Subview( *PP_, p+keff, keff_new );
 
-    Teuchos::BLAS<int,ScalarType> blas;
-    blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, p+keff+1, keff_new, p+keff, one,
-                   DMT::GetConstRawHostPtr(*H2tmp), DMT::GetStride(*H2tmp),
-                   DMT::GetConstRawHostPtr(*PPtmp), DMT::GetStride(*PPtmp),
-                   zero, DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp));
+    DMT::Multiply(false, false, one, *H2tmp, *PPtmp, zero, *HPtmp);
   }
 
-  // Workspace size query for QR factorization of HP (the worksize will be placed in work_[0])
-  int info = 0, lwork = -1;
-  tau_.resize (keff_new);
-  lapack.GEQRF (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetRawHostPtr(*HPtmp),
-                DMT::GetStride(*HPtmp), &tau_[0], &work_[0], lwork, &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
-    "LAPACK's _GEQRF failed to compute a workspace size.");
-
-  // NOTE (mfh 18 Apr 2014) LAPACK promises that the value of work_[0]
-  // after the workspace query will fit in int.  This justifies the
-  // cast.  We call real() first because static_cast from std::complex
-  // to int doesn't work.
-  lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work_[0])));
-  work_.resize (lwork); // Allocate workspace for the QR factorization
-  lapack.GEQRF (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetRawHostPtr(*HPtmp),
-                DMT::GetStride(*HPtmp), &tau_[0], &work_[0], lwork, &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
-    "LAPACK's _GEQRF failed to compute a QR factorization.");
+  DMT::Reshape(*tau_, keff_new, 1);
+  DMT::geqrf(*HPtmp, *tau_);
 
   // Explicitly construct Q and R factors
   // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
-  DMT::SyncDeviceToHost( *R_ );
   Teuchos::RCP<DM> Rtmp = DMT::Subview( *R_, keff_new, keff_new );
-  for(int i=0;i<keff_new;i++) { for(int j=i;j<keff_new;j++) DMT::Value(*Rtmp,i,j) = DMT::ValueConst(*HPtmp,i,j); }
+  DMT::AssignUpperTri(*Rtmp, *DMT::SubviewConst(*HP_, keff_new, keff_new));
 
-  // NOTE (mfh 18 Apr 2014): Teuchos::LAPACK's wrapper for UNGQR
-  // dispatches to the correct Scalar-specific routine.  It calls
-  // {S,D}ORGQR if Scalar is real, and {C,Z}UNGQR if Scalar is
-  // complex.
-  lapack.UNGQR (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetNumCols(*HPtmp),
-                DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp), &tau_[0], &work_[0],
-                lwork, &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
-    "LAPACK's _UNGQR failed to construct the Q factor.");
+  DMT::ungqr(DMT::GetNumCols(*HPtmp), *HPtmp, *tau_);
 
-  DMT::SyncHostToDevice( *HP_ );
   HPtmp = Teuchos::null;
 
   // Form orthonormalized C and adjust U accordingly so that C = A*U
@@ -2256,14 +2182,17 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
   // C_ = C1_; (via a swap)
   std::swap(C_, C1_);
 
+  int info = 0;
+
   // Finally, compute U_ = U_*R^{-1}
   // First, compute LU factorization of R
+  DMT::SyncDeviceToHost( *R_ );
   ipiv_.resize(DMT::GetNumRows(*Rtmp));
   lapack.GETRF(DMT::GetNumRows(*Rtmp),DMT::GetNumCols(*Rtmp),DMT::GetRawHostPtr(*Rtmp),DMT::GetStride(*Rtmp),&ipiv_[0],&info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::buildRecycleSpace2(): LAPACK _GETRF failed to compute an LU factorization.");
 
   // Now, form inv(R)
-  lwork = DMT::GetNumRows(*Rtmp);
+  int lwork = DMT::GetNumRows(*Rtmp);
   work_.resize(lwork);
   lapack.GETRI(DMT::GetNumRows(*Rtmp),DMT::GetRawHostPtr(*Rtmp),DMT::GetStride(*Rtmp),&ipiv_[0],&work_[0],lwork,&info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::buildRecycleSpace2(): LAPACK _GETRI failed to compute an LU factorization.");
@@ -2417,80 +2346,27 @@ buildFlexibleRecycleSpace2(Teuchos::RCP<GCRODRIteration<ScalarType,MV,OP,DM> > g
   }
 
   // HP = H * P.
-  DMT::SyncDeviceToHost(*HP_);
   Teuchos::RCP<DM> HPtmp = DMT::Subview(*HP_, p+keff+1, keff_new);
 
   {
-    DMT::SyncDeviceToHost(*PP_);
-    DMT::SyncDeviceToHost(*H2_);
     Teuchos::RCP<DM> PPtmp = DMT::Subview(*PP_, p+keff, keff_new);
 
-    Teuchos::BLAS<int,ScalarType> blas;
-    blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
-              p+keff+1, keff_new, p+keff,
-              one,
-              DMT::GetConstRawHostPtr(*H2tmp), DMT::GetStride(*H2tmp),
-              DMT::GetConstRawHostPtr(*PPtmp), DMT::GetStride(*PPtmp),
-              zero,
-              DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp));
+    DMT::Multiply(false, false, one, *H2tmp, *PPtmp, zero, *HPtmp);
   }
 
   // QR factorization of HP.
   int info = 0;
   int lwork = -1;
 
-  tau_.resize(keff_new);
-  if (work_.size() < 1) work_.resize(1);
-
-  lapack.GEQRF(DMT::GetNumRows(*HPtmp),
-               DMT::GetNumCols(*HPtmp),
-               DMT::GetRawHostPtr(*HPtmp),
-               DMT::GetStride(*HPtmp),
-               &tau_[0], &work_[0], lwork, &info);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0,
-    GCRODRSolMgrLAPACKFailure,
-    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK GEQRF workspace query failed.");
-
-  lwork = std::abs(static_cast<int>(Teuchos::ScalarTraits<ScalarType>::real(work_[0])));
-  work_.resize(lwork);
-
-  lapack.GEQRF(DMT::GetNumRows(*HPtmp),
-               DMT::GetNumCols(*HPtmp),
-               DMT::GetRawHostPtr(*HPtmp),
-               DMT::GetStride(*HPtmp),
-               &tau_[0], &work_[0], lwork, &info);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0,
-    GCRODRSolMgrLAPACKFailure,
-    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK GEQRF failed.");
+  DMT::Reshape(*tau_, keff_new, 1);
+  DMT::geqrf(*HPtmp, *tau_);
 
   // Copy R from upper triangular part of HP.
-  DMT::SyncDeviceToHost(*R_);
   Teuchos::RCP<DM> Rtmp = DMT::Subview(*R_, keff_new, keff_new);
-
-  for (int i=0; i<keff_new; ++i) {
-    for (int j=i; j<keff_new; ++j) {
-      DMT::Value(*Rtmp, i, j) = DMT::ValueConst(*HPtmp, i, j);
-    }
-  }
+  DMT::AssignUpperTri(*Rtmp, *DMT::SubviewConst(*HP_, keff_new, keff_new));
 
   // Form Q explicitly in HPtmp.
-  lapack.UNGQR(DMT::GetNumRows(*HPtmp),
-               DMT::GetNumCols(*HPtmp),
-               DMT::GetNumCols(*HPtmp),
-               DMT::GetRawHostPtr(*HPtmp),
-               DMT::GetStride(*HPtmp),
-               &tau_[0], &work_[0], lwork, &info);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0,
-    GCRODRSolMgrLAPACKFailure,
-    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK UNGQR failed.");
-
-  DMT::SyncHostToDevice(*HP_);
+  DMT::ungqr(DMT::GetNumCols(*HPtmp), *HPtmp, *tau_);
 
   // C1 = [C, V_{p+1}] * Q.
   {
@@ -2525,8 +2401,8 @@ buildFlexibleRecycleSpace2(Teuchos::RCP<GCRODRIteration<ScalarType,MV,OP,DM> > g
   std::swap(C_, C1_);
 
   // Compute R^{-1}.
+  DMT::SyncDeviceToHost(*Rtmp);
   ipiv_.resize(DMT::GetNumRows(*Rtmp));
-
   lapack.GETRF(DMT::GetNumRows(*Rtmp),
                DMT::GetNumCols(*Rtmp),
                DMT::GetRawHostPtr(*Rtmp),
@@ -2729,11 +2605,7 @@ int GCRODRSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs2(int keffloc, int m,
   // B = H2' * H2; Don't zero out matrix when constructing
   Teuchos::RCP<DM> B = DMT::Create(m2,m2,false);
 
-  Teuchos::BLAS<int,ScalarType> blas;
-  blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, m2, m2, DMT::GetNumRows(HH), one,
-             DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-             DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-             zero, DMT::GetRawHostPtr(*B), DMT::GetStride(*B));
+  DMT::Multiply(true, false, one, HH, HH, zero, *B);
 
   // A_tmp = | C'*U        0 |
   //         | V_{m+1}'*U  I |
@@ -2756,19 +2628,13 @@ int GCRODRSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs2(int keffloc, int m,
 
   A11 = Teuchos::null;
   A21 = Teuchos::null;
-  DMT::SyncDeviceToHost(*A_tmp);
 
-  // A_tmp(keffloc+1:m-k+keffloc,keffloc+1:m-k+keffloc) = eye(m-k);
-  for( i=keffloc; i<keffloc+m; i++ ) {
-    DMT::Value(*A_tmp,i,i) = one;
-  }
+  DMT::AssignDiag(*DMT::Subview(*A_tmp, m, m, keffloc, keffloc), one);
 
   // A = H2' * A_tmp;
   Teuchos::RCP<DM> A = DMT::Create( m2, DMT::GetNumCols(*A_tmp) );
-  blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, m2, DMT::GetNumCols(*A_tmp), DMT::GetNumRows(*A_tmp),
-             one, DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-	     DMT::GetConstRawHostPtr(*A_tmp), DMT::GetStride(*A_tmp),
-	     zero, DMT::GetRawHostPtr(*A), DMT::GetStride(*A) );
+
+  DMT::Multiply(true, false, one, HH, *A_tmp, zero, *A);
 
   // Compute k smallest harmonic Ritz pairs
   // SUBROUTINE DGGEVX( BALANC, JOBVL, JOBVR, SENSE, N, A, LDA, B, LDB,
@@ -2895,14 +2761,7 @@ getFlexibleHarmonicVecs2(int keffloc, int m,
   // B = H^H H.
   Teuchos::RCP<DM> B = DMT::Create(m2, m2, false);
 
-  Teuchos::BLAS<int,ScalarType> blas;
-  blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-            m2, m2, DMT::GetNumRows(HH),
-            one,
-            DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-            DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-            zero,
-            DMT::GetRawHostPtr(*B), DMT::GetStride(*B));
+  DMT::Multiply(true, false, one, HH, HH, zero, *B);
 
   // A_tmp = T^H Wfull.
   Teuchos::RCP<DM> A_tmp = DMT::Create(keffloc + m + 1, keffloc + m);
@@ -2936,23 +2795,13 @@ getFlexibleHarmonicVecs2(int keffloc, int m,
   A11 = Teuchos::null;
   A21 = Teuchos::null;
 
-  DMT::SyncDeviceToHost(*A_tmp);
-
   // A22 = V_{m+1}^H V_m = [I; 0].
-  for (i=0; i<m; ++i) {
-    DMT::Value(*A_tmp, keffloc+i, keffloc+i) = one;
-  }
+  DMT::AssignDiag(*DMT::Subview(*A_tmp, m, m, keffloc, keffloc), one);
 
   // A = H^H A_tmp.
   Teuchos::RCP<DM> A = DMT::Create(m2, DMT::GetNumCols(*A_tmp));
 
-  blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-            m2, DMT::GetNumCols(*A_tmp), DMT::GetNumRows(*A_tmp),
-            one,
-            DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-            DMT::GetConstRawHostPtr(*A_tmp), DMT::GetStride(*A_tmp),
-            zero,
-            DMT::GetRawHostPtr(*A), DMT::GetStride(*A));
+  DMT::Multiply(true, false, one, HH, *A_tmp, zero, *A);
 
   char balanc = 'P', jobvl = 'N', jobvr = 'V', sense = 'N';
 
