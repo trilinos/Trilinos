@@ -61,8 +61,7 @@ namespace MueLuExamples {
 
 template <class SC, class LO, class GO, class NO>
 MueLu::ParameterListInterpreter<SC, LO, GO, NO> makeFactory(Teuchos::ParameterList& paramList) {
-  std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
-  paramList            = *Teuchos::getParametersFromXmlString(paramXML);
+  paramList = *MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
   return MueLu::ParameterListInterpreter<SC, LO, GO, NO>(paramList);
 }
 

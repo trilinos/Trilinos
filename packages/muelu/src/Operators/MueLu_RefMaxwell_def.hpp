@@ -84,6 +84,11 @@ T pop(Teuchos::ParameterList &pl, std::string const &name_in, T def_value) {
   return result;
 }
 
+template <typename T>
+T pop(Teuchos::ParameterList &pl1, Teuchos::ParameterList &pl2, std::string const &name_in, T def_value) {
+  return pop(pl2, name_in, pop(pl1, name_in, def_value));
+}
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
   return SM_Matrix_->getDomainMap();
@@ -162,6 +167,8 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   precList11.disableRecursiveValidation();
   ParameterList &precList22 = params->sublist("refmaxwell: 22list");
   precList22.disableRecursiveValidation();
+  ParameterList &userData = params->sublist("user data");
+  userData.disableRecursiveValidation();
 
   params->set("smoother: type", "CHEBYSHEV");
   ParameterList &smootherList = params->sublist("smoother: params");
@@ -202,7 +209,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
   if (list.isType<std::string>("parameterlist: syntax") && list.get<std::string>("parameterlist: syntax") == "ml") {
     Teuchos::ParameterList newList;
     {
-      Teuchos::ParameterList newList2                = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list, "refmaxwell"));
+      Teuchos::ParameterList newList2                = *MueLu::ML2MueLuParameterTranslator::translate(list, "refmaxwell");
       RCP<Teuchos::ParameterList> validateParameters = getValidParamterList();
       for (auto it = newList2.begin(); it != newList2.end(); ++it) {
         const std::string &entry_name = it->first;
@@ -214,9 +221,9 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
     }
 
     if (list.isSublist("refmaxwell: 11list") && list.sublist("refmaxwell: 11list").isSublist("edge matrix free: coarse"))
-      newList.sublist("refmaxwell: 11list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse"), "SA"));
+      newList.sublist("refmaxwell: 11list") = *MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse"), "SA");
     if (list.isSublist("refmaxwell: 22list"))
-      newList.sublist("refmaxwell: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 22list"), "SA"));
+      newList.sublist("refmaxwell: 22list") = *MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 22list"), "SA");
     list = newList;
   }
 
@@ -2527,6 +2534,52 @@ bool RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasTransposeApply() 
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::pair<std::set<std::string>, std::set<std::string>>
+RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    requiredAndOptionalUserData(const Teuchos::ParameterList &params) {
+  std::set<std::string> requiredUserData;
+  int spaceNumber = 1;
+  if (params.isType<int>("refmaxwell: space number"))
+    spaceNumber = params.get<int>("refmaxwell: space number");
+  bool disable_addon = MasterList::getDefault<bool>("refmaxwell: disable addon");
+  if (params.isType<bool>("refmaxwell: disable addon"))
+    disable_addon = params.get<bool>("refmaxwell: disable addon");
+  bool disable_addon22 = true;
+  if (params.isType<bool>("refmaxwell: disable addon 22"))
+    disable_addon22 = params.get<bool>("refmaxwell: disable addon 22");
+
+  requiredUserData.insert("Coordinates");
+  requiredUserData.insert("Dk_1");
+
+  requiredUserData.insert("M1_beta");
+  if (spaceNumber >= 2)
+    requiredUserData.insert("M1_alpha");
+
+  if (!disable_addon) {
+    requiredUserData.insert("Mk_one");
+    requiredUserData.insert("invMk_1_invBeta");
+  }
+
+  if ((spaceNumber >= 2) && (!disable_addon22)) {
+    requiredUserData.insert("Dk_2");
+    requiredUserData.insert("Mk_1_one");
+    requiredUserData.insert("invMk_2_invAlpha");
+  }
+
+  auto [requiredUserData11, optionalUserData11] = ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(params.sublist("refmaxwell: 11list"));
+  auto [requiredUserData22, optionalUserData22] = ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(params.sublist("refmaxwell: 22list"));
+
+  if (requiredUserData11.contains("Material") || requiredUserData22.contains("Material"))
+    requiredUserData.insert("Material");
+
+  std::set<std::string> optionalUserData;
+  optionalUserData.insert("Nullspace11");
+  optionalUserData.insert("Nullspace22");
+
+  return std::make_pair(requiredUserData, optionalUserData);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RefMaxwell(const Teuchos::RCP<Matrix> &SM_Matrix,
                Teuchos::ParameterList &List,
@@ -2540,22 +2593,24 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   RCP<MultiVector> Nullspace11, Nullspace22;
   RCP<RealValuedMultiVector> NodalCoords;
 
-  Dk_1 = pop(List, "Dk_1", Dk_1);
-  Dk_2 = pop<RCP<Matrix>>(List, "Dk_2", Dk_2);
-  D0   = pop<RCP<Matrix>>(List, "D0", D0);
+  auto &userData = List.sublist("user data");
 
-  M1_beta  = pop<RCP<Matrix>>(List, "M1_beta", M1_beta);
-  M1_alpha = pop<RCP<Matrix>>(List, "M1_alpha", M1_alpha);
+  Dk_1 = pop(List, userData, "Dk_1", Dk_1);
+  Dk_2 = pop(List, userData, "Dk_2", Dk_2);
+  D0   = pop(List, userData, "D0", D0);
 
-  Mk_one   = pop<RCP<Matrix>>(List, "Mk_one", Mk_one);
-  Mk_1_one = pop<RCP<Matrix>>(List, "Mk_1_one", Mk_1_one);
+  M1_beta  = pop(List, userData, "M1_beta", M1_beta);
+  M1_alpha = pop(List, userData, "M1_alpha", M1_alpha);
 
-  invMk_1_invBeta  = pop<RCP<Matrix>>(List, "invMk_1_invBeta", invMk_1_invBeta);
-  invMk_2_invAlpha = pop<RCP<Matrix>>(List, "invMk_2_invAlpha", invMk_2_invAlpha);
+  Mk_one   = pop(List, userData, "Mk_one", Mk_one);
+  Mk_1_one = pop(List, userData, "Mk_1_one", Mk_1_one);
 
-  Nullspace11 = pop<RCP<MultiVector>>(List, "Nullspace11", Nullspace11);
-  Nullspace22 = pop<RCP<MultiVector>>(List, "Nullspace22", Nullspace22);
-  NodalCoords = pop<RCP<RealValuedMultiVector>>(List, "Coordinates", NodalCoords);
+  invMk_1_invBeta  = pop(List, userData, "invMk_1_invBeta", invMk_1_invBeta);
+  invMk_2_invAlpha = pop(List, userData, "invMk_2_invAlpha", invMk_2_invAlpha);
+
+  Nullspace11 = pop(List, userData, "Nullspace11", Nullspace11);
+  Nullspace22 = pop(List, userData, "Nullspace22", Nullspace22);
+  NodalCoords = pop(List, userData, "Coordinates", NodalCoords);
 
   // old parameter names
   if (List.isType<RCP<Matrix>>("Ms")) {

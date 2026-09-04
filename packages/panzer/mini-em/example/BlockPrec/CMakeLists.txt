@@ -23,14 +23,14 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   darcyTet.xml darcyHex.xml
   darcyTetAnalytic.xml darcyHexAnalytic.xml
   solverCG.xml solverGMRES.xml
-  solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml solverMueLuBarrier.xml
+  solverMueLu.xml solverMueLu2D.xml solverMueLuBarrier.xml
   solverMueLuOpenMP.xml solverMueLuCuda.xml solverMueLuTruncated.xml solverMueLuTPL.xml
   solverMueLuHO.xml solverMueLuHOCuda.xml
   solverAugmentationUseILU.xml
   solverML.xml
   solverDirect.xml
   maxwell-large.xml
-  solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml
+  solverMueLu.xml solverMueLu2D.xml
   solverMueLuOpenMP.xml solverMueLuCuda.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
@@ -67,29 +67,29 @@ INSTALL(TARGETS "${PACKAGE_NAME}_BlockPrec"
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "Maxwell_MueLu"
-   POSTFIX_AND_ARGS_0 "order1"       --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra
-   POSTFIX_AND_ARGS_1 "order1_reuse" --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --resetSolver
+   POSTFIX_AND_ARGS_0 "order1"       --solver=MueLu --numTimeSteps=1
+   POSTFIX_AND_ARGS_1 "order1_reuse" --solver=MueLu --numTimeSteps=3 --resetSolver
    NUM_MPI_PROCS 1
    )
 
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "Maxwell_MueLu"
-   POSTFIX_AND_ARGS_0 "order1"                      --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra
-   POSTFIX_AND_ARGS_1 "order1_reuse"                --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --resetSolver
-   POSTFIX_AND_ARGS_2 "order2"                      --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2 --pCoarsenSchedule="1"
-   POSTFIX_AND_ARGS_3 "order3"                      --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="1"
-   POSTFIX_AND_ARGS_4 "order3,2"                    --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="2,1"
-   POSTFIX_AND_ARGS_5 "order2_matrixFree"           --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2  --pCoarsenSchedule="1" --matrixFree
-   POSTFIX_AND_ARGS_6 "order3_matrixFree"           --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3  --pCoarsenSchedule="1" --matrixFree
-   POSTFIX_AND_ARGS_7 "order3,2_matrixFree"         --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="2,1" --matrixFree
-   POSTFIX_AND_ARGS_8 "2D"                          --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=maxwell2D.xml
-   POSTFIX_AND_ARGS_9 "order1_analytic"             --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-analyticSolution.xml
-   POSTFIX_AND_ARGS_10 "order1_truncated"           --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --truncateMueLuHierarchy
-   POSTFIX_AND_ARGS_11 "order1_barriers"            --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --barriers
-   POSTFIX_AND_ARGS_12 "order1_maxwell1_unsmoothed" --solver=Maxwell1-RS --numTimeSteps=1 --linAlgebra=Tpetra
-   POSTFIX_AND_ARGS_13 "order1_maxwell1_smoothed"   --solver=Maxwell1-SA-RS --numTimeSteps=1 --linAlgebra=Tpetra
-   POSTFIX_AND_ARGS_14 "order1_maxwell1_emin"       --solver=Maxwell1-Emin --numTimeSteps=1 --linAlgebra=Tpetra
+   POSTFIX_AND_ARGS_0 "order1"                      --solver=MueLu --numTimeSteps=1
+   POSTFIX_AND_ARGS_1 "order1_reuse"                --solver=MueLu --numTimeSteps=3 --resetSolver
+   POSTFIX_AND_ARGS_2 "order2"                      --solver=MueLu --inputFile=maxwell-pthOrder.xml --basis-order=2 --pCoarsenSchedule="1"
+   POSTFIX_AND_ARGS_3 "order3"                      --solver=MueLu --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="1"
+   POSTFIX_AND_ARGS_4 "order3,2"                    --solver=MueLu --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="2,1"
+   POSTFIX_AND_ARGS_5 "order2_matrixFree"           --solver=MueLu --inputFile=maxwell-pthOrder.xml --basis-order=2  --pCoarsenSchedule="1" --matrixFree
+   POSTFIX_AND_ARGS_6 "order3_matrixFree"           --solver=MueLu --inputFile=maxwell-pthOrder.xml --basis-order=3  --pCoarsenSchedule="1" --matrixFree
+   POSTFIX_AND_ARGS_7 "order3,2_matrixFree"         --solver=MueLu --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="2,1" --matrixFree
+   POSTFIX_AND_ARGS_8 "2D"                          --solver=MueLu --numTimeSteps=1 --inputFile=maxwell2D.xml
+   POSTFIX_AND_ARGS_9 "order1_analytic"             --solver=MueLu --inputFile=maxwell-analyticSolution.xml
+   POSTFIX_AND_ARGS_10 "order1_truncated"           --solver=MueLu --numTimeSteps=1 --truncateMueLuHierarchy
+   POSTFIX_AND_ARGS_11 "order1_barriers"            --solver=MueLu --numTimeSteps=1 --barriers
+   POSTFIX_AND_ARGS_12 "order1_maxwell1_unsmoothed" --solver=Maxwell1-RS --numTimeSteps=1
+   POSTFIX_AND_ARGS_13 "order1_maxwell1_smoothed"   --solver=Maxwell1-SA-RS --numTimeSteps=1
+   POSTFIX_AND_ARGS_14 "order1_maxwell1_emin"       --solver=Maxwell1-Emin --numTimeSteps=1
    POSTFIX_AND_ARGS_15 "order1_direct"              --solver=direct
    NUM_MPI_PROCS 4
    )
@@ -99,7 +99,7 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
   TRIBITS_ADD_TEST(
     BlockPrec
     NAME "Maxwell_MueLu"
-    POSTFIX_AND_ARGS_0 "order1_tpl"    --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --tpl
+    POSTFIX_AND_ARGS_0 "order1_tpl"    --solver=MueLu --numTimeSteps=1 --tpl
     ENVIRONMENT TPETRA_FUSED_RESIDUAL=OFF
     NUM_MPI_PROCS 4
   )
@@ -110,7 +110,7 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_4"
-   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml"
+   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --inputFile=maxwell-large.xml"
    COMM mpi
    NUM_MPI_PROCS 4
    CATEGORIES PERFORMANCE
@@ -120,7 +120,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16"
-   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml"
+   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --inputFile=maxwell-large.xml"
    COMM mpi
    NUM_MPI_PROCS 16
    CATEGORIES PERFORMANCE
@@ -130,7 +130,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_4_newCopyAndPermute"
-   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --test-name=\"MiniEM 3D RefMaxwell newCopyAndPermute\""
+   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --inputFile=maxwell-large.xml --test-name=\"MiniEM 3D RefMaxwell newCopyAndPermute\""
    COMM mpi
    NUM_MPI_PROCS 4
    CATEGORIES PERFORMANCE
@@ -141,7 +141,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_Maxwell1_unsmoothed_Performance_4"
-   ARGS "--stacked-timer --solver=Maxwell1-RS --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --test-name=\"MiniEM 3D Maxwell1 unsmoothed\""
+   ARGS "--stacked-timer --solver=Maxwell1-RS --numTimeSteps=3 --inputFile=maxwell-large.xml --test-name=\"MiniEM 3D Maxwell1 unsmoothed\""
    COMM mpi
    NUM_MPI_PROCS 4
    CATEGORIES PERFORMANCE
@@ -151,7 +151,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_Maxwell1_smoothed_Performance_4"
-   ARGS "--stacked-timer --solver=Maxwell1-SA-RS --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --test-name=\"MiniEM 3D Maxwell1 smoothed\""
+   ARGS "--stacked-timer --solver=Maxwell1-SA-RS --numTimeSteps=3 --inputFile=maxwell-large.xml --test-name=\"MiniEM 3D Maxwell1 smoothed\""
    COMM mpi
    NUM_MPI_PROCS 4
    CATEGORIES PERFORMANCE
@@ -161,7 +161,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16_barriers"
-   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --barriers"
+   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --inputFile=maxwell-large.xml --barriers"
    COMM mpi
    NUM_MPI_PROCS 16
    CATEGORIES PERFORMANCE
@@ -173,7 +173,7 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
   TRIBITS_ADD_TEST(
     BlockPrec
     NAME "MiniEM-BlockPrec_RefMaxwell_Performance_4_tpl"
-    ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --tpl --test-name=\"MiniEM 3D RefMaxwell TPL\""
+    ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --inputFile=maxwell-large.xml --tpl --test-name=\"MiniEM 3D RefMaxwell TPL\""
     ENVIRONMENT TPETRA_FUSED_RESIDUAL=OFF
     COMM mpi
     NUM_MPI_PROCS 4
@@ -184,7 +184,7 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
   TRIBITS_ADD_TEST(
     BlockPrec
     NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16_tpl"
-    ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --tpl --test-name=\"MiniEM 3D RefMaxwell TPL\""
+    ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --inputFile=maxwell-large.xml --tpl --test-name=\"MiniEM 3D RefMaxwell TPL\""
     ENVIRONMENT TPETRA_FUSED_RESIDUAL=OFF
     COMM mpi
     NUM_MPI_PROCS 16
@@ -197,63 +197,12 @@ ENDIF()
  TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16_reuse"
-   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=20 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --resetSolver --test-name=\"MiniEM 3D RefMaxwell Reuse\""
+   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=20 --inputFile=maxwell-large.xml --resetSolver --test-name=\"MiniEM 3D RefMaxwell Reuse\""
    COMM mpi
    NUM_MPI_PROCS 16
    CATEGORIES PERFORMANCE
    RUN_SERIAL
    )
-
-
-IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
- # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
-
- TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "Maxwell_MueLu_Epetra"
-   POSTFIX_AND_ARGS_0 "order1"       --solver=MueLu --numTimeSteps=1 --linAlgebra=Epetra
-   POSTFIX_AND_ARGS_1 "order1_reuse" --solver=MueLu --numTimeSteps=3 --linAlgebra=Epetra --resetSolver
-   NUM_MPI_PROCS 1
-   )
-
- TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "Maxwell_MueLu_Epetra"
-   ARGS "--solver=MueLu --numTimeSteps=1 --linAlgebra=Epetra"
-   NUM_MPI_PROCS 4
-   )
-
- # TRIBITS_ADD_TEST(
- #   BlockPrec
- #   NAME "RefMaxwell_Epetra_reuse"
- #   ARGS "--solver=MueLu --numTimeSteps=3 --linAlgebra=Epetra --resetSolver"
- #   COMM mpi
- #   NUM_MPI_PROCS 4
- #   )
-
-ENDIF()
-
-
-#################################################
-# ML RefMaxwell solver
-
-IF (NOT Kokkos_ENABLE_CUDA AND ${PACKAGE_NAME}_ENABLE_ML AND MueLu_ENABLE_Epetra)
-
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "Maxwell_ML"
-    ARGS "--solver=ML --numTimeSteps=1 --linAlgebra=Epetra"
-    NUM_MPI_PROCS 1
-    )
-
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "Maxwell_ML"
-    ARGS "--solver=ML --numTimeSteps=1 --linAlgebra=Epetra"
-    NUM_MPI_PROCS 4
-    )
-
-ENDIF()
 
 
 #################################################
@@ -262,9 +211,9 @@ ENDIF()
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "Maxwell_CG"
-   POSTFIX_AND_ARGS_0 "order1" --solver=CG --linAlgebra=Tpetra --inputFile=maxwell-1stOrder.xml --basis-order=1
-   POSTFIX_AND_ARGS_1 "order2" --solver=CG --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2
-   POSTFIX_AND_ARGS_2 "order3" --solver=CG --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3
+   POSTFIX_AND_ARGS_0 "order1" --solver=CG --inputFile=maxwell-1stOrder.xml --basis-order=1
+   POSTFIX_AND_ARGS_1 "order2" --solver=CG --inputFile=maxwell-pthOrder.xml --basis-order=2
+   POSTFIX_AND_ARGS_2 "order3" --solver=CG --inputFile=maxwell-pthOrder.xml --basis-order=3
    NUM_MPI_PROCS 4
    )
 
@@ -281,7 +230,7 @@ TRIBITS_ADD_TEST(
    BlockPrec
    NAME "Darcy_MueLu"
    POSTFIX_AND_ARGS_0
-   "order1" --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=darcyTet.xml --x-elements=15  --y-elements=15 --z-elements=15
+   "order1" --solver=MueLu --numTimeSteps=1 --inputFile=darcyTet.xml --x-elements=15  --y-elements=15 --z-elements=15
    NUM_MPI_PROCS 1
    RUN_SERIAL
    )
@@ -289,54 +238,13 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "Darcy_MueLu"
-   POSTFIX_AND_ARGS_0 "order1_tet"     --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=darcyTet.xml --x-elements=15  --y-elements=15 --z-elements=15
-   POSTFIX_AND_ARGS_1 "order1_hex"     --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=darcyHex.xml --x-elements=15  --y-elements=15 --z-elements=15
-   POSTFIX_AND_ARGS_2 "order2"     --solver=MueLu --linAlgebra=Tpetra --inputFile=darcyTet.xml --basis-order=2 --pCoarsenSchedule=\"1\" --x-elements=8  --y-elements=8 --z-elements=8
-   POSTFIX_AND_ARGS_3 "order3"         --solver=MueLu --linAlgebra=Tpetra --inputFile=darcyTet.xml --basis-order=3 --pCoarsenSchedule=\"1\" --x-elements=4  --y-elements=4 --z-elements=4
-   POSTFIX_AND_ARGS_4 "order3,2"   --solver=MueLu --linAlgebra=Tpetra --inputFile=darcyTet.xml --basis-order=3 --pCoarsenSchedule=\"2,1\" --x-elements=4  --y-elements=4 --z-elements=4
+   POSTFIX_AND_ARGS_0 "order1_tet"     --solver=MueLu --numTimeSteps=1 --inputFile=darcyTet.xml --x-elements=15  --y-elements=15 --z-elements=15
+   POSTFIX_AND_ARGS_1 "order1_hex"     --solver=MueLu --numTimeSteps=1 --inputFile=darcyHex.xml --x-elements=15  --y-elements=15 --z-elements=15
+   POSTFIX_AND_ARGS_2 "order2"     --solver=MueLu --inputFile=darcyTet.xml --basis-order=2 --pCoarsenSchedule=\"1\" --x-elements=8  --y-elements=8 --z-elements=8
+   POSTFIX_AND_ARGS_3 "order3"         --solver=MueLu --inputFile=darcyTet.xml --basis-order=3 --pCoarsenSchedule=\"1\" --x-elements=4  --y-elements=4 --z-elements=4
+   POSTFIX_AND_ARGS_4 "order3,2"   --solver=MueLu --inputFile=darcyTet.xml --basis-order=3 --pCoarsenSchedule=\"2,1\" --x-elements=4  --y-elements=4 --z-elements=4
    NUM_MPI_PROCS 4
    )
-
-
-IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
- # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
-
- TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "Darcy_MueLu_Epetra_order1"
-   ARGS "--solver=MueLu --numTimeSteps=1 --linAlgebra=Epetra --inputFile=darcyTet.xml"
-   NUM_MPI_PROCS 1
- )
-
- TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "Darcy_MueLu_Epetra_order1"
-   ARGS "--solver=MueLu --numTimeSteps=1 --linAlgebra=Epetra --inputFile=darcyTet.xml"
-   NUM_MPI_PROCS 4
- )
-
-ENDIF()
-
-#################################################
-# ML graddiv solver
-
-IF (NOT Kokkos_ENABLE_CUDA AND ${PACKAGE_NAME}_ENABLE_ML AND MueLu_ENABLE_Epetra)
-
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "Darcy_ML"
-    ARGS "--solver=ML --numTimeSteps=1 --linAlgebra=Epetra --inputFile=darcyHex.xml  --x-elements=15  --y-elements=15 --z-elements=15"
-    NUM_MPI_PROCS 1
-    )
-
-  # TRIBITS_ADD_TEST(
-  #   BlockPrec
-  #   NAME "Darcy_ML"
-  #   ARGS "--solver=ML --numTimeSteps=1 --linAlgebra=Epetra --inputFile=darcyHex.xml  --x-elements=15  --y-elements=15 --z-elements=15"
-  #   NUM_MPI_PROCS 4
-  #   )
-
-ENDIF()
 
 
 #################################################
@@ -345,8 +253,8 @@ ENDIF()
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "Darcy_CG"
-   POSTFIX_AND_ARGS_0 "order1" --solver=CG --linAlgebra=Tpetra --inputFile=darcyTet.xml --basis-order=1 --x-elements=15 --y-elements=15 --z-elements=15
-   POSTFIX_AND_ARGS_1 "order2" --solver=CG --linAlgebra=Tpetra --inputFile=darcyTet.xml --basis-order=2 --x-elements=8  --y-elements=8  --z-elements=8
-   POSTFIX_AND_ARGS_2 "order3" --solver=CG --linAlgebra=Tpetra --inputFile=darcyTet.xml --basis-order=3 --x-elements=4  --y-elements=4  --z-elements=4
+   POSTFIX_AND_ARGS_0 "order1" --solver=CG --inputFile=darcyTet.xml --basis-order=1 --x-elements=15 --y-elements=15 --z-elements=15
+   POSTFIX_AND_ARGS_1 "order2" --solver=CG --inputFile=darcyTet.xml --basis-order=2 --x-elements=8  --y-elements=8  --z-elements=8
+   POSTFIX_AND_ARGS_2 "order3" --solver=CG --inputFile=darcyTet.xml --basis-order=3 --x-elements=4  --y-elements=4  --z-elements=4
    NUM_MPI_PROCS 4
    )

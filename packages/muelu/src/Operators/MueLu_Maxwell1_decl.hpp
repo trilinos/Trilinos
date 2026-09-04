@@ -199,21 +199,37 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
            Teuchos::ParameterList& List,
            bool ComputePrec = true)
     : mode_(MODE_STANDARD) {
-    RCP<MultiVector> Nullspace        = List.get<RCP<MultiVector> >("Nullspace", Teuchos::null);
-    RCP<RealValuedMultiVector> Coords = List.get<RCP<RealValuedMultiVector> >("Coordinates", Teuchos::null);
-    RCP<MultiVector> Material         = List.get<RCP<MultiVector> >("Material", Teuchos::null);
-    RCP<Matrix> D0_Matrix             = List.get<RCP<Matrix> >("D0");
-    RCP<Matrix> Kn_Matrix;
-    if (List.isType<RCP<Matrix> >("Kn"))
-      Kn_Matrix = List.get<RCP<Matrix> >("Kn");
-    RCP<Matrix> CurlCurl_Matrix;
-    if (List.isType<RCP<Matrix> >("CurlCurl"))
-      CurlCurl_Matrix = List.get<RCP<Matrix> >("CurlCurl");
+    auto& userData = List.sublist("user data");
+
+#define MUELU_MAXWELL1_GET_USER_DATA(TYPE, NAME, VAR) \
+  RCP<TYPE> VAR;                                      \
+  if (List.isType<RCP<TYPE>>(NAME))                   \
+    VAR = List.get<RCP<TYPE>>(NAME, Teuchos::null);   \
+  if (userData.isType<RCP<TYPE>>(NAME))               \
+    VAR = userData.get<RCP<TYPE>>(NAME, Teuchos::null);
+
+    MUELU_MAXWELL1_GET_USER_DATA(MultiVector, "Nullspace", Nullspace);
+    MUELU_MAXWELL1_GET_USER_DATA(RealValuedMultiVector, "Coordinates", Coords);
+    MUELU_MAXWELL1_GET_USER_DATA(MultiVector, "Material", Material);
+    MUELU_MAXWELL1_GET_USER_DATA(Matrix, "D0", D0_Matrix);
+    MUELU_MAXWELL1_GET_USER_DATA(Matrix, "Kn", Kn_Matrix);
+    MUELU_MAXWELL1_GET_USER_DATA(Matrix, "CurlCurl", CurlCurl_Matrix);
 
     initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, CurlCurl_Matrix, Material, List);
 
     if (SM_Matrix != Teuchos::null)
       resetMatrix(SM_Matrix, ComputePrec);
+
+    MUELU_MAXWELL1_GET_USER_DATA(Matrix, "GmhdA", GmhdA_Matrix);
+
+#undef MUELU_MAXWELL1_GET_USER_DATA
+
+    if (!GmhdA_Matrix.is_null()) {
+      mode_          = MODE_GMHD_STANDARD;
+      GmhdA_Matrix_  = GmhdA_Matrix;
+      HierarchyGmhd_ = rcp(new Hierarchy("HierarchyGmhd"));
+      GMHDSetupHierarchy(List);
+    }
   }
 
   //! Destructor.
@@ -249,6 +265,8 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
 
   //! Indicates whether this operator supports applying the adjoint operator.
   bool hasTransposeApply() const;
+
+  static std::pair<std::set<std::string>, std::set<std::string>> requiredAndOptionalUserData(const Teuchos::ParameterList& params);
 
   void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
 
@@ -310,7 +328,7 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
   void dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const;
 
   //! get a (synced) timer
-  Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm = Teuchos::null) const;
+  Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int>> comm = Teuchos::null) const;
 
   //! ParameterLists
   mutable Teuchos::ParameterList parameterList_, precList11_, precList22_;

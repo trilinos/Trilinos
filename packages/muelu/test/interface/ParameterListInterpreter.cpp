@@ -219,7 +219,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           if (paramList.isParameter("parameter list: syntax"))
             paramList.remove("parameter list: syntax");
 
-          RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList, "SA"));
+          RCP<Teuchos::ParameterList> mueluParamList = MueLu::ML2MueLuParameterTranslator::translate(paramList, "SA");
           mueluParamList->set("multigrid algorithm", "sa");
           mueluParamList->set("use kokkos refactor", useKokkos);
 
@@ -236,7 +236,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
 
         } else if (dirList[k] == prefix + "MLParameterListInterpreter2/") {
-          RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList, "SA"));
+          RCP<Teuchos::ParameterList> mueluParamList = MueLu::ML2MueLuParameterTranslator::translate(paramList, "SA");
 
           mueluParamList->set("multigrid algorithm", "sa");
           mueluParamList->set("use kokkos refactor", useKokkos);

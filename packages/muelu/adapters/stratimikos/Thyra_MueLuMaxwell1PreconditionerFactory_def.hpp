@@ -121,6 +121,8 @@ void MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "Kn", "D0", "CurlCurl"};
     for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
       Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(paramList, *it);
+    for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
+      Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(paramList.sublist("user data"), *it);
 
     std::list<std::string> sublists = {"maxwell1: 11list", "maxwell1: 22list"};
     for (auto itSublist = sublists.begin(); itSublist != sublists.end(); ++itSublist)

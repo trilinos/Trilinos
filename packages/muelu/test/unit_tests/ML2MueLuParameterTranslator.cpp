@@ -62,17 +62,69 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate) {
   TEST_EQUALITY(listStr, "ml");
 
   List.remove(syntaxStr);
-  std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(List, "");
-  List                 = *Teuchos::getParametersFromXmlString(paramXML);
+  List = *MueLu::ML2MueLuParameterTranslator::translate(List, "");
 
   std::cout << "\n-----------------------\n"
             << List << std::endl;
 
   // gold list
+  goldList.set("aggregation: type", "uncoupled");
+  goldList.set("aggregation: coloring algorithm", "mis2 aggregation");
+  goldList.set("aggregation: backend", "kokkos");
   goldList.set("aggregation: match ML phase1", true);
   goldList.set("aggregation: match ML phase2a", true);
   goldList.set("aggregation: match ML phase2b", true);
   goldList.set("aggregation: use ml scaling of drop tol", true);
+  goldList.set("max levels", 10);
+  goldList.set("cycle type", "V");
+  goldList.set("sa: damping factor", 1.333);
+  goldList.set("sa: diagonal replacement tolerance", 0.);
+  goldList.set("sa: eigenvalue estimate num iterations", 10);
+  goldList.set("smoother: type", "RELAXATION");
+  goldList.set("smoother: pre or post", "both");
+  goldList.set("repartition: start level", 2);
+  goldList.set("repartition: put on single proc", 5000);
+  goldList.set("coarse: type", "klu");
+  goldList.set("coarse: max size", 128);
+  goldList.sublist("smoother: params").set("relaxation: type", "Symmetric Gauss-Seidel");
+  goldList.sublist("smoother: params").set("relaxation: sweeps", 2);
+  goldList.sublist("smoother: params").set("relaxation: damping factor", 1.0);
+  goldList.set("coarse: params", dummy);
+
+  std::cout << "\n-----------------------\n"
+            << goldList << std::endl;
+
+  TEST_EQUALITY(compareLists(List, goldList), true);
+
+}  // SA_plus_translate
+
+TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate_plus_MueLu) {
+  // SetDefaults(SA)
+  Teuchos::ParameterList List, goldList, dummy;
+  MueLu::ML2MueLuParameterTranslator::SetDefaults("SA", List);
+
+  std::string syntaxStr = "parameterlist: syntax";
+  TEST_EQUALITY(List.isParameter(syntaxStr), true);
+  std::string listStr = List.get<std::string>(syntaxStr);
+  TEST_EQUALITY(listStr, "ml");
+
+  List.remove(syntaxStr);
+  List.set("aggregation: strength-of-connection: measure", "unscaled");
+
+  List = *MueLu::ML2MueLuParameterTranslator::translate(List, "");
+
+  std::cout << "\n-----------------------\n"
+            << List << std::endl;
+
+  // gold list
+  goldList.set("aggregation: type", "uncoupled");
+  goldList.set("aggregation: coloring algorithm", "mis2 aggregation");
+  goldList.set("aggregation: backend", "kokkos");
+  goldList.set("aggregation: match ML phase1", true);
+  goldList.set("aggregation: match ML phase2a", true);
+  goldList.set("aggregation: match ML phase2b", true);
+  goldList.set("aggregation: use ml scaling of drop tol", true);
+  goldList.set("aggregation: strength-of-connection: measure", "unscaled");
   goldList.set("max levels", 10);
   goldList.set("cycle type", "V");
   goldList.set("sa: damping factor", 1.333);
