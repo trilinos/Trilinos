@@ -14,7 +14,7 @@
 //#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 //#include "Tpetra_Map.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
 
 namespace panzer {
 
@@ -32,7 +32,7 @@ namespace panzer {
    * this typedef wherever a Tpetra node type template argument is
    * needed, e.g. `Tpetra::Map<LocalOrdinal,GlobalOrdinal,TpetraNodeType>`.
    */
-  typedef typename Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::Device> TpetraNodeType;
+  typedef typename Tpetra::KokkosClassic::DefaultNode::DefaultNodeType TpetraNodeType;
 
 }
 
