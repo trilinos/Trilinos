@@ -199,6 +199,7 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXESUFFIX
   SOURCES ${ADAPT_MAIN} ${ADAPT_HEADER}
   COMM serial mpi
+  CATEGORIES BASIC PERFORMANCE
   )
 
 # Temporary hack until we can figure out how to pull in the defines
