@@ -1111,6 +1111,19 @@ namespace Belos {
   
 } // end Belos namespace
 
+#ifdef HAVE_BELOS_TPETRA
+#include "BelosTpetraETIHelpers.hpp"
+
+#define BELOS_TPETRA_LINEARPROBLEM_NOEXTERN_CALL(SC, LO, GO, NT)            \
+  BELOS_TPETRA_CALL(Belos::LinearProblem, SC, LO, GO, NT)
+
+#define BELOS_TPETRA_LINEARPROBLEM_EXTERN_CALL(SC, LO, GO, NT)              \
+  BELOS_TPETRA_EXTERN_CALL(Belos::LinearProblem, SC, LO, GO, NT)
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(BELOS_TPETRA_LINEARPROBLEM_EXTERN_CALL)
+#endif
+
+
 #endif /* BELOS_LINEAR_PROBLEM_HPP */
 
 

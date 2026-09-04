@@ -985,4 +985,17 @@ std::string LSQRSolMgr<ScalarType,MV,OP,DM,false>::description () const
 
 } // end Belos namespace
 
+#ifdef HAVE_BELOS_TPETRA
+#include "BelosTpetraETIHelpers.hpp"
+
+#define BELOS_TPETRA_LSQRSOLMGR_NOEXTERN_CALL(SC, LO, GO, NT)            \
+  BELOS_TPETRA_CALL(Belos::LSQRSolMgr, SC, LO, GO, NT)
+
+#define BELOS_TPETRA_LSQRSOLMGR_EXTERN_CALL(SC, LO, GO, NT)              \
+  BELOS_TPETRA_EXTERN_CALL(Belos::LSQRSolMgr, SC, LO, GO, NT)
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(BELOS_TPETRA_LSQRSOLMGR_EXTERN_CALL)
+#endif
+
+
 #endif /* BELOS_LSQR_SOLMGR_HPP */

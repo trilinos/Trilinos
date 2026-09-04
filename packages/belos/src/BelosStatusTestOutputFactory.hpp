@@ -139,4 +139,17 @@ class StatusTestOutputFactory {
 
 } // end of Belos namespace
 
+#ifdef HAVE_BELOS_TPETRA
+#include "BelosTpetraETIHelpers.hpp"
+
+#define BELOS_TPETRA_STATUSTESTOUTPUTFACTORY_NOEXTERN_CALL(SC, LO, GO, NT)            \
+  BELOS_TPETRA_CALL(Belos::StatusTestOutputFactory, SC, LO, GO, NT)
+
+#define BELOS_TPETRA_STATUSTESTOUTPUTFACTORY_EXTERN_CALL(SC, LO, GO, NT)              \
+  BELOS_TPETRA_EXTERN_CALL(Belos::StatusTestOutputFactory, SC, LO, GO, NT)
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(BELOS_TPETRA_STATUSTESTOUTPUTFACTORY_EXTERN_CALL)
+#endif
+
+
 #endif /* BELOS_STATUS_TEST_OUTPUT_FACTORY_HPP */

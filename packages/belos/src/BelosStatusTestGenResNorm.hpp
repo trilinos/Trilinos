@@ -665,4 +665,17 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP,DM>::firstCallCheckStatusSetup(
 
 } // end namespace Belos
 
+#ifdef HAVE_BELOS_TPETRA
+#include "BelosTpetraETIHelpers.hpp"
+
+#define BELOS_TPETRA_STATUSTESTGENRESNORM_NOEXTERN_CALL(SC, LO, GO, NT)            \
+  BELOS_TPETRA_CALL(Belos::StatusTestGenResNorm, SC, LO, GO, NT)
+
+#define BELOS_TPETRA_STATUSTESTGENRESNORM_EXTERN_CALL(SC, LO, GO, NT)              \
+  BELOS_TPETRA_EXTERN_CALL(Belos::StatusTestGenResNorm, SC, LO, GO, NT)
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(BELOS_TPETRA_STATUSTESTGENRESNORM_EXTERN_CALL)
+#endif
+
+
 #endif /* BELOS_STATUS_TEST_RESNORM_H */
