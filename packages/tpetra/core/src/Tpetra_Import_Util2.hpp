@@ -387,7 +387,9 @@ void reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
     int recv_data_size     = ReverseRecvSizes[i] * 2;
     int recvData_MPI_Tag   = mpi_tag_base_ * 2 + ProcsTo[i];
     MPI_Request rawRequest = MPI_REQUEST_NULL;
-    GO* rec_bptr           = (GO*)(&AllReverseRecv[offset]);
+    GO* rec_bptr;
+    if (offset < AllReverseRecv.size())
+      rec_bptr = (GO*)(&AllReverseRecv[offset]);
     offset += ReverseRecvSizes[i];
     MPI_Irecv(rec_bptr,
               recv_data_size,
@@ -399,7 +401,9 @@ void reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
     rawBreq[mpireq_idx++] = rawRequest;
   }
   for (int ii = 0; ii < ProcsFrom.size(); ++ii) {
-    GO* send_bptr          = (GO*)(RSB[ii].getRawPtr());
+    GO* send_bptr;
+    if (RSB[ii].size() > 0)
+      send_bptr = (GO*)(RSB[ii].getRawPtr());
     MPI_Request rawSequest = MPI_REQUEST_NULL;
     int send_data_size     = ReverseSendSizes[ii] * 2;  // 2 == count of pair
     int sendData_MPI_Tag   = mpi_tag_base_ * 2 + MyPID;
