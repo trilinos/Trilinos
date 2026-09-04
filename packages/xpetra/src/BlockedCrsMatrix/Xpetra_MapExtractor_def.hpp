@@ -13,62 +13,99 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_BlockedMap.hpp>
+#include <Xpetra_TpetraMap.hpp>
+#include <Xpetra_TpetraMultiVector.hpp>
+#include <Xpetra_TpetraVector.hpp>
 
 #include <Xpetra_MapExtractor_decl.hpp>
 
 namespace Xpetra {
 
+// Local helpers to bridge the Xpetra <-> Tpetra type gap.  These reuse the blocked-aware
+// unwrap/wrap helpers from BlockedMultiVectorDetails so that blocked Xpetra vectors unwrap
+// to Tpetra::BlockedMultiVector (and are re-wrapped preserving the blocked dynamic type),
+// while plain vectors go through the ordinary TpetraMultiVector/TpetraVector conversions.
+// Epetra-backed objects trigger Xpetra::Exceptions::BadCast.
+namespace MapExtractorDetails {
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::vector<Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>>
+toTpetraMaps(const std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>>& maps) {
+  std::vector<Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>> tmaps(maps.size());
+  for (size_t i = 0; i < maps.size(); ++i)
+    tmaps[i] = (maps[i] == Teuchos::null) ? Teuchos::null : toTpetra(maps[i]);
+  return tmaps;
+}
+
+}  // namespace MapExtractorDetails
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MapExtractor(const RCP<const Map>& fullmap, const std::vector<RCP<const Map>>& maps, bool bThyraMode) {
-  map_ = Teuchos::rcp(new BlockedMap(fullmap, maps, bThyraMode));
+  // Build an Xpetra::BlockedMap wrapper first: it caches the original Xpetra
+  // sub-maps and full map so their dynamic type (e.g. StridedMap) survives
+  // getMap()/getFullMap().  The Tpetra core extractor is then built from that
+  // wrapper's Tpetra blocked map -- identical to building it directly from the
+  // unwrapped maps, but preserving the richer Xpetra identity for MueLu.
+  blockedMapXpetra_ = Teuchos::rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(fullmap, maps, bThyraMode));
+  te_               = Teuchos::rcp(new tpetra_mapextractor_type(blockedMapXpetra_->getTpetra_BlockedMap()));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MapExtractor(const std::vector<RCP<const Map>>& maps, const std::vector<RCP<const Map>>& thyramaps) {
-  map_ = Teuchos::rcp(new BlockedMap(maps, thyramaps));
+  // As above: route through an Xpetra::BlockedMap so the original sub-maps'
+  // dynamic type is retained for getMap().
+  blockedMapXpetra_ = Teuchos::rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(maps, thyramaps));
+  te_               = Teuchos::rcp(new tpetra_mapextractor_type(blockedMapXpetra_->getTpetra_BlockedMap()));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    MapExtractor(const Teuchos::RCP<const BlockedMap>& blockedMap)
-  : map_(blockedMap) {}
+    MapExtractor(const Teuchos::RCP<const BlockedMap>& blockedMap) {
+  te_               = Teuchos::rcp(new tpetra_mapextractor_type(blockedMap->getTpetra_BlockedMap()));
+  blockedMapXpetra_ = blockedMap;
+}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MapExtractor(const MapExtractor& input) {
-  map_ = Teuchos::rcp(new BlockedMap(*(input.getBlockedMap())));
+  te_               = Teuchos::rcp(new tpetra_mapextractor_type(*input.getTpetra_MapExtractor()));
+  blockedMapXpetra_ = input.blockedMapXpetra_;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ~MapExtractor() {
-  map_ = Teuchos::null;
+  te_               = Teuchos::null;
+  blockedMapXpetra_ = Teuchos::null;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(const Vector& full, size_t block, Vector& partial) const {
-  XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(), std::out_of_range,
-                            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps() << " partial blocks.");
-  XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError,
-                            "ExtractVector: map_->getMap(" << block << ",false) is null");
-
-  partial.doImport(full, *(map_->getImporter(block)), Xpetra::INSERT);
+  Teuchos::RCP<const MultiVector> fullMV    = Teuchos::rcpFromRef(full);
+  Teuchos::RCP<MultiVector> partialMV       = Teuchos::rcpFromRef(partial);
+  Teuchos::RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull =
+      Teuchos::rcp_dynamic_cast<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(
+          BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fullMV), true);
+  Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial =
+      Teuchos::rcp_dynamic_cast<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(
+          BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(partialMV), true);
+  te_->ExtractVector(*tfull, block, *tpartial);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(const MultiVector& full, size_t block, MultiVector& partial) const {
-  XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
-                            std::out_of_range,
-                            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
-                                                             << " partial blocks.");
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "ExtractVector: map_->getMap(" << block << ",false) is null");
-
-  partial.doImport(full, *(map_->getImporter(block)), Xpetra::INSERT);
+  Teuchos::RCP<const MultiVector> fullMV    = Teuchos::rcpFromRef(full);
+  Teuchos::RCP<MultiVector> partialMV       = Teuchos::rcpFromRef(partial);
+  Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fullMV);
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(partialMV);
+  te_->ExtractVector(*tfull, block, *tpartial);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -99,274 +136,83 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& full, size_t block, bool bThyraMode) const {
-  XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
-                            std::out_of_range,
-                            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
-                                                             << " partial blocks.");
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "ExtractVector: map_->getMap(" << block << ",false) is null");
-  // first extract partial vector from full vector (using xpetra style GIDs)
-  const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vv = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(getMap(block, false), false);
-  ExtractVector(*full, block, *vv);
-  if (bThyraMode == false)
-    return vv;
-  TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true,
-                             Xpetra::Exceptions::RuntimeError,
-                             "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been "
-                             "created using Thyra-style numbered submaps.");
-  vv->replaceMap(getMap(block, true));  // switch to Thyra-style map
-  return vv;
+  Teuchos::RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull = toTpetra(full);
+  Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial     = te_->ExtractVector(tfull, block, bThyraMode);
+  return toXpetra(tpartial);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& full, size_t block, bool bThyraMode) const {
-  XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
-                            std::out_of_range,
-                            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
-                                                             << " partial blocks.");
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "ExtractVector: map_->getmap(" << block << ",false) is null");
-  // first extract partial vector from full vector (using xpetra style GIDs)
-  const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vv = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(getMap(block, false), false);
-
-  ExtractVector(*full, block, *vv);
-  if (bThyraMode == false)
-    return vv;
-  TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true,
-                             Xpetra::Exceptions::RuntimeError,
-                             "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been "
-                             "created using Thyra-style numbered submaps.");
-  vv->replaceMap(getMap(block, true));  // switch to Thyra-style map
-  return vv;
+  Teuchos::RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull =
+      toTpetra(Teuchos::rcp_const_cast<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(full));
+  Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial = te_->ExtractVector(tfull, block, bThyraMode);
+  return toXpetra(tpartial);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& full, size_t block, bool bThyraMode) const {
-  XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
-                            std::out_of_range,
-                            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
-                                                             << " partial blocks.");
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "ExtractVector: map_->getmap(" << block << ",false) is null");
-  RCP<const BlockedMultiVector> bfull = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(full);
-  if (bfull.is_null() == true) {
-    // standard case: full is not of type BlockedMultiVector
-    // first extract partial vector from full vector (using xpetra style GIDs)
-    const RCP<MultiVector> vv = MultiVectorFactory::Build(getMap(block, false), full->getNumVectors(), false);
-    // if(bThyraMode == false) {
-    //  ExtractVector(*full, block, *vv);
-    //  return vv;
-    //} else {
-    RCP<const Map> oldThyMapFull     = full->getMap();  // temporarely store map of full
-    RCP<MultiVector> rcpNonConstFull = Teuchos::rcp_const_cast<MultiVector>(full);
-    rcpNonConstFull->replaceMap(map_->getImporter(block)->getSourceMap());
-    ExtractVector(*rcpNonConstFull, block, *vv);
-    TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true,
-                               Xpetra::Exceptions::RuntimeError,
-                               "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been "
-                               "created using Thyra-style numbered submaps.");
-    if (bThyraMode == true)
-      vv->replaceMap(getMap(block, true));  // switch to Thyra-style map
-    rcpNonConstFull->replaceMap(oldThyMapFull);
-    return vv;
-    //}
-  } else {
-    // special case: full is of type BlockedMultiVector
-    XPETRA_TEST_FOR_EXCEPTION(map_->getNumMaps() != bfull->getBlockedMap()->getNumMaps(),
-                              Xpetra::Exceptions::RuntimeError,
-                              "ExtractVector: Number of blocks in map extractor is " << map_->getNumMaps() << " but should be "
-                                                                                     << bfull->getBlockedMap()->getNumMaps()
-                                                                                     << " (number of blocks in BlockedMultiVector)");
-    return bfull->getMultiVector(block, bThyraMode);
-  }
+  Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(full);
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial = te_->ExtractVector(tfull, block, bThyraMode);
+  return BlockedMultiVectorDetails::wrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tpartial);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& full, size_t block, bool bThyraMode) const {
-  XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
-                            std::out_of_range,
-                            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
-                                                             << " partial blocks.");
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "ExtractVector: map_->getmap(" << block << ",false) is null");
-  RCP<BlockedMultiVector> bfull = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(full);
-  if (bfull.is_null() == true) {
-    // standard case: full is not of type BlockedMultiVector
-    // first extract partial vector from full vector (using xpetra style GIDs)
-    const RCP<MultiVector> vv = MultiVectorFactory::Build(getMap(block, false), full->getNumVectors(), false);
-    // if(bThyraMode == false) {
-    //  ExtractVector(*full, block, *vv);
-    //  return vv;
-    //} else {
-    RCP<const Map> oldThyMapFull = full->getMap();  // temporarely store map of full
-    full->replaceMap(map_->getImporter(block)->getSourceMap());
-    ExtractVector(*full, block, *vv);
-    TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true,
-                               Xpetra::Exceptions::RuntimeError,
-                               "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been "
-                               "created using Thyra-style numbered submaps.");
-    if (bThyraMode == true)
-      vv->replaceMap(getMap(block, true));  // switch to Thyra-style map
-    full->replaceMap(oldThyMapFull);
-    return vv;
-    //}
-  } else {
-    // special case: full is of type BlockedMultiVector
-    XPETRA_TEST_FOR_EXCEPTION(map_->getNumMaps() != bfull->getBlockedMap()->getNumMaps(),
-                              Xpetra::Exceptions::RuntimeError,
-                              "ExtractVector: Number of blocks in map extractor is " << map_->getNumMaps() << " but should be "
-                                                                                     << bfull->getBlockedMap()->getNumMaps()
-                                                                                     << " (number of blocks in BlockedMultiVector)");
-    return bfull->getMultiVector(block, bThyraMode);
-  }
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(full);
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial = te_->ExtractVector(tfull, block, bThyraMode);
+  return BlockedMultiVectorDetails::wrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tpartial);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<const Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& full, size_t block, bool bThyraMode) const {
-  XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
-                            std::out_of_range,
-                            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
-                                                             << " partial blocks.");
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "ExtractVector: map_->getmap(" << block << ",false) is null");
-  XPETRA_TEST_FOR_EXCEPTION(map_->getNumMaps() != full->getBlockedMap()->getNumMaps(),
-                            Xpetra::Exceptions::RuntimeError,
-                            "ExtractVector: Number of blocks in map extractor is " << map_->getNumMaps() << " but should be "
-                                                                                   << full->getBlockedMap()->getNumMaps()
-                                                                                   << " (number of blocks in BlockedMultiVector)");
-  Teuchos::RCP<MultiVector> vv = full->getMultiVector(block, bThyraMode);
-  return vv;
+  Teuchos::RCP<const Tpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull = full->getTpetra_BlockedMultiVector();
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial           = te_->ExtractVector(tfull, block, bThyraMode);
+  return BlockedMultiVectorDetails::wrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tpartial);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ExtractVector(RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& full, size_t block, bool bThyraMode) const {
-  XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
-                            std::out_of_range,
-                            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
-                                                             << " partial blocks.");
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "ExtractVector: map_->getmap(" << block << ",false) is null");
-  XPETRA_TEST_FOR_EXCEPTION(map_->getNumMaps() != full->getBlockedMap()->getNumMaps(),
-                            Xpetra::Exceptions::RuntimeError,
-                            "ExtractVector: Number of blocks in map extractor is " << map_->getNumMaps() << " but should be "
-                                                                                   << full->getBlockedMap()->getNumMaps()
-                                                                                   << " (number of blocks in BlockedMultiVector)");
-  Teuchos::RCP<MultiVector> vv = full->getMultiVector(block, bThyraMode);
-  return vv;
+  Teuchos::RCP<Tpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull = full->getTpetra_BlockedMultiVector();
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial     = te_->ExtractVector(tfull, block, bThyraMode);
+  return BlockedMultiVectorDetails::wrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tpartial);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     InsertVector(const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& partial, size_t block, Vector& full, bool bThyraMode) const {
-  XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
-                            std::out_of_range,
-                            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
-                                                             << " partial blocks.");
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "ExtractVector: map_->getmap(" << block << ",false) is null");
-  XPETRA_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true,
-                            Xpetra::Exceptions::RuntimeError,
-                            "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created "
-                            "using Thyra-style numbered submaps.");
-  if (bThyraMode) {
-    // NOTE: the importer objects in the BlockedMap are always using Xpetra GIDs (or Thyra style Xpetra GIDs)
-    // The source map corresponds to the full map (in Xpetra GIDs) starting with GIDs from zero. The GIDs are consecutive in Thyra mode
-    // The target map is the partial map (in the corresponding Xpetra GIDs)
-
-    // TODO can we skip the Export call in special cases (i.e. Src = Target map, same length, etc...)
-
-    // store original GIDs (could be Thyra GIDs)
-    RCP<const MultiVector> rcpPartial   = Teuchos::rcpFromRef(partial);
-    RCP<MultiVector> rcpNonConstPartial = Teuchos::rcp_const_cast<MultiVector>(rcpPartial);
-    RCP<const Map> oldThyMapPartial     = rcpNonConstPartial->getMap();  // temporarely store map of partial
-    RCP<const Map> oldThyMapFull        = full.getMap();                 // temporarely store map of full
-
-    // check whether getMap(block,false) is identical to target map of importer
-    XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block, false)->isSameAs(*(map_->getImporter(block)->getTargetMap())) == false,
-                              Xpetra::Exceptions::RuntimeError,
-                              "MapExtractor::InsertVector: InsertVector in Thyra-style mode: Xpetra GIDs of partial vector are not identical "
-                              "to target Map of Importer. This should not be.");
-
-    // XPETRA_TEST_FOR_EXCEPTION(full.getMap()->isSameAs(*(map_->getImporter(block)->getSourceMap()))==false,
-    // Xpetra::Exceptions::RuntimeError,
-    //           "MapExtractor::InsertVector: InsertVector in Thyra-style mode: Xpetra GIDs of full vector are not identical to source Map of
-    //           Importer. This should not be.");
-
-    rcpNonConstPartial->replaceMap(getMap(block, false));       // temporarely switch to xpetra-style map
-    full.replaceMap(map_->getImporter(block)->getSourceMap());  // temporarely switch to Xpetra GIDs
-
-    // do the Export
-    full.doExport(*rcpNonConstPartial, *(map_->getImporter(block)), Xpetra::INSERT);
-
-    // switch back to original maps
-    full.replaceMap(oldThyMapFull);                    // reset original map (Thyra GIDs)
-    rcpNonConstPartial->replaceMap(oldThyMapPartial);  // change map back to original map
-  } else {
-    // Xpetra style numbering
-    full.doExport(partial, *(map_->getImporter(block)), Xpetra::INSERT);
-  }
+  Teuchos::RCP<const MultiVector> partialMV = Teuchos::rcpFromRef(partial);
+  Teuchos::RCP<MultiVector> fullMV          = Teuchos::rcpFromRef(full);
+  Teuchos::RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial =
+      Teuchos::rcp_dynamic_cast<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(
+          BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(partialMV), true);
+  Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull =
+      Teuchos::rcp_dynamic_cast<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(
+          BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fullMV), true);
+  te_->InsertVector(*tpartial, block, *tfull, bThyraMode);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     InsertVector(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& partial, size_t block, MultiVector& full, bool bThyraMode) const {
-  XPETRA_TEST_FOR_EXCEPTION(block >= map_->getNumMaps(),
-                            std::out_of_range,
-                            "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << map_->getNumMaps()
-                                                             << " partial blocks.");
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "ExtractVector: map_->getmap(" << block << ",false) is null");
-  XPETRA_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true,
-                            Xpetra::Exceptions::RuntimeError,
-                            "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created "
-                            "using Thyra-style numbered submaps.");
-  if (bThyraMode) {
-    // NOTE: the importer objects in the BlockedMap are always using Xpetra GIDs (or Thyra style Xpetra GIDs)
-    // The source map corresponds to the full map (in Xpetra GIDs) starting with GIDs from zero. The GIDs are consecutive in Thyra mode
-    // The target map is the partial map (in the corresponding Xpetra GIDs)
-
-    // TODO can we skip the Export call in special cases (i.e. Src = Target map, same length, etc...)
-
-    // store original GIDs (could be Thyra GIDs)
-    RCP<const MultiVector> rcpPartial   = Teuchos::rcpFromRef(partial);
-    RCP<MultiVector> rcpNonConstPartial = Teuchos::rcp_const_cast<MultiVector>(rcpPartial);
-    RCP<const Map> oldThyMapPartial     = rcpNonConstPartial->getMap();  // temporarely store map of partial
-    RCP<const Map> oldThyMapFull        = full.getMap();                 // temporarely store map of full
-
-    // check whether getMap(block,false) is identical to target map of importer
-    XPETRA_TEST_FOR_EXCEPTION(map_->getMap(block, false)->isSameAs(*(map_->getImporter(block)->getTargetMap())) == false,
-                              Xpetra::Exceptions::RuntimeError,
-                              "MapExtractor::InsertVector: InsertVector in Thyra-style mode: Xpetra GIDs of partial vector are not identical "
-                              "to target Map of Importer. This should not be.");
-
-    // XPETRA_TEST_FOR_EXCEPTION(full.getMap()->isSameAs(*(map_->getImporter(block)->getSourceMap()))==false,
-    // Xpetra::Exceptions::RuntimeError,
-    //           "MapExtractor::InsertVector: InsertVector in Thyra-style mode: Xpetra GIDs of full vector are not identical to source Map of
-    //           Importer. This should not be.");
-
-    rcpNonConstPartial->replaceMap(getMap(block, false));       // temporarely switch to xpetra-style map
-    full.replaceMap(map_->getImporter(block)->getSourceMap());  // temporarely switch to Xpetra GIDs
-
-    // do the Export
-    full.doExport(*rcpNonConstPartial, *(map_->getImporter(block)), Xpetra::INSERT);
-
-    // switch back to original maps
-    full.replaceMap(oldThyMapFull);                    // reset original map (Thyra GIDs)
-    rcpNonConstPartial->replaceMap(oldThyMapPartial);  // change map back to original map
-  } else {
-    // Xpetra style numbering
-    full.doExport(partial, *(map_->getImporter(block)), Xpetra::INSERT);
-  }
+  Teuchos::RCP<const MultiVector> partialMV = Teuchos::rcpFromRef(partial);
+  Teuchos::RCP<MultiVector> fullMV          = Teuchos::rcpFromRef(full);
+  Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(partialMV);
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fullMV);
+  te_->InsertVector(*tpartial, block, *tfull, bThyraMode);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -387,21 +233,11 @@ void MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                  size_t block,
                  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> full,
                  bool bThyraMode) const {
-  RCP<BlockedMultiVector> bfull = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(full);
-  if (bfull.is_null() == true)
-    InsertVector(*partial, block, *full, bThyraMode);
-  else {
-    XPETRA_TEST_FOR_EXCEPTION(
-        map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "InsertVector: map_->getmap(" << block << ",false) is null");
-
-#if 0
-            // WCMCLEN - ETI: MultiVector::setMultiVector() doesn't exist.
-            // WCMCLEN - ETI: but BlockedMultiVector::setMultiVector() does... should this be using bfull.
-            full->setMultiVector(block, partial, bThyraMode);
-#else
-    throw std::runtime_error("Xpetra::MultiVector::setMultiVector() doesn't exist in " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
-#endif
-  }
+  Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(partial);
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(full);
+  te_->InsertVector(tpartial, block, tfull, bThyraMode);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -410,15 +246,11 @@ void MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                  size_t block,
                  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> full,
                  bool bThyraMode) const {
-  RCP<BlockedMultiVector> bfull = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(full);
-  if (bfull.is_null() == true)
-    InsertVector(*partial, block, *full, bThyraMode);
-  else {
-    XPETRA_TEST_FOR_EXCEPTION(
-        map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "InsertVector: map_->getmap(" << block << ",false) is null");
-
-    bfull->setMultiVector(block, partial, bThyraMode);
-  }
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(partial);
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(full);
+  te_->InsertVector(tpartial, block, tfull, bThyraMode);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -427,10 +259,10 @@ void MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                  size_t block,
                  RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> full,
                  bool bThyraMode) const {
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "InsertVector: map_->getmap(" << block << ",false) is null");
-
-  full->setMultiVector(block, partial, bThyraMode);
+  Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(partial);
+  Teuchos::RCP<Tpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull = full->getTpetra_BlockedMultiVector();
+  te_->InsertVector(tpartial, block, tfull, bThyraMode);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -439,82 +271,87 @@ void MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                  size_t block,
                  RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> full,
                  bool bThyraMode) const {
-  XPETRA_TEST_FOR_EXCEPTION(
-      map_->getMap(block, false) == null, Xpetra::Exceptions::RuntimeError, "InsertVector: map_->getmap(" << block << ",false) is null");
-  full->setMultiVector(block, partial, bThyraMode);
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpartial =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(partial);
+  Teuchos::RCP<Tpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tfull = full->getTpetra_BlockedMultiVector();
+  te_->InsertVector(tpartial, block, tfull, bThyraMode);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getVector(size_t i, bool bThyraMode, bool bZero) const {
-  XPETRA_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true,
-                            Xpetra::Exceptions::RuntimeError,
-                            "MapExtractor::getVector: getVector in Thyra-style numbering only possible if MapExtractor has been created using "
-                            "Thyra-style numbered submaps.");
-  // TODO check whether this can return a blocked multivector
-  return Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(getMap(i, bThyraMode), bZero);
+  return toXpetra(te_->getVector(i, bThyraMode, bZero));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getVector(size_t i, size_t numvec, bool bThyraMode, bool bZero) const {
-  XPETRA_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true,
-                            Xpetra::Exceptions::RuntimeError,
-                            "MapExtractor::getVector: getVector in Thyra-style numbering only possible if MapExtractor has been created using "
-                            "Thyra-style numbered submaps.");
-  // TODO check whether this can return a blocked multivector
-  return MultiVectorFactory::Build(getMap(i, bThyraMode), numvec, bZero);
+  return BlockedMultiVectorDetails::wrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
+      te_->getVector(i, numvec, bThyraMode, bZero));
 }
 
 /// returns true, if sub maps are stored in Thyra-style numbering
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getThyraMode() const {
-  return map_->getThyraMode();
+  return te_->getThyraMode();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     NumMaps() const {
-  return map_->getNumMaps();
+  return te_->NumMaps();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getMap(size_t i, bool bThyraMode) const {
-  return map_->getMap(i, bThyraMode);
+  // Prefer the cached Xpetra sub-map so its dynamic type (e.g. StridedMap) is
+  // preserved; the Tpetra core stores only flattened plain maps.
+  if (!blockedMapXpetra_.is_null())
+    return blockedMapXpetra_->getMap(i, bThyraMode);
+  return toXpetra(te_->getMap(i, bThyraMode));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getMap() const {
-  return map_;
+  return getBlockedMap();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getBlockedMap() const {
-  return map_;
+  if (blockedMapXpetra_.is_null())
+    blockedMapXpetra_ = Teuchos::rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(te_->getBlockedMap()));
+  return blockedMapXpetra_;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getFullMap() const {
-  return map_->getFullMap();
+  // Prefer the cached Xpetra full map so its dynamic type (e.g. StridedMap) is
+  // preserved for MueLu factories that rcp_dynamic_cast it.
+  if (!blockedMapXpetra_.is_null()) {
+    RCP<const Map> full = blockedMapXpetra_->getFullMap();
+    if (!full.is_null())
+      return full;
+  }
+  return toXpetra(te_->getFullMap());
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getMapIndexForGID(GlobalOrdinal gid) const {
-  return map_->getMapIndexForGID(gid);
+  return te_->getMapIndexForGID(gid);
 }
 
 }  // namespace Xpetra

@@ -1,0 +1,641 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#ifndef TPETRA_REORDEREDBLOCKEDCRSMATRIX_HPP
+#define TPETRA_REORDEREDBLOCKEDCRSMATRIX_HPP
+
+/// \file Tpetra_ReorderedBlockedCrsMatrix.hpp
+/// \brief Declaration of the Tpetra::ReorderedBlockedCrsMatrix class.
+///
+/// Direct port of Xpetra::ReorderedBlockedCrsMatrix.  This header-only class
+/// (plus its mergeSubBlockMaps/mergeSubBlocks/mergeSubBlocksThyra/
+/// buildReorderedBlockedCrsMatrix free functions) applies a
+/// Tpetra::BlockReorderManager tree to a Tpetra::BlockedCrsMatrix, producing a
+/// new (nested) blocked operator whose block structure follows the reorder
+/// manager.
+///
+/// Tpetra adaptations relative to the Xpetra source:
+///  - Xpetra::MapUtils::concatenateMaps  ->  static Tpetra::BlockedMap::concatenateMaps.
+///  - Leaf detection: Xpetra decided "leaf" via rcp_dynamic_cast<CrsMatrixWrap>.
+///    Tpetra has no CrsMatrixWrap, so a leaf is anything that is NOT a
+///    Tpetra::BlockedCrsMatrix (rcp_dynamic_cast<BlockedCrsMatrix>(mat) == null).
+///  - getMatrix(r,c) returns RCP<Tpetra::RowMatrix> (the Tpetra block type).
+///  - fullOp_->getRangeMap() is a flat Tpetra::Map (BlockedMap is not a Map), so
+///    the apply() override uses fullOp_->getBlockedRangeMap() where the Xpetra
+///    version dynamic-casts getRangeMap() to a BlockedMap.
+
+#include <Tpetra_KokkosCompat_DefaultNode.hpp>
+
+#include "Tpetra_ConfigDefs.hpp"
+
+#include "Tpetra_BlockReorderManager.hpp"
+#include "Tpetra_BlockedMap_decl.hpp"
+#include "Tpetra_MapExtractor_decl.hpp"
+#include "Tpetra_BlockedMultiVector_decl.hpp"
+#include "Tpetra_ReorderedBlockedMultiVector.hpp"
+#include "Tpetra_BlockedCrsMatrix_decl.hpp"
+
+namespace Tpetra {
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node = ::Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+class ReorderedBlockedCrsMatrix : public BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+ public:
+  typedef Scalar scalar_type;
+  typedef LocalOrdinal local_ordinal_type;
+  typedef GlobalOrdinal global_ordinal_type;
+  typedef Node node_type;
+
+ private:
+  typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+  typedef ::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+  typedef ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> RowMatrix;
+  typedef ::Tpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
+  typedef ::Tpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
+  typedef ::Tpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedMultiVector;
+  typedef ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
+
+ public:
+  //! @name Constructor/Destructor Methods
+  //@{
+
+  //! Constructor
+  /*!
+   * \param rangeMaps range maps for all blocks
+   * \param domainMaps domain maps for all blocks
+   * \param npr estimated number of entries per row in each block(!)
+   * \param brm of type BlockReorderManager
+   * \param bmat original full blocked operator (we keep the RCP to make sure all subblocks are available)
+   */
+  ReorderedBlockedCrsMatrix(Teuchos::RCP<const MapExtractor>& rangeMaps,
+                            Teuchos::RCP<const MapExtractor>& domainMaps,
+                            size_t npr,
+                            Teuchos::RCP<const ::Tpetra::BlockReorderManager> brm,
+                            Teuchos::RCP<const ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> bmat)
+    : ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rangeMaps, domainMaps, npr) {
+    brm_    = brm;
+    fullOp_ = bmat;
+  }
+
+  // protected:
+
+  //! Destructor
+  virtual ~ReorderedBlockedCrsMatrix() {}
+
+  //@}
+
+ private:
+  Teuchos::RCP<const Map> mergeSubBlockMaps(Teuchos::RCP<const ::Tpetra::BlockReorderManager> brm) {
+    Teuchos::RCP<const MapExtractor> fullRangeMapExtractor = fullOp_->getRangeMapExtractor();
+
+    // number of sub blocks
+    size_t numBlocks = brm->GetNumBlocks();
+
+    Teuchos::RCP<const Map> map = Teuchos::null;
+
+    if (numBlocks == 0) {
+      // it is a leaf node
+      Teuchos::RCP<const ::Tpetra::BlockReorderLeaf> leaf = Teuchos::rcp_dynamic_cast<const ::Tpetra::BlockReorderLeaf>(brm);
+
+      // never extract Thyra style maps (since we have to merge them)
+      map = fullRangeMapExtractor->getMap(Teuchos::as<size_t>(leaf->GetIndex()), false);
+    } else {
+      // initialize vector for sub maps
+      std::vector<Teuchos::RCP<const Map>> subMaps(numBlocks, Teuchos::null);
+
+      for (size_t i = 0; i < numBlocks; i++) {
+        Teuchos::RCP<const ::Tpetra::BlockReorderManager> blkMgr = brm->GetBlock(Teuchos::as<int>(i));
+        subMaps[i]                                               = mergeSubBlockMaps(blkMgr);
+        TEUCHOS_ASSERT(subMaps[i].is_null() == false);
+      }
+
+      map = BlockedMap::concatenateMaps(subMaps);
+    }
+    TEUCHOS_ASSERT(map.is_null() == false);
+    return map;
+  }
+
+ public:
+  //! @name Methods implementing Matrix
+  //@{
+
+  //! sparse matrix-multivector multiplication for the region layout matrices (currently no blocked implementation)
+  virtual void apply(const MultiVector& X, MultiVector& Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues,
+                     const Teuchos::RCP<::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>>& regionInterfaceImporter,
+                     const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const {}
+  //! \brief Computes the sparse matrix-multivector multiplication.
+  /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
+    - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
+    */
+  virtual void apply(const MultiVector& X, MultiVector& Y,
+                     Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                     Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
+                     Scalar beta           = Teuchos::ScalarTraits<Scalar>::zero()) const {
+    // Nested sub-operators should just use the provided X and B vectors
+    if (fullOp_->getLocalNumRows() != this->getLocalNumRows()) {
+      BlockedCrsMatrix::apply(X, Y, mode, alpha, beta);
+      return;
+    }
+
+    // Special handling for the top level of the nested operator
+
+    // check whether input parameters are blocked or not
+    Teuchos::RCP<const MultiVector> refX         = Teuchos::rcpFromRef(X);
+    Teuchos::RCP<const BlockedMultiVector> refbX = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(refX);
+    Teuchos::RCP<MultiVector> tmpY               = Teuchos::rcpFromRef(Y);
+    Teuchos::RCP<BlockedMultiVector> tmpbY       = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(tmpY);
+
+    bool bCopyResultX = false;
+    bool bCopyResultY = false;
+
+    // if X and B are not blocked, create a blocked version here and use the blocked vectors
+    // for the internal (nested) apply call.
+
+    // Check whether "this" operator is the reordered variant of the underlying fullOp_.
+    // Note, that nested ReorderedBlockedCrsMatrices always have the same full operator "fullOp_"
+    // stored underneath for being able to "translate" the block ids.
+    if (refbX == Teuchos::null && fullOp_->getLocalNumRows() == this->getLocalNumRows()) {
+      // create a new (non-nested) blocked multi vector (using the blocked range map of fullOp_)
+      Teuchos::RCP<const BlockedMap> blkRgMap = fullOp_->getBlockedRangeMap();
+      TEUCHOS_ASSERT(blkRgMap.is_null() == false);
+      Teuchos::RCP<const BlockedMultiVector> bXtemp = Teuchos::rcp(new BlockedMultiVector(blkRgMap, refX));
+      TEUCHOS_ASSERT(bXtemp.is_null() == false);
+      Teuchos::RCP<const BlockedMultiVector> bX =
+          Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(::Tpetra::buildReorderedBlockedMultiVector(brm_, bXtemp));
+      TEUCHOS_ASSERT(bX.is_null() == false);
+      refbX.swap(bX);
+      bCopyResultX = true;
+    }
+
+    if (tmpbY == Teuchos::null && fullOp_->getLocalNumRows() == this->getLocalNumRows()) {
+      // create a new (non-nested) blocked multi vector (using the blocked range map of fullOp_)
+      Teuchos::RCP<const BlockedMap> blkRgMap = fullOp_->getBlockedRangeMap();
+      TEUCHOS_ASSERT(blkRgMap.is_null() == false);
+      Teuchos::RCP<BlockedMultiVector> tmpbYtemp = Teuchos::rcp(new BlockedMultiVector(blkRgMap, tmpY));
+      TEUCHOS_ASSERT(tmpbYtemp.is_null() == false);
+      Teuchos::RCP<BlockedMultiVector> bY =
+          Teuchos::rcp_dynamic_cast<BlockedMultiVector>(::Tpetra::buildReorderedBlockedMultiVector(brm_, tmpbYtemp));
+      TEUCHOS_ASSERT(bY.is_null() == false);
+      tmpbY.swap(bY);
+      bCopyResultY = true;
+    }
+
+    TEUCHOS_ASSERT(refbX.is_null() == false);
+    TEUCHOS_ASSERT(tmpbY.is_null() == false);
+
+    BlockedCrsMatrix::apply(*refbX, *tmpbY, mode, alpha, beta);
+
+    if (bCopyResultX == true) {
+      Teuchos::RCP<const MultiVector> Xmerged = refbX->Merge();
+      Teuchos::RCP<MultiVector> nonconstX     = Teuchos::rcp_const_cast<MultiVector>(refX);
+      nonconstX->update(Teuchos::ScalarTraits<Scalar>::one(), *Xmerged, Teuchos::ScalarTraits<Scalar>::zero());
+    }
+    if (bCopyResultY == true) {
+      Teuchos::RCP<MultiVector> Ymerged = tmpbY->Merge();
+      Y.update(Teuchos::ScalarTraits<Scalar>::one(), *Ymerged, Teuchos::ScalarTraits<Scalar>::zero());
+    }
+  }
+
+  // @}
+
+  //! @name Access functions
+  //@{
+
+  /** \brief Returns internal BlockReorderManager object */
+  Teuchos::RCP<const ::Tpetra::BlockReorderManager> getBlockReorderManager() { return brm_; }
+
+  /** \brief Returns internal unmodified BlockedCrsMatrix object */
+  Teuchos::RCP<const ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> getBlockedCrsMatrix() { return fullOp_; }
+
+  // @}
+
+  //! @name Overridden from Teuchos::Describable
+  //@{
+
+  /** \brief Return a simple one-line description of this object. */
+  std::string description() const { return "ReorderedBlockedCrsMatrix"; }
+
+  /** \brief Print the object with some verbosity level to an FancyOStream object. */
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const {
+    out << "Tpetra::ReorderedBlockedCrsMatrix: " << BlockedCrsMatrix::Rows() << " x " << BlockedCrsMatrix::Cols() << std::endl;
+
+    if (BlockedCrsMatrix::isFillComplete()) {
+      out << "ReorderedBlockMatrix is fillComplete" << std::endl;
+
+      out << "fullRowMap" << std::endl;
+      BlockedCrsMatrix::getRangeMap(0, false)->describe(out, verbLevel);
+
+      // out << "fullColMap" << std::endl;
+      // fullcolmap_->describe(out,verbLevel);
+
+    } else {
+      out << "Tpetra::ReorderedBlockedCrsMatrix is NOT fillComplete" << std::endl;
+    }
+
+    for (size_t r = 0; r < BlockedCrsMatrix::Rows(); ++r)
+      for (size_t c = 0; c < BlockedCrsMatrix::Cols(); ++c) {
+        out << "Block(" << r << "," << c << ")" << std::endl;
+        BlockedCrsMatrix::getMatrix(r, c)->describe(out, verbLevel);
+      }
+  }
+
+  //@}
+
+ private:
+  Teuchos::RCP<const ::Tpetra::BlockReorderManager> brm_;
+  Teuchos::RCP<const ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> fullOp_;
+};
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> mergeSubBlockMaps(Teuchos::RCP<const ::Tpetra::BlockReorderManager> brm, Teuchos::RCP<const ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> bmat, bool bThyraMode) {
+  typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+  typedef ::Tpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
+
+  // TODO distinguish between range and domain map extractor! provide MapExtractor as parameter!
+  Teuchos::RCP<const ::Tpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>> fullRangeMapExtractor = bmat->getRangeMapExtractor();
+
+  // number of sub blocks
+  size_t numBlocks = brm->GetNumBlocks();
+
+  Teuchos::RCP<const Map> map = Teuchos::null;
+
+  if (numBlocks == 0) {
+    // it is a leaf node
+    Teuchos::RCP<const ::Tpetra::BlockReorderLeaf> leaf = Teuchos::rcp_dynamic_cast<const ::Tpetra::BlockReorderLeaf>(brm);
+
+    map = fullRangeMapExtractor->getMap(Teuchos::as<size_t>(leaf->GetIndex()), bThyraMode);
+  } else {
+    // initialize vector for sub maps
+    std::vector<Teuchos::RCP<const Map>> subMaps(numBlocks, Teuchos::null);
+
+    for (size_t i = 0; i < numBlocks; i++) {
+      Teuchos::RCP<const ::Tpetra::BlockReorderManager> blkMgr = brm->GetBlock(Teuchos::as<int>(i));
+      subMaps[i]                                               = mergeSubBlockMaps(blkMgr, bmat, bThyraMode);
+      TEUCHOS_ASSERT(subMaps[i].is_null() == false);
+    }
+
+    // concatenate submaps
+    // for Thyra mode this map isn't important
+    // NOTE (Tpetra port): Xpetra wrapped the concatenated map in a BlockedMap here
+    // (BlockedMap is-a Map in Xpetra).  Tpetra::BlockedMap is standalone (not a Map),
+    // so a merged sub-block map is just the concatenated plain Map -- the nested block
+    // structure is carried by the (Reordered)BlockedCrsMatrix, not by this map.
+    map = BlockedMap::concatenateMaps(subMaps);
+  }
+  TEUCHOS_ASSERT(map.is_null() == false);
+  return map;
+}
+
+/// \brief Build a *nested* Tpetra::BlockedMap for a reorder manager (Xpetra mode).
+///
+/// Companion to mergeSubBlockMaps(): where that returns only the flattened
+/// concatenated Map, this reconstructs the block structure as a BlockedMap and,
+/// for every non-leaf child, records the child's own nested BlockedMap via
+/// setBlockedSubMap().  Returns null for a leaf manager (numBlocks == 0), which
+/// signals that the corresponding sub-block is a plain (non-blocked) map.  This
+/// mirrors Xpetra, where BlockedMap : public Map so a sub-map could itself be a
+/// BlockedMap; here the nested identity is carried in nestedMaps_ instead.
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const ::Tpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>
+mergeSubBlockMapsToBlocked(Teuchos::RCP<const ::Tpetra::BlockReorderManager> brm, Teuchos::RCP<const ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> bmat, bool bThyraMode) {
+  typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+  typedef ::Tpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
+
+  size_t numBlocks = brm->GetNumBlocks();
+  if (numBlocks == 0)
+    return Teuchos::null;  // leaf: sub-block is a plain map
+
+  std::vector<Teuchos::RCP<const Map>> subMaps(numBlocks, Teuchos::null);
+  std::vector<Teuchos::RCP<const BlockedMap>> subNested(numBlocks, Teuchos::null);
+  for (size_t i = 0; i < numBlocks; i++) {
+    Teuchos::RCP<const ::Tpetra::BlockReorderManager> blkMgr = brm->GetBlock(Teuchos::as<int>(i));
+    subMaps[i]                                               = mergeSubBlockMaps<Scalar, LocalOrdinal, GlobalOrdinal, Node>(blkMgr, bmat, bThyraMode);
+    TEUCHOS_ASSERT(subMaps[i].is_null() == false);
+    subNested[i] = mergeSubBlockMapsToBlocked<Scalar, LocalOrdinal, GlobalOrdinal, Node>(blkMgr, bmat, bThyraMode);
+  }
+
+  Teuchos::RCP<const Map> fullMap = BlockedMap::concatenateMaps(subMaps);
+  Teuchos::RCP<BlockedMap> bmap   = Teuchos::rcp(new BlockedMap(fullMap, subMaps, bThyraMode));
+  for (size_t i = 0; i < numBlocks; i++)
+    if (!subNested[i].is_null())
+      bmap->setBlockedSubMap(i, subNested[i]);
+  return bmap;
+}
+
+/// \brief Build a *nested* Tpetra::BlockedMap for a reorder manager (Thyra mode).
+///
+/// Thyra-mode companion to mergeSubBlockMapsToBlocked(): builds the BlockedMap
+/// through the expert (xpetraMaps, thyraMaps) constructor so the resulting map
+/// reports getThyraMode() == true, and records nested children the same way.
+/// Returns null for a leaf manager.
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const ::Tpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>
+mergeSubBlockMapsToBlockedThyra(Teuchos::RCP<const ::Tpetra::BlockReorderManager> brm, Teuchos::RCP<const ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> bmat) {
+  typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+  typedef ::Tpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
+
+  size_t numBlocks = brm->GetNumBlocks();
+  if (numBlocks == 0)
+    return Teuchos::null;  // leaf: sub-block is a plain map
+
+  std::vector<Teuchos::RCP<const Map>> xpMaps(numBlocks, Teuchos::null);
+  std::vector<Teuchos::RCP<const Map>> tyMaps(numBlocks, Teuchos::null);
+  std::vector<Teuchos::RCP<const BlockedMap>> subNested(numBlocks, Teuchos::null);
+  for (size_t i = 0; i < numBlocks; i++) {
+    Teuchos::RCP<const ::Tpetra::BlockReorderManager> blkMgr = brm->GetBlock(Teuchos::as<int>(i));
+    xpMaps[i]                                                = mergeSubBlockMaps<Scalar, LocalOrdinal, GlobalOrdinal, Node>(blkMgr, bmat, false);
+    tyMaps[i]                                                = mergeSubBlockMaps<Scalar, LocalOrdinal, GlobalOrdinal, Node>(blkMgr, bmat, true);
+    TEUCHOS_ASSERT(xpMaps[i].is_null() == false);
+    TEUCHOS_ASSERT(tyMaps[i].is_null() == false);
+    subNested[i] = mergeSubBlockMapsToBlockedThyra<Scalar, LocalOrdinal, GlobalOrdinal, Node>(blkMgr, bmat);
+  }
+
+  Teuchos::RCP<BlockedMap> bmap = Teuchos::rcp(new BlockedMap(xpMaps, tyMaps));
+  for (size_t i = 0; i < numBlocks; i++)
+    if (!subNested[i].is_null())
+      bmap->setBlockedSubMap(i, subNested[i]);
+  return bmap;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> mergeSubBlocks(Teuchos::RCP<const ::Tpetra::BlockReorderManager> rowMgr, Teuchos::RCP<const ::Tpetra::BlockReorderManager> colMgr, Teuchos::RCP<const ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> bmat) {
+  typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+  typedef ::Tpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
+  typedef ::Tpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
+  typedef ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> RowMatrix;
+  typedef ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
+  typedef ::Tpetra::ReorderedBlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> ReorderedBlockedCrsMatrix;
+
+  // number of sub blocks
+  size_t rowSz = rowMgr->GetNumBlocks();
+  size_t colSz = colMgr->GetNumBlocks();
+
+  Teuchos::RCP<BlockedCrsMatrix> rbmat = Teuchos::null;
+
+  if (rowSz == 0 && colSz == 0) {
+    // it is a leaf node
+    Teuchos::RCP<const ::Tpetra::BlockReorderLeaf> rowleaf = Teuchos::rcp_dynamic_cast<const ::Tpetra::BlockReorderLeaf>(rowMgr);
+    Teuchos::RCP<const ::Tpetra::BlockReorderLeaf> colleaf = Teuchos::rcp_dynamic_cast<const ::Tpetra::BlockReorderLeaf>(colMgr);
+
+    // extract leaf node
+    Teuchos::RCP<RowMatrix> mat = bmat->getMatrix(rowleaf->GetIndex(), colleaf->GetIndex());
+
+    if (mat == Teuchos::null) return Teuchos::null;
+
+    // check, whether leaf node is itself a blocked matrix (Tpetra has no CrsMatrixWrap;
+    // a leaf is anything that is NOT a Tpetra::BlockedCrsMatrix).
+    Teuchos::RCP<BlockedCrsMatrix> matblocked = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
+    if (matblocked == Teuchos::null) {
+      // If the leaf node is a plain (non-blocked) matrix, wrap it into a 1x1 ReorderedBlockMatrix
+      // with the corresponding MapExtractors for translating Thyra to Xpetra GIDs if necessary
+      Teuchos::RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
+      Teuchos::RCP<const Map> submap                         = fullRangeMapExtractor->getMap(rowleaf->GetIndex(), false);
+      std::vector<Teuchos::RCP<const Map>> rowSubMaps(1, submap);
+      Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::rcp(new MapExtractor(submap, rowSubMaps, false));
+
+      Teuchos::RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
+      Teuchos::RCP<const Map> submap2                         = fullDomainMapExtractor->getMap(colleaf->GetIndex(), false);
+      std::vector<Teuchos::RCP<const Map>> colSubMaps(1, submap2);
+      Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::rcp(new MapExtractor(submap2, colSubMaps, false));
+
+      rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor, doMapExtractor, 33, rowMgr, bmat));
+      rbmat->setMatrix(0, 0, mat);
+    } else {
+      // If leaf node is already wrapped into a blocked matrix do not wrap it again.
+      rbmat = matblocked;
+      TEUCHOS_ASSERT(rbmat != Teuchos::null);
+    }
+    TEUCHOS_ASSERT(mat->getLocalNumEntries() == rbmat->getLocalNumEntries());
+  } else {
+    // create the map extractors
+    // we cannot create block matrix in thyra mode since merged maps might not start with 0 GID
+    Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::null;
+    if (rowSz > 0) {
+      // Build the range map as a *nested* BlockedMap so that sub-blocks which are
+      // themselves blocked keep their block structure (needed for nested blocked
+      // (multi)vectors).  mergeSubBlockMapsToBlocked mirrors mergeSubBlockMaps but
+      // preserves the recursive structure via setBlockedSubMap.
+      Teuchos::RCP<const BlockedMap> rgBlockedMap = mergeSubBlockMapsToBlocked<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMgr, bmat, false /*xpetra*/);
+      rgMapExtractor                              = Teuchos::rcp(new MapExtractor(rgBlockedMap));
+    } else {
+      Teuchos::RCP<const ::Tpetra::BlockReorderLeaf> rowleaf = Teuchos::rcp_dynamic_cast<const ::Tpetra::BlockReorderLeaf>(rowMgr);
+      Teuchos::RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
+      // TODO think about Thyra style maps: we cannot use thyra style maps when recombining several blocks!!!
+      // The GIDs might not start with 0 and may not be consecutive!
+      Teuchos::RCP<const Map> submap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(), false);
+      std::vector<Teuchos::RCP<const Map>> rowSubMaps(1, submap);
+      rgMapExtractor = Teuchos::rcp(new MapExtractor(submap, rowSubMaps, false));
+    }
+
+    Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::null;
+    if (colSz > 0) {
+      // Build the domain map as a nested BlockedMap (see range branch above).
+      Teuchos::RCP<const BlockedMap> doBlockedMap = mergeSubBlockMapsToBlocked<Scalar, LocalOrdinal, GlobalOrdinal, Node>(colMgr, bmat, false /*xpetra*/);
+      doMapExtractor                              = Teuchos::rcp(new MapExtractor(doBlockedMap));
+    } else {
+      Teuchos::RCP<const ::Tpetra::BlockReorderLeaf> colleaf = Teuchos::rcp_dynamic_cast<const ::Tpetra::BlockReorderLeaf>(colMgr);
+      Teuchos::RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
+      // TODO think about Thyra style maps: we cannot use thyra style maps when recombining several blocks!!!
+      // The GIDs might not start with 0 and may not be consecutive!
+      Teuchos::RCP<const Map> submap = fullDomainMapExtractor->getMap(colleaf->GetIndex(), false);
+      std::vector<Teuchos::RCP<const Map>> colSubMaps(1, submap);
+      doMapExtractor = Teuchos::rcp(new MapExtractor(submap, colSubMaps, false));
+    }
+
+    rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor, doMapExtractor, 33, rowMgr, bmat));
+
+    size_t cntNNZ = 0;
+
+    if (rowSz == 0 && colSz > 0) {
+      for (size_t j = 0; j < colSz; j++) {
+        Teuchos::RCP<const ::Tpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
+        Teuchos::RCP<const RowMatrix> submat                        = mergeSubBlocks(rowMgr, colSubMgr, bmat);
+        rbmat->setMatrix(0, j, Teuchos::rcp_const_cast<RowMatrix>(submat));
+        if (submat != Teuchos::null) cntNNZ += submat->getLocalNumEntries();
+      }
+    } else if (rowSz > 0 && colSz == 0) {
+      for (size_t i = 0; i < rowSz; i++) {
+        Teuchos::RCP<const ::Tpetra::BlockReorderManager> rowSubMgr = rowMgr->GetBlock(Teuchos::as<int>(i));
+        Teuchos::RCP<const RowMatrix> submat                        = mergeSubBlocks(rowSubMgr, colMgr, bmat);
+        rbmat->setMatrix(i, 0, Teuchos::rcp_const_cast<RowMatrix>(submat));
+        if (submat != Teuchos::null) cntNNZ += submat->getLocalNumEntries();
+      }
+    } else {
+      for (size_t i = 0; i < rowSz; i++) {
+        Teuchos::RCP<const ::Tpetra::BlockReorderManager> rowSubMgr = rowMgr->GetBlock(Teuchos::as<int>(i));
+        for (size_t j = 0; j < colSz; j++) {
+          Teuchos::RCP<const ::Tpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
+          Teuchos::RCP<const RowMatrix> submat                        = mergeSubBlocks(rowSubMgr, colSubMgr, bmat);
+          rbmat->setMatrix(i, j, Teuchos::rcp_const_cast<RowMatrix>(submat));
+          if (submat != Teuchos::null) cntNNZ += submat->getLocalNumEntries();
+        }
+      }
+    }
+    TEUCHOS_ASSERT(rbmat->getLocalNumEntries() == cntNNZ);
+  }
+  rbmat->fillComplete();
+  return rbmat;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> mergeSubBlocksThyra(Teuchos::RCP<const ::Tpetra::BlockReorderManager> rowMgr, Teuchos::RCP<const ::Tpetra::BlockReorderManager> colMgr, Teuchos::RCP<const ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> bmat) {
+  typedef ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+  typedef ::Tpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node> BlockedMap;
+  typedef ::Tpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
+  typedef ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> RowMatrix;
+  typedef ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
+  typedef ::Tpetra::ReorderedBlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> ReorderedBlockedCrsMatrix;
+
+  TEUCHOS_ASSERT(bmat->getRangeMapExtractor()->getThyraMode() == true);
+  TEUCHOS_ASSERT(bmat->getDomainMapExtractor()->getThyraMode() == true);
+
+  // number of sub blocks
+  size_t rowSz = rowMgr->GetNumBlocks();
+  size_t colSz = colMgr->GetNumBlocks();
+
+  Teuchos::RCP<BlockedCrsMatrix> rbmat = Teuchos::null;
+
+  if (rowSz == 0 && colSz == 0) {
+    // it is a leaf node
+    Teuchos::RCP<const ::Tpetra::BlockReorderLeaf> rowleaf = Teuchos::rcp_dynamic_cast<const ::Tpetra::BlockReorderLeaf>(rowMgr);
+    Teuchos::RCP<const ::Tpetra::BlockReorderLeaf> colleaf = Teuchos::rcp_dynamic_cast<const ::Tpetra::BlockReorderLeaf>(colMgr);
+
+    // this matrix uses Thyra style GIDs as global row, range, domain and column indices
+    Teuchos::RCP<RowMatrix> mat = bmat->getMatrix(rowleaf->GetIndex(), colleaf->GetIndex());
+
+    if (mat == Teuchos::null) return Teuchos::null;  // Block rowleaf,colleaf is zero
+
+    // check, whether leaf node is itself a blocked matrix (Tpetra has no CrsMatrixWrap;
+    // a leaf is anything that is NOT a Tpetra::BlockedCrsMatrix).
+    Teuchos::RCP<BlockedCrsMatrix> matblocked = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
+    if (matblocked == Teuchos::null) {
+      ///////////////////////////////////////////////////////////////////////////
+      // build map extractors
+      Teuchos::RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
+      // extract Xpetra and Thyra based GIDs
+      Teuchos::RCP<const Map> xpsubmap  = fullRangeMapExtractor->getMap(rowleaf->GetIndex(), false);
+      Teuchos::RCP<const Map> thysubmap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(), true);
+      std::vector<Teuchos::RCP<const Map>> rowXpSubMaps(1, xpsubmap);
+      std::vector<Teuchos::RCP<const Map>> rowTySubMaps(1, thysubmap);
+      // use expert constructor
+      Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::rcp(new MapExtractor(rowXpSubMaps, rowTySubMaps));
+
+      Teuchos::RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
+      // extract Xpetra and Thyra based GIDs
+      Teuchos::RCP<const Map> xpsubmap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(), false);
+      Teuchos::RCP<const Map> tysubmap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(), true);
+      std::vector<Teuchos::RCP<const Map>> colXpSubMaps(1, xpsubmap2);
+      std::vector<Teuchos::RCP<const Map>> colTySubMaps(1, tysubmap2);
+      // use expert constructor
+      Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::rcp(new MapExtractor(colXpSubMaps, colTySubMaps));
+
+      ///////////////////////////////////////////////////////////////////////////
+      // build reordered block operator
+      rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor, doMapExtractor, 33, rowMgr, bmat));
+      rbmat->setMatrix(0, 0, mat);
+    } else {
+      // If leaf node is already wrapped into a blocked matrix do not wrap it again.
+      rbmat = matblocked;
+      TEUCHOS_ASSERT(rbmat != Teuchos::null);
+    }
+    TEUCHOS_ASSERT(mat->getLocalNumEntries() == rbmat->getLocalNumEntries());
+  } else {
+    // create the map extractors
+    // we cannot create block matrix in thyra mode since merged maps might not start with 0 GID
+    Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::null;
+    if (rowSz > 0) {
+      // Build the range map as a nested Thyra-mode BlockedMap so nested blocked
+      // sub-blocks keep their structure (see mergeSubBlockMapsToBlockedThyra).
+      Teuchos::RCP<const BlockedMap> rgBlockedMap = mergeSubBlockMapsToBlockedThyra<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMgr, bmat);
+      rgMapExtractor                              = Teuchos::rcp(new MapExtractor(rgBlockedMap));
+    } else {
+      Teuchos::RCP<const ::Tpetra::BlockReorderLeaf> rowleaf = Teuchos::rcp_dynamic_cast<const ::Tpetra::BlockReorderLeaf>(rowMgr);
+      Teuchos::RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
+      // extract Xpetra and Thyra based GIDs
+      Teuchos::RCP<const Map> xpsubmap  = fullRangeMapExtractor->getMap(rowleaf->GetIndex(), false);
+      Teuchos::RCP<const Map> thysubmap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(), true);
+      std::vector<Teuchos::RCP<const Map>> rowXpSubMaps(1, xpsubmap);
+      std::vector<Teuchos::RCP<const Map>> rowTySubMaps(1, thysubmap);
+      // use expert constructor
+      rgMapExtractor = Teuchos::rcp(new MapExtractor(rowXpSubMaps, rowTySubMaps));
+    }
+
+    Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::null;
+    if (colSz > 0) {
+      // Build the domain map as a nested Thyra-mode BlockedMap (see range branch).
+      Teuchos::RCP<const BlockedMap> doBlockedMap = mergeSubBlockMapsToBlockedThyra<Scalar, LocalOrdinal, GlobalOrdinal, Node>(colMgr, bmat);
+      doMapExtractor                              = Teuchos::rcp(new MapExtractor(doBlockedMap));
+    } else {
+      Teuchos::RCP<const ::Tpetra::BlockReorderLeaf> colleaf = Teuchos::rcp_dynamic_cast<const ::Tpetra::BlockReorderLeaf>(colMgr);
+      Teuchos::RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
+      // extract Xpetra and Thyra based GIDs
+      Teuchos::RCP<const Map> xpsubmap = fullDomainMapExtractor->getMap(colleaf->GetIndex(), false);
+      Teuchos::RCP<const Map> tysubmap = fullDomainMapExtractor->getMap(colleaf->GetIndex(), true);
+      std::vector<Teuchos::RCP<const Map>> colXpSubMaps(1, xpsubmap);
+      std::vector<Teuchos::RCP<const Map>> colTySubMaps(1, tysubmap);
+      // use expert constructor
+      doMapExtractor = Teuchos::rcp(new MapExtractor(colXpSubMaps, colTySubMaps));
+    }
+
+    // TODO matrix should have both rowMgr and colMgr??
+    rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor, doMapExtractor, 33, rowMgr, bmat));
+
+    size_t cntNNZ = 0;
+
+    if (rowSz == 0 && colSz > 0) {
+      for (size_t j = 0; j < colSz; j++) {
+        Teuchos::RCP<const ::Tpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
+        Teuchos::RCP<const RowMatrix> submat                        = mergeSubBlocksThyra(rowMgr, colSubMgr, bmat);
+        rbmat->setMatrix(0, j, Teuchos::rcp_const_cast<RowMatrix>(submat));
+        if (submat != Teuchos::null) cntNNZ += submat->getLocalNumEntries();
+      }
+    } else if (rowSz > 0 && colSz == 0) {
+      for (size_t i = 0; i < rowSz; i++) {
+        Teuchos::RCP<const ::Tpetra::BlockReorderManager> rowSubMgr = rowMgr->GetBlock(Teuchos::as<int>(i));
+        Teuchos::RCP<const RowMatrix> submat                        = mergeSubBlocksThyra(rowSubMgr, colMgr, bmat);
+        rbmat->setMatrix(i, 0, Teuchos::rcp_const_cast<RowMatrix>(submat));
+        if (submat != Teuchos::null) cntNNZ += submat->getLocalNumEntries();
+      }
+    } else {
+      for (size_t i = 0; i < rowSz; i++) {
+        Teuchos::RCP<const ::Tpetra::BlockReorderManager> rowSubMgr = rowMgr->GetBlock(Teuchos::as<int>(i));
+        for (size_t j = 0; j < colSz; j++) {
+          Teuchos::RCP<const ::Tpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
+          Teuchos::RCP<const RowMatrix> submat                        = mergeSubBlocksThyra(rowSubMgr, colSubMgr, bmat);
+          rbmat->setMatrix(i, j, Teuchos::rcp_const_cast<RowMatrix>(submat));
+          if (submat != Teuchos::null) cntNNZ += submat->getLocalNumEntries();
+        }
+      }
+    }
+    TEUCHOS_ASSERT(rbmat->getLocalNumEntries() == cntNNZ);
+  }
+
+  rbmat->fillComplete();
+  return rbmat;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> buildReorderedBlockedCrsMatrix(Teuchos::RCP<const ::Tpetra::BlockReorderManager> brm, Teuchos::RCP<const ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> bmat) {
+  TEUCHOS_ASSERT(bmat->getRangeMapExtractor()->getThyraMode() == bmat->getDomainMapExtractor()->getThyraMode());
+  Teuchos::RCP<const ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> rbmat = Teuchos::null;
+  if (bmat->getRangeMapExtractor()->getThyraMode() == false) {
+    rbmat = mergeSubBlocks(brm, brm, bmat);
+  } else {
+    rbmat = mergeSubBlocksThyra(brm, brm, bmat);
+  }
+
+  // TAW, 6/7/2016: rbmat might be Teuchos::null for empty blocks!
+  return rbmat;
+}
+
+}  // namespace Tpetra
+
+#endif /* TPETRA_REORDEREDBLOCKEDCRSMATRIX_HPP */
