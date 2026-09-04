@@ -12,6 +12,8 @@
 #include "Xpetra_ConfigDefs.hpp"
 
 #include <MatrixMarket_Tpetra.hpp>
+#include <Tpetra_BinaryIO.hpp>
+#include <Tpetra_Details_DefaultTypes.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
@@ -34,9 +36,152 @@
 
 #include <Teuchos_MatrixMarket_Raw_Writer.hpp>
 #include <Teuchos_MatrixMarket_Raw_Reader.hpp>
+#include <complex>
 #include <string>
+#include <type_traits>
 
 namespace Xpetra {
+
+namespace Details {
+
+template <class Scalar>
+struct binaryIOAvailableForScalar : std::false_type {};
+
+#if defined(HAVE_TPETRA_INST_FLOAT)
+template <>
+struct binaryIOAvailableForScalar<float> : std::true_type {};
+#endif
+
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+template <>
+struct binaryIOAvailableForScalar<double> : std::true_type {};
+#endif
+
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+template <>
+struct binaryIOAvailableForScalar<std::complex<float>> : std::true_type {};
+#endif
+
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+template <>
+struct binaryIOAvailableForScalar<std::complex<double>> : std::true_type {};
+#endif
+
+#if defined(HAVE_TPETRA_INST_FLOAT128)
+template <>
+struct binaryIOAvailableForScalar<__float128> : std::true_type {};
+#endif
+
+template <class LocalOrdinal>
+struct binaryIOAvailableForLocalOrdinalScalar : std::false_type {};
+
+#if !defined(HAVE_TPETRA_REDUCED_ETI) && !defined(HAVE_TPETRA_INST_INT_INT)
+template <>
+struct binaryIOAvailableForLocalOrdinalScalar<int> : std::true_type {};
+#endif
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> readBinaryMapWithDefaultScalar(const std::string& fileName,
+                                                                                          const RCP<const Teuchos::Comm<int>>& comm) {
+  using default_scalar_type = ::Tpetra::Details::DefaultTypes::scalar_type;
+  using binary_reader_type  = Tpetra::BinaryIO<default_scalar_type, LocalOrdinal, GlobalOrdinal, Node>;
+  return binary_reader_type::readMapFile(fileName, comm);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename std::enable_if<binaryIOAvailableForScalar<Scalar>::value,
+                        RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>::type
+readBinarySparseFile(const std::string& fileName,
+                     const RCP<const Teuchos::Comm<int>>& comm) {
+  using binary_reader_type = Tpetra::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  return binary_reader_type::readSparseFile(fileName, comm);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename std::enable_if<!binaryIOAvailableForScalar<Scalar>::value,
+                        RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>::type
+readBinarySparseFile(const std::string&,
+                     const RCP<const Teuchos::Comm<int>>&) {
+  TEUCHOS_TEST_FOR_EXCEPTION(true,
+                             Exceptions::RuntimeError,
+                             "Xpetra::IO: binary Tpetra matrix input is not available for this Scalar type. "
+                                 << "Tpetra::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
+                                 << "not for Sacado/Stokhos ensemble scalars.");
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename std::enable_if<binaryIOAvailableForScalar<Scalar>::value,
+                        RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>::type
+readBinarySparseFile(const std::string& fileName,
+                     const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& rowMap,
+                     const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap,
+                     const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& rangeMap,
+                     const bool callFillComplete) {
+  using binary_reader_type = Tpetra::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  return binary_reader_type::readSparseFile(fileName, rowMap, domainMap, rangeMap, callFillComplete);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename std::enable_if<!binaryIOAvailableForScalar<Scalar>::value,
+                        RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>::type
+readBinarySparseFile(const std::string&,
+                     const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>&,
+                     const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>&,
+                     const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>&,
+                     const bool) {
+  TEUCHOS_TEST_FOR_EXCEPTION(true,
+                             Exceptions::RuntimeError,
+                             "Xpetra::IO: binary Tpetra matrix input is not available for this Scalar type. "
+                                 << "Tpetra::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
+                                 << "not for Sacado/Stokhos ensemble scalars.");
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename std::enable_if<binaryIOAvailableForScalar<Scalar>::value,
+                        RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>::type
+readBinaryDenseFile(const std::string& fileName,
+                    const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map) {
+  using binary_reader_type = Tpetra::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  return binary_reader_type::readDenseFile(fileName, map);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename std::enable_if<!binaryIOAvailableForScalar<Scalar>::value,
+                        RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>::type
+readBinaryDenseFile(const std::string&,
+                    const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>&) {
+  TEUCHOS_TEST_FOR_EXCEPTION(true,
+                             Exceptions::RuntimeError,
+                             "Xpetra::IO: binary Tpetra multivector input is not available for this Scalar type. "
+                                 << "Tpetra::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
+                                 << "not for Sacado/Stokhos ensemble scalars.");
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+typename std::enable_if<binaryIOAvailableForLocalOrdinalScalar<LocalOrdinal>::value,
+                        RCP<Tpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>>::type
+readBinaryDenseFileLocalOrdinal(const std::string& fileName,
+                                const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map) {
+  using binary_reader_type = Tpetra::BinaryIO<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+  return binary_reader_type::readDenseFile(fileName, map);
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+typename std::enable_if<!binaryIOAvailableForLocalOrdinalScalar<LocalOrdinal>::value,
+                        RCP<Tpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>>::type
+readBinaryDenseFileLocalOrdinal(const std::string&,
+                                const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>&) {
+  TEUCHOS_TEST_FOR_EXCEPTION(true,
+                             Exceptions::RuntimeError,
+                             "Xpetra::IO: binary Tpetra local-ordinal multivector input is not available for this build. "
+                                 << "That path requires a matching Tpetra::BinaryIO<LocalOrdinal,...> explicit instantiation.");
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+}
+
+}  // namespace Details
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2TpetraMap(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) {
@@ -233,76 +378,22 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scala
       throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
     }
   } else {
-    // Custom file format (binary)
-    std::ifstream ifs(fileName.c_str(), std::ios::binary);
-    TEUCHOS_TEST_FOR_EXCEPTION(!ifs.good(), Exceptions::RuntimeError, "Can not read \"" << fileName << "\"");
-    int m, n, nnz;
-    ifs.read(reinterpret_cast<char*>(&m), sizeof(m));
-    ifs.read(reinterpret_cast<char*>(&n), sizeof(n));
-    ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
+    if (lib == Xpetra::UseTpetra) {
+      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
 
-    int myRank = comm->getRank();
+      RCP<sparse_matrix_type> tA = Details::readBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fileName, comm);
 
-    GlobalOrdinal indexBase                                    = 0;
-    RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> rowMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, m, (myRank == 0 ? m : 0), indexBase, comm), rangeMap = rowMap;
-    RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> colMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, n, (myRank == 0 ? n : 0), indexBase, comm), domainMap = colMap;
-    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A;
+      if (tA.is_null())
+        throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from BinaryIO::readSparseFile() is null.");
 
-    if (myRank == 0) {
-      Teuchos::Array<GlobalOrdinal> inds;
-      Teuchos::Array<Scalar> vals;
-      // Scan matrix to determine the exact nnz per row.
-      Teuchos::ArrayRCP<size_t> numEntriesPerRow(m, (size_t)(0));
-      for (int i = 0; i < m; i++) {
-        int row, rownnz;
-        ifs.read(reinterpret_cast<char*>(&row), sizeof(row));
-        ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
-        numEntriesPerRow[row] = rownnz;
-        for (int j = 0; j < rownnz; j++) {
-          int index;
-          ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
-        }
-        for (int j = 0; j < rownnz; j++) {
-          double value;
-          ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
-        }
-      }
+      RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tmpA1 = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tA));
+      RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tmpA2       = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(tmpA1);
+      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A              = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA2));
 
-      A = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, numEntriesPerRow);
-
-      // Now that nnz per row are known, reread and store the matrix.
-      ifs.seekg(0, ifs.beg);  // rewind to beginning of file
-      int junk;               // skip header info
-      ifs.read(reinterpret_cast<char*>(&junk), sizeof(junk));
-      ifs.read(reinterpret_cast<char*>(&junk), sizeof(junk));
-      ifs.read(reinterpret_cast<char*>(&junk), sizeof(junk));
-      for (int i = 0; i < m; i++) {
-        int row, rownnz;
-        ifs.read(reinterpret_cast<char*>(&row), sizeof(row));
-        ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
-        inds.resize(rownnz);
-        vals.resize(rownnz);
-        for (int j = 0; j < rownnz; j++) {
-          int index;
-          ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
-          inds[j] = Teuchos::as<GlobalOrdinal>(index);
-        }
-        for (int j = 0; j < rownnz; j++) {
-          double value;
-          ifs.read(reinterpret_cast<char*>(&value), sizeof(value));
-          vals[j] = Teuchos::as<Scalar>(value);
-        }
-        A->insertGlobalValues(row, inds, vals);
-      }
-    }  // if (myRank == 0)
-    else {
-      Teuchos::ArrayRCP<size_t> numEntriesPerRow(0, (size_t)(0));
-      A = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, numEntriesPerRow);
+      return A;
+    } else {
+      throw Exceptions::RuntimeError("Utils::Read : binary mode is only implemented for Xpetra::UseTpetra.");
     }
-
-    A->fillComplete(domainMap, rangeMap);
-
-    return A;
   }  // if (binary == false) ... else
 
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
@@ -350,16 +441,26 @@ IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(const std::string& filename,
       throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
     }
   } else {
-    // Read in on rank 0.
-    auto tempA = Read(filename, lib, rowMap->getComm(), binary);
+    if (lib == Xpetra::UseTpetra) {
+      typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
+      typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
-    auto A        = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, colMap, 0);
-    auto importer = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(tempA->getRowMap(), rowMap);
-    A->doImport(*tempA, *importer, Xpetra::INSERT);
-    if (callFillComplete)
-      A->fillComplete(domainMap, rangeMap);
+      const RCP<const map_type> tpetraRowMap    = Map2TpetraMap(*rowMap);
+      const RCP<const map_type> tpetraDomainMap = (domainMap.is_null() ? tpetraRowMap : Map2TpetraMap(*domainMap));
+      const RCP<const map_type> tpetraRangeMap  = (rangeMap.is_null() ? tpetraRowMap : Map2TpetraMap(*rangeMap));
 
-    return A;
+      RCP<sparse_matrix_type> tA = Details::readBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(filename, tpetraRowMap, tpetraDomainMap, tpetraRangeMap, callFillComplete);
+      if (tA.is_null())
+        throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from BinaryIO::readSparseFile() is null.");
+
+      RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tmpA1 = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tA));
+      RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tmpA2       = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(tmpA1);
+      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A              = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA2));
+
+      return A;
+    } else {
+      throw Exceptions::RuntimeError("Utils::Read : binary mode is only implemented for Xpetra::UseTpetra.");
+    }
   }
 
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
@@ -510,13 +611,18 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, L
 
   if (lib == Xpetra::UseTpetra) {
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
-    typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+    typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> mm_reader_type;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> multivector_type;
 
-    RCP<const map_type> temp  = toTpetra(map);
-    RCP<multivector_type> TMV = reader_type::readDenseFile(fileName, map->getComm(), temp, false, false, binary);
-    RCP<MultiVector> rmv      = Xpetra::toXpetra(TMV);
+    RCP<const map_type> temp = toTpetra(map);
+    RCP<multivector_type> TMV;
+    if (binary) {
+      TMV = Details::readBinaryDenseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fileName, temp);
+    } else {
+      TMV = mm_reader_type::readDenseFile(fileName, map->getComm(), temp, false, false, false);
+    }
+    RCP<MultiVector> rmv = Xpetra::toXpetra(TMV);
     return rmv;
   } else {
     throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
@@ -533,12 +639,17 @@ RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> IO<Sca
 
   if (lib == Xpetra::UseTpetra) {
     typedef Tpetra::CrsMatrix<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
-    typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+    typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> mm_reader_type;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
     typedef Tpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> multivector_type;
 
-    RCP<const map_type> temp                                                      = toTpetra(map);
-    RCP<multivector_type> TMV                                                     = reader_type::readDenseFile(fileName, map->getComm(), temp, false, false, binary);
+    RCP<const map_type> temp = toTpetra(map);
+    RCP<multivector_type> TMV;
+    if (binary) {
+      TMV = Details::readBinaryDenseFileLocalOrdinal<LocalOrdinal, GlobalOrdinal, Node>(fileName, temp);
+    } else {
+      TMV = mm_reader_type::readDenseFile(fileName, map->getComm(), temp, false, false, false);
+    }
     RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> rmv = Xpetra::toXpetra(TMV);
     return rmv;
   } else {
@@ -555,11 +666,16 @@ RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, LocalOrdina
                                                                                                                  const bool binary) {
   if (lib == Xpetra::UseTpetra) {
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
-    typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
+    typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> mm_reader_type;
 
-    RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> tMap = reader_type::readMapFile(fileName, comm, false, false, binary);
+    RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> tMap;
+    if (binary) {
+      tMap = Details::readBinaryMapWithDefaultScalar<LocalOrdinal, GlobalOrdinal, Node>(fileName, comm);
+    } else {
+      tMap = mm_reader_type::readMapFile(fileName, comm, false, false, false);
+    }
     if (tMap.is_null())
-      throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
+      throw Exceptions::RuntimeError("The Tpetra::Map returned from readMapFile() is null.");
 
     return Xpetra::toXpetra(tMap);
   } else {
