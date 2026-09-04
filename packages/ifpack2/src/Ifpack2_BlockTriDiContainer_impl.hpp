@@ -2371,7 +2371,7 @@ static inline int ExtractAndFactorizeRecommendedHIPTeamSize(const int blksize,
 template <>
 struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HIPSpace> {
   typedef KB::Mode::Team mode_type;
-  typedef KB::Algo::Level3::Unblocked algo_type;
+  typedef KB::Algo::Level3::Blocked algo_type;
   static int recommended_team_size(const int blksize,
                                    const int vector_length,
                                    const int internal_vector_length) {
@@ -2381,7 +2381,7 @@ struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HIPSpace> {
 template <>
 struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::HIPHostPinnedSpace> {
   typedef KB::Mode::Team mode_type;
-  typedef KB::Algo::Level3::Unblocked algo_type;
+  typedef KB::Algo::Level3::Blocked algo_type;
   static int recommended_team_size(const int blksize,
                                    const int vector_length,
                                    const int internal_vector_length) {
