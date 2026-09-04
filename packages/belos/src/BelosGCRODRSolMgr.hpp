@@ -2346,22 +2346,12 @@ buildFlexibleRecycleSpace2(Teuchos::RCP<GCRODRIteration<ScalarType,MV,OP,DM> > g
   }
 
   // HP = H * P.
-  DMT::SyncDeviceToHost(*HP_);
   Teuchos::RCP<DM> HPtmp = DMT::Subview(*HP_, p+keff+1, keff_new);
 
   {
-    DMT::SyncDeviceToHost(*PP_);
-    DMT::SyncDeviceToHost(*H2_);
     Teuchos::RCP<DM> PPtmp = DMT::Subview(*PP_, p+keff, keff_new);
 
-    Teuchos::BLAS<int,ScalarType> blas;
-    blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
-              p+keff+1, keff_new, p+keff,
-              one,
-              DMT::GetConstRawHostPtr(*H2tmp), DMT::GetStride(*H2tmp),
-              DMT::GetConstRawHostPtr(*PPtmp), DMT::GetStride(*PPtmp),
-              zero,
-              DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp));
+    DMT::Multiply(false, false, one, *H2tmp, *PPtmp, zero, *HPtmp);
   }
 
   // QR factorization of HP.
@@ -2771,14 +2761,7 @@ getFlexibleHarmonicVecs2(int keffloc, int m,
   // B = H^H H.
   Teuchos::RCP<DM> B = DMT::Create(m2, m2, false);
 
-  Teuchos::BLAS<int,ScalarType> blas;
-  blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-            m2, m2, DMT::GetNumRows(HH),
-            one,
-            DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-            DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-            zero,
-            DMT::GetRawHostPtr(*B), DMT::GetStride(*B));
+  DMT::Multiply(true, false, one, HH, HH, zero, *B);
 
   // A_tmp = T^H Wfull.
   Teuchos::RCP<DM> A_tmp = DMT::Create(keffloc + m + 1, keffloc + m);
@@ -2812,23 +2795,13 @@ getFlexibleHarmonicVecs2(int keffloc, int m,
   A11 = Teuchos::null;
   A21 = Teuchos::null;
 
-  DMT::SyncDeviceToHost(*A_tmp);
-
   // A22 = V_{m+1}^H V_m = [I; 0].
-  for (i=0; i<m; ++i) {
-    DMT::Value(*A_tmp, keffloc+i, keffloc+i) = one;
-  }
+  DMT::AssignDiag(*DMT::Subview(*A_tmp, m, m, keffloc, keffloc), one);
 
   // A = H^H A_tmp.
   Teuchos::RCP<DM> A = DMT::Create(m2, DMT::GetNumCols(*A_tmp));
 
-  blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
-            m2, DMT::GetNumCols(*A_tmp), DMT::GetNumRows(*A_tmp),
-            one,
-            DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-            DMT::GetConstRawHostPtr(*A_tmp), DMT::GetStride(*A_tmp),
-            zero,
-            DMT::GetRawHostPtr(*A), DMT::GetStride(*A));
+  DMT::Multiply(true, false, one, HH, *A_tmp, zero, *A);
 
   char balanc = 'P', jobvl = 'N', jobvr = 'V', sense = 'N';
 

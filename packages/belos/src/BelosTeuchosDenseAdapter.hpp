@@ -16,6 +16,7 @@
 */
 
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_as.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
