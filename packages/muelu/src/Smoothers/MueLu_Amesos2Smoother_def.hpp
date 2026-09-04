@@ -180,7 +180,11 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
   if (pL.get<bool>("fix nullspace")) {
     this->GetOStream(Runtime1) << "MueLu::Amesos2Smoother::Setup(): fixing nullspace" << std::endl;
 
-    rowMap            = A->getRowMap();
+    rowMap        = A->getRowMap();
+    auto tpRowMap = Xpetra::toTpetra(rowMap);
+    if (!tpRowMap->haveGlobalConstants()) {
+      Teuchos::rcp_const_cast<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(tpRowMap)->computeGlobalConstants();
+    }
     size_t gblNumCols = rowMap->getGlobalNumElements();
 
     RCP<MultiVector> NullspaceOrig = Factory::Get<RCP<MultiVector> >(currentLevel, "Nullspace");

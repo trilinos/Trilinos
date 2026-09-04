@@ -604,7 +604,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
     }
   }
 
-  describe(GetOStream(Runtime0));
+  if (IsPrint(Runtime0))
+    describe(GetOStream(Runtime0));
 
 #ifdef HAVE_MUELU_CUDA
   if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStop();
@@ -2897,7 +2898,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   nnz     = 0;
   if (!A22_.is_null()) {
     numRows = A22_->getGlobalNumRows();
-    nnz     = A22_->getGlobalNumEntries();
+    if (Xpetra::toTpetra(A22_)->haveGlobalConstants())
+      nnz = A22_->getGlobalNumEntries();
   }
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numRows, Teuchos::ptr(&numRowsGlobal));
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, nnz, Teuchos::ptr(&numNNZGlobal));

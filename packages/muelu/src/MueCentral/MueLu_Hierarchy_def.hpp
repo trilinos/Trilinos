@@ -187,6 +187,7 @@ double Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetSmootherComplexi
   if (A.is_null()) return -1.0;
   RCP<Matrix> Am = rcp_dynamic_cast<Matrix>(A);
   if (Am.is_null()) return -1.0;
+  if (!Am->haveGlobalConstants()) return -1.0;
   a0_nnz = as<double>(Am->getGlobalNumEntries());
 
   // Get smoother complexity at each level
