@@ -103,6 +103,8 @@
 
 #cmakedefine HAVE_TEUCHOS_COMM_TIMERS
 
+#cmakedefine HAVE_TEUCHOS_HALF
+
 #cmakedefine HAVE_TEUCHOS_FLOAT
 
 #cmakedefine HAVE_TEUCHOS_LONG_DOUBLE
@@ -110,6 +112,8 @@
 #define TEUCHOS_ORDINAL_TYPE @Teuchos_ORDINAL_TYPE@
 
 #cmakedefine HAVE_TEUCHOS_COMPLEX
+
+#cmakedefine HAVE_TEUCHOS_INST_HALF
 
 #cmakedefine HAVE_TEUCHOS_INST_FLOAT
 

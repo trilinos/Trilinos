@@ -90,7 +90,7 @@ protected:
       r_norm = ATS::real (r_beta(0));
       beta_old = ATS::real (r_beta(1));
     }
-    r_norm = std::sqrt (r_norm);
+    r_norm = ATM::sqrt (r_norm);
     r_norm_orig = r_norm;
 
     // quick-return
@@ -149,7 +149,7 @@ protected:
         r_norm = ATS::real (r_beta(0));
         beta_new = ATS::real (r_beta(1));
       }
-      r_norm = std::sqrt (r_norm);
+      r_norm = ATM::sqrt (r_norm);
       metric = this->getConvergenceMetric (r_norm, r_norm_orig, input);
       if (outPtr != nullptr) {
         *outPtr << "r_norm: " << r_norm << endl;

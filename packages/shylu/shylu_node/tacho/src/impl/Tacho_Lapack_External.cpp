@@ -62,6 +62,112 @@ namespace Tacho {
 #define F77_FUNC_CGETRF F77_BLAS_MANGLE(cgetrf, CGETRF)
 #define F77_FUNC_ZGETRF F77_BLAS_MANGLE(zgetrf, ZGETRF)
 
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+template <> int Lapack<Kokkos::Experimental::half_t>::potrf(const char uplo, const int m, Kokkos::Experimental::half_t *a, const int lda, int *info) {
+  throw std::logic_error("Error: potrf<external>(half) not implemented");
+  return -1;
+}
+#if defined(TACHO_ENABLE_CUSOLVER)
+template <>
+int Lapack<Kokkos::Experimental::half_t>::potrf_buffersize(cusolverDnHandle_t handle,
+                                                           const cublasFillMode_t uplo, const int m,
+                                                           Kokkos::Experimental::half_t *a, const int lda,
+                                                           int *lwork) {
+  throw std::logic_error("Error: potrf_buffersize<external>(half) not implemented in CUSOLVER");
+  return -1;
+}
+
+template <>
+int Lapack<Kokkos::Experimental::half_t>::potrf(cusolverDnHandle_t handle,
+                                                const cublasFillMode_t uplo, const int m,
+                                                Kokkos::Experimental::half_t *a, const int lda,
+                                                Kokkos::Experimental::half_t *w, const int lwork, int *dev) {
+  throw std::logic_error("Error: potrf<external>(half) not implemented in CUSOLVER");
+  return -1;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCSOLVER)
+template <>
+int Lapack<Kokkos::Experimental::half_t>::potrf(rocblas_handle handle,
+                                                const rocblas_fill uplo, const int m,
+                                                Kokkos::Experimental::half_t *a, const int lda,
+                                                int *dev) {
+  throw std::logic_error("Error: potrf<external>(half) not implemented in ROCSOLVER");
+  return -1;
+}
+#endif
+
+
+template <>
+int Lapack<Kokkos::Experimental::half_t>::sytrf(const char uplo, const int m, Kokkos::Experimental::half_t *a, const int lda, int *ipiv,
+                                                Kokkos::Experimental::half_t *work, int lwork, int *info) {
+  throw std::logic_error("Error: sytrf<external>(half) not implemented");
+  return -1;
+}
+#if defined(TACHO_ENABLE_CUSOLVER)
+template <>
+int Lapack<Kokkos::Experimental::half_t>::sytrf_buffersize(cusolverDnHandle_t handle, const int m,
+                                                           Kokkos::Experimental::half_t *a, const int lda, int *lwork) {
+  throw std::logic_error("Error: sytrf<external>(half) not implemented in CUSOLVER");
+  return -1;
+}
+
+template <>
+int Lapack<Kokkos::Experimental::half_t>::sytrf(cusolverDnHandle_t handle,
+                                                const cublasFillMode_t uplo, const int m,
+                                                Kokkos::Experimental::half_t *a, const int lda,
+                                                int *ipiv,
+                                                Kokkos::Experimental::half_t *w, const int lwork,
+                                                int *dev) {
+  throw std::logic_error("Error: sytrf<external>(half) not implemented in CUSOLVER");
+  return -1;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCSOLVER)
+template <>
+int Lapack<Kokkos::Experimental::half_t>::sytrf(rocblas_handle handle,
+                                                const rocblas_fill uplo, const int m,
+                                                Kokkos::Experimental::half_t *a, const int lda,
+                                                int *ipiv, int *dev) {
+  throw std::logic_error("Error: sytrf<external> not implemented in ROCSOLVER");
+  return -1;
+}
+#endif
+
+template <> int Lapack<Kokkos::Experimental::half_t>::getrf(const int m, const int n, Kokkos::Experimental::half_t *a, const int lda, int *ipiv, int *info) {
+  throw std::logic_error("Error: getrf<external>(half) not implemented");
+  return -1;
+}
+#if defined(TACHO_ENABLE_CUSOLVER)
+template <>
+int Lapack<Kokkos::Experimental::half_t>::getrf_buffersize(cusolverDnHandle_t handle, const int m, const int n,
+                                                           Kokkos::Experimental::half_t *a, const int lda,
+                                                           int *lwork) {
+  throw std::logic_error("Error: getrf_buffersize<external>(half) not implemented in CUSOLVER");
+  return -1;
+}
+
+template <>
+int Lapack<Kokkos::Experimental::half_t>::getrf(cusolverDnHandle_t handle, const int m, const int n,
+                                                Kokkos::Experimental::half_t *a, const int lda,
+                                                Kokkos::Experimental::half_t *w, int *ipiv, int *dev) {
+  throw std::logic_error("Error: getrf<external>(half) not implemented in CUSOLVER");
+  return -1;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCSOLVER)
+template <>
+int Lapack<Kokkos::Experimental::half_t>::getrf(rocblas_handle handle, const int m, const int n,
+                                                Kokkos::Experimental::half_t *a, const int lda,
+                                                int *ipiv, int *dev) {
+  throw std::logic_error("Error: getrf<external>(half) not implemented in ROCSOLVER");
+  return -1;
+}
+#endif
+#endif
+
+
+// float
 template <> int Lapack<float>::potrf(const char uplo, const int m, float *a, const int lda, int *info) {
   F77_FUNC_SPOTRF(&uplo, &m, a, &lda, info);
   return 0;
@@ -154,6 +260,8 @@ int Lapack<float>::getrf(rocblas_handle handle, const int m, const int n, float 
 }
 #endif
 
+
+// double
 template <> int Lapack<double>::potrf(const char uplo, const int m, double *a, const int lda, int *info) {
   F77_FUNC_DPOTRF(&uplo, &m, a, &lda, info);
   return 0;
@@ -245,6 +353,8 @@ int Lapack<double>::getrf(rocblas_handle handle, const int m, const int n, doubl
 }
 #endif
 
+
+// complex<float>
 template <>
 int Lapack<Kokkos::complex<float>>::potrf(const char uplo, const int m, Kokkos::complex<float> *a, const int lda,
                                           int *info) {
@@ -346,6 +456,8 @@ int Lapack<Kokkos::complex<float>>::getrf(rocblas_handle handle, const int m, co
 }
 #endif
 
+
+// complex<double>
 template <>
 int Lapack<Kokkos::complex<double>>::potrf(const char uplo, const int m, Kokkos::complex<double> *a, const int lda,
                                            int *info) {

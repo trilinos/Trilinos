@@ -482,6 +482,7 @@ struct NormManager {
   using impl_type            = ImplType<MatrixType>;
   using host_execution_space = typename impl_type::host_execution_space;
   using magnitude_type       = typename impl_type::magnitude_type;
+  using MAT                  = Teuchos::ScalarTraits<magnitude_type>;
 
  private:
   bool collective_;
@@ -588,9 +589,9 @@ struct NormManager {
   // After termination has occurred, finalize the norms for use in
   // get_norms{0,final}.
   void finalize() {
-    work_[0] = std::sqrt(work_[0]);  // after converged
+    work_[0] = MAT::squareroot(work_[0]);  // after converged
     if (work_[2] >= 0)
-      work_[2] = std::sqrt(work_[2]);  // first norm
+      work_[2] = MAT::squareroot(work_[2]);  // first norm
     // if work_[2] is minus one, then norm is not requested.
   }
 

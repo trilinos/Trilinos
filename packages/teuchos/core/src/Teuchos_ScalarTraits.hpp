@@ -25,6 +25,7 @@
 
 #ifdef HAVE_TEUCHOSCORE_KOKKOS
 #include "Kokkos_Complex.hpp"
+#include "Kokkos_Core.hpp"
 #endif // HAVE_TEUCHOSCORE_KOKKOS
 
 #ifdef HAVE_TEUCHOS_ARPREC
@@ -545,11 +546,125 @@ extern TEUCHOSCORE_LIB_DLL_EXPORT const float flt_nan;
 #endif
 
 
+#if defined(HAVE_TEUCHOS_HALF) && \
+    defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+template<>
+struct ScalarTraits<Kokkos::Experimental::half_t>
+{
+  typedef Kokkos::Experimental::half_t magnitudeType;
+  typedef Kokkos::Experimental::half_t halfPrecision; // ??
+  typedef float doublePrecision;
+  typedef Kokkos::Experimental::half_t coordinateType;
+  static const bool isComplex = false;
+  static const bool isOrdinal = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = true;
+
+  typedef Kokkos::Experimental::half_t valType;
+  static inline valType eps()   {
+    return Kokkos::Experimental::epsilon<valType>::value;
+    //return std::numeric_limits<Kokkos::Experimental::half_t>::epsilon();
+  }
+  static inline valType sfmin() {
+    return Kokkos::Experimental::finite_min<valType>::value;
+    //return std::numeric_limits<Kokkos::Experimental::half_t>::min();
+  }
+  static inline valType base()  {
+    return Kokkos::Experimental::radix<valType>::value;
+    //return static_cast<Kokkos::Experimental::half_t>(std::numeric_limits<Kokkos::Experimental::half_t>::radix);
+  }
+  static inline valType prec()  {
+    return eps()*base();
+  }
+  static inline valType t()     {
+    return Kokkos::Experimental::digits<valType>::value;
+    //return static_cast<Kokkos::Experimental::half_t>(std::numeric_limits<Kokkos::Experimental::half_t>::digits);
+  }
+  static inline valType rnd()   {
+    return one();
+    //return ( std::numeric_limits<Kokkos::Experimental::half_t>::round_style == std::round_to_nearest ? one() : zero() );
+  }
+  static inline valType emin()  {
+    return Kokkos::Experimental::min_exponent<valType>::value;
+    //return static_cast<Kokkos::Experimental::half_t>(std::numeric_limits<Kokkos::Experimental::half_t>::min_exponent);
+  }
+  static inline valType rmin()  {
+    return Kokkos::Experimental::norm_min<valType>::value;
+    //return std::numeric_limits<Kokkos::Experimental::half_t>::min();
+  }
+  static inline valType emax()  {
+    return Kokkos::Experimental::max_exponent<valType>::value;
+    //return static_cast<Kokkos::Experimental::half_t>(std::numeric_limits<Kokkos::Experimental::half_t>::max_exponent);
+  }
+  static inline valType rmax()  {
+    return Kokkos::Experimental::finite_max<valType>::value;
+    //return std::numeric_limits<Kokkos::Experimental::half_t>::max();
+  }
+  static inline magnitudeType magnitude(valType a)
+    {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
+#endif
+      return Kokkos::abs(a);
+    }
+  static inline valType zero()  { return(0.0f); }
+  static inline valType one()   { return(1.0f); }
+  static inline valType conjugate(valType x)   { return(x); }
+  static inline valType real(valType x) { return x; }
+  static inline valType imag(valType ) { return zero(); }
+  static inline valType nan() {
+     return Kokkos::Experimental::quiet_NaN<valType>::value;
+//#ifdef __sun
+//    return 0.0f/std::sin(0.0f);
+//#else
+//    return std::numeric_limits<Kokkos::Experimental::half_t>::quiet_NaN();
+//#endif
+  }
+  static inline bool isnaninf(valType x) {
+    return Kokkos::isnan(x) || Kokkos::isinf(x);
+  }
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  static inline valType random() {
+    valType rnd = valType(std::rand()) / static_cast<valType>(RAND_MAX);
+    return (-1.0f + 2.0f * rnd);
+  }
+  static inline std::string name() { return "Kokkos::Experimental::half_t"; }
+  static inline valType squareroot(valType x)
+    {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
+#endif
+      errno = 0;
+      const valType rtn = Kokkos::sqrt(x);
+      if (errno)
+        return nan();
+      return rtn;
+    }
+  static inline valType pow(valType x, valType y) { return Kokkos::pow(x,y); }
+  static inline valType pi() { return 3.14159265358979323846f; }
+  static inline valType log(valType x) { return Kokkos::log(x); }
+  static inline valType log10(valType x) { return Kokkos::log10(x); }
+};
+#endif
+
 template<>
 struct ScalarTraits<float>
 {
   typedef float magnitudeType;
+#if defined(HAVE_TEUCHOS_HALF) && defined(HAVE_TEUCHOSCORE_KOKKOS)
+  typedef Kokkos::Experimental::half_t halfPrecision; 
+#else
   typedef float halfPrecision; // should become IEEE754-2008 binary16 or fp16 later, perhaps specified at configure according to architectural support
+#endif
   typedef double doublePrecision;
   typedef float coordinateType;
   static const bool isComplex = false;
@@ -757,7 +872,7 @@ struct ScalarTraits<long double>
 {
   typedef long double magnitudeType;
   typedef double halfPrecision;
-  typedef double doublePrecision;    
+  typedef double doublePrecision;
   typedef long double coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
@@ -1185,7 +1300,7 @@ struct ScalarTraits<mp_real>
 #endif // HAVE_TEUCHOS_ARPREC
 
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if 1//def HAVE_TEUCHOS_COMPLEX
 
 
 // Partial specialization for std::complex numbers templated on real type T
@@ -1262,7 +1377,7 @@ struct ScalarTraits<
     // might be slightly less than zero (i.e. -1e-16) and that would cause
     // a possbile NaN return.  THe above if test is the right thing to do
     // I think and is very cheap.
-  static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); }
+  static inline ComplexT pow(ComplexT x, ComplexT y) { return std::pow(x,y); }
   static inline ComplexT pi() { return ScalarTraits<T>::pi(); }
 };
 #endif //  HAVE_TEUCHOS_COMPLEX
@@ -1275,7 +1390,13 @@ struct ScalarTraits<
 >
 {
   typedef Kokkos::complex<T>  ComplexT;
+#if defined(HAVE_TEUCHOS_HALF) && defined(HAVE_TEUCHOSCORE_KOKKOS)
+  // catch to avoid complex<half_t>
+  typedef Kokkos::complex<std::conditional_t<std::is_same<T, float>::value,
+                          float, typename ScalarTraits<T>::halfPrecision>> halfPrecision;
+#else
   typedef Kokkos::complex<typename ScalarTraits<T>::halfPrecision> halfPrecision;
+#endif
   typedef Kokkos::complex<typename ScalarTraits<T>::doublePrecision> doublePrecision;
   typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
   typedef typename ScalarTraits<T>::coordinateType coordinateType;

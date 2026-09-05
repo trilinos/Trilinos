@@ -37,6 +37,7 @@
 //      complex<double>, but not complex<float>, although a
 //      double-float preconditioner would be possible.
 #if (!defined(HAVE_TPETRA_INST_DOUBLE) || (defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT))) && \
+    (!defined(HAVE_TPETRA_INST_FLOAT)  || (defined(HAVE_TPETRA_INST_FLOAT)  && defined(HAVE_TPETRA_INST_HALF)))  && \
     (!defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)))
 #define THYRA_IFPACK2_ENABLE_HALF_PRECISION
 #endif

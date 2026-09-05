@@ -180,6 +180,10 @@ void getValidParameters(Teuchos::ParameterList &params) {
   Teuchos::RCP<Tpetra::MultiVector<>> dummy;
   params.set("partitioner: coordinates", dummy);
 
+  // Ifpack2_BlockRelaxation.hpp
+  params.set("partitioner: block size", -1);
+  params.set("partitioner: explicit convert to BlockCrs", false);
+
   // Ifpack2_Hypre.hpp
   params.set("hypre: Solver", "PCG");
   params.set("hypre: Preconditioner", "Euclid");

@@ -867,7 +867,7 @@ void ILUT<MatrixType>::compute() {
           unorm[row_i] += scalar_mag(cur_row[U_vals_heap[j]]);
         }
 
-        unorm[row_i] /= (orig_U_len + U_vals_heaplen);
+        unorm[row_i] = unorm[row_i] / scalar_mag(orig_U_len + U_vals_heaplen);
 
 #ifdef IFPACK2_WRITE_ILUT_FACTORS
         for (int ii = 0; ii < U_tmp_idx[row_i].size(); ++ii) {

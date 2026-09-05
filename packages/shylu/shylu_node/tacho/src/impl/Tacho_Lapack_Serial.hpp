@@ -183,7 +183,7 @@ template <typename T> struct LapackSerial {
         *info = 1+i;
         return *info;
       }
-      alpha = sqrt(arith_traits::real(alpha));
+      alpha = Kokkos::sqrt(arith_traits::real(alpha));
       alpha = arith_traits::real(alpha);
       A[i + i*lda] = alpha;
 
@@ -203,7 +203,8 @@ template <typename T> struct LapackSerial {
   }
 
   // uplo = upper
-  inline static int sytrf_nopiv(const char uplo, const bool conjugate, const int m, const double tol, T *A, const int lda, int *info) {
+  inline static int sytrf_nopiv(const char uplo, const bool conjugate, const int m, 
+                                const ArithTraits<T>::mag_type tol, T *A, const int lda, int *info) {
       
     *info = 0; 
     if (m <= 0) 

@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, localValues, LO, GO, Scalar, Node) 
   Kokkos::parallel_for(
       "modifyValuesOnDevice",
       dev_range_policy(0, mat->getLocalNumEntries()),
-      KOKKOS_LAMBDA(const LO i) { view[i] *= 2; });
+      KOKKOS_LAMBDA(const LO i) { view[i] = impl_scalar_t(2) * view[i]; });
 }
 
 {
@@ -160,7 +160,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, localValues, LO, GO, Scalar, Node) 
 Kokkos::parallel_for(
     "modifyValuesOnHost",
     host_range_policy(0, mat->getLocalNumEntries()),
-    [&](const LO i) { view[i] *= 2; });
+    [&](const LO i) { view[i] = impl_scalar_t(2) * view[i]; });
 }
 {
   int checkHostModifiedValuesOnDeviceErrors = 0;

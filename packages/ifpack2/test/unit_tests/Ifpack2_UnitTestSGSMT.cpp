@@ -33,6 +33,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO) {
   typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
   typedef Tpetra::RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename STS::magnitudeType Magnitude;
 
   Teuchos::OSTab tab0(out);
   out << "Test multiple threaded SGS sweeps compared w.r.t. Jacobi" << endl;
@@ -73,13 +74,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO) {
   X_seek.putScalar(STS::zero());
   vec_type initial_X_diff(X_seek, Teuchos::Copy);
   initial_X_diff.update(1, X_wanted, -1);
-  double initial_normInf = initial_X_diff.normInf();
+  Magnitude initial_normInf = initial_X_diff.normInf();
 
   prec_mt_sgs.apply(Y_result, X_seek);
 
   vec_type X_diff_mtgs(X_seek, Teuchos::Copy);
   X_diff_mtgs.update(1, X_wanted, -1);
-  double normInf_mt_gs = X_diff_mtgs.normInf();
+  Magnitude normInf_mt_gs = X_diff_mtgs.normInf();
 
   // Test two-stage Gauss-Seidel (SGS) with ten sweeps, and ten inner sweeps.
   ParameterList params_sgs2;
@@ -99,7 +100,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO) {
 
   vec_type X_diff_sgs2(X_seek, Teuchos::Copy);
   X_diff_sgs2.update(1, X_wanted, -1);
-  double normInf_sgs2 = X_diff_sgs2.normInf();
+  Magnitude normInf_sgs2 = X_diff_sgs2.normInf();
 
   // Jacobi with ten sweeps
   ParameterList params_jacobi;
@@ -117,7 +118,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO) {
 
   vec_type X_diff_jacobi(X_seek, Teuchos::Copy);
   X_diff_jacobi.update(1, X_wanted, -1);
-  double normInf_jacobi = X_diff_jacobi.normInf();
+  Magnitude normInf_jacobi = X_diff_jacobi.normInf();
 
   bool sgs_improve            = initial_normInf > normInf_mt_gs;
   bool sgs_better_than_jacobi = normInf_mt_gs < normInf_jacobi;

@@ -18,6 +18,8 @@
 #include "Teuchos_ScalarTraits.hpp"
 #endif
 
+#include "Kokkos_Core.hpp"
+
 namespace BaskerNS
 {
 
@@ -29,9 +31,9 @@ namespace BaskerNS
     static inline double divide(double a, double b){return 0;}
     static inline magnitudeType approxABS(double a){return 0;}
     static inline magnitudeType abs(double a){return 0;}
-    static inline bool gt (double a, double b){return 0;}  
+    static inline bool gt (double a, double b){return 0;}
   };
-  
+
   //double
   template <>
   struct Basker_ScalarTraits<double>
@@ -45,7 +47,7 @@ namespace BaskerNS
     { return (MY_SCALAR_ABS(a));}
     static inline bool gt (double a, double b){return (a>b);}
   };
-  
+
   //float
   template <>
   struct Basker_ScalarTraits<float>
@@ -59,7 +61,23 @@ namespace BaskerNS
     { return (MY_SCALAR_ABS(a));}
     static inline bool gt(float a, float b){return (a>b);}
   };
-  
+
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+  //half_t
+  template <>
+  struct Basker_ScalarTraits<Kokkos::Experimental::half_t>
+  {
+    typedef Kokkos::Experimental::half_t magnitudeType;
+    static inline Kokkos::Experimental::half_t reciprocal(Kokkos::Experimental::half_t c){return 1.0/c;}
+    static inline Kokkos::Experimental::half_t divide(Kokkos::Experimental::half_t a, Kokkos::Experimental::half_t b){return a/b;}
+    static inline magnitudeType approxABS(Kokkos::Experimental::half_t a)
+    { return (MY_SCALAR_ABS(a));}
+    static inline magnitudeType abs(Kokkos::Experimental::half_t a)
+    { return (MY_SCALAR_ABS(a));}
+    static inline bool gt(Kokkos::Experimental::half_t a, Kokkos::Experimental::half_t b){return (a>b);}
+  };
+#endif
+
   //complex
   #ifdef HAVE_TEUCHOS_COMPLEX
   template <class T>
@@ -67,7 +85,7 @@ namespace BaskerNS
   {
     typedef std::complex<T> ComplexT ;
     typedef typename Basker_ScalarTraits<T>::magnitudeType magnitudeType ;
-    
+
     static inline ComplexT reciprocal (ComplexT c)
     {
       T r, den, cr, ci ;
@@ -88,7 +106,7 @@ namespace BaskerNS
       }
       return ret;
     }
-    
+
     static inline ComplexT divide (ComplexT a, ComplexT b)
     {
       T r, den, ar, ai, br, bi ;
@@ -112,18 +130,18 @@ namespace BaskerNS
       }
       return ret;
     }
-    
+
     static inline magnitudeType approxABS (ComplexT a)
     {
       return ( MY_SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::real(a)) +
                MY_SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::imag(a)) ) ;
     }
-    
+
     static inline magnitudeType abs (ComplexT a)
     {
       T r, ar, ai ;
       magnitudeType s;
-      
+
       ar = MY_SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::real(a)) ;
       ai = MY_SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::imag(a)) ;
       if (ar >= ai)
@@ -157,9 +175,9 @@ namespace BaskerNS
     {
       return( (Teuchos::ScalarTraits<ComplexT>::real(a)+Teuchos::ScalarTraits<ComplexT>::imag(a)) > (Teuchos::ScalarTraits<ComplexT>::real(b) + Teuchos::ScalarTraits<ComplexT>::imag(b)));
     }
-    
+
   };
-  
+
   #else  //C++ complexx
 #include <complex>
 

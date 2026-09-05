@@ -58,10 +58,10 @@ namespace BaskerNS
       //================OLD EQ BLK=================//
 
       //divide equally and launch
-      //Int nchunks = (basker->btf_nblks - 
+      //Int nchunks = (basker->btf_nblks -
       //               basker->btf_tabs_offset);
       //Int chunk_size = nchunks/total_threads;
-      //Int chunks_left_over = nchunks - 
+      //Int chunks_left_over = nchunks -
       //                       (chunk_size*total_threads);
       //Int chunk_start = kid*chunk_size;
 
@@ -69,7 +69,7 @@ namespace BaskerNS
 
       //printf("kid: %d c_size: %d numc: %d schunk: %d \n", kid, chunk_size, nchunks, chunk_start);
 
-      //basker->t_nfactor_btf(kid, chunk_start, 
+      //basker->t_nfactor_btf(kid, chunk_start,
       //                       chunk_size);
 
       //extra
@@ -94,7 +94,7 @@ namespace BaskerNS
         info = basker->t_nfactor_btf(kid, chunk_start, chunk_size);
       }
 
-#if defined(BASKER_SPLIT_A) 
+#if defined(BASKER_SPLIT_A)
       if (info == BASKER_SUCCESS && basker->btf_top_nblks > 0) {
         Int tot_num_ranks = (Int)(thread.league_size()*thread.team_size());
         chunk_size = basker->btf_top_nblks / tot_num_ranks;
@@ -110,7 +110,7 @@ namespace BaskerNS
 #endif
 
     }//end operator()
-    
+
   };//end kokkos_nfactor_btf
 
 
@@ -123,7 +123,7 @@ namespace BaskerNS
     typedef typename TeamPolicy::member_type TeamMember;
 
     Basker<Int,Entry,Exe_Space> *basker;
-    
+
     INT_1DARRAY thread_start_top;
     INT_1DARRAY thread_start;
 
@@ -169,7 +169,7 @@ namespace BaskerNS
         }
       }//end if
 
-#if defined(BASKER_SPLIT_A) 
+#if defined(BASKER_SPLIT_A)
       if (info == BASKER_SUCCESS && basker->btf_top_nblks > 0) {
         chunk_start = thread_start_top(kid);
 
@@ -186,7 +186,7 @@ namespace BaskerNS
 #endif
 
     }//end operator()
-    
+
   };//end kokkos_nfactor_btf_remalloc
 
 
@@ -232,7 +232,7 @@ namespace BaskerNS
       {
         return BASKER_ERROR;
       }
-    }//over all chunks 
+    }//over all chunks
     #ifdef BASKER_TIMER
     double nfactor_time = timer_nfactor.seconds();
     std::cout << " > Basker nfactor_btf(" << schunk << ":" << schunk+nchunk-1 << ") : time: " << nfactor_time
@@ -321,7 +321,7 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::t_blk_nfactor
   (
-   Int kid, 
+   Int kid,
    Int c
   )
   {
@@ -378,7 +378,7 @@ namespace BaskerNS
     Int *color    = &(ws(0));
     Int *pattern  = &(color[ws_size]);
 
-    //local variable 
+    //local variable
     Int top = ws_size;
     Int xnnz, lnnz, unnz, lcnt, ucnt;
 
@@ -419,7 +419,7 @@ namespace BaskerNS
       FILE *fp = fopen(filename,"w");
       for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k) {
         for( i = M.col_ptr(k-bcol); i < M.col_ptr(k-bcol+1); ++i) {
-          if (M.row_idx(i) >= brow2) 
+          if (M.row_idx(i) >= brow2)
             fprintf(fp, " %d %d %d %e, %d %d %d\n", (int)i, (int)(M.row_idx(i)-brow2), (int)(k-btf_tabs(c)),
                     std::real(M.val(i)), (int)(M.row_idx(i)), (int)(k), (int)(i));
         }
@@ -437,7 +437,7 @@ namespace BaskerNS
         Mag anorm_j = Mag(0.0);
         for (i = M.col_ptr(j-bcol); i < M.col_ptr(j-bcol+1); ++i) {
           if (M.row_idx(i) >= brow2) {
-            anorm_j += abs(M.val(i));
+            anorm_j += STS::magnitude(M.val(i));
           }
         }
         if (anorm_j > normA_blk) {
@@ -504,7 +504,7 @@ namespace BaskerNS
         }
 
         if (M.val(i) != zero ||
-           (i+1 == M.col_ptr(k-bcol+1) && top == ws_size)) // the last element, and have not found non-zero entry, then go ahead and process this zero entry 
+           (i+1 == M.col_ptr(k-bcol+1) && top == ws_size)) // the last element, and have not found non-zero entry, then go ahead and process this zero entry
         {
           X(j) = M.val(i);
           if(color[j] == 0)
@@ -527,7 +527,7 @@ namespace BaskerNS
 
       #ifdef BASKER_DEBUG_NFACTOR_BTF
       if (Options.verbose == BASKER_TRUE) {
-        printf("xnnz: %d ws_size: %d top: %d \n", 
+        printf("xnnz: %d ws_size: %d top: %d \n",
                (int)xnnz, (int)ws_size, (int)top);
       }
       #endif
@@ -542,10 +542,10 @@ namespace BaskerNS
       #endif
 
       //Future add
-      //t_locate_pivot(kid, top)  
+      //t_locate_pivot(kid, top)
       //find pivot
-      maxv = abs(zero);
-      digv = abs(zero);
+      maxv = STS::magnitude(zero);
+      digv = STS::magnitude(zero);
       maxindex = BASKER_MAX_IDX;
       digindex = BASKER_MAX_IDX;
       #ifdef BASKER_TIMER
@@ -564,7 +564,7 @@ namespace BaskerNS
             std::cout << std::endl;
             std::cout << "---------------------------" << std::endl;
             std::cout << "Error: NaN found blk: "
-                      << c 
+                      << c
                       << " Column: "
                       << k << std::endl;
           }
@@ -573,7 +573,7 @@ namespace BaskerNS
           thread_array(kid).error_info = k;
           return BASKER_ERROR;
         }
-        absv = abs(value);
+        absv = STS::magnitude(value);
 
         #ifdef BASKER_DEBUG_NFACTOR_BTF
         if (Options.verbose == BASKER_TRUE) {
@@ -588,7 +588,7 @@ namespace BaskerNS
           ++lcnt;
           // looking for the pivot candidate (largest off-diagonal)
           // will be compared with diagonal
-          if(absv > maxv || maxindex == BASKER_MAX_IDX) 
+          if(absv > maxv || maxindex == BASKER_MAX_IDX)
           {
             maxv     = absv;
             pivot    = value;
@@ -659,23 +659,23 @@ namespace BaskerNS
           std::cout << "---------------------------"
                     << std::endl;
           std::cout << "Error: Diag Matrix is singular, blk: "
-                    << c 
+                    << c
                     << " Column: "
                     << k
                     << " Size: "
                     << btf_tabs(c+1)-btf_tabs(c)
                     << std::endl;
-          std::cout << "MaxIndex: " << maxindex 
-                    << " pivot " 
+          std::cout << "MaxIndex: " << maxindex
+                    << " pivot "
                     << pivot << std::endl;
-          if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+          if (Options.replace_zero_pivot && normA_blk > STS::magnitude(zero) && maxindex != BASKER_MAX_IDX) {
             std::cout << "  replace zero pivot with " << normA_blk * eps
                       << " (normA = " << normA << ", normA_blk = " << normA_blk << ", eps = " << eps << ")" << std::endl;
           } else {
             if (!Options.replace_zero_pivot) {
               std::cout << " replace_zero_pivot disabled, ";
             }
-            if (normA_blk <= abs(zero)) {
+            if (normA_blk <= STS::magnitude(zero)) {
               std::cout << " empty block, ";
             }
             if (maxindex == BASKER_MAX_IDX) {
@@ -684,7 +684,7 @@ namespace BaskerNS
             std::cout << std::endl;
           }
         }
-        if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+        if (Options.replace_zero_pivot && normA_blk > STS::magnitude(zero) && maxindex != BASKER_MAX_IDX) {
           pivot = normA_blk * eps;
           X(maxindex) = pivot;
         } else {
@@ -695,12 +695,12 @@ namespace BaskerNS
         }
       }
 
-      //printf("----------------PIVOT------------blk: %d %d \n", 
+      //printf("----------------PIVOT------------blk: %d %d \n",
       //      c, btf_tabs(c+1)-btf_tabs(c));
       // store pivot
       gperm(maxindex+L.scol) = k;
       gpermi(k)              = maxindex + L.srow;
-      //if (c == 4) std::cout << " k = " << k << " : gperm( " << maxindex << " + " << L.scol << " = " << maxindex+L.scol << " ) = " << k << "(" << k-btf_tabs(c) << ")" 
+      //if (c == 4) std::cout << " k = " << k << " : gperm( " << maxindex << " + " << L.scol << " = " << maxindex+L.scol << " ) = " << k << "(" << k-btf_tabs(c) << ")"
       //                      << (k == maxindex+L.scol ? "" : " pivot") << std::endl;
       #ifdef BASKER_TIMER
       pivot_time += timer_nfactor.seconds();
@@ -714,7 +714,7 @@ namespace BaskerNS
         if((maxindex+L.scol) != k)
         {
           cout << " >> Permuting Pivot: " << k
-               << " as row " 
+               << " as row "
                << maxindex+L.scol << std::endl;
         }
       }
@@ -791,11 +791,11 @@ namespace BaskerNS
           printf("j = %d, t = %d, k = %d, x = %g\n",
                   (int)j, (int)t, (int)k, std::real(X(j)));
         }
-        #endif            
+        #endif
 
         if(t != BASKER_MAX_IDX)
         { // U
-          if (Options.prune || abs(X(j)) > rmin_)
+          if (Options.prune || STS::magnitude(X(j)) > rmin_)
           {
             if(t < k)
             {
@@ -817,7 +817,7 @@ namespace BaskerNS
         }
         else if (t == BASKER_MAX_IDX)
         { // L
-          if (Options.prune || abs(X(j)) > rmin_*abs(pivot))
+          if (Options.prune || STS::magnitude(X(j)) > rmin_*STS::magnitude(pivot))
           {
             L.row_idx(lnnz) = j;
             L.val(lnnz) = X(j)/pivot;
@@ -942,9 +942,9 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::t_local_reach_btf
   (
-   Int kid, 
+   Int kid,
    BASKER_MATRIX &L,
-   Int root_j, 
+   Int root_j,
    Int &top,
    Int c, Int k
   )
@@ -953,12 +953,12 @@ namespace BaskerNS
 
     INT_1DARRAY    ws  = thread_array(kid).iws;
     Int        ws_size = thread_array(kid).iws_size;
- 
+
     /*{
       printf("ws_size: %d \n", ws_size);
       printf("total size: %d \n", thread_array(kid).iws_size*thread_array(kid).iws_mult);
     }*/
- 
+
     Int brow        = L.srow;
     Int *pattern    = &(ws(ws_size));
     Int *stack      = &(pattern[ws_size]);
@@ -970,7 +970,7 @@ namespace BaskerNS
 
     //printf( " t_reach (L.srow = %d, L.scol = %d)\n",L.srow,L.scol );
     while (head != BASKER_MAX_IDX) // BASKER_MAX_IDX = -1
-    { 
+    {
       Int j = stack[head];
       Int t = gperm(j+brow);
 
@@ -991,7 +991,7 @@ namespace BaskerNS
           //Backward walk
           //start = L.col_ptr(t+1-L.scol);
           //Add pend here
-          start = 
+          start =
             (L.pend(t-L.scol)==BASKER_MAX_IDX) ? L.col_ptr(t+1-L.scol) : L.pend(t-L.scol);
         #ifdef BASKER_DEBUG_LOCAL_REACH
           printf("%d: reach.. j: %d t:%d L.scol %d\n", kid, j, t, L.scol);
@@ -1062,11 +1062,11 @@ namespace BaskerNS
         ws(j)          = 2;
         pattern[--top] = j;
       }
-    } //end while 
+    } //end while
     return 0;
   }//end t_local_reach_btf
 
-    
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry,Exe_Space>::t_back_solve
@@ -1076,21 +1076,21 @@ namespace BaskerNS
    BASKER_MATRIX &L,
    Int lvl,
    Int l,
-   Int k, 
+   Int k,
    Int top,
    Int xnnz
   )
   {
     const Entry zero (0.0);
-    
+
     INT_1DARRAY   ws = thread_array(kid).iws;
     ENTRY_1DARRAY  X = thread_array(kid).ews;
     Int      ws_size = thread_array(kid).iws_size;
-    
+
     Int brow     = L.srow;
     Int *color   = &(ws(0));
     Int *pattern = &(color[ws_size]);
- 
+
     //printf("back solve called. nnz: %d \n",
     //       xnnz);
 

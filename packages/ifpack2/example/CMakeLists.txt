@@ -12,6 +12,9 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES BlockTriDi.cpp
   CATEGORIES BASIC PERFORMANCE
 )
+IF(Teuchos_INST_HALF)
+  TRIBITS_ADD_EXECUTABLE(BlockTriDiagonalSolver_half SOURCES BlockTriDi_half.cpp)
+ENDIF()
 
 TRIBITS_ADD_TEST(
   BlockTriDiagonalSolver

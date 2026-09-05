@@ -173,7 +173,8 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
 };
 
 template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Serial> {
-  template <typename ViewTypeA> inline static int invoke(const double tol, const ViewTypeA &A, const bool conjugate) {
+  template <typename ViewTypeA> inline static int invoke(const ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type tol,
+                                                         const ViewTypeA &A, const bool conjugate) {
 
     static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
@@ -194,7 +195,8 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Serial> {
   }
 
   template <typename MemberType, typename ViewTypeA>
-  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double tol, const ViewTypeA &A, const bool conjugate) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type tol,
+                                           const ViewTypeA &A, const bool conjugate) {
 
     static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 

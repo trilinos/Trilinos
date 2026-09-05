@@ -34,6 +34,13 @@ template <typename T>
 struct ImplTag {
   typedef ImplNotAvailTag type;
 };
+#if defined(HAVE_TEUCHOS_HALF) && \
+    defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+template <>
+struct ImplTag<Kokkos::Experimental::half_t> {
+  typedef ImplSimdTag type;
+};
+#endif
 template <>
 struct ImplTag<float> {
   typedef ImplSimdTag type;

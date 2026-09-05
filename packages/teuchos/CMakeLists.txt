@@ -230,6 +230,53 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Do explicit instantiations for complex<float> scalar type."
   ${${PACKAGE_NAME}_INST_COMPLEX_DOUBLE_DEFAULT}
   )
+# Set up for HALF precision
+IF (Trilinos_ENABLE_HALF)
+  SET(${PACKAGE_NAME}_ENABLE_HALF_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_HALF_DEFAULT  FALSE)
+  # Turn HALF ON for testing (TODO: remove these lines)
+  SET(${PACKAGE_NAME}_ENABLE_HALF_DEFAULT  TRUE)
+ENDIF()
+# Set HAVE_TEUCHOS_HALF to be Teuchos_ENABLE_HALF, or
+#  if Teuchos_ENABLE_HALF was not set, then set both Teuchos_ENABLE_HALF & HAVE_TEUCHOS_HAL
+#  to be Teuchos_ENABLE_HALF_DEFAULT/Trilinos_ENABLE_HALF
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_HALF
+  HAVE_TEUCHOS_HALF
+  "Enable Teuchos features for half data type."
+  ${${PACKAGE_NAME}_ENABLE_HALF_DEFAULT}
+  )
+
+IF (${PACKAGE_NAME}_ENABLE_HALF)
+  SET(${PACKAGE_NAME}_INST_HALF_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_INST_HALF_DEFAULT  FALSE)
+  # Turn HALF ON for testing (TODO: remove these lines)
+  SET(${PACKAGE_NAME}_INST_HALF_DEFAULT  TRUE)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_HALF
+  HAVE_TEUCHOS_INST_HALF
+  "Do explicit instantaitions for half scalar type."
+  ${${PACKAGE_NAME}_INST_HALF_DEFAULT}
+  )
+
+IF(${PACKAGE_NAME}_INST_HALF)
+
+  IF(NOT DEFINED ${PROJECT_NAME}_ENABLE_Kokkos)
+    MESSAGE(
+      FATAL_ERROR
+        "Teuchos: Teuchos_INST_HALF is ON (meaning that you want to instantiate and/or test Teuchos with Scalar = half), but Teuchos_ENABLE_Kokkos is not defined.  Teuchos needs Kokkos to support half.  Please enable Kokkos."
+    )
+  ELSEIF(NOT ${PROJECT_NAME}_ENABLE_Kokkos)
+    MESSAGE(
+      FATAL_ERROR
+        "Teuchos: Teuchos_INST_HALF is ON (meaning that you want to instantiate and/or test Teuchos with Scalar = half), but Teuchos_ENABLE_Kokkos is OFF.  Teuchos needs Kokkos to support half.  Please enable Kokkos."
+    )
+  ENDIF()
+
+ENDIF()
 
 # Check whether the C++ compiler can compile __attribute__((constructor)).
 INCLUDE(CheckCXXAttributeConstructorCompiles)

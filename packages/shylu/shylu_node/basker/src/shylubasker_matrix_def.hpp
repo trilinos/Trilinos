@@ -233,7 +233,7 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int, Entry, Exe_Space>::init_matrix
   (
-   std::string _label, Int _m, Int _n, 
+   std::string _label, Int _m, Int _n,
    Int _nnz
   )
   {
@@ -280,8 +280,8 @@ namespace BaskerNS
   BASKER_INLINE
   int BaskerMatrix<Int,Entry,Exe_Space>::copy_values
   (
-   Int _sr, Int _m, 
-   Int _sc, Int _n, 
+   Int _sr, Int _m,
+   Int _sc, Int _n,
    Int _nnz,
    Int *_col_ptr, Int *_row_idx, Entry *_val
   )
@@ -367,14 +367,14 @@ namespace BaskerNS
   void BaskerMatrix<Int,Entry,Exe_Space>::malloc_perm(Int n)
   {
     BASKER_ASSERT(n > 0, "matrix malloc_perm");
-    MALLOC_INT_1DARRAY(lpinv,n);    
- 
+    MALLOC_INT_1DARRAY(lpinv,n);
+
     //Fix later.  //NDE determine what the issue is...
     init_perm();
 
   }//end init_perm(Int)
 
-  
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void BaskerMatrix<Int,Entry, Exe_Space>::init_perm()
@@ -392,7 +392,7 @@ namespace BaskerNS
     BASKER_ASSERT(nrow > 0, "matrix_malloc_union_bit");
     MALLOC_BOOL_1DARRAY(union_bit, nrow);
   }//end malloc_union_bit
-  
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::init_union_bit()
@@ -463,7 +463,7 @@ namespace BaskerNS
     v_fill = BASKER_TRUE;
     return 0;
   }
-  
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::init_ptr()
@@ -481,6 +481,8 @@ namespace BaskerNS
    bool keep_zeros
   )
   {
+    using STS = Teuchos::ScalarTraits<Entry>;
+
     if(nnz == 0)
     {
       for(Int i = 0; i < ncol+1; i++)
@@ -529,7 +531,7 @@ namespace BaskerNS
 
     const Entry zero(0.0);
 
-    anorm = std::abs(zero);
+    anorm = STS::magnitude(zero);
     Int temp_count = 0;
     for(Int k = scol; k < scol+ncol; ++k)
     {
@@ -553,7 +555,7 @@ namespace BaskerNS
             // if all were zero, then add the last entry to avoid empty column.
             row_idx(temp_count) = M.row_idx(i-1)-srow;
             val(temp_count) = M.val(i-1);
-            anorm_k += std::abs(M.val(i-1));
+            anorm_k += STS::magnitude(M.val(i-1));
             temp_count++;
           }
           break;
@@ -561,13 +563,13 @@ namespace BaskerNS
 
         if(j < srow)
         {
-          std::cout << std::endl 
-                    << "BaskerMatrix::convert2D(kid = " << kid 
-                    << "): j " << j 
-                    << " srow: " << srow 
-                    << " scol: " << scol 
-                    << " nrow: " << nrow 
-                    << " ncol: " << ncol 
+          std::cout << std::endl
+                    << "BaskerMatrix::convert2D(kid = " << kid
+                    << "): j " << j
+                    << " srow: " << srow
+                    << " scol: " << scol
+                    << " nrow: " << nrow
+                    << " ncol: " << ncol
                     << " with k: " << k
                     << " idx: " << i
                     << std::endl << std::endl;
@@ -580,7 +582,7 @@ namespace BaskerNS
           row_idx(temp_count) = j-srow;
           val(temp_count) = M.val(i);
 
-          anorm_k += std::abs(M.val(i));
+          anorm_k += STS::magnitude(M.val(i));
           temp_count++;
           kept_count ++;
         } else {
@@ -607,12 +609,12 @@ namespace BaskerNS
   {
     std::cout << "\n Matrix Information: scol: " << scol
               << " ncol: " << ncol
-              << " srow: " << srow 
+              << " srow: " << srow
               << " nrow: " << nrow
               << " nnz: " << nnz
               << std::endl;
   }//end info()
-  
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::print()
@@ -643,7 +645,7 @@ namespace BaskerNS
     std::cout << "\n END PRINT " << std::endl;
 
   }//end print()
-  
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::print_matrix(const char *filename, const int base)

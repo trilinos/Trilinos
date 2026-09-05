@@ -114,6 +114,8 @@ INCLUDE(CMakeCuda.txt)
 SET(${PACKAGE_NAME}_ETI_SCALARS "")
 # Exclude all ordinal types (GlobalOrdinal and int)
 SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "")
+#
+SET(${PACKAGE_NAME}_ETI_SCALARS_NO_SPECIAL_NO_ORDS "")
 # Kokkos versions of Scalar types.  For now, this just means replacing
 # std::complex<T> with Kokkos::complex<T>.
 SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "")
@@ -1049,12 +1051,45 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED(Tpetra_INST_LONG_DOUBLE)
 GLOBAL_SET(HAVE_TPETRA_LONG_DOUBLE ${Tpetra_INST_LONG_DOUBLE})
 
-# Make sure that it's OK to instantiate/test over Scalar = float.
-# Tpetra requires BLAS support for this case.  It presumes that a BLAS
-# could exist without float (S) support.  Furthermore, it presumes
-# that Teuchos supports float (this is mainly necessary for correct
+GLOBAL_SET(Tpetra_INST_HALF_DEFAULT OFF)
+# NOTE: Turn HALF ON for testing (TODO: remove this line)
+GLOBAL_SET(Tpetra_INST_HALF_DEFAULT ON)
+
+# Set up the Tpetra_INST_HALF option: whether to instantiate / test
+# Scalar = half_t.
+# Do we need half-is-float check?
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_HALF
+  HAVE_TPETRA_INST_HALF
+  "Instantiate and/or test classes over Scalar = half.  This option is ${Tpetra_INST_HALF_DEFAULT} by default."
+  ${Tpetra_INST_HALF_DEFAULT}
+)
+ASSERT_DEFINED(Tpetra_INST_HALF)
+GLOBAL_SET(HAVE_TPETRA_INST_KOKKOS_EXPERIMENTAL_HALF_T ${Tpetra_INST_HALF})
+GLOBAL_SET(HAVE_TPETRA_KOKKOS_EXPERIMENTAL_HALF_T ${Tpetra_INST_HALF})
+
+# Make sure that it's OK to instantiate/test over Scalar = half_t.
+# Tpetra requires BLAS support for this case?  It presumes that a BLAS
+# could exist without half_t support?  Furthermore, it presumes
+# that Teuchos supports half_t (this is mainly necessary for correct
 # linking when ETI is ON, with downstream packages like Thyra, which
 # get used in surprising places, e.g., in Ifpack2).
+IF(Tpetra_INST_HALF)
+
+  IF(NOT DEFINED Teuchos_ENABLE_HALF)
+    MESSAGE(
+      FATAL_ERROR
+        "Tpetra: Tpetra_INST_HALF is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = half), but Teuchos_ENABLE_HALF is not defined.  Tpetra needs Teuchos to support half.  Please set Teuchos_ENABLE_HALF:BOOL=ON, reconfigure, and rebuild."
+    )
+  ELSEIF(NOT Teuchos_ENABLE_HALF)
+    MESSAGE(
+      FATAL_ERROR
+        "Tpetra: Tpetra_INST_HALF is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = half), but Teuchos_ENABLE_HALF is OFF.  Tpetra needs Teuchos to support half.  Please set Teuchos_ENABLE_HALF:BOOL=ON, reconfigure, and rebuild."
+    )
+  ENDIF()
+
+ENDIF()
+
 IF(Tpetra_INST_FLOAT)
 
   IF(NOT DEFINED Teuchos_ENABLE_FLOAT)
@@ -1353,10 +1388,18 @@ ENDIF()
 #
 # Build list of Scalar types over which to instantiate / test.
 #
+IF(Tpetra_INST_HALF)
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "Kokkos::Experimental::half_t")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::Experimental::half_t")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "Kokkos::Experimental::half_t")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::Experimental::half_t")
+  GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
+ENDIF()
 IF(Tpetra_INST_FLOAT)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "float")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "float")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "float")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_SPECIAL_NO_ORDS "float")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "float")
   GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
 ENDIF()
@@ -1364,6 +1407,7 @@ IF(Tpetra_INST_DOUBLE)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_SPECIAL_NO_ORDS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "double")
   GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
 ENDIF()
@@ -1371,6 +1415,7 @@ IF(Tpetra_INST_LONG_DOUBLE)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "long double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_SPECIAL_NO_ORDS "long double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "long double")
   GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
 ENDIF()
@@ -1378,6 +1423,7 @@ IF(Tpetra_INST_COMPLEX_FLOAT)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "std::complex<float>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::complex<float>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "std::complex<float>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_SPECIAL_NO_ORDS "std::complex<float>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::complex<float>")
   GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
 ENDIF()
@@ -1385,6 +1431,7 @@ IF(Tpetra_INST_COMPLEX_DOUBLE)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "std::complex<double>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::complex<double>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "std::complex<double>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_SPECIAL_NO_ORDS "std::complex<double>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::complex<double>")
   GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
 ENDIF()
@@ -1430,6 +1477,7 @@ ASSERT_DEFINED(HAVE_TPETRA_SCALAR)
 
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS ${${PACKAGE_NAME}_ETI_SCALARS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS})
+GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_NO_SPECIAL_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_NO_SPECIAL_NO_ORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS ${${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_ORDS})

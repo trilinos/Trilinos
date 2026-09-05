@@ -90,6 +90,7 @@ namespace Belos {
     using DMT = DenseMatTraits<ScalarType,DM>;
     using SCT = Teuchos::ScalarTraits<ScalarType>;
     using MagnitudeType = typename SCT::magnitudeType;
+    using MAT = Teuchos::ScalarTraits<MagnitudeType>;
 
     //! @name Constructors/Destructor
     //@{
@@ -420,8 +421,8 @@ namespace Belos {
     Teuchos::RCP<DM> alpha = DMT::Create( numRHS_,numRHS_ );
 
     // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    const ScalarType one = SCT::one();
+    const MagnitudeType zero = MAT::zero();
 
     // Get the current solution std::vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
@@ -513,11 +514,11 @@ namespace Belos {
       // Condition estimate (if needed)
       if (doCondEst_ && (iter_ - 1) < diag_.size()) {
         if (iter_ > 1) {
-          diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real((beta_old_ * beta_old_ * pAp_old_ + pAp[0]) / rHz_old[0]);
-          offdiag_[iter_-2] = -Teuchos::ScalarTraits<ScalarType>::real(beta_old_ * pAp_old_ / (sqrt( rHz_old[0] * rHz_old2_)));
+          diag_[iter_-1]    = SCT::real((beta_old_ * beta_old_ * pAp_old_ + pAp[0]) / rHz_old[0]);
+          offdiag_[iter_-2] = -SCT::real(beta_old_ * pAp_old_ / (SCT::squareroot( rHz_old[0] * rHz_old2_)));
         }
         else {
-          diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real(pAp[0] / rHz_old[0]);
+          diag_[iter_-1]    = SCT::real(pAp[0] / rHz_old[0]);
         }
         rHz_old2_ = rHz_old[0];
         beta_old_ = beta[0];

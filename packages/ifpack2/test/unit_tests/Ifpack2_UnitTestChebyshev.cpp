@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Chebyshev, Test0, Scalar, LocalOrdinal,
 
   crsmatrix                = tif_utest::create_test_matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowmap, -one);
   Scalar n                 = Teuchos::as<Scalar>(rowmap->getGlobalNumElements());
-  Scalar expectedLambdaMax = one - std::cos(Teuchos::ScalarTraits<Scalar>::pi() * n / (n + 1));
+  Scalar expectedLambdaMax = one - Kokkos::cos(Teuchos::ScalarTraits<Scalar>::pi() * n / (n + 1));
 
   prec.setMatrix(crsmatrix);
 

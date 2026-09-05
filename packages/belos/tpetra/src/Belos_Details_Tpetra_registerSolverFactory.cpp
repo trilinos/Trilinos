@@ -63,6 +63,16 @@ namespace Details {
 namespace Tpetra {
 
 void registerSolverFactory() {
+#ifndef HAVE_TPETRA_INST_HALF // To be consistent with CMakeList
+  // will require complex<half> otherwise
+  ::BelosTpetra::Impl::register_Gmres (false);
+  ::BelosTpetra::Impl::register_GmresPipeline (false);
+  ::BelosTpetra::Impl::register_GmresPoly (false);
+  ::BelosTpetra::Impl::register_GmresSingleReduce (false);
+  ::BelosTpetra::Impl::register_GmresSstep (false);
+
+  ::BelosTpetra::Impl::register_GmresPoly_KDV (false);
+#endif
   ::BelosTpetra::Impl::register_BiCGStab (false);
   ::BelosTpetra::Impl::register_BlockCG (false);
   ::BelosTpetra::Impl::register_BlockGmres (false);
@@ -71,11 +81,6 @@ void registerSolverFactory() {
   ::BelosTpetra::Impl::register_CgSingleReduce (false);
   ::BelosTpetra::Impl::register_FixedPoint (false);
   ::BelosTpetra::Impl::register_GCRODR (false);
-  ::BelosTpetra::Impl::register_Gmres (false);
-  ::BelosTpetra::Impl::register_GmresPipeline (false);
-  ::BelosTpetra::Impl::register_GmresPoly (false);
-  ::BelosTpetra::Impl::register_GmresSingleReduce (false);
-  ::BelosTpetra::Impl::register_GmresSstep (false);
   ::BelosTpetra::Impl::register_LSQR (false);
   ::BelosTpetra::Impl::register_Minres (false);
   ::BelosTpetra::Impl::register_PCPG (false);
@@ -89,7 +94,6 @@ void registerSolverFactory() {
   ::BelosTpetra::Impl::register_BlockGmres_KDV (false);
   ::BelosTpetra::Impl::register_FixedPoint_KDV (false);
   ::BelosTpetra::Impl::register_GCRODR_KDV (false);
-  ::BelosTpetra::Impl::register_GmresPoly_KDV (false);
   ::BelosTpetra::Impl::register_LSQR_KDV (false);
   ::BelosTpetra::Impl::register_Minres_KDV (false);
   ::BelosTpetra::Impl::register_PCPG_KDV (false);

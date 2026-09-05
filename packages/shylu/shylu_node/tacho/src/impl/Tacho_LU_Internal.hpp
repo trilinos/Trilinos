@@ -41,7 +41,8 @@ template <> struct LU<Algo::Internal> {
   }
 
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP>
-  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double tol, const ViewTypeA &A, const ViewTypeP &P) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type tol,
+                                           const ViewTypeA &A, const ViewTypeP &P) {
     typedef typename ViewTypeA::non_const_value_type value_type;
 
     static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");

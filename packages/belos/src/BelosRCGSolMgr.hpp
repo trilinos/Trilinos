@@ -2008,8 +2008,8 @@ template<class ScalarType, class MV, class OP, class DM>
 void RCGSolMgr<ScalarType,MV,OP,DM,true>::sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm)
 {
   int l, r, j, i, flag;
-  int    RR2;
-  double dRR, dK;
+  int RR2;
+  ScalarType dRR, dK;
 
   // Initialize the permutation vector.
   for(j=0;j<n;j++)

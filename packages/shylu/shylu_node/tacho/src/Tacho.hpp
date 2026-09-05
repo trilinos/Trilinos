@@ -198,6 +198,22 @@ template <typename SpT> void printExecSpaceConfiguration(std::string name, const
 
 template <typename T> struct ArithTraits;
 
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+template <> struct ArithTraits<Kokkos::Experimental::half_t> {
+  typedef Kokkos::Experimental::half_t val_type;
+  typedef Kokkos::Experimental::half_t mag_type;
+
+  enum : bool { is_complex = false };
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs(const val_type &x) { return x > 0 ? x : -x; }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type &x) { return x; }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type &x) { return 0; }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type &x) { return x; }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() { return Kokkos::Experimental::epsilon_v<float>; }
+  static KOKKOS_FORCEINLINE_FUNCTION void set_real(val_type &x, const mag_type &val) { x = val; }
+  static KOKKOS_FORCEINLINE_FUNCTION void set_imag(val_type &x, const mag_type &val) {}
+};
+#endif
+
 template <> struct ArithTraits<float> {
   typedef float val_type;
   typedef float mag_type;

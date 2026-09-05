@@ -62,7 +62,8 @@ template <> struct LU<Algo::External> {
   }
 
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP>
-  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double /*tol*/, const ViewTypeA &A, const ViewTypeP &P) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type /*tol*/,
+                                           const ViewTypeA &A, const ViewTypeP &P) {
     // tol is not used, for now
     return invoke(member, A, P);
   }

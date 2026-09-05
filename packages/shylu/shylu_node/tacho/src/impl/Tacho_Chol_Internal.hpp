@@ -36,7 +36,8 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::Internal> {
   }
 
   template <typename MemberType, typename ViewTypeA>
-  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double tol, const ViewTypeA &A) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, 
+                                           const ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type tol, const ViewTypeA &A) {
     typedef typename ViewTypeA::non_const_value_type value_type;
 
     static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");

@@ -73,6 +73,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+# IS THIS HOW TO CHECK?
+IF (NOT HAVE_TPETRA_INST_HALF)
 BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
   Tpetra_HybridGMRES_hb_test
   SOURCES test_hybrid_gmres_hb.cpp
@@ -81,6 +83,7 @@ BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
        "--verbose --max-degree=10 --poly-type=Roots"
   COMM serial mpi
   )
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockGMRES_hb_CopyFiles
   SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices

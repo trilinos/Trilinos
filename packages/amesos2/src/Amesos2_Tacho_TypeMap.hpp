@@ -20,6 +20,8 @@
 #include <Teuchos_SerializationTraits.hpp>
 #endif
 
+#include "Kokkos_Core.hpp"
+
 #include "Amesos2_TypeMap.hpp"
 
 namespace Amesos2 {
@@ -45,6 +47,15 @@ struct TypeMap<TachoSolver,double>
   typedef double magnitude_type;
 };
 
+
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+template <>
+struct TypeMap<TachoSolver,Kokkos::Experimental::half_t>
+{
+  typedef Kokkos::Experimental::half_t type;
+  typedef Kokkos::Experimental::half_t magnitude_type;
+};
+#endif
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 

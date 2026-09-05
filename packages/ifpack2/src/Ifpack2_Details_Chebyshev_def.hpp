@@ -1502,7 +1502,7 @@ Chebyshev<ScalarType, MV>::
     p->update(one, *z, beta);
     if (iter > 0) {
       diag[iter]        = STS::real((betaOld * betaOld * pApOld + pAp) / rHzOld);
-      offdiag[iter - 1] = -STS::real((betaOld * pApOld / (sqrt(rHzOld * rHzOld2))));
+      offdiag[iter - 1] = -STS::real((betaOld * pApOld / (STS::squareroot(rHzOld * rHzOld2))));
       if (debug_) {
         *out_ << " diag[" << iter << "]     = " << diag[iter] << endl;
         *out_ << " offdiag[" << iter - 1 << "] = " << offdiag[iter - 1] << endl;
