@@ -29,7 +29,7 @@ namespace Belos {
    *
    * This struct is utilized by CGIteration::initialize() and CGIteration::getState().
    */
-  template <class ScalarType, class MV, class DM>
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
   class CGIterationStateBase {
 
   public:
@@ -138,7 +138,7 @@ namespace Belos {
   //@}
 
 
-template<class ScalarType, class MV, class OP, class DM>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class CGIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:

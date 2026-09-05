@@ -41,72 +41,45 @@ template <typename T, unsigned Stride> struct LocalScalarType<const T, Stride> {
 //
 // For SLFad, divde the array size by the given stride
 namespace Fad {
-namespace Exp {
 template <typename T, int N> class StaticStorage;
 template <typename S> class GeneralFad;
-} // namespace Exp
 } // namespace Fad
 template <typename T, int N, unsigned Stride>
-struct LocalScalarType<Fad::Exp::GeneralFad<Fad::Exp::StaticStorage<T, N>>,
+struct LocalScalarType<Fad::GeneralFad<Fad::StaticStorage<T, N>>,
                        Stride> {
   static const int Ns = (N + Stride - 1) / Stride;
-  typedef Fad::Exp::GeneralFad<Fad::Exp::StaticStorage<T, Ns>> type;
+  typedef Fad::GeneralFad<Fad::StaticStorage<T, Ns>> type;
 };
-#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-namespace Fad {
-template <typename T, int N> class SLFad;
-}
-template <typename T, int N, unsigned Stride>
-struct LocalScalarType<Fad::SLFad<T, N>, Stride> {
-  static const int Ns = (N + Stride - 1) / Stride;
-  typedef Fad::SLFad<T, Ns> type;
-};
-#endif
-
 // Type of local scalar type when partitioning a view
 //
 // For SFad, divde the array size by the given stride.  If it divides evenly,
 // use SFad, otherwise use SLFad
 namespace Fad {
-namespace Exp {
 template <typename T, typename U> class DynamicStorage;
 template <typename T, int N> class StaticFixedStorage;
 template <typename T, int N> class StaticStorage;
 template <typename S> class GeneralFad;
-} // namespace Exp
 } // namespace Fad
 template <typename T, int N, unsigned Stride>
-struct LocalScalarType<Fad::Exp::GeneralFad<Fad::Exp::StaticFixedStorage<T, N>>,
+struct LocalScalarType<Fad::GeneralFad<Fad::StaticFixedStorage<T, N>>,
                        Stride> {
   static const int Ns = (N + Stride - 1) / Stride;
   typedef typename std::conditional<
       Ns == N / Stride,
-      Fad::Exp::GeneralFad<Fad::Exp::StaticFixedStorage<T, Ns>>,
-      Fad::Exp::GeneralFad<Fad::Exp::StaticStorage<T, Ns>>>::type type;
+      Fad::GeneralFad<Fad::StaticFixedStorage<T, Ns>>,
+      Fad::GeneralFad<Fad::StaticStorage<T, Ns>>>::type type;
 };
-
-#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-namespace Fad {
-template <typename T, int N> class SFad;
-}
-template <typename T, int N, unsigned Stride>
-struct LocalScalarType<Fad::SFad<T, N>, Stride> {
-  static const int Ns = (N + Stride - 1) / Stride;
-  typedef typename std::conditional<Ns == N / Stride, Fad::SFad<T, Ns>,
-                                    Fad::SLFad<T, Ns>>::type type;
-};
-#endif
 
 #if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
 
 #ifndef SACADO_VIEW_CUDA_HIERARCHICAL_DFAD
 template <unsigned Stride, typename T, typename U>
 KOKKOS_INLINE_FUNCTION typename LocalScalarType<
-    Fad::Exp::GeneralFad<Fad::Exp::DynamicStorage<T, U>>, Stride>::type
+    Fad::GeneralFad<Fad::DynamicStorage<T, U>>, Stride>::type
 partition_scalar(
-    const Fad::Exp::GeneralFad<Fad::Exp::DynamicStorage<T, U>> &x) {
+    const Fad::GeneralFad<Fad::DynamicStorage<T, U>> &x) {
   typedef typename LocalScalarType<
-      Fad::Exp::GeneralFad<Fad::Exp::DynamicStorage<T, U>>, Stride>::type
+      Fad::GeneralFad<Fad::DynamicStorage<T, U>>, Stride>::type
       ret_type;
   if (Stride == 1u)
     return x;
@@ -127,10 +100,10 @@ partition_scalar(
 #endif
 template <unsigned Stride, typename T, int N>
 KOKKOS_INLINE_FUNCTION typename LocalScalarType<
-    Fad::Exp::GeneralFad<Fad::Exp::StaticStorage<T, N>>, Stride>::type
-partition_scalar(const Fad::Exp::GeneralFad<Fad::Exp::StaticStorage<T, N>> &x) {
+    Fad::GeneralFad<Fad::StaticStorage<T, N>>, Stride>::type
+partition_scalar(const Fad::GeneralFad<Fad::StaticStorage<T, N>> &x) {
   typedef typename LocalScalarType<
-      Fad::Exp::GeneralFad<Fad::Exp::StaticStorage<T, N>>, Stride>::type
+      Fad::GeneralFad<Fad::StaticStorage<T, N>>, Stride>::type
       ret_type;
   if (Stride == 1u)
     return x;
@@ -143,11 +116,11 @@ partition_scalar(const Fad::Exp::GeneralFad<Fad::Exp::StaticStorage<T, N>> &x) {
 }
 template <unsigned Stride, typename T, int N>
 KOKKOS_INLINE_FUNCTION typename LocalScalarType<
-    Fad::Exp::GeneralFad<Fad::Exp::StaticFixedStorage<T, N>>, Stride>::type
+    Fad::GeneralFad<Fad::StaticFixedStorage<T, N>>, Stride>::type
 partition_scalar(
-    const Fad::Exp::GeneralFad<Fad::Exp::StaticFixedStorage<T, N>> &x) {
+    const Fad::GeneralFad<Fad::StaticFixedStorage<T, N>> &x) {
   typedef typename LocalScalarType<
-      Fad::Exp::GeneralFad<Fad::Exp::StaticFixedStorage<T, N>>, Stride>::type
+      Fad::GeneralFad<Fad::StaticFixedStorage<T, N>>, Stride>::type
       ret_type;
   if (Stride == 1u)
     return x;

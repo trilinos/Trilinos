@@ -4,30 +4,7 @@
 //
 // Copyright 2006 NTESS and the Sacado contributors.
 // SPDX-License-Identifier: LGPL-2.1-or-later
-//
-// ***********************************************************************
-//
-// The forward-mode AD classes in Sacado are a derivative work of the
-// expression template classes in the Fad package by Nicolas Di Cesare.
-// The following banner is included in the original Fad source code:
-//
-// ************ DO NOT REMOVE THIS BANNER ****************
-//
-//  Nicolas Di Cesare <Nicolas.Dicesare@ann.jussieu.fr>
-//  http://www.ann.jussieu.fr/~dicesare
-//
-//            CEMRACS 98 : C++ courses,
-//         templates : new C++ techniques
-//            for scientific computing
-//
-//********************************************************
-//
-//  A short implementation ( not all operators and
-//  functions are overloaded ) of 1st order Automatic
-//  Differentiation in forward mode (FAD) using
-//  EXPRESSION TEMPLATES.
-//
-//********************************************************
+// *****************************************************************************
 // @HEADER
 
 #ifndef SACADO_FAD_OPS_FWD_HPP
@@ -42,40 +19,45 @@ namespace Sacado {
   template <typename T> struct ValueType;
 
   namespace Fad {
+  
 
-    template <typename ExprT> class UnaryPlusOp;
-    template <typename ExprT> class UnaryMinusOp;
-    template <typename ExprT> class ExpOp;
-    template <typename ExprT> class ExpM1Op;
-    template <typename ExprT> class LogOp;
-    template <typename ExprT> class Log1POp;
-    template <typename ExprT> class Log10Op;
-    template <typename ExprT> class SqrtOp;
-    template <typename ExprT> class CosOp;
-    template <typename ExprT> class SinOp;
-    template <typename ExprT> class TanOp;
-    template <typename ExprT> class ACosOp;
-    template <typename ExprT> class ASinOp;
-    template <typename ExprT> class ATanOp;
-    template <typename ExprT> class CoshOp;
-    template <typename ExprT> class SinhOp;
-    template <typename ExprT> class TanhOp;
-    template <typename ExprT> class ACoshOp;
-    template <typename ExprT> class ASinhOp;
-    template <typename ExprT> class ATanhOp;
-    template <typename ExprT> class AbsOp;
-    template <typename ExprT> class FAbsOp;
-    template <typename ExprT> class CbrtOp;
-    template <typename ExprT, bool is_simd = IsSimdType<ExprT>::value>
+    template <typename T, typename E> class UnaryPlusOp;
+    template <typename T, typename E> class UnaryMinusOp;
+    template <typename T, typename E> class ExpOp;
+    template <typename T, typename E> class ExpM1Op;
+    template <typename T, typename E> class LogOp;
+    template <typename T, typename E> class Log1POp;
+    template <typename T, typename E> class Log10Op;
+    template <typename T, typename E> class SqrtOp;
+    template <typename T, typename E> class CosOp;
+    template <typename T, typename E> class SinOp;
+    template <typename T, typename E> class TanOp;
+    template <typename T, typename E> class ACosOp;
+    template <typename T, typename E> class ASinOp;
+    template <typename T, typename E> class ATanOp;
+    template <typename T, typename E> class CoshOp;
+    template <typename T, typename E> class SinhOp;
+    template <typename T, typename E> class TanhOp;
+    template <typename T, typename E> class ACoshOp;
+    template <typename T, typename E> class ASinhOp;
+    template <typename T, typename E> class ATanhOp;
+    template <typename T, typename E> class AbsOp;
+    template <typename T, typename E> class FAbsOp;
+    template <typename T, typename E> class CbrtOp;
+    template <typename T, typename E, bool is_simd = IsSimdType<T>::value>
     class SafeSqrtOp;
 
-    template <typename ExprT1, typename ExprT2> class AdditionOp;
-    template <typename ExprT1, typename ExprT2> class SubtractionOp;
-    template <typename ExprT1, typename ExprT2> class Multiplicationp;
-    template <typename ExprT1, typename ExprT2> class DivisionOp;
-    template <typename ExprT1, typename ExprT2> class Atan2Op;
-    template <typename ExprT1, typename ExprT2> class MaxOp;
-    template <typename ExprT1, typename ExprT2> class MinOp;
+    template <typename T1, typename T2, bool, bool, typename E>
+    class AdditionOp;
+    template <typename T1, typename T2, bool, bool, typename E>
+    class SubtractionOp;
+    template <typename T1, typename T2, bool, bool, typename E>
+    class Multiplicationp;
+    template <typename T1, typename T2, bool, bool, typename E>
+    class DivisionOp;
+    template <typename T1, typename T2, bool, bool, typename E> class Atan2Op;
+    template <typename T1, typename T2, bool, bool, typename E> class MaxOp;
+    template <typename T1, typename T2, bool, bool, typename E> class MinOp;
 
     namespace PowerImpl {
       struct Simd {};
@@ -104,8 +86,8 @@ namespace Sacado {
           >::type type;
       };
     }
-    template <typename ExprT1, typename ExprT2,
-              typename Impl = typename PowerImpl::Selector<ExprT1,ExprT2>::type>
+    template <typename T1, typename T2, bool, bool, typename E,
+              typename Impl = typename PowerImpl::Selector<T1,T2>::type >
     class PowerOp;
 
   } // namespace Fad

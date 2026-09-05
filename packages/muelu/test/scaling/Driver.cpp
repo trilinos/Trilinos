@@ -432,7 +432,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   // This is because if a StackedTimer is already active, globalTimer will be become a sub-timer of the root.
   RCP<TimeMonitor> globalTimeMonitor = Teuchos::null;
   if (useStackedTimer) {
-    stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+    stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver", timeMatrixBuild));
     Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
     if (!timeMatrixBuild)
       stacked_timer->disableTimers();  // will be reenabled below after linear system setup
@@ -566,8 +566,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         if (runList.isParameter("tol")) tol = runList.get<double>("tol");
 
         if (resetStackedTimer) {
-          stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+          stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver", timeMatrixBuild));
           Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+          if (!timeMatrixBuild)
+            stacked_timer->disableTimers();  // will be reenabled below after linear system setup
         }
       }
 
@@ -588,8 +590,11 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       size_t kokkos_context_id = 0;
 
       // Timers might have been disabled by option --no-time-matrix-build.
-      if (useStackedTimer)
+      // In that case, base timer itself won't be running.
+      if (useStackedTimer && !timeMatrixBuild) {
+        stacked_timer->startBaseTimer();
         stacked_timer->enableTimers();
+      }
       // =========================================================================
       // Loop over the setup/solve pairs
       // =========================================================================

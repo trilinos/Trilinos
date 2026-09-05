@@ -50,7 +50,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
 
     // Push solution, x and dxdt into ghosted domain
     m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
-    m_lin_obj_factory->beginFill(*in.ghostedContainer_);
+    m_lin_obj_factory->beginFill(*in.ghostedContainer_,*in.container_);
   }
 
   // *********************
@@ -98,7 +98,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
       gedc.ghostToGlobal(LOC::F | LOC::Mat);
       m_lin_obj_factory->endFill(*in.container_);
     }
-    m_lin_obj_factory->endFill(*in.ghostedContainer_);
+    m_lin_obj_factory->endFill(*in.ghostedContainer_,*in.container_);
   }
 
   return;
@@ -122,7 +122,7 @@ evaluateOnlyDirichletBCs(const panzer::AssemblyEngineInArgs& in)
 
   // Push solution, x and dxdt into ghosted domain
   m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
-  m_lin_obj_factory->beginFill(*in.ghostedContainer_);
+  m_lin_obj_factory->beginFill(*in.ghostedContainer_,*in.container_);
 
   // Dirchlet conditions require a global matrix
   Teuchos::RCP<LOC> counter = this->evaluateDirichletBCs(in);
@@ -133,7 +133,7 @@ evaluateOnlyDirichletBCs(const panzer::AssemblyEngineInArgs& in)
   gedc.ghostToGlobal(LOC::F | LOC::Mat);
   m_lin_obj_factory->endFill(*in.container_);
 
-  m_lin_obj_factory->endFill(*in.ghostedContainer_);
+  m_lin_obj_factory->endFill(*in.ghostedContainer_,*in.container_);
 
   return counter;
 }

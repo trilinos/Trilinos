@@ -192,8 +192,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetPar
                                  "MueLu_CreateXpetraPreconditioner: Must supply Minv  as NoFactory is listed as supplier of Minv  in the project auxiliary matrices sublist");
       TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("MinvA") && (projectList.get("MinvA", "") == "NoFactory") && !MinvA_Supplied, Exceptions::Incompatible,
                                  "MueLu_CreateXpetraPreconditioner: Must supply MinvA as NoFactory is listed as supplier of MinvA in the project auxiliary matrices sublist");
-    } else {  // default behavior if sublist("project auxiliary matrices") not user-supplied requires "M" to be user-supplied.
-      TEUCHOS_TEST_FOR_EXCEPTION(!M_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M when 'aggregation: strength-of-connection: matrix'= MinvA and sublist('project auxiliary matrices') not supplied.");
+    } else {  // default behavior if sublist("project auxiliary matrices") not user-supplied requires "M" or "Minv" to be user-supplied.
+      TEUCHOS_TEST_FOR_EXCEPTION(!M_Supplied && !Minv_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M or Minv when 'aggregation: strength-of-connection: matrix'= MinvA and sublist('project auxiliary matrices') not supplied.");
     }
   }
 }
@@ -272,16 +272,21 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   projectMinvA_ = true;
   if (constParamList.isSublist("project auxiliary matrices")) {
     auto projectList = constParamList.sublist("project auxiliary matrices");
+    // only one is true. MinvA takes precedence over Minv which takes precedence over M.
     if (projectList.isParameter("M")) {
       projectM_     = true;
+      projectMinv_  = false;
       projectMinvA_ = false;
     }
     if (projectList.isParameter("Minv")) {
+      projectM_     = false;
       projectMinv_  = true;
       projectMinvA_ = false;
     }
     if (projectList.isParameter("MinvA")) {
       projectMinvA_ = true;
+      projectM_     = false;
+      projectMinv_  = true;
     }
   } else {  // default settings when "project auxiliary matrices" not specified by user
     projectM_     = false;
@@ -1296,6 +1301,9 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: greedy Dirichlet", dropParams);
     if (useKokkos_)
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: distance laplacian metric", dropParams);
+    if (useKokkos_)
+      test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: Minv scheme", dropParams);
+
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: distance laplacian algo", dropParams);
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: classical algo", dropParams);

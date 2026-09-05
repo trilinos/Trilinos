@@ -39,8 +39,9 @@ using Teuchos::RCP;
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                       const Teuchos::RCP<const GlobalIndexer> & gidProvider)
-   : comm_(comm), gidProvider_(gidProvider)
+                       const Teuchos::RCP<const GlobalIndexer> & gidProvider,
+                       bool useFEAssembly)
+   : comm_(comm), gidProvider_(gidProvider), useFEAssembly_(useFEAssembly)
 {
    hasColProvider_ = colGidProvider_!=Teuchos::null;
 
@@ -53,8 +54,9 @@ template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename Globa
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                        const Teuchos::RCP<const GlobalIndexer> & gidProvider,
-                       const Teuchos::RCP<const GlobalIndexer> & colGidProvider)
-   : comm_(comm), gidProvider_(gidProvider), colGidProvider_(colGidProvider)
+                       const Teuchos::RCP<const GlobalIndexer> & colGidProvider,
+                       bool useFEAssembly)
+   : comm_(comm), gidProvider_(gidProvider), colGidProvider_(colGidProvider), useFEAssembly_(useFEAssembly)
 {
    hasColProvider_ = colGidProvider_!=Teuchos::null;
 
@@ -105,14 +107,14 @@ globalToGhostContainer(const LinearObjContainer & in,
 
    // Operations occur if the GLOBAL container has the correct targets!
    // Users set the GLOBAL continer arguments
-   if ( !is_null(t_in.get_x()) && !is_null(t_out.get_x()) && ((mem & LOC::X)==LOC::X))
-     globalToGhostTpetraVector(*t_in.get_x(),*t_out.get_x(),true);
+   if ( !is_null(t_in.get_x_mv()) && !is_null(t_out.get_x_mv()) && ((mem & LOC::X)==LOC::X))
+     globalToGhostTpetraVector(*t_in.get_x_mv(),*t_out.get_x_mv(),true);
 
-   if ( !is_null(t_in.get_dxdt()) && !is_null(t_out.get_dxdt()) && ((mem & LOC::DxDt)==LOC::DxDt))
-     globalToGhostTpetraVector(*t_in.get_dxdt(),*t_out.get_dxdt(),true);
+   if ( !is_null(t_in.get_dxdt_mv()) && !is_null(t_out.get_dxdt_mv()) && ((mem & LOC::DxDt)==LOC::DxDt))
+     globalToGhostTpetraVector(*t_in.get_dxdt_mv(),*t_out.get_dxdt_mv(),true);
 
-   if ( !is_null(t_in.get_f()) && !is_null(t_out.get_f()) && ((mem & LOC::F)==LOC::F))
-      globalToGhostTpetraVector(*t_in.get_f(),*t_out.get_f(),false);
+   if ( !is_null(t_in.get_f_mv()) && !is_null(t_out.get_f_mv()) && ((mem & LOC::F)==LOC::F))
+      globalToGhostTpetraVector(*t_in.get_f_mv(),*t_out.get_f_mv(),false);
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -130,21 +132,28 @@ ghostToGlobalContainer(const LinearObjContainer & in,
 
   // Operations occur if the GLOBAL container has the correct targets!
   // Users set the GLOBAL continer arguments
-   if ( !is_null(t_in.get_x()) && !is_null(t_out.get_x()) && ((mem & LOC::X)==LOC::X))
-     ghostToGlobalTpetraVector(*t_in.get_x(),*t_out.get_x(),true);
+   if ( !is_null(t_in.get_x_mv()) && !is_null(t_out.get_x_mv()) && ((mem & LOC::X)==LOC::X))
+     ghostToGlobalTpetraVector(*t_in.get_x_mv(),*t_out.get_x_mv(),true);
 
-   if ( !is_null(t_in.get_f()) && !is_null(t_out.get_f()) && ((mem & LOC::F)==LOC::F))
-     ghostToGlobalTpetraVector(*t_in.get_f(),*t_out.get_f(),false);
+   if ( !is_null(t_in.get_f_mv()) && !is_null(t_out.get_f_mv()) && ((mem & LOC::F)==LOC::F))
+     ghostToGlobalTpetraVector(*t_in.get_f_mv(),*t_out.get_f_mv(),false);
 
-   if ( !is_null(t_in.get_A()) && !is_null(t_out.get_A()) && ((mem & LOC::Mat)==LOC::Mat))
+   // In FE mode the ghosted and global containers hold the SAME FECrsMatrix, so there is
+   // nothing to export here: the owned+shared -> owned migration is done in place by
+   // endAssembly() (driven from endFill()). Exporting an object into itself would at best
+   // be wasted work and at worst corrupt the values, so skip it. The pointer comparison
+   // deliberately keys off object identity rather than the useFEAssembly_ flag, so a
+   // container the caller populated by hand still behaves predictably.
+   if ( !is_null(t_in.get_A()) && !is_null(t_out.get_A()) && ((mem & LOC::Mat)==LOC::Mat)
+        && t_in.get_A().get()!=t_out.get_A().get())
      ghostToGlobalTpetraMatrix(*t_in.get_A(),*t_out.get_A());
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-ghostToGlobalTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
-                          Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
+ghostToGlobalTpetraVector(const Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
+                          Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
 {
    using Teuchos::RCP;
 
@@ -174,8 +183,8 @@ ghostToGlobalTpetraMatrix(const Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOr
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-globalToGhostTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
-                          Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
+globalToGhostTpetraVector(const Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
+                          Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
 {
    using Teuchos::RCP;
 
@@ -199,17 +208,17 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    const ContainerType & t_globalBCRows = Teuchos::dyn_cast<const ContainerType>(globalBCRows);
    ContainerType & t_ghosted = Teuchos::dyn_cast<ContainerType>(ghostedObjs);
 
-   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.get_f()));
-   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.get_f()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.get_f_mv()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.get_f_mv()));
 
    // pull out jacobian and vector
    Teuchos::RCP<CrsMatrixType> A = t_ghosted.get_A();
-   Teuchos::RCP<VectorType> f = t_ghosted.get_f();
-   if(adjustX) f = t_ghosted.get_x();
+   Teuchos::RCP<MultiVectorType> f = t_ghosted.get_f_mv();
+   if(adjustX) f = t_ghosted.get_x_mv();
    Teuchos::ArrayRCP<double> f_array = f!=Teuchos::null ? f->get1dViewNonConst() : Teuchos::null;
 
-   const VectorType & local_bcs  = *(t_localBCRows.get_f());
-   const VectorType & global_bcs = *(t_globalBCRows.get_f());
+   const MultiVectorType & local_bcs  = *(t_localBCRows.get_f_mv());
+   const MultiVectorType & global_bcs = *(t_globalBCRows.get_f_mv());
    Teuchos::ArrayRCP<const double> local_bcs_array = local_bcs.get1dView();
    Teuchos::ArrayRCP<const double> global_bcs_array = global_bcs.get1dView();
 
@@ -420,7 +429,10 @@ initializeGhostedContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinal
    }
 
    if((mem & LOC::Mat) == LOC::Mat) {
-      loc.set_A(getGhostedTpetraMatrix());
+      // Under FE assembly the ghosted container owns no matrix; beginFill(ghosted,owned)
+      // points it at the owned container's FECrsMatrix for the duration of the assembly.
+      if(!useFEAssembly_)
+         loc.set_A(getGhostedTpetraMatrix());
       loc.setRequiresDirichletAdjustment(true);
    }
 }
@@ -489,6 +501,21 @@ getGhostedGraph() const
    if(ghostedGraph_==Teuchos::null) ghostedGraph_ = buildGhostedGraph();
 
    return ghostedGraph_;
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FECrsGraphType>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getFEGraph() const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!useFEAssembly_,std::logic_error,
+      "TpetraLinearObjFactory::getFEGraph: This factory was not constructed with "
+      "useFEAssembly=true, so FE (Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector) objects "
+      "are not available. Pass useFEAssembly=true to the constructor to opt in.");
+
+   if(feGraph_==Teuchos::null) feGraph_ = buildFEGraph();
+
+   return feGraph_;
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -723,6 +750,131 @@ buildGhostedGraph() const
    return graph;
 }
 
+// build the FE graph: same element/associated-neighbor traversal as buildGhostedGraph(),
+// but inserted into a single Tpetra::FECrsGraph (V2 constructor) instead of two separate
+// CrsGraph objects joined by a manual doExport.
+//
+// NOTE: Tpetra::FECrsGraph::setup() requires the owned row/domain map's global ids to
+// appear, in the same order, as a leading prefix of the owned+shared row/domain map. This
+// holds by construction for every concrete panzer::GlobalIndexer in the tree (DOFManager
+// and Filtered_GlobalIndexer both build getOwnedAndGhostedIndices() as owned_ followed by
+// ghosted_), so getGhostedMap()/getGhostedColMap() can be used directly here.
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+const Teuchos::RCP<typename TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FECrsGraphType>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+buildFEGraph() const
+{
+   // row maps are always the unique/ghosted row maps; domain maps must go through
+   // the column-provider-aware accessors so the blocked/rectangular case still works
+   //
+   // NOTE: these must be RCP<const MapType> (not RCP<MapType>). FECrsGraph has both a
+   // "V1" ctor (4th positional arg = importer) and "V2" ctor (4th positional arg =
+   // ownedPlusSharedDomainMap); Teuchos::RCP's converting constructor is an unconstrained
+   // template, so an RCP<MapType> argument is equally "convertible" to RCP<const ImportType>
+   // and RCP<const MapType> as far as overload resolution is concerned, making the call
+   // ambiguous. Typing the locals as RCP<const MapType> makes them bind to the V2 domain-map
+   // parameter with no conversion at all, which resolves the ambiguity in V2's favor.
+   Teuchos::RCP<const MapType> rMap = getMap();
+   Teuchos::RCP<const MapType> ownedAndGhostedRowMap = getGhostedMap();
+   Teuchos::RCP<const MapType> ownedDomainMap = getColMap();
+   Teuchos::RCP<const MapType> ownedAndGhostedDomainMap = getGhostedColMap();
+
+   std::vector<std::string> elementBlockIds;
+   gidProvider_->getElementBlockIds(elementBlockIds);
+
+   const Teuchos::RCP<const GlobalIndexer>
+     colGidProvider = hasColProvider_ ? colGidProvider_ : gidProvider_;
+   const Teuchos::RCP<const ConnManager> conn_mgr = colGidProvider->getConnManager();
+   const bool han = conn_mgr.is_null() ? false : conn_mgr->hasAssociatedNeighbors();
+
+   // count number of entries per ghosted row, exactly as buildGhostedGraph() does
+   std::vector<size_t> nEntriesPerRow(ownedAndGhostedRowMap->getLocalNumElements(), 0);
+
+   std::vector<std::string>::const_iterator blockItr;
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      std::string blockId = *blockItr;
+
+      const std::vector<LocalOrdinalT> & elements = gidProvider_->getElementBlock(blockId);
+
+      std::vector<GlobalOrdinalT> gids;
+      std::vector<GlobalOrdinalT> col_gids;
+
+      for(std::size_t i=0;i<elements.size();i++) {
+         gidProvider_->getElementGIDs(elements[i],gids);
+
+         colGidProvider->getElementGIDs(elements[i],col_gids);
+         if (han) {
+           const std::vector<LocalOrdinalT>& aes = conn_mgr->getAssociatedNeighbors(elements[i]);
+           for (typename std::vector<LocalOrdinalT>::const_iterator eit = aes.begin();
+                eit != aes.end(); ++eit) {
+             std::vector<GlobalOrdinalT> other_col_gids;
+             colGidProvider->getElementGIDs(*eit, other_col_gids);
+             col_gids.insert(col_gids.end(), other_col_gids.begin(), other_col_gids.end());
+           }
+         }
+
+         for(std::size_t j=0;j<gids.size();j++){
+            LocalOrdinalT lid = ownedAndGhostedRowMap->getLocalElement(gids[j]);
+            nEntriesPerRow[lid] += col_gids.size();
+         }
+      }
+   }
+
+   size_t maxNumRowEntries = 0;
+   for(std::size_t i=0;i<nEntriesPerRow.size();i++)
+      maxNumRowEntries = std::max(maxNumRowEntries,nEntriesPerRow[i]);
+
+   // V2 constructor: Panzer partitions by element/cell, so we must supply the owned+shared
+   // domain map explicitly to guarantee the ghosted GlobalIndexer's local ids coincide with
+   // the FE graph's column-map local ids (see Tpetra_FECrsGraph_decl.hpp doxygen).
+   Teuchos::RCP<FECrsGraphType> feGraph = Teuchos::rcp(new FECrsGraphType(
+       rMap, ownedAndGhostedRowMap, maxNumRowEntries,
+       ownedAndGhostedDomainMap,
+       Teuchos::null,
+       ownedDomainMap));
+
+   // Panzer's DOFManager does not guarantee a locally owned element has an owned dof, so
+   // Tpetra's debug-only check for that is too strict here; the cost is at most a structurally
+   // empty column. Must be set after construction -- the ctor's validator rejects the option.
+   {
+      Teuchos::RCP<Teuchos::ParameterList> feGraphParams = Teuchos::parameterList();
+      feGraphParams->set("Check Col GIDs In At Least One Owned Row",false);
+      feGraph->setParameterList(feGraphParams);
+   }
+
+   // Now insert entries into the graph
+   feGraph->beginAssembly();
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      std::string blockId = *blockItr;
+
+      const std::vector<LocalOrdinalT> & elements = gidProvider_->getElementBlock(blockId);
+
+      std::vector<GlobalOrdinalT> gids;
+      std::vector<GlobalOrdinalT> col_gids;
+
+      for(std::size_t i=0;i<elements.size();i++) {
+         gidProvider_->getElementGIDs(elements[i],gids);
+
+         colGidProvider->getElementGIDs(elements[i],col_gids);
+         if (han) {
+           const std::vector<LocalOrdinalT>& aes = conn_mgr->getAssociatedNeighbors(elements[i]);
+           for (typename std::vector<LocalOrdinalT>::const_iterator eit = aes.begin();
+                eit != aes.end(); ++eit) {
+             std::vector<GlobalOrdinalT> other_col_gids;
+             colGidProvider->getElementGIDs(*eit, other_col_gids);
+             col_gids.insert(col_gids.end(), other_col_gids.begin(), other_col_gids.end());
+           }
+         }
+
+         for(std::size_t j=0;j<gids.size();j++)
+            feGraph->insertGlobalIndices(gids[j],col_gids);
+      }
+   }
+   feGraph->endAssembly();
+
+   return feGraph;
+}
+
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
@@ -764,6 +916,17 @@ Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getTpetraMatrix() const
 {
+   // In FE mode hand back an FECrsMatrix. This is what makes the FE path work end-to-end:
+   // panzer::ModelEvaluator::create_W_op() calls getThyraMatrix() -> here, so the operator
+   // NOX/Piro allocates and hands back as W_out IS an FE matrix (wrapped in Thyra).
+   // set_A_th() then dynamic_casts it back down to CrsMatrixType, which succeeds because
+   // FECrsMatrix IS-A CrsMatrix. The ghosted container borrows whichever one it is handed
+   // at beginFill(), giving the "one object, two views" model FECrsMatrix is built around:
+   // endAssembly() migrates owned+shared -> owned in place, with no separate ghost->global
+   // matrix export needed.
+   if(useFEAssembly_)
+     return getFEMatrix();
+
    Teuchos::RCP<CrsGraphType> tGraph = getGraph();
    Teuchos::RCP<CrsMatrixType> tMat =  Teuchos::rcp(new CrsMatrixType(tGraph));
    tMat->fillComplete(tMat->getDomainMap(),tMat->getRangeMap());
@@ -776,11 +939,73 @@ Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraMatrix() const
 {
+   // There is no separate ghosted matrix under FE assembly: a ghosted container borrows the
+   // owned container's FECrsMatrix at beginFill(), whose owned+shared view already spans
+   // getGhostedMap(). Returning a standalone matrix here would look usable but silently
+   // drop every ghost contribution, so refuse instead.
+   TEUCHOS_TEST_FOR_EXCEPTION(useFEAssembly_,std::logic_error,
+      "TpetraLinearObjFactory::getGhostedTpetraMatrix: not available under FE assembly. "
+      "The ghosted container shares the owned container's Tpetra::FECrsMatrix, which is "
+      "connected by beginFill(ghosted,owned); use getFEMatrix() to allocate one.");
+
    Teuchos::RCP<CrsGraphType> tGraph = getGhostedGraph();
    Teuchos::RCP<CrsMatrixType> tMat =  Teuchos::rcp(new CrsMatrixType(tGraph));
    tMat->fillComplete(tMat->getDomainMap(),tMat->getRangeMap());
 
    return tMat;
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FECrsMatrixType>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getFEMatrix() const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!useFEAssembly_,std::logic_error,
+      "TpetraLinearObjFactory::getFEMatrix: This factory was not constructed with "
+      "useFEAssembly=true, so FE (Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector) objects "
+      "are not available. Pass useFEAssembly=true to the constructor to opt in.");
+
+   // A fresh matrix per call, like getTpetraMatrix()/getGhostedTpetraMatrix(). The graph
+   // behind them is shared and cached, so this is only the values allocation.
+   return Teuchos::rcp(new FECrsMatrixType(getFEGraph()));
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FEMultiVectorType>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getFEMultiVector(std::size_t numVectors) const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!useFEAssembly_,std::logic_error,
+      "TpetraLinearObjFactory::getFEMultiVector: This factory was not constructed with "
+      "useFEAssembly=true, so FE (Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector) objects "
+      "are not available. Pass useFEAssembly=true to the constructor to opt in.");
+
+   // Built over getGhostedImport() (owned map -> ghosted ROW map), NOT the FE graph's own
+   // importer. Tpetra's FEMultiVector documentation suggests the graph importer as the
+   // "canonical" choice, and the Tpetra example does that, but its target is the graph's
+   // COLUMN map -- which the cross-rank clique merge widens beyond the ghosted row map. A
+   // residual is indexed by ROW local ids (what GlobalIndexer::getLIDs() yields) and is
+   // migrated by getGhostedExport(), whose source map is getGhostedMap(); a column-map
+   // vector matches neither. It only appears to work because the ghosted map is a locally
+   // fitted prefix of the column map, so row lids happen to land correctly and the extra
+   // trailing entries are simply never written -- fragile, and wrong for the export.
+   return Teuchos::rcp(new FEMultiVectorType(getMap(),getGhostedImport(),numVectors));
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FEMultiVectorType>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getFEColMultiVector(std::size_t numVectors) const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!useFEAssembly_,std::logic_error,
+      "TpetraLinearObjFactory::getFEColMultiVector: This factory was not constructed with "
+      "useFEAssembly=true, so FE (Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector) objects "
+      "are not available. Pass useFEAssembly=true to the constructor to opt in.");
+
+   // Domain-space counterpart of getFEMultiVector(): owned col map -> ghosted col map.
+   // Both accessors collapse to the row-map versions when there is no separate column
+   // GlobalIndexer, since getColMap()/getGhostedColMap() fall back to the row maps.
+   return Teuchos::rcp(new FEMultiVectorType(getColMap(),getGhostedColImport(),numVectors));
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -793,12 +1018,82 @@ getTeuchosComm() const
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+beginFill(LinearObjContainer & ghostContainer,const LinearObjContainer & container) const
+{
+  // Under FE assembly the ghosted container carries no matrix of its own: hand it the owned
+  // container's, so local assembly writes into the owned+shared view of the very matrix
+  // endAssembly() will migrate. Doing this here rather than when the container is built is
+  // what lets the Jacobian be whichever matrix the caller supplies -- panzer::ModelEvaluator
+  // sets the owned container's operator from W_out on every evaluation, so it is not known
+  // any earlier, and a factory-cached matrix would alias every W_out to the first one.
+  if(useFEAssembly_) {
+    const ContainerType & ownedLoc = Teuchos::dyn_cast<const ContainerType>(container);
+    if(ownedLoc.get_A()!=Teuchos::null)
+      Teuchos::dyn_cast<ContainerType>(ghostContainer).set_A(ownedLoc.get_A());
+  }
+
+  beginFill(ghostContainer);
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+void TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 beginFill(LinearObjContainer & loc) const
 {
   ContainerType & tloc = Teuchos::dyn_cast<ContainerType>(loc);
   Teuchos::RCP<CrsMatrixType> A = tloc.get_A();
-  if(A!=Teuchos::null)
-    A->resumeFill();
+  if(A!=Teuchos::null) {
+    // If A is actually an FECrsMatrix, calling the plain CrsMatrix::resumeFill()
+    // (inherited, unoverridden) would silently bypass FECrsMatrix's own owned/owned+shared
+    // state machine -- ghost-row contributions accumulated during local assembly would
+    // never get migrated to the owned rows. Must go through beginAssembly() instead.
+    //
+    // The guard matters because in FE mode the owned and ghosted containers hold the SAME
+    // FECrsMatrix, and AssemblyEngine::evaluate() calls beginFill() on both (ghosted first,
+    // then the global container). FECrsMatrix::beginAssembly() asserts its fill state is
+    // "closed", so the second call would throw; tracking which matrix already has an
+    // assembly open collapses the pair into the single begin the FE state machine expects.
+    // See feAssemblyOpenOn_ for why the matrix cannot be asked this directly.
+    Teuchos::RCP<FECrsMatrixType> feA = Teuchos::rcp_dynamic_cast<FECrsMatrixType>(A);
+    if(feA!=Teuchos::null) {
+      if(feAssemblyOpenOn_!=feA.get()) {
+        feA->beginAssembly();
+
+        // Zero the matrix to start the assembly. The owned+shared view is active here, so
+        // this is the one point where a single call reaches every row: between assemblies
+        // the matrix rests in its OWNED view, whose values alias only the leading chunk of
+        // the owned+shared array (see Tpetra_FECrsMatrix_def.hpp, "we'll grab the first
+        // chunk of the Owned+Shared matrix's values array"), so a caller's setAllToScalar
+        // never touches the ghost rows. endAssembly() does not clear them either, being a
+        // combining self-export that leaves its source untouched, so without this the next
+        // assembly sums onto the previous one's ghost contributions and inflates every
+        // shared-interface dof.
+        feA->setAllToScalar(0.0);
+
+        feAssemblyOpenOn_ = feA.get();
+      }
+    }
+    else
+      A->resumeFill();
+  }
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+void TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+endFill(LinearObjContainer & ghostContainer,const LinearObjContainer & container) const
+{
+  endFill(ghostContainer);
+
+  // Give back what beginFill(ghostContainer,container) lent. Guarded on identity rather than
+  // just on useFEAssembly_, so a container holding a matrix of its own is never cleared --
+  // only the borrow is undone. Leaving it in place would keep the ghosted container pinning
+  // the caller's Jacobian alive between evaluations, which is the same thing
+  // panzer::ModelEvaluator avoids by nulling the owned container's operator after assembly.
+  if(useFEAssembly_) {
+    ContainerType & ghostedLoc = Teuchos::dyn_cast<ContainerType>(ghostContainer);
+    const ContainerType & ownedLoc = Teuchos::dyn_cast<const ContainerType>(container);
+    if(ghostedLoc.get_A()!=Teuchos::null && ghostedLoc.get_A().get()==ownedLoc.get_A().get())
+      ghostedLoc.set_A(Teuchos::null);
+  }
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -807,8 +1102,25 @@ endFill(LinearObjContainer & loc) const
 {
   ContainerType & tloc = Teuchos::dyn_cast<ContainerType>(loc);
   Teuchos::RCP<CrsMatrixType> A = tloc.get_A();
-  if(A!=Teuchos::null)
-    A->fillComplete(A->getDomainMap(),A->getRangeMap());
+  if(A!=Teuchos::null) {
+    // See beginFill(): must go through endAssembly() for an FECrsMatrix, not the plain
+    // CrsMatrix::fillComplete(), so the owned+shared -> owned cross-rank merge happens.
+    // This single endAssembly() IS the ghost->global migration for the Jacobian in FE mode,
+    // which is why ghostToGlobalContainer() skips the matrix export there.
+    //
+    // Mirror of the beginFill() guard: endFill() is likewise called on both containers
+    // (global then ghosted) holding the same matrix, and endAssembly() asserts its fill
+    // state is "open", so only the first call may run it.
+    Teuchos::RCP<FECrsMatrixType> feA = Teuchos::rcp_dynamic_cast<FECrsMatrixType>(A);
+    if(feA!=Teuchos::null) {
+      if(feAssemblyOpenOn_==feA.get()) {
+        feA->endAssembly();
+        feAssemblyOpenOn_ = nullptr;
+      }
+    }
+    else
+      A->fillComplete(A->getDomainMap(),A->getRangeMap());
+  }
 }
 
 }

@@ -48,8 +48,6 @@ constexpr unsigned computeFadPartitionSize(unsigned size, unsigned stride) {
 
 namespace Fad {
 
-namespace Exp {
-
 // PartitionedFadStride > 0 implies LayoutContiguous
 template <class ElementType, class MemorySpace, size_t FadStaticStride,
           size_t PartitionedFadStride, bool IsUnmanaged>
@@ -276,7 +274,6 @@ KOKKOS_INLINE_FUNCTION auto accessor_from_mapping_and_accessor_arg(
   return fad_acc_t(accessor_arg.value, mapping.required_span_size());
 }
 
-} // namespace Exp
 } // namespace Fad
 } // namespace Sacado
 
@@ -381,7 +378,7 @@ auto data_address_of(T& val) { return &val; }
 
 template<class T>
 KOKKOS_FUNCTION
-auto data_address_of(Fad::Exp::GeneralFad<T>& val) { return static_cast<int>(val.size()) > 0 ? &val.fastAccessDx(0) : &val.val(); }
+auto data_address_of(Fad::GeneralFad<T>& val) { return static_cast<int>(val.size()) > 0 ? &val.fastAccessDx(0) : &val.val(); }
 
 
 template <class... ViewArgs, class... OtherViews>
@@ -510,36 +507,36 @@ constexpr unsigned computeFadPartitionSize(unsigned size, unsigned stride) {
 
 namespace std {
   template<class T, class T2>
-  struct common_type<Sacado::Fad::Exp::GeneralFad<T>, T2> {
-    using type = typename Sacado::Promote<Sacado::Fad::Exp::GeneralFad<T>, T2>::type;
+  struct common_type<Sacado::Fad::GeneralFad<T>, T2> {
+    using type = typename Sacado::Promote<Sacado::Fad::GeneralFad<T>, T2>::type;
   };
   template<class T, class T2>
-  struct common_type<const Sacado::Fad::Exp::GeneralFad<T>, T2> {
-    using type = typename Sacado::Promote<const Sacado::Fad::Exp::GeneralFad<T>, T2>::type;
+  struct common_type<const Sacado::Fad::GeneralFad<T>, T2> {
+    using type = typename Sacado::Promote<const Sacado::Fad::GeneralFad<T>, T2>::type;
   };
   template<class T1, class T>
-  struct common_type<T1, Sacado::Fad::Exp::GeneralFad<T>> {
-    using type = typename Sacado::Promote<Sacado::Fad::Exp::GeneralFad<T>, T1>::type;
+  struct common_type<T1, Sacado::Fad::GeneralFad<T>> {
+    using type = typename Sacado::Promote<Sacado::Fad::GeneralFad<T>, T1>::type;
   };
   template<class T1, class T>
-  struct common_type<T1, const Sacado::Fad::Exp::GeneralFad<T>> {
-    using type = typename Sacado::Promote<const Sacado::Fad::Exp::GeneralFad<T>, T1>::type;
+  struct common_type<T1, const Sacado::Fad::GeneralFad<T>> {
+    using type = typename Sacado::Promote<const Sacado::Fad::GeneralFad<T>, T1>::type;
   };
   template<class T1, class T2>
-  struct common_type<Sacado::Fad::Exp::GeneralFad<T1>, Sacado::Fad::Exp::GeneralFad<T2>> {
-    using type = typename Sacado::Promote<Sacado::Fad::Exp::GeneralFad<T1>, Sacado::Fad::Exp::GeneralFad<T2>>::type;
+  struct common_type<Sacado::Fad::GeneralFad<T1>, Sacado::Fad::GeneralFad<T2>> {
+    using type = typename Sacado::Promote<Sacado::Fad::GeneralFad<T1>, Sacado::Fad::GeneralFad<T2>>::type;
   };
   template<class T1, class T2>
-  struct common_type<const Sacado::Fad::Exp::GeneralFad<T1>, Sacado::Fad::Exp::GeneralFad<T2>> {
-    using type = typename Sacado::Promote<const Sacado::Fad::Exp::GeneralFad<T1>, Sacado::Fad::Exp::GeneralFad<T2>>::type;
+  struct common_type<const Sacado::Fad::GeneralFad<T1>, Sacado::Fad::GeneralFad<T2>> {
+    using type = typename Sacado::Promote<const Sacado::Fad::GeneralFad<T1>, Sacado::Fad::GeneralFad<T2>>::type;
   };
   template<class T1, class T2>
-  struct common_type<Sacado::Fad::Exp::GeneralFad<T1>, const Sacado::Fad::Exp::GeneralFad<T2>> {
-    using type = typename Sacado::Promote<Sacado::Fad::Exp::GeneralFad<T1>, const Sacado::Fad::Exp::GeneralFad<T2>>::type;
+  struct common_type<Sacado::Fad::GeneralFad<T1>, const Sacado::Fad::GeneralFad<T2>> {
+    using type = typename Sacado::Promote<Sacado::Fad::GeneralFad<T1>, const Sacado::Fad::GeneralFad<T2>>::type;
   };
   template<class T1, class T2>
-  struct common_type<const Sacado::Fad::Exp::GeneralFad<T1>, const Sacado::Fad::Exp::GeneralFad<T2>> {
-    using type = typename Sacado::Promote<const Sacado::Fad::Exp::GeneralFad<T1>, const Sacado::Fad::Exp::GeneralFad<T2>>::type;
+  struct common_type<const Sacado::Fad::GeneralFad<T1>, const Sacado::Fad::GeneralFad<T2>> {
+    using type = typename Sacado::Promote<const Sacado::Fad::GeneralFad<T1>, const Sacado::Fad::GeneralFad<T2>>::type;
   };
 }
 #endif

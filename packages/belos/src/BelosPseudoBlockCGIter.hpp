@@ -50,7 +50,7 @@ namespace Belos {
    *
    * This struct is utilized by PseudoBlockCGIteration::initialize() and PseudoBlockCGIteration::getState().
    */
-  template <class ScalarType, class MV, class DM>
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
   class PseudoBlockCGIterationState : public CGIterationStateBase<ScalarType, MV, DM> {
 
   public:
@@ -77,7 +77,7 @@ namespace Belos {
     }
   };
 
-  template<class ScalarType, class MV, class OP, class DM>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   class PseudoBlockCGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
 
   public:

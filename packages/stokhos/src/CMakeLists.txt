@@ -724,15 +724,6 @@ IF (Stokhos_ENABLE_Sacado)
 
     TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/Fad)
     LIST(APPEND SACADO_HEADERS
-      sacado/kokkos/vector/Fad/Sacado_Fad_ExprSpec_MP_Vector.hpp
-      sacado/kokkos/vector/Fad/Sacado_Fad_Expr_MP_Vector.hpp
-      sacado/kokkos/vector/Fad/Sacado_Fad_GeneralFad_MP_Vector.hpp
-      sacado/kokkos/vector/Fad/Sacado_Fad_Ops_MP_Vector.hpp
-      sacado/kokkos/vector/Fad/Sacado_Fad_DFad_MP_Vector.hpp
-      sacado/kokkos/vector/Fad/Sacado_Fad_SFad_MP_Vector.hpp
-      sacado/kokkos/vector/Fad/Sacado_Fad_SLFad_MP_Vector.hpp
-      sacado/kokkos/vector/Fad/Sacado_Fad_ViewFad_MP_Vector.hpp
-      sacado/kokkos/vector/Fad/Sacado_Fad_Exp_MP_Vector.hpp
       sacado/kokkos/vector/Fad/Sacado_Fad_MP_Vector.hpp
       )
   ENDIF()

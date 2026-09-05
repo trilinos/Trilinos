@@ -1093,15 +1093,62 @@ class Scalar3D_27PtStencil {
         }
       }
     } else {  // Implicitly handled Dirichlet bcs. Truncate stencil for entries that fall over the boundary
+      GlobalOrdinal ii, jj, kk, remainder;
+      // compute grid location (ii,jj,kk) corresponding to center
+      ii          = (center % nx);
+      remainder   = (center - ii) / nx;
+      jj          = (remainder % ny);
+      kk          = (remainder - jj) / ny;
+      bool LeftBc = (DirichletBC & DIR_LEFT);
+      bool RghtBc = (DirichletBC & DIR_RIGHT);
+      bool BottBc = (DirichletBC & DIR_BOTTOM);
+      bool TopBc  = (DirichletBC & DIR_TOP);
+      bool FronBc = (DirichletBC & DIR_FRONT);
+      bool BackBc = (DirichletBC & DIR_BACK);
       for (size_t k0 = 0; k0 < 3; ++k0) {
         for (size_t k1 = 0; k1 < 3; ++k1) {
           for (size_t k2 = 0; k2 < 3; ++k2) {
-            if ((k0 != MID) || (k1 != MID) || (k2 != MID))
-              Galeri_enterValue(rowStart, stencil_indices[k0][k1][k2], (stencil_entries(k0, k1, k2)));
+            impl_scalar_type scaleFactor = one;
+            if ((ii == 0) && !LeftBc) {
+              if (k0 == 0)
+                scaleFactor = zero;
+              else if (k0 == 1)
+                scaleFactor /= 2.;
+            }
+            if ((ii == nx - 1) && !RghtBc) {
+              if (k0 == 2)
+                scaleFactor = zero;
+              else if (k0 == 1)
+                scaleFactor /= 2.;
+            }
+            if ((jj == 0) && !BottBc) {
+              if (k1 == 0)
+                scaleFactor = zero;
+              else if (k1 == 1)
+                scaleFactor /= 2.;
+            }
+            if ((jj == ny - 1) && !TopBc) {
+              if (k1 == 2)
+                scaleFactor = zero;
+              else if (k1 == 1)
+                scaleFactor /= 2.;
+            }
+            if ((kk == 0) && !BackBc) {
+              if (k2 == 0)
+                scaleFactor = zero;
+              else if (k2 == 1)
+                scaleFactor /= 2.;
+            }
+            if ((kk == nz - 1) && !FronBc) {
+              if (k2 == 2)
+                scaleFactor = zero;
+              else if (k2 == 1)
+                scaleFactor /= 2.;
+            }
+            Galeri_enterValue(rowStart, stencil_indices[k0][k1][k2], (scaleFactor * stencil_entries(k0, k1, k2)));
           }
         }
       }
-      Galeri_enterValue(rowStart, center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : stencil_entries(MID, MID, MID));
     }
   }
 };
@@ -1511,8 +1558,8 @@ StencilMatrix(const Teuchos::RCP<const Map>& map,
   ///////////////////////////
   // Step 2 - Column map
 
-  tm1 = Teuchos::null;
-  tm1 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: " + matLabel + " generation: column map")));
+  tm1                    = Teuchos::null;
+  tm1                    = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: " + matLabel + " generation: column map")));
   auto columnMap_entries = Kokkos::View<GlobalOrdinal*, memory_space>("columnMap_entries", numMyElements + stencil.off_rank_indices.size());
   // Copy over on-rank entries from rowmap
   Kokkos::deep_copy(Kokkos::subview(columnMap_entries, Kokkos::make_pair(0, numMyElements)),
@@ -1583,8 +1630,8 @@ StencilMatrix(const Teuchos::RCP<const Map>& map,
   ///////////////////////////
   // Step 3 - Fill
 
-  tm1 = Teuchos::null;
-  tm1 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: " + matLabel + " generation: fill")));
+  tm1               = Teuchos::null;
+  tm1               = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: " + matLabel + " generation: fill")));
   stencil.lclColMap = ghosted_map->getLocalMap();
   stencil.colidx    = colidx_type("colidx", myNNZ);
   stencil.values    = values_type("values", myNNZ);

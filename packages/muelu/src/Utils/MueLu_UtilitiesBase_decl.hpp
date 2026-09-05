@@ -92,6 +92,14 @@ class UtilitiesBase {
   */
   static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> GetThresholdedGraph(const RCP<Matrix>& A, const Magnitude threshold);
 
+  /*! @brief Threshold a graph
+
+    Returns graph associated with lower triangular matrix that is also filtered with a threshold value.
+
+    NOTE -- it's assumed that A has been fillComplete'd.
+  */
+  static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> GetThresholdedLowerTriangularGraph(const RCP<Matrix>& A, const Magnitude threshold);
+
   /*! @brief Extract Matrix Diagonal
 
     Returns Matrix diagonal in ArrayRCP.
@@ -444,7 +452,7 @@ class UtilitiesBase {
                                 const Teuchos::ArrayRCP<const bool>& dirichletCols,
                                 Scalar replaceWith = Teuchos::ScalarTraits<Scalar>::zero());
 
-  static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletCols, SC replaceWith = Teuchos::ScalarTraits<SC>::zero());
+  static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletCols, SC replaceWith = Teuchos::ScalarTraits<SC>::zero(), const bool DontZeroDiagEntries = false);
 
   // Finds the OAZ Dirichlet rows for this matrix
   static void FindDirichletRowsAndPropagateToCols(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
@@ -456,7 +464,7 @@ class UtilitiesBase {
   static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> ReplaceNonZerosWithOnes(const RCP<Matrix>& original);
 
   //! Creates a sparse approximate inverse of a matrix with the same nonzero pattern as the input matrix
-  static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> SPAI(const RCP<Matrix>& original);
+  static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> SPAI(const RCP<Matrix>& original, const std::string& MinvScheme);
 
   // This routine takes a BlockedMap and an Importer (assuming that the BlockedMap matches the source of the importer) and generates a BlockedMap corresponding
   // to the Importer's target map.  We assume that the targetMap is unique (which, is not a strict requirement of an Importer, but is here and no, we don't check)

@@ -257,6 +257,11 @@ void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level&
     auto mapParams = Teuchos::rcp(new Teuchos::ParameterList);
     mapParams->set("compute global constants", IsPrint(Statistics1));
     newRowMap = MapFactory ::Build(lib, rowMap->getGlobalNumElements(), myGIDs(), indexBase, origComm, mapParams);
+    if (!IsPrint(Statistics1) && Xpetra::toTpetra(rowMap)->haveGlobalConstants()) {
+      // Copy global constants
+      auto tpMap = Xpetra::toTpetra(newRowMap->getMap());
+      Teuchos::rcp_const_cast<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(tpMap)->copyGlobalConstants(*Xpetra::toTpetra(rowMap));
+    }
   }
 
   RCP<const Import> rowMapImporter;

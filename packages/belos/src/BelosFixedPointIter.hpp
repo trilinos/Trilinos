@@ -39,7 +39,7 @@
 
 namespace Belos {
 
-template<class ScalarType, class MV, class OP, class DM>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP,DM> {
 
   public:

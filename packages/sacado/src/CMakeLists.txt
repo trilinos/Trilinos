@@ -19,60 +19,31 @@ SET(HEADERS ${HEADERS}
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/new_design)
 SET(HEADERS ${HEADERS}
-  new_design/Sacado_Fad_Exp_MathFunctions.hpp
-  new_design/Sacado_Fad_Exp_Expression.hpp
-  new_design/Sacado_Fad_Exp_ExpressionTraits.hpp
-  new_design/Sacado_Fad_Exp_ExprAssign.hpp
-  new_design/Sacado_Fad_Exp_Extender.hpp
-  new_design/Sacado_Fad_Exp_GeneralFad.hpp
-  new_design/Sacado_Fad_Exp_GeneralFadTraits.hpp
-  new_design/Sacado_Fad_Exp_Ops_Fwd.hpp
-  new_design/Sacado_Fad_Exp_Ops.hpp
-  new_design/Sacado_Fad_Exp_DynamicStorage.hpp
-  new_design/Sacado_Fad_Exp_StaticStorage.hpp
-  new_design/Sacado_Fad_Exp_StaticFixedStorage.hpp
-  new_design/Sacado_Fad_Exp_VectorDynamicStorage.hpp
-  new_design/Sacado_Fad_Exp_ViewStorage.hpp
-  new_design/Sacado_Fad_Exp_DFad.hpp
-  new_design/Sacado_Fad_Exp_SLFad.hpp
-  new_design/Sacado_Fad_Exp_SFad.hpp
-  new_design/Sacado_Fad_Exp_ViewFad.hpp
-  new_design/Sacado_Fad_Exp_DVFad.hpp
-  new_design/Sacado_Fad_Exp_Atomic.hpp
-  )
-
-# FAD
-SET(HEADERS ${HEADERS}
-  Sacado_Fad_GeneralFad.hpp
-  Sacado_Fad_GeneralFadExpr.hpp
-  Sacado_Fad_GeneralFadTestingHelpers.hpp
-  Sacado_Fad_ExpressionTraits.hpp
   Sacado_Fad_ExpressionFwd.hpp
   Sacado_Fad_Expression.hpp
+  Sacado_Fad_ExpressionTraits.hpp
+  Sacado_Fad_ExprAssign.hpp
+  Sacado_Fad_Extender.hpp
+  Sacado_Fad_GeneralFad.hpp
+  Sacado_Fad_GeneralFadExpr.hpp
+  Sacado_Fad_GeneralFadTraits.hpp
+  Sacado_Fad_GeneralFadTestingHelpers.hpp
   Sacado_Fad_Ops_Fwd.hpp
   Sacado_Fad_Ops.hpp
   Sacado_Fad_DynamicStorage.hpp
-  Sacado_Fad_DFad.hpp
-  Sacado_Fad_DFadTraits.hpp
   Sacado_Fad_StaticStorage.hpp
+  Sacado_Fad_StaticFixedStorage.hpp
+  Sacado_Fad_VectorDynamicStorage.hpp
+  Sacado_Fad_ViewStorage.hpp
+  Sacado_Fad_DFad.hpp
   Sacado_Fad_SLFad.hpp
-  Sacado_Fad_SLFadTraits.hpp
   Sacado_Fad_SFad.hpp
-  Sacado_Fad_SFadTraits.hpp
+  Sacado_Fad_ViewFad.hpp
   Sacado_Fad_DVFad.hpp
-  Sacado_Fad_DVFadTraits.hpp
+  Sacado_Fad_Atomic.hpp
   Sacado_Fad_Vector.hpp
   Sacado_Fad_VectorImp.hpp
-  Sacado_Fad_VectorDynamicStorage.hpp
-  Sacado_Fad_SimpleFad.hpp
-  Sacado_Fad_SimpleFadImp.hpp
-  Sacado_Fad_SimpleFadOps.hpp
-  Sacado_Fad_SimpleFadTraits.hpp
-  Sacado_Fad_ViewStorage.hpp
-  Sacado_Fad_ViewFad.hpp
-  Sacado_Fad_ViewFadTraits.hpp
   Sacado_Fad_DFad_tmpl.hpp
   Sacado_Fad_SFad_tmpl.hpp
   Sacado_Fad_SLFad_tmpl.hpp

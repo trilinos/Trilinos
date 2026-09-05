@@ -29,7 +29,7 @@
     typename NODE_TYPE::device_type>,                                                           \
     Kokkos::View<S**, Kokkos::LayoutLeft, typename NODE_TYPE::device_type> >;
 
-#ifdef KOKKOS_ENABLE_CUDA_UVM
+#if defined(KOKKOS_ENABLE_CUDA) && defined(HAVE_TPETRA_SHARED_ALLOCS)
 #define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(S,LO)       \
   template class Amesos2::AMESOS2_KOKKOS_IMPL_SOLVER_NAME<KokkosSparse::CrsMatrix<S, LO,          \
     Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>>,                                              \

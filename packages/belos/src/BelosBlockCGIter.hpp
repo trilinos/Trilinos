@@ -39,7 +39,7 @@ namespace Belos {
    *
    * This struct is utilized by BlockCGIteration::initialize() and BlockCGIteration::getState().
    */
-  template <class ScalarType, class MV, class DM>
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
   class BlockCGIterationState : public CGIterationStateBase<ScalarType, MV, DM> {
 
   public:
@@ -75,7 +75,7 @@ namespace Belos {
 
 /// \brief Stub implementation of BlockCGIter, for ScalarType types
 ///   for which Teuchos::LAPACK does NOT have a valid implementation.
-template<class ScalarType, class MV, class OP, class DM,
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>,
          const bool lapackSupportsScalarType =
          Belos::Details::LapackSupportsScalar<ScalarType>::value>
 class BlockCGIter : virtual public CGIteration<ScalarType, MV, OP, DM> {

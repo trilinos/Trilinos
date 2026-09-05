@@ -17,7 +17,6 @@
 #include "Teuchos_TestingHelpers.hpp"
 
 #include "Sacado_No_Kokkos.hpp"
-#include "Sacado_Fad_SimpleFad.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
 #include "Sacado_mpl_apply.hpp"
 
@@ -341,9 +340,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, ELRCacheFad_DFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, ELRCacheFad_SFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Fad, ELRCacheFad_SLFadType )
 
-typedef Sacado::Fad::SimpleFad<double> SimpleFadType;
 typedef Sacado::LFad::LogicalSparse<double,bool> LFadType;
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, SimpleFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Promote, Other, LFadType )
 
 typedef Sacado::FlopCounterPack::ScalarFlopCounter<double> SFCType;

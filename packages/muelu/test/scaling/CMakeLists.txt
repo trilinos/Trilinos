@@ -146,6 +146,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     smoother_complex.xml
     smooVec.mm
     smooVecCoalesce.xml
+    test.globalConstants.xml
     tripleMatrixProduct.xml
     zeroAggTest.xml
   CATEGORIES BASIC PERFORMANCE
@@ -924,5 +925,14 @@ TRIBITS_ADD_TEST(
   COMM mpi
   NUM_MPI_PROCS 4
   ARGS "--matrix=A_rankWithoutUnknowns.m --rowmap=map_rankWithoutUnknowns.m --coords=coords_rankWithoutUnknowns.m --xml=rankWithoutUnknowns.xml"
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
+
+TRIBITS_ADD_TEST(
+  Driver
+  NAME GlobalConstants
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--nx=400 --ny=400 --xml=test.globalConstants.xml"
   PASS_REGULAR_EXPRESSION "Belos converged"
 )

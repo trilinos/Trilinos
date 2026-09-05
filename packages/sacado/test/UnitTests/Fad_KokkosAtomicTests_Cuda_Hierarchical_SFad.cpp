@@ -26,10 +26,8 @@ typedef Sacado::LayoutContiguous<Kokkos::LayoutRight,32> RightContiguous32;
   VIEW_FAD_TESTS_FLD( F, RightContiguous32, D )
 
 // Instantiate tests for Cuda device
-#if SACADO_ENABLE_NEW_DESIGN
 using Kokkos::Cuda;
 VIEW_FAD_TESTS_FD( SFadType , Cuda )
-#endif
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

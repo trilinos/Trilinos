@@ -61,6 +61,23 @@ class LSCPrecondState : public BlockPreconditionerState {
   double alpha_;
 };
 
+/** \brief Least-Squares Commutator (LSC) block preconditioner factory for
+ *        incompressible Navier-Stokes saddle-point systems.
+ *
+ * Builds a block preconditioner for a 2x2 velocity/pressure system whose Schur
+ * complement is approximated by the least-squares commutator construction of
+ * Elman, Howle, Shadid, Silvester and Tuminaro (SISC 2007). The details of how
+ * the required operators (\f$F^{-1}\f$, the \f$BQ_u^{-1}B^T\f$ Schur-complement
+ * approximation, the velocity mass inverse, and any stabilization) are formed are
+ * delegated to a pluggable LSCStrategy — the built-in strategies are the basic
+ * inverse, pressure-Laplace, and SIMPLEC variants (see buildStrategy /
+ * addStrategy). Per-instance operators are cached in an LSCPrecondState so they
+ * can be reused across rebuilds.
+ *
+ * This is the factory behind the <tt>"NS LSC"</tt> type; see the
+ * \ref teko_navier_stokes "Navier-Stokes Preconditioners" guide page for the
+ * strategies and their parameters.
+ */
 class LSCPreconditionerFactory : public BlockPreconditionerFactory {
  public:
   //! \name Constructors

@@ -1108,6 +1108,16 @@ void Map<LocalOrdinal, GlobalOrdinal, Node>::computeGlobalConstants() const {
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void Map<LocalOrdinal, GlobalOrdinal, Node>::copyGlobalConstants(const Map<local_ordinal_type, global_ordinal_type, Node>& map) {
+  TEUCHOS_TEST_FOR_EXCEPTION(!map.haveGlobalConstants(), std::invalid_argument, "Map needs to have global constants");
+
+  minAllGID_           = map.getMinAllGlobalIndex();
+  maxAllGID_           = map.getMaxAllGlobalIndex();
+  haveGlobalConstants_ = true;
+  distributed_         = (getComm()->getSize() > 1) && map.distributed_;
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Map<LocalOrdinal, GlobalOrdinal, Node>::~Map() {
   if (!Kokkos::is_initialized()) {
     std::ostringstream os;

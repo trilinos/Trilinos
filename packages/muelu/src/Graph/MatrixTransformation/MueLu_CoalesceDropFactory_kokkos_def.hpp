@@ -58,6 +58,7 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   SET_VALID_ENTRY("aggregation: drop scheme");
   SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
   SET_VALID_ENTRY("aggregation: distance laplacian metric");
+  SET_VALID_ENTRY("aggregation: Minv scheme");
   SET_VALID_ENTRY("aggregation: distance laplacian directional weights");
   SET_VALID_ENTRY("aggregation: dropping may create Dirichlet");
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
@@ -92,6 +93,7 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   validParamList->getEntry("aggregation: strength-of-connection: matrix").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("A", "distance laplacian", "MinvA"))));
   validParamList->getEntry("aggregation: strength-of-connection: measure").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben", "unscaled"))));
   validParamList->getEntry("aggregation: distance laplacian metric").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("unweighted", "material"))));
+  validParamList->getEntry("aggregation: Minv scheme").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("spai", "fsai"))));
 
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
   validParamList->set<RCP<const FactoryBase>>("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
@@ -133,9 +135,12 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Decl
   if (needM && (currentLevel.GetLevelID() != 0)) {
     if (pL.isSublist("project auxiliary matrices")) {
       auto projectList = pL.sublist("project auxiliary matrices");
-      if (projectList.isParameter("M")) Input(currentLevel, "M");
-      if (projectList.isParameter("Minv")) Input(currentLevel, "Minv");
-      if (projectList.isParameter("MinvA")) Input(currentLevel, "MinvA");
+      if (projectList.isParameter("MinvA"))
+        Input(currentLevel, "MinvA");
+      else if (projectList.isParameter("Minv"))
+        Input(currentLevel, "Minv");
+      else if (projectList.isParameter("M"))
+        Input(currentLevel, "M");
     }
   }
 
@@ -323,6 +328,7 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
   std::string socUsesMatrix           = pL.get<std::string>("aggregation: strength-of-connection: matrix");
   std::string socUsesMeasure          = pL.get<std::string>("aggregation: strength-of-connection: measure");
   std::string distanceLaplacianMetric = pL.get<std::string>("aggregation: distance laplacian metric");
+  std::string MinvScheme              = pL.get<std::string>("aggregation: Minv scheme");
   bool symmetrizeDroppedGraph         = pL.get<bool>("aggregation: symmetrize graph after dropping");
   magnitudeType threshold;
   // If we're doing the ML-style halving of the drop tol at each level, we do that here.
@@ -397,29 +403,63 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
         bool storeMinvOnLevel = false, storeMinvAOnLevel = false;
         if (pL.isSublist("project auxiliary matrices")) {
           auto projectList = pL.sublist("project auxiliary matrices");
-          if (projectList.isParameter("Minv")) storeMinvOnLevel = true;
-          if (projectList.isParameter("MinvA")) storeMinvAOnLevel = true;
-          // project list appears to be empty, so default behavior is to store MinvA
-          if (!projectList.isParameter("M") && !storeMinvOnLevel && !storeMinvAOnLevel) storeMinvAOnLevel = true;
+          if (projectList.isParameter("MinvA"))
+            storeMinvAOnLevel = true;
+          else {
+            if (projectList.isParameter("Minv"))
+              storeMinvOnLevel = true;
+            else
+              storeMinvAOnLevel = true;  // nothing found in project list, so default to storing MinvA
+          }
         } else
-          storeMinvAOnLevel = true;  // default behavior is to project MinvA
+          storeMinvAOnLevel = true;  // no project list given, so default to storing MinvA
 
         if (IsAvailable(currentLevel, "MinvA")) {
           A_drop = Get<RCP<Matrix>>(currentLevel, "MinvA");
         } else {
           RCP<Matrix> Minv;
-          if (IsAvailable(currentLevel, "Minv")) {
-            Minv = Get<RCP<Matrix>>(currentLevel, "Minv");
+          bool MueLu_Minv = IsAvailable(currentLevel, "Minv");
+          bool User_Minv  = currentLevel.IsAvailable("Minv", NoFactory::get());
+          if (MueLu_Minv || User_Minv) {
+            if (MueLu_Minv)
+              Minv = Get<RCP<Matrix>>(currentLevel, "Minv");
+            else
+              Minv = currentLevel.Get<RCP<Matrix>>("Minv", NoFactory::get());
           } else {  // get M and create Minv
+
+            RCP<Matrix> M;
             if (currentLevel.GetLevelID() == 0) {
-              auto M = currentLevel.Get<RCP<Matrix>>("M", NoFactory::get());
-              // Create Minv via sparse approximate inverse
-              Minv = Utilities::SPAI(M);
+              M = currentLevel.Get<RCP<Matrix>>("M", NoFactory::get());
             } else {
-              auto M = Get<RCP<Matrix>>(currentLevel, "M");
-              // Create Minv via sparse approximate inverse
-              Minv = Utilities::SPAI(M);
+              M = Get<RCP<Matrix>>(currentLevel, "M");
             }
+            // Find Dirichlets in A to stick corresponding Dirichlets in M
+#ifdef moreExperimentsToSeeIfHelpful
+            auto boundaryNodes = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos(*A, 8.0 * Teuchos::ScalarTraits<magnitudeType>::eps());
+            if (GetVerbLevel() & Statistics1) {
+              int nAbc = 0;
+              for (size_t iii = 0; iii < A->getLocalNumRows(); iii++)
+                if (boundaryNodes[iii]) nAbc++;
+              auto MbcBefore = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos(*M, 8.0 * Teuchos::ScalarTraits<magnitudeType>::eps());
+              int nMbcBefore = 0;
+              for (size_t iii = 0; iii < M->getLocalNumRows(); iii++)
+                if (MbcBefore[iii]) nMbcBefore++;
+              GetOStream(Statistics1) << "MueLu_CoalesceDropFactory_kokkos_def: # A bcs = " << nAbc << ", # M bcs before MueLu enforcement = " << nMbcBefore;
+            }
+            MueLu::Utilities<SC, LO, GO, NO>::ApplyOAZToMatrixRows(M, boundaryNodes);
+            if (GetVerbLevel() & Statistics1) {
+              auto MbcAfter = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos(*M, 8.0 * Teuchos::ScalarTraits<magnitudeType>::eps());
+              int nMbcAfter = 0;
+              for (size_t iii = 0; iii < M->getLocalNumRows(); iii++)
+                if (MbcAfter[iii]) nMbcAfter++;
+              GetOStream(Statistics1) << ", # M bcs after MueLu enforcement = " << nMbcAfter << std::endl;
+            }
+#endif
+
+            // Create Minv via sparse approximate inverse
+
+            Minv = Utilities::SPAI(M, MinvScheme);
+
             if (storeMinvOnLevel) currentLevel.Set("Minv", Minv);
           }  // finished if/else (currentLevel.IsAvailable("Minv", *mtf)
 
@@ -428,6 +468,13 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
           auto params = Teuchos::rcp(new Teuchos::ParameterList());
           params->set("MM Throw For Non-Existent Entries", false);
           A_drop = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Minv, false, *A, false, A_drop, GetOStream(Statistics2), true, true, std::string("MinvA"), params);
+
+          // Enforce Dirichlet BCs by zeroing out off-diagonal rows and columns and putting a 1 on diag of MinvA
+          auto boundaryNodes = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletRows_kokkos(*A, 8.0 * Teuchos::ScalarTraits<magnitudeType>::eps());
+          auto dirichletCols = MueLu::Utilities<SC, LO, GO, NO>::DetectDirichletCols(*A, boundaryNodes);
+          MueLu::Utilities<SC, LO, GO, NO>::ApplyOAZToMatrixRows(A_drop, boundaryNodes);
+          MueLu::Utilities<SC, LO, GO, NO>::ZeroDirichletCols(A_drop, dirichletCols, Teuchos::ScalarTraits<SC>::zero(), true);
+
           if (storeMinvAOnLevel) currentLevel.Set("MinvA", A_drop);
         }  // finished if/else  (currentLevel.IsAvailable("MinvA", NoFactory::get()))
       }    // else if (socUsesMatrix == "MinvA") {

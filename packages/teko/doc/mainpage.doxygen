@@ -1,2 +1,42 @@
-/*! @mainpage Teko: For block and physics-based preconditioners
+/*! @mainpage Teko: Block and Physics-Based Preconditioning
+
+\section teko_mainpage_intro Introduction
+
+Teko is a Trilinos package for the development and application of <b>block and
+physics-based preconditioners</b>. It provides tools to assemble and manipulate block
+linear operators, to decompose a fully coupled operator into its physical sub-blocks, and
+to build approximate inverses of those blocks using the full complement of Trilinos solvers
+and preconditioners (Ifpack2, MueLu, Amesos2, Belos, and others). On top of that
+infrastructure Teko ships a library of generic block preconditioners (block Jacobi, block
+Gauss-Seidel, LU 2x2) and physics-based preconditioners for the incompressible
+Navier-Stokes equations (SIMPLE, LSC, PCD).
+
+\section teko_mainpage_guide User's Guide
+
+The pages below document how to configure and use Teko, with a focus on the
+<tt>Teuchos::ParameterList</tt> / XML options that control every preconditioner:
+
+  - \subpage teko_guide "Overview and glossary"
+  - \subpage teko_getting_started "Getting Started" &mdash; core concepts and a minimal
+    end-to-end example.
+  - \subpage teko_config_model "Configuration Model" &mdash; the three-layer configuration
+    model and complete XML examples. <b>Start here for options.</b>
+  - \subpage teko_inverse_library "The Inverse Library" &mdash; named inverses and how they
+    reference Ifpack2 / MueLu / Amesos2 / Belos.
+  - \subpage teko_block_reference "Block Preconditioner Reference" &mdash; exhaustive
+    parameter tables for every built-in block preconditioner.
+  - \subpage teko_navier_stokes "Navier-Stokes Preconditioners" &mdash; SIMPLE, LSC, PCD.
+  - \subpage teko_examples "Examples" &mdash; walkthroughs of the in-tree example drivers.
+  - \subpage teko_advanced "Advanced Topics" &mdash; the RequestHandler callback system,
+    reordering, operator reuse, and writing your own factory.
+  - \subpage teko_cookbook "Cookbook" &mdash; common blocking, solver-composition, reuse,
+    and multiphysics patterns.
+
+\section teko_mainpage_refs References
+
+For the theory behind the Navier-Stokes methods, see
+<a href="http://dx.doi.org/10.1016/j.jcp.2011.09.001">Cyr, Shadid &amp; Tuminaro,
+<em>Stabilization and Scalable Block Preconditioning for the Navier-Stokes Equations</em>,
+J. Comput. Phys. 2011</a>.
+
 */

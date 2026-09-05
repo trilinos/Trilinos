@@ -27,7 +27,7 @@ namespace Belos {
    *
    * This struct is utilized by GmresIteration::initialize() and GmresIteration::getState().
    */
-  template <class ScalarType, class MV, class DM>
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
   struct GmresIterationState {
     /*! \brief The current dimension of the reduction.
      *
@@ -69,7 +69,7 @@ namespace Belos {
    *
    * This struct is utilized by PseudoBlockGmresIter::initialize() and PseudoBlockGmresIter::getState().
    */
-  template <class ScalarType, class MV, class DM>
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
   struct PseudoBlockGmresIterState {
 
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
@@ -159,7 +159,7 @@ namespace Belos {
 
   //@}
 
-template<class ScalarType, class MV, class OP, class DM>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class GmresIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:

@@ -51,7 +51,7 @@ namespace Belos {
    *
    * The structure is utilized by initialize() and getState().
    */
-  template <class ScalarType, class MV, class DM>
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
   struct PCPGIterState {
     /*! \brief The current dimension of the reduction.
      *
@@ -97,7 +97,7 @@ namespace Belos {
   
   //@}
   
-  template<class ScalarType, class MV, class OP, class DM>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   class PCPGIter : virtual public Iteration<ScalarType,MV,OP,DM> {
     
   public:

@@ -33,13 +33,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_NEW_FAD_DESIGN_IS_DEFAULT
-  SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-  "Make the new Fad design the default, replacing the old one."
-  ON
-  )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_SFAD_INIT_DEFAULT_CONSTRUCTOR
   SACADO_SFAD_INIT_DEFAULT_CONSTRUCTOR
   "Force SFad (in the new design) to initialize value and derivative components in the default constructor (adds additional runtime cost, but protects against uninitialized use)."

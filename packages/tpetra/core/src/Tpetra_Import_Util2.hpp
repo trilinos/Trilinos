@@ -877,6 +877,8 @@ void lowCommunicationMakeColMapAndReindex(
   // For now, we copy back into colind_LID_host (which also overwrites the colind_LID Teuchos array)
   // When colind_LID becomes a Kokkos View we can delete this
   Kokkos::deep_copy(exec, colind_LID_host, colind_LID_view);
+  // fence so colind_LID is safe to access by caller immediately
+  exec.fence();
 }
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>

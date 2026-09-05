@@ -51,7 +51,7 @@ namespace Belos {
    *
    * This struct is utilized by RCGIter::initialize()
    */
-  template <class ScalarType, class MV, class DM>
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
   struct RCGIterState {
     /*! \brief The current dimension of the reduction.
      *
@@ -106,7 +106,7 @@ namespace Belos {
 
   //@}
 
-  template<class ScalarType, class MV, class OP, class DM>
+  template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
   class RCGIter : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:

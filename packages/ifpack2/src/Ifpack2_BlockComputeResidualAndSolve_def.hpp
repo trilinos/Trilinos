@@ -671,13 +671,17 @@ void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag
   switch (blocksize_requested) {
     case 3: RUN_CASE(3);
     case 5: RUN_CASE(5);
+    case 6: RUN_CASE(6);
     case 7: RUN_CASE(7);
     case 9: RUN_CASE(9);
     case 10: RUN_CASE(10);
     case 11: RUN_CASE(11);
+    case 12: RUN_CASE(12);
+    case 13: RUN_CASE(13);
     case 16: RUN_CASE(16);
     case 17: RUN_CASE(17);
     case 18: RUN_CASE(18);
+    case 19: RUN_CASE(19);
     default: RUN_CASE(0);
   }
 #undef RUN_CASE
@@ -699,13 +703,17 @@ void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag
   switch (blocksize_requested) {
     case 3: RUN_CASE(3);
     case 5: RUN_CASE(5);
+    case 6: RUN_CASE(6);
     case 7: RUN_CASE(7);
     case 9: RUN_CASE(9);
     case 10: RUN_CASE(10);
     case 11: RUN_CASE(11);
+    case 12: RUN_CASE(12);
+    case 13: RUN_CASE(13);
     case 16: RUN_CASE(16);
     case 17: RUN_CASE(17);
     case 18: RUN_CASE(18);
+    case 19: RUN_CASE(19);
     default: RUN_CASE(0);
   }
 #undef RUN_CASE
@@ -726,13 +734,17 @@ void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag
   switch (blocksize_requested) {
     case 3: RUN_CASE(3);
     case 5: RUN_CASE(5);
+    case 6: RUN_CASE(6);
     case 7: RUN_CASE(7);
     case 9: RUN_CASE(9);
     case 10: RUN_CASE(10);
     case 11: RUN_CASE(11);
+    case 12: RUN_CASE(12);
+    case 13: RUN_CASE(13);
     case 16: RUN_CASE(16);
     case 17: RUN_CASE(17);
     case 18: RUN_CASE(18);
+    case 19: RUN_CASE(19);
     default: RUN_CASE(0);
   }
 #undef RUN_CASE
@@ -753,13 +765,17 @@ void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag
   switch (blocksize_requested) {
     case 3: RUN_CASE(3);
     case 5: RUN_CASE(5);
+    case 6: RUN_CASE(6);
     case 7: RUN_CASE(7);
     case 9: RUN_CASE(9);
     case 10: RUN_CASE(10);
     case 11: RUN_CASE(11);
+    case 12: RUN_CASE(12);
+    case 13: RUN_CASE(13);
     case 16: RUN_CASE(16);
     case 17: RUN_CASE(17);
     case 18: RUN_CASE(18);
+    case 19: RUN_CASE(19);
     default: RUN_CASE(0);
   }
 #undef RUN_CASE
