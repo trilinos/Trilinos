@@ -35,7 +35,7 @@ namespace PHX {
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_HIP)
   using Device = Kokkos::HIP;
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_SYCL)
-  using Device = Kokkos::Experimental::SYCL;
+  using Device = Kokkos::SYCL;
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_OPENMP)
   using Device = Kokkos::OpenMP;
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_THREAD)

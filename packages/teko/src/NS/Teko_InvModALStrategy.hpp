@@ -30,6 +30,19 @@ namespace NS {
 
 class ModALPrecondState;
 
+/** \brief Strategy object for the modified augmented-Lagrangian (ModAL)
+ *        Navier-Stokes preconditioner.
+ *
+ * Supplies the approximate inverses the ModAL preconditioner needs: the inverses
+ * of the augmented velocity diagonal blocks
+ * \f$A_{ii}p = A_{ii} + \gamma B_i^T W^{-1} B_i\f$ (for each spatial dimension)
+ * and the inverse of the pressure Schur complement \f$S\f$. The augmentation
+ * parameter \f$\gamma\f$ and an optional pressure mass matrix control the
+ * augmentation. Inverses are built from one factory for the velocity blocks and
+ * one for the Schur complement, and reusable state is cached in a
+ * ModALPrecondState. See the \ref teko_navier_stokes "Navier-Stokes
+ * Preconditioners" guide page.
+ */
 class InvModALStrategy {
  public:
   //! Empty constructor.

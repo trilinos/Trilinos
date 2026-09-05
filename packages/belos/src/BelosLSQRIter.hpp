@@ -38,7 +38,7 @@
 
 namespace Belos {
 
-template<class ScalarType, class MV, class OP, class DM>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
 
   public:

@@ -8,6 +8,7 @@ SET(ASSEMBLY_EXAMPLE_SOURCES
 TRIBITS_ADD_EXECUTABLE(
   PoissonExample
   SOURCES ${ASSEMBLY_EXAMPLE_SOURCES}
+  CATEGORIES BASIC PERFORMANCE
   )
 
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -135,3 +136,57 @@ SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
 DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 EXEDEPS PoissonExample
 )
+
+# FE assembly (Tpetra::FECrsMatrix) must produce the same answer as the classic path.
+# Both runs solve the identical problem; the only difference is whether the Jacobian is
+# assembled into a shared FECrsMatrix migrated by endAssembly(), or into separate
+# owned/ghosted matrices joined by an explicit export.
+TRIBITS_ADD_ADVANCED_TEST(
+  PoissonExample-FEAssembly
+  TEST_0 EXEC PoissonExample
+    ARGS --cell="Quad" --x-elements=10 --y-elements=10 --basis-order=2 --use-fe-assembly
+    PASS_REGULAR_EXPRESSION "ALL PASSED"
+    NUM_MPI_PROCS 4
+    OUTPUT_FILE PoissonExample-FEAssembly-fe.out
+  TEST_1 EXEC PoissonExample
+    ARGS --cell="Quad" --x-elements=10 --y-elements=10 --basis-order=2 --use-classic-assembly
+    PASS_REGULAR_EXPRESSION "ALL PASSED"
+    NUM_MPI_PROCS 4
+    OUTPUT_FILE PoissonExample-FEAssembly-classic.out
+  TEST_2 CMND python3
+    ARGS ${PACKAGE_SOURCE_DIR}/example/utilities/compareAssemblyModes.py
+         PoissonExample-FEAssembly-fe.out
+         PoissonExample-FEAssembly-classic.out
+         "L2 Error"
+         "H1 Error"
+    PASS_REGULAR_EXPRESSION "Test Passed"
+  COMM mpi
+  )
+
+# Performance tests: a mesh large enough to be worth timing, run through both
+# Jacobian assembly paths so the FECrsMatrix path can be compared against the
+# classic owned/ghosted path, and so assembly cost can be compared across
+# platforms. The assembly is repeated to keep the timing out of the noise; the
+# exodus write is off so file I/O does not swamp the measurement. RUN_SERIAL
+# keeps the two runs off each other's cores (and off each other's output files).
+TRIBITS_ADD_TEST(
+  PoissonExample
+  NAME PoissonExample-Performance-FEAssembly
+  ARGS "--cell=Quad --x-elements=400 --y-elements=400 --basis-order=2 --use-fe-assembly --assembly-loops=10 --no-exodus-output --stacked-timer --test-name=\"Panzer PoissonExample FE Assembly\""
+  PASS_REGULAR_EXPRESSION "ALL PASSED"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  CATEGORIES PERFORMANCE
+  RUN_SERIAL
+  )
+
+TRIBITS_ADD_TEST(
+  PoissonExample
+  NAME PoissonExample-Performance-ClassicAssembly
+  ARGS "--cell=Quad --x-elements=400 --y-elements=400 --basis-order=2 --use-classic-assembly --assembly-loops=10 --no-exodus-output --stacked-timer --test-name=\"Panzer PoissonExample Classic Assembly\""
+  PASS_REGULAR_EXPRESSION "ALL PASSED"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  CATEGORIES PERFORMANCE
+  RUN_SERIAL
+  )

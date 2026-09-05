@@ -9,14 +9,12 @@
 
 #include "TraitsTests.hpp"
 
-#include "Sacado_Fad_SimpleFad.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
 
 typedef ::testing::Types<
   Sacado::Fad::DFad<double>,
   Sacado::Fad::SFad<double,5>,
   Sacado::Fad::SLFad<double,10>,
-  Sacado::Fad::SimpleFad<double>,
   Sacado::Fad::DVFad<double>,
   Sacado::ELRFad::DFad<double>,
   Sacado::ELRFad::SFad<double,5>,

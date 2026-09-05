@@ -10,28 +10,13 @@
 #ifndef SACADO_FAD_VECTORDYNAMICSTORAGE_HPP
 #define SACADO_FAD_VECTORDYNAMICSTORAGE_HPP
 
-#include "Sacado_ConfigDefs.h"
-
-#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-
-#include "Sacado_Fad_Exp_VectorDynamicStorage.hpp"
-
-namespace Sacado {
-  namespace Fad {
-
-    template <typename T, typename U = T>
-    using VectorDynamicStorage = Exp::VectorDynamicStorage<T,U>;
-
-  }
-}
-
-#else
+#include <type_traits>
+#include <utility>
 
 #include "Sacado_Traits.hpp"
 #include "Sacado_DynamicArrayTraits.hpp"
 
 namespace Sacado {
-
   namespace Fad {
 
     //! Derivative array storage class using dynamic memory allocation
@@ -40,13 +25,35 @@ namespace Sacado {
 
     public:
 
-      typedef T value_type;
+      typedef typename std::remove_cv<T>::type value_type;
+      static constexpr bool is_statically_sized = false;
+      static constexpr int static_size = 0;
+      static constexpr bool is_view = false;
+
+      //! Turn DynamicStorage into a meta-function class usable with mpl::apply
+      template <typename TT, typename UU = TT>
+      struct apply {
+        typedef VectorDynamicStorage<TT,UU> type;
+      };
+
+      //! Replace static derivative length
+      template <int N>
+      struct apply_N {
+        typedef VectorDynamicStorage<T,U> type;
+      };
 
       //! Default constructor
-      template <typename S>
       SACADO_INLINE_FUNCTION
-      VectorDynamicStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
-        v_(x), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_), dx_(NULL)
+      VectorDynamicStorage() :
+        v_(), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_),
+        dx_(nullptr)
+      {}
+
+      //! Constructor with value
+      SACADO_INLINE_FUNCTION
+      VectorDynamicStorage(const T & x) :
+        v_(x), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_),
+        dx_(nullptr)
       {}
 
       //! Constructor with size \c sz
@@ -54,12 +61,25 @@ namespace Sacado {
        * Initializes derivative array 0 of length \c sz
        */
       SACADO_INLINE_FUNCTION
-      VectorDynamicStorage(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
+      VectorDynamicStorage(const int sz, const T & x,
+                           const DerivInit zero_out = InitDerivArray) :
         v_(x), owns_mem(true), sz_(sz), len_(sz), stride_(1), val_(&v_) {
         if (zero_out == InitDerivArray)
           dx_ = ds_array<U>::get_and_fill(sz_);
         else
           dx_ = ds_array<U>::get(sz_);
+      }
+
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      SACADO_INLINE_FUNCTION
+      VectorDynamicStorage(const int sz, const int i, const value_type & x) :
+        VectorDynamicStorage(sz, x, InitDerivArray) {
+        dx_[i]=1.;
       }
 
       //! Constructor with supplied memory
@@ -80,6 +100,10 @@ namespace Sacado {
         dx_ = ds_array<U>::strided_get_and_fill(x.dx_, x.stride_, sz_);
       }
 
+      // Move does not make sense for this storage since it is always tied to
+      // some preallocated data.  Don't define move constructor so compiler will
+      // always fall-back to copy
+
       //! Destructor
       SACADO_INLINE_FUNCTION
       ~VectorDynamicStorage() {
@@ -97,7 +121,7 @@ namespace Sacado {
           if (sz_ != x.sz_) {
             sz_ = x.sz_;
             if (x.sz_ > len_) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
               if (!owns_mem)
                 throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
@@ -115,6 +139,10 @@ namespace Sacado {
         return *this;
       }
 
+      // Move does not make sense for this storage since it is always tied to
+      // some preallocated data.  Don't define move assignment so compiler will
+      // always fall-back to copy
+
       //! Returns number of derivative components
       SACADO_INLINE_FUNCTION
       int size() const { return sz_;}
@@ -130,7 +158,7 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       void resize(int sz) {
         if (sz > len_) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
           if (!owns_mem)
               throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
@@ -150,7 +178,7 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {
         if (sz > len_) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
           if (!owns_mem)
               throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
@@ -172,7 +200,7 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       void expand(int sz) {
         if (sz > len_) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
           if (!owns_mem)
               throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
@@ -266,7 +294,5 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
-
-#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_VECTORDYNAMICSTORAGE_HPP

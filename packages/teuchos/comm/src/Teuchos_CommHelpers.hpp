@@ -1909,6 +1909,15 @@ scatter (const int sendBuf[],
          const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
+scatterv (const int sendBuf[],
+          const int sendCounts[],
+          const int displs[],
+          int recvBuf[],
+          const int recvCount,
+          const int root,
+          const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
 scatterv (const double sendBuf[],
           const int sendCounts[],
           const int displs[],

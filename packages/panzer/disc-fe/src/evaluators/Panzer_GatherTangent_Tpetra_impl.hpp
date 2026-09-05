@@ -131,11 +131,11 @@ evaluateFields(typename TRAITS::EvalData workset)
   // for convenience pull out some objects from workset
   std::string blockId = this->wda(workset).block_id;
 
-  Teuchos::RCP<typename LOC::VectorType> x;
+  Teuchos::RCP<typename LOC::MultiVectorType> x;
   if (useTimeDerivativeSolutionVector_)
-    x = tpetraContainer_->get_dxdt();
+    x = tpetraContainer_->get_dxdt_mv();
   else
-    x = tpetraContainer_->get_x();
+    x = tpetraContainer_->get_x_mv();
 
   auto cellLocalIdsKokkos = this->wda(workset).getLocalCellIDs();
   auto lids = globalIndexer_->getLIDs();

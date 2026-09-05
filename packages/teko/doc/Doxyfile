@@ -44,11 +44,22 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = mainpage.doxygen ../src 
+INPUT                  = mainpage.doxygen \
+                         guide/index.md \
+                         guide/01-getting-started.md \
+                         guide/02-configuration-model.md \
+                         guide/03-inverse-library.md \
+                         guide/04-block-preconditioners.md \
+                         guide/05-navier-stokes.md \
+                         guide/06-examples.md \
+                         guide/07-advanced.md \
+                         guide/08-cookbook.md \
+                         ../src
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = 
-EXAMPLE_PATTERNS       = 
+EXAMPLE_PATH           = ../examples
+EXAMPLE_PATTERNS       = *.cpp *.hpp
+EXAMPLE_RECURSIVE      = YES
 IMAGE_PATH             = .
 ALPHABETICAL_INDEX     = YES
 COLS_IN_ALPHA_INDEX    = 4
@@ -69,14 +80,14 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
 INCLUDE_FILE_PATTERNS  = 
-PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI Anasazi::StatusTest
+PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS
 INCLUDE_PATH           = 
 EXPAND_AS_DEFINED      = STANDARD_MEMBER_COMPOSITION_MEMBERS
 #
 # Links to other packages
 #
 TAGFILES               = 
-GENERATE_TAGFILE       = ../../common/tag_files/anasazi.tag
+GENERATE_TAGFILE       = ../../common/tag_files/teko.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
 #

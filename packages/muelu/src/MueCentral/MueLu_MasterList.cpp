@@ -189,6 +189,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: distance laplacian directional weights\" type=\"Array(double)\" value=\"{1,1,1}\"/>"
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: distance laplacian metric\" type=\"string\" value=\"unweighted\"/>"
+  "<Parameter name=\"aggregation: Minv scheme\" type=\"string\" value=\"fsai\"/>"
   "<Parameter name=\"aggregation: classical algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: use ml scaling of drop tol\" type=\"bool\" value=\"false\"/>"
@@ -658,6 +659,8 @@ namespace MueLu {
          ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
       
          ("aggregation: distance laplacian metric","aggregation: distance laplacian metric")
+      
+         ("aggregation: Minv scheme","aggregation: Minv scheme")
       
          ("aggregation: classical algo","aggregation: classical algo")
       

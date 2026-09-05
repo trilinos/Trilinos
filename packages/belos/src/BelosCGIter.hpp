@@ -49,7 +49,7 @@ namespace Belos {
    *
    * This struct is utilized by CGIteration::initialize() and CGIteration::getState().
    */
-  template <class ScalarType, class MV, class DM>
+  template <class ScalarType, class MV, class DM = DefaultDenseMatrix<int,ScalarType>>
   class CGIterationState : public CGIterationStateBase<ScalarType, MV, DM> {
 
   public:

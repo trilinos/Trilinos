@@ -10,28 +10,13 @@
 #ifndef SACADO_FAD_STATICSTORAGE_HPP
 #define SACADO_FAD_STATICSTORAGE_HPP
 
-#include "Sacado_ConfigDefs.h"
-
-#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-
-#include "Sacado_Fad_Exp_StaticStorage.hpp"
-
-namespace Sacado {
-  namespace Fad {
-
-    template <typename T, int N>
-    using StaticStorage = Exp::StaticStorage<T,N>;
-
-  }
-}
-
-#else
+#include <type_traits>
+#include <utility>
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_StaticArrayTraits.hpp"
 
 namespace Sacado {
-
   namespace Fad {
 
     //! Derivative array storage class using static memory allocation
@@ -44,12 +29,31 @@ namespace Sacado {
 
     public:
 
-       typedef T value_type;
+      typedef typename std::remove_cv<T>::type value_type;
+      static constexpr bool is_statically_sized = false;
+      static constexpr int static_size = 0;
+      static constexpr bool is_view = false;
+
+      //! Turn StaticStorage into a meta-function class usable with mpl::apply
+      template <typename TT>
+      struct apply {
+        typedef StaticStorage<TT,Num> type;
+      };
+
+      //! Replace static derivative length (interpreted as a fixed length)
+      template <int N>
+      struct apply_N {
+        typedef StaticStorage<T,Num> type;
+      };
 
       //! Default constructor
-      template <typename S>
       SACADO_INLINE_FUNCTION
-      StaticStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
+      StaticStorage() :
+        val_(), sz_(0) {}
+
+      //! Constructor with value
+      SACADO_INLINE_FUNCTION
+      StaticStorage(const T & x) :
         val_(x), sz_(0) {}
 
       //! Constructor with size \c sz
@@ -57,14 +61,27 @@ namespace Sacado {
        * Initializes derivative array 0 of length \c sz
        */
       SACADO_INLINE_FUNCTION
-      StaticStorage(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
+      StaticStorage(const int sz, const T & x,
+                    const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
         if (sz > Num)
           throw "StaticStorage::StaticStorage() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
         if (zero_out == InitDerivArray)
           ss_array<T>::zero(dx_, sz_);
+      }
+
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      SACADO_INLINE_FUNCTION
+      StaticStorage(const int sz, const int i, const value_type & x) :
+        StaticStorage(sz, x, InitDerivArray) {
+        dx_[i]=1.;
       }
 
       //! Copy constructor
@@ -74,6 +91,14 @@ namespace Sacado {
         //ss_array<T>::copy(x.dx_, dx_, sz_);
         for (int i=0; i<sz_; i++)
           dx_[i] = x.dx_[i];
+      }
+
+      //! Move constructor
+      SACADO_INLINE_FUNCTION
+      StaticStorage(StaticStorage&& x) :
+        val_(std::move(x.val_)), sz_(x.sz_) {
+        for (int i=0; i<sz_; i++)
+          dx_[i] = std::move(x.dx_[i]);
       }
 
       //! Destructor
@@ -93,6 +118,18 @@ namespace Sacado {
         return *this;
       }
 
+      //! Move assignment
+      SACADO_INLINE_FUNCTION
+      StaticStorage& operator=(StaticStorage&& x) {
+        if (this != &x) {
+          val_ = std::move(x.val_);
+          sz_ = x.sz_;
+          for (int i=0; i<sz_; i++)
+            dx_[i] = std::move(x.dx_[i]);
+        }
+        return *this;
+      }
+
       //! Returns number of derivative components
       SACADO_INLINE_FUNCTION
       int size() const { return sz_;}
@@ -104,7 +141,7 @@ namespace Sacado {
       //! Resize the derivative array to sz
       SACADO_INLINE_FUNCTION
       void resize(int sz) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
         if (sz > Num)
           throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
@@ -118,7 +155,7 @@ namespace Sacado {
        */
       SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
         if (sz > Num)
           throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
@@ -134,7 +171,7 @@ namespace Sacado {
        */
       SACADO_INLINE_FUNCTION
       void expand(int sz) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
         if (sz > Num)
           throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
@@ -188,7 +225,5 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
-
-#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_STATICSTORAGE_HPP

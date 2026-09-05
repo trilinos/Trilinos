@@ -227,7 +227,6 @@ INSTANTIATE_FUNCS(Sacado::Fad::DFad<double>)
 INSTANTIATE_FUNCS(Sacado::ELRFad::DFad<double>)
 INSTANTIATE_FUNCS(Sacado::CacheFad::DFad<double>)
 INSTANTIATE_FUNCS(Sacado::ELRCacheFad::DFad<double>)
-INSTANTIATE_FUNCS(Sacado::Fad::SimpleFad<double>)
 #ifdef HAVE_ADOLC
 INSTANTIATE_FUNCS(adouble)
 #endif

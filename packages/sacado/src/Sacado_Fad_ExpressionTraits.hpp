@@ -10,22 +10,14 @@
 #ifndef SACADO_FAD_EXPRESSIONTRAITS_HPP
 #define SACADO_FAD_EXPRESSIONTRAITS_HPP
 
-#include "Sacado_ConfigDefs.h"
-
-#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-
-#include "Sacado_Fad_Exp_ExpressionTraits.hpp"
-
-#else
-
 #include "Sacado_Traits.hpp"
 
-#include "Sacado_Fad_ExpressionFwd.hpp"
+#include "Sacado_Fad_Expression.hpp"
 
 namespace Sacado {
 
   //! Specialization of %Promote to Expr types
-  SACADO_EXPR_PROMOTE_SPEC( Fad )
+  SACADO_EXPR_PROMOTE_SPEC( Fad::Exp )
 
   //! Specialization of %ScalarType to Expr types
   template <typename T>
@@ -45,7 +37,7 @@ namespace Sacado {
     static const bool value = true;
   };
 
-  //! Specialization of %IsSclarType to Expr types
+  //! Specialization of %IsScalarType to Expr types
   template <typename T>
   struct IsScalarType< Fad::Expr<T> > {
     static const bool value = false;
@@ -77,7 +69,5 @@ namespace Sacado {
   };
 
 } // namespace Sacado
-
-#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_EXPRESSIONTRAITS_HPP

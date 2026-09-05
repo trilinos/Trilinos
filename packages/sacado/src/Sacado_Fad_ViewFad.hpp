@@ -10,31 +10,84 @@
 #ifndef SACADO_FAD_VIEWFAD_HPP
 #define SACADO_FAD_VIEWFAD_HPP
 
-#include "Sacado_ConfigDefs.h"
+#include "Sacado_Fad_GeneralFad.hpp"
+#include "Sacado_Fad_ViewStorage.hpp"
 
-#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-
-#include "Sacado_Fad_Exp_ViewFad.hpp"
+#if defined(HAVE_SACADO_KOKKOS)
+#include "Kokkos_Atomic.hpp"
+#include "impl/Kokkos_Error.hpp"
+#endif
 
 namespace Sacado {
   namespace Fad {
-    template <typename T, unsigned static_length, unsigned static_stride,
-              typename U>
-    using ViewFad =
-      Exp::GeneralFad< Exp::ViewStorage<T,static_length,static_stride,U> >;
-  }
-}
 
-#else
+    template <typename T, unsigned static_length, unsigned static_stride, typename U>
+    using  ViewFad = GeneralFad< ViewStorage<T,static_length,static_stride,U> >;
 
-#include "Sacado_Fad_GeneralFadExpr.hpp"
-#include "Sacado_Fad_ViewFadTraits.hpp"
-#include "Sacado_Fad_ViewStorage.hpp"
+    // Class representing a pointer to ViewFad so that &ViewFad is supported
+    template <typename T, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr : public ViewFad<T,sl,ss,U> {
+    public:
 
-#define FAD_NS Fad
-#include "Sacado_Fad_ViewFad_tmpl.hpp"
-#undef FAD_NS
+      // Storage type base class
+      typedef ViewFad<T,sl,ss,U> view_fad_type;
 
-#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+      // Bring in constructors
+      using view_fad_type::view_fad_type;
+
+      // Add overload of dereference operator
+      SACADO_INLINE_FUNCTION
+      view_fad_type* operator->() { return this; }
+
+      // Add overload of dereference operator
+      SACADO_INLINE_FUNCTION
+      view_fad_type& operator*() { return *this; }
+    };
+
+  } // namespace Fad
+
+  template <typename,unsigned,unsigned> struct ViewFadType;
+
+  //! The View Fad type associated with this type
+  template< class S, unsigned length, unsigned stride >
+  struct ViewFadType< Fad::GeneralFad<S>, length, stride > {
+    typedef Fad::ViewFad< typename S::value_type,length,stride,Fad::GeneralFad<S> > type;
+  };
+
+  //! The View Fad type associated with this type
+  /*!
+   * Do not include the const in the base expr type.
+   */
+  template< class S, unsigned length, unsigned stride >
+  struct ViewFadType< const Fad::GeneralFad<S>, length, stride > {
+    typedef Fad::ViewFad< const typename S::value_type,length,stride,Fad::GeneralFad<S> > type;
+  };
+
+  // Specialization of BaseExprType for ViewFad, to use the base fad type
+  template <typename T, unsigned static_length, unsigned static_stride, typename U>
+  struct BaseExprType< Fad::GeneralFad< Fad::ViewStorage<T,static_length,static_stride,U> > > {
+    typedef U type;
+  };
+
+  //! Specialization of %ScalarType to ViewFad types
+  /*!
+   * This specialization overrides the one for GeneralFad to handle const
+   * value types so that resulting scalar type is still const.
+   */
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct ScalarType< Fad::ViewFad<ValueT,Size,Stride,Base> > {
+    typedef typename ScalarType<ValueT>::type type;
+  };
+
+  /*!
+   * This specialization overrides the one for GeneralFad to handle const
+   * value types so that resulting value type is still const.
+   */
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct ValueType< Fad::ViewFad<ValueT,Size,Stride,Base> > {
+    typedef ValueT type;
+  };
+
+} // namespace Sacado
 
 #endif // SACADO_FAD_VIEWFAD_HPP

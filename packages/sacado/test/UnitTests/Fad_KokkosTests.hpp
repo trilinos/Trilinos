@@ -2092,7 +2092,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
-#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, ConstViewAssign, FadType, Layout, Device )
 {
@@ -2185,10 +2184,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
     success = success && checkFads(f, h_v2(i), out);
   }
 }
-#else
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
-  Kokkos_View_Fad, ConstViewAssign, FadType, Layout, Device ) {}
-#endif
 
 // Tests that require view spec
 

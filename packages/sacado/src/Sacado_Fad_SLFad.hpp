@@ -10,31 +10,17 @@
 #ifndef SACADO_FAD_SLFAD_HPP
 #define SACADO_FAD_SLFAD_HPP
 
-#include "Sacado_ConfigDefs.h"
-
-#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-
-#include "Sacado_Fad_Exp_SLFad.hpp"
+#include "Sacado_Fad_GeneralFad.hpp"
+#include "Sacado_Fad_StaticStorage.hpp"
 
 namespace Sacado {
   namespace Fad {
+
     template <typename T, int Num>
-    using SLFad = Exp::GeneralFad< Exp::StaticStorage<T,Num> >;
-  }
-}
+    using SLFad = GeneralFad< StaticStorage<T,Num> >;
 
-#else
+  } // namespace Fad
 
-#include "Sacado_Fad_GeneralFadExpr.hpp"
-#include "Sacado_Fad_SLFadTraits.hpp"
-#include "Sacado_Fad_StaticStorage.hpp"
-
-#define FAD_NS Fad
-#include "Sacado_Fad_SLFad_tmpl.hpp"
-#undef FAD_NS
-
-#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-
-#include "Sacado_Fad_ViewFad.hpp"
+} // namespace Sacado
 
 #endif // SACADO_FAD_SLFAD_HPP

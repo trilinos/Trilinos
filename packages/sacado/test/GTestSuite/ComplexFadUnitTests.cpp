@@ -13,13 +13,10 @@
 
 #include "FadUnitTests2.hpp"
 
-#include "Sacado_Fad_SimpleFad.hpp"
-
 typedef ::testing::Types<
   Sacado::Fad::DFad<std::complex<double>>,
   Sacado::Fad::SFad<std::complex<double>,5>,
   Sacado::Fad::SLFad<std::complex<double>,5>,
-  Sacado::Fad::SimpleFad<std::complex<double>>,
   Sacado::Fad::DVFad<std::complex<double>>
   > FadTypes;
 

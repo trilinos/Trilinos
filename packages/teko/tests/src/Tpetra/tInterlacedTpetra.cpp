@@ -90,6 +90,13 @@ int tInterlacedTpetra::runTest(int verbosity, std::ostream& stdstrm, std::ostrea
   failcount += status ? 0 : 1;
   totalrun++;
 
+  status = test_buildSubBlock(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"buildSubBlock\" ... PASSED",
+                       "   \"buildSubBlock\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
+
   status = allTests;
   if (verbosity >= 10) {
     Teko_TEST_MSG_tpetra(failstrm, 0, "tInterlacedTpetra...PASSED", "tInterlacedTpetra...FAILED");
@@ -511,6 +518,135 @@ bool tInterlacedTpetra::test_many2one(int verbosity, std::ostream& os) {
                                      << Teko::Test::toString(status) << "): "
                                      << "norm must be better than the tolerance ( " << max
                                      << " <=? " << tolerance_ << " maxn = " << maxn << " )");
+
+  return allPassed;
+}
+
+// Verify that a strided sub-block is the expected diagonal matrix by applying
+// it to a vector with a distinct entry per node. With x_K = K+1, the exact
+// result is y_K = scale*(baseVal+K)*(K+1); using a distinct x per node means a
+// misplaced column (wrong node) changes the answer, so structure is checked too.
+static bool checkSubBlockDiagonal(const Tpetra::CrsMatrix<ST, LO, GO, NT>& blk, ST baseVal,
+                                  ST scale, ST tolerance, int i, int j, int verbosity,
+                                  std::ostream& os) {
+  bool status    = false;
+  bool allPassed = true;
+
+  RCP<const Tpetra::Map<LO, GO, NT> > domainMap = blk.getDomainMap();
+  RCP<const Tpetra::Map<LO, GO, NT> > rangeMap  = blk.getRangeMap();
+
+  Tpetra::Vector<ST, LO, GO, NT> x(domainMap);
+  Tpetra::Vector<ST, LO, GO, NT> y(rangeMap);
+  Tpetra::Vector<ST, LO, GO, NT> expected(rangeMap);
+
+  const LO numDomain = static_cast<LO>(domainMap->getLocalNumElements());
+  for (LO lr = 0; lr < numDomain; ++lr) {
+    GO K = domainMap->getGlobalElement(lr);
+    x.replaceLocalValue(lr, static_cast<ST>(K) + 1.0);
+  }
+
+  const LO numRange = static_cast<LO>(rangeMap->getLocalNumElements());
+  for (LO lr = 0; lr < numRange; ++lr) {
+    GO K = rangeMap->getGlobalElement(lr);
+    expected.replaceLocalValue(lr,
+                               scale * (baseVal + static_cast<ST>(K)) * (static_cast<ST>(K) + 1.0));
+  }
+
+  blk.apply(x, y);
+
+  ST expectedNorm = expected.norm2();
+  y.update(-1.0, expected, 1.0);  // y <- y - expected
+  ST diffNorm = y.norm2();
+  ST relErr   = (expectedNorm > 0.0) ? diffNorm / expectedNorm : diffNorm;
+
+  TEST_ASSERT(relErr <= tolerance, "   tInterlacedTpetra::test_buildSubBlock ("
+                                       << Teko::Test::toString(status) << "): sub-block (" << i
+                                       << "," << j << ") apply mismatch, relative error " << relErr
+                                       << " <=? " << tolerance);
+
+  return allPassed;
+}
+
+bool tInterlacedTpetra::test_buildSubBlock(int verbosity, std::ostream& os) {
+  bool status    = false;
+  bool allPassed = true;
+
+  const RCP<const Teuchos::Comm<int> > comm = GetComm_tpetra();
+  const int numProc                         = comm->getSize();
+
+  // Build an interlaced (numVars = 2) matrix whose only couplings are the 2x2
+  // block on each node. Then every strided sub-block (i,j) is a known diagonal
+  // matrix with entry base[i][j]+K on node K, which we can check exactly.
+  const int numVars     = 2;
+  const LO nodesPerProc = 5;
+  const GO globalNodes  = static_cast<GO>(nodesPerProc) * numProc;
+  const GO size         = numVars * globalNodes;
+
+  // Node-aligned contiguous distribution: proc r owns whole nodes, so the
+  // strided sub-block rows are a subset of A's locally owned rows (the
+  // assumption the device assembly relies on).
+  RCP<Tpetra::Map<LO, GO, NT> > map =
+      rcp(new Tpetra::Map<LO, GO, NT>(static_cast<Tpetra::global_size_t>(size),
+                                      static_cast<size_t>(numVars * nodesPerProc), 0, comm));
+
+  // Distinct bases per (row-var, col-var) so any (i,j) mixup is caught.
+  const ST base[2][2] = {{1.0, 1000.0}, {2000.0, 3000.0}};
+
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A =
+      rcp(new Tpetra::CrsMatrix<ST, LO, GO, NT>(map, static_cast<size_t>(numVars)));
+
+  const LO numMyNodes = static_cast<LO>(map->getLocalNumElements()) / numVars;
+  for (LO n = 0; n < numMyNodes; ++n) {
+    const GO K = map->getGlobalElement(numVars * n) / numVars;  // global node index
+    GO cols[2] = {numVars * K, numVars * K + 1};
+    for (int iv = 0; iv < numVars; ++iv) {
+      GO row     = numVars * K + iv;
+      ST vals[2] = {base[iv][0] + static_cast<ST>(K), base[iv][1] + static_cast<ST>(K)};
+      A->insertGlobalValues(row, Teuchos::ArrayView<GO>(cols, 2), Teuchos::ArrayView<ST>(vals, 2));
+    }
+  }
+  A->fillComplete();
+
+  // Sub maps follow A's exact parallel distribution (production call path).
+  std::vector<std::pair<int, RCP<Tpetra::Map<LO, GO, NT> > > > subMaps;
+  Strided::buildSubMaps(*map, std::vector<int>(numVars, 1), *comm, subMaps);
+
+  // Build every (i,j) sub-block from the original A and check it exactly.
+  std::vector<RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > > blocks;
+  for (int i = 0; i < numVars; ++i) {
+    for (int j = 0; j < numVars; ++j) {
+      RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > blk = Strided::buildSubBlock(i, j, A, subMaps);
+
+      TEST_EQUALITY(blk->getGlobalNumEntries(), static_cast<Tpetra::global_size_t>(globalNodes),
+                    "   tInterlacedTpetra::test_buildSubBlock ("
+                        << Teko::Test::toString(status) << "): sub-block (" << i << "," << j
+                        << ") should have exactly one entry per node");
+
+      allPassed &= checkSubBlockDiagonal(*blk, base[i][j], 1.0, tolerance_, i, j, verbosity, os);
+      blocks.push_back(blk);
+    }
+  }
+
+  // Change A's values, then re-assemble each sub-block in place. Every entry
+  // should now be scaled by 2 with the structure preserved.
+  A->scale(2.0);
+
+  int idx = 0;
+  for (int i = 0; i < numVars; ++i) {
+    for (int j = 0; j < numVars; ++j) {
+      Strided::rebuildSubBlock(i, j, A, subMaps, *blocks[idx]);
+
+      TEST_EQUALITY(blocks[idx]->getGlobalNumEntries(),
+                    static_cast<Tpetra::global_size_t>(globalNodes),
+                    "   tInterlacedTpetra::test_buildSubBlock ("
+                        << Teko::Test::toString(status) << "): rebuilt sub-block (" << i << "," << j
+                        << ") should preserve one entry per node");
+
+      allPassed &=
+          checkSubBlockDiagonal(*blocks[idx], base[i][j], 2.0, tolerance_, i, j, verbosity, os);
+      ++idx;
+    }
+  }
 
   return allPassed;
 }
