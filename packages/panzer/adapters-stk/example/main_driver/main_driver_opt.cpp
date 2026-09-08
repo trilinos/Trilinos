@@ -69,6 +69,8 @@
 //  Tempus
 // *************************************************
 
+#include <limits>
+
 int main(int argc, char *argv[])
 {
   using namespace Teuchos;
@@ -139,6 +141,23 @@ int main(int argc, char *argv[])
     input_params->remove("Objective");
     input_params->remove("ROL");
 
+    // Optional, and pulled off for the same reason.
+    RCP<ParameterList> gradient_check_params;
+    if (input_params->isSublist("Gradient Check")) {
+      gradient_check_params = parameterList(input_params->sublist("Gradient Check"));
+      input_params->remove("Gradient Check");
+
+      ParameterList valid_params;
+      valid_params.set("Parameter Value",1.0,
+                       "Parameter value at which the gradient is evaluated");
+      valid_params.set("Step",1.0e-6,
+                       "Step size for the central finite difference");
+      valid_params.set("Tolerance",1.0e-5,
+                       "Largest relative difference allowed between the analytic "
+                       "and finite difference gradients");
+      gradient_check_params->validateParametersAndSetDefaults(valid_params);
+    }
+
     {
       RCP<ParameterList> tempus_params = parameterList(input_params->sublist("Solution Control",true).sublist("Tempus",true));
       auto objective = ROL::makePtr<ROL::TransientReducedObjective<double>>(input_params,tempus_params,comm,objective_params,out);
@@ -150,6 +169,44 @@ int main(int argc, char *argv[])
       RCP<ROL::Vector<double>> r = objective->create_response_vector();
       objective->run_tempus(*r, *p);
       objective->set_target(r);
+
+      // Compare the analytic gradient against a central finite difference. The
+      // optimization below reaches the target even when dg/dp is badly wrong,
+      // so this is the part of the test that actually exercises the
+      // sensitivity path (dg/dx * dx/dp + dg/dp) rather than just ROL.
+      if (nonnull(gradient_check_params)) {
+        const double p0  = gradient_check_params->get<double>("Parameter Value");
+        const double h   = gradient_check_params->get<double>("Step");
+        const double gtol = gradient_check_params->get<double>("Tolerance");
+
+        RCP<ROL::Vector<double>> p_check = objective->create_design_vector();
+        RCP<ROL::Vector<double>> grad    = objective->create_design_vector();
+        double rtol = 1.0e-12;
+
+        p_check->setScalar(p0);
+        objective->gradient(*grad,*p_check,rtol);
+        const double g_analytic =
+          Thyra::get_ele(*(dyn_cast<const ROL::ThyraVector<double> >(*grad).getVector()),0);
+
+        p_check->setScalar(p0+h);
+        const double obj_plus = objective->value(*p_check,rtol);
+        p_check->setScalar(p0-h);
+        const double obj_minus = objective->value(*p_check,rtol);
+        const double g_fd = (obj_plus-obj_minus)/(2.0*h);
+
+        const double g_err = std::fabs(g_analytic-g_fd)/
+                             std::max(std::fabs(g_fd),std::numeric_limits<double>::min());
+
+        *out << "Gradient check: analytic = " << g_analytic
+             << ", finite difference = " << g_fd
+             << ", relative error = " << g_err << std::endl;
+
+        if (g_err > gtol) {
+          status = -1;
+          *out << "******* Analytic gradient does not match finite difference! ********" << std::endl;
+          *out << "\tTolerance = " << gtol << std::endl;
+        }
+      }
 
       p->setScalar(1.5);
       ROL::OptimizationProblem<double> problem(objective, p);

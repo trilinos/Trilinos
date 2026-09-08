@@ -411,6 +411,12 @@
   </ParameterList>
 </ParameterList>
 
+  <ParameterList name="Gradient Check">
+    <Parameter name="Parameter Value" type="double" value="1.5"/>
+    <Parameter name="Step" type="double" value="1.0e-6"/>
+    <Parameter name="Tolerance" type="double" value="1.0e-5"/>
+  </ParameterList>
+
   <ParameterList name="Objective">
     <Parameter name="Sensitivity Method" type="string" value="Forward"/>
     <Parameter name="Parameter Name" type="string" value="S"/>
