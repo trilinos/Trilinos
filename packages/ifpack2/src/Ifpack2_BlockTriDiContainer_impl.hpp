@@ -2411,7 +2411,7 @@ static inline int ExtractAndFactorizeRecommendedSYCLTeamSize(const int blksize,
   return 2 * total_team_size / vector_size;
 }
 template <>
-struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::SYCLDeviceUSMSpace> {
+struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::SYCLDeviceUSMSpace> {
   typedef KB::Mode::Team mode_type;
   typedef KB::Algo::Level3::Unblocked algo_type;
   static int recommended_team_size(const int blksize,
@@ -2421,7 +2421,7 @@ struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::SYCLD
   }
 };
 template <>
-struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::SYCLSharedUSMSpace> {
+struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::SYCLSharedUSMSpace> {
   typedef KB::Mode::Team mode_type;
   typedef KB::Algo::Level3::Unblocked algo_type;
   static int recommended_team_size(const int blksize,
@@ -4029,7 +4029,7 @@ static inline int SolveTridiagsRecommendedSYCLTeamSize(const int blksize,
 }
 
 template <>
-struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::SYCLSharedUSMSpace> {
+struct SolveTridiagsDefaultModeAndAlgo<Kokkos::SYCLSharedUSMSpace> {
   typedef KB::Mode::Team mode_type;
   typedef KB::Algo::Level2::Unblocked single_vector_algo_type;
   typedef KB::Algo::Level3::Unblocked multi_vector_algo_type;
@@ -4040,7 +4040,7 @@ struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::SYCLSharedUSMSpace>
   }
 };
 template <>
-struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::SYCLDeviceUSMSpace> {
+struct SolveTridiagsDefaultModeAndAlgo<Kokkos::SYCLDeviceUSMSpace> {
   typedef KB::Mode::Team mode_type;
   typedef KB::Algo::Level2::Unblocked single_vector_algo_type;
   typedef KB::Algo::Level3::Unblocked multi_vector_algo_type;
