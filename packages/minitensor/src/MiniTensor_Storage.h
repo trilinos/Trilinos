@@ -61,6 +61,29 @@ struct check_static {
 };
 
 ///
+/// Bound a run-time dimension by the static dimension N, when there is one.
+///
+/// A statically sized tensor stores its run-time dimension as a plain
+/// integer that set_dimension() has already checked against N, but the check
+/// is an assert and the optimizer cannot see it. Loops bounded by
+/// get_dimension() then look unbounded, and GCC reports the iterations that a
+/// static tensor can never reach as out-of-bounds or uninitialized accesses
+/// to its storage. Bounding the dimension by N states the invariant in a form
+/// the optimizer can use; the value is unchanged whenever the invariant holds.
+///
+template<Index N>
+KOKKOS_INLINE_FUNCTION
+constexpr Index
+bound_dimension(Index const dimension)
+{
+  if constexpr (N == DYNAMIC) {
+    return dimension;
+  } else {
+    return dimension <= N ? dimension : N;
+  }
+}
+
+///
 /// Validate a run-time dimension for dynamic storage.
 ///
 template<typename Store>
@@ -413,7 +436,12 @@ public:
   Index
   size() const
   {
-    return size_;
+    // resize() asserts size_ <= N, but the assert is gone from optimized
+    // builds and the optimizer cannot see the invariant. Stating it here lets
+    // GCC prove that every loop bounded by size() indexes within storage_,
+    // instead of reporting -Warray-bounds and -Wstringop-overflow at the
+    // writes those loops make through operator[].
+    return size_ <= N ? size_ : N;
   }
 
   ///

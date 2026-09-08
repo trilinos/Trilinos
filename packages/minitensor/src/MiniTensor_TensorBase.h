@@ -872,11 +872,8 @@ TensorBase<T, ST>::set_number_components(Index const number_components)
   Index const
   old_size = get_number_components();
 
-  Index const
-  new_size = number_components;
-
-  if (new_size < old_size) {
-    for (auto i = new_size; i < old_size; ++i) {
+  if (number_components < old_size) {
+    for (auto i = number_components; i < old_size; ++i) {
       auto & entry = (*this)[i];
       fill_AD<T>(entry, not_a_number<S>());
       entry = not_a_number<T>();
@@ -884,6 +881,13 @@ TensorBase<T, ST>::set_number_components(Index const number_components)
   }
 
   components_.resize(number_components);
+
+  // Bound the growth loop by the size the storage reports after the resize,
+  // which static storage clamps to its capacity, rather than by the requested
+  // count, which the optimizer cannot bound. The two are equal whenever the
+  // resize was valid.
+  Index const
+  new_size = get_number_components();
 
   if (new_size > old_size) {
     for (auto i = old_size; i < new_size; ++i) {
