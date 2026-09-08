@@ -1051,4 +1051,16 @@ compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
 
 } // end Belos namespace
 
+#ifdef HAVE_BELOS_TPETRA
+#include "BelosTpetraETIHelpers.hpp"
+
+#define BELOS_TPETRA_PSEUDOBLOCKCGSOLMGR_NOEXTERN_CALL(SC, LO, GO, NT)            \
+  BELOS_TPETRA_CALL(Belos::PseudoBlockCGSolMgr, SC, LO, GO, NT)
+
+#define BELOS_TPETRA_PSEUDOBLOCKCGSOLMGR_EXTERN_CALL(SC, LO, GO, NT)              \
+  BELOS_TPETRA_EXTERN_CALL(Belos::PseudoBlockCGSolMgr, SC, LO, GO, NT)
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(BELOS_TPETRA_PSEUDOBLOCKCGSOLMGR_EXTERN_CALL)
+#endif
+
 #endif /* BELOS_PSEUDO_BLOCK_CG_SOLMGR_HPP */

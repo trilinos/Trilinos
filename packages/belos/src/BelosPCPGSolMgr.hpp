@@ -1179,4 +1179,17 @@ std::string PCPGSolMgr<ScalarType,MV,OP,DM,true>::description() const
 
 } // end Belos namespace
 
+#ifdef HAVE_BELOS_TPETRA
+#include "BelosTpetraETIHelpers.hpp"
+
+#define BELOS_TPETRA_PCPGSOLMGR_NOEXTERN_CALL(SC, LO, GO, NT)            \
+  BELOS_TPETRA_CALL(Belos::PCPGSolMgr, SC, LO, GO, NT)
+
+#define BELOS_TPETRA_PCPGSOLMGR_EXTERN_CALL(SC, LO, GO, NT)              \
+  BELOS_TPETRA_EXTERN_CALL(Belos::PCPGSolMgr, SC, LO, GO, NT)
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(BELOS_TPETRA_PCPGSOLMGR_EXTERN_CALL)
+#endif
+
+
 #endif /* BELOS_PCPG_SOLMGR_HPP */

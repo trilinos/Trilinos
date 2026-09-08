@@ -96,6 +96,38 @@ APPEND_SET(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_RCG_KDV.cpp
   )
 
+APPEND_SET(SOURCES
+  BelosMultiVecTraits_Tpetra.cpp
+
+  BelosStatusTestOutputFactory.cpp
+
+  BelosDGKSOrthoManager.cpp
+  BelosICGSOrthoManager.cpp
+  BelosIMGSOrthoManager.cpp
+
+  BelosLinearProblem.cpp
+
+  BelosBiCGStabSolMgr.cpp
+  BelosBlockCGSolMgr.cpp
+  BelosBlockGmresSolMgr.cpp
+  BelosFixedPointSolMgr.cpp
+  BelosGCRODRSolMgr.cpp
+  BelosGmresPolySolMgr.cpp
+  BelosLSQRSolMgr.cpp
+  BelosMinresSolMgr.cpp
+  BelosPCPGSolMgr.cpp
+  BelosPseudoBlockCGSolMgr.cpp
+  BelosPseudoBlockGmresSolMgr.cpp
+  BelosPseudoBlockStochasticCGSolMgr.cpp
+  BelosPseudoBlockTFQMRSolMgr.cpp
+  BelosRCGSolMgr.cpp
+  BelosTFQMRSolMgr.cpp
+
+  BelosStatusTestGenResNorm.cpp
+  BelosStatusTestResNormOutput.cpp
+)
+
+
 #
 # C) Define the targets for package's library(s)
 #

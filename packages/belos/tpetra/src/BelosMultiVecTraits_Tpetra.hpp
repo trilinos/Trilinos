@@ -23,6 +23,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Assert.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 #include <map>
 #include <utility>
 #include <vector>
@@ -1145,5 +1146,37 @@ namespace Belos {
   };//end Kokkos dense specialized. 
 
 } // namespace Belos
+
+#ifdef HAVE_BELOS_TPETRA
+#include "BelosTpetraETIHelpers.hpp"
+
+#define BELOS_TPETRA_MVTRAITS_NOEXTERN_CALL(SC, LO, GO, NT)                    \
+  template class Belos::TpetraMVGeneralTraits<SC, LO, GO, NT>;                 \
+  template Teuchos::RCP<::Tpetra::MultiVector<SC, LO, GO, NT>>                 \
+  impl::getMultiVectorFromPool<SC, LO, GO, NT>(                                \
+      const Teuchos::RCP<const ::Tpetra::Map<LO, GO, NT>> &, const int);       \
+  template class Belos::MultiVecTraits<SC,                                     \
+                                       Tpetra::MultiVector<SC, LO, GO, NT>,    \
+                                       Teuchos::SerialDenseMatrix<int, SC>>;   \
+  template class Belos::MultiVecTraits<                                        \
+      SC, Tpetra::MultiVector<SC, LO, GO, NT>,                                 \
+      typename Tpetra::MultiVector<SC, LO, GO,                                 \
+                                   NT>::wrapped_dual_view_type::DVT>;
+
+#define BELOS_TPETRA_MVTRAITS_EXTERN_CALL(SC, LO, GO, NT)                      \
+  extern template class Belos::TpetraMVGeneralTraits<SC, LO, GO, NT>;          \
+  extern template Teuchos::RCP<::Tpetra::MultiVector<SC, LO, GO, NT>>          \
+  impl::getMultiVectorFromPool<SC, LO, GO, NT>(                                \
+      const Teuchos::RCP<const ::Tpetra::Map<LO, GO, NT>> &, const int);       \
+  extern template class Belos::MultiVecTraits<                                 \
+      SC, Tpetra::MultiVector<SC, LO, GO, NT>,                                 \
+      Teuchos::SerialDenseMatrix<int, SC>>;                                    \
+  extern template class Belos::MultiVecTraits<                                 \
+      SC, Tpetra::MultiVector<SC, LO, GO, NT>,                                 \
+      typename Tpetra::MultiVector<SC, LO, GO,                                 \
+                                   NT>::wrapped_dual_view_type::DVT>;
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(BELOS_TPETRA_MVTRAITS_EXTERN_CALL)
+#endif
 
 #endif // BELOSMULTIVECTRAITS_TPETRA_HPP

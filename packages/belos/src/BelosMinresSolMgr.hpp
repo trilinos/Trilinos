@@ -832,4 +832,17 @@ namespace Belos {
 
 } // end Belos namespace
 
+#ifdef HAVE_BELOS_TPETRA
+#include "BelosTpetraETIHelpers.hpp"
+
+#define BELOS_TPETRA_MINRESSOLMGR_NOEXTERN_CALL(SC, LO, GO, NT)            \
+  BELOS_TPETRA_CALL(Belos::MinresSolMgr, SC, LO, GO, NT)
+
+#define BELOS_TPETRA_MINRESSOLMGR_EXTERN_CALL(SC, LO, GO, NT)              \
+  BELOS_TPETRA_EXTERN_CALL(Belos::MinresSolMgr, SC, LO, GO, NT)
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(BELOS_TPETRA_MINRESSOLMGR_EXTERN_CALL)
+#endif
+
+
 #endif /* BELOS_MINRES_SOLMGR_HPP */
