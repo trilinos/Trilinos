@@ -461,6 +461,8 @@ class RefMaxwell : public VerboseObject, public Xpetra::Operator<Scalar, LocalOr
   //! Indicates whether this operator supports applying the adjoint operator.
   bool hasTransposeApply() const;
 
+  static std::pair<std::set<std::string>, std::set<std::string>> requiredAndOptionalUserData(const Teuchos::ParameterList &params);
+
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_HIGH) const;
 
   //! Compute a residual R = B - (*this) * X
@@ -633,7 +635,7 @@ class RefMaxwell : public VerboseObject, public Xpetra::Operator<Scalar, LocalOr
   void dump(const Kokkos::View<bool *, typename Node::device_type> &v, std::string name) const;
 
   //! get a (synced) timer
-  Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm = Teuchos::null) const;
+  Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int>> comm = Teuchos::null) const;
 
   //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
   Teuchos::RCP<Hierarchy> HierarchyCoarse11_, Hierarchy22_;

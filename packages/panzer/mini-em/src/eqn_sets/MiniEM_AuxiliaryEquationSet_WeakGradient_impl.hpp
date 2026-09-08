@@ -28,9 +28,6 @@
 #include "Panzer_Sum.hpp"
 #include "Panzer_Constant.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
-#endif
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_ReorderADValues_Evaluator.hpp"
@@ -137,18 +134,11 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    typedef panzer::Traits::Jacobian EvalT;
 
    typedef double Scalar;
-#ifdef PANZER_HAVE_EPETRA_STACK
-   typedef int LocalOrdinalEpetra;
-#endif
    typedef int LocalOrdinalTpetra;
    typedef panzer::GlobalOrdinal GlobalOrdinalTpetra;
 
    typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> blockedTpetraLinObjFactory;
    typedef typename panzer::TpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> tpetraLinObjFactory;
-#ifdef PANZER_HAVE_EPETRA_STACK
-   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> blockedEpetraLinObjFactory;
-   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> epetraLinObjFactory;
-#endif
 
    PANZER_FUNC_TIME_MONITOR_DIFF("mini_em::AuxEqSet_WeakGradient::buildAndRegisterScatterEvaluators()",scatter_eval);
 
@@ -167,10 +157,6 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
    // must be able to cast to a block linear object factory
    Teuchos::RCP<const blockedTpetraLinObjFactory> tblof
       = Teuchos::rcp_dynamic_cast<const blockedTpetraLinObjFactory>(Teuchos::rcpFromRef(lof));
-#ifdef PANZER_HAVE_EPETRA_STACK
-   Teuchos::RCP<const blockedEpetraLinObjFactory> eblof
-      = Teuchos::rcp_dynamic_cast<const blockedEpetraLinObjFactory>(Teuchos::rcpFromRef(lof));
-#endif
 
    if(tblof != Teuchos::null) {
 
@@ -211,46 +197,6 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
        fm.registerEvaluator<EvalT>(op);
      }
-#ifdef PANZER_HAVE_EPETRA_STACK
-   } else if(eblof != Teuchos::null) {
-     Teuchos::RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
-     Teuchos::RCP<panzer::GlobalIndexer> rowUgi;
-     Teuchos::RCP<panzer::GlobalIndexer> colUgi;
-
-     blockedDOFMngr = eblof->getGlobalIndexer();
-     TEUCHOS_ASSERT(blockedDOFMngr!=Teuchos::null);
-
-     uFieldNum = blockedDOFMngr->getFieldNum(fieldStr);
-     pFieldNum = blockedDOFMngr->getFieldNum(scalar_name);
-     rowBlockIndex = blockedDOFMngr->getFieldBlock(uFieldNum);
-     colBlockIndex = blockedDOFMngr->getFieldBlock(pFieldNum);
-
-     // get the unique global indexer for just this field
-     rowUgi = blockedDOFMngr->getFieldDOFManagers()[rowBlockIndex];
-     colUgi = blockedDOFMngr->getFieldDOFManagers()[colBlockIndex];
-
-     // build a new epetra linear object factory
-     nlof = Teuchos::rcp(new epetraLinObjFactory(Teuchos::rcp(new Teuchos::MpiComm<int>(eblof->getComm())).getConst(),rowUgi,colUgi));
-
-     // first build a reordering evaluator to take it to the new sub global indexer
-     {
-       std::vector<Teuchos::RCP<PHX::DataLayout> > fieldLayouts;
-       fieldLayouts.push_back(field_library.lookupBasis(fieldStr)->functional);
-
-       std::vector<std::string> resNames;
-       resNames.push_back(this->m_provided_dofs_desc.begin()->second.residualName.second);
-
-       RCP< PHX::Evaluator<panzer::Traits> > op = Teuchos::rcp(
-                                                               new panzer::ReorderADValues_Evaluator<EvalT,panzer::Traits>(outPrefix,
-                                                                                                                           resNames,
-                                                                                                                           fieldLayouts,
-                                                                                                                           this->getElementBlockId(),
-                                                                                                                           *blockedDOFMngr,
-                                                                                                                           *colUgi));
-
-       fm.registerEvaluator<EvalT>(op);
-     }
-#endif
    } else
      TEUCHOS_ASSERT(false);
 
