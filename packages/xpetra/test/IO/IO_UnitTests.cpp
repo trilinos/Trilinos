@@ -165,9 +165,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryCustomColMap, M, MA, Scalar, LO, GO,
   tpetraAWrite->fillComplete(tpetraRowMap, tpetraRowMap);
   binary_io_type::writeSparseFile(filename, *tpetraAWrite);
 
-  auto rowMap = Xpetra::toXpetra<LO, GO, Node>(tpetraRowMap);
-  auto colMap = Xpetra::toXpetra<LO, GO, Node>(tpetraColMap);
-  auto A      = Xpetra::IO<Scalar, LO, GO, Node>::Read(filename, rowMap, colMap, rowMap, rowMap, true, true);
+  Teuchos::RCP<const Xpetra::Map<LO, GO, Node> > rowMap = Teuchos::rcp(new Xpetra::TpetraMap<LO, GO, Node>(tpetraRowMap));
+  Teuchos::RCP<const Xpetra::Map<LO, GO, Node> > colMap = Teuchos::rcp(new Xpetra::TpetraMap<LO, GO, Node>(tpetraColMap));
+  auto A                                                = Xpetra::IO<Scalar, LO, GO, Node>::Read(filename, rowMap, colMap, rowMap, rowMap, true, true);
 
   auto xpetraColMap = A->getColMap();
   TEST_ASSERT(colMap->isSameAs(*xpetraColMap));
