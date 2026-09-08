@@ -2145,6 +2145,41 @@ const ModifiableLinearOp explicitAdd(const LinearOp &opl_in, const LinearOp &opr
   bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
   bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
 
+  // if one of the operators in the sum is a thyra zero op (as happens with a true
+  // zero (2,2) block in a saddle-point system), short-circuit before the backend
+  // add path, which cannot unwrap a Thyra::DefaultZeroLinearOp. Mirrors the
+  // two-argument explicitAdd overload.
+  if (isZeroOp(opl)) {
+    if (isZeroOp(opr))  // return a zero op if both are zero
+      return Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST>>(opr);
+    if (isTpetrar) {  // if other op is tpetra, replace this with a zero crs matrix
+      ST scalar     = 0.0;
+      bool transp   = false;
+      auto crs_op   = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalar, &transp);
+      auto zero_crs = Tpetra::createCrsMatrix<ST, LO, GO, NT>(crs_op->getRowMap());
+      zero_crs->fillComplete();
+      opl = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
+          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crs_op->getRangeMap()),
+          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crs_op->getDomainMap()), zero_crs);
+      isTpetral = true;
+    } else
+      return Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST>>(opr->clone());
+  }
+  if (isZeroOp(opr)) {
+    if (isTpetral) {  // if other op is tpetra, replace this with a zero crs matrix
+      ST scalar     = 0.0;
+      bool transp   = false;
+      auto crs_op   = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalar, &transp);
+      auto zero_crs = Tpetra::createCrsMatrix<ST, LO, GO, NT>(crs_op->getRowMap());
+      zero_crs->fillComplete();
+      opr = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
+          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crs_op->getRangeMap()),
+          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crs_op->getDomainMap()), zero_crs);
+      isTpetrar = true;
+    } else
+      return Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST>>(opl->clone());
+  }
+
   if (isTpetral && isTpetrar) {  // Both operators are Tpetra matrices so use the explicit
                                  // Tpetra matrix-matrix add
 

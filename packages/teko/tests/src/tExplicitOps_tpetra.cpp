@@ -22,6 +22,7 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
+#include "Thyra_DefaultZeroLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 
 // Galeri / Xpetra includes
@@ -150,6 +151,12 @@ int tExplicitOps_tpetra::runTest(int verbosity, std::ostream& stdstrm, std::ostr
 
   status = test_add_mod(verbosity, failstrm);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"add_mod\" ... PASSED", "   \"add\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
+
+  status = test_add_zero(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"add_zero\" ... PASSED", "   \"add_zero\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
@@ -542,6 +549,95 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
                     << " tExplicitOps_tpetra::test_add_mod3"
                     << ": Testing matrix addition returns new pointer");
     if (not(eop3.getRawPtr() == eop6.getRawPtr()) || verbosity >= 10) os << ss.str();
+  }
+
+  return allPassed;
+}
+
+// Regression test for a true Thyra zero operand, as produced for the (2,2) block
+// of a reordered saddle-point system (a Thyra::DefaultZeroLinearOp). SIMPLE builds
+// its Schur complement as explicitAdd(C, scale(-1, B*H*Bt), destOp); when C is a
+// zero block, explicitAdd must short-circuit it instead of trying to unwrap it as a
+// concrete backend matrix.
+bool tExplicitOps_tpetra::test_add_zero(int verbosity, std::ostream& os) {
+  bool status    = false;
+  bool allPassed = true;
+
+  Thyra::LinearOpTester<ST> tester;
+  tester.set_all_error_tol(1e-10);
+  tester.show_all_tests(true);
+
+  // a true zero block matching F_'s range/domain
+  Teko::LinearOp Z = Thyra::zero<ST>(F_->range(), F_->domain());
+
+  // reference: 0 + (-4)*F == (-4)*F
+  RCP<const Thyra::LinearOpBase<ST>> thyOp = Teko::scale(-4.0, F_);
+
+  // zero on the left, three-argument overload (the exact SIMPLE call shape)
+  {
+    Teko::ModifiableLinearOp expOp;
+    expOp = Teko::explicitAdd(Z, Teko::scale(-4.0, F_), expOp);
+
+    // the result must be an explicit Tpetra operator, confirming the zero operand
+    // was resolved through the Tpetra add path rather than left as an implicit op
+    RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp =
+        Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+    (void)tOp;
+
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    const bool result = tester.compare(*thyOp, *expOp, Teuchos::ptrFromRef(fos));
+    TEST_ASSERT(result, std::endl
+                            << "   tExplicitOps_tpetra::test_add_zero"
+                            << ": Testing explicit add with zero left operand");
+    if (not result || verbosity >= 10) os << ss.str();
+  }
+
+  // zero on the right, three-argument overload
+  {
+    Teko::ModifiableLinearOp expOp;
+    expOp = Teko::explicitAdd(Teko::scale(-4.0, F_), Z, expOp);
+
+    RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp =
+        Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+    (void)tOp;
+
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    const bool result = tester.compare(*thyOp, *expOp, Teuchos::ptrFromRef(fos));
+    TEST_ASSERT(result, std::endl
+                            << "   tExplicitOps_tpetra::test_add_zero"
+                            << ": Testing explicit add with zero right operand");
+    if (not result || verbosity >= 10) os << ss.str();
+  }
+
+  // reuse a non-null destination operator across rebuilds (SIMPLE rebuilds hatS
+  // into a cached ModifiableLinearOp)
+  {
+    Teko::ModifiableLinearOp expOp;
+    expOp = Teko::explicitAdd(Z, Teko::scale(-4.0, F_), expOp);  // allocate
+    expOp = Teko::explicitAdd(Z, Teko::scale(-4.0, F_), expOp);  // reuse
+
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    const bool result = tester.compare(*thyOp, *expOp, Teuchos::ptrFromRef(fos));
+    TEST_ASSERT(result, std::endl
+                            << "   tExplicitOps_tpetra::test_add_zero"
+                            << ": Testing explicit add with zero operand and reused destination");
+    if (not result || verbosity >= 10) os << ss.str();
+  }
+
+  // two-argument overload for parity
+  {
+    Teko::LinearOp expOp = Teko::explicitAdd(Z, Teko::scale(-4.0, F_));
+
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    const bool result = tester.compare(*thyOp, *expOp, Teuchos::ptrFromRef(fos));
+    TEST_ASSERT(result, std::endl
+                            << "   tExplicitOps_tpetra::test_add_zero"
+                            << ": Testing two-argument explicit add with zero operand");
+    if (not result || verbosity >= 10) os << ss.str();
   }
 
   return allPassed;
