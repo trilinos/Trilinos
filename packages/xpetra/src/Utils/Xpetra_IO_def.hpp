@@ -115,17 +115,19 @@ typename std::enable_if<binaryIOAvailableForScalar<Scalar>::value,
                         RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>::type
 readBinarySparseFile(const std::string& fileName,
                      const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& rowMap,
+                     const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& colMap,
                      const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap,
                      const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& rangeMap,
                      const bool callFillComplete) {
   using binary_reader_type = Tpetra::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  return binary_reader_type::readSparseFile(fileName, rowMap, domainMap, rangeMap, callFillComplete);
+  return binary_reader_type::readSparseFile(fileName, rowMap, colMap, domainMap, rangeMap, callFillComplete);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 typename std::enable_if<!binaryIOAvailableForScalar<Scalar>::value,
                         RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>::type
 readBinarySparseFile(const std::string&,
+                     const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>&,
                      const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>&,
                      const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>&,
                      const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>&,
@@ -446,10 +448,11 @@ IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(const std::string& filename,
       typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
       const RCP<const map_type> tpetraRowMap    = Map2TpetraMap(*rowMap);
+      const RCP<const map_type> tpetraColMap    = (colMap.is_null() ? Teuchos::null : Map2TpetraMap(*colMap));
       const RCP<const map_type> tpetraDomainMap = (domainMap.is_null() ? tpetraRowMap : Map2TpetraMap(*domainMap));
       const RCP<const map_type> tpetraRangeMap  = (rangeMap.is_null() ? tpetraRowMap : Map2TpetraMap(*rangeMap));
 
-      RCP<sparse_matrix_type> tA = Details::readBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(filename, tpetraRowMap, tpetraDomainMap, tpetraRangeMap, callFillComplete);
+      RCP<sparse_matrix_type> tA = Details::readBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(filename, tpetraRowMap, tpetraColMap, tpetraDomainMap, tpetraRangeMap, callFillComplete);
       if (tA.is_null())
         throw Exceptions::RuntimeError("The Tpetra::CrsMatrix returned from BinaryIO::readSparseFile() is null.");
 

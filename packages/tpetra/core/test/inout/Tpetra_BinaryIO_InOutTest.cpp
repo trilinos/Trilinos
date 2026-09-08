@@ -62,6 +62,17 @@ makeCyclicMap(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                            comm));
 }
 
+template <class LO, class GO, class Node>
+RCP<const Tpetra::Map<LO, GO, Node> >
+makeImbalancedContiguousMap(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+  const size_t numLocalElts         = (comm->getRank() == 0) ? static_cast<size_t>(comm->getSize() + 1) : static_cast<size_t>(1);
+  const global_size_t globalNumElts = static_cast<global_size_t>(2 * comm->getSize());
+  return rcp(new Tpetra::Map<LO, GO, Node>(globalNumElts,
+                                           numLocalElts,
+                                           static_cast<GO>(0),
+                                           comm));
+}
+
 template <class ST, class LO, class GO, class Node>
 RCP<Tpetra::MultiVector<ST, LO, GO, Node> >
 makeDenseTestMultiVector(const RCP<const Tpetra::Map<LO, GO, Node> >& map,
@@ -237,6 +248,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, MapRoundTrip,
   cleanupFile(filename, comm);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, MapRoundTripImbalancedContiguous,
+                                  ST, LO, GO, NODE) {
+  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, NODE>;
+
+  auto comm                  = Tpetra::getDefaultComm();
+  auto map                   = makeImbalancedContiguousMap<LO, GO, NODE>(comm);
+  const std::string filename = makeFilename("Tpetra_BinaryIO_MapRoundTripImbalancedContiguous", *comm);
+
+  binary_io_type::writeMapFile(filename, *map);
+  auto inMap = binary_io_type::readMapFile(filename, comm);
+
+  TEST_ASSERT(map->isSameAs(*inMap));
+  cleanupFile(filename, comm);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, DenseRoundTripDefaultMap,
                                   ST, LO, GO, NODE) {
   using map_type       = Tpetra::Map<LO, GO, NODE>;
@@ -337,11 +363,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, SparseRoundTripCustomRowMap,
 }
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-#define UNIT_TEST_GROUP(LO, GO, NODE)                                                             \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTrip, double, LO, GO, NODE)              \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripDefaultMap, double, LO, GO, NODE)  \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripCustomMap, double, LO, GO, NODE)   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripDefaultMap, double, LO, GO, NODE) \
+#define UNIT_TEST_GROUP(LO, GO, NODE)                                                                    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTrip, double, LO, GO, NODE)                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTripImbalancedContiguous, double, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripDefaultMap, double, LO, GO, NODE)         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripCustomMap, double, LO, GO, NODE)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripDefaultMap, double, LO, GO, NODE)        \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripCustomRowMap, double, LO, GO, NODE)
 #else
 #define UNIT_TEST_GROUP(LO, GO, NODE)

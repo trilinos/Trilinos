@@ -51,6 +51,13 @@ class BinaryIO {
   static Teuchos::RCP<sparse_matrix_type>
   readSparseFile(const std::string& filename,
                  const Teuchos::RCP<const map_type>& rowMap,
+                 const Teuchos::RCP<const map_type>& colMap,
+                 const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+                 const Teuchos::RCP<const map_type>& rangeMap  = Teuchos::null,
+                 const bool callFillComplete                   = true);
+  static Teuchos::RCP<sparse_matrix_type>
+  readSparseFile(const std::string& filename,
+                 const Teuchos::RCP<const map_type>& rowMap,
                  const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                  const Teuchos::RCP<const map_type>& rangeMap  = Teuchos::null,
                  const bool callFillComplete                   = true);
@@ -98,9 +105,10 @@ class BinaryIO {
     unsigned long long numGlobalElements;
     long long indexBase;
     unsigned long long mapFlags;
+    unsigned long long numRanks;
   };
 
-  static const unsigned long long fileVersion     = 1ull;
+  static const unsigned long long fileVersion     = 2ull;
   static const unsigned long long byteOrderMarker = 0x0102030405060708ull;
 
   static FileHeader makeBaseHeader(const unsigned long long objectKind);
@@ -111,8 +119,6 @@ class BinaryIO {
 
   static unsigned long long mapFlags(const map_type& map);
 
-  static unsigned long long computeContiguousLocalCount(const unsigned long long globalCount, const int rank, const int size);
-  static unsigned long long computeContiguousStart(const unsigned long long globalCount, const int rank, const int size);
   static unsigned long long checkedByteCount(const unsigned long long count, const size_t elementSize);
   static unsigned long long checkedByteOffset(const unsigned long long dataOffset,
                                               const unsigned long long globalOffset,
@@ -127,8 +133,10 @@ class BinaryIO {
   static FileHeader readHeaderFromFile(const std::string& filename, const trcp_tcomm_t& comm);
 
   static MapSectionHeader makeMapSectionHeader(const map_type& map);
-  static unsigned long long mapSectionSize();
-  static unsigned long long mapSectionPayloadOffset(const unsigned long long mapSectionOffset);
+  static unsigned long long mapSectionSize(const map_type& map);
+  static unsigned long long mapSectionCountsOffset(const unsigned long long mapSectionOffset);
+  static unsigned long long mapSectionPayloadOffset(const unsigned long long mapSectionOffset,
+                                                    const unsigned long long numRanks);
 
   static void writeMapSection(const std::string& filename,
                               const unsigned long long mapSectionOffset,
@@ -147,6 +155,20 @@ class BinaryIO {
                                                const trcp_tcomm_t& comm);
 
   static unsigned long long exclusiveScanUnsignedLongLong(const unsigned long long localValue, const trcp_tcomm_t& comm);
+
+  template <class T>
+  static void writeArrayFromRoot(const std::string& filename,
+                                 const unsigned long long dataOffset,
+                                 const T* data,
+                                 const unsigned long long count,
+                                 const trcp_tcomm_t& comm);
+
+  template <class T>
+  static void readArrayFromRoot(const std::string& filename,
+                                const unsigned long long dataOffset,
+                                T* data,
+                                const unsigned long long count,
+                                const trcp_tcomm_t& comm);
 
   template <class T>
   static void writeArrayCollective(const std::string& filename,

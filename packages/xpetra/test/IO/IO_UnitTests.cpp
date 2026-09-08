@@ -129,6 +129,67 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryMissingRows, M, MA, Scalar, LO, GO, 
   cleanupFile(filename, comm);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryCustomColMap, M, MA, Scalar, LO, GO, Node) {
+  using Teuchos::as;
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  TEUCHOS_ASSERT_EQUALITY(comm->getSize(), 1);
+
+  M testMap(1, 0, comm);
+  Xpetra::UnderlyingLib lib  = testMap.lib();
+  const std::string filename = makeBinaryFilename("xpetra_io_binary_custom_colmap", *comm);
+
+  using tpetra_map_type    = Tpetra::Map<LO, GO, Node>;
+  using tpetra_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
+  using binary_io_type     = Tpetra::BinaryIO<Scalar, LO, GO, Node>;
+
+  auto tpetraRowMap = Teuchos::rcp(new tpetra_map_type(5, static_cast<GO>(0), comm));
+  Teuchos::Array<GO> colGids;
+  colGids.push_back(static_cast<GO>(0));
+  colGids.push_back(static_cast<GO>(3));
+  colGids.push_back(static_cast<GO>(4));
+  auto tpetraColMap = Teuchos::rcp(new tpetra_map_type(5, colGids(), static_cast<GO>(0), comm));
+  auto tpetraAWrite = Teuchos::rcp(new tpetra_matrix_type(tpetraRowMap, tpetraColMap, 2));
+  Teuchos::Array<GO> cols;
+  Teuchos::Array<Scalar> vals;
+  cols.push_back(static_cast<GO>(0));
+  cols.push_back(static_cast<GO>(3));
+  vals.push_back(as<Scalar>(2.));
+  vals.push_back(as<Scalar>(3.));
+  tpetraAWrite->insertGlobalValues(static_cast<GO>(0), cols(), vals());
+  cols.resize(1);
+  vals.resize(1);
+  cols[0] = static_cast<GO>(4);
+  vals[0] = as<Scalar>(4.);
+  tpetraAWrite->insertGlobalValues(static_cast<GO>(1), cols(), vals());
+  tpetraAWrite->fillComplete(tpetraRowMap, tpetraRowMap);
+  binary_io_type::writeSparseFile(filename, *tpetraAWrite);
+
+  auto rowMap = Xpetra::toXpetra<LO, GO, Node>(tpetraRowMap);
+  auto colMap = Xpetra::toXpetra<LO, GO, Node>(tpetraColMap);
+  auto A      = Xpetra::IO<Scalar, LO, GO, Node>::Read(filename, rowMap, colMap, rowMap, rowMap, true, true);
+
+  auto xpetraColMap = A->getColMap();
+  TEST_ASSERT(colMap->isSameAs(*xpetraColMap));
+
+  auto crsA = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> >(A, true)->getCrsMatrix();
+  Teuchos::ArrayView<const LO> indices;
+  Teuchos::ArrayView<const Scalar> values;
+  crsA->getLocalRowView(0, indices, values);
+  TEST_EQUALITY(indices.size(), 2);
+  TEST_EQUALITY(xpetraColMap->getGlobalElement(indices[0]), 0);
+  TEST_EQUALITY(xpetraColMap->getGlobalElement(indices[1]), 3);
+  TEST_EQUALITY(values[0], as<Scalar>(2.));
+  TEST_EQUALITY(values[1], as<Scalar>(3.));
+
+  crsA->getLocalRowView(1, indices, values);
+  TEST_EQUALITY(indices.size(), 1);
+  TEST_EQUALITY(xpetraColMap->getGlobalElement(indices[0]), 4);
+  TEST_EQUALITY(values[0], as<Scalar>(4.));
+
+  cleanupFile(filename, comm);
+}
+
 //
 // INSTANTIATIONS
 //
@@ -138,9 +199,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryMissingRows, M, MA, Scalar, LO, GO, 
   typedef typename Xpetra::TpetraCrsMatrix<S, LO, GO, N> MA##S##LO##GO##N;
 
 // list of all tests which run both with Epetra and Tpetra
-#define XP_IO_INSTANT(S, LO, GO, N)                                                                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, MMMissingRows, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryMissingRows, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)
+#define XP_IO_INSTANT(S, LO, GO, N)                                                                         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, MMMissingRows, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryMissingRows, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryCustomColMap, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)
 
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>

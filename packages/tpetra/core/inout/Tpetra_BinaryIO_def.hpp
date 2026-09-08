@@ -82,9 +82,11 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::validateHeader(const F
                              std::runtime_error,
                              "Tpetra::BinaryIO: File object kind " << header.objectKind
                                                                    << " does not match expected kind " << expectedObjectKind << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(header.scalarSize != sizeof(Scalar) || header.scalarFlags != typeFlags<Scalar>(),
-                             std::runtime_error,
-                             "Tpetra::BinaryIO: File scalar type does not match this BinaryIO instantiation.");
+  if (expectedObjectKind != MAP_OBJECT) {
+    TEUCHOS_TEST_FOR_EXCEPTION(header.scalarSize != sizeof(Scalar) || header.scalarFlags != typeFlags<Scalar>(),
+                               std::runtime_error,
+                               "Tpetra::BinaryIO: File scalar type does not match this BinaryIO instantiation.");
+  }
   TEUCHOS_TEST_FOR_EXCEPTION(header.localOrdinalSize != sizeof(LocalOrdinal) || header.localOrdinalFlags != typeFlags<LocalOrdinal>(),
                              std::runtime_error,
                              "Tpetra::BinaryIO: File local ordinal type does not match this BinaryIO instantiation.");
@@ -125,25 +127,6 @@ unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mapFlags
     flags |= 1ull << 2;
   }
   return flags;
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::computeContiguousLocalCount(const unsigned long long globalCount,
-                                                                                                    const int rank,
-                                                                                                    const int size) {
-  const unsigned long long quotient  = globalCount / static_cast<unsigned long long>(size);
-  const unsigned long long remainder = globalCount % static_cast<unsigned long long>(size);
-  return quotient + (static_cast<unsigned long long>(rank) < remainder ? 1ull : 0ull);
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::computeContiguousStart(const unsigned long long globalCount,
-                                                                                               const int rank,
-                                                                                               const int size) {
-  const unsigned long long quotient  = globalCount / static_cast<unsigned long long>(size);
-  const unsigned long long remainder = globalCount % static_cast<unsigned long long>(size);
-  const unsigned long long rankU     = static_cast<unsigned long long>(rank);
-  return rankU * quotient + std::min(rankU, remainder);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -278,17 +261,25 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeMapSectionHeader(const 
   header.numGlobalElements = static_cast<unsigned long long>(map.getGlobalNumElements());
   header.indexBase         = static_cast<long long>(map.getIndexBase());
   header.mapFlags          = mapFlags(map);
+  header.numRanks          = static_cast<unsigned long long>(map.getComm()->getSize());
   return header;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mapSectionSize() {
-  return static_cast<unsigned long long>(sizeof(MapSectionHeader));
+unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mapSectionSize(const map_type& map) {
+  return static_cast<unsigned long long>(sizeof(MapSectionHeader)) +
+         static_cast<unsigned long long>(map.getComm()->getSize()) * sizeof(unsigned long long);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mapSectionPayloadOffset(const unsigned long long mapSectionOffset) {
-  return mapSectionOffset + mapSectionSize();
+unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mapSectionCountsOffset(const unsigned long long mapSectionOffset) {
+  return mapSectionOffset + static_cast<unsigned long long>(sizeof(MapSectionHeader));
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mapSectionPayloadOffset(const unsigned long long mapSectionOffset,
+                                                                                                const unsigned long long numRanks) {
+  return mapSectionCountsOffset(mapSectionOffset) + numRanks * sizeof(unsigned long long);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -384,6 +375,96 @@ unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::exclusiv
   Teuchos::scan<int, unsigned long long>(*comm, Teuchos::REDUCE_SUM, 1,
                                          const_cast<unsigned long long*>(&localValue), &inclusive);
   return inclusive - localValue;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class T>
+void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeArrayFromRoot(const std::string& filename,
+                                                                             const unsigned long long dataOffset,
+                                                                             const T* data,
+                                                                             const unsigned long long count,
+                                                                             const trcp_tcomm_t& comm) {
+  const unsigned long long byteCount = checkedByteCount(count, sizeof(T));
+#ifdef HAVE_TPETRACORE_MPI
+  if (Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Details::extractMpiCommFromTeuchos(*comm);
+    MPI_File file;
+    const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
+    TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
+                               "Tpetra::BinaryIO: MPI_File_open failed while writing root-owned array data.");
+    if (comm->getRank() == 0) {
+      MPI_Status status;
+      const int writeErr = MPI_File_write_at(file,
+                                             static_cast<MPI_Offset>(dataOffset),
+                                             const_cast<T*>(data),
+                                             static_cast<int>(byteCount),
+                                             MPI_BYTE,
+                                             &status);
+      TEUCHOS_TEST_FOR_EXCEPTION(writeErr != MPI_SUCCESS, std::runtime_error,
+                                 "Tpetra::BinaryIO: MPI_File_write_at failed while writing root-owned array data.");
+    }
+    MPI_File_close(&file);
+    comm->barrier();
+    return;
+  }
+#endif
+  if (comm->getRank() == 0) {
+    std::fstream out(filename.c_str(), std::ios::binary | std::ios::in | std::ios::out);
+    TEUCHOS_TEST_FOR_EXCEPTION(!out.good(), std::runtime_error,
+                               "Tpetra::BinaryIO: Failed to open file '" << filename << "' while writing root-owned array data.");
+    out.seekp(static_cast<std::streamoff>(dataOffset), std::ios::beg);
+    out.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(byteCount));
+    TEUCHOS_TEST_FOR_EXCEPTION(!out.good(), std::runtime_error,
+                               "Tpetra::BinaryIO: Failed to write root-owned array data to file '" << filename << "'.");
+  }
+  comm->barrier();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class T>
+void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readArrayFromRoot(const std::string& filename,
+                                                                            const unsigned long long dataOffset,
+                                                                            T* data,
+                                                                            const unsigned long long count,
+                                                                            const trcp_tcomm_t& comm) {
+  const unsigned long long byteCount = checkedByteCount(count, sizeof(T));
+#ifdef HAVE_TPETRACORE_MPI
+  if (Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Details::extractMpiCommFromTeuchos(*comm);
+    MPI_File file;
+    const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
+    TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
+                               "Tpetra::BinaryIO: MPI_File_open failed while reading root-owned array data.");
+    if (comm->getRank() == 0) {
+      MPI_Status status;
+      const int readErr = MPI_File_read_at(file,
+                                           static_cast<MPI_Offset>(dataOffset),
+                                           data,
+                                           static_cast<int>(byteCount),
+                                           MPI_BYTE,
+                                           &status);
+      TEUCHOS_TEST_FOR_EXCEPTION(readErr != MPI_SUCCESS, std::runtime_error,
+                                 "Tpetra::BinaryIO: MPI_File_read_at failed while reading root-owned array data.");
+    }
+    MPI_File_close(&file);
+    if (comm->getSize() > 1) {
+      broadcastBytesFromRoot(reinterpret_cast<char*>(data), byteCount, comm);
+    }
+    return;
+  }
+#endif
+  if (comm->getRank() == 0) {
+    std::ifstream in(filename.c_str(), std::ios::binary);
+    TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error,
+                               "Tpetra::BinaryIO: Failed to open file '" << filename << "' while reading root-owned array data.");
+    in.seekg(static_cast<std::streamoff>(dataOffset), std::ios::beg);
+    in.read(reinterpret_cast<char*>(data), static_cast<std::streamsize>(byteCount));
+    TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error,
+                               "Tpetra::BinaryIO: Failed to read root-owned array data from file '" << filename << "'.");
+  }
+  if (comm->getSize() > 1) {
+    broadcastBytesFromRoot(reinterpret_cast<char*>(data), byteCount, comm);
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -522,11 +603,19 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMapSection(const 
   const MapSectionHeader sectionHeader = makeMapSectionHeader(map);
   writeMapSectionHeader(filename, mapSectionOffset, sectionHeader, comm);
 
-  auto gids                             = map.getLocalElementList();
-  const unsigned long long localCount   = static_cast<unsigned long long>(gids.size());
+  auto gids                           = map.getLocalElementList();
+  const unsigned long long localCount = static_cast<unsigned long long>(gids.size());
+  Teuchos::Array<unsigned long long> localCounts(static_cast<Teuchos::Array<unsigned long long>::size_type>(comm->getSize()));
+  Teuchos::gatherAll(*comm, 1, &localCount, comm->getSize(), localCounts.getRawPtr());
+  writeArrayFromRoot(filename,
+                     mapSectionCountsOffset(mapSectionOffset),
+                     localCounts.getRawPtr(),
+                     static_cast<unsigned long long>(localCounts.size()),
+                     comm);
+
   const unsigned long long globalOffset = exclusiveScanUnsignedLongLong(localCount, comm);
   writeArrayCollective(filename,
-                       mapSectionPayloadOffset(mapSectionOffset),
+                       mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
                        gids.getRawPtr(),
                        localCount,
                        globalOffset,
@@ -538,15 +627,32 @@ Teuchos::RCP<const typename BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
 BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapSection(const std::string& filename,
                                                                     const unsigned long long mapSectionOffset,
                                                                     const trcp_tcomm_t& comm) {
-  const MapSectionHeader sectionHeader  = readMapSectionHeader(filename, mapSectionOffset, comm);
-  const unsigned long long globalCount  = sectionHeader.numGlobalElements;
-  const unsigned long long localCount   = computeContiguousLocalCount(globalCount, comm->getRank(), comm->getSize());
-  const unsigned long long globalOffset = computeContiguousStart(globalCount, comm->getRank(), comm->getSize());
+  const MapSectionHeader sectionHeader = readMapSectionHeader(filename, mapSectionOffset, comm);
+  const unsigned long long globalCount = sectionHeader.numGlobalElements;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(sectionHeader.numRanks != static_cast<unsigned long long>(comm->getSize()),
+                             std::runtime_error,
+                             "Tpetra::BinaryIO: Map section was written for " << sectionHeader.numRanks
+                                                                              << " ranks, but the read communicator has "
+                                                                              << comm->getSize() << " ranks.");
+
+  Teuchos::Array<unsigned long long> localCounts(static_cast<Teuchos::Array<unsigned long long>::size_type>(sectionHeader.numRanks));
+  readArrayFromRoot(filename,
+                    mapSectionCountsOffset(mapSectionOffset),
+                    localCounts.getRawPtr(),
+                    static_cast<unsigned long long>(localCounts.size()),
+                    comm);
+
+  const unsigned long long localCount = localCounts[comm->getRank()];
+  unsigned long long globalOffset     = 0;
+  for (int rank = 0; rank < comm->getRank(); ++rank) {
+    globalOffset += localCounts[rank];
+  }
 
   Teuchos::Array<GlobalOrdinal> gids(static_cast<Teuchos::Array<GlobalOrdinal>::size_type>(localCount));
   if (localCount > 0) {
     readArrayCollective(filename,
-                        mapSectionPayloadOffset(mapSectionOffset),
+                        mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
                         gids.getRawPtr(),
                         localCount,
                         globalOffset,
@@ -587,7 +693,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDenseFile(const s
   header.numGlobalCols = static_cast<unsigned long long>(X.getNumVectors());
   header.numVectors    = static_cast<unsigned long long>(X.getNumVectors());
   header.rowMapOffset  = static_cast<unsigned long long>(sizeof(FileHeader));
-  header.valuesOffset  = header.rowMapOffset + mapSectionSize() + header.numGlobalRows * sizeof(GlobalOrdinal);
+  header.valuesOffset  = header.rowMapOffset + mapSectionSize(*map) + header.numGlobalRows * sizeof(GlobalOrdinal);
   writeHeaderToNewFile(filename, header, map->getComm());
   writeMapSection(filename, header.rowMapOffset, *map, map->getComm());
 
@@ -696,9 +802,9 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseFile(const 
 
   const unsigned long long globalNumRows    = static_cast<unsigned long long>(A.getGlobalNumRows());
   const unsigned long long globalNumEntries = static_cast<unsigned long long>(A.getGlobalNumEntries());
-  const unsigned long long rowMapBytes      = mapSectionSize() + globalNumRows * sizeof(GlobalOrdinal);
-  const unsigned long long domainMapBytes   = mapSectionSize() + static_cast<unsigned long long>(domainMap->getGlobalNumElements()) * sizeof(GlobalOrdinal);
-  const unsigned long long rangeMapBytes    = mapSectionSize() + static_cast<unsigned long long>(rangeMap->getGlobalNumElements()) * sizeof(GlobalOrdinal);
+  const unsigned long long rowMapBytes      = mapSectionSize(*rowMap) + globalNumRows * sizeof(GlobalOrdinal);
+  const unsigned long long domainMapBytes   = mapSectionSize(*domainMap) + static_cast<unsigned long long>(domainMap->getGlobalNumElements()) * sizeof(GlobalOrdinal);
+  const unsigned long long rangeMapBytes    = mapSectionSize(*rangeMap) + static_cast<unsigned long long>(rangeMap->getGlobalNumElements()) * sizeof(GlobalOrdinal);
 
   FileHeader header          = makeBaseHeader(MATRIX_OBJECT);
   header.numGlobalRows       = globalNumRows;
@@ -760,13 +866,14 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
   auto rowMap    = readMapSection(filename, header.rowMapOffset, comm);
   auto domainMap = readMapSection(filename, header.domainMapOffset, comm);
   auto rangeMap  = readMapSection(filename, header.rangeMapOffset, comm);
-  return readSparseFile(filename, rowMap, domainMap, rangeMap, true);
+  return readSparseFile(filename, rowMap, Teuchos::null, domainMap, rangeMap, true);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<typename BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
 BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::string& filename,
                                                                     const Teuchos::RCP<const map_type>& rowMap,
+                                                                    const Teuchos::RCP<const map_type>& colMap,
                                                                     const Teuchos::RCP<const map_type>& domainMap,
                                                                     const Teuchos::RCP<const map_type>& rangeMap,
                                                                     const bool callFillComplete) {
@@ -784,8 +891,7 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
   const auto fileDomainMap = readMapSection(filename, header.domainMapOffset, comm);
   const auto fileRangeMap  = readMapSection(filename, header.rangeMapOffset, comm);
 
-  const auto activeRowMap                  = fileRowMap;
-  const unsigned long long localNumRows    = static_cast<unsigned long long>(activeRowMap->getLocalNumElements());
+  const unsigned long long localNumRows    = static_cast<unsigned long long>(fileRowMap->getLocalNumElements());
   const unsigned long long globalRowOffset = exclusiveScanUnsignedLongLong(localNumRows, comm);
 
   Teuchos::Array<unsigned long long> localRowPtr(localNumRows + 1);
@@ -814,6 +920,28 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
     rowLengths[lclRow] = static_cast<size_t>(localRowPtr[lclRow + 1] - localRowPtr[lclRow]);
   }
 
+  const auto dom = domainMap.is_null() ? fileDomainMap : domainMap;
+  const auto ran = rangeMap.is_null() ? fileRangeMap : rangeMap;
+
+  if (rowMap->isSameAs(*fileRowMap) && !colMap.is_null()) {
+    auto matrix = Teuchos::rcp(new sparse_matrix_type(rowMap, colMap, rowLengths()));
+    for (size_t lclRow = 0; lclRow < static_cast<size_t>(localNumRows); ++lclRow) {
+      const GlobalOrdinal gblRow = rowMap->getGlobalElement(static_cast<LocalOrdinal>(lclRow));
+      const size_t rowBegin      = static_cast<size_t>(localRowPtr[lclRow]);
+      const size_t rowEnd        = static_cast<size_t>(localRowPtr[lclRow + 1]);
+      const size_t rowLen        = rowEnd - rowBegin;
+      if (rowLen > 0) {
+        Teuchos::ArrayView<const GlobalOrdinal> cols(globalColumns.data() + rowBegin, rowLen);
+        Teuchos::ArrayView<const Scalar> vals(values.data() + rowBegin, rowLen);
+        matrix->insertGlobalValues(gblRow, cols, vals);
+      }
+    }
+    if (callFillComplete) {
+      matrix->fillComplete(dom, ran);
+    }
+    return matrix;
+  }
+
   auto fileMatrix = Teuchos::rcp(new sparse_matrix_type(fileRowMap, rowLengths()));
   for (size_t lclRow = 0; lclRow < static_cast<size_t>(localNumRows); ++lclRow) {
     const GlobalOrdinal gblRow = fileRowMap->getGlobalElement(static_cast<LocalOrdinal>(lclRow));
@@ -829,8 +957,6 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
 
   if (rowMap->isSameAs(*fileRowMap)) {
     if (callFillComplete) {
-      const auto dom = domainMap.is_null() ? fileDomainMap : domainMap;
-      const auto ran = rangeMap.is_null() ? fileRangeMap : rangeMap;
       fileMatrix->fillComplete(dom, ran);
     }
     return fileMatrix;
@@ -841,19 +967,37 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
   using import_type = Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
   import_type importer(fileRowMap, rowMap);
 
-  if (callFillComplete) {
-    const auto dom = domainMap.is_null() ? fileDomainMap : domainMap;
-    const auto ran = rangeMap.is_null() ? fileRangeMap : rangeMap;
+  if (callFillComplete && colMap.is_null()) {
     return Tpetra::importAndFillCompleteCrsMatrix<sparse_matrix_type>(fileMatrix,
                                                                       importer,
                                                                       dom,
                                                                       ran);
   }
 
-  auto matrix = Teuchos::rcp(new sparse_matrix_type(rowMap,
-                                                    static_cast<size_t>(fileMatrix->getGlobalMaxNumRowEntries())));
+  Teuchos::RCP<sparse_matrix_type> matrix;
+  if (colMap.is_null()) {
+    matrix = Teuchos::rcp(new sparse_matrix_type(rowMap,
+                                                 static_cast<size_t>(fileMatrix->getGlobalMaxNumRowEntries())));
+  } else {
+    matrix = Teuchos::rcp(new sparse_matrix_type(rowMap,
+                                                 colMap,
+                                                 static_cast<size_t>(fileMatrix->getGlobalMaxNumRowEntries())));
+  }
   matrix->doImport(*fileMatrix, importer, Tpetra::INSERT);
+  if (callFillComplete) {
+    matrix->fillComplete(dom, ran);
+  }
   return matrix;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sparse_matrix_type>
+BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::string& filename,
+                                                                    const Teuchos::RCP<const map_type>& rowMap,
+                                                                    const Teuchos::RCP<const map_type>& domainMap,
+                                                                    const Teuchos::RCP<const map_type>& rangeMap,
+                                                                    const bool callFillComplete) {
+  return readSparseFile(filename, rowMap, Teuchos::null, domainMap, rangeMap, callFillComplete);
 }
 
 }  // namespace Tpetra
