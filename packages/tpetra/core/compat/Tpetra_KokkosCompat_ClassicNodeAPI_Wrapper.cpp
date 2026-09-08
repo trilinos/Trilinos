@@ -65,12 +65,12 @@ std::string KokkosDeviceWrapperNode<Kokkos::HIP, Kokkos::HIPSpace>::name() {
 #ifdef KOKKOS_ENABLE_SYCL
 #ifdef HAVE_TPETRA_SHARED_ALLOCS
 template <>
-std::string KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace>::name() {
+std::string KokkosDeviceWrapperNode<Kokkos::SYCL, Kokkos::SYCLSharedUSMSpace>::name() {
   return std::string("SYCL/Wrapper");
 }
 #else
 template <>
-std::string KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>::name() {
+std::string KokkosDeviceWrapperNode<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>::name() {
   return std::string("SYCL/Wrapper");
 }
 #endif

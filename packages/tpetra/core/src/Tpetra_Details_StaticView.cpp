@@ -93,7 +93,7 @@ size_t sycl_memory_size_ = 0;
 
 void finalize_sycl_memory() {
   if (sycl_memory_ != nullptr) {
-    Kokkos::kokkos_free<Kokkos::Experimental::SYCLDeviceUSMSpace>(sycl_memory_);
+    Kokkos::kokkos_free<Kokkos::SYCLDeviceUSMSpace>(sycl_memory_);
     sycl_memory_      = nullptr;
     sycl_memory_size_ = 0;
   }
@@ -104,7 +104,7 @@ size_t sycl_shared_memory_size_ = 0;
 
 void finalize_sycl_shared_memory() {
   if (sycl_shared_memory_ != nullptr) {
-    Kokkos::kokkos_free<Kokkos::Experimental::SYCLSharedUSMSpace>(sycl_shared_memory_);
+    Kokkos::kokkos_free<Kokkos::SYCLSharedUSMSpace>(sycl_shared_memory_);
     sycl_shared_memory_      = nullptr;
     sycl_shared_memory_size_ = 0;
   }
@@ -245,10 +245,10 @@ void* StaticKokkosAllocation<Kokkos::HIPHostPinnedSpace>::
 #ifdef KOKKOS_ENABLE_SYCL
 
 template <>
-void* StaticKokkosAllocation<Kokkos::Experimental::SYCLDeviceUSMSpace>::
-    resize(Kokkos::Experimental::SYCLDeviceUSMSpace /* space */,
+void* StaticKokkosAllocation<Kokkos::SYCLDeviceUSMSpace>::
+    resize(Kokkos::SYCLDeviceUSMSpace /* space */,
            const size_t size) {
-  using memory_space                = Kokkos::Experimental::SYCLDeviceUSMSpace;
+  using memory_space                = Kokkos::SYCLDeviceUSMSpace;
   static bool created_finalize_hook = false;
 
   if (size > sycl_memory_size_) {
@@ -268,10 +268,10 @@ void* StaticKokkosAllocation<Kokkos::Experimental::SYCLDeviceUSMSpace>::
 }
 
 template <>
-void* StaticKokkosAllocation<Kokkos::Experimental::SYCLSharedUSMSpace>::
-    resize(Kokkos::Experimental::SYCLSharedUSMSpace /* space */,
+void* StaticKokkosAllocation<Kokkos::SYCLSharedUSMSpace>::
+    resize(Kokkos::SYCLSharedUSMSpace /* space */,
            const size_t size) {
-  using memory_space                = Kokkos::Experimental::SYCLSharedUSMSpace;
+  using memory_space                = Kokkos::SYCLSharedUSMSpace;
   static bool created_finalize_hook = false;
 
   const size_t req_size = size > minimum_initial_size ? size : minimum_initial_size;
