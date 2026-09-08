@@ -664,8 +664,7 @@ class TrilinosPRConfigurationBase(object):
         enable_map_entry = self.get_multi_property_from_config("ENABLE_MAP", job_name, delimeter=" ")
         # Generate files using ATDM/TriBiTS Scripts
         if enable_map_entry is None:
-            cmd = [os.path.join( self.arg_workspace_dir,
-                                'Trilinos',
+            cmd = [os.path.join(self.arg_source_dir,
                                 'commonTools',
                                 'framework',
                                 'get-changed-trilinos-packages.sh'),
