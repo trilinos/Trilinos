@@ -193,7 +193,8 @@ public:
        r_data(lid,0) = field(cell,basisId);
 
        // record that you set a dirichlet condition
-       dirichlet_counter(lid,0) = 1.0;
+       if (dirichlet_counter.extent(0) > 0)
+         dirichlet_counter(lid,0) = 1.0;
 
    } // end basis
   }
@@ -225,7 +226,8 @@ public:
        r_data(lid,0) = field(cell,basis);
 
        // record that you set a dirichlet condition
-       dirichlet_counter(lid,0) = 1.0;
+       if (dirichlet_counter.extent(0) > 0)
+         dirichlet_counter(lid,0) = 1.0;
 
    } // end basis
   }
@@ -254,7 +256,8 @@ evaluateFields(typename TRAITS::EvalData workset)
     ScatterDirichletResidualIC_Residual_Functor<ScalarT,LO,GO,NodeT> functor;
     functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
     functor.lids = scratch_lids_;
-    functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    if (dirichletCounter_ != Teuchos::null)
+      functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
       // for each field, do a parallel for loop
     for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -267,7 +270,8 @@ evaluateFields(typename TRAITS::EvalData workset)
     ScatterDirichletResidual_Residual_Functor<ScalarT,LO,GO,NodeT> functor;
     functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
     functor.lids = scratch_lids_;
-    functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    if (dirichletCounter_ != Teuchos::null)
+      functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
       // for each field, do a parallel for loop
     for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -477,7 +481,8 @@ public:
          dfdp_fields(i_param)(lid,0) = field(cell,basisId).fastAccessDx(i_param);
 
        // record that you set a dirichlet condition
-       dirichlet_counter(lid,0) = 1.0;
+       if (dirichlet_counter.extent(0) > 0)
+         dirichlet_counter(lid,0) = 1.0;
 
    } // end basis
   }
@@ -516,7 +521,8 @@ public:
           dfdp_fields(i_param)(lid,0) = field(cell,basis).fastAccessDx(i_param);
 
        // record that you set a dirichlet condition
-       dirichlet_counter(lid,0) = 1.0;
+       if (dirichlet_counter.extent(0) > 0)
+         dirichlet_counter(lid,0) = 1.0;
 
    } // end basis
   }
@@ -545,7 +551,8 @@ evaluateFields(typename TRAITS::EvalData workset)
     ScatterDirichletResidualIC_Tangent_Functor<ScalarT,LO,GO,NodeT> functor;
     functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
     functor.lids = scratch_lids_;
-    functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    if (dirichletCounter_ != Teuchos::null)
+      functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
     functor.dfdp_fields = dfdpFieldsVoV_.getViewDevice();
 
       // for each field, do a parallel for loop
@@ -560,7 +567,8 @@ evaluateFields(typename TRAITS::EvalData workset)
     ScatterDirichletResidual_Tangent_Functor<ScalarT,LO,GO,NodeT> functor;
     functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
     functor.lids = scratch_lids_;
-    functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    if (dirichletCounter_ != Teuchos::null)
+      functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
     functor.dfdp_fields = dfdpFieldsVoV_.getViewDevice();
 
       // for each field, do a parallel for loop
@@ -691,8 +699,12 @@ evaluateFields(typename TRAITS::EvalData workset)
    Teuchos::RCP<typename LOC::MultiVectorType> r = tpetraContainer_->get_f_mv(); 
    Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();
 
-   Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
-   Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
+   Teuchos::ArrayRCP<double> r_array;
+   if (r != Teuchos::null)
+     r_array = r->get1dViewNonConst();
+   Teuchos::ArrayRCP<double> dc_array;
+   if (dirichletCounter_ != Teuchos::null)
+     dc_array = dirichletCounter_->get1dViewNonConst();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -751,8 +763,10 @@ evaluateFields(typename TRAITS::EvalData workset)
             GO gid = GIDs[offset];
             const ScalarT scatterField = scatterFields_h(worksetCellIndex,basisId);
     
-            r_array[lid] = scatterField.val();
-            dc_array[lid] = 1.0; // mark row as dirichlet
+            if (r_array != Teuchos::null)
+              r_array[lid] = scatterField.val();
+            if (dc_array != Teuchos::null)
+              dc_array[lid] = 1.0; // mark row as dirichlet
     
             // loop over the sensitivity indices: all DOFs on a cell
             std::vector<double> jacRow(scatterField.size(),0.0);

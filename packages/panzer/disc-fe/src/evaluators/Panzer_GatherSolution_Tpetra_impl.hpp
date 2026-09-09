@@ -122,15 +122,35 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>
 preEvaluate(typename TRAITS::PreEvalData d)
 {
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+   typedef TpetraVector_ReadOnly_GlobalEvaluationData<double,LO,GO,NodeT> RO_GED;
+
+   // first try the refactored read-only container
+   std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
+   if(d.gedc->containsDataObject(globalDataKey_+post)) {
+      x_vector = Teuchos::rcp_dynamic_cast<RO_GED>(d.gedc->getDataObject(globalDataKey_+post),true)->getGhostedVector_Tpetra();
+      return;
+   }
+
+   Teuchos::RCP<GlobalEvaluationData> ged = d.gedc->getDataObject(globalDataKey_);
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(ged);
 
    if(tpetraContainer_==Teuchos::null) {
-      // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
-      tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+      Teuchos::RCP<LOCPair_GlobalEvaluationData> loc_pair = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+      if(loc_pair!=Teuchos::null)
+         tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc_pair->getGhostedLOC());
    }
+
+   if(tpetraContainer_!=Teuchos::null) {
+      x_vector = useTimeDerivativeSolutionVector_ ? tpetraContainer_->get_dxdt_mv()
+                                                  : tpetraContainer_->get_x_mv();
+      return;
+   }
+
+   // last resort: a read-only ghosted vector stored under the bare key. This
+   // throws if the object is neither, which is the intended behavior.
+   x_vector = Teuchos::rcp_dynamic_cast<RO_GED>(ged,true)->getGhostedVector_Tpetra();
 }
 
 // **********************************************************************
@@ -138,19 +158,11 @@ template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
-
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
-   Teuchos::RCP<typename LOC::MultiVectorType> x;
-   if (useTimeDerivativeSolutionVector_)
-     x = tpetraContainer_->get_dxdt_mv();
-   else
-     x = tpetraContainer_->get_x_mv();
-
-   auto x_data = x->getLocalViewDevice(Tpetra::Access::ReadOnly);
+   auto x_data = x_vector->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
    globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
@@ -290,15 +302,35 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>:
 preEvaluate(typename TRAITS::PreEvalData d)
 {
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+   typedef TpetraVector_ReadOnly_GlobalEvaluationData<double,LO,GO,NodeT> RO_GED;
+
+   // first try the refactored read-only container
+   std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
+   if(d.gedc->containsDataObject(globalDataKey_+post)) {
+      x_vector = Teuchos::rcp_dynamic_cast<RO_GED>(d.gedc->getDataObject(globalDataKey_+post),true)->getGhostedVector_Tpetra();
+      return;
+   }
+
+   Teuchos::RCP<GlobalEvaluationData> ged = d.gedc->getDataObject(globalDataKey_);
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(ged);
 
    if(tpetraContainer_==Teuchos::null) {
-      // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
-      tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
+      Teuchos::RCP<LOCPair_GlobalEvaluationData> loc_pair = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+      if(loc_pair!=Teuchos::null)
+         tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc_pair->getGhostedLOC());
    }
+
+   if(tpetraContainer_!=Teuchos::null) {
+      x_vector = useTimeDerivativeSolutionVector_ ? tpetraContainer_->get_dxdt_mv()
+                                                  : tpetraContainer_->get_x_mv();
+      return;
+   }
+
+   // last resort: a read-only ghosted vector stored under the bare key. This
+   // throws if the object is neither, which is the intended behavior.
+   x_vector = Teuchos::rcp_dynamic_cast<RO_GED>(ged,true)->getGhostedVector_Tpetra();
 }
 
 // **********************************************************************
@@ -306,16 +338,8 @@ template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
-
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
-
-   Teuchos::RCP<typename LOC::MultiVectorType> x;
-   if (useTimeDerivativeSolutionVector_)
-     x = tpetraContainer_->get_dxdt_mv();
-   else
-     x = tpetraContainer_->get_x_mv();
 
    typedef typename PHX::MDField<ScalarT,Cell,NODE>::array_type::reference_type reference_type;
    auto cellLocalIdsKokkos = this->wda(workset).getLocalCellIDs();
@@ -323,7 +347,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    auto gidFieldOffsetsVoV = Teuchos::rcp_dynamic_cast<const panzer::DOFManager>(globalIndexer_,true)->getGIDFieldOffsetsKokkos(blockId,fieldIds_);
    auto gidFieldOffsets = gidFieldOffsetsVoV.getViewDevice();
    auto gatherFieldsDevice = gatherFieldsVoV_.getViewDevice();
-   auto x_view = x->getLocalViewDevice(Tpetra::Access::ReadOnly);
+   auto x_view = x_vector->getLocalViewDevice(Tpetra::Access::ReadOnly);
    auto tangentInnerVectorSizes = this->tangentInnerVectorSizes_;
 
    if (has_tangent_fields_) {
@@ -519,25 +543,25 @@ evaluateFields(typename TRAITS::EvalData workset)
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
 
+   // Only read the seed when it will actually be used. With sensitivities off
+   // the gather_seeds entry this index names need not exist: a gather built
+   // with a seed index still runs on every evaluation, and only the ones the
+   // model evaluator is differentiating with respect to get seeds filled in.
    double seed_value = 0.0;
-   if (useTimeDerivativeSolutionVector_) {
-     seed_value = workset.alpha;
+   if (applySensitivities_) {
+     if (useTimeDerivativeSolutionVector_) {
+       seed_value = workset.alpha;
+     }
+     else if (gatherSeedIndex_<0) {
+       seed_value = workset.beta;
+     }
+     else if(!useTimeDerivativeSolutionVector_) {
+       seed_value = workset.gather_seeds[gatherSeedIndex_];
+     }
+     else {
+       TEUCHOS_ASSERT(false);
+     }
    }
-   else if (gatherSeedIndex_<0) {
-     seed_value = workset.beta;
-   }
-   else if(!useTimeDerivativeSolutionVector_) {
-     seed_value = workset.gather_seeds[gatherSeedIndex_];
-   }
-   else {
-     TEUCHOS_ASSERT(false);
-   }
-
-   // turn off sensitivies: this may be faster if we don't expand the term
-   // but I suspect not because anywhere it is used the full complement of
-   // sensitivies will be needed anyway.
-   if(!applySensitivities_)
-      seed_value = 0.0;
 
    // Interface worksets handle DOFs from two element blocks.  The
    // derivative offset for the other element block must be shifted by
