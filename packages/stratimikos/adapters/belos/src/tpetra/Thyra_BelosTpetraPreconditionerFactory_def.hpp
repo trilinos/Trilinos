@@ -21,7 +21,19 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
 
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MixedScalarMultiplyOp.hpp"
+
+// Ifpack2 lives upstream of Stratimikos, so its inner-preconditioner builder is
+// registered directly here (guarded by the TriBITS-generated macro).  MueLu
+// lives downstream of Stratimikos and therefore injects its own builder via
+// setInnerPrecBuilder() -- see Stratimikos::enableBelosPrecMueLu().
+// HAVE_STRATIMIKOS_IFPACK2 is defined in Stratimikos_InternalConfig.h (not the
+// public Stratimikos_Config.h), so it must be included for the guard to work.
+#include "Stratimikos_InternalConfig.h"
+#if defined(HAVE_STRATIMIKOS_IFPACK2)
+#  include "Ifpack2_Factory.hpp"
+#endif
 
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Assert.hpp"
@@ -60,10 +72,8 @@ bool BelosTpetraPreconditionerFactory<MatrixType>::isCompatible(
   const LinearOpSourceBase<scalar_type> &fwdOpSrc
   ) const
 {
-  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-  typedef typename MatrixType::node_type node_type;
-
+  // scalar_type, local_ordinal_type, global_ordinal_type and node_type are
+  // member typedefs of the class; do not redeclare them here (-Wshadow).
   const Teuchos::RCP<const LinearOpBase<scalar_type> > fwdOp = fwdOpSrc.getOp();
   using TpetraExtractHelper = TpetraOperatorVectorExtraction<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
   const auto tpetraFwdOp =  TpetraExtractHelper::getConstTpetraOperator(fwdOp);
@@ -113,10 +123,8 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   const RCP<const LinearOpBase<scalar_type> > fwdOp = fwdOpSrc->getOp();
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
 
-  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-  typedef typename MatrixType::node_type node_type;
-
+  // scalar_type, local_ordinal_type, global_ordinal_type and node_type are
+  // member typedefs of the class; do not redeclare them here (-Wshadow).
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraLinOp;
   using TpetraExtractHelper = TpetraOperatorVectorExtraction<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
   const auto tpetraFwdOp =  TpetraExtractHelper::getConstTpetraOperator(fwdOp);
@@ -131,7 +139,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   // CAG: There is nothing special about the combination double-float,
   //      except that I feel somewhat confident that Trilinos builds
   //      with both scalar types.
-  typedef typename Teuchos::ScalarTraits<scalar_type>::halfPrecision half_scalar_type;
+  // half_scalar_type is a member typedef; do not redeclare it here (-Wshadow).
   typedef Tpetra::Operator<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraLinOpHalf;
   typedef Tpetra::MultiVector<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraMVHalf;
   typedef Belos::TpetraOperator<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> BelosTpOpHalf;
@@ -160,6 +168,10 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   const std::string solverType = Teuchos::getParameter<std::string>(*innerParamList, "BelosPrec Solver Type");
   const RCP<Teuchos::ParameterList> packageParamList = Teuchos::rcpFromRef(innerParamList->sublist("BelosPrec Solver Params"));
 
+  // Optional algebraic preconditioner applied *inside* the inner Belos solve.
+  const std::string innerPrecType = innerParamList->get<std::string>("Inner Prec Type", "None");
+  const std::string innerPrecSide = innerParamList->get<std::string>("Inner Prec Side", "left");
+
   // solverTypeUpper is the upper-case version of solverType.
   std::string solverTypeUpper (solverType);
   std::transform(solverTypeUpper.begin(), solverTypeUpper.end(),solverTypeUpper.begin(), ::toupper);
@@ -181,6 +193,40 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
 
     RCP<BelosTpLinProbHalf> belosLinProbHalf = rcp(new BelosTpLinProbHalf());
     belosLinProbHalf->setOperator(tpetraFwdMatrixHalf);
+
+    // Optionally attach an algebraic preconditioner, built at half_scalar_type
+    // against the down-converted matrix, to the inner (half-precision) Belos
+    // solve.  Same before-the-wrapper contract as the full-precision branch.
+    // The builder must come from a package that is ETI-instantiated for
+    // half_scalar_type (Ifpack2 is registered automatically; MueLu via
+    // Stratimikos::enableBelosPrecMueLuHalf()).
+    if (innerPrecType != "None") {
+      std::map<std::string, InnerPrecBuilderHalf>& registry = innerPrecRegistryHalf();
+      typename std::map<std::string, InnerPrecBuilderHalf>::const_iterator it =
+        registry.find(innerPrecType);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        it == registry.end(), std::logic_error,
+        "Thyra::BelosTpetraPreconditionerFactory: no *half-precision* inner-preconditioner "
+        "builder is registered for \"Inner Prec Type\"=\"" << innerPrecType << "\". "
+        "\"Ifpack2\" is registered automatically when Stratimikos is configured with "
+        "Ifpack2 and a half-precision scalar is available.  For a downstream package such "
+        "as MueLu, register its half-precision builder before solving, e.g. by calling "
+        "Stratimikos::enableBelosPrecMueLuHalf<...>().");
+
+      Teuchos::ParameterList& ip = innerParamList->sublist("Inner Prec Params");
+      const RCP<const TpetraLinOpHalf> innerPrec = (it->second)(tpetraFwdMatrixHalf, ip);
+
+      if (innerPrecSide == "right") {
+        belosLinProbHalf->setRightPrec(innerPrec);
+      } else if (innerPrecSide == "left") {
+        belosLinProbHalf->setLeftPrec(innerPrec);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+          "Thyra::BelosTpetraPreconditionerFactory: unknown \"Inner Prec Side\"=\""
+          << innerPrecSide << "\" (valid: \"left\", \"right\").");
+      }
+    }
+
     RCP<TpetraLinOpHalf> belosOpRCPHalf = rcp(new BelosTpOpHalf(belosLinProbHalf, packageParamList, solverType, true));
     RCP<TpetraLinOp> wrappedOp = rcp(new Tpetra::MixedScalarMultiplyOp<scalar_type,half_scalar_type,local_ordinal_type,global_ordinal_type,node_type>(belosOpRCPHalf));
 
@@ -192,6 +238,37 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
     // Wrap concrete preconditioner
     RCP<BelosTpLinProb> belosLinProb = rcp(new BelosTpLinProb());
     belosLinProb->setOperator(tpetraFwdOp);
+
+    // Optionally attach an algebraic preconditioner to the inner Belos solve.
+    // The preconditioner is set on the LinearProblem *before* it is wrapped in
+    // Belos::TpetraOperator; the wrapper preserves LP_/RP_ (it only resets the
+    // solution/RHS vectors on each apply()), so the inner solve honors it.
+    if (innerPrecType != "None") {
+      std::map<std::string, InnerPrecBuilder>& registry = innerPrecRegistry();
+      typename std::map<std::string, InnerPrecBuilder>::const_iterator it =
+        registry.find(innerPrecType);
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        it == registry.end(), std::logic_error,
+        "Thyra::BelosTpetraPreconditionerFactory: no inner-preconditioner builder "
+        "is registered for \"Inner Prec Type\"=\"" << innerPrecType << "\". "
+        "\"Ifpack2\" is registered automatically when Stratimikos is configured "
+        "with Ifpack2. For a downstream package such as MueLu, register its builder "
+        "before solving, e.g. by calling Stratimikos::enableBelosPrecMueLu<...>().");
+
+      Teuchos::ParameterList& ip = innerParamList->sublist("Inner Prec Params");
+      const RCP<const TpetraLinOp> innerPrec = (it->second)(tpetraFwdOp, ip);
+
+      if (innerPrecSide == "right") {
+        belosLinProb->setRightPrec(innerPrec);
+      } else if (innerPrecSide == "left") {
+        belosLinProb->setLeftPrec(innerPrec);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+          "Thyra::BelosTpetraPreconditionerFactory: unknown \"Inner Prec Side\"=\""
+          << innerPrecSide << "\" (valid: \"left\", \"right\").");
+      }
+    }
+
     RCP<TpetraLinOp> belosOpRCP = rcp(new BelosTpOp(belosLinProb, packageParamList, solverType, true));
     thyraPrecOp = Thyra::createLinearOp(belosOpRCP);
   }
@@ -303,6 +380,22 @@ BelosTpetraPreconditionerFactory<MatrixType>::getValidParameters() const
       "BelosPrec Solver Params", false,
       "Belos solver settings that are passed onto the Belos solver itself."
       );
+    validParamList->set(
+      "Inner Prec Type", "None",
+      "Algebraic preconditioner applied inside the inner Belos solve: "
+      "\"None\", \"Ifpack2\", or \"MueLu\"."
+      );
+    validParamList->set(
+      "Inner Prec Side", "left",
+      "Side on which to apply the inner algebraic preconditioner: \"left\" or \"right\"."
+      );
+    validParamList->sublist(
+      "Inner Prec Params", false,
+      "Parameters passed to the inner algebraic preconditioner. For Ifpack2, the "
+      "string \"Prec Type\" selects the Ifpack2 method (e.g. \"RELAXATION\", \"ILUT\", "
+      "\"SCHWARZ\") and the remaining entries are the Ifpack2 settings; for MueLu this "
+      "is a standard MueLu parameter list."
+      );
     Teuchos::setupVerboseObjectSublist(validParamList.getRawPtr());
   }
 
@@ -316,6 +409,119 @@ template <typename MatrixType>
 std::string BelosTpetraPreconditionerFactory<MatrixType>::description() const
 {
   return "Thyra::BelosTpetraPreconditionerFactory";
+}
+
+
+// Inner-preconditioner builder registry
+
+
+template <typename MatrixType>
+std::map<std::string, typename BelosTpetraPreconditionerFactory<MatrixType>::InnerPrecBuilder>&
+BelosTpetraPreconditionerFactory<MatrixType>::innerPrecRegistry()
+{
+  // Function-local static: one registry per template specialization, safely
+  // initialized on first use.  The Ifpack2 builder is seeded here because
+  // Ifpack2 is upstream of Stratimikos; downstream packages add their own via
+  // setInnerPrecBuilder().
+  static std::map<std::string, InnerPrecBuilder> registry = [] {
+    std::map<std::string, InnerPrecBuilder> m;
+#if defined(HAVE_STRATIMIKOS_IFPACK2)
+    m["Ifpack2"] = [](const Teuchos::RCP<const inner_prec_op_type>& fwdOp,
+                      Teuchos::ParameterList& ip)
+        -> Teuchos::RCP<const inner_prec_op_type> {
+      // Ifpack2 needs the concrete matrix, not just the operator.
+      const Teuchos::RCP<const MatrixType> mat =
+        Teuchos::rcp_dynamic_cast<const MatrixType>(fwdOp, true);
+      const std::string ifpackType = ip.get<std::string>("Prec Type", "RELAXATION");
+      Teuchos::RCP<Ifpack2::Preconditioner<scalar_type, local_ordinal_type,
+        global_ordinal_type, node_type> > prec =
+          Ifpack2::Factory::create<MatrixType>(ifpackType, mat);
+      // Do not forward our "Prec Type" selector key on to Ifpack2 itself.
+      Teuchos::ParameterList ifpackParams(ip);
+      ifpackParams.remove("Prec Type", false);
+      prec->setParameters(ifpackParams);
+      prec->initialize();
+      prec->compute();
+      return prec;
+    };
+#endif
+    return m;
+  }();
+  return registry;
+}
+
+
+template <typename MatrixType>
+void BelosTpetraPreconditionerFactory<MatrixType>::setInnerPrecBuilder(
+  const std::string& precType, InnerPrecBuilder builder)
+{
+  innerPrecRegistry()[precType] = builder;
+}
+
+
+template <typename MatrixType>
+bool BelosTpetraPreconditionerFactory<MatrixType>::hasInnerPrecBuilder(
+  const std::string& precType)
+{
+  return innerPrecRegistry().count(precType) != 0;
+}
+
+
+// Half-precision inner-preconditioner builder registry
+
+
+template <typename MatrixType>
+std::map<std::string, typename BelosTpetraPreconditionerFactory<MatrixType>::InnerPrecBuilderHalf>&
+BelosTpetraPreconditionerFactory<MatrixType>::innerPrecRegistryHalf()
+{
+  // Parallel to innerPrecRegistry(), but the builders produce operators at
+  // half_scalar_type for the half-precision inner Belos solve.  The Ifpack2
+  // builder is seeded only when a half-precision scalar is actually available
+  // (THYRA_BELOS_PREC_ENABLE_HALF_PRECISION); in that configuration Ifpack2 is
+  // ETI-instantiated for the half scalar too.
+  static std::map<std::string, InnerPrecBuilderHalf> registry = [] {
+    std::map<std::string, InnerPrecBuilderHalf> m;
+#if defined(HAVE_STRATIMIKOS_IFPACK2) && defined(THYRA_BELOS_PREC_ENABLE_HALF_PRECISION)
+    m["Ifpack2"] = [](const Teuchos::RCP<const inner_prec_op_half_type>& fwdOp,
+                      Teuchos::ParameterList& ip)
+        -> Teuchos::RCP<const inner_prec_op_half_type> {
+      // The half-precision matrix produced by MatrixType::convert<half_scalar_type>().
+      typedef Tpetra::CrsMatrix<half_scalar_type, local_ordinal_type,
+        global_ordinal_type, node_type> matrix_half_type;
+      const Teuchos::RCP<const matrix_half_type> mat =
+        Teuchos::rcp_dynamic_cast<const matrix_half_type>(fwdOp, true);
+      const std::string ifpackType = ip.get<std::string>("Prec Type", "RELAXATION");
+      Teuchos::RCP<Ifpack2::Preconditioner<half_scalar_type, local_ordinal_type,
+        global_ordinal_type, node_type> > prec =
+          Ifpack2::Factory::create<matrix_half_type>(ifpackType, mat);
+      // Do not forward our "Prec Type" selector key on to Ifpack2 itself.
+      Teuchos::ParameterList ifpackParams(ip);
+      ifpackParams.remove("Prec Type", false);
+      prec->setParameters(ifpackParams);
+      prec->initialize();
+      prec->compute();
+      return prec;
+    };
+#endif
+    return m;
+  }();
+  return registry;
+}
+
+
+template <typename MatrixType>
+void BelosTpetraPreconditionerFactory<MatrixType>::setInnerPrecBuilderHalf(
+  const std::string& precType, InnerPrecBuilderHalf builder)
+{
+  innerPrecRegistryHalf()[precType] = builder;
+}
+
+
+template <typename MatrixType>
+bool BelosTpetraPreconditionerFactory<MatrixType>::hasInnerPrecBuilderHalf(
+  const std::string& precType)
+{
+  return innerPrecRegistryHalf().count(precType) != 0;
 }
 
 
