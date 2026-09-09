@@ -37,6 +37,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     energy-transient-tempus-blocked.xml
     energy-transient-tempus-opt-blocked.xml
     energy-transient-tempus-opt-blocked-p-dependent-g.xml
+    energy-transient-tempus-opt-p-dependent-g.xml
     rol_params.xml
     energy-neumann.xml
     energy-ss-blocked-tp.xml
@@ -231,6 +232,17 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
         EXCLUDE_IF_NOT_TRUE PANZER_THIS_IS_AN_OPT_BUILD
         TEST_0 EXEC main_driver_opt
           ARGS --i=energy-transient-tempus-opt-blocked-p-dependent-g.xml
+          PASS_REGULAR_EXPRESSION "panzer::MainDriverOpt run completed."
+          NUM_MPI_PROCS 4
+        )
+      # Same problem on a single (non-blocked) field order, so the plain
+      # TpetraLinearObjFactory and GatherSolution/GatherTangent_Tpetra are
+      # covered rather than only their blocked counterparts.
+      TRIBITS_ADD_ADVANCED_TEST(
+        main_driver_energy-transient-tempus-opt-p-dependent-g
+        EXCLUDE_IF_NOT_TRUE PANZER_THIS_IS_AN_OPT_BUILD
+        TEST_0 EXEC main_driver_opt
+          ARGS --i=energy-transient-tempus-opt-p-dependent-g.xml
           PASS_REGULAR_EXPRESSION "panzer::MainDriverOpt run completed."
           NUM_MPI_PROCS 4
         )
