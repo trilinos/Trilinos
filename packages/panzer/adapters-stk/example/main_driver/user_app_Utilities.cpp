@@ -251,17 +251,18 @@ user_app::buildTimeIntegrator(const Teuchos::RCP<Teuchos::ParameterList>& input_
   integrator->getStepper()->getSolver()->setParameterList(noxList);
   integrator->initialize();
 
-  // Setting observers on tempus breaks the screen output of the
-  // time steps! It replaces IntegratorObserverBasic which handles
-  // IO. Is this at least documented?
-  //{
-  //  RCP<Tempus::IntegratorObserverComposite<double>> tempus_observers = rcp(new Tempus::IntegratorObserverComposite<double>);
-  //  RCP<const panzer_stk::TempusObserverFactory> tof =
-  //    Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
-  //  tempus_observers->addObserver(Teuchos::rcp(new Tempus::IntegratorObserverBasic<double>));
-  //  tempus_observers->addObserver(tof->buildTempusObserver(mesh,globalIndexer,linObjFactory));
-  //  integrator->setObserver(tempus_observers);
-  //}
+  // The observer replaces IntegratorObserverBasic, which prints the per time
+  // step screen output, so add it back alongside the mesh output observer.
+  // TempusObserver_WriteToExodus pulls the state block out of the forward
+  // sensitivity integrator's augmented solution before writing.
+  {
+    RCP<Tempus::IntegratorObserverComposite<double>> tempus_observers = rcp(new Tempus::IntegratorObserverComposite<double>);
+    RCP<const panzer_stk::TempusObserverFactory> tof =
+      Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
+    tempus_observers->addObserver(Teuchos::rcp(new Tempus::IntegratorObserverBasic<double>));
+    tempus_observers->addObserver(tof->buildTempusObserver(mesh,globalIndexer,linObjFactory));
+    integrator->setObserver(tempus_observers);
+  }
 
   RCP<Thyra::VectorBase<double>> x0 = physics->getNominalValues().get_x()->clone_v();
   integrator->initializeSolutionHistory(0.0, x0);
