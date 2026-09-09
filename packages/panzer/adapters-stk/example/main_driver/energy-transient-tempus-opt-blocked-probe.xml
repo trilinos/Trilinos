@@ -13,12 +13,14 @@
             <ParameterList name="Mesh Factory Parameter List">
                 <Parameter name="X Blocks" type="int" value="1" />
                 <Parameter name="Y Blocks" type="int" value="1" />
-                <!-- 21 elements, not 20: the probe point is hardcoded at
-                     (0.5,0.5) in user_app_Utilities.cpp, and with an even
-                     element count that lands exactly on a cell boundary, where
-                     two cells each contribute and the derivative doubles. -->
-                <Parameter name="X Elements" type="int" value="21" />
-                <Parameter name="Y Elements" type="int" value="21" />
+                <!-- An even element count puts the probe point, hardcoded at
+                     (0.5,0.5) in user_app_Utilities.cpp, exactly on a cell
+                     boundary, so it is inside a cell on more than one process.
+                     That is deliberate: it exercises the single-owner
+                     reduction in Response_Probe<Jacobian>::scatterResponse,
+                     without which dg/dx is summed once per sharing process. -->
+                <Parameter name="X Elements" type="int" value="20" />
+                <Parameter name="Y Elements" type="int" value="20" />
                 <Parameter name="X0" type="double" value="0.0" />
                 <Parameter name="Y0" type="double" value="0.0" />
                 <Parameter name="Xf" type="double" value="1.0" />

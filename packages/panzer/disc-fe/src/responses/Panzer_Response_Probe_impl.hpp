@@ -22,6 +22,7 @@
 #endif
 
 #include "Sacado_Traits.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 namespace panzer {
 
@@ -98,6 +99,22 @@ void Response_Probe<panzer::Traits::Jacobian>::
 scatterResponse()
 {
   using Teuchos::rcp_dynamic_cast;
+
+  // A point on a cell boundary is inside a cell on more than one process, so
+  // more than one process scatters a derivative for it. The ghost to global
+  // sum below would then add each of those contributions. Pick a single owner
+  // the same way the value does, and drop everyone else's contribution.
+  // Without this dg/dx is multiplied by the number of processes sharing the
+  // point.
+  int locProc = have_probe ? this->getComm()->getRank() : this->getComm()->getSize();
+  int glbProc = 0;
+  Teuchos::reduceAll(*this->getComm(), Teuchos::REDUCE_MIN, Thyra::Ordinal(1), &locProc, &glbProc);
+  TEUCHOS_ASSERT(glbProc < this->getComm()->getSize());
+
+  if (this->getComm()->getRank() != glbProc) {
+    auto ghosted = rcp_dynamic_cast<ThyraObjContainer<double> >(ghostedContainer_);
+    Thyra::assign(ghosted->get_x_th().ptr(),0.0);
+  }
 
   Teuchos::RCP<Thyra::MultiVectorBase<double> > dgdx_unique = getDerivative();
 
