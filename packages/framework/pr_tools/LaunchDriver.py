@@ -85,6 +85,8 @@ def main(argv):
                       help="Build is requiring to pull the current develop of kokkos and kokkos-kernels packages")
   parser.add_argument("--extra-configure-args",
                       help="Extra arguments that will be passed to CMake for configuring Trilinos.")
+  parser.add_argument("--extra-ctest-driver-args",
+                      help="Extra arguments that will be passed to the CTest configure/build/test/report driver.")
   args = parser.parse_args(argv)
 
   if os.getenv("TRILINOS_DIR") == None:
@@ -98,6 +100,9 @@ def main(argv):
   launch_env = get_launch_env(ds.system_name)
   launch_cmd = get_launch_cmd(ds.system_name)
   driver_args = get_driver_args(ds.system_name)
+
+  if args.build_name.startswith("ats4"):
+      args.driver = "./Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver_ats4.sh"
 
   cmd = launch_env + launch_cmd + args.driver + driver_args
 
@@ -115,6 +120,9 @@ def main(argv):
      cmd += f" --extra-configure-args=\"{args.extra_configure_args}\""
   elif os.getenv("EXTRA_CONFIGURE_ARGS"):
      cmd += f" --extra-configure-args=\"{os.getenv('EXTRA_CONFIGURE_ARGS')}\""
+
+  if args.extra_ctest_driver_args:
+     cmd += f" --extra-ctest-driver-args=\"{args.extra_ctest_driver_args}\""
 
   print("LaunchDriver> EXEC: " + cmd, flush=True)
 

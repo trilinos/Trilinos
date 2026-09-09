@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import shlex
 from textwrap import dedent
 
 sys.dont_write_bytecode = True
@@ -117,6 +118,22 @@ class TrilinosPRConfigurationBase(object):
             else:
                 self._arg_extra_configure_args = self.args.extra_configure_args
         return self._arg_extra_configure_args
+
+    @property
+    def arg_extra_ctest_driver_args(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        This parameter stores extra arguments that will be passed to the CTest
+        driver.
+
+        Returns:
+            self.args.extra_ctest_driver_args
+        """
+        print(f"DIAG HIT {self.args.extra_ctest_driver_args}")
+        return shlex.split(self.args.extra_ctest_driver_args)
 
     @property
     def arg_ctest_driver(self):

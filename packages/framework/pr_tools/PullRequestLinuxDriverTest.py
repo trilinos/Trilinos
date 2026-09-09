@@ -40,23 +40,11 @@ def parse_args():
     default_filename_packageenables = os.path.join("..", "packageEnables.cmake")
     default_filename_subprojects = os.path.join("..", "package_subproject_list.cmake")
 
-    required.add_argument('--target-branch-name',
-                          dest="target_branch_name",
-                          action='store',
-                          help='Branch to merge into',
-                          required=False)
-
     required.add_argument('--genconfig-build-name',
                           dest="genconfig_build_name",
                           action='store',
                           help='The job base name for the cmake configuration',
                           required=True)
-
-    required.add_argument('--pullrequest-number',
-                          dest="pullrequest_number",
-                          action='store',
-                          help='The github PR number',
-                          required=False)
 
     required.add_argument('--source-dir',
                           dest="source_dir",
@@ -231,6 +219,24 @@ def parse_args():
                           default="",
                           help="Extra arguments that will be passed to CMake for configuring Trilinos.")
 
+    optional.add_argument("--extra-ctest-driver-args",
+                          dest="extra_ctest_driver_args",
+                          action="store",
+                          default="",
+                          help="Extra arguments that will be passed to the CTest driver for configure/build/test/submit.")
+
+    optional.add_argument('--pullrequest-number',
+                          dest="pullrequest_number",
+                          action='store',
+                          help='The github PR number',
+                          required=False)
+
+    optional.add_argument('--target-branch-name',
+                          dest="target_branch_name",
+                          action='store',
+                          help='Branch to merge into',
+                          required=False)
+
     arguments = parser.parse_args()
 
     if not arguments.ctest_driver:
@@ -269,8 +275,9 @@ def parse_args():
     print("| - [O] workspace-dir               : {workspace_dir}".format(**vars(arguments)))
     print("| - [O] skip-run-tests              : {skip_run_tests}".format(**vars(arguments)))
     print("| - [O] extra_configure_args        : {extra_configure_args}".format(**vars(arguments)))
+    print("| - [O] extra_ctest_driver_args     : {extra_ctest_driver_args}".format(**vars(arguments)))
     print("| - [O] dashboard_build_name        : {dashboard_build_name}".format(**vars(arguments)))
-    print("| - [O] use_explicit_cachefile       : {use_explicit_cachefile}".format(**vars(arguments)))
+    print("| - [O] use_explicit_cachefile      : {use_explicit_cachefile}".format(**vars(arguments)))
     #print("| - [O] : {}".format(**vars(arguments)))
     print("+" + "="*78 + "+")
 
