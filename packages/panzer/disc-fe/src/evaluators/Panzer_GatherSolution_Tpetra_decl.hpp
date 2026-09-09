@@ -115,6 +115,11 @@ private:
 
   Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 
+  // Resolved in preEvaluate(), which accepts either a linear object container
+  // or a read-only ghosted vector under the global data key. Distributed
+  // parameters are only ever supplied as the latter.
+  Teuchos::RCP<const typename TpetraLinearObjContainer<double,LO,GO,NodeT>::MultiVectorType> x_vector;
+
   // Fields for storing tangent components dx/dp of solution vector x
   // These are not actually used by the residual specialization of this evaluator,
   // even if they are supplied, but it is useful to declare them as dependencies anyway
@@ -189,6 +194,11 @@ private:
   std::string globalDataKey_; // what global data does this fill?
 
   Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
+
+  // Resolved in preEvaluate(), which accepts either a linear object container
+  // or a read-only ghosted vector under the global data key. Distributed
+  // parameters are only ever supplied as the latter.
+  Teuchos::RCP<const typename TpetraLinearObjContainer<double,LO,GO,NodeT>::MultiVectorType> x_vector;
 
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;

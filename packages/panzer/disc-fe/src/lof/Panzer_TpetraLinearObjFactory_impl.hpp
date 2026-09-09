@@ -296,7 +296,7 @@ buildReadOnlyDomainContainer() const
   using TVROGED = TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,
     LocalOrdinalT, GlobalOrdinalT, NodeT>;
   auto ged = rcp(new TVROGED);
-  ged->initialize(getGhostedImport(), getGhostedColMap(), getColMap());
+  ged->initialize(getGhostedColImport(), getGhostedColMap(), getColMap());
   return ged;
 } // end of buildReadOnlyDomainContainer()
 

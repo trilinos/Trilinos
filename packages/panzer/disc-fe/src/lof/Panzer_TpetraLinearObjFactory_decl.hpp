@@ -150,7 +150,7 @@ public:
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherDomain() const
-   { return Teuchos::rcp(new GatherSolution_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(gidProvider_)); }
+   { return Teuchos::rcp(new GatherSolution_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(getDomainGlobalIndexer())); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
@@ -267,9 +267,11 @@ public:
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<const Teuchos::Comm<int> > getTeuchosComm() const;
 
-   //! Get the domain global indexer this factory was created with.
+   //! Get the domain global indexer this factory was created with. For a
+   //! non-square factory this is the column provider; it is the row provider
+   //! only when no separate column provider was supplied.
    Teuchos::RCP<const panzer::GlobalIndexer> getDomainGlobalIndexer() const
-   { return gidProvider_; }
+   { return hasColProvider_ ? colGidProvider_ : gidProvider_; }
 
    //! Get the domain global indexer this factory was created with.
    Teuchos::RCP<const panzer::GlobalIndexer> getRangeGlobalIndexer() const
