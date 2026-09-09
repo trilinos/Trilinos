@@ -118,6 +118,19 @@ getProductVectorBlockIndex() const
 }
 
 template<typename EvalT, typename Traits, typename LO, typename GO>
+int ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
+getDerivativeOffset(const std::string& blockId) const
+{
+  auto blockedDOFManager =
+    Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager>(globalIndexer_);
+
+  if (Teuchos::is_null(blockedDOFManager))
+    return 0;
+
+  return blockedDOFManager->getBlockGIDOffset(blockId,getProductVectorBlockIndex());
+}
+
+template<typename EvalT, typename Traits, typename LO, typename GO>
 void ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
@@ -311,6 +324,7 @@ evaluateFields(panzer::Traits::EvalData d)
                                        this->cellIndex_,
                                        this->responseObj_->have_probe,
                                        d,this->wda,
+                                       this->getDerivativeOffset(this->wda(d).block_id),
                                        local_dgdx);
 }
 
