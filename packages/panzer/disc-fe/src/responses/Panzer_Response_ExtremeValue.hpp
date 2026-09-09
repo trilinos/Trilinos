@@ -62,9 +62,12 @@ public:
        // set ghosted container (work space for assembly)
        linObjFactory_->initializeGhostedContainer(panzer::LinearObjContainer::X,*ghostedContainer_);
 
-       if constexpr (std::is_same<EvalT,panzer::Traits::Jacobian>::value) {
-        this->setDerivativeVectorSpace(thyraObjFactory_->getThyraDomainSpace());
-       }
+       // No derivative vector space is set here on purpose. There is no
+       // Jacobian scatter evaluator for an extreme value response, and
+       // ResponseEvaluatorFactory_ExtremeValue::typeSupported() returns false
+       // for the Jacobian type, so a Response_ExtremeValue<Jacobian> is never
+       // built. Setting one would make supportsDerivative() true and the model
+       // evaluator would advertise DgDx for a response nothing can fill.
      }
    }
 
