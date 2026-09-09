@@ -441,8 +441,8 @@
 
   <ParameterList name="ROL">
 
-    <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
-    <ParameterList name="General">
+  <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
@@ -468,7 +468,7 @@
       <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
       <Parameter name="Iteration Limit"    type="int"    value="100"                 />
     </ParameterList>
-    </ParameterList>
+  </ParameterList>
 
   <!-- ===========  STEP SUBLIST  =========== -->
   <ParameterList name="Step">
