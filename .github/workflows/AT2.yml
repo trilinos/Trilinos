@@ -118,7 +118,7 @@ jobs:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
       genconfig-string: "rhel8_gcc-openmpi-openmp_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_ramses"
       image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260507
-      cdash-track: "Pull Request (Non-blocking)"
+      cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static_RAMSES
       max-cores-allowed: 29
       num-concurrent-tests: 16
