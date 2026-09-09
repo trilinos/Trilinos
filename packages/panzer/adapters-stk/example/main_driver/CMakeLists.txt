@@ -35,10 +35,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     energy-ss-loca-eigenvalue.xml
     energy-ss-blocked.xml
     energy-transient-tempus-blocked.xml
-    energy-transient-tempus-opt-blocked.xml
-    energy-transient-tempus-opt-blocked-p-dependent-g.xml
-    energy-transient-tempus-opt-p-dependent-g.xml
-    energy-transient-tempus-opt-blocked-probe.xml
+    energy-transient-tempus-opt-blocked-fd-deriv.xml
+    energy-transient-tempus-opt-blocked-analytic-deriv.xml
+    energy-transient-tempus-opt-nonblocked-analytic-deriv.xml
+    energy-transient-tempus-opt-blocked-probe-analytic-deriv.xml
     rol_params.xml
     energy-neumann.xml
     energy-ss-blocked-tp.xml
@@ -222,17 +222,18 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
         set(PANZER_THIS_IS_AN_OPT_BUILD FALSE)
       ENDIF()
       TRIBITS_ADD_ADVANCED_TEST(
-        main_driver_energy-transient-tempus-opt-blocked
+        main_driver_energy-transient-tempus-opt-blocked-fd-deriv
         EXCLUDE_IF_NOT_TRUE PANZER_THIS_IS_AN_OPT_BUILD
         TEST_0 EXEC main_driver_opt
+          ARGS --i=energy-transient-tempus-opt-blocked-fd-deriv.xml
           PASS_REGULAR_EXPRESSION "panzer::MainDriverOpt run completed."
           NUM_MPI_PROCS 4
         )
       TRIBITS_ADD_ADVANCED_TEST(
-        main_driver_energy-transient-tempus-opt-blocked-p-dependent-g
+        main_driver_energy-transient-tempus-opt-blocked-analytic-deriv
         EXCLUDE_IF_NOT_TRUE PANZER_THIS_IS_AN_OPT_BUILD
         TEST_0 EXEC main_driver_opt
-          ARGS --i=energy-transient-tempus-opt-blocked-p-dependent-g.xml
+          ARGS --i=energy-transient-tempus-opt-blocked-analytic-deriv.xml
           PASS_REGULAR_EXPRESSION "panzer::MainDriverOpt run completed."
           NUM_MPI_PROCS 4
         )
@@ -240,10 +241,10 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
       # TpetraLinearObjFactory and GatherSolution/GatherTangent_Tpetra are
       # covered rather than only their blocked counterparts.
       TRIBITS_ADD_ADVANCED_TEST(
-        main_driver_energy-transient-tempus-opt-p-dependent-g
+        main_driver_energy-transient-tempus-opt-nonblocked-analytic-deriv
         EXCLUDE_IF_NOT_TRUE PANZER_THIS_IS_AN_OPT_BUILD
         TEST_0 EXEC main_driver_opt
-          ARGS --i=energy-transient-tempus-opt-p-dependent-g.xml
+          ARGS --i=energy-transient-tempus-opt-nonblocked-analytic-deriv.xml
           PASS_REGULAR_EXPRESSION "panzer::MainDriverOpt run completed."
           NUM_MPI_PROCS 4
         )
@@ -251,10 +252,10 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
       # a non-zero block of the product vector, so the blocked probe derivative
       # scatter is exercised.
       TRIBITS_ADD_ADVANCED_TEST(
-        main_driver_energy-transient-tempus-opt-blocked-probe
+        main_driver_energy-transient-tempus-opt-blocked-probe-analytic-deriv
         EXCLUDE_IF_NOT_TRUE PANZER_THIS_IS_AN_OPT_BUILD
         TEST_0 EXEC main_driver_opt
-          ARGS --i=energy-transient-tempus-opt-blocked-probe.xml
+          ARGS --i=energy-transient-tempus-opt-blocked-probe-analytic-deriv.xml
           PASS_REGULAR_EXPRESSION "panzer::MainDriverOpt run completed."
           NUM_MPI_PROCS 4
         )

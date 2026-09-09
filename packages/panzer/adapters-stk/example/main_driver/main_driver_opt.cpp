@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     // Parse the command line arguments
-    std::string input_file_name = "energy-transient-tempus-opt-blocked.xml";
+    std::string input_file_name = "energy-transient-tempus-opt-blocked-fd-deriv.xml";
     int exodus_io_num_procs = 0;
     bool printTimers = true;
     bool printInputPL = false;
@@ -140,6 +140,21 @@ int main(int argc, char *argv[])
     RCP<ParameterList> rol_params = parameterList(input_params->sublist("ROL", true));
     input_params->remove("Objective");
     input_params->remove("ROL");
+
+    // Optional, and pulled off for the same reason. Finite difference
+    // gradients converge the parameter less tightly than analytic ones, so the
+    // tolerance on the recovered parameter is per problem.
+    double target_tolerance = 1.0e-9;
+    if (input_params->isSublist("Optimization Check")) {
+      ParameterList opt_check = input_params->sublist("Optimization Check");
+      input_params->remove("Optimization Check");
+      ParameterList valid_opt_check;
+      valid_opt_check.set("Target Tolerance",1.0e-9,
+                          "Largest relative difference allowed between the recovered "
+                          "parameter and the target used to build the response");
+      opt_check.validateParametersAndSetDefaults(valid_opt_check);
+      target_tolerance = opt_check.get<double>("Target Tolerance");
+    }
 
     // Optional, and pulled off for the same reason.
     RCP<ParameterList> gradient_check_params;
@@ -224,10 +239,11 @@ int main(int argc, char *argv[])
         *out << "Final Values: p = " << p_final
              << ", g = " << Thyra::get_ele(*(thyra_r.getVector()),0)
              << std::endl;
-        if (fabs(p_target - p_final) / fabs(p_target) > 1e-9) { 
+        if (fabs(p_target - p_final) / fabs(p_target) > target_tolerance) {
           status = -1;
           *out <<"******* Optimization solution does not match expected target! ********" << std::endl;
-          *out <<"\tExpected p = " << p_target << std::endl;
+          *out <<"\tExpected p = " << p_target
+               << " within relative tolerance " << target_tolerance << std::endl;
         }
       }
     }
