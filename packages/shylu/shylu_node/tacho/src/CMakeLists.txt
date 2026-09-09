@@ -102,7 +102,7 @@ IF (Kokkos_ENABLE_HIP)
 ENDIF()
 IF (Kokkos_ENABLE_SYCL)
   LIST(APPEND TACHO_ETI_DEVICE_NAME "SYCL")
-  LIST(APPEND TACHO_ETI_DEVICE_TYPE "Kokkos::Device<Kokkos::Experimental::SYCL,Kokkos::Experimental::SYCLDeviceUSMSpace>")
+  LIST(APPEND TACHO_ETI_DEVICE_TYPE "Kokkos::Device<Kokkos::SYCL,Kokkos::SYCLDeviceUSMSpace>")
   LIST(APPEND TACHO_ETI_WITH_TASK "0")
 ENDIF()
 

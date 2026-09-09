@@ -329,7 +329,7 @@ int main(int argc, char* argv[]) {
 
   if (!useSYCL && !useHIP && !useCuda && !useOpenMP && !useThreads && !useSerial) {
 #ifdef HAVE_TPETRA_INST_SYCL
-    if (std::is_same<default_exec, Kokkos::Experimental::SYCL>::value) {
+    if (std::is_same<default_exec, Kokkos::SYCL>::value) {
       if (myRank == 0) std::cout << "No node specified in command-line args, so using default (SYCL)\n";
       useSYCL = true;
     }
