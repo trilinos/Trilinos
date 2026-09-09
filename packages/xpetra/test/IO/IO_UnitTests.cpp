@@ -135,8 +135,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryCustomColMap, M, MA, Scalar, LO, GO,
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
   TEUCHOS_ASSERT_EQUALITY(comm->getSize(), 1);
 
-  M testMap(1, 0, comm);
-  Xpetra::UnderlyingLib lib  = testMap.lib();
   const std::string filename = makeBinaryFilename("xpetra_io_binary_custom_colmap", *comm);
 
   using tpetra_map_type    = Tpetra::Map<LO, GO, Node>;
