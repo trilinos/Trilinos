@@ -16,12 +16,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   )
 
-# The tests below still build against the Epetra stack.
-IF (PANZER_HAVE_EPETRA_STACK)
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  model_evaluator
-  SOURCES model_evaluator.cpp ${UNIT_TEST_DRIVER}
+  explicit_model_evaluator
+  SOURCES explicit_model_evaluator.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 4
   )
@@ -34,17 +31,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  explicit_model_evaluator
-  SOURCES explicit_model_evaluator.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 4
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
   response_residual
   SOURCES response_residual.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 2
+  )
+
+# The tests below still build against the Epetra stack.
+IF (PANZER_HAVE_EPETRA_STACK)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  model_evaluator
+  SOURCES model_evaluator.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 4
   )
 
 IF(${PARENT_PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT)
