@@ -612,7 +612,7 @@ operator()(const NoSeed,const int worksetCellIndex) const
     LO lid    = functor_data.lids(worksetCellIndex,offset);
 
     // set the value and seed the FAD object
-    functor_data.field(worksetCellIndex,basis).val() = functor_data.x_data(lid,0);
+    functor_data.field(worksetCellIndex,basis) = ScalarT(functor_data.x_data(lid,0));
   }
 }
 
