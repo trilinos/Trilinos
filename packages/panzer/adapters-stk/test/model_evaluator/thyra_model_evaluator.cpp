@@ -775,16 +775,6 @@ namespace panzer {
 
   }
 
-  // These two distributed-parameter tests require a linear object factory with
-  // different range and domain indexers, which is not yet supported on Tpetra:
-  //   - the non-blocked case gathers the domain with the range indexer, because
-  //     TpetraLinearObjFactory ignores its colGidProvider_ in
-  //     getDomainGlobalIndexer()/buildGatherDomain();
-  //   - the blocked case is rejected outright by
-  //     cloneWithNewRangeAndDomain() in Panzer_LinearObjFactory_Utilities.cpp.
-  // Until that support lands they can only run against the Epetra stack.
-#ifdef PANZER_HAVE_EPETRA_STACK
-
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(thyra_model_evaluator, distro_parameters_dgdp)
   {
@@ -908,6 +898,11 @@ namespace panzer {
       TEST_ASSERT(a || b || c);
     }
   }
+
+  // A distributed parameter needs a linear object factory whose range and
+  // domain indexers differ. BlockedTpetraLinearObjFactory has no column
+  // provider at all, so cloneWithNewRangeAndDomain() rejects it outright.
+#ifdef PANZER_HAVE_EPETRA_STACK
 
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(thyra_model_evaluator, distro_blocked_parameters_dgdp)
