@@ -549,11 +549,6 @@ evaluateFields(typename TRAITS::EvalData workset)
      functor_data.dos = globalIndexer_->getElementBlockGIDCount(workset.details(0).block_id);
    }
 
-   // switch to a faster assembly
-   bool use_seed = true;
-   if(seed_value==0.0)
-     use_seed = false;
-
    globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
    // now setup the fuctor_data, and run the parallel_for loop
@@ -571,10 +566,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      functor_data.offsets = scratch_offsets_[fieldIndex];
      functor_data.field   = gatherFields_[fieldIndex];
 
-     if(use_seed)
-       Kokkos::parallel_for(workset.num_cells,*this);
-     else
-       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoSeed>(0,workset.num_cells),*this);
+     Kokkos::parallel_for(workset.num_cells,*this);
    }
    functor_data.x_data = Kokkos::View<const double**, Kokkos::LayoutLeft,PHX::Device>();
 }
@@ -596,23 +588,8 @@ operator()(const int worksetCellIndex) const
     else // Interface conditions need to zero out derivative array
       functor_data.field(worksetCellIndex,basis) = ScalarT(functor_data.x_data(lid,0));
 
+    // Always written, even when the seed is zero. See operator() in the decl.
     functor_data.field(worksetCellIndex,basis).fastAccessDx(functor_data.dos + offset) = functor_data.seed_value;
-  }
-}
-
-// **********************************************************************
-template<typename TRAITS,typename LO,typename GO,typename NodeT>
-KOKKOS_INLINE_FUNCTION
-void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
-operator()(const NoSeed,const int worksetCellIndex) const
-{
-  // loop over basis functions and fill the fields
-  for(std::size_t basis=0;basis<functor_data.offsets.extent(0);basis++) {
-    int offset = functor_data.offsets(basis);
-    LO lid    = functor_data.lids(worksetCellIndex,offset);
-
-    // set the value and seed the FAD object
-    functor_data.field(worksetCellIndex,basis).val() = functor_data.x_data(lid,0);
   }
 }
 

@@ -239,16 +239,23 @@ public:
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
-  /// \brief Device functor: gathers one cell's solution values into #functor_data.field, seeding derivative components per #functor_data.seed_value.
+  /** \brief Device functor: gathers one cell's solution values into
+    * #functor_data.field, writing #functor_data.seed_value into the derivative
+    * component.
+    *
+    * The seed is ALWAYS written, including when it is zero. Phalanx field
+    * memory persists across evaluations, so skipping the write when the seed
+    * is zero would leave whatever seed a previous evaluation stored and the
+    * assembled Jacobian would keep contributing that term -- a beta=1
+    * evaluation followed by a beta=0 one would still include df/dx. There is
+    * deliberately only one gather kernel here so that a "fast path" cannot
+    * reintroduce that. See thyra_model_evaluator/jacobian_alpha_beta.
+    */
   KOKKOS_INLINE_FUNCTION
   void operator()(const int cell) const;
 
 
-  /// \brief Tag type selecting the operator() overload that gathers values without seeding any AD derivatives.
-  struct NoSeed {};
-  /// \brief Device functor: gathers one cell's solution values into #functor_data.field with no derivative seeding. \sa NoSeed
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const NoSeed,const int cell) const;
+
 
 private:
 
