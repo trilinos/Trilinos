@@ -1,6 +1,8 @@
 include(Join)
 MESSAGE(STATUS "${PACKAGE_NAME}: Processing ETI / test support")
 
+include(TribitsETISupport)
+
 # Galeri ETI type fields.  S, LO, GO, N correspond to the four
 # template parameters of most Tpetra classes: Scalar, LocalOrdinal,
 # GlobalOrdinal, and Node.  Galeri shares these with Tpetra, because

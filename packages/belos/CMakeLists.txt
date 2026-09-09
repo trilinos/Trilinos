@@ -110,8 +110,9 @@ ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-
+# Set HAVE_BELOS_TPETRA so Stratimikos knows Tpetra solvers are available
 IF (Belos_ENABLE_Tpetra)
+  GLOBAL_SET(HAVE_BELOS_TPETRA ON)
   ADD_SUBDIRECTORY(tpetra)
 ENDIF()
 
