@@ -41,7 +41,7 @@ class ScopedStackedTimer {
 };
 
 TEUCHOS_UNIT_TEST(TimeMonitor, FlatAndLevelTimers) {
-  // Create timers for 5 different levels and a total timer and check that 
+  // Create timers for 5 different levels and a total timer and check that
   // they are all created and called the correct number of times
   constexpr int numLevels      = 5;
   const std::string totalLabel = "MueLu: TimeMonitorUnitTest: Computing Ac (total)";
