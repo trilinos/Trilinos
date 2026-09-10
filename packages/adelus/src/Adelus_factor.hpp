@@ -63,8 +63,8 @@ void factor(HandleType& ahandle,           // handle containg metadata
   using pival_type = typename PViewType::value_type;
 #ifdef PRINT_STATUS
   using execution_space = typename ZDView::device_type::execution_space;
-  using memory_space    = typename ZDView::device_type::memory_space;
 #endif
+  using memory_space    = typename ZDView::device_type::memory_space;
 #if defined(KOKKOS_ENABLE_CUDA)
   using View1DHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
