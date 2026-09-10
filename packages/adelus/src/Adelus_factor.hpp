@@ -63,8 +63,8 @@ void factor(HandleType& ahandle,           // handle containg metadata
   using pival_type = typename PViewType::value_type;
 #ifdef PRINT_STATUS
   using execution_space = typename ZDView::device_type::execution_space;
-#endif
   using memory_space    = typename ZDView::device_type::memory_space;
+#endif
 #if defined(KOKKOS_ENABLE_CUDA)
   using View1DHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
@@ -75,9 +75,9 @@ void factor(HandleType& ahandle,           // handle containg metadata
 
   constexpr bool isOnDeviceSpace =
 #if defined( KOKKOS_ENABLE_CUDA )
-    std::is_same_v<memory_space, Kokkos::CudaSpace>;
+    std::is_same_v<typename ZDView::device_type::memory_space, Kokkos::CudaSpace>;
 #elif defined( KOKKOS_ENABLE_HIP )
-    std::is_same_v<memory_space, Kokkos::HIPSpace>;
+    std::is_same_v<typename ZDView::device_type::memory_space, Kokkos::HIPSpace>;
 #else
     false;
 #endif
