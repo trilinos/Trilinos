@@ -67,6 +67,7 @@ jobs:
         with:
           fetch-depth: 1
           ref: ${{ github.event.pull_request && github.ref || inputs.target-branch }}
+          path: trilinos-src
       - name: Print debug outputs
         shell: bash -l {0}
         env:
@@ -91,16 +92,18 @@ jobs:
           git branch -vv
           git branch -a
           echo "::endgroup::"
-      - name: Get CI script dependencies
-        working-directory: ./packages/framework
+      - name: Setup
+        working-directory: trilinos-src
         run: |
-          mkdir -p /home/Trilinos/build
           git fetch origin ${{ inputs.target-branch }}
-          ./get_dependencies.sh
+          ./packages/framework/get_dependencies.sh
       - name: Run build and test driver script
         shell: bash -l {0}
-        working-directory: /home/Trilinos/build
         run: |
+          export BUILD_DIR=${GITHUB_WORKSPACE}/trilinos-build
+          mkdir ${BUILD_DIR}
+          cd ${BUILD_DIR}
+
           # python is python3 hackery
           pwd
           mkdir bin
@@ -109,8 +112,7 @@ jobs:
           export PATH=$(pwd):${PATH}
           popd
 
-          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
-          export BUILD_DIR=/home/Trilinos/build
+          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}/trilinos-src
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
           printf "\n\n\n"
@@ -190,20 +192,21 @@ jobs:
         if: success() || failure()
         shell: bash -l {0}
         run: |
-          build_dir=/home/Trilinos/build
+          build_dir=${GITHUB_WORKSPACE}/trilinos-build
           build_tag=$(head -n 1 ${build_dir}/Testing/TAG)
-          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/ctest_xml_printer.py \
-            --ctest-xml-dir /home/Trilinos/build/Testing/${build_tag}/Build \
+          python3 ${GITHUB_WORKSPACE}/trilinos-src/packages/framework/pr_tools/ctest_xml_printer.py \
+            --ctest-xml-dir ${build_dir}/Testing/${build_tag}/Build \
             --print-errors \
             --github-actions-mode
       - name: Copy artifacts
         if: success() || failure()
         shell: bash -l {0}
-        working-directory: /home/Trilinos/build
+        working-directory: trilinos-build
         run: |
-          cp ./packageEnables.cmake /home/runner/artifacts/
-          cp ./configure_command.txt /home/runner/artifacts/
-          cp ./genconfig_build_name.txt /home/runner/artifacts/
+          mkdir -p ${GITHUB_WORKSPACE}/artifacts
+          cp ./packageEnables.cmake ${GITHUB_WORKSPACE}/artifacts/
+          cp ./configure_command.txt ${GITHUB_WORKSPACE}/artifacts/
+          cp ./genconfig_build_name.txt ${GITHUB_WORKSPACE}/artifacts/
       - name: Upload artifacts
         if: success() || failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -211,8 +214,8 @@ jobs:
           NODE_USE_SYSTEM_CA: 1
         with:
           name: ${{ inputs.genconfig-string }}-artifacts
-          path: /home/runner/artifacts/*
+          path: ${GITHUB_WORKSPACE}/artifacts/*
           retention-days: 90
       - name: Write Summary
         if: ${{ !cancelled() }}
-        uses: ./.github/workflows/actions/summary
+        uses: ./trilinos-src/.github/workflows/actions/summary

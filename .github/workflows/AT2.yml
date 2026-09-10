@@ -123,5 +123,5 @@ jobs:
       max-cores-allowed: 29
       num-concurrent-tests: 16
       skip-create-packageenables: true
-      extra-pr-driver-args: --extra-configure-args=-C;${GITHUB_WORKSPACE}/packages/framework/cmake-fragments/ramses/gcc-mpi-openmp.cmake
+      extra-pr-driver-args: --extra-configure-args=-C;${GITHUB_WORKSPACE}/trilinos-src/packages/framework/cmake-fragments/ramses/gcc-mpi-openmp.cmake
       target-branch: ${{ github.base_ref }}
