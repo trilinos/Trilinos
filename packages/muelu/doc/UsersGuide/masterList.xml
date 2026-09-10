@@ -1479,6 +1479,14 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>sa: use edge matrix for smoothing</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>If true, smooth the edge prolongator with the edge matrix (mass + curl curl). In general this does violate the commuting relationship. If false smooth with the user provided CurlCurl matrix.</description>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>replicate: npdes</name>
       <type>int</type>
       <default>1</default>
