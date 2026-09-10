@@ -1407,10 +1407,17 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     test_and_set_param_2list<double>(paramList, defaultList, "aggregation: Dirichlet threshold", dropParams);
     test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: greedy Dirichlet", dropParams);
-    if (useKokkos_)
+    if (useKokkos_) {
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: distance laplacian metric", dropParams);
-    if (useKokkos_)
+      test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: material distance: interface penalty", dropParams);
+      test_and_set_param_2list<double>(paramList, defaultList, "aggregation: material distance: interface penalty strength", dropParams);
+      test_and_set_param_2list<double>(paramList, defaultList, "aggregation: material distance: interface penalty floor", dropParams);
+      test_and_set_param_2list<double>(paramList, defaultList, "aggregation: material distance: interface penalty shape weight", dropParams);
+      test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: material distance diagnostics", dropParams);
+      test_and_set_param_2list<double>(paramList, defaultList, "aggregation: material distance diagnostics threshold", dropParams);
+      test_and_set_param_2list<double>(paramList, defaultList, "aggregation: material distance diagnostics contrast", dropParams);
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: Minv scheme", dropParams);
+    }
 
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: distance laplacian algo", dropParams);
