@@ -148,8 +148,14 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     putScalar(const Scalar& value) {
-  for (size_t r = 0; r < map_->getNumMaps(); r++)
-    getMultiVector(r)->putScalar(value);
+  for (size_t r = 0; r < map_->getNumMaps(); r++) {
+    Teuchos::RCP<MultiVector> mv         = getMultiVector(r);
+    Teuchos::RCP<BlockedMultiVector> bmv = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(mv);
+    if (bmv.is_null())
+      mv->putScalar(value);
+    else
+      bmv->putScalar(value);
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -215,17 +221,31 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     scale(const Scalar& alpha) {
-  for (size_t r = 0; r < map_->getNumMaps(); ++r)
-    if (getMultiVector(r) != Teuchos::null)
-      getMultiVector(r)->scale(alpha);
+  for (size_t r = 0; r < map_->getNumMaps(); ++r) {
+    Teuchos::RCP<MultiVector> mv = getMultiVector(r);
+    if (mv != Teuchos::null) {
+      Teuchos::RCP<BlockedMultiVector> bmv = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(mv);
+      if (bmv.is_null())
+        mv->scale(alpha);
+      else
+        bmv->scale(alpha);
+    }
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     scale(const Teuchos::ArrayView<const Scalar>& alpha) {
-  for (size_t r = 0; r < map_->getNumMaps(); ++r)
-    if (getMultiVector(r) != Teuchos::null)
-      getMultiVector(r)->scale(alpha);
+  for (size_t r = 0; r < map_->getNumMaps(); ++r) {
+    Teuchos::RCP<MultiVector> mv = getMultiVector(r);
+    if (mv != Teuchos::null) {
+      Teuchos::RCP<BlockedMultiVector> bmv = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(mv);
+      if (bmv.is_null())
+        mv->scale(alpha);
+      else
+        bmv->scale(alpha);
+    }
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -255,15 +275,21 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Teuchos::RCP<BlockedMultiVector> blmv = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(lmv);
       Teuchos::RCP<BlockedMultiVector> brmv = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(rmv);
 
-      if (blmv.is_null() == true && brmv.is_null() == false) {
+      if (blmv.is_null() == false) {
+        // NOTE: dispatch through the blocked type when the destination block is itself
+        // blocked; the base MultiVector::update() is non-virtual and would act on the
+        // empty base subobject only.
+        blmv->update(alpha, *rmv, beta);
+      } else if (brmv.is_null() == false) {
         // special case: lmv is standard MultiVector but rmv is BlockedMultiVector
         TEUCHOS_TEST_FOR_EXCEPTION(brmv->getBlockedMap()->getNumMaps() > 1,
                                    std::runtime_error,
                                    "BlockedMultiVector::update: Standard MultiVector object does not accept BlockedMultVector object as "
                                    "parameter in update call.");
-        lmv->update(alpha, *(brmv->getMultiVector(0)), beta);
-      } else
+        lmv->update(alpha, *(brmv->getMultiVector(0, brmv->getBlockedMap()->getThyraMode())), beta);
+      } else {
         lmv->update(alpha, *rmv, beta);
+      }
     }
   } else {
     if (getBlockedMap()->getNumMaps() == 1) {
@@ -291,8 +317,16 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TEUCHOS_TEST_FOR_EXCEPTION(map_->getNumMaps() != bB->getBlockedMap()->getNumMaps(),
                                std::runtime_error,
                                "BlockedMultiVector::update: update with incompatible vector (different number of partial vectors in vector B).");
-    for (size_t r = 0; r < map_->getNumMaps(); r++)
-      getMultiVector(r)->update(alpha, *(bA->getMultiVector(r)), beta, *(bB->getMultiVector(r)), gamma);
+    for (size_t r = 0; r < map_->getNumMaps(); r++) {
+      Teuchos::RCP<MultiVector> lmv           = getMultiVector(r);
+      Teuchos::RCP<const MultiVector> amv     = bA->getMultiVector(r);
+      Teuchos::RCP<const MultiVector> bmvPart = bB->getMultiVector(r);
+      Teuchos::RCP<BlockedMultiVector> blmv   = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(lmv);
+      if (blmv.is_null())
+        lmv->update(alpha, *amv, beta, *bmvPart, gamma);
+      else
+        blmv->update(alpha, *amv, beta, *bmvPart, gamma);
+    }
     return;
   }
   throw std::runtime_error("BlockedMultiVector::update: only supports update with other BlockedMultiVector.");
@@ -305,8 +339,13 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   std::fill(norms.begin(), norms.end(), Teuchos::ScalarTraits<mag_type>::zero());
   std::fill(temp_norms.begin(), temp_norms.end(), Teuchos::ScalarTraits<mag_type>::zero());
   for (size_t r = 0; r < map_->getNumMaps(); ++r) {
-    if (getMultiVector(r) != Teuchos::null) {
-      getMultiVector(r)->norm1(temp_norms());
+    Teuchos::RCP<MultiVector> mv = getMultiVector(r);
+    if (mv != Teuchos::null) {
+      Teuchos::RCP<BlockedMultiVector> bmv = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(mv);
+      if (bmv.is_null())
+        mv->norm1(temp_norms());
+      else
+        bmv->norm1(temp_norms());
       for (size_t c = 0; c < getNumVectors(); ++c)
         norms[c] += temp_norms[c];
     }
@@ -322,8 +361,13 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   std::fill(results.begin(), results.end(), Teuchos::ScalarTraits<mag_type>::zero());
   std::fill(temp_norms.begin(), temp_norms.end(), Teuchos::ScalarTraits<mag_type>::zero());
   for (size_t r = 0; r < map_->getNumMaps(); ++r) {
-    if (getMultiVector(r) != Teuchos::null) {
-      getMultiVector(r)->norm2(temp_norms());
+    Teuchos::RCP<MultiVector> mv = getMultiVector(r);
+    if (mv != Teuchos::null) {
+      Teuchos::RCP<BlockedMultiVector> bmv = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(mv);
+      if (bmv.is_null())
+        mv->norm2(temp_norms());
+      else
+        bmv->norm2(temp_norms());
       for (size_t c = 0; c < getNumVectors(); ++c)
         results[c] += temp_norms[c] * temp_norms[c];
     }
@@ -339,8 +383,13 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   std::fill(norms.begin(), norms.end(), Teuchos::ScalarTraits<mag_type>::zero());
   std::fill(temp_norms.begin(), temp_norms.end(), Teuchos::ScalarTraits<mag_type>::zero());
   for (size_t r = 0; r < map_->getNumMaps(); ++r) {
-    if (getMultiVector(r) != Teuchos::null) {
-      getMultiVector(r)->normInf(temp_norms());
+    Teuchos::RCP<MultiVector> mv = getMultiVector(r);
+    if (mv != Teuchos::null) {
+      Teuchos::RCP<BlockedMultiVector> bmv = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(mv);
+      if (bmv.is_null())
+        mv->normInf(temp_norms());
+      else
+        bmv->normInf(temp_norms());
       for (size_t c = 0; c < getNumVectors(); ++c)
         norms[c] = std::max(norms[c], temp_norms[c]);
     }
@@ -388,10 +437,14 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       bA.is_null() == true, std::runtime_error, "BlockedMultiVector::elementWiseMultiply: A must be a BlockedVector.");
 
   for (size_t m = 0; m < bmap->getNumMaps(); m++) {
-    Teuchos::RCP<const Vector> partA      = bA->getMultiVector(m, bmap->getThyraMode())->getVector(0);
-    Teuchos::RCP<const MultiVector> partB = bB->getMultiVector(m, bmap->getThyraMode());
-    Teuchos::RCP<MultiVector> thisPart    = this->getMultiVector(m, bmap->getThyraMode());
-    thisPart->elementWiseMultiply(scalarAB, *partA, *partB, scalarThis);
+    Teuchos::RCP<const Vector> partA           = bA->getMultiVector(m, bmap->getThyraMode())->getVector(0);
+    Teuchos::RCP<const MultiVector> partB      = bB->getMultiVector(m, bmap->getThyraMode());
+    Teuchos::RCP<MultiVector> thisPart         = this->getMultiVector(m, bmap->getThyraMode());
+    Teuchos::RCP<BlockedMultiVector> bThisPart = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(thisPart);
+    if (bThisPart.is_null())
+      thisPart->elementWiseMultiply(scalarAB, *partA, *partB, scalarThis);
+    else
+      bThisPart->elementWiseMultiply(scalarAB, *partA, *partB, scalarThis);
   }
 }
 
@@ -476,15 +529,27 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     randomize(bool /* bUseXpetraImplementation */) {
-  for (size_t r = 0; r < map_->getNumMaps(); ++r)
-    getMultiVector(r)->randomize();
+  for (size_t r = 0; r < map_->getNumMaps(); ++r) {
+    Teuchos::RCP<MultiVector> mv         = getMultiVector(r);
+    Teuchos::RCP<BlockedMultiVector> bmv = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(mv);
+    if (bmv.is_null())
+      mv->randomize();
+    else
+      bmv->randomize();
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     randomize(const Scalar& minVal, const Scalar& maxVal, bool /* bUseXpetraImplementation */) {
-  for (size_t r = 0; r < map_->getNumMaps(); ++r)
-    getMultiVector(r)->randomize(minVal, maxVal);
+  for (size_t r = 0; r < map_->getNumMaps(); ++r) {
+    Teuchos::RCP<MultiVector> mv         = getMultiVector(r);
+    Teuchos::RCP<BlockedMultiVector> bmv = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(mv);
+    if (bmv.is_null())
+      mv->randomize(minVal, maxVal);
+    else
+      bmv->randomize(minVal, maxVal);
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

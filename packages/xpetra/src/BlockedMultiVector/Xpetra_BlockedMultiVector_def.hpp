@@ -283,13 +283,7 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     elementWiseMultiply(Scalar scalarAB, const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const MultiVector& B, Scalar scalarThis) {
-  // A is a Vector; unwrap to a Tpetra::Vector via the multivector unwrap then downcast.
-  Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tA =
-      BlockedMultiVectorDetails::unwrapMultiVector(
-          Teuchos::rcp_dynamic_cast<const MultiVector>(Teuchos::rcpFromRef(A)));
-  Teuchos::RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tAv =
-      Teuchos::rcp_dynamic_cast<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(tA, true);
-  vec_->elementWiseMultiply(scalarAB, *tAv,
+  vec_->elementWiseMultiply(scalarAB, *toTpetra(Teuchos::rcpFromRef(A)),
                             *BlockedMultiVectorDetails::unwrapMultiVector(Teuchos::rcpFromRef(B)), scalarThis);
 }
 

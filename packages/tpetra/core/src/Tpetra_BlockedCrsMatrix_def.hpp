@@ -668,7 +668,11 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const Mu
         Teuchos::RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, numVecsY, bRangeThyraMode_, false);
         Ablock->apply(*Xblock, *tmpYblock);
 
-        Yblock->update(one, *tmpYblock, one);
+        Teuchos::RCP<BlockedMultiVector> bYblock = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(Yblock);
+        if (bYblock.is_null())
+          Yblock->update(one, *tmpYblock, one);
+        else
+          bYblock->update(one, *tmpYblock, one);
       }
       rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
     }
@@ -694,7 +698,11 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const Mu
         Teuchos::RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, numVecsY, bDomainThyraMode_, false);
         Ablock->apply(*Xblock, *tmpYblock, Teuchos::TRANS);
 
-        Yblock->update(one, *tmpYblock, one);
+        Teuchos::RCP<BlockedMultiVector> bYblock = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(Yblock);
+        if (bYblock.is_null())
+          Yblock->update(one, *tmpYblock, one);
+        else
+          bYblock->update(one, *tmpYblock, one);
       }
       domainmaps_->InsertVector(Yblock, col, tmpY, bDomainThyraMode_);
     }
@@ -825,7 +833,11 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::bgs_apply(cons
       Teuchos::RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, numVecsY, bRangeThyraMode_, false);
       Ablock->apply(*Xblock, *tmpYblock);
 
-      Yblock->update(one, *tmpYblock, one);
+      Teuchos::RCP<BlockedMultiVector> bYblock = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(Yblock);
+      if (bYblock.is_null())
+        Yblock->update(one, *tmpYblock, one);
+      else
+        bYblock->update(one, *tmpYblock, one);
     }
     rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
   } else {

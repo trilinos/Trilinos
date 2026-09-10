@@ -81,7 +81,7 @@ BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
   Teuchos::RCP<tpetra_blockedmap_type> tpetraMap =
       Teuchos::rcp(new tpetra_blockedmap_type(BlockedMapDetails::toTpetraMaps<LocalOrdinal, GlobalOrdinal, Node>(maps),
                                               BlockedMapDetails::toTpetraMaps<LocalOrdinal, GlobalOrdinal, Node>(thyramaps)));
-  BlockedMapDetails::setNestedTpetraBlockedMaps<LocalOrdinal, GlobalOrdinal, Node>(tpetraMap, maps);
+  BlockedMapDetails::setNestedTpetraBlockedMaps<LocalOrdinal, GlobalOrdinal, Node>(tpetraMap, thyramaps);
   map_ = tpetraMap;
   // Retain the original Xpetra sub-maps so getMap() preserves nested
   // BlockedMap identity for both numbering styles.
