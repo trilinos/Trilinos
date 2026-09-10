@@ -101,15 +101,46 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
   if (solverName == "Belos") {
     // construct preconditioner
     RCP<Operator> preconditioner;
-    if (precType == "MueLu-RefMaxwell") {
-      preconditioner = rcp(new MueLu::RefMaxwell<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Ms_Matrix, M0inv_Matrix,
-                                                                 M1_Matrix, nullspace, coords, material, params));
-    } else if (precType == "MueLu-Maxwell1" || precType == "MueLu-Reitzinger") {
-      if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
-        preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, S_Matrix, material, params));
-      else
-        preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, params, GmhdA_Matrix));
-    }
+    std::set<std::string> requiredUserData;
+    std::set<std::string> optionalUserData;
+    if (precType == "MueLu-RefMaxwell")
+      std::tie(requiredUserData, optionalUserData) = MueLu::RefMaxwell<SC, LO, GO, NO>::requiredAndOptionalUserData(params);
+    else if (precType == "MueLu-Maxwell1" || precType == "MueLu-Reitzinger")
+      std::tie(requiredUserData, optionalUserData) = MueLu::Maxwell1<SC, LO, GO, NO>::requiredAndOptionalUserData(params);
+
+    auto& userData = params.sublist("user data");
+    // set required user data
+    if (requiredUserData.contains("Coordinates"))
+      userData.set("Coordinates", coords);
+    if (requiredUserData.contains("Material"))
+      userData.set("Material", material);
+    if (requiredUserData.contains("CurlCurl"))
+      userData.set("CurlCurl", S_Matrix);
+    if (requiredUserData.contains("D0"))
+      userData.set("D0", D0_Matrix);
+    if (requiredUserData.contains("Dk_1"))
+      userData.set("Dk_1", D0_Matrix);
+    if (requiredUserData.contains("M1_beta"))
+      userData.set("M1_beta", Ms_Matrix);
+    if (requiredUserData.contains("Mk_one"))
+      userData.set("Mk_one", M1_Matrix);
+    if (requiredUserData.contains("invMk_1_invBeta"))
+      userData.set("invMk_1_invBeta", M0inv_Matrix);
+
+    // set optional user data
+    if (optionalUserData.contains("Nullspace"))
+      userData.set("Nullspace", nullspace);
+    if (optionalUserData.contains("Nullspace22"))
+      userData.set("Nullspace22", nullspace);
+    if (optionalUserData.contains("Kn"))
+      userData.set("Kn_Matrix", Kn_Matrix);
+    if (optionalUserData.contains("GmhdA"))
+      userData.set("GmhdA", GmhdA_Matrix);
+
+    if (precType == "MueLu-RefMaxwell")
+      preconditioner = rcp(new MueLu::RefMaxwell<SC, LO, GO, NO>(SM_Matrix, params));
+    else if (precType == "MueLu-Maxwell1" || precType == "MueLu-Reitzinger")
+      preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, params));
 
     {
       // A test to make sure we can wrap this guy as a MueLu::TpetraOperator

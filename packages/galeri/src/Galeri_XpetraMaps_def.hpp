@@ -31,6 +31,8 @@
 #include "Galeri_XpetraUtils.hpp"
 #include "Galeri_Exception.h"
 
+#include "Tpetra_Map.hpp"
+
 #ifdef HAVE_GALERI_XPETRA
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_Exceptions.hpp>

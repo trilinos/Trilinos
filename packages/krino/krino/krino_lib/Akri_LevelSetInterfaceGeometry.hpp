@@ -130,6 +130,9 @@ public:
   static std::vector<stk::mesh::Entity> get_active_elements_that_may_be_cut_by_levelsets(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const std::vector<LS_Field> & LSFields);
   static void fill_active_elements_that_intersect_levelset_interval(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const LS_Field & lsField, const std::array<double,2> loAndHi, std::vector<stk::mesh::Entity> & elementsThaIntersectInterval);
 
+  virtual stk::math::Vector3d compute_interface_normal(const stk::mesh::BulkData & mesh, const Surface_Identifier surfaceIdentifier, const stk::mesh::Entity element) const override;
+  FieldRef get_coordinates_field(const stk::mesh::BulkData & mesh) const;
+
 private:
   void set_parent_element_selector();
   bool have_enough_levelsets_to_have_interior_intersections_or_multiple_crossings() const;

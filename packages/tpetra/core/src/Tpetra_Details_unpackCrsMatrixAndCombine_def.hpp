@@ -624,6 +624,7 @@ void unpackAndCombineIntoCrsMatrix(
 
   auto batch_info_h = Kokkos::create_mirror_view(host_space, batch_info);
 
+  XS().fence();
   (void)compute_batch_info(batches_per_lid_h, batch_info_h);
   // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
   Kokkos::deep_copy(XS(), batch_info, batch_info_h);

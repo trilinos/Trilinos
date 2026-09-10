@@ -11,7 +11,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Sacado.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 #include "Phalanx_MDField.hpp"
 
 namespace panzer_test {
@@ -24,17 +24,17 @@ namespace panzer_test {
     // Test a DynRankView from a DynRankView
     {
       Kokkos::DynRankView<FadType,PHX::Device> a("a",10,4,13,derivative_dim_plus_one);
-      TEST_EQUALITY(static_cast<int>(Kokkos::dimension_scalar(a)),derivative_dim_plus_one);
-      auto b = Kokkos::createDynRankView(a,"b",5,3,8);
-      TEST_EQUALITY(static_cast<int>(Kokkos::dimension_scalar(b)),derivative_dim_plus_one);
+      TEST_EQUALITY(static_cast<int>(Sacado::dimension_scalar(a)),derivative_dim_plus_one);
+      auto b = Sacado::createDynRankView(a,"b",5,3,8);
+      TEST_EQUALITY(static_cast<int>(Sacado::dimension_scalar(b)),derivative_dim_plus_one);
     }
 
     // Test a DynRankView from a View
     {
       PHX::View<FadType*> a("a",8,derivative_dim_plus_one);
-      TEST_EQUALITY(static_cast<int>(Kokkos::dimension_scalar(a)),derivative_dim_plus_one);
-      auto b = Kokkos::createDynRankView(a,"b",5,3,8);
-      TEST_EQUALITY(static_cast<int>(Kokkos::dimension_scalar(b)),derivative_dim_plus_one);
+      TEST_EQUALITY(static_cast<int>(Sacado::dimension_scalar(a)),derivative_dim_plus_one);
+      auto b = Sacado::createDynRankView(a,"b",5,3,8);
+      TEST_EQUALITY(static_cast<int>(Sacado::dimension_scalar(b)),derivative_dim_plus_one);
     }
 
   }

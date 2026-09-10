@@ -17,8 +17,8 @@
 
 #include "Fad_KokkosTests.hpp"
 
-typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,64> LeftContiguous64;
-typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight,64> RightContiguous64;
+typedef Sacado::LayoutContiguous<Kokkos::LayoutLeft,64> LeftContiguous64;
+typedef Sacado::LayoutContiguous<Kokkos::LayoutRight,64> RightContiguous64;
 #undef VIEW_FAD_TESTS_FDC
 #define VIEW_FAD_TESTS_FDC( F, D )                                      \
   VIEW_FAD_TESTS_FLD( F, LeftContiguous64, D )                          \

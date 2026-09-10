@@ -42,11 +42,12 @@ bool success = true;
   typedef int                               OT;
   typedef Kokkos::DefaultExecutionSpace     EXSP;
   typedef Teuchos::ScalarTraits<ST>        SCT;
-  typedef SCT::magnitudeType                MT;
+  typedef SCT::magnitudeType MT;
+  using SDM = Teuchos::SerialDenseMatrix<int, ST>;
   typedef Belos::KokkosMultiVec<ST, EXSP>         MV;
-  typedef Belos::MultiVec<ST> KMV;
-  typedef Belos::Operator<ST> KOP; 
-  typedef Belos::MultiVecTraits<ST,KMV>     MVT;
+  typedef Belos::MultiVec<ST, SDM> KMV;
+  typedef Belos::Operator<ST, SDM> KOP;
+  typedef Belos::MultiVecTraits<ST,KMV,SDM>     MVT;
   typedef Belos::OperatorTraits<ST,KMV,KOP>  OPT;
 
   using Teuchos::ParameterList;
@@ -124,7 +125,7 @@ try {
   //
   // Construct an unpreconditioned linear problem instance.
   //
-  Belos::LinearProblem<ST,KMV,KOP> problem( A, X, B );
+  Belos::LinearProblem<ST,KMV,KOP,SDM> problem( A, X, B );
   bool set = problem.setProblem();
   if (set == false) {
     std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
@@ -136,8 +137,8 @@ try {
   // *******************************************************************
   //
   // Create an iterative solver manager.
-  RCP< Belos::SolverManager<ST,KMV,KOP> > newSolver
-    = rcp( new Belos::BlockGmresSolMgr<ST,KMV,KOP>(rcpFromRef(problem), rcpFromRef(belosList)) );
+  RCP< Belos::SolverManager<ST,KMV,KOP,SDM> > newSolver
+    = rcp( new Belos::BlockGmresSolMgr<ST,KMV,KOP,SDM>(rcpFromRef(problem), rcpFromRef(belosList)) );
 
   //
   // **********Print out information about problem*******************

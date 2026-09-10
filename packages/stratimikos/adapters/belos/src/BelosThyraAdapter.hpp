@@ -24,8 +24,6 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
-#include "Thyra_DefaultProductMultiVector_decl.hpp"
-#include "Thyra_TpetraThyraWrappers_decl.hpp"
 
 #include <Thyra_DetachedMultiVectorView.hpp>
 #include <Thyra_MultiVectorBase.hpp>
@@ -35,6 +33,7 @@
 #endif // HAVE_BELOS_TSQR
 
 #if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+#include "Thyra_TpetraThyraWrappers.hpp"
 #include "BelosMultiVecTraits_Tpetra.hpp"
 #include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
@@ -73,6 +72,8 @@ namespace Belos {
     typedef Thyra::MultiVectorBase<ScalarType> TMVB;
     typedef Teuchos::ScalarTraits<ScalarType> ST;
     typedef typename ST::magnitudeType magType;
+    using DM = Belos::DefaultDenseMatrix<int, ScalarType>;
+    using DMT = Belos::DenseMatTraits<ScalarType, DM>;
 #if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
     using TpMap = Tpetra::Map<Tpetra::MultiVector<>::local_ordinal_type,
                               Tpetra::MultiVector<>::global_ordinal_type,
@@ -84,6 +85,7 @@ namespace Belos {
                                                              Tpetra::MultiVector<>::local_ordinal_type,
                                                              Tpetra::MultiVector<>::global_ordinal_type,
                                                              Tpetra::MultiVector<>::node_type>;
+    using TpMVT = Belos::MultiVecTraits<ScalarType, TpMV>;
 
     private:
     static Teuchos::RCP<TMVB> BuildProductMultiVectorMaybe(Teuchos::RCP<const TMVB> &mv_rcp, const int numvecs) {
@@ -360,31 +362,46 @@ namespace Belos {
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
      */
     static void MvTimesMatAddMv( const ScalarType alpha, const TMVB& A,
-         const Teuchos::SerialDenseMatrix<int,ScalarType>& B,
+         const DM& B,
          const ScalarType beta, TMVB& mv )
     {
       using Teuchos::arrayView; using Teuchos::arcpFromArrayView;
       STRATIMIKOS_TIME_MONITOR("Belos::MVT::MvTimesMatAddMv");
 
-      const int m = B.numRows();
-      const int n = B.numCols();
-      // Check if B is 1-by-1, in which case we can just call MvAddMv()
-      if ((m == 1) && (n == 1)) {
-        using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::inoutArg;
-        const ScalarType alphaNew = alpha * B(0, 0);
-        Thyra::linear_combination<ScalarType>(tuple(alphaNew)(), tuple(ptrInArg(A))(), beta, inoutArg(mv));
-      } else {
-        // perform the operation via A: mv <- alpha*A*B_thyra + beta*mv
-        auto vs = A.domain();
-        // Create a view of the B object!
-        Teuchos::RCP< const TMVB >
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+      auto A_rcp = Teuchos::rcpFromRef(A);
+      auto mv_rcp = Teuchos::rcpFromRef(mv);
+      try {
+        Teuchos::RCP<const TpMV> A_tp = Extraction::getConstTpetraMultiVector(A_rcp);
+        Teuchos::RCP<TpMV> mv_tp = Extraction::getTpetraMultiVector(mv_rcp);
+        TpMVT::MvTimesMatAddMv(alpha, *A_tp, B, beta, *mv_tp);
+        return;
+      } catch (std::logic_error&)
+#endif
+      {
+        const int m = DMT::GetNumRows(B);
+        const int n = DMT::GetNumCols(B);
+        // Check if B is 1-by-1, in which case we can just call MvAddMv()
+        if ((m == 1) && (n == 1)) {
+          using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::inoutArg;
+          auto B_ptr = DMT::GetConstRawHostPtr(B);
+          const ScalarType alphaNew = alpha * (*B_ptr);
+          Thyra::linear_combination<ScalarType>(tuple(alphaNew)(), tuple(ptrInArg(A))(), beta, inoutArg(mv));
+        } else {
+          // perform the operation via A: mv <- alpha*A*B_thyra + beta*mv
+          auto vs = A.domain();
+          auto B_ptr = DMT::GetConstRawHostPtr(B);
+          auto stride = DMT::GetStride(B);
+          // Create a view of the B object!
+          Teuchos::RCP< const TMVB >
           B_thyra = vs->createCachedMembersView(
-            RTOpPack::ConstSubMultiVectorView<ScalarType>(
-              0, m, 0, n,
-              arcpFromArrayView(arrayView(&B(0,0), B.stride()*B.numCols())), B.stride()
-              )
-            );
-        Thyra::apply<ScalarType>(A, Thyra::NOTRANS, *B_thyra, Teuchos::outArg(mv), alpha, beta);
+                                                RTOpPack::ConstSubMultiVectorView<ScalarType>(
+                                                                                              0, m, 0, n,
+                                                                                              arcpFromArrayView(arrayView(B_ptr, stride*n)), stride
+                                                                                              )
+                                                );
+          Thyra::apply<ScalarType>(A, Thyra::NOTRANS, *B_thyra, Teuchos::outArg(mv), alpha, beta);
+        }
       }
     }
 
@@ -423,25 +440,40 @@ namespace Belos {
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
     */
     static void MvTransMv( const ScalarType alpha, const TMVB& A, const TMVB& mv,
-      Teuchos::SerialDenseMatrix<int,ScalarType>& B )
+      DM& B )
     {
       using Teuchos::arrayView; using Teuchos::arcpFromArrayView;
       STRATIMIKOS_TIME_MONITOR("Belos::MVT::MvTransMv");
 
-      // Create a multivector to hold the result (m by n)
-      int m = A.domain()->dim();
-      int n = mv.domain()->dim();
-      auto vs = A.domain();
-      // Create a view of the B object!
-      Teuchos::RCP< TMVB >
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+      auto A_rcp = Teuchos::rcpFromRef(A);
+      auto mv_rcp = Teuchos::rcpFromRef(mv);
+      try {
+        Teuchos::RCP<const TpMV> A_tp = Extraction::getConstTpetraMultiVector(A_rcp);
+        Teuchos::RCP<const TpMV> mv_tp = Extraction::getConstTpetraMultiVector(mv_rcp);
+        TpMVT::MvTransMv(alpha, *A_tp, *mv_tp, B);
+        return;
+      } catch (std::logic_error&)
+#endif
+      {
+        // Create a multivector to hold the result (m by n)
+        int m = A.domain()->dim();
+        int n = mv.domain()->dim();
+        auto vs = A.domain();
+        auto stride = DMT::GetStride(B);
+        auto B_cols = DMT::GetNumCols(B);
+        auto B_ptr = DMT::GetRawHostPtr(B);
+        // Create a view of the B object!
+        Teuchos::RCP< TMVB >
         B_thyra = vs->createCachedMembersView(
-          RTOpPack::SubMultiVectorView<ScalarType>(
-            0, m, 0, n,
-            arcpFromArrayView(arrayView(&B(0,0), B.stride()*B.numCols())), B.stride()
-            ),
-          false
-          );
-      Thyra::apply<ScalarType>(A, Thyra::CONJTRANS, mv, B_thyra.ptr(), alpha);
+                                              RTOpPack::SubMultiVectorView<ScalarType>(
+                                                                                       0, m, 0, n,
+                                                                                       arcpFromArrayView(arrayView(B_ptr, stride*B_cols)), stride
+                                                                                       ),
+                                              false
+                                              );
+        Thyra::apply<ScalarType>(A, Thyra::CONJTRANS, mv, B_thyra.ptr(), alpha);
+      }
     }
 
     /*! \brief Compute a std::vector \c b where the components are the individual dot-products of the

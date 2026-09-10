@@ -3455,6 +3455,8 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     output_type offsetsOut(offsets.getRawPtr(), lclNumRows);
     // DEEP_COPY REVIEW - DEVICE-TO-HOST
     Kokkos::deep_copy(execution_space(), offsetsOut, offsetsTmp);
+    // Fence so offsets is safe to access by caller immediately
+    execution_space().fence();
   }
 }
 

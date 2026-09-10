@@ -42,5 +42,39 @@ struct Trsm<ArgSide, ArgUplo, ArgTransA, Algo::Internal> {
   }
 };
 
+
+// TRSM with zero diagonals
+template <typename ArgSide, typename ArgUplo, typename ArgTransA>
+struct Trsm_defs<ArgSide, ArgUplo, ArgTransA, Algo::Internal> {
+  template <typename MemberType, typename DiagType, typename ScalarType, typename ViewTypeA, typename ViewTypeB>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const DiagType diagA, const ScalarType alpha,
+                                           const ViewTypeA &A, const ViewTypeB &B) {
+
+    typedef typename ViewTypeA::non_const_value_type value_type;
+    typedef typename ViewTypeB::non_const_value_type value_type_b;
+
+    static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
+    static_assert(ViewTypeB::rank == 2, "B is not rank 2 view.");
+
+    static_assert(std::is_same<value_type, value_type_b>::value, "A and B do not have the same value type.");
+
+    const ordinal_type m = B.extent(0);
+    const ordinal_type n = B.extent(1);
+
+    if (m > 0 && n > 0)
+      BlasTeam<value_type>::trsm_defs(member, ArgSide::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n,
+                                      value_type(alpha), A.data(), A.stride(1), B.data(), B.stride(1));
+    return 0;
+  }
+
+  template <typename MemberType, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static void reset_zero_diags(MemberType &member, const ViewTypeA &A) {
+    typedef typename ViewTypeA::non_const_value_type value_type;
+    const value_type one(1.0), zero(0.0);
+    const ordinal_type m = A.extent(0);
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const int &i) { if (A(i, i) == zero) A(i, i) = one; });
+  }
+};
+
 } // namespace Tacho
 #endif

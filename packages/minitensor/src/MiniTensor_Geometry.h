@@ -15,11 +15,17 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_geometry
+/// @{
+
 ///
 /// Useful to distinguish among different finite elements.
 ///
 namespace ELEMENT{
 
+///
+/// Finite element types.
+///
 enum Type {
   UNKNOWN,
   SEGMENTAL,
@@ -129,7 +135,8 @@ in_normal_side(
 ///
 /// Given two iterators to a container of points,
 /// find the associated bounding box.
-/// \param start end: define sequence of points
+/// \param start iterator that begins the sequence of points
+/// \param end iterator that ends the sequence of points
 /// \return vectors that define the bounding box
 ///
 template<typename T, typename I, Index N>
@@ -145,7 +152,8 @@ bounding_box(I start, I end);
 ///
 /// Determine if a given point is inside a bounding box.
 /// \param p the point
-/// \param min max points defining the box
+/// \param min lower corner of the box
+/// \param max upper corner of the box
 /// \return whether the point is inside
 ///
 template<typename T, Index N>
@@ -158,7 +166,8 @@ in_box(
 
 ///
 /// Generate random point inside bounding box
-/// \param min max the bounding box
+/// \param min lower corner of the bounding box
+/// \param max upper corner of the bounding box
 /// \return p point inside box
 ///
 template<typename T, Index N>
@@ -217,7 +226,8 @@ closest_point(Vector<T, N> const & p, std::vector<Vector<T, N>> const & n);
 
 /// Median of a sequence defined by random
 /// access iterators. Undefined for empty set.
-/// \param begin end Iterators that define the sequence
+/// \param begin iterator that begins the sequence
+/// \param end iterator that ends the sequence
 /// \return median of sequence
 ///
 template<typename T, typename Iterator>
@@ -229,7 +239,10 @@ median(Iterator begin, Iterator end);
 /// Given quadrilateral nodes and a position
 /// in parametric coordinates, interpolate.
 /// \param xi position in parametric coordinates
-/// \param p0 ... corner nodes
+/// \param p0 corner node
+/// \param p1 corner node
+/// \param p2 corner node
+/// \param p3 corner node
 /// \return interpolated position
 ///
 template<typename T, Index N>
@@ -246,7 +259,9 @@ interpolate_quadrilateral(
 /// Given triangle nodes and a position
 /// in parametric coordinates, interpolate.
 /// \param xi position in parametric coordinates
-/// \param p0 ... corner nodes
+/// \param p0 corner node
+/// \param p1 corner node
+/// \param p2 corner node
 /// \return interpolated position
 ///
 template<typename T, Index N>
@@ -262,7 +277,14 @@ interpolate_triangle(
 /// Given hexahedron nodes and a position
 /// in parametric coordinates, interpolate.
 /// \param xi position in parametric coordinates
-/// \param p0 ... corner nodes
+/// \param p0 corner node
+/// \param p1 corner node
+/// \param p2 corner node
+/// \param p3 corner node
+/// \param p4 corner node
+/// \param p5 corner node
+/// \param p6 corner node
+/// \param p7 corner node
 /// \return interpolated position
 ///
 template<typename T, Index N>
@@ -283,7 +305,10 @@ interpolate_hexahedron(
 /// Given tetrahedron nodes and a position
 /// in parametric coordinates, interpolate.
 /// \param xi position in parametric coordinates
-/// \param p0 ... corner nodes
+/// \param p0 corner node
+/// \param p1 corner node
+/// \param p2 corner node
+/// \param p3 corner node
 /// \return interpolated position
 ///
 template<typename T, Index N>
@@ -348,55 +373,102 @@ class SphericalParametrization
 {
 public:
 
+  ///
+  /// Constructor that takes material tangent
+  /// \param A material tangent (fourth-order tensor)
+  ///
   KOKKOS_INLINE_FUNCTION
   SphericalParametrization(Tensor4<T, N> const & A);
 
+  ///
+  /// Evaluate the localization determinant for the normal defined
+  /// by the spherical angles and update the extrema found so far.
+  /// \param parameters spherical angles (phi, theta)
+  ///
   KOKKOS_INLINE_FUNCTION
   void
   operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
+  ///
+  /// Unit normal for the given spherical angles.
+  /// \param parameters spherical angles (phi, theta)
+  /// \return unit normal on the sphere
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal(Vector<T, dimension_const<N, 2>::value> const & parameters) const;
 
+  ///
+  /// Smallest localization determinant found so far.
+  ///
   KOKKOS_INLINE_FUNCTION
   T
   get_minimum() const {return minimum_;}
 
+  ///
+  /// Largest localization determinant found so far.
+  ///
   KOKKOS_INLINE_FUNCTION
   T
   get_maximum() const {return maximum_;}
 
+  ///
+  /// Parameters at which the minimum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, 2>
   get_arg_minimum() const {return arg_minimum_;}
 
+  ///
+  /// Parameters at which the maximum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, 2>
   get_arg_maximum() const {return arg_maximum_;}
 
+  ///
+  /// Normal at which the minimum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal_minimum() const {return get_normal(arg_minimum_);}
 
+  ///
+  /// Normal at which the maximum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal_maximum() const {return get_normal(arg_maximum_);}
 
 private:
 
+  ///
+  /// Material tangent
+  ///
   Tensor4<T, N> const &
   tangent_;
 
+  ///
+  /// Minimum of the localization determinant
+  ///
   T
   minimum_;
 
+  ///
+  /// Parameters of the minimum
+  ///
   Vector<T, 2>
   arg_minimum_;
 
+  ///
+  /// Maximum of the localization determinant
+  ///
   T
   maximum_;
 
+  ///
+  /// Parameters of the maximum
+  ///
   Vector<T, 2>
   arg_maximum_;
 };
@@ -409,55 +481,102 @@ class StereographicParametrization
 {
 public:
 
+  ///
+  /// Constructor that takes material tangent
+  /// \param A material tangent (fourth-order tensor)
+  ///
   KOKKOS_INLINE_FUNCTION
   StereographicParametrization(Tensor4<T, N> const & A);
 
+  ///
+  /// Unit normal from the inverse stereographic projection.
+  /// \param parameters stereographic projection coordinates (x, y)
+  /// \return unit normal on the sphere
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal(Vector<T, dimension_const<N, 2>::value> const & parameters) const;
 
+  ///
+  /// Evaluate the localization determinant for the normal defined
+  /// by the stereographic coordinates and update the extrema found so far.
+  /// \param parameters stereographic projection coordinates (x, y)
+  ///
   KOKKOS_INLINE_FUNCTION
   void
   operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
+  ///
+  /// Smallest localization determinant found so far.
+  ///
   KOKKOS_INLINE_FUNCTION
   T
   get_minimum() const {return minimum_;}
 
+  ///
+  /// Largest localization determinant found so far.
+  ///
   KOKKOS_INLINE_FUNCTION
   T
   get_maximum() const {return maximum_;}
 
+  ///
+  /// Parameters at which the minimum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, 2>
   get_arg_minimum() const {return arg_minimum_;}
 
+  ///
+  /// Parameters at which the maximum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, 2>
   get_arg_maximum() const {return arg_maximum_;}
 
+  ///
+  /// Normal at which the minimum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal_minimum() const {return get_normal(arg_minimum_);}
 
+  ///
+  /// Normal at which the maximum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal_maximum() const {return get_normal(arg_maximum_);}
 
 private:
 
+  ///
+  /// Material tangent
+  ///
   Tensor4<T, N> const &
   tangent_;
 
+  ///
+  /// Minimum of the localization determinant
+  ///
   T
   minimum_;
 
+  ///
+  /// Parameters of the minimum
+  ///
   Vector<T, 2>
   arg_minimum_;
 
+  ///
+  /// Maximum of the localization determinant
+  ///
   T
   maximum_;
 
+  ///
+  /// Parameters of the maximum
+  ///
   Vector<T, 2>
   arg_maximum_;
 };
@@ -476,52 +595,95 @@ public:
   KOKKOS_INLINE_FUNCTION
   ProjectiveParametrization(Tensor4<T, N> const & A);
 
+  ///
+  /// Evaluate the localization determinant for the normal defined
+  /// by the projective coordinates and update the extrema found so far.
+  /// \param parameters homogeneous (projective) coordinates (x, y, z)
+  ///
   KOKKOS_INLINE_FUNCTION
   void
   operator()(Vector<T, dimension_const<N, 3>::value> const & parameters);
 
+  ///
+  /// Normalized normal for the given homogeneous coordinates.
+  /// \param parameters homogeneous (projective) coordinates (x, y, z)
+  /// \return unit normal, or (1, 1, 1) for the zero vector
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal(Vector<T, dimension_const<N, 3>::value> const & parameters) const;
 
+  ///
+  /// Smallest localization determinant found so far.
+  ///
   KOKKOS_INLINE_FUNCTION
   T
   get_minimum() const {return minimum_;}
 
+  ///
+  /// Largest localization determinant found so far.
+  ///
   KOKKOS_INLINE_FUNCTION
   T
   get_maximum() const {return maximum_;}
 
+  ///
+  /// Parameters at which the minimum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, 3>
   get_arg_minimum() const {return arg_minimum_;}
 
+  ///
+  /// Parameters at which the maximum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, 3>
   get_arg_maximum() const {return arg_maximum_;}
 
+  ///
+  /// Normal at which the minimum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal_minimum() const {return get_normal(arg_minimum_);}
 
+  ///
+  /// Normal at which the maximum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal_maximum() const {return get_normal(arg_maximum_);}
 
 private:
 
+  ///
+  /// Material tangent
+  ///
   Tensor4<T, N> const &
   tangent_;
 
+  ///
+  /// Minimum of the localization determinant
+  ///
   T
   minimum_;
 
+  ///
+  /// Parameters of the minimum
+  ///
   Vector<T, 3>
   arg_minimum_;
 
+  ///
+  /// Maximum of the localization determinant
+  ///
   T
   maximum_;
 
+  ///
+  /// Parameters of the maximum
+  ///
   Vector<T, 3>
   arg_maximum_;
 };
@@ -541,54 +703,95 @@ public:
   TangentParametrization(Tensor4<T, N> const & A);
 
   ///
+  /// Evaluate the localization determinant for the normal defined
+  /// by the tangent coordinates and update the extrema found so far.
+  /// \param parameters tangent coordinates (x, y)
   ///
   ///
   KOKKOS_INLINE_FUNCTION
   void
   operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
 
+  ///
+  /// Unit normal from the exponential map of the tangent coordinates.
+  /// \param parameters tangent coordinates (x, y)
+  /// \return unit normal on the sphere
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal(Vector<T, dimension_const<N, 2>::value> const & parameters) const;
 
+  ///
+  /// Smallest localization determinant found so far.
+  ///
   KOKKOS_INLINE_FUNCTION
   T
   get_minimum() const {return minimum_;}
 
+  ///
+  /// Largest localization determinant found so far.
+  ///
   KOKKOS_INLINE_FUNCTION
   T
   get_maximum() const {return maximum_;}
 
+  ///
+  /// Parameters at which the minimum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, 2>
   get_arg_minimum() const {return arg_minimum_;}
 
+  ///
+  /// Parameters at which the maximum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, 2>
   get_arg_maximum() const {return arg_maximum_;}
 
+  ///
+  /// Normal at which the minimum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal_minimum() const {return get_normal(arg_minimum_);}
 
+  ///
+  /// Normal at which the maximum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal_maximum() const {return get_normal(arg_maximum_);}
 
 private:
 
+  ///
+  /// Material tangent
+  ///
   Tensor4<T, N> const &
   tangent_;
 
+  ///
+  /// Minimum of the localization determinant
+  ///
   T
   minimum_;
 
+  ///
+  /// Parameters of the minimum
+  ///
   Vector<T, 2>
   arg_minimum_;
 
+  ///
+  /// Maximum of the localization determinant
+  ///
   T
   maximum_;
 
+  ///
+  /// Parameters of the maximum
+  ///
   Vector<T, 2>
   arg_maximum_;
 };
@@ -601,55 +804,103 @@ class CartesianParametrization
 {
 public:
 
+  ///
+  /// Constructor that takes material tangent
+  /// \param A material tangent (fourth-order tensor)
+  ///
   KOKKOS_INLINE_FUNCTION
   CartesianParametrization(Tensor4<T, N> const & A);
 
+  ///
+  /// Evaluate the localization determinant for the normal defined
+  /// by the Cartesian coordinates and update the extrema found so far.
+  /// \param parameters Cartesian components (x, y, z)
+  ///
   KOKKOS_INLINE_FUNCTION
   void
   operator()(Vector<T, dimension_const<N, 3>::value> const & parameters);
 
+  ///
+  /// Normal formed directly from the Cartesian components.
+  /// Note: not normalized.
+  /// \param parameters Cartesian components (x, y, z)
+  /// \return normal vector (x, y, z)
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal(Vector<T, dimension_const<N, 3>::value> const & parameters) const;
 
+  ///
+  /// Smallest localization determinant found so far.
+  ///
   KOKKOS_INLINE_FUNCTION
   T
   get_minimum() const {return minimum_;}
 
+  ///
+  /// Largest localization determinant found so far.
+  ///
   KOKKOS_INLINE_FUNCTION
   T
   get_maximum() const {return maximum_;}
 
+  ///
+  /// Parameters at which the minimum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, 3>
   get_arg_minimum() const {return arg_minimum_;}
 
+  ///
+  /// Parameters at which the maximum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, 3>
   get_arg_maximum() const {return arg_maximum_;}
 
+  ///
+  /// Normal at which the minimum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal_minimum() const {return get_normal(arg_minimum_);}
 
+  ///
+  /// Normal at which the maximum determinant occurs.
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector<T, N>
   get_normal_maximum() const {return get_normal(arg_maximum_);}
 
 private:
 
+  ///
+  /// Material tangent
+  ///
   Tensor4<T, N> const &
   tangent_;
 
+  ///
+  /// Minimum of the localization determinant
+  ///
   T
   minimum_;
 
+  ///
+  /// Parameters of the minimum
+  ///
   Vector<T, 3>
   arg_minimum_;
 
+  ///
+  /// Maximum of the localization determinant
+  ///
   T
   maximum_;
 
+  ///
+  /// Parameters of the maximum
+  ///
   Vector<T, 3>
   arg_maximum_;
 };
@@ -682,6 +933,8 @@ public:
       Vector<Index, N> const & points_per_dimension);
 
   ///
+  /// Traverse the grid, applying the visitor to each grid point.
+  /// \param visitor functor to apply at each grid point
   ///
   template<typename Visitor>
   KOKKOS_INLINE_FUNCTION
@@ -690,12 +943,21 @@ public:
 
 private:
 
+  ///
+  /// Lower limits of the grid
+  ///
   Vector<T, N>
   lower_;
 
+  ///
+  /// Upper limits of the grid
+  ///
   Vector<T, N>
   upper_;
 
+  ///
+  /// Number of grid points in each dimension
+  ///
   Vector<Index, N>
   points_per_dimension_;
 
@@ -1522,6 +1784,9 @@ bounding_box(I start, I end)
   return std::make_pair(min, max);
 }
 
+///
+/// Bounding box of a sequence of points.
+///
 template<typename T, typename I>
 KOKKOS_INLINE_FUNCTION
 std::pair<Vector<T, DYNAMIC>, Vector<T, DYNAMIC>>
@@ -1997,6 +2262,7 @@ minimum_distances(std::vector< std::vector<T>> const & distances)
   return minima;
 }
 
+/// @}
 } // namespace minitensor
 
 #endif // MiniTensor_Geometry_h

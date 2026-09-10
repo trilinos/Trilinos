@@ -64,14 +64,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Ternary, Ternary, ELRCacheFad_DFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Ternary, Ternary, ELRCacheFad_SLFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Ternary, Ternary, ELRCacheFad_SFadType )
 
-#if defined(SACADO_ENABLE_NEW_DESIGN) && !defined(SACADO_NEW_FAD_DESIGN_IS_DEFAULT)
-typedef Sacado::Fad::Exp::DFad<double> ExpFad_DFadType;
-typedef Sacado::Fad::Exp::SLFad<double,global_fad_size> ExpFad_SLFadType;
-typedef Sacado::Fad::Exp::SFad<double,global_fad_size> ExpFad_SFadType;
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Ternary, Ternary, ExpFad_DFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Ternary, Ternary, ExpFad_SLFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Ternary, Ternary, ExpFad_SFadType )
-#endif
+
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

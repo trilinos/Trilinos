@@ -35,13 +35,14 @@
 // Belos
 #include "BelosTpetraAdapter.hpp"
 #include "BelosSolverFactory.hpp"
+#include "BelosTpetraTestFramework.hpp"
 
 // ****************************************************************************
 // BEGIN RUN ROUTINE
 // ****************************************************************************
 
-template <typename ScalarType>
-int run(int argc, char *argv[]) {
+template <class ScalarType, class DM>
+int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[]) {
 
   // Belos solvers have the following template parameters:
   //
@@ -96,7 +97,6 @@ int run(int argc, char *argv[]) {
     MT tol = 1.0e-5;           // relative residual tolerance
     std::string solverName = "Block GMRES"; // type of iterative solver
 
-    Teuchos::CommandLineProcessor cmdp(false,true);
     Galeri::Xpetra::Parameters<GO> galeriParameters(cmdp, nx, ny, nz, "Laplace2D");
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nondebug",&debug,"Print debugging information from solver.");
@@ -114,7 +114,11 @@ int run(int argc, char *argv[]) {
     if (!verbose)
       frequency = -1;  // reset frequency if test is not verbose
 
-    std::string watchrProblemName = std::string("Belos ") + solverName + " " + std::to_string(comm->getSize()) + " ranks";
+    std::string watchrProblemName;
+    if (std::is_same_v<DM, Teuchos::SerialDenseMatrix<int, ScalarType>>)
+      watchrProblemName = std::string("Belos ") + solverName + " " + std::to_string(comm->getSize()) + " ranks";
+    else
+      watchrProblemName = std::string("Belos ") + solverName + " Kokkos " + std::to_string(comm->getSize()) + " ranks";
     procVerbose = ( verbose && (myPID==0) ); // Only print on the zero processor
 
     if (procVerbose) {
@@ -178,7 +182,7 @@ int run(int argc, char *argv[]) {
     belosList.set( "Verbosity", verbosity );
 
     // Construct an unpreconditioned linear problem instance.
-    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
     bool set = problem.setProblem();
     if (set == false) {
       if (procVerbose)
@@ -192,10 +196,10 @@ int run(int argc, char *argv[]) {
     // *******************************************************************
     //
     // Create a solver factory
-    Belos::SolverFactory<double,MV,OP> factory;
+    Belos::SolverFactory<ST,MV,OP,DM> factory;
 
     // Create an iterative solver manager
-    RCP< Belos::SolverManager<double,MV,OP> > newSolver = factory.create (solverName, rcp(&belosList,false));
+    RCP< Belos::SolverManager<ST,MV,OP,DM> > newSolver = factory.create (solverName, rcp(&belosList,false));
 
     // Set the problem on the solver manager
     newSolver->setProblem( rcp(&problem,false) );
@@ -232,8 +236,8 @@ int run(int argc, char *argv[]) {
 
     // Compute actual residuals.
     bool badRes = false;
-    std::vector<ST> actualResids( numrhs );
-    std::vector<ST> rhsNorm( numrhs );
+    std::vector<MT> actualResids( numrhs );
+    std::vector<MT> rhsNorm( numrhs );
     MV resid(Map, numrhs);
     OPT::Apply( *A, *X, resid );
     MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
@@ -242,7 +246,7 @@ int run(int argc, char *argv[]) {
     if (procVerbose) {
       *out<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
-        ST actRes = actualResids[i]/rhsNorm[i];
+        MT actRes = actualResids[i]/rhsNorm[i];
         *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
         if (actRes > tol) badRes = true;
       }
@@ -264,8 +268,8 @@ int run(int argc, char *argv[]) {
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-int main(int argc, char *argv[]) {
-  // run with different ST
-  return run<double>(argc,argv);
-  // run<float>(argc,argv); // FAILS
+#include "BelosTpetraTestMain.hpp"
+
+int main(int argc, char* argv[]) {
+  return common_main(argc, argv);
 }

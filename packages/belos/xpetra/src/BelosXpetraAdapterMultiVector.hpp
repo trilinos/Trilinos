@@ -135,13 +135,16 @@ using Teuchos::rcp;
   Xpetra::MultiVector will be accepted by the Belos templated solvers.
 */
 template <class Scalar, class LO, class GO, class Node>
-class MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, LO, GO, Node>> {
+class MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, LO, GO, Node>, ::Belos::DefaultDenseMatrix<int, Scalar>> {
 private:
+  using DM = ::Belos::DefaultDenseMatrix<int, Scalar>;
+  using DMT =::Belos::DenseMatTraits<Scalar, DM>;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MV;
+  using MVT = MultiVecTraits<Scalar, MV, DM>;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
   typedef Xpetra::TpetraMultiVector<Scalar, LO, GO, Node> TpetraMultiVector;
   typedef Xpetra::Vector<Scalar, LO, GO, Node> Vector;
-  typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, LO, GO, Node>>
+  typedef MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar, LO, GO, Node>, DM>
       MultiVecTraitsTpetra;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
@@ -179,7 +182,7 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> out_r = out->getMultiVector(r);
         RCP<MV> in_r = bmv->getMultiVector(r);
-        MultiVecTraits<Scalar, MV>::Assign(*in_r, *out_r);
+        MVT::Assign(*in_r, *out_r);
       }
       return out;
     }
@@ -197,8 +200,8 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> out_r = out->getMultiVector(r);
         RCP<MV> in_r = bmv->getMultiVector(r);
-        RCP<MV> tmp = MultiVecTraits<Scalar, MV>::CloneCopy(*in_r, index);
-        MultiVecTraits<Scalar, MV>::Assign(*tmp, *out_r);
+        RCP<MV> tmp = MVT::CloneCopy(*in_r, index);
+        MVT::Assign(*tmp, *out_r);
       }
       return out;
     }
@@ -237,8 +240,8 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> out_r = out->getMultiVector(r);
         RCP<MV> in_r = bmv->getMultiVector(r);
-        RCP<MV> tmp = MultiVecTraits<Scalar, MV>::CloneCopy(*in_r, index);
-        MultiVecTraits<Scalar, MV>::Assign(*tmp, *out_r);
+        RCP<MV> tmp = MVT::CloneCopy(*in_r, index);
+        MVT::Assign(*tmp, *out_r);
       }
       return out;
     }
@@ -275,7 +278,7 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> in_r = bmv->getMultiVector(r);
         blocks.push_back(
-            MultiVecTraits<Scalar, MV>::CloneViewNonConst(*in_r, index));
+            MVT::CloneViewNonConst(*in_r, index));
       }
       return rcp(new BlockedMultiVector(bmv->getBlockedMap(), blocks));
     }
@@ -294,7 +297,7 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> in_r = bmv->getMultiVector(r);
         blocks.push_back(
-            MultiVecTraits<Scalar, MV>::CloneViewNonConst(*in_r, index));
+            MVT::CloneViewNonConst(*in_r, index));
       }
       return rcp(new BlockedMultiVector(bmv->getBlockedMap(), blocks));
     }
@@ -313,7 +316,7 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> in_r = bmv->getMultiVector(r);
         RCP<const MV> view_r =
-            MultiVecTraits<Scalar, MV>::CloneView(*in_r, index);
+            MVT::CloneView(*in_r, index);
         blocks.push_back(Teuchos::rcp_const_cast<MV>(view_r));
       }
       return rcp(new BlockedMultiVector(bmv->getBlockedMap(), blocks));
@@ -338,7 +341,7 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> in_r = bmv->getMultiVector(r);
         RCP<const MV> view_r =
-            MultiVecTraits<Scalar, MV>::CloneView(*in_r, index);
+            MVT::CloneView(*in_r, index);
         blocks.push_back(Teuchos::rcp_const_cast<MV>(view_r));
       }
       return rcp(new BlockedMultiVector(bmv->getBlockedMap(), blocks));
@@ -368,7 +371,7 @@ public:
     if (auto bmv = asBlocked(mv)) {
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> in_r = bmv->getMultiVector(r);
-        if (!MultiVecTraits<Scalar, MV>::HasConstantStride(*in_r))
+        if (!MVT::HasConstantStride(*in_r))
           return false;
       }
       return true;
@@ -381,7 +384,7 @@ public:
   }
 
   static void MvTimesMatAddMv(Scalar alpha, const MV &A,
-                              const Teuchos::SerialDenseMatrix<int, Scalar> &B,
+                              const DM &B,
                               Scalar beta, MV &mv) {
 #ifdef HAVE_BELOS_XPETRA_TIMERS
     Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
@@ -393,7 +396,7 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> mv_r = bmv->getMultiVector(r);
         RCP<MV> A_r = A_bmv->getMultiVector(r);
-        MultiVecTraits<Scalar, MV>::MvTimesMatAddMv(alpha, *A_r, B, beta,
+        MVT::MvTimesMatAddMv(alpha, *A_r, B, beta,
                                                     *mv_r);
       }
       return;
@@ -419,7 +422,7 @@ public:
         RCP<MV> mv_r = bmv->getMultiVector(r);
         RCP<MV> A_r = A_bmv->getMultiVector(r);
         RCP<MV> B_r = B_bmv->getMultiVector(r);
-        MultiVecTraits<Scalar, MV>::MvAddMv(alpha, *A_r, beta, *B_r, *mv_r);
+        MVT::MvAddMv(alpha, *A_r, beta, *B_r, *mv_r);
       }
       return;
     }
@@ -431,7 +434,7 @@ public:
     if (auto bmv = asBlocked(mv)) {
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> mv_r = bmv->getMultiVector(r);
-        MultiVecTraits<Scalar, MV>::MvScale(*mv_r, alpha);
+        MVT::MvScale(*mv_r, alpha);
       }
       return;
     }
@@ -443,7 +446,7 @@ public:
     if (auto bmv = asBlocked(mv)) {
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> mv_r = bmv->getMultiVector(r);
-        MultiVecTraits<Scalar, MV>::MvScale(*mv_r, alphas);
+        MVT::MvScale(*mv_r, alphas);
       }
       return;
     }
@@ -452,7 +455,7 @@ public:
   }
 
   static void MvTransMv(Scalar alpha, const MV &A, const MV &B,
-                        Teuchos::SerialDenseMatrix<int, Scalar> &C) {
+                        DM &C) {
 #ifdef HAVE_BELOS_XPETRA_TIMERS
     Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
@@ -460,17 +463,15 @@ public:
     if (auto A_bmv = asBlocked(A)) {
       auto B_bmv = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(
           Teuchos::rcpFromRef(B), true);
-      C.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-      Teuchos::SerialDenseMatrix<int, Scalar> Ctmp(C.numRows(), C.numCols());
+      DMT::PutScalar(C, Teuchos::ScalarTraits<Scalar>::zero());
+      auto Ctmp = DMT::Create(DMT::GetNumRows(C), DMT::GetNumCols(C));
 
       for (size_t r = 0; r < getNumBlocks(*A_bmv); ++r) {
         RCP<MV> A_r = A_bmv->getMultiVector(r);
         RCP<MV> B_r = B_bmv->getMultiVector(r);
-        Ctmp.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-        MultiVecTraits<Scalar, MV>::MvTransMv(alpha, *A_r, *B_r, Ctmp);
-        for (int i = 0; i < C.numRows(); ++i)
-          for (int j = 0; j < C.numCols(); ++j)
-            C(i, j) += Ctmp(i, j);
+        DMT::PutScalar(*Ctmp, Teuchos::ScalarTraits<Scalar>::zero());
+        MVT::MvTransMv(alpha, *A_r, *B_r, *Ctmp);
+        DMT::Add(C, *Ctmp);
       }
       return;
     }
@@ -496,7 +497,7 @@ public:
         RCP<MV> B_r = B_bmv->getMultiVector(r);
         std::fill(tmp.begin(), tmp.end(),
                   Teuchos::ScalarTraits<Scalar>::zero());
-        MultiVecTraits<Scalar, MV>::MvDot(*A_r, *B_r, tmp);
+        MVT::MvDot(*A_r, *B_r, tmp);
         for (size_t j = 0; j < dots.size(); ++j)
           dots[j] += tmp[j];
       }
@@ -521,7 +522,7 @@ public:
         for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
           RCP<MV> mv_r = bmv->getMultiVector(r);
           std::fill(tmp.begin(), tmp.end(), zero);
-          MultiVecTraits<Scalar, MV>::MvNorm(*mv_r, tmp, OneNorm);
+          MVT::MvNorm(*mv_r, tmp, OneNorm);
           for (size_t j = 0; j < normvec.size(); ++j)
             normvec[j] += tmp[j];
         }
@@ -531,7 +532,7 @@ public:
         for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
           RCP<MV> mv_r = bmv->getMultiVector(r);
           std::fill(tmp.begin(), tmp.end(), zero);
-          MultiVecTraits<Scalar, MV>::MvNorm(*mv_r, tmp, TwoNorm);
+          MVT::MvNorm(*mv_r, tmp, TwoNorm);
           for (size_t j = 0; j < normvec.size(); ++j)
             normvec[j] += tmp[j] * tmp[j];
         }
@@ -544,7 +545,7 @@ public:
         for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
           RCP<MV> mv_r = bmv->getMultiVector(r);
           std::fill(tmp.begin(), tmp.end(), zero);
-          MultiVecTraits<Scalar, MV>::MvNorm(*mv_r, tmp, InfNorm);
+          MVT::MvNorm(*mv_r, tmp, InfNorm);
           for (size_t j = 0; j < normvec.size(); ++j)
             if (tmp[j] > normvec[j])
               normvec[j] = tmp[j];
@@ -583,7 +584,7 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> mv_r = bmv->getMultiVector(r);
         RCP<MV> A_r = A_bmv->getMultiVector(r);
-        MultiVecTraits<Scalar, MV>::SetBlock(*A_r, index, *mv_r);
+        MVT::SetBlock(*A_r, index, *mv_r);
       }
       return;
     }
@@ -603,7 +604,7 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> mv_r = bmv->getMultiVector(r);
         RCP<MV> A_r = A_bmv->getMultiVector(r);
-        MultiVecTraits<Scalar, MV>::SetBlock(*A_r, index, *mv_r);
+        MVT::SetBlock(*A_r, index, *mv_r);
       }
       return;
     }
@@ -623,7 +624,7 @@ public:
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> mv_r = bmv->getMultiVector(r);
         RCP<MV> A_r = A_bmv->getMultiVector(r);
-        MultiVecTraits<Scalar, MV>::Assign(*A_r, *mv_r);
+        MVT::Assign(*A_r, *mv_r);
       }
       return;
     }
@@ -635,7 +636,7 @@ public:
     if (auto bmv = asBlocked(mv)) {
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> mv_r = bmv->getMultiVector(r);
-        MultiVecTraits<Scalar, MV>::MvRandom(*mv_r);
+        MVT::MvRandom(*mv_r);
       }
       return;
     }
@@ -648,7 +649,7 @@ public:
     if (auto bmv = asBlocked(mv)) {
       for (size_t r = 0; r < getNumBlocks(*bmv); ++r) {
         RCP<MV> mv_r = bmv->getMultiVector(r);
-        MultiVecTraits<Scalar, MV>::MvInit(*mv_r, alpha);
+        MVT::MvInit(*mv_r, alpha);
       }
       return;
     }

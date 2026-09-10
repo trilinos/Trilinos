@@ -14,7 +14,6 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_LAPACK.hpp>
 
 #include "MueLu_Amesos2Smoother_fwd.hpp"
 

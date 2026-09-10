@@ -825,7 +825,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      const bool checkApplyBC = checkApplyBC_;
      const auto& tangentFieldsDevice = dfdpFieldsVoV_.getViewDevice();
      const auto& kokkosTangents = Kokkos::subview(tangentFieldsDevice,Kokkos::ALL(),productVectorBlockIndex_[fieldIndex]);
-     const double num_params = Kokkos::dimension_scalar(fieldValues)-1;
+     const double num_params = Sacado::dimension_scalar(fieldValues)-1;
 
      if (!scatterIC_) {
 

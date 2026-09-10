@@ -33,7 +33,7 @@ double Dot(const DistributedVector & x, const DistributedVector & y)
   STK_ThrowAssert(x.size() == y.size() && x.local_size() == y.local_size());
   double dot = 0.;
   for (size_t i=0; i<x.local_size(); ++i)
-    dot += x[i]*y[i];
+    dot += float(x[i]*y[i]); // reduced order addend to produce parallel consistency
 
   const double localDot = dot;
   if (x.comm() != stk::parallel_machine_null())
@@ -48,26 +48,6 @@ DistributedVector vectorSubtract(const DistributedVector& x, const DistributedVe
   for (size_t i=0; i<x.size(); ++i)
       result[i] -= y[i];
   return result;
-}
-
-void DistributedVector::assign(const stk::ParallelMachine comm, const size_t size, const size_t localSize, const double value)
-{
-  myComm = comm;
-  myLocalSize = localSize;
-  myData.assign(size, value);
-}
-
-void DistributedVector::resize(const size_t newSize)
-{
-  STK_ThrowAssert(myData.size() == myLocalSize);
-  myData.resize(newSize);
-  myLocalSize = newSize;
-}
-
-void DistributedVector::resize(const std::pair<size_t,size_t> newSizes)
-{
-  myData.resize(newSizes.first);
-  myLocalSize = newSizes.second;
 }
 
 }

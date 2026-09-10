@@ -67,6 +67,11 @@ public:
                     const ROL::Vector<Real> &u,
                     const ROL::Vector<Real> &z,
                     const int g_idx) const;
+    void block_diagonal_hessian_22(Teuchos::RCP<Thyra::LinearOpBase<Real>>& H,
+                const ROL::Vector<Real> &u,
+                const ROL::Vector<Real> &z,
+                const int g_idx,
+                const int p_index) const;
 #endif
 
     /** \brief . */
@@ -92,6 +97,8 @@ public:
     ::Thyra::ModelEvaluatorBase::InArgs<Real> getLowerBounds() const;
     /** \brief . */
     ::Thyra::ModelEvaluatorBase::InArgs<Real> getUpperBounds() const;
+
+    const std::vector<int>& get_p_indices() const {return p_indices_;}
 
 protected:
 
@@ -942,6 +949,41 @@ ProductModelEvaluator<Real>::block_diagonal_hessian_22(const Teuchos::RCP<Thyra:
     H->endBlockFill();
 
     thyra_model_->evalModel(inArgs, outArgs);
+}
+
+template <typename Real>
+void
+ProductModelEvaluator<Real>::block_diagonal_hessian_22(Teuchos::RCP<Thyra::LinearOpBase<Real>>& H,
+                    const ROL::Vector<Real> &u,
+                    const ROL::Vector<Real> &z,
+                    const int g_idx,
+                    const int p_index) const
+{
+    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
+    bool supports_deriv = true;
+    supports_deriv = supports_deriv &&  outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_idx, p_index, p_index);
+    
+    TEUCHOS_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, 
+        "ProductModelEvaluator<Real>::block_diagonal_hessian_22: H_pp is not supported");
+
+    const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
+    ROL::Ptr<ROL::Vector<Real>> unew = u.clone();
+    unew->set(u);
+    const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(*unew);
+
+    Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
+
+    inArgs.set_p(p_index, thyra_p.getVector());
+    inArgs.set_x(thyra_x.getVector());
+
+    Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model_->get_g_multiplier_space(g_idx));
+    Thyra::put_scalar(1.0, multiplier_g.ptr());
+    inArgs.set_g_multiplier(g_idx, multiplier_g);
+
+    H = thyra_model_->create_hess_g_pp(g_idx, p_index, p_index);
+    outArgs.set_hess_g_pp(g_idx, p_index, p_index, H);
+    thyra_model_->evalModel(inArgs, outArgs);
+
 }
 #endif
 

@@ -16,6 +16,8 @@
 // Tpetra includes
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_FECrsGraph.hpp"
+#include "Tpetra_FECrsMatrix.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 
@@ -58,19 +60,29 @@ public:
    typedef Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> ImportType;
    typedef Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> ExportType;
 
+   typedef Tpetra::FECrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> FECrsGraphType;
+   typedef Tpetra::FECrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> FECrsMatrixType;
+
    typedef Thyra::TpetraVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> ThyraVector;
    typedef Thyra::TpetraLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> ThyraLinearOp;
 
 
+   /** \param[in] useFEAssembly Opt in to assembling each (i,j) block into a
+     *            Tpetra::FECrsMatrix instead of a separate owned/ghosted CrsMatrix pair
+     *            joined by an explicit export. Defaults to false, which leaves the
+     *            classic behavior of this class completely unchanged.
+     */
    BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                                 const Teuchos::RCP<const BlockedDOFManager> & gidProvider);
+                                 const Teuchos::RCP<const BlockedDOFManager> & gidProvider,
+                                 bool useFEAssembly = false);
 
   /** \brief Ctor that takes a vector of DOFManagers instead of the
       BlockedDOFManager. Plan is to deprecate the BlockedDOFManager,
       but for now it is ingrained in all gather/scatter operators.
    */
    BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                                 const std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> & gidProviders);
+                                 const std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> & gidProviders,
+                                 bool useFEAssembly = false);
 
    virtual ~BlockedTpetraLinearObjFactory();
 
@@ -253,6 +265,23 @@ public:
    Teuchos::RCP<CrsMatrixType> getTpetraMatrix(int i,int j) const;
    Teuchos::RCP<CrsMatrixType> getGhostedTpetraMatrix(int i,int j) const;
 
+/*************** FE (finite-element) construction functions *******************/
+
+   //! True if this factory was constructed with FE assembly enabled.
+   bool useFEAssembly() const { return useFEAssembly_; }
+
+   //! Get the (cached) FE graph for block (i,j), built via the Tpetra::FECrsGraph "V2" ctor.
+   Teuchos::RCP<FECrsGraphType> getFEGraph(int i,int j) const;
+
+   /** \brief Get the (cached) FECrsMatrix for block (i,j).
+     *
+     * Unlike getTpetraMatrix()/getGhostedTpetraMatrix(), which hand back a freshly
+     * allocated matrix on every call, this returns the same object each time. That
+     * sharing is the whole point in FE mode: the owned and ghosted containers must
+     * wrap one matrix so endAssembly() can perform the ghost->global migration in place.
+     */
+   Teuchos::RCP<FECrsMatrixType> getFEMatrix(int i,int j) const;
+
    Teuchos::RCP<VectorType> getTpetraDomainVector(int i) const;
    Teuchos::RCP<VectorType> getGhostedTpetraDomainVector(int i) const;
 
@@ -272,7 +301,23 @@ public:
    void addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs);
 
    virtual void beginFill(LinearObjContainer & loc) const;
+
+   /** \brief Open the ghosted container for filling, giving it the owned container's operator.
+     *
+     * Under FE assembly the ghosted container holds no operator of its own; this is where it
+     * borrows the owned one. Outside FE assembly it is exactly beginFill(ghostContainer).
+     */
+   virtual void beginFill(LinearObjContainer & ghostContainer,
+                          const LinearObjContainer & container) const;
    virtual void endFill(LinearObjContainer & loc) const;
+
+   /** \brief Close the ghosted container after filling, returning the borrowed matrix.
+     *
+     * The counterpart of beginFill(ghostContainer,container). Outside FE assembly it is
+     * exactly endFill(ghostContainer).
+     */
+   virtual void endFill(LinearObjContainer & ghostContainer,
+                        const LinearObjContainer & container) const;
 
    Teuchos::RCP<const panzer::BlockedDOFManager> getGlobalIndexer() const
    { return blockedDOFManager_; }
@@ -334,6 +379,9 @@ protected:
    // get the graph of the crs matrix
    virtual Teuchos::RCP<const CrsGraphType> buildTpetraGraph(int i,int j) const;
 
+   // build the FE graph for block (i,j) (owned+shared/owned unified via Tpetra::FECrsGraph)
+   virtual Teuchos::RCP<FECrsGraphType> buildFEGraph(int i,int j) const;
+
 
  public:
    virtual Teuchos::RCP<const CrsGraphType> buildTpetraGhostedGraph(int i,int j) const;
@@ -348,6 +396,25 @@ protected:
 
    mutable std::vector<Teuchos::RCP<const ImportType> > importers_;
    mutable std::vector<Teuchos::RCP<const ExportType> > exporters_;
+
+/*************** FE based members *******************/
+
+   bool useFEAssembly_;
+
+   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<FECrsGraphType>,panzer::pair_hash> feGraphs_;
+
+   /** Which FE matrices currently have an assembly open, tracked so the paired
+     * beginFill(ghosted)/beginFill(global) calls AssemblyEngine makes -- which in FE mode
+     * hold the same matrix per block -- collapse into a single beginAssembly()/endAssembly().
+     *
+     * This cannot be derived from the matrix itself: Tpetra::FECrsMatrix keeps its assembly
+     * state in a private fillState_, and the public isFillActive() reports the underlying
+     * CrsMatrix's state, which is decoupled from it.
+     *
+     * Keyed by block rather than by matrix pointer so a stray unbalanced call on one block
+     * cannot silently suppress the begin/end on another.
+     */
+   mutable std::unordered_map<std::pair<int,int>,const FECrsMatrixType *,panzer::pair_hash> feAssemblyOpenOn_;
 };
 
 }

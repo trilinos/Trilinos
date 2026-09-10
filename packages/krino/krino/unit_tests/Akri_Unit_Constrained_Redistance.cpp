@@ -9,7 +9,7 @@
 #include <Akri_Refinement.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include "Akri_TransitionElementEdgeMarker.hpp"
-#include <Akri_Unit_LogRedirecter.hpp>
+#include <Akri_LogRedirecter.hpp>
 #include <Akri_ContourElement.hpp>
 #include <Akri_OutputUtils.hpp>
 

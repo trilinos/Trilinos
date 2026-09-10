@@ -54,6 +54,7 @@ public:
 
   using size_type_array = Kokkos::View<size_type *, device_type>;
   using ordinal_type_array = Kokkos::View<ordinal_type *, device_type>;
+  using mag_type_array = Kokkos::View<mag_type *, device_type>;
   using value_type_array = Kokkos::View<value_type *, device_type>;
   using value_type_matrix = Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type>;
 
@@ -97,6 +98,9 @@ private:
   size_type_array_host _h_ap;
   ordinal_type_array _aj;
   ordinal_type_array_host _h_aj;
+
+  // in debug mode (e.g., to compute residual)
+  value_type_array _ax;
 
   ordinal_type_array _perm;
   ordinal_type_array_host _h_perm;
@@ -149,6 +153,7 @@ private:
 
   // ** options
   ordinal_type _verbose;             // print
+  ordinal_type _debug;               // debug
   ordinal_type _small_problem_thres; // smaller than this, use lapack
 
 #ifdef TACHO_DEPRECATED_PARAMETERS
@@ -172,7 +177,7 @@ private:
 
   int _shift_diag;                   // shift diagonal with small perturbation
   mag_type _shift;
-  value_type_array _dv;
+  mag_type_array _dv;
 
   int _replace_tiny_pivot;           // replace tiny pivot
   mag_type _pivot_tol;               // tolerance for tiny pivot perturbation
@@ -196,7 +201,7 @@ public:
   ///
   /// common options
   ///
-  void setVerbose(const ordinal_type verbose = 1);
+  void setVerbose(const ordinal_type verbose = 1, const ordinal_type debug = 0);
   void setSmallProblemThresholdsize(const ordinal_type small_problem_thres = 1024);
   void setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric
                      const bool is_positive_definite);
@@ -232,7 +237,7 @@ public:
   mag_type currentShift() { return _shift; }
   void setPivotTolerance(const mag_type pivot_tol);
   void useNoPivotTolerance();
-  void useDefaultPivotTolerance(const int option = 1);
+  void useDefaultPivotTolerance(const int option = 1); // default is tol = eps
   void storeExplicitTranspose(bool flag);
 
   ///
@@ -255,7 +260,7 @@ public:
 
     _m = m;
 
-    if (duplicate) {
+    if (duplicate || _debug) {
       /// for most cases, ap and aj are from host; so construct ap and aj and mirror to device
       _h_ap = size_type_array_host(Kokkos::ViewAllocateWithoutInitializing("h_ap"), ap.extent(0));
       Kokkos::deep_copy(_h_ap, ap);
@@ -302,7 +307,7 @@ public:
     _m = m;
 
     // this takes the user-specified perm, such that analyze() won't call graph partitioner
-    if (duplicate) {
+    if (duplicate || _debug) {
       /// for most cases, ap and aj are from host; so construct ap and aj and mirror to device
       _h_ap = size_type_array_host(Kokkos::ViewAllocateWithoutInitializing("h_ap"), ap.extent(0));
       Kokkos::deep_copy(_h_ap, ap);
@@ -355,7 +360,7 @@ public:
               const arg_ordinal_type_array &aw_graph, const bool duplicate = false) {
     _m = m;
 
-    if (duplicate) {
+    if (duplicate || _debug) {
       /// for most cases, ap and aj are from host; so construct ap and aj and mirror to device
       _h_ap = size_type_array_host(Kokkos::ViewAllocateWithoutInitializing("h_ap"), ap.extent(0));
       Kokkos::deep_copy(_h_ap, ap);
@@ -385,7 +390,7 @@ public:
     _nnz = _h_ap(m);
 
     _m_graph = m_graph;
-    if (duplicate) {
+    if (duplicate || _debug) {
       _h_ap_graph = size_type_array_host(Kokkos::ViewAllocateWithoutInitializing("h_ap_graph"), ap_graph.extent(0));
       _h_aj_graph = ordinal_type_array_host(Kokkos::ViewAllocateWithoutInitializing("h_aj_graph"), aj_graph.extent(0));
       _h_aw_graph = ordinal_type_array_host(Kokkos::ViewAllocateWithoutInitializing("h_aw_graph"), aw_graph.extent(0));
@@ -456,7 +461,8 @@ public:
   int solve(const value_type_matrix &x, const value_type_matrix &b, const value_type_matrix &t);
   int solve_small_host(const value_type_matrix &x, const value_type_matrix &b, const value_type_matrix &t);
 
-  double computeRelativeResidual(const value_type_array &ax, const value_type_matrix &x, const value_type_matrix &b, const mag_type shift = 0.0);
+  double computeRelativeResidual(const value_type_array &ax, const value_type_matrix &x, const value_type_matrix &b, const mag_type shift = 0.0, const bool verbose = true);
+  double computeRelativeResidual(const value_type_matrix &x, const value_type_matrix &b, const bool verbose = true);
   void   computeSpMV(const value_type_array &ax, const value_type_matrix &x, value_type_matrix &b);
 
   int exportFactorsToCrsMatrix(crs_matrix_type &A);

@@ -9,6 +9,8 @@ For details on these methods see [Stabilization and Scalable Block Preconditioni
 
 Teko is part of the [Trilinos Project](https://trilinos.github.io), and additional information (e.g., examples, tutorials, and source code documentation) is available through [Teko's Doxygen webpages](https://trilinos.github.io/docs/teko/index.html).
 
+A user's guide covering configuration options (the `Teuchos::ParameterList` / XML keys that control every preconditioner) and worked examples lives under [`doc/guide/`](doc/guide/index.md). It is also rendered into the Doxygen output. Start with the [Configuration Model](doc/guide/02-configuration-model.md) and the [Block Preconditioner Reference](doc/guide/04-block-preconditioners.md).
+
 ## Questions?
 
 Contact the lead developers:

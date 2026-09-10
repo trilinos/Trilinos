@@ -124,6 +124,8 @@ void MueLuRefMaxwellPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, N
     convertXpetra.insert(convertXpetra.end(), convertMat.begin(), convertMat.end());
     for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
       Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(paramList, *it);
+    for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
+      Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(paramList.sublist("user data"), *it);
 
     paramList.set<bool>("refmaxwell: use as preconditioner", true);
     if (useHalfPrecision) {

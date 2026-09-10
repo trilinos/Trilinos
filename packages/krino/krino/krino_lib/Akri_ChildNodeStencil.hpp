@@ -3,10 +3,9 @@
 
 #include <vector>
 
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
-namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class Part; } }
 namespace krino { class FieldRef; }
 
 namespace krino {
@@ -20,8 +19,15 @@ struct ChildNodeStencil
   std::vector<double> parentWeights;
 };
 
-void fill_child_node_stencils(const stk::mesh::BulkData & mesh,
+void fill_child_node_stencils_for_all_interfaces(const stk::mesh::BulkData & mesh,
     const stk::mesh::Part & childNodePart,
+    const FieldRef & parentIdsField,
+    const FieldRef & parentWtsField,
+    std::vector<ChildNodeStencil> & childNodeStencils);
+
+void fill_child_node_stencils_for_interface(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Part & childNodePart,
+    const stk::mesh::Selector & interfaceSelector,
     const FieldRef & parentIdsField,
     const FieldRef & parentWtsField,
     std::vector<ChildNodeStencil> & childNodeStencils);

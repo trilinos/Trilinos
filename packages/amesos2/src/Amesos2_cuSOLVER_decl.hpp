@@ -16,7 +16,11 @@
 
 namespace Amesos2 {
 
-/** \brief Amesos2 interface to Cholesky from cuSOLVER.
+/** \brief Amesos2 interface to cuSOLVER sparse Cholesky and dense inverse solves.
+ *
+ * For small matrices, factorizes via cusolverDn LU, computes the explicit
+ * inverse A^{-1} once during setup, and solves with cuBLAS GEMM. For larger
+ * matrices, uses the original cusolverSp CSR Cholesky factorization and solve.
  *
  * \ingroup amesos2_solver_interfaces
  */
@@ -89,7 +93,9 @@ private:
   /**
    * \brief Perform symbolic factorization of the matrix using cuSOLVER.
    *
-   * Called first in the sequence before numericFactorization.
+   * Runs cusolverSp CSR Cholesky analysis for large matrices. For small
+   * matrices, allocates the dense n×n matrix, pivot array, factorization
+   * workspace, and the explicit inverse buffer.
    *
    * \throw std::runtime_error cuSOLVER is not able to factor the matrix.
    */
@@ -97,6 +103,11 @@ private:
 
   /**
    * \brief cuSOLVER specific numeric factorization
+   *
+   * Uses cusolverSp CSR Cholesky factorization for large matrices. For small
+   * matrices, scatters the sparse matrix into the dense buffer, calls
+   * cusolverDnDgetrf, and calls cusolverDnDgetrs with an identity RHS to form
+   * the explicit inverse A^{-1} stored in device_inverse_.
    *
    * \throw std::runtime_error cuSOLVER is not able to factor the matrix
    */
@@ -147,7 +158,7 @@ private:
    */
   bool loadA_impl(EPhase current_phase);
 
-  /** 
+  /**
    * \brief Prints the status information about the current solver with some level
    * of verbosity
    */
@@ -159,19 +170,41 @@ private:
    */
   bool do_optimization() const;
 
-  // struct holds all data necessary to make a superlu factorization or solve call
+  // cuSOLVER/cuBLAS handles and options for both threshold-selected paths.
   mutable struct cuSolverData {
-    cusolverSpHandle_t handle;
-    csrcholInfo_t chol_info;
+    cusolverDnHandle_t dn_handle;
+    cusolverSpHandle_t sp_handle;
+    csrcholInfo_t      chol_info;
     cusparseMatDescr_t desc;
-    bool bReorder;
+    cublasHandle_t     blas_handle;
+    bool bReorder = false;
+    int small_matrix_threshold = 2500;
   } data_;
 
-  typedef Kokkos::View<cusolver_type**, Kokkos::LayoutLeft, device_type> device_solve_array_t;
+  typedef Kokkos::View<cusolver_type**, Kokkos::LayoutLeft, device_type>
+      device_value_type_matrix;
 
+  typedef Kokkos::View<cusolver_type**, Kokkos::LayoutLeft, device_type>
+      device_solve_array_t;
+
+  // Scratch n×n matrix for LU factorization (overwritten by getrf, not used in solve)
+  mutable device_value_type_matrix device_matrix_;
+
+  // Cached explicit inverse A^{-1} (n×n, column-major); used every solve via GEMM
+  mutable device_value_type_matrix device_inverse_;
+
+  // Pivot indices from LU factorization (length n); only needed during numericFactorization
+  mutable Kokkos::View<int*, device_type> device_ipiv_;
+
+  // Scalar device integer for cusolverDn status output
+  mutable Kokkos::View<int, device_type> device_info_;
+
+  // Factorization workspace (length determined by bufferSize query)
+  mutable device_value_type_array buffer_;
+
+  // RHS and solution vectors (column-major, n × nrhs)
   mutable device_solve_array_t xValues_;
   mutable device_solve_array_t bValues_;
-  mutable device_value_type_array buffer_;
 
   device_value_type_array device_nzvals_view_;
   device_size_type_array device_row_ptr_view_;
@@ -183,6 +216,13 @@ private:
   permute_array_t device_perm_;
   permute_array_t device_peri_;
   mutable device_solve_array_t permute_result_;
+
+  /// Cached distribution map for B/X redistribution; avoids recomputing the
+  /// gather map (MPI collective) on every solve call.
+  mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
+                                          global_ordinal_type,
+                                          node_type>> distributionMap_;
+
 };                              // End class cuSOLVER
 
 template <>

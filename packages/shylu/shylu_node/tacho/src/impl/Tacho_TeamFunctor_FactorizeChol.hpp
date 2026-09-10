@@ -88,15 +88,29 @@ public:
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
       bool conjugate = false;
-      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL, conjugate);
+      int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
       member.team_barrier();
+      if (ndefs < 0) {
+        // LDL_nopiv (without diag-perturb) encountered zero pivot
+        Kokkos::atomic_add(_rval, -1);
+        return;
+      }
 
       if (n_m > 0) {
         const value_type one(1), minus_one(-1), zero(0);
         // Apply L^{-1} on off-diagonal
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        Trsm<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
-                                                                           ATR);
+        if (ndefs > 0) {
+          // Trsm with zero-diagonals
+          Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                                     ATR);
+          // reset zero-diagonal to one
+          member.team_barrier();
+          Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::reset_zero_diags(member, ATL);
+        } else {
+          Trsm<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                                ATR);
+        }
         member.team_barrier(); // TODO: check when we need barrier
 
         // Save in workspace
@@ -110,7 +124,10 @@ public:
 
         // ABR = -ATR*W
         GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
-                                                                                             W, zero, ABR);
+                                                                                                W, zero, ABR);
+      } else if (ndefs > 0) {
+        // reset zero-diagonal to one
+        Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::reset_zero_diags(member, ATL);
       }
     }
   }
@@ -131,15 +148,30 @@ public:
 
       // Factor diagonal block
       bool conjugate = false;
-      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL, conjugate);
+      int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
       member.team_barrier();
+      if (ndefs < 0) {
+        // LDL_nopiv (without diag-perturb) encountered zero pivot
+        Kokkos::atomic_add(_rval, -1);
+        return;
+      }
 
       if (n_m > 0) {
         // * Update off-diagonal block
         // Apply L^{-T} on off-diagonal (TODO: should we gemm after inversion?)
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        Trsm<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
-                                                                           ATR);
+        if (ndefs > 0) {
+          // Trsm with zero-diagonals
+          Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                                     ATR);
+
+          // reset zero diagonal to be one
+          member.team_barrier();
+          Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::reset_zero_diags(member, ATL);
+        } else {
+          Trsm<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                                ATR);
+        }
         member.team_barrier();
 
         // compute Inverse of diagobal block (NOTE: T and ABR point to the same address = need to compute inverse before gemm)
@@ -151,7 +183,6 @@ public:
         member.team_barrier();
 
         // TODO: copy diagonal back
-        //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
           ATL(i,i) = T(i,i);
         });
@@ -171,6 +202,12 @@ public:
         GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
                                                                                              W, zero, ABR);
       } else {
+        if (ndefs > 0) {
+          // reset zero diagonals to be one
+          Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::reset_zero_diags(member, ATL);
+          member.team_barrier();
+        }
+
         // compute Inverse of diagobal block
         Copy<Algo::Internal>::invoke(member, T, ATL);
         member.team_barrier();
@@ -181,7 +218,6 @@ public:
         Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL);
         member.team_barrier();
         // TODO: copy diagonal back
-        //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
           ATL(i,i) = T(i,i);
         });
@@ -204,14 +240,28 @@ public:
       aptr += m * m;
       // Factor diagonal block
       bool conjugate = false;
-      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL, conjugate);
+      int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
       member.team_barrier();
+      if (ndefs < 0) {
+        // LDL_nopiv (without diag-perturb) encountered zero pivot
+        Kokkos::atomic_add(_rval, -1);
+        return;
+      }
 
       if (n_m > 0) {
         // * Update off-diagonal block
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        Trsm<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+        if (ndefs > 0) {
+          // Trsm with zero-diagonals
+          Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                                     ATR);
+          // reset zero diagonals to be one
+          member.team_barrier();
+          Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::reset_zero_diags(member, ATL);
+        } else {
+          Trsm<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
                                                                            ATR);
+        }
         member.team_barrier();
 
         // Save ATR in workspace
@@ -228,7 +278,12 @@ public:
         GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, HerkAlgoType>::invoke(member, minus_one, ATR,
                                                                                              W, zero, ABR);
         member.team_barrier();
+      } else if (ndefs > 0) {
+        // reset zero diagonals to be one
+        Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::reset_zero_diags(member, ATL);
+        member.team_barrier();
       }
+
       // * Invert the whole block row
       Copy<Algo::Internal>::invoke(member, T, ATL);
       member.team_barrier();

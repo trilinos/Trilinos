@@ -625,7 +625,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto& fieldValues = scatterFields_[fieldIndex].get_static_view();
     const auto& tangentFieldsDevice = dfdpFieldsVoV_.getViewDevice();
     const auto& kokkosTangents = Kokkos::subview(tangentFieldsDevice,Kokkos::ALL(),productVectorBlockIndex_[fieldIndex]);
-    const double num_params = Kokkos::dimension_scalar(fieldValues)-1;
+    const double num_params = Sacado::dimension_scalar(fieldValues)-1;
 
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {

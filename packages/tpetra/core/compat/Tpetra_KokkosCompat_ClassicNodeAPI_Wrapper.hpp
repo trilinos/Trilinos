@@ -78,9 +78,9 @@ class KokkosDeviceWrapperNode {
 
 #ifdef KOKKOS_ENABLE_SYCL
 #ifdef HAVE_TPETRA_SHARED_ALLOCS
-typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::SYCL, ::Kokkos::Experimental::SYCLSharedUSMSpace> KokkosSYCLWrapperNode;
+typedef KokkosDeviceWrapperNode<::Kokkos::SYCL, ::Kokkos::SYCLSharedUSMSpace> KokkosSYCLWrapperNode;
 #else
-typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::SYCL, ::Kokkos::Experimental::SYCLDeviceUSMSpace> KokkosSYCLWrapperNode;
+typedef KokkosDeviceWrapperNode<::Kokkos::SYCL, ::Kokkos::SYCLDeviceUSMSpace> KokkosSYCLWrapperNode;
 #endif
 #endif
 

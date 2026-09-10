@@ -587,7 +587,7 @@ public:
             const supernode_type_array_host &h_supernodes,
             const ordinal_type_array &solve_mode,
             ordinal_type_array &piv,
-	    const stream_type &stream_0,
+            const stream_type &stream_0,
             multi_vectors_type &_w_vec) {
     using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
     int r_val(0);
@@ -794,7 +794,7 @@ public:
            const supernode_type_array_host &h_supernodes,
            const ordinal_type_array &solve_mode,
            ordinal_type_array &piv,
-	   const stream_type &stream_0,
+           const stream_type &stream_0,
            multi_vectors_type &_w_vec) {
     using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
     const bool lu = (method == 3);

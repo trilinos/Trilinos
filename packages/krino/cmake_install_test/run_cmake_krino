@@ -17,7 +17,7 @@ printf "BUILD_DIR=${build_dir}\n";
 printf "CMAKE_BUILD_TYPE=${build_type}\n";
 printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
 printf "YAML_INSTALL_DIR=${yaml_install_dir}\n";
-printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk'\n\n";
+printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_krino'\n\n";
 printf "ENABLE_YAML=${enable_yaml}\n";
 
 if [ ! -d ${trilinos_src_dir}/packages/krino ] && [ ! -L ${trilinos_src_dir}/packages/krino ]; then

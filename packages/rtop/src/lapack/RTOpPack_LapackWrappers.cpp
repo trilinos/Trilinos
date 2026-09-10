@@ -10,5 +10,5 @@
 
 #include "RTOpPack_LapackWrappers.hpp"
 
-const Teuchos::Tuple<char,RTOpPack::NUM_ETRANS_ARGS>
+RTOP_LIB_DLL_EXPORT const Teuchos::Tuple<char,RTOpPack::NUM_ETRANS_ARGS>
 RTOpPack::transpMap = Teuchos::tuple('N', 'T', 'C');

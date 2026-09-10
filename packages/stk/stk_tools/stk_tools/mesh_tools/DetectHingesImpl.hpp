@@ -35,50 +35,50 @@
 #ifndef _stk_tools_DetectHingesImpl_hpp_
 #define _stk_tools_DetectHingesImpl_hpp_
 
+#include <stk_tools/mesh_tools/EdgeMidNodeDetector.hpp>
 #include <stk_tools/mesh_tools/HingeTypes.hpp>
 #include <stk_mesh/base/EntityLess.hpp>
 #include <vector>
 
+namespace stk { namespace mesh { class BulkData; } }
+
 namespace stk {
-namespace mesh { class BulkData; }
 namespace tools {
 namespace impl {
 
 bool common_nodes_are_part_of_a_side (const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& commonElements, const stk::mesh::EntityVector& commonNodes);
 
-bool fill_pairwise_common_nodes_by_face(const stk::mesh::BulkData& bulk, stk::mesh::Entity elem, stk::mesh::EntityVector& commonNodes);
-
 void populate_pairwise_side_info(const stk::mesh::BulkData& bulk, stk::mesh::Entity elem1,
                                  stk::mesh::Entity elem2, PairwiseSideInfoVector& infoVec);
 
-void fill_common_nodes_for_connected_elems(const stk::mesh::BulkData& bulk, stk::mesh::Entity node,
+void fill_common_nodes_for_connected_elems(const EdgeMidNodeDetector& midNodeDetector, stk::mesh::Entity node,
                                            PairwiseSideInfoVector& infoVec);
 
-bool common_nodes_are_part_of_an_edge(const stk::mesh::BulkData& bulk, stk::mesh::Entity node1, stk::mesh::Entity node2);
+bool common_nodes_are_part_of_an_edge(const EdgeMidNodeDetector& midNodeDetector, stk::mesh::Entity node1, stk::mesh::Entity node2);
 
 unsigned get_side_count(const PairwiseSideInfoVector& infoVec) ;
 
-PairwiseSideInfoVector get_hinge_info_vec(const stk::mesh::BulkData& bulk, stk::mesh::Entity node);
+std::pair<PairwiseSideInfoVector, bool> get_hinge_info_vec(const EdgeMidNodeDetector& midNodeDetector, stk::mesh::Entity node);
 
-HingeNode convert_to_hinge_node (const stk::mesh::BulkData& bulk, stk::mesh::Entity node);
+HingeNode convert_to_hinge_node (const EdgeMidNodeDetector& midNodeDetector, stk::mesh::Entity node);
 
-HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& nodes);
+HingeNodeVector get_hinge_nodes(const EdgeMidNodeDetector& midNodeDetector, const stk::mesh::EntityVector& nodes);
 
-HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk);
+HingeNodeVector get_hinge_nodes(const EdgeMidNodeDetector& midNodeDetector);
 
-HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, bool onlyIfConnectedToSolidElements = false);
+HingeNodeVector get_hinge_nodes(const EdgeMidNodeDetector& midNodeDetector, const std::vector<std::string>& blocksToDetect, bool onlyIfConnectedToSolidElements = false);
 
-void fill_hinge_edges_for_hinge_node(const stk::mesh::BulkData& bulk, const HingeNodeVector& hingeNodes, const HingeNode& hingeNode, HingeEdgeVector& hingeEdges);
+void fill_hinge_edges_for_hinge_node(const EdgeMidNodeDetector& midNodeDetector, const HingeNodeVector& hingeNodes, const HingeNode& hingeNode, HingeEdgeVector& hingeEdges);
 
-HingeEdgeVector get_hinge_edges(const stk::mesh::BulkData& bulk, const HingeNodeVector& hingeNodes);
+HingeEdgeVector get_hinge_edges(const EdgeMidNodeDetector& midNodeDetector, const HingeNodeVector& hingeNodes);
 
-void remove_entity_from_list(stk::mesh::EntityVector& entityVec, stk::mesh::Entity entity);
+void remove_entity_from_sorted_list(stk::mesh::EntityVector& entityVec, stk::mesh::Entity entity);
 
 void prune_hinge_edge_node(const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& commonElems, const HingeNode& hingeNode, HingeNodeVector& hingeNodes);
 
-void prune_hinge_edge(const stk::mesh::BulkData& bulk, const HingeEdge& hingeEdge, HingeNodeVector& hingeNodes);
+void prune_hinge_edge(const EdgeMidNodeDetector& midNodeDetector, const HingeEdge& hingeEdge, HingeNodeVector& hingeNodes);
 
-void prune_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, const HingeEdgeVector& hingeEdges);
+void prune_hinge_nodes(const EdgeMidNodeDetector& midNodeDetector, HingeNodeVector& hingeNodes, const HingeEdgeVector& hingeEdges);
 
 bool hinge_node_is_locally_owned(const stk::mesh::BulkData& bulk, const HingeNode& node);
 
@@ -86,7 +86,11 @@ bool hinge_edge_is_locally_owned(const stk::mesh::BulkData& bulk, const HingeEdg
 
 std::pair<unsigned, unsigned> get_hinge_count(const stk::mesh::BulkData& bulk);
 
-HingeNodeVector get_cyclic_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes);
+std::pair<unsigned, unsigned> get_hinge_count(const EdgeMidNodeDetector& midNodeDetector);
+
+std::pair<unsigned, unsigned> get_hinge_count(const EdgeMidNodeDetector& midNodeDetector, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges);
+
+HingeNodeVector get_cyclic_hinge_nodes(const EdgeMidNodeDetector& midNodeDetector, HingeNodeVector& hingeNodes);
 
 // Convex Groupings
 void merge_groups(HingeGroupVector& groupVec, int idx1, int idx2, const stk::mesh::EntityLess& compare);
@@ -100,22 +104,28 @@ void insert_into_group(const PairwiseSideInfoVector& infoVec, HingeGroupVector& 
 void insert_into_group(const PairwiseSideInfoVector& node1InfoVec, const PairwiseSideInfoVector& node2InfoVec,
                        const stk::mesh::EntityVector& commonElem, HingeGroupVector& groupVec);
 
-HingeGroupVector get_convex_groupings(const stk::mesh::BulkData& bulk, stk::mesh::Entity node);
+HingeGroupVector get_convex_groupings(const EdgeMidNodeDetector& midNodeDetector, stk::mesh::Entity node);
 
-HingeGroupVector get_convex_groupings(const stk::mesh::BulkData& bulk, const HingeNode& node1, const HingeNode& node2);
+HingeGroupVector get_convex_groupings(const EdgeMidNodeDetector& midNodeDetector, const HingeNode& node1, const HingeNode& node2);
 
-HingeGroupVector get_convex_groupings(const stk::mesh::BulkData& bulk, const HingeNode& node);
+HingeGroupVector get_convex_groupings(const EdgeMidNodeDetector& midNodeDetector, const HingeNode& node);
 
-HingeGroupVector get_convex_groupings(const stk::mesh::BulkData& bulk, const HingeEdge& edge);
+HingeGroupVector get_convex_groupings(const EdgeMidNodeDetector& midNodeDetector, const HingeEdge& edge);
 
 
 // Hinge Snipping
-void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes);
+void snip_all_hinges_for_input_nodes(EdgeMidNodeDetector& midNodeDetector, const stk::mesh::EntityVector nodes);
 
-void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes,
+void snip_all_hinges_for_input_nodes(EdgeMidNodeDetector& midNodeDetector, const stk::mesh::EntityVector nodes,
                                      const HingeNodeVector& preservedHingeNodes);
 
 void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk);
+
+// Fill mesh hinges
+void fill_mesh_hinges(const EdgeMidNodeDetector& midNodeDetector, const std::vector<std::string>& blocksToDetect,
+                      HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges, bool onlyIfConnectedToSolidElements = false);
+
+void fill_mesh_hinges(const EdgeMidNodeDetector& midNodeDetector, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes);
 
 }}}
 

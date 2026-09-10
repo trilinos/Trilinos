@@ -31,7 +31,7 @@ namespace PHX {
 #endif
 
     if (Sacado::IsFad<Scalar>::value) {
-      const int num_derivatives = Kokkos::dimension_scalar(f.get_static_view());
+      const int num_derivatives = Sacado::dimension_scalar(f.get_static_view());
       if (rank==1)
         tmp = Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,Kokkos::MemoryUnmanaged>(const_cast<nonconst_data_type>(f.get_static_view().data()),f.extent(0),num_derivatives);
       else if (rank==2)

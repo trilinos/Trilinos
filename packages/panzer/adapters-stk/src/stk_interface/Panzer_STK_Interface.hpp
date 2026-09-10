@@ -26,7 +26,7 @@
 #include <Shards_CellTopologyData.h>
 
 #include <PanzerAdaptersSTK_config.hpp>
-#include <Kokkos_ViewFactory.hpp>
+#include <Sacado_Fad_Kokkos_ViewFactory.hpp>
 
 #include <unordered_map>
 
@@ -1692,7 +1692,7 @@ void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std
 {
    const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
 
-   solutionValues = Kokkos::createDynRankView(solutionValues,
+   solutionValues = Sacado::createDynRankView(solutionValues,
 					      "solutionValues",
 					      localElementIds.size(),
 					      bulkData_->num_nodes(elements[localElementIds[0]]));
@@ -1918,7 +1918,7 @@ void STK_Interface::getElementVertices_FromCoords(const std::vector<stk::mesh::E
 {
    // nothing to do! silently return
    if(elements.size() == 0) {
-     vertices = Kokkos::createDynRankView(vertices, "vertices", 0, 0, 0);
+     vertices = Sacado::createDynRankView(vertices, "vertices", 0, 0, 0);
      return;
    }
 
@@ -1931,7 +1931,7 @@ void STK_Interface::getElementVertices_FromCoords(const std::vector<stk::mesh::E
      = stk::mesh::get_cell_topology(bulkData_->bucket(elements[0]).topology()).getCellTopologyData()->vertex_count;
 
    // allocate space
-   vertices = Kokkos::createDynRankView(vertices, "vertices", elements.size(), masterVertexCount,getDimension());
+   vertices = Sacado::createDynRankView(vertices, "vertices", elements.size(), masterVertexCount,getDimension());
    auto vertices_h = Kokkos::create_mirror_view(vertices);
    Kokkos::deep_copy(vertices_h, vertices);
 
@@ -2017,7 +2017,7 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk::mesh::En
 
    // nothing to do! silently return
    if(elements.size()==0) {
-     vertices = Kokkos::createDynRankView(vertices,"vertices",0,0,0);
+     vertices = Sacado::createDynRankView(vertices,"vertices",0,0,0);
       return;
    }
 
@@ -2026,7 +2026,7 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk::mesh::En
      = stk::mesh::get_cell_topology(bulkData_->bucket(elements[0]).topology()).getCellTopologyData()->vertex_count;
 
    // allocate space
-   vertices = Kokkos::createDynRankView(vertices,"vertices",elements.size(),masterVertexCount,getDimension());
+   vertices = Sacado::createDynRankView(vertices,"vertices",elements.size(),masterVertexCount,getDimension());
    auto vertices_h = Kokkos::create_mirror_view(vertices);
    std::map<std::string,std::vector<std::string> >::const_iterator itr = meshCoordFields_.find(eBlock);
    if(itr==meshCoordFields_.end()) {
@@ -2247,7 +2247,7 @@ void STK_Interface::getElementNodes_FromCoords(const std::vector<stk::mesh::Enti
 {
    // nothing to do! silently return
    if(elements.size() == 0) {
-     nodes = Kokkos::createDynRankView(nodes, "nodes", 0, 0, 0);
+     nodes = Sacado::createDynRankView(nodes, "nodes", 0, 0, 0);
      return;
    }
 
@@ -2260,7 +2260,7 @@ void STK_Interface::getElementNodes_FromCoords(const std::vector<stk::mesh::Enti
      = stk::mesh::get_cell_topology(bulkData_->bucket(elements[0]).topology()).getCellTopologyData()->node_count;
 
    // allocate space
-   nodes = Kokkos::createDynRankView(nodes, "nodes", elements.size(), masterNodeCount,getDimension());
+   nodes = Sacado::createDynRankView(nodes, "nodes", elements.size(), masterNodeCount,getDimension());
    auto nodes_h = Kokkos::create_mirror_view(nodes);
    Kokkos::deep_copy(nodes_h, nodes);
 
@@ -2346,7 +2346,7 @@ void STK_Interface::getElementNodes_FromField(const std::vector<stk::mesh::Entit
 
    // nothing to do! silently return
    if(elements.size()==0) {
-     nodes = Kokkos::createDynRankView(nodes,"nodes",0,0,0);
+     nodes = Sacado::createDynRankView(nodes,"nodes",0,0,0);
       return;
    }
 
@@ -2355,7 +2355,7 @@ void STK_Interface::getElementNodes_FromField(const std::vector<stk::mesh::Entit
      = stk::mesh::get_cell_topology(bulkData_->bucket(elements[0]).topology()).getCellTopologyData()->node_count;
 
    // allocate space
-   nodes = Kokkos::createDynRankView(nodes,"nodes",elements.size(),masterNodeCount,getDimension());
+   nodes = Sacado::createDynRankView(nodes,"nodes",elements.size(),masterNodeCount,getDimension());
    auto nodes_h = Kokkos::create_mirror_view(nodes);
    std::map<std::string,std::vector<std::string> >::const_iterator itr = meshCoordFields_.find(eBlock);
    if(itr==meshCoordFields_.end()) {

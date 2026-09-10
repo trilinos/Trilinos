@@ -166,7 +166,8 @@ std::vector<unsigned> Phase_Support::get_negative_levelset_interface_ordinals(co
   {
     const unsigned partOrd = part->mesh_meta_data_ordinal();
     if (myPhasePartInfo.is_interface_part(partOrd) &&
-        myPhasePartInfo.get_interface_part_touching_phase(partOrd).contain(levelSetIdentifier, -1))
+        myPhasePartInfo.get_interface_part_touching_phase(partOrd).contain(levelSetIdentifier, -1) &&
+        myPhasePartInfo.get_interface_part_opposite_phase(partOrd).contain(levelSetIdentifier, +1))
       negLevelsetInterfaceOrdinals.push_back(partOrd);
   }
   return negLevelsetInterfaceOrdinals;
@@ -597,6 +598,72 @@ Phase_Support::build_decomposed_block_surface_connectivity()
   }
 }
 
+unsigned Phase_Support::get_converted_conforming_part_ordinal(const unsigned partOrd, const PhaseTag & toPhase) const
+{
+  const stk::mesh::Part & nonconformingPart = meta().get_part(myPhasePartInfo.get_nonconforming_part(partOrd));
+  const stk::mesh::Part & newConformingPart = find_conformal_io_part(nonconformingPart, toPhase);
+  return newConformingPart.mesh_meta_data_ordinal();
+}
+
+int Phase_Support::get_converted_interface_part_ordinal(const unsigned convertedTouchingPartOrd, const unsigned convertedOppositePartOrd, const int valueToIndicateRemoval) const
+{
+  if (convertedTouchingPartOrd == convertedOppositePartOrd)
+    return valueToIndicateRemoval;
+
+  const stk::mesh::Part * newInterfacePart = find_interface_part(meta().get_part(convertedTouchingPartOrd), meta().get_part(convertedOppositePartOrd));
+  STK_ThrowAssert(nullptr != newInterfacePart);
+  return newInterfacePart->mesh_meta_data_ordinal();
+}
+
+std::map<int,int> Phase_Support::build_phase_conversion_map(const PhaseTag & fromPhase, const PhaseTag & toPhase) const
+{
+  const int valueToIndicateRemoval = -1; // negative value used to indicate that we will remove this interface part
+  std::map<int,int> partOrdinalMapping;
+  for (auto * part : meta().get_mesh_parts())
+  {
+    const unsigned partOrd = part->mesh_meta_data_ordinal();
+    if ((part->primary_entity_rank() == stk::topology::ELEMENT_RANK || part->primary_entity_rank() == meta().side_rank()))
+    {
+      if (myPhasePartInfo.is_conforming_part(partOrd))
+      {
+        if (fromPhase == myPhasePartInfo.get_conforming_part_phase(partOrd))
+          partOrdinalMapping[partOrd] = get_converted_conforming_part_ordinal(partOrd, toPhase);
+      }
+      else if (myPhasePartInfo.is_interface_part(partOrd))
+      {
+        const unsigned touchingPartOrd = myPhasePartInfo.get_interface_part_touching_part(partOrd);
+        const unsigned oppositePartOrd = myPhasePartInfo.get_interface_part_opposite_part(partOrd);
+        if (fromPhase == myPhasePartInfo.get_conforming_part_phase(touchingPartOrd))
+          partOrdinalMapping[partOrd] = get_converted_interface_part_ordinal(get_converted_conforming_part_ordinal(partOrd, toPhase), oppositePartOrd, valueToIndicateRemoval);
+        else if (fromPhase == myPhasePartInfo.get_conforming_part_phase(oppositePartOrd))
+          partOrdinalMapping[partOrd] = get_converted_interface_part_ordinal(touchingPartOrd, get_converted_conforming_part_ordinal(partOrd, toPhase), valueToIndicateRemoval);
+        if (valueToIndicateRemoval == partOrdinalMapping[partOrd])
+        {
+          // Also need to remove interface superset part
+          for(const auto * superset : part->supersets())
+            if (myPhasePartInfo.is_interface_superset_part(superset->mesh_meta_data_ordinal()))
+              partOrdinalMapping[superset->mesh_meta_data_ordinal()] = valueToIndicateRemoval;
+        }
+      }
+    }
+  }
+  return partOrdinalMapping;
+}
+
+stk::mesh::Selector Phase_Support::get_selector_of_blocks_with_phase(const PhaseTag & phase) const
+{
+  std::vector<unsigned> phaseBlockOrdinals;
+  for (auto * part : meta().get_mesh_parts())
+  {
+    const unsigned partOrd = part->mesh_meta_data_ordinal();
+      if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
+          myPhasePartInfo.is_conforming_part(partOrd) &&
+          myPhasePartInfo.get_conforming_part_phase(partOrd) == phase)
+        phaseBlockOrdinals.push_back(partOrd);
+  }
+  return select_union_from_part_ordinals(meta(), phaseBlockOrdinals);
+}
+
 static stk::topology interface_topology(const stk::mesh::Part & decomposedPart)
 {
   stk::topology partTopology = decomposedPart.topology();
@@ -730,6 +797,23 @@ void Phase_Support::add_interface_superset_part(const stk::mesh::Part & interfac
       const PhaseTag & /*oppositePhase*/)
 {
   myPhasePartInfo.setup_interface_superset_part(meta(), interfacePart.mesh_meta_data_ordinal());
+}
+
+const NamedPhase & Phase_Support::get_phase_with_name(const std::string & phaseName) const
+{
+  const auto iter = std::find_if(myMeshPhases.begin(), myMeshPhases.end(),
+      [&phaseName](const NamedPhase & x) { return phaseName == x.name(); });
+  STK_ThrowRequireMsg(iter != myMeshPhases.end(), "Did not find phase " << phaseName);
+  return *iter;
+}
+
+void Phase_Support::set_small_cluster_cleanup(const std::vector<std::tuple<std::string,std::string,unsigned>> & smallClusterCleanup)
+{
+  std::vector<std::tuple<NamedPhase,NamedPhase,unsigned>> fromPhaseToPhaseAndClusterSize;
+  for (auto & [fromPhaseName,toPhaseName,clusterSize] : smallClusterCleanup)
+  {
+    mySmallClusterCleanup.emplace_back(get_phase_with_name(fromPhaseName), get_phase_with_name(toPhaseName), clusterSize);
+  }
 }
 
 bool do_blocks_have_topology_that_can_be_decomposed(const stk::mesh::PartVector & blocksToDecompose)

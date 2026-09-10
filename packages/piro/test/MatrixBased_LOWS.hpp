@@ -65,7 +65,7 @@ protected:
       const Teuchos::Ptr<const Thyra::SolveCriteria<double>> solveCriteria) const;
 
   const Teuchos::RCP<Thyra::LinearOpBase<double>> mat_;
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double>> solver_;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double>> solver_, trans_solver_;
   //@}
 
 }; 

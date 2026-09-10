@@ -8,12 +8,15 @@
 #include <Akri_AdaptiveContourTri.hpp>
 
 #include <Akri_AdaptiveContourUtils.hpp>
+#include <Akri_ContourTri.hpp>
 #include <Akri_ContourUtils.hpp>
 #include <Akri_DiagWriter.hpp>
 
 #include <stk_math/StkVector.hpp>
 #include <Akri_Faceted_Surface.hpp>
 #include <stk_topology/topology.hpp>
+
+using krino::ContourTri;
 
 namespace krino {
 
@@ -105,71 +108,15 @@ std::array<double,6> get_child_tri6_distance(const std::array<double,6> & tri6Di
   return subTri6Dist;
 }
 
-void append_facets_for_converged_tri(const std::array<stk::math::Vector3d,3> & coords,
-  const std::array<double,6> & tri6Dist,
-  const double /*lengthScale*/,
-  FacetedSurfaceBase & facets)
-{
-  const int caseId = ContourTri::compute_case_id({{compute_node_sign(tri6Dist[0]), compute_node_sign(tri6Dist[1]), compute_node_sign(tri6Dist[2])}});
-
-  if (caseId == 0 || // ls[0]<0 && ls[1]<0 && ls[2]<0
-      caseId == 26)  // ls[0]>0 && ls[1]>0 && ls[2]>0
-    return;
-
-  const std::array<unsigned,6> & i = ContourTri::get_permuted_node_ordinals(caseId);
-  const int permutedCaseId = ContourTri::get_permuted_case_id(caseId);
-
-  switch (permutedCaseId)
-  {
-    case 1:  // ls[0]=0 && ls[1]<0 && ls[2]<0
-    case 22: // ls[0]=0 && ls[1]=0 && ls[2]>0
-    case 25: // ls[0]=0 && ls[1]>0 && ls[2]>0
-      // empty
-    break;
-
-    case 2:  // ls[0]>0 && ls[1]<0 && ls[2]<0
-    case 24: // ls[0]<0 && ls[1]>0 && ls[2]>0
-    {
-      const stk::math::Vector3d x3 = compute_quadratic_edge_crossing(coords, tri6Dist, i[0], i[1], i[3]);
-      const stk::math::Vector3d x5 = compute_quadratic_edge_crossing(coords, tri6Dist, i[2], i[0], i[5]);
-      if (permutedCaseId == 2)
-        facets.emplace_back_2d(x5, x3);
-      else
-        facets.emplace_back_2d(x3, x5);
-    }
-    break;
-
-    case 4:  // ls[0]=0 && ls[1]=0 && ls[2]<0
-    {
-      facets.emplace_back_2d(coords[i[0]], coords[i[1]]);
-    }
-    break;
-
-    case 5:  // ls[0]>0 && ls[1]=0 && ls[2]<0
-    case 21: // ls[0]<0 && ls[1]=0 && ls[2]>0
-    {
-      const stk::math::Vector3d x5 = compute_quadratic_edge_crossing(coords, tri6Dist, i[2], i[0], i[5]);
-      if (permutedCaseId == 5)
-        facets.emplace_back_2d(x5, coords[i[1]]);
-      else
-        facets.emplace_back_2d(coords[i[1]], x5);
-    }
-    break;
-
-    default: ThrowRuntimeError("Subelement decomposition error. caseId,permutedCaseId=" << caseId << "," << permutedCaseId);
-  }
-}
-
 void append_facets_for_subtri_of_converged_tri(const std::array<stk::math::Vector3d,6> & tri6Coords,
   const std::array<double,6> & tri6Dist,
   const std::array<double,9> & subTriDist,
-  const double lengthScale,
   FacetedSurfaceBase & facets,
   const std::array<int, 3> & subElemVertexIndices,
   const std::array<int, 3> & subElemMidsideIndices)
 {
   const std::array<double,6> subTri6Dist = get_child_tri6_distance(tri6Dist, subTriDist, subElemVertexIndices, subElemMidsideIndices);
-  append_facets_for_converged_tri(subarray(tri6Coords, subElemVertexIndices), subTri6Dist, lengthScale, facets);
+  ContourTri::append_facets_for_tri3_with_tri6_distance(subarray(tri6Coords, subElemVertexIndices), subTri6Dist, facets);
 }
 
 int determine_tri_edge_refinement_case_id(const std::array<double,6> & tri6Dist,
@@ -208,10 +155,10 @@ void append_facets_for_refined_subtri_using_interpolated_distance(const std::arr
   std::array<double,9> subSubTriDist = interpolate_subtri(subTri6Dist);
   snap_distance(subSubTriDist, snapTol*lengthScale);
 
-  append_facets_for_subtri_of_converged_tri(subTri6Coords, subTri6Dist, subSubTriDist, lengthScale, facets, {{0,3,5}}, {{0,7,5}});
-  append_facets_for_subtri_of_converged_tri(subTri6Coords, subTri6Dist, subSubTriDist, lengthScale, facets, {{1,4,3}}, {{2,8,1}});
-  append_facets_for_subtri_of_converged_tri(subTri6Coords, subTri6Dist, subSubTriDist, lengthScale, facets, {{2,5,4}}, {{4,6,3}});
-  append_facets_for_subtri_of_converged_tri(subTri6Coords, subTri6Dist, subSubTriDist, lengthScale, facets, {{3,4,5}}, {{8,6,7}});
+  append_facets_for_subtri_of_converged_tri(subTri6Coords, subTri6Dist, subSubTriDist, facets, {{0,3,5}}, {{0,7,5}});
+  append_facets_for_subtri_of_converged_tri(subTri6Coords, subTri6Dist, subSubTriDist, facets, {{1,4,3}}, {{2,8,1}});
+  append_facets_for_subtri_of_converged_tri(subTri6Coords, subTri6Dist, subSubTriDist, facets, {{2,5,4}}, {{4,6,3}});
+  append_facets_for_subtri_of_converged_tri(subTri6Coords, subTri6Dist, subSubTriDist, facets, {{3,4,5}}, {{8,6,7}});
 }
 
 void append_facets_for_converged_tri6(const std::array<stk::math::Vector3d,6> & coords,

@@ -127,6 +127,24 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
       interface_refinement_specified = true;
     }
 
+    double interfaceRefinementCurvatureTol = 0.2;
+    if (region_node.get_if_present("interface_refinement_curvature_tolerance", interfaceRefinementCurvatureTol))
+    {
+      refinementSupport.set_interface_refinement_curvature_tolerance(interfaceRefinementCurvatureTol);
+    }
+
+    double interfaceRefinementCurvatureAngleTol = 10;
+    if (region_node.get_if_present("interface_refinement_curvature_angle_tolerance", interfaceRefinementCurvatureAngleTol))
+    {
+      refinementSupport.set_interface_refinement_curvature_angle_tolerance(interfaceRefinementCurvatureAngleTol);
+    }
+
+    double interfaceRefinementChordalErrorTol = 0.001; // dimensional, units of length
+    if (region_node.get_if_present("interface_refinement_chordal_error_tolerance", interfaceRefinementChordalErrorTol))
+    {
+      refinementSupport.set_interface_refinement_chordal_error_tolerance(interfaceRefinementChordalErrorTol);
+    }
+
     if (interface_refinement_specified)
     {
       if (interface_maximum_refinement_level > interface_minimum_refinement_level)

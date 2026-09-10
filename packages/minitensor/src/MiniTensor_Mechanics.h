@@ -14,6 +14,9 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_mechanics
+/// @{
+
 ///
 /// Volumetric part of 2nd-order tensor
 /// \param A tensor
@@ -36,7 +39,8 @@ dev(Tensor<T, N> const & A);
 
 ///
 /// Push forward covariant vector
-/// \param \f$ F, u \f$
+/// \param F deformation-gradient-like tensor
+/// \param u vector
 /// \return \f$ F^{-T} u \f$
 ///
 template<typename T, Index N>
@@ -46,7 +50,8 @@ push_forward_covariant(Tensor<T, N> const & F, Vector<T, N> const & u);
 
 ///
 /// Pull back covariant vector
-/// \param \f$ F, u \f$
+/// \param F deformation-gradient-like tensor
+/// \param u vector
 /// \return \f$ F^T u \f$
 ///
 template<typename T, Index N>
@@ -56,7 +61,8 @@ pull_back_covariant(Tensor<T, N> const & F, Vector<T, N> const & u);
 
 ///
 /// Push forward contravariant vector
-/// \param \f$ F, u \f$
+/// \param F deformation-gradient-like tensor
+/// \param u vector
 /// \return \f$ F u \f$
 ///
 template<typename T, Index N>
@@ -66,7 +72,8 @@ push_forward_contravariant(Tensor<T, N> const & F, Vector<T, N> const & u);
 
 ///
 /// Pull back contravariant vector
-/// \param \f$ F, u \f$
+/// \param F deformation-gradient-like tensor
+/// \param u vector
 /// \return \f$ F^{-1} u \f$
 ///
 template<typename T, Index N>
@@ -76,7 +83,8 @@ pull_back_contravariant(Tensor<T, N> const & F, Vector<T, N> const & u);
 
 ///
 /// Push forward covariant tensor
-/// \param \f$ F, A \f$
+/// \param F deformation-gradient-like tensor
+/// \param A tensor
 /// \return \f$ F^{-T} A F^{-1} \f$
 ///
 template<typename T, Index N>
@@ -86,7 +94,8 @@ push_forward_covariant(Tensor<T, N> const & F, Tensor<T, N> const & A);
 
 ///
 /// Pull back covariant tensor
-/// \param \f$ F, A \f$
+/// \param F deformation-gradient-like tensor
+/// \param A tensor
 /// \return \f$ F^T A F\f$
 ///
 template<typename T, Index N>
@@ -96,7 +105,8 @@ pull_back_covariant(Tensor<T, N> const & F, Tensor<T, N> const & A);
 
 ///
 /// Push forward contravariant tensor
-/// \param \f$ F, A \f$
+/// \param F deformation-gradient-like tensor
+/// \param A tensor
 /// \return \f$ F A F^T \f$
 ///
 template<typename T, Index N>
@@ -106,7 +116,8 @@ push_forward_contravariant(Tensor<T, N> const & F, Tensor<T, N> const & A);
 
 ///
 /// Pull back contravariant tensor
-/// \param \f$ F, A \f$
+/// \param F deformation-gradient-like tensor
+/// \param A tensor
 /// \return \f$ F^{-1} A F^{-T} \f$
 ///
 template<typename T, Index N>
@@ -116,7 +127,8 @@ pull_back_contravariant(Tensor<T, N> const & F, Tensor<T, N> const & A);
 
 ///
 /// Piola transformation for vector
-/// \param \f$ F, u \f$
+/// \param F deformation-gradient-like tensor
+/// \param u vector
 /// \return \f$ \det F F^{-1} u \f$
 ///
 template<typename T, Index N>
@@ -126,7 +138,8 @@ piola(Tensor<T, N> const & F, Vector<T, N> const & u);
 
 ///
 /// Inverse Piola transformation for vector
-/// \param \f$ F, u \f$
+/// \param F deformation-gradient-like tensor
+/// \param u vector
 /// \return \f$ (\det F)^{-1} F u \f$
 ///
 template<typename T, Index N>
@@ -137,7 +150,8 @@ piola_inverse(Tensor<T, N> const & F, Vector<T, N> const & u);
 ///
 /// Piola transformation for tensor, applied on second
 /// index. Useful for transforming Cauchy stress to 1PK stress.
-/// \param \f$ F, sigma \f$
+/// \param F deformation-gradient-like tensor
+/// \param sigma Cauchy stress tensor
 /// \return \f$ \det F sigma F^{-T} \f$
 ///
 template<typename T, Index N>
@@ -148,7 +162,8 @@ piola(Tensor<T, N> const & F, Tensor<T, N> const & sigma);
 ///
 /// Inverse Piola transformation for tensor, applied on second
 /// index. Useful for transforming 1PK stress to Cauchy stress.
-/// \param \f$ F, P \f$
+/// \param F deformation-gradient-like tensor
+/// \param P first Piola-Kirchhoff stress tensor
 /// \return \f$ (\det F)^{-1} P F^T \f$
 ///
 template<typename T, Index N>
@@ -863,6 +878,7 @@ check_strong_ellipticity(Tensor4<T, N> const & A)
   return std::make_pair(is_elliptic, eigenvector);
 }
 
+/// @}
 } // namespace minitensor
 
 #endif // MiniTensor_Mechanics_h

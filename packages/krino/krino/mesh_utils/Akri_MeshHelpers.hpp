@@ -96,6 +96,7 @@ double compute_simplex_RMS_edge_lengths(const CONTAINER & elementNodeCoords)
   return std::sqrt(sum/numEdges);
 }
 
+void connect_all_surfaces_to_all_blocks(stk::mesh::MetaData & meta);
 void fill_nodes_attached_to_node(const stk::mesh::BulkData& mesh, const stk::mesh::Entity node, std::vector<stk::mesh::Entity> &nbrNodes);
 void populate_stk_local_ids(stk::mesh::BulkData & mesh);
 void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & parentNodes, std::vector<stk::mesh::EntityId> & parentNodeIds);
@@ -137,6 +138,8 @@ void attach_sides_to_elements(stk::mesh::BulkData & mesh);
 void attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity element);
 void attach_entity_to_element_if_not_already_attached(stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity element);
 void attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
+size_t get_index_of_entity_in_sorted(const stk::mesh::BulkData& mesh, const std::vector<stk::mesh::Entity> & sortedEntities, const stk::mesh::Entity entity);
+void fill_selected_side_attached_elements(const stk::mesh::BulkData &mesh, const stk::mesh::Selector & elementSelector, const stk::mesh::Entity elem, std::vector<stk::mesh::Entity> & sideNbrs);
 std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::mesh::BulkData &mesh, const stk::mesh::Selector & elementSelector, const stk::mesh::Entity elem);
 bool are_entities_selected(const stk::mesh::Selector & selector, const stk::mesh::Bucket & bucket);
 bool is_entity_selected(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & selector, const stk::mesh::Entity entity);
@@ -220,6 +223,7 @@ void recursively_fill_parent_nodes(const stk::mesh::BulkData & mesh,
     stk::mesh::Entity childNode, const FieldRef & parentIdsField,
     std::set<stk::mesh::Entity> & parentNodes);
 
+unsigned get_edge_longest_dimension(const unsigned dim, const double * edgeCoord0, const double * edgeCoord1);
 double compute_child_position(const unsigned dim, const double * childCoords, const double * parentCoords0, const double * parentCoords1);
 double compute_child_position(const unsigned dim, const stk::math::Vector3d & childCoords, const stk::math::Vector3d & parentCoords0, const stk::math::Vector3d & parentCoords1);
 double compute_child_position(const stk::mesh::BulkData & mesh, stk::mesh::Entity child, stk::mesh::Entity parent0, stk::mesh::Entity parent1);

@@ -17,15 +17,13 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosRCGSolMgr.hpp"
+#include "BelosTpetraTestFramework.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-
-// I/O for Harwell-Boeing files
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
 #include <Tpetra_MatrixIO.hpp>
 
 using namespace Teuchos;
@@ -37,15 +35,16 @@ using std::cout;
 using std::vector;
 using Teuchos::tuple;
 
-int main(int argc, char *argv[]) {
+template <class ScalarType, class DM>
+int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[]) {
 
-  typedef Tpetra::MultiVector<>::scalar_type ST;
+  typedef typename Tpetra::MultiVector<ScalarType>::scalar_type ST;
   typedef ScalarTraits<ST>                SCT;
-  typedef SCT::magnitudeType               MT;
+  typedef typename SCT::magnitudeType      MT;
   typedef Tpetra::Operator<ST>             OP;
   typedef Tpetra::MultiVector<ST>          MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
-  typedef Belos::MultiVecTraits<ST,MV>    MVT;
+  typedef Belos::MultiVecTraits<ST,MV,DM> MVT;
 
   GlobalMPISession mpisess(&argc,&argv,&cout);
 
@@ -66,7 +65,6 @@ int main(int argc, char *argv[]) {
   int maxiters = -1;                   // maximum number of iterations allowed per linear system
   MT tol = 1.0e-5;     // relative residual tolerance
 
-  CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
@@ -129,7 +127,7 @@ int main(int argc, char *argv[]) {
   //
   // Construct an unpreconditioned linear problem instance.
   //
-  Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+  Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)
@@ -141,7 +139,7 @@ int main(int argc, char *argv[]) {
   // *********************Start the RCG iteration***********************
   // *******************************************************************
   //
-  Belos::RCGSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
+  Belos::RCGSolMgr<ST,MV,OP,DM> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
   //
   // **********Print out information about problem*******************
@@ -201,3 +199,10 @@ int main(int argc, char *argv[]) {
   return 0;
   //
 } // end test_rcg_hb.cpp
+
+
+#include "BelosTpetraTestMain.hpp"
+
+int main(int argc, char* argv[]) {
+  return common_main(argc, argv);
+}

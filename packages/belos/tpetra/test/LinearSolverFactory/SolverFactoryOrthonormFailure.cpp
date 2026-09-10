@@ -142,8 +142,11 @@ testSolver (Teuchos::FancyOStream& out,
   Belos::SolverFactory<SC, MV, OP> factory;
 
   // Set up Belos solver parameters.
+  int verbosity = Belos::Errors + Belos::Warnings
+                  + Belos::TimingDetails + Belos::StatusTestDetails;
+
   Teuchos::RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList (solverName);
-  belosList->set ("Verbosity", Belos::Errors + Belos::Warnings);
+  belosList->set ("Verbosity", verbosity);
   belosList->set("Maximum Iterations", 10);
   if (solverName == "BLOCK GMRES") {
     belosList->set("Flexible Gmres", false);
@@ -200,6 +203,13 @@ testSolver (Teuchos::FancyOStream& out,
       << endl;
 
   if ( (ret != Belos::OrthonormFailure) ) {
+    success = false;
+    return;
+  }
+
+  if ( convertReturnTypeToString(ret) != "OrthonormFailure" ) {
+    out << "Return type and string conversion of return type do not match!"
+        << endl;
     success = false;
     return;
   }

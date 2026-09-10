@@ -121,12 +121,12 @@ macro(tribits_setup_compiler_flags  PACKAGE_NAME_IN)
 
   assert_defined(PARSE_CLEANED)
 
-  assert_defined(${PROJECT_NAME}_ENABLE_C ${PROJECT_NAME}_ENABLE_C_DEBUG_COMPILE_FLAGS)
+  assert_defined(${PROJECT_NAME}_ENABLE_C)
   if (PARSE_CLEANED AND ${PROJECT_NAME}_ENABLE_STRONG_C_COMPILE_WARNINGS)
     tribits_apply_warnings_as_error_flags_lang(C)
   endif()
 
-  assert_defined(${PROJECT_NAME}_ENABLE_CXX ${PROJECT_NAME}_ENABLE_CXX_DEBUG_COMPILE_FLAGS)
+  assert_defined(${PROJECT_NAME}_ENABLE_CXX)
   if (PARSE_CLEANED AND ${PROJECT_NAME}_ENABLE_STRONG_CXX_COMPILE_WARNINGS)
     tribits_apply_warnings_as_error_flags_lang(CXX)
   endif()

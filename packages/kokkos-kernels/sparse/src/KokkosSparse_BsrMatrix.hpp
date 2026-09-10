@@ -380,21 +380,12 @@ class BsrMatrix {
   //! Copy constructor (shallow copy).
   template <typename SType, typename OType, class DType, class MTType, typename IType>
   explicit BsrMatrix(const BsrMatrix<SType, OType, DType, MTType, IType>& B)
-      :
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-        graph(B.graph.entries, B.graph.row_map),
-#else
-        graph(B.graph),
-#endif
+      : graph(B.graph),
 
         values(B.values),
         dev_config(B.dev_config),
         numCols_(B.numCols()),
-        blockDim_(B.blockDim()) {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-    graph.row_block_offsets = B.graph.row_block_offsets;
-#endif
-  }
+        blockDim_(B.blockDim()) {}
 
   /// \brief Construct with a graph that will be shared.
   ///

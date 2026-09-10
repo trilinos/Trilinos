@@ -1,9 +1,10 @@
-/*
- * Akri_AdaptiveContourUtils.cpp
- *
- *  Created on: Sep 30, 2025
- *      Author: drnoble
- */
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 #include <Akri_AdaptiveContourUtils.hpp>
 #include <Akri_MathUtil.hpp>
@@ -65,22 +66,11 @@ int compute_node_sign(const double dist)
   return (dist == 0) ? 0 : ((dist < 0) ? -1 : 1);
 }
 
-template <size_t NCOORDS, size_t NDIST>
-stk::math::Vector3d compute_quadratic_edge_crossing(const std::array<stk::math::Vector3d,NCOORDS> & coords,
-  const std::array<double,NDIST> & distance,
-  const unsigned i0, const unsigned i1, const unsigned i2)
-{
-  const double loc = find_quadratic_crossing(distance[i0], distance[i1], distance[i2]);
-  return (1.-loc) * coords[i0] + loc * coords[i1];
-}
-
 // Explicit template instantiation
 template bool have_possibly_cut_edge(const std::array<stk::math::Vector3d,3> & coords, const std::array<double,3> & dist);
 template bool have_possibly_cut_edge(const std::array<stk::math::Vector3d,4> & coords, const std::array<double,4> & dist);
 template bool have_possibly_cut_edge(const std::array<stk::math::Vector3d,6> & coords, const std::array<double,6> & dist, const std::array<int, 3> & subElemVertexIndices);
 template bool have_possibly_cut_edge(const std::array<stk::math::Vector3d,10> & coords, const std::array<double,10> & dist, const std::array<int, 4> & subElemVertexIndices);
-template stk::math::Vector3d compute_quadratic_edge_crossing(const std::array<stk::math::Vector3d,3> & coords, const std::array<double,6> & distance, const unsigned i0, const unsigned i1, const unsigned i2);
-template stk::math::Vector3d compute_quadratic_edge_crossing(const std::array<stk::math::Vector3d,4> & coords, const std::array<double,10> & distance, const unsigned i0, const unsigned i1, const unsigned i2);
 
 }
 

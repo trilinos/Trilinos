@@ -11,6 +11,7 @@
 #define ROL_MiniTensor_MiniSolver_hpp
 
 #include "MiniTensor_Solvers.h"
+#include "Teuchos_ParameterList.hpp"
 
 namespace ROL {
 

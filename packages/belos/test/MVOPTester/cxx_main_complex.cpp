@@ -27,6 +27,7 @@
 #include "MyMultiVec.hpp"
 #include "MyOperator.hpp"
 #include "MyBetterOperator.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 using namespace Teuchos;
 
@@ -73,7 +74,7 @@ int main(int argc, char *argv[])
     typedef Belos::MultiVec<ST> MV;
     typedef Belos::Operator<ST> OP;
     typedef Belos::MultiVecTraits<ST,MV> MVT;
-    //typedef Belos::OperatorTraits<ST,MV,OP> OPT;
+    typedef Teuchos::SerialDenseMatrix<int,ST> TDM;
 
     // Create an output manager to handle the I/O from the solver
     RCP<Belos::OutputManager<ST> > MyOM
@@ -114,10 +115,10 @@ int main(int argc, char *argv[])
     MVT::MvNorm(*ivec,v);
 
     // Create a MyOperator for testing against
-    RCP<MyOperator<ST> > A2 = rcp( new MyOperator<ST>(dim) );
+    RCP<MyOperator<ST, TDM> > A2 = rcp( new MyOperator<ST, TDM>(dim) );
 
     // test the multivector and its adapter
-    ierr = Belos::TestMultiVecTraits<ST,MV>(MyOM,ivec);
+    ierr = Belos::TestMultiVecTraits<ST,MV,TDM>(MyOM,ivec);
     gerr &= ierr;
     if (ierr) {
       MyOM->print(Belos::Warnings, "*** MyMultiVec<std::complex> PASSED TestMultiVecTraits()\n");

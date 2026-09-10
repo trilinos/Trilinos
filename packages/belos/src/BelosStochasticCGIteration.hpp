@@ -51,8 +51,8 @@ namespace Belos {
     {}
   };
 
-template<class ScalarType, class MV, class OP>
-class StochasticCGIteration : virtual public Iteration<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
+class StochasticCGIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:
 

@@ -230,11 +230,10 @@ namespace FROSch {
             Kokkos::fence();
 
             // make it into offsets
-#if KOKKOSKERNELS_VERSION >= 40199
-            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
-              (1+numLocalRows, Rowptr);
+#if KOKKOSKERNELS_VERSION >= 50299
+            KokkosKernels::inclusive_parallel_prefix_sum(execution_space(), Rowptr);
 #else
-            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
               (1+numLocalRows, Rowptr);
 #endif
 

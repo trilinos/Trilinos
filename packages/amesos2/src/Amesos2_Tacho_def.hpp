@@ -120,7 +120,7 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
       data_.solver.shiftDiagonal();
     }
     if (data_.pivot_pert) {
-      data_.solver.useDefaultPivotTolerance();
+      data_.solver.useDefaultPivotTolerance(2); // tol = sqrt(eps)
     } else {
       data_.solver.useNoPivotTolerance();
     }

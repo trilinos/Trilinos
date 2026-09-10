@@ -25,9 +25,8 @@
 #include "Kokkos_Random.hpp"
 
 #ifdef HAVE_INTREPID2_SACADO
-#include "Kokkos_View_Fad_Fwd.hpp"
-#include "Kokkos_LayoutNatural.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_Fwd.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 #endif
 
 namespace Intrepid2 {
@@ -308,28 +307,38 @@ namespace Intrepid2 {
             (i.e. the dimension of the type w.r.t. the type associated to the pointer type).
     */
 
-  template<typename T, typename ...P>
-  KOKKOS_INLINE_FUNCTION
-  constexpr typename
-  std::enable_if< std::is_standard_layout<T>::value && std::is_trivial<T>::value, unsigned >::type
-  dimension_scalar(const Kokkos::DynRankView<T, P...> /* view */) {return 1;}
+  // These should not be needed anymore as the Sacado implementation of dimension_scalar should handle this, so commenting out
 
-  template<typename T, typename ...P>
-  KOKKOS_INLINE_FUNCTION
-  constexpr typename
-  std::enable_if< std::is_standard_layout<typename Kokkos::View<T, P...>::value_type>::value && std::is_trivial<typename Kokkos::View<T, P...>::value_type>::value, unsigned >::type
-  dimension_scalar(const Kokkos::View<T, P...> /*view*/) {return 1;}
+  // template<typename T, typename ...P>
+  // KOKKOS_INLINE_FUNCTION
+  // constexpr typename
+  // std::enable_if< std::is_standard_layout<T>::value && std::is_trivial<T>::value, unsigned >::type
+  // dimension_scalar(const Kokkos::DynRankView<T, P...> /* view */) {return 1;}
+
+  // template<typename T, typename ...P>
+  // KOKKOS_INLINE_FUNCTION
+  // constexpr typename
+  // std::enable_if< std::is_standard_layout<typename Kokkos::View<T, P...>::value_type>::value && std::is_trivial<typename Kokkos::View<T, P...>::value_type>::value, unsigned >::type
+  // dimension_scalar(const Kokkos::View<T, P...> /*view*/) {return 1;}
 
   template<typename T, typename ...P>
   KOKKOS_FORCEINLINE_FUNCTION
   static ordinal_type get_dimension_scalar(const Kokkos::DynRankView<T, P...> &view) {
-    return dimension_scalar(view);
+#ifdef HAVE_INTREPID2_SACADO
+    return Sacado::dimension_scalar(view);
+#else
+    return 1;
+#endif
   }
 
   template<typename T, typename ...P>
   KOKKOS_FORCEINLINE_FUNCTION
   static ordinal_type get_dimension_scalar(const Kokkos::View<T, P...> &view) {
-    return dimension_scalar(view);
+#ifdef HAVE_INTREPID2_SACADO
+    return Sacado::dimension_scalar(view);
+#else
+    return 1;
+#endif
   }
 
   //! Used to obtain the dynRankView type from an input View,
@@ -349,7 +358,7 @@ namespace Intrepid2 {
   as_scalar_1d_view(const Kokkos::View<DataType, Properties...> &view) {
     using view_t = Kokkos::View<DataType, Properties...>;
 #ifdef HAVE_INTREPID2_SACADO
-    if constexpr (Kokkos::is_view_fad<view_t>::value) {
+    if constexpr (Sacado::is_view_fad<view_t>::value) {
       return Sacado::as_scalar_view(view);
     } else
 #endif
@@ -383,7 +392,7 @@ namespace Intrepid2 {
                   const Dims... dims)
       {
   #ifdef HAVE_INTREPID2_SACADO
-        using view_factory = Kokkos::ViewFactory<ViewPack...>;
+        using view_factory = Sacado::ViewFactory<ViewPack...>;
         return view_factory::template create_view<OutViewType>(views..., prop, dims...);
   #else
         ((void)views, ...);
@@ -437,11 +446,7 @@ namespace Intrepid2 {
     createMatchingUnmanagedView(const InViewType &view, const CtorProp &data, const Dims... dims)
     {
   #ifdef HAVE_INTREPID2_SACADO
-  #ifdef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
       if constexpr (Sacado::is_view_fad<InViewType>::value)
-  #else
-      if constexpr (Kokkos::is_view_fad<InViewType>::value)
-  #endif
       {
         const int derivative_dimension = get_dimension_scalar(view);
         return OutViewType(data, dims..., derivative_dimension);
@@ -893,20 +898,10 @@ namespace Intrepid2 {
   /**
    \brief Define layout that will allow us to wrap Sacado Scalar objects in Views without copying
    */
-#if defined(HAVE_INTREPID2_SACADO) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
-  template <typename ValueType>
-  struct NaturalLayoutForType {
-    using layout  =
-    typename std::conditional<(std::is_standard_layout<ValueType>::value && std::is_trivial<ValueType>::value),
-      Kokkos::LayoutLeft, // for POD types, use LayoutLeft
-      Kokkos::LayoutNatural<Kokkos::LayoutLeft> >::type; // For FAD types, use LayoutNatural
-  };
-#else
   template <typename ValueType>
   struct NaturalLayoutForType {
     using layout  = Kokkos::LayoutLeft;
   };
-#endif
   
   // define vector sizes for hierarchical parallelism
   const int VECTOR_SIZE = 1;

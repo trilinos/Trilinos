@@ -90,7 +90,7 @@ private:
 
   ScatterDirichletResidual_Tpetra() {}
 
-  Teuchos::RCP<typename LOC::VectorType> dirichletCounter_;
+  Teuchos::RCP<typename LOC::MultiVectorType> dirichletCounter_;
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const LOC> tpetraContainer_;

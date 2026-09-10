@@ -72,7 +72,7 @@ namespace PHX {
       // non-fad adjusted layout.
       #ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
       auto layout = v.layout();
-      layout.dimension[ViewType::rank] = Kokkos::dimension_scalar(v);
+      layout.dimension[ViewType::rank] = Sacado::dimension_scalar(v);
       return ViewType(v.data(),layout);
       #else
       return ViewType(v.data(),v.mapping(),v.accessor());

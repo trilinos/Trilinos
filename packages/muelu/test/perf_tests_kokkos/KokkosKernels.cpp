@@ -380,7 +380,7 @@ int main(int argc, char* argv[]) {
 #endif
   } else if (node == "sycl") {
 #ifdef KOKKOS_ENABLE_SYCL
-    return main_<double, int, Kokkos::Experimental::SYCL>(argc, argv);
+    return main_<double, int, Kokkos::SYCL>(argc, argv);
 #else
     std::cout << "Error: SYCL node type is disabled" << std::endl;
 #endif

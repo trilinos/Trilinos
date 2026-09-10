@@ -171,7 +171,7 @@ namespace panzer
     bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
     if (!use_shared_memory) {
       if (Sacado::IsADType<ScalarT>::value) {
-	const auto fadSize = Kokkos::dimension_scalar(field_.get_view());
+	const auto fadSize = Sacado::dimension_scalar(field_.get_view());
 	tmp_ = PHX::View<ScalarT*>("GradBasisDotVector::tmp_",field_.extent(0),fadSize);
       } else {
 	tmp_ = PHX::View<ScalarT*>("GradBasisDotVector::tmp_",field_.extent(0));
@@ -255,7 +255,7 @@ namespace panzer
     const int numQP = vector_.extent(1);
     const int numDim = vector_.extent(2);
     const int numBases = basis_.extent(1);
-    const int fadSize = Kokkos::dimension_scalar(field_.get_view());
+    const int fadSize = Sacado::dimension_scalar(field_.get_view());
 
     scratch_view tmp_field;
     if (Sacado::IsADType<ScalarT>::value) {
@@ -338,7 +338,7 @@ namespace panzer
     if (use_shared_memory) {
       int bytes;
       if (Sacado::IsADType<ScalarT>::value) {
-	const int fadSize = Kokkos::dimension_scalar(field_.get_view());
+	const int fadSize = Sacado::dimension_scalar(field_.get_view());
 	bytes = scratch_view::shmem_size(basis_.extent(1),fadSize);
       }
       else

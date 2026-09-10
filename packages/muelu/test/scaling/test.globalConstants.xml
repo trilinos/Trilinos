@@ -1,0 +1,23 @@
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"                        type="string"   value="none"/>
+  <Parameter        name="coarse: max size"                 type="int"      value="2000"/>
+
+  <Parameter        name="smoother: type"                   type="string"   value="CHEBYSHEV"/>
+  
+  <Parameter        name="aggregation: type"                type="string"   value="uncoupled"/>
+  <Parameter        name="aggregation: drop tol"            type="double"   value="0.005"/>
+  <Parameter        name="aggregation: drop scheme"         type="string"   value="distance laplacian"/>
+
+  <Parameter        name="repartition: enable"              type="bool"     value="true"/>
+  <Parameter        name="repartition: min rows per proc"   type="int"      value="8000"/>
+  <Parameter        name="repartition: start level"         type="int"      value="1"/>
+  <Parameter        name="repartition: max imbalance"       type="double"   value="1.327"/>
+  <Parameter        name="repartition: partitioner"         type="string"   value="zoltan2"/>
+
+  <ParameterList name="level 2">
+    <Parameter        name="repartition: min rows per proc"   type="int"      value="1500"/>
+  </ParameterList>
+
+  <!-- This results in a 4 levels with 4, 3, 2, 1 ranks -->
+  
+</ParameterList>

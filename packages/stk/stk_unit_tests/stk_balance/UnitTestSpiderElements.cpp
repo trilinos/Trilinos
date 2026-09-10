@@ -7,8 +7,10 @@
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include "UnitTestSpiderMeshSetup.hpp"
 #include "stk_balance/setup/DefaultSettings.hpp"
+#include "stk_balance/internal/Balancer.hpp"
 #include "stk_balance/io/BalanceIO.hpp"
 #include "stk_unit_test_utils/getOption.h"
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 namespace {
 
@@ -52,12 +54,12 @@ protected:
     stk::balance::internal::fix_spider_elements(m_balanceSettings, get_bulk(), *m_changeList);
   }
 
-  void check_spider_body(const stk::mesh::EntityKeyProcVec & spiderBody)
+  void check_spider_body(const stk::mesh::EntityKeyProcVec& spiderBody)
   {
     check_entity_key_ownership(spiderBody);
   }
 
-  void check_spider_legs(const stk::mesh::EntityKeyProcVec & spiderLegs)
+  void check_spider_legs(const stk::mesh::EntityKeyProcVec& spiderLegs)
   {
     check_entity_key_ownership(spiderLegs);
   }
@@ -103,10 +105,9 @@ protected:
 //
 // Final: (Same as initial)
 //
-
 TEST_F(SpiderElement, notASpider_EnoughLegsNoVolumeElements_NoMovement)
 {
-  if (stk::parallel_machine_size(get_comm()) != 4) return;
+  if (stk::parallel_machine_size(get_comm()) != 4) GTEST_SKIP();
 
   make_mesh_non_spider_no_volume_elements(get_bulk());
 
@@ -155,10 +156,9 @@ TEST_F(SpiderElement, notASpider_EnoughLegsNoVolumeElements_NoMovement)
 //
 // Final: (Same as initial)
 //
-
 TEST_F(SpiderElement, notASpider_NotEnoughLegs_NoMovement)
 {
-  if (stk::parallel_machine_size(get_comm()) != 4) return;
+  if (stk::parallel_machine_size(get_comm()) != 4) GTEST_SKIP();
 
   make_mesh_non_spider_not_enough_legs(get_bulk());
 
@@ -233,7 +233,7 @@ TEST_F(SpiderElement, notASpider_NotEnoughLegs_NoMovement)
 
 TEST_F(SpiderElement, oneSpider_NoBodyElement)
 {
-  if (stk::parallel_machine_size(get_comm()) != 4) return;
+  if (stk::parallel_machine_size(get_comm()) != 4) GTEST_SKIP();
 
   make_mesh_one_spider_no_body_element(get_bulk());
 
@@ -302,10 +302,9 @@ TEST_F(SpiderElement, oneSpider_NoBodyElement)
 //  2------------6------------10-----------14-----------18-----------22-----------26-----------30-----------34
 //
 //
-
 TEST_F(SpiderElement, oneSpider_ParticleBody)
 {
-  if (stk::parallel_machine_size(get_comm()) != 4) return;
+  if (stk::parallel_machine_size(get_comm()) != 4) GTEST_SKIP();
 
   make_mesh_one_spider_particle_body(get_bulk());
 
@@ -321,7 +320,6 @@ TEST_F(SpiderElement, oneSpider_ParticleBody)
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 13), 1},
                      {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 14), 1}});
 }
-
 
 // Initial:                           (15:3)                       Elem: (id:proc)
 //                               37------------38                  Node: id
@@ -380,7 +378,7 @@ TEST_F(SpiderElement, oneSpider_ParticleBody)
 
 TEST_F(SpiderElement, oneSpider_BeamBody)
 {
-  if (stk::parallel_machine_size(get_comm()) != 4) return;
+  if (stk::parallel_machine_size(get_comm()) != 4) GTEST_SKIP();
 
   make_mesh_one_spider_beam_body(get_bulk());
 
@@ -454,7 +452,7 @@ TEST_F(SpiderElement, oneSpider_BeamBody)
 //
 TEST_F(SpiderElement, compoundSpider_BeamBody)
 {
-  if (stk::parallel_machine_size(get_comm()) != 4) return;
+  if (stk::parallel_machine_size(get_comm()) != 4) GTEST_SKIP();
 
   make_mesh_compound_spider_beam_body(get_bulk());
 
@@ -537,7 +535,7 @@ TEST_F(SpiderElement, compoundSpider_BeamBody)
 //
 TEST_F(SpiderElement, twoSpiders_ParticleBody)
 {
-  if (stk::parallel_machine_size(get_comm()) != 4) return;
+  if (stk::parallel_machine_size(get_comm()) != 4) GTEST_SKIP();
 
   make_mesh_two_spiders_particle_body(get_bulk());
 
@@ -637,6 +635,149 @@ TEST_F(SpiderElement, cubeMeshWithSpider_ParticleBodyInsensitivity)
     unlink(fileNameNode.c_str());
     unlink(fileNameParticle.c_str());
   }
+}
+
+
+class GroupedSpiderElement : public stk::unit_test_util::MeshFixture
+{
+public:
+  GroupedSpiderElement()
+    : MeshFixture()
+  {
+    m_balanceSettings.setShouldFixSpiders(true);
+    m_balanceSettings.setShouldGroupSpiderLegs(true);
+
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+    stk::balance::internal::register_internal_fields_and_parts(get_bulk(), m_balanceSettings);
+  }
+
+  void balance_mesh()
+  {
+    stk::set_outputP0(&stk::outputNull());
+    stk::balance::BalanceMesh balanceMesh(get_bulk());
+    stk::balance::Balancer balancer(m_balanceSettings);
+    balancer.balance(balanceMesh);
+    stk::reset_default_output_streams();
+  }
+
+  void check_spider_body(const stk::mesh::EntityKeyProcVec & spiderBody)
+  {
+    check_entity_key_ownership(spiderBody);
+  }
+
+  void check_spider_legs(const stk::mesh::EntityKeyProcVec & spiderLegs)
+  {
+    check_entity_key_ownership(spiderLegs);
+  }
+
+  void check_volume_elements(const stk::mesh::EntityKeyProcVec& volumeElements)
+  {
+    check_entity_key_ownership(volumeElements);
+  }
+
+private:
+  void check_entity_key_ownership(const stk::mesh::EntityKeyProcVec & entityKeyProcs)
+  {
+    for (const stk::mesh::EntityKeyProc & entityKeyProc : entityKeyProcs) {
+      stk::mesh::EntityKey entityKey = entityKeyProc.first;
+      int expectedEntityOwner = entityKeyProc.second;
+
+      stk::mesh::Entity entity = get_bulk().get_entity(entityKey);
+      if (get_bulk().is_valid(entity) && get_bulk().bucket(entity).owned()) {  // Only check on one proc
+        const int actualEntityOwner = get_bulk().parallel_owner_rank(entity);
+        if (actualEntityOwner == get_bulk().parallel_rank()) {
+          EXPECT_EQ(actualEntityOwner, expectedEntityOwner)
+            << "New owner for " << entityKey << " is " << actualEntityOwner << " and not " << expectedEntityOwner;
+        }
+      }
+    }
+  }
+
+  stk::balance::StkBalanceSettings m_balanceSettings;
+};
+
+
+
+//
+// Initial:                                                100 (50:1)         Elem: (id:proc)
+//                                                        /|\                 Node: id
+//                                                       /||\\                                                                            .
+//                                                      //|| |\                                                                           .
+//                                                     // || | \                                                                          .
+//                                                    //  || |  \                                                                         .
+//                                                   //  / |  \  \                                                                        .
+//                                            (21:0)//   | |   \  \(25:1)
+//                                                 //    | |    |  \                                                                      .
+//                                                //     | |    |(24:1)
+//                                               //(20:0)| |     \   \                                                                    .
+//                                              //      /  |(23:1)|   \                                                                   .
+//                                             //       |  |      |    \                                                                  .
+//     4------------8------------12-----------16--------|--20-----|-----24-----------28-----------32-----------36-----------40-----------44
+//    /|           /|           /|           //   (22:1)| /|       \   /|           /|           /|           /|           /|           /|
+//   / |          / |          / |          //|         |/ |        \ / |          / |          / |          / |          / |          / |
+//  1------------5------------9------------13-----------17-----------21-----------25-----------29-----------33 |---------37-----------41 |
+//  |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |
+//  |  |  (1:0)  |  |  (2:0)  |  |  (3:0)  |  |  (4:0)  |  |  (5:1)  |  |  (6:1)  |  |  (7:1)  |  |  (8:1)  |  |  (7:1)  |  |  (8:1)  |  |
+//  |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |
+//  |  3---------|--7---------|--11--------|--15--------|--19--------|--23--------|--27--------|--31--------|--35--------|--39--------|--43
+//  | /          | /          | /          | /          | /          | /          | /          | /          | /          | /          | /
+//  |/           |/           |/           |/           |/           |/           |/           |/           |/           |/           |/
+//  2------------6------------10-----------14-----------18-----------22-----------26-----------30-----------34  ---------38-----------42
+//
+//
+// Final:                                                  100 (50:0)         Elem: (id:proc)
+//                                                        /|\                 Node: id
+//                                                       /||\\                                                                            .
+//                                                      //|| |\                                                                           .
+//                                                     // || | \                                                                          .
+//                                                    //  || |  \                                                                         .
+//                                                   //  / |  \  \                                                                        .
+//                                            (21:0)//   | |   \  \(25:0)
+//                                                 //    | |    |  \                                                                      .
+//                                                //     | |    |(24:0)
+//                                               //(20:0)| |     \   \                                                                    .
+//                                              //      /  |(23:0)|   \                                                                   .
+//                                             //       |  |      |    \                                                                  .
+//     4------------8------------12-----------16--------|--20-----|-----24-----------28-----------32-----------36-----------40-----------44
+//    /|           /|           /|           //   (22:0)| /|       \   /|           /|           /|           /|           /|           /|
+//   / |          / |          / |          //|         |/ |        \ / |          / |          / |          / |          / |          / |
+//  1------------5------------9------------13-----------17-----------21-----------25-----------29-----------33 |---------37-----------41 |
+//  |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |
+//  |  |  (1:1)  |  |  (2:1)  |  |  (3:1)  |  |  (4:0)  |  |  (5:0)  |  |  (6:1)  |  |  (7:1)  |  |  (8:1)  |  |  (7:1)  |  |  (8:1)  |  |
+//  |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |         |  |
+//  |  3---------|--7---------|--11--------|--15--------|--19--------|--23--------|--27--------|--31--------|--35--------|--39--------|--43
+//  | /          | /          | /          | /          | /          | /          | /          | /          | /          | /          | /
+//  |/           |/           |/           |/           |/           |/           |/           |/           |/           |/           |/
+//  2------------6------------10-----------14-----------18-----------22-----------26-----------30-----------34  ---------38-----------42
+//
+TEST_F(GroupedSpiderElement, oneSpider_ParticleBody)
+{
+  if (stk::parallel_machine_size(get_comm()) != 2) GTEST_SKIP();
+
+  make_mesh_one_spider_particle_body_balanced_elems(get_bulk());
+
+  balance_mesh();
+
+  check_spider_body({{stk::mesh::EntityKey(stk::topology::NODE_RANK, 100), 0},
+                     {stk::mesh::EntityKey(stk::topology::ELEM_RANK,  50), 0}});
+
+  check_spider_legs({{stk::mesh::EntityKey(stk::topology::ELEM_RANK, 20), 0},
+                     {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 21), 0},
+                     {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 22), 0},
+                     {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 23), 0},
+                     {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 24), 0},
+                     {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 25), 0}});
+
+  check_volume_elements({{stk::mesh::EntityKey(stk::topology::ELEM_RANK,  1), 1},
+                         {stk::mesh::EntityKey(stk::topology::ELEM_RANK,  2), 1},
+                         {stk::mesh::EntityKey(stk::topology::ELEM_RANK,  3), 1},
+                         {stk::mesh::EntityKey(stk::topology::ELEM_RANK,  4), 0},  // Spider elements clustered together on p0
+                         {stk::mesh::EntityKey(stk::topology::ELEM_RANK,  5), 0},  // Rest of mesh disconnected on p1
+                         {stk::mesh::EntityKey(stk::topology::ELEM_RANK,  6), 1},
+                         {stk::mesh::EntityKey(stk::topology::ELEM_RANK,  7), 1},
+                         {stk::mesh::EntityKey(stk::topology::ELEM_RANK,  8), 1},
+                         {stk::mesh::EntityKey(stk::topology::ELEM_RANK,  9), 1},
+                         {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 10), 1}});
 }
 
 }

@@ -14,6 +14,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_CompilerCodeTweakMacros.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Xpetra_CrsMatrix.hpp"
@@ -81,6 +82,11 @@ T pop(Teuchos::ParameterList &pl, std::string const &name_in, T def_value) {
   T result = pl.get<T>(name_in, def_value);
   pl.remove(name_in, false);
   return result;
+}
+
+template <typename T>
+T pop(Teuchos::ParameterList &pl1, Teuchos::ParameterList &pl2, std::string const &name_in, T def_value) {
+  return pop(pl2, name_in, pop(pl1, name_in, def_value));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -161,6 +167,8 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   precList11.disableRecursiveValidation();
   ParameterList &precList22 = params->sublist("refmaxwell: 22list");
   precList22.disableRecursiveValidation();
+  ParameterList &userData = params->sublist("user data");
+  userData.disableRecursiveValidation();
 
   params->set("smoother: type", "CHEBYSHEV");
   ParameterList &smootherList = params->sublist("smoother: params");
@@ -201,7 +209,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
   if (list.isType<std::string>("parameterlist: syntax") && list.get<std::string>("parameterlist: syntax") == "ml") {
     Teuchos::ParameterList newList;
     {
-      Teuchos::ParameterList newList2                = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list, "refmaxwell"));
+      Teuchos::ParameterList newList2                = *MueLu::ML2MueLuParameterTranslator::translate(list, "refmaxwell");
       RCP<Teuchos::ParameterList> validateParameters = getValidParamterList();
       for (auto it = newList2.begin(); it != newList2.end(); ++it) {
         const std::string &entry_name = it->first;
@@ -213,9 +221,9 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
     }
 
     if (list.isSublist("refmaxwell: 11list") && list.sublist("refmaxwell: 11list").isSublist("edge matrix free: coarse"))
-      newList.sublist("refmaxwell: 11list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse"), "SA"));
+      newList.sublist("refmaxwell: 11list") = *MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse"), "SA");
     if (list.isSublist("refmaxwell: 22list"))
-      newList.sublist("refmaxwell: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 22list"), "SA"));
+      newList.sublist("refmaxwell: 22list") = *MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 22list"), "SA");
     list = newList;
   }
 
@@ -466,6 +474,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
   if (!coarseA11_.is_null()) {
     VerbLevel verbosityLevel = VerboseObject::GetDefaultVerbLevel();
     std::string label("coarseA11");
+    if (!precList11_.isType<std::string>("hierarchy label"))
+      precList11_.set("hierarchy label", solverName_ + " coarse (1,1)");
     setupSubSolve(HierarchyCoarse11_, thyraPrecOpH_, coarseA11_, NullspaceCoarse11_, CoordsCoarse11_, Material_beta_, precList11_, label, reuse);
     VerboseObject::SetDefaultVerbLevel(verbosityLevel);
   }
@@ -506,6 +516,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
     if (!A22_.is_null()) {
       VerbLevel verbosityLevel = VerboseObject::GetDefaultVerbLevel();
       std::string label("A22");
+      if (!precList22_.isType<std::string>("hierarchy label"))
+        precList22_.set("hierarchy label", solverName_ + " (2,2)");
       if (!P22_.is_null()) {
         precList22_.sublist("level 1 user data").set("A", coarseA22_);
         precList22_.sublist("level 1 user data").set("P", P22_);
@@ -599,7 +611,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
     }
   }
 
-  describe(GetOStream(Runtime0));
+  if (IsPrint(Runtime0))
+    describe(GetOStream(Runtime0));
 
 #ifdef HAVE_MUELU_CUDA
   if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStop();
@@ -691,9 +704,35 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     if ((numProcsCoarseA11 < 0) || (numProcsA22 < 0) || (numProcsCoarseA11 + numProcsA22 > numProcs)) {
-      GetOStream(Warnings0) << solverName_ + "::compute(): Disabling rebalancing of subsolves, since partition heuristic resulted "
-                            << "in undesirable number of partitions: " << numProcsCoarseA11 << ", " << numProcsA22 << std::endl;
-      doRebalancing = false;
+      std::stringstream ss;
+      ss << solverName_ + "::compute(): Partition heuristic resulted "
+         << "in undesirable number of partitions: " << numProcsCoarseA11 << ", " << numProcsA22 << ".";
+
+      if (numProcsCoarseA11 < 0)
+        numProcsCoarseA11 = numProcs;
+      if (numProcsA22 < 0)
+        numProcsA22 = numProcs;
+
+      double ratioCoarseA11 = ((double)numProcsCoarseA11) / ((double)(numProcsCoarseA11 + numProcsA22));
+      double ratioA22       = ((double)numProcsA22) / ((double)(numProcsCoarseA11 + numProcsA22));
+      numProcsCoarseA11     = std::round(ratioCoarseA11 * numProcs);
+      numProcsA22           = std::round(ratioA22 * numProcs);
+
+      if (numProcsCoarseA11 == 0) {
+        numProcsCoarseA11 = 1;
+        numProcsA22       = numProcs - 1;
+      }
+      if (numProcsA22 == 0) {
+        numProcsCoarseA11 = numProcs - 1;
+        numProcsA22       = 1;
+      }
+
+      ss << ". Adjusting to fit: " << numProcsCoarseA11 << ", " << numProcsA22 << std::endl;
+
+      GetOStream(Warnings0) << ss.str();
+      TEUCHOS_ASSERT_INEQUALITY(numProcsCoarseA11, >, 0);
+      TEUCHOS_ASSERT_INEQUALITY(numProcsA22, >, 0);
+      TEUCHOS_ASSERT_EQUALITY(numProcsCoarseA11 + numProcsA22, numProcs);
     }
   }
 #else
@@ -2496,6 +2535,52 @@ bool RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasTransposeApply() 
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::pair<std::set<std::string>, std::set<std::string>>
+RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    requiredAndOptionalUserData(const Teuchos::ParameterList &params) {
+  std::set<std::string> requiredUserData;
+  int spaceNumber = 1;
+  if (params.isType<int>("refmaxwell: space number"))
+    spaceNumber = params.get<int>("refmaxwell: space number");
+  bool disable_addon = MasterList::getDefault<bool>("refmaxwell: disable addon");
+  if (params.isType<bool>("refmaxwell: disable addon"))
+    disable_addon = params.get<bool>("refmaxwell: disable addon");
+  bool disable_addon22 = true;
+  if (params.isType<bool>("refmaxwell: disable addon 22"))
+    disable_addon22 = params.get<bool>("refmaxwell: disable addon 22");
+
+  requiredUserData.insert("Coordinates");
+  requiredUserData.insert("Dk_1");
+
+  requiredUserData.insert("M1_beta");
+  if (spaceNumber >= 2)
+    requiredUserData.insert("M1_alpha");
+
+  if (!disable_addon) {
+    requiredUserData.insert("Mk_one");
+    requiredUserData.insert("invMk_1_invBeta");
+  }
+
+  if ((spaceNumber >= 2) && (!disable_addon22)) {
+    requiredUserData.insert("Dk_2");
+    requiredUserData.insert("Mk_1_one");
+    requiredUserData.insert("invMk_2_invAlpha");
+  }
+
+  auto [requiredUserData11, optionalUserData11] = ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(params.sublist("refmaxwell: 11list"));
+  auto [requiredUserData22, optionalUserData22] = ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(params.sublist("refmaxwell: 22list"));
+
+  if (requiredUserData11.contains("Material") || requiredUserData22.contains("Material"))
+    requiredUserData.insert("Material");
+
+  std::set<std::string> optionalUserData;
+  optionalUserData.insert("Nullspace11");
+  optionalUserData.insert("Nullspace22");
+
+  return std::make_pair(requiredUserData, optionalUserData);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RefMaxwell(const Teuchos::RCP<Matrix> &SM_Matrix,
                Teuchos::ParameterList &List,
@@ -2509,22 +2594,24 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   RCP<MultiVector> Nullspace11, Nullspace22;
   RCP<RealValuedMultiVector> NodalCoords;
 
-  Dk_1 = pop(List, "Dk_1", Dk_1);
-  Dk_2 = pop<RCP<Matrix>>(List, "Dk_2", Dk_2);
-  D0   = pop<RCP<Matrix>>(List, "D0", D0);
+  auto &userData = List.sublist("user data");
 
-  M1_beta  = pop<RCP<Matrix>>(List, "M1_beta", M1_beta);
-  M1_alpha = pop<RCP<Matrix>>(List, "M1_alpha", M1_alpha);
+  Dk_1 = pop(List, userData, "Dk_1", Dk_1);
+  Dk_2 = pop(List, userData, "Dk_2", Dk_2);
+  D0   = pop(List, userData, "D0", D0);
 
-  Mk_one   = pop<RCP<Matrix>>(List, "Mk_one", Mk_one);
-  Mk_1_one = pop<RCP<Matrix>>(List, "Mk_1_one", Mk_1_one);
+  M1_beta  = pop(List, userData, "M1_beta", M1_beta);
+  M1_alpha = pop(List, userData, "M1_alpha", M1_alpha);
 
-  invMk_1_invBeta  = pop<RCP<Matrix>>(List, "invMk_1_invBeta", invMk_1_invBeta);
-  invMk_2_invAlpha = pop<RCP<Matrix>>(List, "invMk_2_invAlpha", invMk_2_invAlpha);
+  Mk_one   = pop(List, userData, "Mk_one", Mk_one);
+  Mk_1_one = pop(List, userData, "Mk_1_one", Mk_1_one);
 
-  Nullspace11 = pop<RCP<MultiVector>>(List, "Nullspace11", Nullspace11);
-  Nullspace22 = pop<RCP<MultiVector>>(List, "Nullspace22", Nullspace22);
-  NodalCoords = pop<RCP<RealValuedMultiVector>>(List, "Coordinates", NodalCoords);
+  invMk_1_invBeta  = pop(List, userData, "invMk_1_invBeta", invMk_1_invBeta);
+  invMk_2_invAlpha = pop(List, userData, "invMk_2_invAlpha", invMk_2_invAlpha);
+
+  Nullspace11 = pop(List, userData, "Nullspace11", Nullspace11);
+  Nullspace22 = pop(List, userData, "Nullspace22", Nullspace22);
+  NodalCoords = pop(List, userData, "Coordinates", NodalCoords);
 
   // old parameter names
   if (List.isType<RCP<Matrix>>("Ms")) {
@@ -2860,12 +2947,19 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   oss << "block " << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " << std::setw(9) << " nnz/row" << std::endl;
   oss << "(1, 1)" << std::setw(rowspacer) << numRows << std::setw(nnzspacer) << nnz << std::setw(9) << as<double>(nnz) / numRows << std::endl;
 
+  GlobalOrdinal numRowsGlobal;
+  GlobalOrdinal numNNZGlobal;
+  numRows = 0;
+  nnz     = 0;
   if (!A22_.is_null()) {
     numRows = A22_->getGlobalNumRows();
-    nnz     = A22_->getGlobalNumEntries();
-
-    oss << "(2, 2)" << std::setw(rowspacer) << numRows << std::setw(nnzspacer) << nnz << std::setw(9) << as<double>(nnz) / numRows << std::endl;
+    if (Xpetra::toTpetra(A22_)->haveGlobalConstants())
+      nnz = A22_->getGlobalNumEntries();
   }
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numRows, Teuchos::ptr(&numRowsGlobal));
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, nnz, Teuchos::ptr(&numNNZGlobal));
+
+  oss << "(2, 2)" << std::setw(rowspacer) << numRowsGlobal << std::setw(nnzspacer) << numNNZGlobal << std::setw(9) << as<double>(numNNZGlobal) / numRowsGlobal << std::endl;
 
   oss << std::endl;
 

@@ -20,7 +20,7 @@
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 #include "Kokkos_DynRankView.hpp"
 
@@ -64,9 +64,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, fields)
    mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0 = Kokkos::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
-   tblock0 = Kokkos::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
-   tblock1 = Kokkos::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
+   ublock0 = Sacado::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
+   tblock0 = Sacado::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
+   tblock1 = Sacado::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
    out << "assigning" << std::endl;
 
    assignBlock(ublock0,vert0,xval);
@@ -97,9 +97,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, cell_fields)
    mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0 = Kokkos::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
-   tblock0 = Kokkos::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
-   tblock1 = Kokkos::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
+   ublock0 = Sacado::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
+   tblock0 = Sacado::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
+   tblock1 = Sacado::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
    out << "assigning" << std::endl;
 
    assignBlock(ublock0,vert0,xval);
@@ -132,9 +132,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, exodus_factory_transient_fields)
    mesh->getElementVertices(*localIds["block_2"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0 = Kokkos::createDynRankView(ublock0,"ublock0",localIds["block_1"]->size(),4);
-   tblock0 = Kokkos::createDynRankView(tblock0,"tblock0",localIds["block_1"]->size(),4);
-   tblock1 = Kokkos::createDynRankView(tblock1,"tblock1",localIds["block_2"]->size(),4);
+   ublock0 = Sacado::createDynRankView(ublock0,"ublock0",localIds["block_1"]->size(),4);
+   tblock0 = Sacado::createDynRankView(tblock0,"tblock0",localIds["block_1"]->size(),4);
+   tblock1 = Sacado::createDynRankView(tblock1,"tblock1",localIds["block_2"]->size(),4);
 
    mesh->setupExodusFile("transient_exo.exo");
 
@@ -166,9 +166,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
    mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0 = Kokkos::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
-   tblock0 = Kokkos::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
-   tblock1 = Kokkos::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
+   ublock0 = Sacado::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
+   tblock0 = Sacado::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
+   tblock1 = Sacado::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
 
    mesh->setupExodusFile("transient.exo");
 

@@ -20,6 +20,7 @@
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_DLLExportMacro.h"
 
 /*! \file
 
@@ -95,7 +96,7 @@ struct CudaInfo {
   CudaInfo(const CudaInfo &other) = delete;
   CudaInfo(CudaInfo &&other)      = delete;
 };
-extern CudaInfo cudaInfo;
+extern TPETRACORE_LIB_DLL_EXPORT CudaInfo cudaInfo;
 #endif  // KOKKOS_ENABLE_CUDA
 
 // Tpetra's managed spaces
@@ -132,9 +133,9 @@ using IsHIP = std::enable_if_t<std::is_same_v<Space, Kokkos::HIP>, bool>;
 #endif  // KOKKOS_ENABLE_HIP
 
 #if defined(KOKKOS_ENABLE_SYCL)
-///\brief IsSYCL<Space> is a type if Space is Kokkos::Experimental::SYCL
+///\brief IsSYCL<Space> is a type if Space is Kokkos::SYCL
 template <typename Space>
-using IsSYCL = std::enable_if_t<std::is_same_v<Space, Kokkos::Experimental::SYCL>, bool>;
+using IsSYCL = std::enable_if_t<std::is_same_v<Space, Kokkos::SYCL>, bool>;
 #endif  // KOKKOS_ENABLE_SYCL
 
 /*! \brief Construct a Kokkos execution space instance with the following
@@ -310,19 +311,19 @@ class InstanceLifetimeManager {
 };
 
 #if defined(KOKKOS_ENABLE_CUDA)
-extern InstanceLifetimeManager<Kokkos::Cuda> cudaSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::Cuda> cudaSpaces;
 #endif
 #if defined(KOKKOS_ENABLE_SERIAL)
-extern InstanceLifetimeManager<Kokkos::Serial> serialSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::Serial> serialSpaces;
 #endif
 #if defined(KOKKOS_ENABLE_OPENMP)
-extern InstanceLifetimeManager<Kokkos::OpenMP> openMPSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::OpenMP> openMPSpaces;
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-extern InstanceLifetimeManager<Kokkos::HIP> HIPSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::HIP> HIPSpaces;
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-extern InstanceLifetimeManager<Kokkos::Experimental::SYCL> SYCLSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::SYCL> SYCLSpaces;
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -369,7 +370,7 @@ Teuchos::RCP<const ExecSpace> space_instance(int i = 0) {
 }
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-/*! \brief get a strong Teuchos::RCP to Tpetra-managed Kokkos::Experimental::SYCL instance \c
+/*! \brief get a strong Teuchos::RCP to Tpetra-managed Kokkos::SYCL instance \c
  * i
  */
 template <typename ExecSpace, Priority priority = Priority::medium,
@@ -481,7 +482,7 @@ is_gpu_exec_space<Kokkos::HIP>() {
 #if defined(KOKKOS_ENABLE_SYCL)
 template <>
 constexpr KOKKOS_INLINE_FUNCTION bool
-is_gpu_exec_space<Kokkos::Experimental::SYCL>() {
+is_gpu_exec_space<Kokkos::SYCL>() {
   return true;
 }
 #endif

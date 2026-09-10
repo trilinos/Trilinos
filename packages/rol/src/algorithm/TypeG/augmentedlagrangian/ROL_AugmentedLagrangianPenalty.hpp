@@ -173,8 +173,11 @@ public:
     multiplier_->set(multiplier);
   }
 
-  void updateMultiplier( const Vector<Real> &x, Real &tol ) {
+  Real updateMultiplier( const Vector<Real> &x, Real &tol ) {
+    multiplier_->axpy(Real(-1),*getDualVec(x,tol));
+    Real multiplierUpdateNorm = multiplier_->norm();
     multiplier_->set(*getDualVec(x,tol));
+    return multiplierUpdateNorm;
   }
 
   // Return constraint value

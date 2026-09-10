@@ -60,6 +60,7 @@ public:
   bool operator() (const HingeNode& h1, const HingeNode& h2) const { return h1.node < h2.node; }
   bool operator== (const stk::mesh::Entity entity) const { return node == entity; }
   bool operator== (const HingeNode& h) const { return node == h.node; }
+  bool operator<  (const stk::mesh::Entity entity) const { return node < entity; }
   bool operator<  (const HingeNode& h) const { return node < h.node; }
   HingeNode& operator=  (const HingeNode& h) { node = h.node; info = h.info; isAHinge = h.isAHinge; isOwned = h.isOwned; return *this; }
 
@@ -75,6 +76,9 @@ typedef std::pair<HingeNode, HingeNode> HingeEdge;
 typedef std::vector<HingeEdge> HingeEdgeVector;
 typedef stk::mesh::EntityVector HingeGroup;
 typedef std::vector<HingeGroup> HingeGroupVector;
+
+inline
+bool operator<(const stk::mesh::Entity node, const HingeNode& h) { return node < h.get_node(); }
 
 }} // namespace stk::tools
 

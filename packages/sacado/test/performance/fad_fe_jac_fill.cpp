@@ -129,9 +129,6 @@ int main(int argc, char* argv[]) {
     t = fad_jac_fill< Sacado::Fad::DFad<double> >(num_nodes, num_eqns, mesh_spacing);
     std::cout << "DFad:          " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
 
-    t = fad_jac_fill< Sacado::Fad::SimpleFad<double> >(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "SimpleFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
-
     if (num_eqns*2 == 4) {
       t = fad_jac_fill< Sacado::ELRFad::SFad<double,4> >(num_nodes, num_eqns, mesh_spacing);
       std::cout << "ELRSFad:       " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;

@@ -131,8 +131,11 @@ testSolver (Teuchos::FancyOStream& out,
   Belos::SolverFactory<SC, MV, OP> factory;
 
   // Set up Belos solver parameters.
+  int verbosity = Belos::Errors + Belos::Warnings
+                  + Belos::TimingDetails + Belos::StatusTestDetails;
+
   Teuchos::RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList (solverName);
-  belosList->set ("Verbosity", Belos::Errors + Belos::Warnings);
+  belosList->set ("Verbosity", verbosity);
   belosList->set("Maximum Iterations", 8); 
   belosList->set("Maximum Restarts", 2); 
   belosList->set("Num Blocks", 1); 
@@ -178,6 +181,13 @@ testSolver (Teuchos::FancyOStream& out,
       << endl;
 
   if ( (ret != Belos::MaxRestartsReached) ) {
+    success = false;
+    return;
+  }
+
+  if ( convertReturnTypeToString(ret) != "MaxRestartsReached" ) {
+    out << "Return type and string conversion of return type do not match!"
+        << endl;
     success = false;
     return;
   }

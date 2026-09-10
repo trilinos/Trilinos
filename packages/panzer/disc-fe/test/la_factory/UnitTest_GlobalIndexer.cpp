@@ -209,32 +209,21 @@ void
 GlobalIndexer::
 getOwnedAndGhostedIndices(std::vector<panzer::GlobalOrdinal>& indices) const
 {
-  indices.resize(8);
-  switch (procRank_)
-  {
-    case 0:
-      indices[0] = 0;
-      indices[1] = 1;
-      indices[2] = 2;
-      indices[3] = 3;
-      indices[4] = 4;
-      indices[5] = 5;
-      indices[6] = 6;
-      indices[7] = 7;
-      break;
-    case 1:
-      indices[0] = 2;
-      indices[1] = 3;
-      indices[2] = 8;
-      indices[3] = 9;
-      indices[4] = 10;
-      indices[5] = 11;
-      indices[6] = 4;
-      indices[7] = 5;
-      break;
-    default:
-      TEUCHOS_ASSERT(false);
-  } // end switch (procRank_)
+  // Owned indices must appear first, in the same order as getOwnedIndices(), followed
+  // by the ghosted-only indices -- this matches the real panzer::DOFManager and
+  // Filtered_GlobalIndexer contract (owned_ then ghosted_), which
+  // Tpetra::FECrsGraph relies on internally.
+  std::vector<panzer::GlobalOrdinal> owned;
+  getOwnedIndices(owned);
+
+  std::vector<panzer::GlobalOrdinal> ghosted;
+  getGhostedIndices(ghosted);
+
+  indices.resize(owned.size()+ghosted.size());
+  for(std::size_t i=0;i<owned.size();i++)
+    indices[i] = owned[i];
+  for(std::size_t i=0;i<ghosted.size();i++)
+    indices[owned.size()+i] = ghosted[i];
 } // end of getOwnedAndGhostedIndices()
 
 ///////////////////////////////////////////////////////////////////////////////

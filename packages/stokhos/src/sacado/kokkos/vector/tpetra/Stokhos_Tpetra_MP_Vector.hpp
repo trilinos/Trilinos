@@ -26,8 +26,8 @@
 #endif
 
 // Kokkos-Linalg
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
-#include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
+#include "KokkosKernels_ArithTraits_MP_Vector.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits_MP_Vector.hpp"
 #include "Kokkos_MV_MP_Vector.hpp"
 
 // Order may be important here because Cuda provides a slightly more

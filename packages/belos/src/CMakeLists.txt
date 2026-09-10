@@ -35,11 +35,18 @@ APPEND_SET(HEADERS
   BelosCGIter.hpp
   BelosCGSingleRedIter.hpp
   BelosConfigDefs.hpp
+  BelosDenseMatTester.hpp
+  BelosDenseMatTraits.hpp
+  BelosDenseSolver.hpp
+  BelosTeuchosDenseAdapter.hpp
+  BelosKokkosDenseAdapter.hpp
   BelosDGKSOrthoManager.hpp
   BelosFixedPointIter.hpp
   BelosFixedPointIteration.hpp
   BelosFixedPointSolMgr.hpp
   BelosGCRODRIter.hpp
+  BelosGCRODRIteration.hpp
+  BelosFGCRODRIter.hpp
   BelosGCRODRSolMgr.hpp
   BelosGmresIteration.hpp
   BelosGmresPolyOp.hpp
@@ -77,6 +84,7 @@ APPEND_SET(HEADERS
   BelosRCGIter.hpp
   BelosRCGSolMgr.hpp
   BelosSimpleOrthoManager.hpp
+  BelosSolutionProjection.hpp
   BelosSolverManager.hpp
   BelosSolverFactory.hpp
   BelosSolverFactory_Belos.hpp
@@ -108,6 +116,7 @@ APPEND_SET(HEADERS
   Belos_Details_registerLinearSolverFactory.hpp
   Belos_Details_registerSolverFactory.hpp
   BelosGlobalComm.hpp
+  BelosTpetraETIHelpers.hpp
   )
 
 # UTIL

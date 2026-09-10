@@ -16,7 +16,6 @@ IF(Teuchos_ENABLE_COMPLEX)
       "--verbose --ortho-type=ICGS"
       "--verbose --ortho-type=IMGS"
     STANDARD_PASS_OUTPUT
-    XHOST KALLIKRATES
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -29,7 +28,6 @@ IF(Teuchos_ENABLE_COMPLEX)
       "--verbose --filename=mhd1280b.cua --pseudo"
       "--verbose --filename=mhd1280a.cua --subspace-length=200 --tol=1e-4"
     STANDARD_PASS_OUTPUT
-    XHOST KALLIKRATES
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -40,15 +38,12 @@ IF(Teuchos_ENABLE_COMPLEX)
       "--verbose --filename=mhd1280b.cua --max-degree=10"
       "--verbose --filename=mhd1280b.cua --max-degree=10 --poly-type=Roots"
     STANDARD_PASS_OUTPUT
-    XHOST KALLIKRATES
     )
 
-  IF(NOT ${${PROJECT_NAME}_HOSTNAME} STREQUAL "KALLIKRATES")
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles
-      SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
-      SOURCE_FILES mhd1280b.cua mhd1280a.cua cg05.cua
-      EXEDEPS bl_gmres_complex_hb
-    )
-  ENDIF()
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
+    SOURCE_FILES mhd1280b.cua mhd1280a.cua cg05.cua
+    EXEDEPS bl_gmres_complex_hb
+  )
 
 ENDIF(Teuchos_ENABLE_COMPLEX)

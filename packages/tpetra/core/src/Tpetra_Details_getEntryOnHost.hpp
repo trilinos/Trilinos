@@ -33,6 +33,7 @@ getEntryOnHost(const ViewType& x,
   typename ViewType::non_const_value_type val;
   // DEEP_COPY REVIEW - DEVICE-TO-VALUE
   Kokkos::deep_copy(execution_space(), val, Kokkos::subview(x, ind));
+  execution_space().fence();
   return val;
 }
 

@@ -918,14 +918,16 @@ class CutDropFunctor {
   comparison_type comparison;
   magnitudeType eps;
   results_view results;
+  local_ordinal_type blockSize;
   Kokkos::View<local_ordinal_type*, memory_space> index;
 
  public:
-  CutDropFunctor(comparison_type& comparison_, magnitudeType threshold)
+  CutDropFunctor(comparison_type& comparison_, magnitudeType threshold, local_ordinal_type blockSize_ = 1)
     : A(comparison_.A)
     , comparison(comparison_)
     , eps(threshold)
-    , results(comparison_.results) {
+    , results(comparison_.results)
+    , blockSize(blockSize_) {
     index = Kokkos::View<local_ordinal_type*, memory_space>("indices", A.nnz());
   }
 
@@ -939,6 +941,11 @@ class CutDropFunctor {
 
     auto comparator = comparison.getComparator(rlid);
 
+    for (size_t i = 0; i < nnz; ++i) {
+      row_permutation(i) = i;
+    }
+    Misc::serialHeapSort(row_permutation, comparator);
+
 #ifdef MUELU_COALESCE_DROP_DEBUG
     {
       Kokkos::printf("SoC:        ");
@@ -946,18 +953,19 @@ class CutDropFunctor {
         Kokkos::printf("%5f ", comparator.get_value(k));
       }
       Kokkos::printf("\n");
+      Kokkos::printf("SoC sorted: ");
+      for (local_ordinal_type k = 0; k < row.length; ++k) {
+        auto const& x = row_permutation(k);
+        Kokkos::printf("%5f ", comparator.get_value(x));
+      }
+      Kokkos::printf("\n");
     }
 #endif
-
-    for (size_t i = 0; i < nnz; ++i) {
-      row_permutation(i) = i;
-    }
-    Misc::serialHeapSort(row_permutation, comparator);
 
     size_t keepStart = 0;
     size_t dropStart = nnz;
     // find index where dropping starts
-    for (size_t i = 1; i < nnz; ++i) {
+    for (size_t i = 2 * blockSize; i < nnz; ++i) {
       auto const& x = row_permutation(i - 1);
       auto const& y = row_permutation(i);
       if ((drop_view(x) != UNDECIDED) && (drop_view(y) == UNDECIDED))
@@ -968,10 +976,21 @@ class CutDropFunctor {
       magnitudeType y_aij = comparator.get_value(y);
       if (eps * eps * x_aij > y_aij) {
         if (i < dropStart) {
+#ifdef MUELU_COALESCE_DROP_DEBUG
+          {
+            Kokkos::printf("Changing dropStart: %d %5f %5f %5f\n", x_aij, y_aij, eps, i);
+          }
+#endif
           dropStart = i;
         }
       }
     }
+
+#ifdef MUELU_COALESCE_DROP_DEBUG
+    {
+      Kokkos::printf("cut-drop: %d %d %d\n", keepStart, dropStart, nnz);
+    }
+#endif
 
     // drop everything to the right of where values stop passing threshold
     for (size_t i = keepStart; i < nnz; ++i) {

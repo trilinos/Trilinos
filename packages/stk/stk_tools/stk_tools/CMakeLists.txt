@@ -71,12 +71,14 @@ if(HAVE_STK_Trilinos)
     )
   endif()
 
+if(Trilinos_ENABLE_Intrepid2)
   TRIBITS_ADD_EXECUTABLE(stk_transfer
     NOEXEPREFIX
     NOEXESUFFIX
     SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/transfer/transferMain.cpp
     COMM serial mpi
   )
+endif()
 
 else()
   add_library(stk_tools_lib ${MESH_CLONE_SOURCES} ${MESH_TOOLS_SOURCES} ${BLOCK_EXTRACTOR_SOURCES})

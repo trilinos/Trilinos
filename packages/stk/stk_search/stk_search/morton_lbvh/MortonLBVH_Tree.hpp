@@ -189,7 +189,7 @@ void MortonAabbTree<ViewType, ExecutionSpace>::init(LocalOrdinal numLeaves)
   m_numLeaves = no_init<local_ordinal_scl_t>(compound_name(m_baseName, "numLeaves"));
   m_numInternalNodes = no_init<local_ordinal_scl_t>(compound_name(m_baseName, "numInternalNodes"));
   m_minMaxs = no_init<ViewType>(compound_name(m_baseName, "minMaxs"), numLeaves);
-  m_nodeMinMaxs = no_init<bboxes_3d_view_t>(compound_name(m_baseName, "nodeMinMaxs"), numInternalNodes);
+  m_nodeMinMaxs = with_init<bboxes_3d_view_t>(compound_name(m_baseName, "nodeMinMaxs"), numInternalNodes);
 
   m_nodeChildren = no_init<local_ordinal_pairs_t>(compound_name(m_baseName, "children"), numNodes);
   m_nodeParents = no_init<local_ordinals_t>(compound_name(m_baseName, "parents"), numNodes);

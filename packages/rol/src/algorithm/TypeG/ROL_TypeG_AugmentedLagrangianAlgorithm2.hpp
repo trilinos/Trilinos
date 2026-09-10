@@ -41,6 +41,7 @@ private:
   bool useDefaultInitTol_;
   Real delta_;
   Real epsilon_;
+  Real subproblemTolFactor_;
   int maxit_;
   std::string subStep_;
   // Optimality tolerance update
@@ -50,10 +51,10 @@ private:
   int verbosity_;
   bool printHeader_;
   // Outer tolerances
-
   Real outerOptTolerance_;
   Real outerFeasTolerance_;
   Real outerStepTolerance_;
+  int outerIterationLimit_;
   bool useRelTol_;
   // Scaling information
   bool useDefaultScaling_;

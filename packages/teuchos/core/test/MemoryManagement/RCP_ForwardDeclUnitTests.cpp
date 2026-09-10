@@ -26,10 +26,9 @@ TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(DummyNS::UndefinedType);
 namespace {
 
 
-using Teuchos::rcp;
-using Teuchos::rcpFromRef;
-using Teuchos::rcpFromUndefRef;
 using Teuchos::RCP;
+using Teuchos::RCP_UNDEFINED_WEAK_NO_DEALLOC;
+using Teuchos::RCP_WEAK_NO_DEALLOC;
 
 using DummyNS::UndefinedType;
 
@@ -48,18 +47,14 @@ TEUCHOS_UNIT_TEST( RCP, ForwardDeclaredUndefined_rcp )
   // trouble.  Note that this has to be a non-owning RCP otherwise there will
   // be issues with the destructor call.
   UndefinedType *ut_ptr = 0;
+  // Construct a null non-owning RCP directly from the pointer.  Do not
+  // dereference ut_ptr to call rcpFromUndefRef()/rcpFromRef() since binding a
+  // reference to a null pointer is undefined behavior.
   RCP<UndefinedType> ut_rcp =
 #if defined(HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR)
-    rcpFromUndefRef(*ut_ptr)
-  // In this case, you have to use rcpFromUndefRef(...) in this case instead
-  // of rcpFromRef() because the latter requires the object to be defined in
-  // order to call dynamic_cast<const void*>(...) in order to get the base
-  // object address needed for RCPNode tracing.
+    RCP<UndefinedType>(ut_ptr, RCP_UNDEFINED_WEAK_NO_DEALLOC)
 #else
-    rcpFromRef(*ut_ptr)
-    // In this case, you can use rcpFromRef(...) because the object's baseq
-    // address will not be looked up using dynamic_cast and no deallocator
-    // needing to know the object's will be compiled.
+    RCP<UndefinedType>(ut_ptr, RCP_WEAK_NO_DEALLOC)
 #endif
     ;
 }

@@ -586,7 +586,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
 #endif  // KOKKOS_ENABLE_CUDA
 
 #ifdef KOKKOS_ENABLE_SYCL
-  static_assert(!std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+  static_assert(!std::is_same<typename ImpView::memory_space, Kokkos::SYCLSharedUSMSpace>::value,
                 "Please do not use Tpetra::Distributor with SharedUSM "
                 "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
 #endif  // KOKKOS_ENABLE_SYCL
@@ -729,8 +729,8 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
 #endif  // KOKKOS_ENABLE_CUDA
 
 #ifdef KOKKOS_ENABLE_SYCL
-  static_assert(!std::is_same<typename ExpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value &&
-                    !std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+  static_assert(!std::is_same<typename ExpView::memory_space, Kokkos::SYCLSharedUSMSpace>::value &&
+                    !std::is_same<typename ImpView::memory_space, Kokkos::SYCLSharedUSMSpace>::value,
                 "Please do not use Tpetra::Distributor with SharedUSM allocations.  "
                 "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
 #endif  // KOKKOS_ENABLE_SYCL

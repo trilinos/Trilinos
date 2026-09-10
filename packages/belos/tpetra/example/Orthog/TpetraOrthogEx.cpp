@@ -46,8 +46,8 @@ int main(int argc, char *argv[]) {
   typedef int                               OT;
   typedef Tpetra::MultiVector<ScalarType>   MV;
   typedef Tpetra::MultiVector<ScalarType>::mag_type   MT;
-  typedef Belos::MultiVecTraits<ScalarType,MV>     MVT;
   typedef Teuchos::SerialDenseMatrix<OT,ScalarType> MAT;
+  typedef Belos::MultiVecTraits<ScalarType,MV,MAT>     MVT;
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int MyPID = Teuchos::rank(*comm);
@@ -178,9 +178,9 @@ int orthogTpMVecs(Tpetra::MultiVector<ScalarType> & inputVecs, RCP<Teuchos::Seri
   Teuchos::ArrayView<RCP<const MV>> pastVecArrayView;  // To hold the above
 
   // Create the orthogonalization manager:
-  Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+  Belos::OrthoManagerFactory<ScalarType, MV, OP, Teuchos::SerialDenseMatrix<int, ScalarType>> factory;
   Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
-  const Teuchos::RCP<Belos::OrthoManager<ScalarType,MV>> orthoMgr =
+  const Teuchos::RCP<Belos::OrthoManager<ScalarType,MV,Teuchos::SerialDenseMatrix<int, ScalarType>>> orthoMgr =
                     factory.makeOrthoManager (orthogType, Teuchos::null, myOutputMgr, "Tpetra OrthoMgr", paramsOrtho);
 
   // Get a view of the first block and normalize: (also orthogonalizes these vecs wrt themselves)

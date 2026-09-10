@@ -90,7 +90,7 @@ CITE_BIB_FILES         =
 QUIET                  = YES
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
-WARN_IF_DOC_ERROR      = NO
+WARN_IF_DOC_ERROR      = YES
 WARN_NO_PARAMDOC       = NO
 WARN_FORMAT            = "$file:$line: $text"
 WARN_LOGFILE           =
@@ -106,7 +106,7 @@ EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = *.x \
                          *.o \
                          *.out
-EXCLUDE_SYMBOLS        =
+EXCLUDE_SYMBOLS        = minitensor::impl
 EXAMPLE_PATH           = .
 EXAMPLE_PATTERNS       =
 EXAMPLE_RECURSIVE      = YES
@@ -182,7 +182,7 @@ FORMULA_FONTSIZE       = 10
 FORMULA_TRANSPARENT    = YES
 USE_MATHJAX            = YES
 MATHJAX_FORMAT         = HTML-CSS
-MATHJAX_RELPATH        = https://cdn.mathjax.org/mathjax/latest
+MATHJAX_RELPATH        = https://cdn.jsdelivr.net/npm/mathjax@2
 MATHJAX_EXTENSIONS     =
 MATHJAX_CODEFILE       =
 SEARCHENGINE           = YES

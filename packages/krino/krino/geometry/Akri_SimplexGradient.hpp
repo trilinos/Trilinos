@@ -9,6 +9,8 @@
 #define KRINO_KRINO_GEOMETRY_AKRI_SIMPLEXGRADIENT_HPP_
 
 #include <array>
+#include <vector>
+
 #include <stk_math/StkVector.hpp>
 
 namespace krino {
@@ -20,6 +22,8 @@ double calculate_triangle2d_gradient_magnitude(const std::array<stk::math::Vecto
 void calculate_tetrahedron_gradient_and_volume(const std::array<stk::math::Vector3d,4> & x, const std::array<double,4> & d, stk::math::Vector3d & grad, double & vol);
 stk::math::Vector3d calculate_tetrahedron_gradient(const std::array<stk::math::Vector3d,4> & x, const std::array<double,4> & d);
 double calculate_tetrahedron_gradient_magnitude(const std::array<stk::math::Vector3d,4> & x, const std::array<double,4> & d);
+
+stk::math::Vector3d calculate_simplex_gradient(const std::vector<stk::math::Vector3d> & x, const std::vector<double> & d);
 
 }
 

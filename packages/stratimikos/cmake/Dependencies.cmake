@@ -1,5 +1,5 @@
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES ThyraCore
-  LIB_OPTIONAL_PACKAGES Amesos2 Belos Ifpack2 ThyraTpetraAdapters
+  LIB_OPTIONAL_PACKAGES Amesos2 Belos Ifpack2 Tpetra ThyraTpetraAdapters
   TEST_OPTIONAL_PACKAGES Ifpack2 Galeri ThyraTpetraAdapters
   )

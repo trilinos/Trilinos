@@ -215,7 +215,7 @@ namespace panzer
       basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
 
     if (Sacado::IsADType<ScalarT>::value) {
-      const auto fadSize = Kokkos::dimension_scalar(field_.get_view());
+      const auto fadSize = Sacado::dimension_scalar(field_.get_view());
       tmp_ = PHX::View<ScalarT*>("GradBasisDotVector::tmp_",field_.extent(0),fadSize);
     } else {
       tmp_ = PHX::View<ScalarT*>("GradBasisDotVector::tmp_",field_.extent(0));

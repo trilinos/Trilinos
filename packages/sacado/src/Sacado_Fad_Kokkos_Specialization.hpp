@@ -24,54 +24,16 @@ namespace Impl {
 
 // Rules for subview arguments and layouts matching
 
-template <class LayoutDest, unsigned StrideDst, class LayoutSrc, int RankDest,
-          int RankSrc, int CurrentArg, class... SubViewArgs>
-struct SubviewLegalArgsCompileTime<
-    Kokkos::LayoutContiguous<LayoutDest, StrideDst>, LayoutSrc, RankDest,
-    RankSrc, CurrentArg, SubViewArgs...> {
-  enum {
-    value =
-        SubviewLegalArgsCompileTime<LayoutDest, LayoutSrc, RankDest, RankSrc,
-                                    CurrentArg, SubViewArgs...>::value
-  };
-};
-
-template <class LayoutDest, class LayoutSrc, unsigned StrideSrc, int RankDest,
-          int RankSrc, int CurrentArg, class... SubViewArgs>
-struct SubviewLegalArgsCompileTime<
-    LayoutDest, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, RankDest,
-    RankSrc, CurrentArg, SubViewArgs...> {
-  enum {
-    value =
-        SubviewLegalArgsCompileTime<LayoutDest, LayoutSrc, RankDest, RankSrc,
-                                    CurrentArg, SubViewArgs...>::value
-  };
-};
-
-template <class LayoutDest, unsigned StrideDest, class LayoutSrc,
-          unsigned StrideSrc, int RankDest, int RankSrc, int CurrentArg,
-          class... SubViewArgs>
-struct SubviewLegalArgsCompileTime<
-    Kokkos::LayoutContiguous<LayoutDest, StrideDest>,
-    Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, RankDest, RankSrc,
-    CurrentArg, SubViewArgs...> {
-  enum {
-    value =
-        SubviewLegalArgsCompileTime<LayoutDest, LayoutSrc, RankDest, RankSrc,
-                                    CurrentArg, SubViewArgs...>::value
-  };
-};
-
 template <class DstT, class DstL, unsigned DstS, class... DstArgs, class SrcT,
           class SrcL, unsigned SrcS, class... SrcArgs, class... Args>
 struct CommonSubview<
-    Kokkos::View<DstT, Kokkos::LayoutContiguous<DstL, DstS>, DstArgs...>,
-    Kokkos::View<SrcT, Kokkos::LayoutContiguous<SrcL, SrcS>, SrcArgs...>,
+    Kokkos::View<DstT, Sacado::LayoutContiguous<DstL, DstS>, DstArgs...>,
+    Kokkos::View<SrcT, Sacado::LayoutContiguous<SrcL, SrcS>, SrcArgs...>,
     Args...> {
   using DstType =
-      Kokkos::View<DstT, Kokkos::LayoutContiguous<DstL, DstS>, DstArgs...>;
+      Kokkos::View<DstT, Sacado::LayoutContiguous<DstL, DstS>, DstArgs...>;
   using SrcType =
-      Kokkos::View<SrcT, Kokkos::LayoutContiguous<SrcL, SrcS>, SrcArgs...>;
+      Kokkos::View<SrcT, Sacado::LayoutContiguous<SrcL, SrcS>, SrcArgs...>;
   using dst_subview_type =
       decltype(subview(std::declval<DstType>(), std::declval<Args>()...));
   using src_subview_type =
@@ -99,9 +61,9 @@ namespace Kokkos {
 template <class D, class LayoutSrc, unsigned StrideSrc, class... P,
           class... Args>
 KOKKOS_INLINE_FUNCTION auto subview(
-    const View<D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...> &src,
+    const View<D, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>, P...> &src,
     Args... args) {
-  using view_t = View<D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...>;
+  using view_t = View<D, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>, P...>;
   auto submapping_result = submdspan_mapping(
       src.mapping(), Impl::transform_kokkos_slice_to_mdspan_slice(args)...);
   using sub_data_type = typename data_type_construct<
@@ -111,41 +73,10 @@ KOKKOS_INLINE_FUNCTION auto subview(
       std::is_same_v<typename decltype(submapping_result.mapping)::layout_type,
                      layout_stride>,
       LayoutStride, LayoutSrc>;
-  return View<sub_data_type, LayoutContiguous<layout_t, StrideSrc>,
+  return View<sub_data_type, Sacado::LayoutContiguous<layout_t, StrideSrc>,
               typename view_t::device_type, typename view_t::memory_traits>(
       src.accessor().offset(src.data_handle(), submapping_result.offset),
       submapping_result.mapping, src.accessor());
-}
-
-// This is needed to deal with the return Layout Deduction for LayoutContiguous
-// ...
-template <class D, class LayoutSrc, unsigned StrideSrc, class... P,
-          class... Args>
-KOKKOS_INLINE_FUNCTION auto
-subview(const DynRankView<D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>,
-                          P...> &src,
-        Args... args) {
-  static_assert(View<D, P...>::rank == sizeof...(Args),
-                "subview requires one argument for each source View rank");
-
-  using sub_mdspan_t = decltype(submdspan(
-      src.to_mdspan(), Impl::transform_kokkos_slice_to_mdspan_slice(args)...));
-  if constexpr (std::is_same_v<typename sub_mdspan_t::layout_type,
-                               layout_stride>) {
-    return typename Kokkos::Impl::ViewMapping<
-        void /* deduce subview type from source view traits */
-        ,
-        typename Impl::RemoveAlignedMemoryTrait<
-            D, Kokkos::LayoutContiguous<LayoutStride, StrideSrc>, P...>::type,
-        Args...>::type(src, args...);
-  } else {
-    return typename Kokkos::Impl::ViewMapping<
-        void /* deduce subview type from source view traits */
-        ,
-        typename Impl::RemoveAlignedMemoryTrait<
-            D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...>::type,
-        Args...>::type(src, args...);
-  }
 }
 
 // Helper function to create a mapping for subdynrankview that avoids calling SubT::layout()
@@ -180,7 +111,7 @@ template <class T, class LayoutSrc, unsigned StrideSrc, class... DRVArgs,
           class SubArg3 = int, class SubArg4 = int, class SubArg5 = int,
           class SubArg6 = int>
 KOKKOS_INLINE_FUNCTION auto
-subdynrankview(const DynRankView<T, LayoutContiguous<LayoutSrc, StrideSrc>,
+subdynrankview(const DynRankView<T, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>,
                                  DRVArgs...> &drv,
                SubArg0 arg0 = SubArg0{}, SubArg1 arg1 = SubArg1{},
                SubArg2 arg2 = SubArg2{}, SubArg3 arg3 = SubArg3{},
@@ -216,7 +147,7 @@ template <class T, class LayoutSrc, unsigned StrideSrc, class... DRVArgs,
           class SubArg3 = int, class SubArg4 = int, class SubArg5 = int,
           class SubArg6 = int>
 KOKKOS_INLINE_FUNCTION auto
-subview(const DynRankView<T, LayoutContiguous<LayoutSrc, StrideSrc>, DRVArgs...>
+subview(const DynRankView<T, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>, DRVArgs...>
             &drv,
         SubArg0 arg0 = SubArg0{}, SubArg1 arg1 = SubArg1{},
         SubArg2 arg2 = SubArg2{}, SubArg3 arg3 = SubArg3{},
@@ -336,185 +267,185 @@ namespace Kokkos {
 
 // Overloads with execution space instance
 template <class ExecT, class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
     const ExecT& exec,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...> &src) {
   Sacado::Impl::deep_copy(exec, dst, src);
 }
 
 template <class ExecT, class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
     const ExecT& exec,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> *, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> *, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> *, SrcArgs...> &src) {
   Sacado::Impl::deep_copy(exec, dst, src);
 }
 
 template <class ExecT, class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
     const ExecT& exec,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> **, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> **, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> **, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> **, SrcArgs...> &src) {
   Sacado::Impl::deep_copy(exec, dst, src);
 }
 
 template <class ExecT, class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
     const ExecT& exec,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ***, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ***, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ***, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> ***, SrcArgs...> &src) {
   Sacado::Impl::deep_copy(exec, dst, src);
 }
 
 template <class ExecT, class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
     const ExecT& exec,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ****, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ****, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ****, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> ****, SrcArgs...> &src) {
   Sacado::Impl::deep_copy(exec, dst, src);
 }
 
 template <class ExecT, class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
     const ExecT& exec,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> *****, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *****, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> *****, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> *****, SrcArgs...> &src) {
   Sacado::Impl::deep_copy(exec, dst, src);
 }
 
 template <class ExecT, class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
     const ExecT& exec,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ******, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ******, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ******, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> ******, SrcArgs...> &src) {
   Sacado::Impl::deep_copy(exec, dst, src);
 }
 
 template <class ExecT, class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
     const ExecT& exec,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> *******, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *******, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> *******, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> *******, SrcArgs...> &src) {
   Sacado::Impl::deep_copy(exec, dst, src);
 }
 
 // Overloads without exection space instance: fencing
 template <class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...> &src) {
   using exec =
-    typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
+    typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
   Kokkos::fence();
   Sacado::Impl::deep_copy(exec(), dst, src);
   Kokkos::fence();
 }
 
 template <class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> *, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> *, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> *, SrcArgs...> &src) {
   using exec =
-    typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
+    typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
   Kokkos::fence();
   Sacado::Impl::deep_copy(exec(), dst, src);
   Kokkos::fence();
 }
 
 template <class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> **, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> **, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> **, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> **, SrcArgs...> &src) {
   using exec =
-    typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
+    typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
   Kokkos::fence();
   Sacado::Impl::deep_copy(exec(), dst, src);
   Kokkos::fence();
 }
 
 template <class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ***, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ***, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ***, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> ***, SrcArgs...> &src) {
   using exec =
-    typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
+    typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
   Kokkos::fence();
   Sacado::Impl::deep_copy(exec(), dst, src);
   Kokkos::fence();
 }
 
 template <class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ****, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ****, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ****, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> ****, SrcArgs...> &src) {
   using exec =
-    typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
+    typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
   Kokkos::fence();
   Sacado::Impl::deep_copy(exec(), dst, src);
   Kokkos::fence();
 }
 
 template <class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> *****, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *****, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> *****, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> *****, SrcArgs...> &src) {
   using exec =
-    typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
+    typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
   Kokkos::fence();
   Sacado::Impl::deep_copy(exec(), dst, src);
   Kokkos::fence();
 }
 
 template <class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ******, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ******, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ******, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> ******, SrcArgs...> &src) {
   using exec =
-    typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
+    typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
   Kokkos::fence();
   Sacado::Impl::deep_copy(exec(), dst, src);
   Kokkos::fence();
 }
 
 template <class DstT, class... DstArgs, class SrcT, class... SrcArgs>
-requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space,
-                        typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
+requires(std::is_same_v<typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space,
+                        typename Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...>::memory_space>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> *******, DstArgs...> &dst,
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *******, SrcArgs...> &src) {
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> *******, DstArgs...> &dst,
+    const Kokkos::View<Sacado::Fad::GeneralFad<SrcT> *******, SrcArgs...> &src) {
   using exec =
-    typename Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
+    typename Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...>::memory_space::execution_space;
   Kokkos::fence();
   Sacado::Impl::deep_copy(exec(), dst, src);
   Kokkos::fence();
@@ -641,50 +572,50 @@ void deep_copy_view(const Kokkos::View<DstArgs...> &dst, const SrcT &src) {
 namespace Kokkos {
 
 template <class DstT, class... DstArgs, class SrcT>
-  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::Exp::GeneralFad<DstT>, SrcT>)
+  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::GeneralFad<DstT>, SrcT>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...> &src,
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT>, DstArgs...> &src,
     SrcT val) {
   Sacado::Impl::deep_copy_view(src, val);
 }
 template <class DstT, class... DstArgs, class SrcT>
-  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::Exp::GeneralFad<DstT>, SrcT>)
+  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::GeneralFad<DstT>, SrcT>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> *, DstArgs...> &src,
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> *, DstArgs...> &src,
     SrcT val) {
   Sacado::Impl::deep_copy_view(src, val);
 }
 template <class DstT, class... DstArgs, class SrcT>
-  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::Exp::GeneralFad<DstT>, SrcT>)
+  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::GeneralFad<DstT>, SrcT>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> **, DstArgs...> &src,
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> **, DstArgs...> &src,
     SrcT val) {
   Sacado::Impl::deep_copy_view(src, val);
 }
 template <class DstT, class... DstArgs, class SrcT>
-  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::Exp::GeneralFad<DstT>, SrcT>)
+  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::GeneralFad<DstT>, SrcT>)
 void deep_copy(
-    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ***, DstArgs...> &src,
+    const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ***, DstArgs...> &src,
     SrcT val) {
   Sacado::Impl::deep_copy_view(src, val);
 }
 template <class DstT, class... DstArgs, class SrcT>
-  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::Exp::GeneralFad<DstT>, SrcT>)
-void deep_copy(const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ****,
+  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::GeneralFad<DstT>, SrcT>)
+void deep_copy(const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ****,
                                   DstArgs...> &src,
                SrcT val) {
   Sacado::Impl::deep_copy_view(src, val);
 }
 template <class DstT, class... DstArgs, class SrcT>
-  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::Exp::GeneralFad<DstT>, SrcT>)
-void deep_copy(const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> *****,
+  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::GeneralFad<DstT>, SrcT>)
+void deep_copy(const Kokkos::View<Sacado::Fad::GeneralFad<DstT> *****,
                                   DstArgs...> &src,
                SrcT val) {
   Sacado::Impl::deep_copy_view(src, val);
 }
 template <class DstT, class... DstArgs, class SrcT>
-  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::Exp::GeneralFad<DstT>, SrcT>)
-void deep_copy(const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ******,
+  requires(!Kokkos::is_view_v<SrcT> && std::is_assignable_v<Sacado::Fad::GeneralFad<DstT>, SrcT>)
+void deep_copy(const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ******,
                                   DstArgs...> &src,
                SrcT val) {
   Sacado::Impl::deep_copy_view(src, val);
@@ -729,7 +660,7 @@ void resize_view(std::index_sequence<Idx...>,
 namespace Kokkos {
 
 template <class SrcT, class... SrcArgs>
-void resize(Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...> &src,
+void resize(Kokkos::View<Sacado::Fad::GeneralFad<SrcT>, SrcArgs...> &src,
             const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
             const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
             const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -741,7 +672,7 @@ void resize(Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...> &src,
   Sacado::Impl::resize_view(std::make_index_sequence<0>(), src, n0, n1, n2, n3, n4, n5, n6, n7);
 }
 template <class SrcT, class... SrcArgs>
-void resize(Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *, SrcArgs...> &src,
+void resize(Kokkos::View<Sacado::Fad::GeneralFad<SrcT> *, SrcArgs...> &src,
             const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
             const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
             const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -754,7 +685,7 @@ void resize(Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *, SrcArgs...> &src,
 }
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> **, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::GeneralFad<SrcT> **, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -767,7 +698,7 @@ void resize(
 }
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ***, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::GeneralFad<SrcT> ***, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -780,7 +711,7 @@ void resize(
 }
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ****, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::GeneralFad<SrcT> ****, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -793,7 +724,7 @@ void resize(
 }
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *****, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::GeneralFad<SrcT> *****, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -806,7 +737,7 @@ void resize(
 }
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ******, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::GeneralFad<SrcT> ******, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -819,7 +750,7 @@ void resize(
 }
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *******, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::GeneralFad<SrcT> *******, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,

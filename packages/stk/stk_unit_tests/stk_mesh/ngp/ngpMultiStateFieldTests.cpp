@@ -40,7 +40,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/NgpFieldBLAS.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>

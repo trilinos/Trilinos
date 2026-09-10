@@ -18,7 +18,7 @@
 #include "Intrepid2_OrientationTools.hpp"
 
 #include "Panzer_PureBasis.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -97,7 +97,7 @@ evaluateFields(typename Traits::EvalData workset)
     const int cellDim = parentCell.getDimension();
     const int numEdges = gatherFieldTangents_.extent(1);
 
-    auto workspace_tmp = Kokkos::createDynRankView(gatherFieldTangents_.get_static_view(),"workspace", workset.num_cells,4, cellDim);
+    auto workspace_tmp = Sacado::createDynRankView(gatherFieldTangents_.get_static_view(),"workspace", workset.num_cells,4, cellDim);
     const auto worksetJacobians = pointValues_.jac.get_view();
     const auto cell_local_ids = workset.getLocalCellIDs();
     auto gatherFieldTangents = gatherFieldTangents_.get_static_view();

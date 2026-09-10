@@ -35,8 +35,8 @@
 
 #include <Akri_Unit_BoundingBoxMesh.hpp>
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
-#include <Akri_Unit_LogRedirecter.hpp>
-#include <Akri_Quality.hpp>
+#include <Akri_LogRedirecter.hpp>
+#include <Akri_MeshQuality.hpp>
 #include <Akri_RefinementSupport.hpp>
 #include <Akri_Unit_DecompositionFixture.hpp>
 #include <Akri_MeshSpecs.hpp>
@@ -2118,6 +2118,56 @@ TEST_F(MeshCloneTest, FaceOwnershipAndPartChangeBetweenClones)
   const auto side_1_new = mesh.get_entity(stk::topology::FACE_RANK, 7);
   EXPECT_TRUE(mesh.bucket(side_1_new).member(surface_2_part));
   EXPECT_FALSE(mesh.bucket(side_1_new).member(surface_1_part));
+}
+
+class CDMeshTestsStackofSixRightTrisLSPerPhase : public DecompositionFixture<StackofSixRightTris, LSPerPhasePolicy, 2>
+{
+public:
+CDMeshTestsStackofSixRightTrisLSPerPhase()
+{
+  if(stk::parallel_machine_size(mComm) == 1)
+    this->build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
+
+  setup_ls_fields();
+}
+
+void test_element_has_phase_set(const InterfaceGeometry & interfaceGeometry, const stk::mesh::Entity elem, const int goldElemPhase)
+{
+  const auto iter = interfaceGeometry.get_phase_for_uncut_elements().find(elem);
+  ASSERT_FALSE(iter == interfaceGeometry.get_phase_for_uncut_elements().end());
+  EXPECT_EQ(goldElemPhase, iter->second);
+}
+
+};
+
+TEST_F(CDMeshTestsStackofSixRightTrisLSPerPhase, snapAndCutLSPerPhase_CheckUncutElementPhase)
+{
+  if (stk::parallel_machine_size(mComm) > 1) return;
+
+  cdfem_support().set_cdfem_edge_tol(0.1);
+  cdfem_support().set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+
+  const double eps = 0.001;
+  const std::vector<std::vector<double>> nodeLs{
+    { -1., 0.},
+    { -1., 0.},
+    { eps, 0.},
+    { eps, 0.},
+    { -1., 0.},
+    { -1., 0.},
+    { eps, 0.},
+    { eps, 0.}
+  };
+
+  set_level_sets(mMesh, levelset_fields(),
+      get_assigned_node_global_ids(),
+      nodeLs);
+
+  std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(mMesh.mesh_meta_data().spatial_dimension(), get_aux_meta().active_part(), cdfem_support(), Phase_Support::get(mMesh.mesh_meta_data()), levelset_fields());
+  cdmesh->decompose_mesh(*interfaceGeometry, -1);
+
+  test_element_has_phase_set(*interfaceGeometry, get_assigned_element_for_index(2), 1);
+  test_element_has_phase_set(*interfaceGeometry, get_assigned_element_for_index(3), 1);
 }
 
 } // namespace krino

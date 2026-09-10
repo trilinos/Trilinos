@@ -94,15 +94,13 @@
 
 #endif
 
-/* Determine if the new fad design is supported.  Requies C++11,
-   and if gcc, version 4.8 or greater.
-*/
-#if defined(__GNUC__) && !defined(__clang__)
-#  if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8) )
-#    define SACADO_ENABLE_NEW_DESIGN 1
-#  endif
+/* Deprecation warning macros */
+#if defined(SACADO_ENABLE_DEPRECATED_CODE)
+  #define SACADO_DEPRECATED [[deprecated]]
+  #define SACADO_DEPRECATED_WITH_COMMENT(comment) [[deprecated(comment)]]
 #else
-#  define SACADO_ENABLE_NEW_DESIGN 1
+  #define SACADO_DEPRECATED
+  #define SACADO_DEPRECATED_WITH_COMMENT(comment)
 #endif
 
 #endif /* SACADO_CONFIGDEFS_H */

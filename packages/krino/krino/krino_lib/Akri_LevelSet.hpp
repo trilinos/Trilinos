@@ -213,7 +213,6 @@ private:
   LevelSet(stk::mesh::MetaData & in_meta, const std::string & in_name, const stk::diag::Timer & parent_timer);
   void sync_all_fields_to_host();
   void redistance_using_existing_facets(const stk::mesh::Selector & volumeSelector, const double elementLengthScale);
-  void append_facets_from_side(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side);
 
   void register_fields();
   void register_nodal_levelset_field_and_set_ref();

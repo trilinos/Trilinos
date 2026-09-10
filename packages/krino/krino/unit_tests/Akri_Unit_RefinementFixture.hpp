@@ -11,12 +11,12 @@
 #include <Akri_EdgeMarker.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshHelpers.hpp>
-#include <Akri_Quality.hpp>
+#include <Akri_MeshQuality.hpp>
 #include <Akri_QualityMetric.hpp>
 #include <Akri_Refinement.hpp>
 #include <Akri_TransitionElementEdgeMarker.hpp>
 #include <Akri_AuxMetaData.hpp>
-#include "../krino_lib/Akri_RefinementManager.hpp"
+#include <Akri_RefinementManager.hpp>
 
 namespace krino {
 

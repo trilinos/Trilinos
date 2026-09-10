@@ -134,9 +134,9 @@ class CoalesceDropFactory_kokkos
 
   Teuchos::RCP<MultiVector> GetMaterial(Level& currentLevel, size_t spatialDim) const;
 
-  std::tuple<GlobalOrdinal, boundary_nodes_type> BuildScalar(Level& currentLevel) const;
+  std::tuple<GlobalOrdinal, GlobalOrdinal, boundary_nodes_type> BuildScalar(Level& currentLevel) const;
 
-  std::tuple<GlobalOrdinal, boundary_nodes_type> BuildVector(Level& currentLevel) const;
+  std::tuple<GlobalOrdinal, GlobalOrdinal, boundary_nodes_type> BuildVector(Level& currentLevel) const;
 };
 
 }  // namespace MueLu

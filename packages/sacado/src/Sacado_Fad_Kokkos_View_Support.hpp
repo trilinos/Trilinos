@@ -15,14 +15,13 @@
 
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
-#include "Kokkos_View_Fad_Fwd.hpp"
+#include "Sacado_Fad_Kokkos_Fwd.hpp"
 
 #include "Sacado_Traits.hpp"
-#include <Kokkos_DynRankView.hpp>
-#include <Sacado_Fad_Ops_Fwd.hpp>
+#include "Kokkos_DynRankView.hpp"
+#include "Sacado_Fad_Ops_Fwd.hpp"
 
-// Rename this file
-#include <Kokkos_LayoutContiguous.hpp>
+#include "Sacado_Fad_Kokkos_LayoutContiguous.hpp"
 
 // ====================================================================
 // Kokkos customization points for the mdspan based View implementation
@@ -48,8 +47,6 @@ constexpr unsigned computeFadPartitionSize(unsigned size, unsigned stride) {
 } // namespace Impl
 
 namespace Fad {
-
-namespace Exp {
 
 // PartitionedFadStride > 0 implies LayoutContiguous
 template <class ElementType, class MemorySpace, size_t FadStaticStride,
@@ -235,7 +232,7 @@ KOKKOS_INLINE_FUNCTION constexpr auto customize_view_arguments(
   constexpr int static_stride =
       std::is_same_v<Kokkos::LayoutRight, LayoutType> ? 1 : 0;
   constexpr size_t partitioned_fad_stride = []() {
-    if constexpr (Kokkos::is_layout_contiguous<LayoutType>::value)
+    if constexpr (Sacado::is_layout_contiguous<LayoutType>::value)
       return LayoutType::scalar_stride;
     else
       return 0;
@@ -253,7 +250,7 @@ KOKKOS_INLINE_FUNCTION constexpr auto customize_view_arguments(
   constexpr int static_stride =
       std::is_same_v<Kokkos::LayoutRight, LayoutType> ? 1 : 0;
   constexpr size_t partitioned_fad_stride = []() {
-    if constexpr (Kokkos::is_layout_contiguous<LayoutType>::value)
+    if constexpr (Sacado::is_layout_contiguous<LayoutType>::value)
       return LayoutType::scalar_stride;
     else
       return 0;
@@ -277,7 +274,6 @@ KOKKOS_INLINE_FUNCTION auto accessor_from_mapping_and_accessor_arg(
   return fad_acc_t(accessor_arg.value, mapping.required_span_size());
 }
 
-} // namespace Exp
 } // namespace Fad
 } // namespace Sacado
 
@@ -306,7 +302,7 @@ struct is_view_fad<Kokkos::DynRankView<ViewArgs...>> {
 template <typename view_type> struct is_view_fad_contiguous {
   static const bool value =
       is_view_fad<view_type>::value &&
-      Kokkos::is_layout_contiguous<typename view_type::array_layout>::value;
+      Sacado::is_layout_contiguous<typename view_type::array_layout>::value;
 };
 
 template <typename ViewType> struct is_dynrankview_fad_contiguous {
@@ -318,7 +314,7 @@ struct is_dynrankview_fad_contiguous<Kokkos::DynRankView<Args...>> {
   using view_type = Kokkos::DynRankView<Args...>;
   static const bool value =
       is_view_fad<view_type>::value &&
-      Kokkos::is_layout_contiguous<typename view_type::array_layout>::value;
+      Sacado::is_layout_contiguous<typename view_type::array_layout>::value;
 };
 
 template <typename ViewType> struct ViewScalarStride {
@@ -328,14 +324,14 @@ template <typename ViewType> struct ViewScalarStride {
 
 template <class T, class L, unsigned S, class... Args>
 struct ViewScalarStride<
-    Kokkos::View<T, Kokkos::LayoutContiguous<L, S>, Args...>> {
+    Kokkos::View<T, Sacado::LayoutContiguous<L, S>, Args...>> {
   static constexpr unsigned stride = S;
   static constexpr bool is_unit_stride = (stride == 1u);
 };
 
 template <class T, class L, unsigned S, class... Args>
 struct ViewScalarStride<
-    Kokkos::DynRankView<T, Kokkos::LayoutContiguous<L, S>, Args...>> {
+    Kokkos::DynRankView<T, Sacado::LayoutContiguous<L, S>, Args...>> {
   static constexpr unsigned stride = S;
   static constexpr bool is_unit_stride = (stride == 1u);
 };
@@ -344,7 +340,7 @@ template <class DataType, class... Properties>
 KOKKOS_INLINE_FUNCTION auto
 as_scalar_view(const Kokkos::View<DataType, Properties...> &view) {
   using view_t = Kokkos::View<DataType, Properties...>;
-  if constexpr (Kokkos::is_view_fad<view_t>::value) {
+  if constexpr (Sacado::is_view_fad<view_t>::value) {
     using value_type = typename view_t::value_type::value_type;
     return Kokkos::View<value_type *, Properties...>(
         view.data(),
@@ -364,16 +360,16 @@ KOKKOS_INLINE_FUNCTION size_t dimension_scalar() { return 0; }
 
 template <class View>
 KOKKOS_FUNCTION size_t dimension_scalar(const View &view) {
-  if constexpr (Kokkos::is_view_fad<View>::value) {
+  if constexpr (Sacado::is_view_fad<View>::value) {
     return static_cast<size_t>(view.accessor().fad_size() + 1);
   } else {
-    return 0;
+    return 1; // For non-Fad views (or any other object), we return 1 to be consistent with a Fad with zero derivatives
   }
 }
 
 template <class... Views>
 KOKKOS_FUNCTION size_t dimension_scalar(const Views &...views) {
-  return Kokkos::max(dimension_scalar(views)...);
+  return Kokkos::max(Sacado::dimension_scalar(views)...);
 }
 
 template<class T>
@@ -382,7 +378,7 @@ auto data_address_of(T& val) { return &val; }
 
 template<class T>
 KOKKOS_FUNCTION
-auto data_address_of(Fad::Exp::GeneralFad<T>& val) { return static_cast<int>(val.size()) > 0 ? &val.fastAccessDx(0) : &val.val(); }
+auto data_address_of(Fad::GeneralFad<T>& val) { return static_cast<int>(val.size()) > 0 ? &val.fastAccessDx(0) : &val.val(); }
 
 
 template <class... ViewArgs, class... OtherViews>
@@ -390,8 +386,8 @@ KOKKOS_FUNCTION
 auto common_view_alloc_prop(const Kokkos::View<ViewArgs...> &view,
                             OtherViews... views) {
   constexpr bool any_fad_view =
-      Kokkos::is_view_fad<Kokkos::View<ViewArgs...>>::value ||
-      (Kokkos::is_view_fad<OtherViews>::value || ... || false);
+      Sacado::is_view_fad<Kokkos::View<ViewArgs...>>::value ||
+      (Sacado::is_view_fad<OtherViews>::value || ... || false);
   if constexpr (any_fad_view) {
     if constexpr (sizeof...(OtherViews) == 0) {
       return Kokkos::Impl::AccessorArg_t{
@@ -412,8 +408,8 @@ KOKKOS_FUNCTION
 auto common_view_alloc_prop(const Kokkos::DynRankView<ViewArgs...> &view,
                             OtherViews... views) {
   constexpr bool any_fad_view =
-      Kokkos::is_view_fad<Kokkos::DynRankView<ViewArgs...>>::value ||
-      (Kokkos::is_view_fad<OtherViews>::value || ... || false);
+      Sacado::is_view_fad<Kokkos::DynRankView<ViewArgs...>>::value ||
+      (Sacado::is_view_fad<OtherViews>::value || ... || false);
   if constexpr (any_fad_view) {
     if constexpr ((sizeof ... (OtherViews)) == 0) {
       return Kokkos::Impl::AccessorArg_t{static_cast<size_t>(Sacado::dimension_scalar(view))};
@@ -442,52 +438,105 @@ auto common_view_alloc_prop(const Kokkos::DynRankView<ViewArgs...> &view,
 #endif
 #undef SACADO_FAD_KOKKOS_VIEW_SUPPORT_INCLUDES
 
+#ifdef SACADO_ENABLE_DEPRECATED_CODE
 namespace Kokkos {
 
-using Sacado::common_view_alloc_prop;
-using Sacado::dimension_scalar;
-using Sacado::is_dynrankview_fad_contiguous;
-using Sacado::is_view_fad;
-using Sacado::is_view_fad_contiguous;
-using Sacado::ThreadLocalScalarType;
-using Sacado::ViewScalarStride;
+// Deprecated wrapper functions for dimension_scalar (3 overloads)
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::dimension_scalar() instead of Kokkos::dimension_scalar()")
+KOKKOS_INLINE_FUNCTION
+size_t dimension_scalar() {
+  return Sacado::dimension_scalar();
+}
+
+template<class View>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::dimension_scalar() instead of Kokkos::dimension_scalar()")
+KOKKOS_FUNCTION
+size_t dimension_scalar(const View& view) {
+  return Sacado::dimension_scalar(view);
+}
+
+template<class... Views>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::dimension_scalar() instead of Kokkos::dimension_scalar()")
+KOKKOS_FUNCTION
+size_t dimension_scalar(const Views&... views) {
+  return Sacado::dimension_scalar(views...);
+}
+
+// Deprecated wrapper functions for common_view_alloc_prop (2 overloads)
+template<class... ViewArgs, class... OtherViews>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::common_view_alloc_prop() instead of Kokkos::common_view_alloc_prop()")
+KOKKOS_FUNCTION
+auto common_view_alloc_prop(const Kokkos::View<ViewArgs...>& view, OtherViews... views) {
+  return Sacado::common_view_alloc_prop(view, views...);
+}
+
+template<class... ViewArgs, class... OtherViews>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::common_view_alloc_prop() instead of Kokkos::common_view_alloc_prop()")
+KOKKOS_FUNCTION
+auto common_view_alloc_prop(const Kokkos::DynRankView<ViewArgs...>& view, OtherViews... views) {
+  return Sacado::common_view_alloc_prop(view, views...);
+}
+
+// Template structs - use template aliases with deprecation
+template<typename ViewType>
+using is_dynrankview_fad_contiguous SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::is_dynrankview_fad_contiguous instead of Kokkos::is_dynrankview_fad_contiguous") = Sacado::is_dynrankview_fad_contiguous<ViewType>;
+template<typename view_type>
+using is_view_fad SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::is_view_fad instead of Kokkos::is_view_fad") = Sacado::is_view_fad<view_type>;
+template<typename view_type>
+using is_view_fad_contiguous SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::is_view_fad_contiguous instead of Kokkos::is_view_fad_contiguous") = Sacado::is_view_fad_contiguous<view_type>;
+template<typename ViewType, typename Enabled = void>
+using ThreadLocalScalarType SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::ThreadLocalScalarType instead of Kokkos::ThreadLocalScalarType") = Sacado::ThreadLocalScalarType<ViewType, Enabled>;
+template<typename ViewType>
+using ViewScalarStride SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::ViewScalarStride instead of Kokkos::ViewScalarStride") = Sacado::ViewScalarStride<ViewType>;
+
 namespace Impl {
-using Sacado::Impl::computeFadPartitionSize;
+// Deprecated wrapper function for computeFadPartitionSize
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::Impl::computeFadPartitionSize() instead of Kokkos::Impl::computeFadPartitionSize()")
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned computeFadPartitionSize(unsigned size, unsigned stride) {
+  return Sacado::Impl::computeFadPartitionSize(size, stride);
+}
 }
 } // namespace Kokkos
+#endif
 
 namespace std {
   template<class T, class T2>
-  struct common_type<Sacado::Fad::Exp::GeneralFad<T>, T2> {
-    using type = typename Sacado::Promote<Sacado::Fad::Exp::GeneralFad<T>, T2>::type;
+  struct common_type<Sacado::Fad::GeneralFad<T>, T2> {
+    using type = typename Sacado::Promote<Sacado::Fad::GeneralFad<T>, T2>::type;
   };
   template<class T, class T2>
-  struct common_type<const Sacado::Fad::Exp::GeneralFad<T>, T2> {
-    using type = typename Sacado::Promote<const Sacado::Fad::Exp::GeneralFad<T>, T2>::type;
+  struct common_type<const Sacado::Fad::GeneralFad<T>, T2> {
+    using type = typename Sacado::Promote<const Sacado::Fad::GeneralFad<T>, T2>::type;
   };
   template<class T1, class T>
-  struct common_type<T1, Sacado::Fad::Exp::GeneralFad<T>> {
-    using type = typename Sacado::Promote<Sacado::Fad::Exp::GeneralFad<T>, T1>::type;
+  struct common_type<T1, Sacado::Fad::GeneralFad<T>> {
+    using type = typename Sacado::Promote<Sacado::Fad::GeneralFad<T>, T1>::type;
   };
   template<class T1, class T>
-  struct common_type<T1, const Sacado::Fad::Exp::GeneralFad<T>> {
-    using type = typename Sacado::Promote<const Sacado::Fad::Exp::GeneralFad<T>, T1>::type;
+  struct common_type<T1, const Sacado::Fad::GeneralFad<T>> {
+    using type = typename Sacado::Promote<const Sacado::Fad::GeneralFad<T>, T1>::type;
   };
   template<class T1, class T2>
-  struct common_type<Sacado::Fad::Exp::GeneralFad<T1>, Sacado::Fad::Exp::GeneralFad<T2>> {
-    using type = typename Sacado::Promote<Sacado::Fad::Exp::GeneralFad<T1>, Sacado::Fad::Exp::GeneralFad<T2>>::type;
+  struct common_type<Sacado::Fad::GeneralFad<T1>, Sacado::Fad::GeneralFad<T2>> {
+    using type = typename Sacado::Promote<Sacado::Fad::GeneralFad<T1>, Sacado::Fad::GeneralFad<T2>>::type;
   };
   template<class T1, class T2>
-  struct common_type<const Sacado::Fad::Exp::GeneralFad<T1>, Sacado::Fad::Exp::GeneralFad<T2>> {
-    using type = typename Sacado::Promote<const Sacado::Fad::Exp::GeneralFad<T1>, Sacado::Fad::Exp::GeneralFad<T2>>::type;
+  struct common_type<const Sacado::Fad::GeneralFad<T1>, Sacado::Fad::GeneralFad<T2>> {
+    using type = typename Sacado::Promote<const Sacado::Fad::GeneralFad<T1>, Sacado::Fad::GeneralFad<T2>>::type;
   };
   template<class T1, class T2>
-  struct common_type<Sacado::Fad::Exp::GeneralFad<T1>, const Sacado::Fad::Exp::GeneralFad<T2>> {
-    using type = typename Sacado::Promote<Sacado::Fad::Exp::GeneralFad<T1>, const Sacado::Fad::Exp::GeneralFad<T2>>::type;
+  struct common_type<Sacado::Fad::GeneralFad<T1>, const Sacado::Fad::GeneralFad<T2>> {
+    using type = typename Sacado::Promote<Sacado::Fad::GeneralFad<T1>, const Sacado::Fad::GeneralFad<T2>>::type;
   };
   template<class T1, class T2>
-  struct common_type<const Sacado::Fad::Exp::GeneralFad<T1>, const Sacado::Fad::Exp::GeneralFad<T2>> {
-    using type = typename Sacado::Promote<const Sacado::Fad::Exp::GeneralFad<T1>, const Sacado::Fad::Exp::GeneralFad<T2>>::type;
+  struct common_type<const Sacado::Fad::GeneralFad<T1>, const Sacado::Fad::GeneralFad<T2>> {
+    using type = typename Sacado::Promote<const Sacado::Fad::GeneralFad<T1>, const Sacado::Fad::GeneralFad<T2>>::type;
   };
 }
 #endif

@@ -13,6 +13,7 @@
 #include <Akri_Edge.hpp>
 #include <Akri_Element_Intersections.hpp>
 #include <Akri_ElementCutterUtils.hpp>
+#include <Akri_Faceted_Surface.hpp>
 #include <Akri_MathUtil.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Surface.hpp>
@@ -24,6 +25,7 @@
 #include "Akri_SnapInfo.hpp"
 #include <Akri_Sign.hpp>
 #include <Akri_SimplexCurvature.hpp>
+#include <Akri_SimplexGradient.hpp>
 
 namespace krino {
 
@@ -732,7 +734,7 @@ static double calculate_surface_curvature_magnitude(const unsigned dim, const Su
   return finite_difference_curvature_magnitude_2d(surface, centroid, 0.5*elemSize);
 }
 
-double AnalyticSurfaceInterfaceGeometry::estimate_element_distance_error(const stk::mesh::BulkData & mesh, stk::mesh::Entity element) const
+double AnalyticSurfaceInterfaceGeometry::estimate_curvature_times_element_size(const stk::mesh::BulkData & mesh, stk::mesh::Entity element) const
 {
   std::vector<stk::math::Vector3d> elemNodesCoords;
   fill_element_node_coordinates(mesh, element, get_coordinates_field(mesh), elemNodesCoords);
@@ -744,6 +746,28 @@ double AnalyticSurfaceInterfaceGeometry::estimate_element_distance_error(const s
     err += elemSize * calculate_surface_curvature_magnitude(mesh.mesh_meta_data().spatial_dimension(), *surf, elemNodesCoords, elemSize);
   }
   return err;
+}
+
+static stk::math::Vector3d calculate_surface_normal(const unsigned dim, const Surface & surface, const std::vector<stk::math::Vector3d> & elemNodesCoords)
+{
+  if (surface.can_approximate_closest_point_normal())
+  {
+    const stk::math::Vector3d centroid = get_centroid(elemNodesCoords);
+    return surface.closest_point_normal(centroid);
+  }
+  std::vector<double> elemNodesDist;
+  fill_point_distances(surface, elemNodesCoords, elemNodesDist);
+  stk::math::Vector3d grad = calculate_simplex_gradient(elemNodesCoords, elemNodesDist);
+  grad.unitize();
+  return grad;
+}
+
+stk::math::Vector3d AnalyticSurfaceInterfaceGeometry::compute_interface_normal(const stk::mesh::BulkData & mesh, const Surface_Identifier surfaceIdentifier, const stk::mesh::Entity element) const
+{
+  std::vector<stk::math::Vector3d> elemNodesCoords;
+  fill_element_node_coordinates(mesh, element, get_coordinates_field(mesh), elemNodesCoords);
+  const unsigned surfIndex = get_index_of_surface_with_identifer(surfaceIdentifier);
+  return calculate_surface_normal(mesh.mesh_meta_data().spatial_dimension(), *mySurfaces[surfIndex], elemNodesCoords);
 }
 
 } // namespace krino

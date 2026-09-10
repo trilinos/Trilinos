@@ -845,6 +845,8 @@ void packCrsMatrix(const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                                                exports.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOST
   Kokkos::deep_copy(device_exec_space(), exports_h, exports_dv.view_device());
+  // Fence so numPacketsPerLID and exports are safe to access by caller immediately
+  device_exec_space().fence();
 }
 
 template <typename ST, typename LO, typename GO, typename NT>
@@ -971,6 +973,8 @@ void packCrsMatrixWithOwningPIDs(const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
       Kokkos::View<size_t*, host_dev_type> num_packets_per_lid_h(numPacketsPerLID.getRawPtr(), numPacketsPerLID.size());
       // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy(execution_space(), num_packets_per_lid_h, num_packets_per_lid_d);
+      // Fence so numPacketsPerLID is safe to access by caller immediately
+      execution_space().fence();
     } catch (std::exception& e) {
       if (verbose) {
         std::ostringstream os;

@@ -12,11 +12,17 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#include "EpetraExt_readEpetraLinearSystem.h"
-#include "Epetra_SerialComm.h"
+#include "Thyra_TpetraThyraWrappers.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Operator.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_toString.hpp"
+
+#include "Galeri_XpetraMaps.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraParameters.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 
@@ -34,12 +40,13 @@ const std::string matrixFileName = "nos1.mtx";
 
 RCP<const LinearOpBase<double> > getFwdLinearOp()
 {
-  static RCP<const LinearOpBase<double> > fwdLinearOp;
-  if (is_null(fwdLinearOp)) {
-    Teuchos::RCP<Epetra_CrsMatrix> epetraCrsMatrix;
-    EpetraExt::readEpetraLinearSystem( matrixFileName, Epetra_SerialComm(), &epetraCrsMatrix );
-    fwdLinearOp = epetraLinearOp(epetraCrsMatrix);
-  }
+  RCP<const LinearOpBase<double> > fwdLinearOp;
+  using crs_type = Tpetra::CrsMatrix<>;
+  using op_type = Tpetra::Operator<>;
+  using reader_type = Tpetra::MatrixMarket::Reader<crs_type>;
+  auto comm = Tpetra::getDefaultComm();
+  auto tpetraCrsMatrix = reader_type::readSparseFile(matrixFileName, comm, true);
+  fwdLinearOp = createLinearOp(Teuchos::rcp_dynamic_cast<op_type>(tpetraCrsMatrix, true));
   return fwdLinearOp;
 }
 

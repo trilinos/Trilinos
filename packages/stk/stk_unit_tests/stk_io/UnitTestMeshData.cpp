@@ -57,6 +57,9 @@
 #include "stk_mesh/base/Field.hpp"
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/BuildMesh.hpp>
+#include "stk_unit_test_utils/getOption.h"
+#include <stk_util/util/ParseCsv.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 
 using stk::unit_test_util::build_mesh;
 using stk::unit_test_util::build_mesh_no_simple_fields;
@@ -91,6 +94,55 @@ void activate_entities(stk::io::StkMeshIoBroker &fixture,
           bulk.change_entity_parts(entities[i], add_parts);
       }
     }
+  }
+  bulk.modification_end();
+}
+
+
+void activate_elements(stk::mesh::BulkData &bulk,
+                       stk::mesh::Part &activePart,
+                       const std::vector<int>& elemList)
+{
+  stk::mesh::EntityRank rank = stk::topology::ELEMENT_RANK;
+  stk::mesh::PartVector addParts(1, &activePart);
+
+  bulk.modification_begin();
+  for(int id : elemList) {
+    stk::mesh::EntityId elemId = static_cast<stk::mesh::EntityId>(id);
+    stk::mesh::Entity elem = bulk.get_entity(rank, elemId);
+
+    if(!bulk.is_valid(elem)) continue;
+    bulk.change_entity_parts(elem, addParts);
+  }
+  bulk.modification_end();
+}
+
+void activate_connected_elements(stk::mesh::BulkData &bulk,
+                                 stk::mesh::Part &activePart,
+                                 const std::vector<int>& nodeList)
+{
+  stk::mesh::EntityRank rank = stk::topology::NODE_RANK;
+  stk::mesh::PartVector addParts(1, &activePart);
+
+  stk::mesh::EntityVector elemList;
+
+  for(int id : nodeList) {
+    stk::mesh::EntityId nodeId = static_cast<stk::mesh::EntityId>(id);
+    stk::mesh::Entity node = bulk.get_entity(rank, nodeId);
+
+    if(!bulk.is_valid(node)) continue;
+
+    unsigned numElems = bulk.num_elements(node);
+    const stk::mesh::Entity* elems = bulk.begin_elements(node);
+    for (unsigned i = 0; i < numElems; ++i) {
+      stk::mesh::Entity elem = elems[i];
+      stk::util::insert_keep_sorted_and_unique(elem, elemList);
+    }
+  }
+
+  bulk.modification_begin();
+  for(auto elem : elemList) {
+    bulk.change_entity_parts(elem, addParts);
   }
   bulk.modification_end();
 }
@@ -500,3 +552,63 @@ TEST(DeclareIossField, reRegisterWithDifferentNumCopies)
   delete iossField1copy;
   delete iossField9copies;
 }
+
+TEST( ExtractElements, fromInputFile )
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  if(stk::parallel_machine_size(pm) != 1) GTEST_SKIP();
+
+  stk::io::StkMeshIoBroker broker(pm);
+
+  std::string inputFileName = stk::unit_test_util::get_option("--inputFile", "");
+  std::string csvElements = stk::unit_test_util::get_option("--elemList", "");
+  std::string csvNodes = stk::unit_test_util::get_option("--nodeList", "");
+
+  if(inputFileName.empty()) GTEST_SKIP();
+  if(csvElements.empty() && csvNodes.empty()) GTEST_SKIP();
+
+  std::vector<int> inputElements = stk::util::get_ids_from_strings(stk::split_csv_string(csvElements));
+  std::vector<int> inputNodes = stk::util::get_ids_from_strings(stk::split_csv_string(csvNodes));
+
+  std::string outputFileName = "extracted_" + inputFileName;
+
+  bool ok = false;
+  try {
+    // Initialize meta data from exodus file
+    broker.add_mesh_database(inputFileName, stk::io::READ_MESH);
+
+    broker.create_input_mesh();
+    ok = true;
+    stk::mesh::MetaData & meta_data = broker.meta_data();
+
+    // Add an "activePart" part...
+    stk::mesh::Part &activePart = meta_data.declare_part("activePart", stk::topology::ELEMENT_RANK);
+    meta_data.commit();
+
+    // bulk_data initialize (from exodus file)
+    broker.populate_bulk_data();
+
+    // Put some entities into the "activePart" part...
+    // This will be used to test the I/O filtering via a selector...
+    stk::mesh::BulkData &bulk = broker.bulk_data();
+
+    activate_elements(bulk, activePart, inputElements);
+    activate_connected_elements(bulk, activePart, inputNodes);
+
+    // exodus file creation
+    size_t index = broker.create_output_mesh( outputFileName, stk::io::WRITE_RESULTS );
+
+    // Set the output filter on the mesh_data...
+    stk::mesh::Selector activeSelector(activePart);
+    broker.set_subset_selector(index, activeSelector);
+
+    // process output
+    const double time_step = 0;
+    broker.process_output_request(index, time_step);
+  }
+  catch(...) {
+    ASSERT_TRUE(ok);
+  }
+}
+

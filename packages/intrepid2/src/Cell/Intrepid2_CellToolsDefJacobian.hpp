@@ -39,7 +39,8 @@ namespace Intrepid2 {
     */
     template<typename jacobianViewType, 
              typename worksetCellType, 
-             typename basisGradType>
+             typename basisGradType,
+             bool squareJacobian = false>
     struct F_setJacobian {
             jacobianViewType _jacobian;
       const worksetCellType  _worksetCells;
@@ -61,26 +62,55 @@ namespace Intrepid2 {
         const ordinal_type phys_dim = _jacobian.extent(2); // dim2 and dim3 should match
         
         const ordinal_type gradRank = rank(_basisGrads);
-        const ordinal_type ref_dim = _basisGrads.extent_int(gradRank-1);
 
-        if ( gradRank == 3)
+        if constexpr (squareJacobian)
         {
-          const ordinal_type cardinality = _basisGrads.extent(0);
-          for (ordinal_type i=0;i<phys_dim;++i)
-            for (ordinal_type j=0;j<ref_dim;++j) {
+          const ordinal_type dim = phys_dim;
+
+          if ( gradRank == 3)
+          {
+            const ordinal_type cardinality = _basisGrads.extent(0);
+            for (ordinal_type i=0;i<dim;++i)
+              for (ordinal_type j=0;j<dim;++j) {
+                _jacobian(cell, point, i, j) = 0;
+                for (ordinal_type bf=0;bf<cardinality;++bf)
+                  _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(bf, point, j);
+              }
+          }
+          else
+          {
+            const ordinal_type cardinality = _basisGrads.extent(1);
+            for (ordinal_type i=0;i<dim;++i)
+            for (ordinal_type j=0;j<dim;++j) {
               _jacobian(cell, point, i, j) = 0;
               for (ordinal_type bf=0;bf<cardinality;++bf)
-                _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(bf, point, j);
+                _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(cell, bf, point, j);
             }
+          }
         }
         else
         {
-          const ordinal_type cardinality = _basisGrads.extent(1);
-          for (ordinal_type i=0;i<phys_dim;++i)
-          for (ordinal_type j=0;j<ref_dim;++j) {
-            _jacobian(cell, point, i, j) = 0;
-            for (ordinal_type bf=0;bf<cardinality;++bf)
-              _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(cell, bf, point, j);
+          const ordinal_type ref_dim = _basisGrads.extent_int(gradRank-1);
+
+          if ( gradRank == 3)
+          {
+            const ordinal_type cardinality = _basisGrads.extent(0);
+            for (ordinal_type i=0;i<phys_dim;++i)
+              for (ordinal_type j=0;j<ref_dim;++j) {
+                _jacobian(cell, point, i, j) = 0;
+                for (ordinal_type bf=0;bf<cardinality;++bf)
+                  _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(bf, point, j);
+              }
+          }
+          else
+          {
+            const ordinal_type cardinality = _basisGrads.extent(1);
+            for (ordinal_type i=0;i<phys_dim;++i)
+            for (ordinal_type j=0;j<ref_dim;++j) {
+              _jacobian(cell, point, i, j) = 0;
+              for (ordinal_type bf=0;bf<cardinality;++bf)
+                _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(cell, bf, point, j);
+            }
           }
         }
       }
@@ -780,7 +810,8 @@ namespace Intrepid2 {
         typename decltype(jacobian)::memory_space>::accessible;
     static_assert(is_accessible, "CellTools<DeviceType>::setJacobian(..): output view's memory space is not compatible with DeviceType");
 
-    using FunctorType      = FunctorCellTools::F_setJacobian<JacobianViewType,WorksetType,BasisGradientsType> ;
+    using SquareFunctorType      = FunctorCellTools::F_setJacobian<JacobianViewType,WorksetType,BasisGradientsType,true> ;
+    using RectangularFunctorType = FunctorCellTools::F_setJacobian<JacobianViewType,WorksetType,BasisGradientsType,false> ;
     
     // resolve the -1 default argument for endCell into the true end cell index
     // In some cases, endCell may be smaller than worksetCell.extent(0).
@@ -791,8 +822,20 @@ namespace Intrepid2 {
     using range_policy_type = Kokkos::MDRangePolicy
       < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     range_policy_type policy( { 0, 0 },
-                              { std::min(jacobian.extent_int(0), endCellResolved-startCell), jacobian.extent_int(1) } );
-    Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, gradients, startCell) );
+                              { std::min<ordinal_type>(static_cast<ordinal_type>(jacobian.extent_int(0)), endCellResolved-startCell), jacobian.extent_int(1) } );
+
+    const ordinal_type gradRank = rank(gradients);
+    const ordinal_type physDim = jacobian.extent_int(2);
+    const ordinal_type refDim = gradients.extent_int(gradRank-1);
+
+    if (physDim == refDim)
+    {
+      Kokkos::parallel_for( policy, SquareFunctorType(jacobian, worksetCell, gradients, startCell) );
+    }
+    else
+    {
+      Kokkos::parallel_for( policy, RectangularFunctorType(jacobian, worksetCell, gradients, startCell) );
+    }
   }
 
 

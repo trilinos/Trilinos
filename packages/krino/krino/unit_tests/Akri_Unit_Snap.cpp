@@ -14,7 +14,7 @@
 #include <Akri_VolumePreservingSnappingLimiter.hpp>
 #include <Akri_MeshSpecs.hpp>
 #include <Akri_Intersection_Points.hpp>
-#include <Akri_Quality.hpp>
+#include <Akri_MeshQuality.hpp>
 #include <Akri_QualityMetric.hpp>
 #include <Akri_Unit_InterfaceGeometry.hpp>
 

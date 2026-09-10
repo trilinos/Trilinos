@@ -15,6 +15,7 @@
 #include "RTOpPack_Types.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
+#include "RTOp_DLLExportMacro.h"
 
 
 namespace RTOpPack {
@@ -27,7 +28,9 @@ enum ETransp {
 const int NUM_ETRANS_ARGS = 3;
 
 /** \brief. */
-extern const Teuchos::Tuple<char,NUM_ETRANS_ARGS> transpMap;
+/// \note On Windows shared builds this DATA symbol needs dllimport in
+///   consumers (thyracore, etc.) or linking fails with LNK2019.
+extern RTOP_LIB_DLL_EXPORT const Teuchos::Tuple<char,NUM_ETRANS_ARGS> transpMap;
 
 
 /** \brief Peform an in-place factorization of a square or rectangular matrix.

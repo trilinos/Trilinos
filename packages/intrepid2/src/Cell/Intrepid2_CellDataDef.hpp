@@ -899,8 +899,8 @@ refCenterDataStatic_ = {
   distance(const PointViewType &point) {
     using scalar_type = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
     constexpr scalar_type one(1), two(2), three(3);
-    const scalar_type& p0 = get_scalar_value(point(0));
-    const scalar_type& p1 = get_scalar_value(point(1));
+    const scalar_type p0 = get_scalar_value(point(0));
+    const scalar_type p1 = get_scalar_value(point(1));
     return Util<scalar_type>::max(one-three*p0, three*(p0+p1)-two, one-three*p1); 
   }
 
@@ -918,8 +918,8 @@ refCenterDataStatic_ = {
   ParametricDistance<shards::Quadrilateral<>::key>::
   distance(const PointViewType &point) {
     using scalar_type = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
-    const scalar_type& p0 = get_scalar_value(point(0));
-    const scalar_type& p1 = get_scalar_value(point(1));
+    const scalar_type p0 = get_scalar_value(point(0));
+    const scalar_type p1 = get_scalar_value(point(1));
     return Util<scalar_type>::max(-p1, p0, p1, -p0); 
   }
 
@@ -938,9 +938,9 @@ refCenterDataStatic_ = {
   distance(const PointViewType &point) {
     using scalar_type = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
     constexpr scalar_type one(1), three(3), four(4);
-    const scalar_type& p0 = get_scalar_value(point(0));
-    const scalar_type& p1 = get_scalar_value(point(1));
-    const scalar_type& p2 = get_scalar_value(point(2));
+    const scalar_type p0 = get_scalar_value(point(0));
+    const scalar_type p1 = get_scalar_value(point(1));
+    const scalar_type p2 = get_scalar_value(point(2));
     return Util<scalar_type>::max(one-four*p1, four*(p0+p1+p2)-three, one-four*p0, one-four*p2);
   }
 
@@ -950,9 +950,9 @@ refCenterDataStatic_ = {
   ParametricDistance<shards::Hexahedron<>::key>::
   distance(const PointViewType &point) {
     using scalar_type = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
-    const scalar_type& p0 = get_scalar_value(point(0));
-    const scalar_type& p1 = get_scalar_value(point(1));
-    const scalar_type& p2 = get_scalar_value(point(2));
+    const scalar_type p0 = get_scalar_value(point(0));
+    const scalar_type p1 = get_scalar_value(point(1));
+    const scalar_type p2 = get_scalar_value(point(2));
     return Util<scalar_type>::max(-p1, p0, p1, -p0, -p2, p2); 
   }
 
@@ -963,9 +963,9 @@ refCenterDataStatic_ = {
   distance(const PointViewType &point) {
     using scalar_type = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
     constexpr scalar_type one(1), four(4), onethird(1.0/3.0), fourthirds(4.0/3.0);
-    const scalar_type& p0 = get_scalar_value(point(0));
-    const scalar_type& p1 = get_scalar_value(point(1));
-    const scalar_type& p2 = get_scalar_value(point(2));
+    const scalar_type p0 = get_scalar_value(point(0));
+    const scalar_type p1 = get_scalar_value(point(1));
+    const scalar_type p2 = get_scalar_value(point(2));
     return Util<scalar_type>::max(fourthirds*(p2-p1)-onethird,  fourthirds*(p2+p0)-onethird, fourthirds*(p2+p1)-onethird, fourthirds*(p2-p0)-onethird, one-four*p2);
   }
   
@@ -976,9 +976,9 @@ refCenterDataStatic_ = {
   distance(const PointViewType &point) {
     using scalar_type = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
     constexpr scalar_type one(1), two(2), three(3);
-    const scalar_type& p0 = get_scalar_value(point(0));
-    const scalar_type& p1 = get_scalar_value(point(1));
-    const scalar_type& p2 = get_scalar_value(point(2));
+    const scalar_type p0 = get_scalar_value(point(0));
+    const scalar_type p1 = get_scalar_value(point(1));
+    const scalar_type p2 = get_scalar_value(point(2));
     return Util<scalar_type>::max(one-three*p0, three*(p0+p1)-two, one-three*p1, -p2, p2);
   }
 

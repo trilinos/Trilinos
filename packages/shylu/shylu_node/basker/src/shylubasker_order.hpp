@@ -389,18 +389,29 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " ++ calling TRILINOS_BTF_MAXTRANS (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
         }
-        if (std::is_same<Int, int>::value) {
-          int *col_ptr = reinterpret_cast <int*> (&(A.col_ptr(0)));
-          int *row_idx = reinterpret_cast <int*> (&(A.row_idx(0)));
-          int *order   = reinterpret_cast <int*> (&(order_match_array(0)));
-          int *iwork   = reinterpret_cast <int*> (&(WORK(0)));
+        if constexpr (std::is_same_v<Int, int>) {
+          int *col_ptr = &(A.col_ptr(0));
+          int *row_idx = &(A.row_idx(0));
+          int *order   = &(order_match_array(0));
+          int *iwork   = &(WORK(0));
           num_match = trilinos_btf_maxtrans ((int)A.nrow, (int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
+        } else if constexpr (std::is_same_v<Int, UF_long>) {
+          // Int is exactly UF_long here (e.g. long long == __int64 on Win64), so no
+          // cast is needed: the pointers already have the right type. A reinterpret_cast
+          // to bridge a different Int (e.g. 32-bit `long` on LLP64) would be UB even
+          // when sizeof matches - [basic.lval]/11 (https://eel.is/c++draft/basic.lval#11) 
+          // only allows access through a similar type (same type, its signed/unsigned counterpart, 
+          // or a char type), and `long`/`long long` are not "similar" to each other
+          // regardless of width.
+          UF_long *col_ptr = &(A.col_ptr(0));
+          UF_long *row_idx = &(A.row_idx(0));
+          UF_long *order   = &(order_match_array(0));
+          UF_long *iwork   = &(WORK(0));
+          num_match = trilinos_btf_l_maxtrans ((UF_long)A.nrow, (UF_long)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
         } else {
-          long int *col_ptr = reinterpret_cast <long int*> (&(A.col_ptr(0)));
-          long int *row_idx = reinterpret_cast <long int*> (&(A.row_idx(0)));
-          long int *order   = reinterpret_cast <long int*> (&(order_match_array(0)));
-          long int *iwork   = reinterpret_cast <long int*> (&(WORK(0)));
-          num_match = trilinos_btf_l_maxtrans ((long int)A.nrow, (long int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
+          // Unsupported ordinal type for this SuiteSparse bridge: fail explicitly
+          // instead of silently reinterpreting memory of the wrong width/type.
+          return BASKER_ERROR;
         }
         #if 0
         printf( " >> debug: set order_match to identity <<\n" );

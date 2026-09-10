@@ -21,6 +21,12 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_containers
+/// @{
+
+///
+/// Storage type alias for Matrix.
+///
 template<typename T, Index M, Index N>
 using matrix_store = Storage<T, dimension_product<M, N>::value>;
 
@@ -64,35 +70,43 @@ public:
 
   ///
   /// Constructor that initializes to NaNs
-  /// \param rows Number of rows
-  /// \param cols Number of columns
   ///
   KOKKOS_INLINE_FUNCTION
   explicit
   Matrix();
 
+  ///
+  /// Constructor that initializes to NaNs.
+  /// \param rows Number of rows
+  /// \param cols Number of columns
+  ///
   KOKKOS_INLINE_FUNCTION
   explicit
   Matrix(Index const rows, Index const cols);
 
   ///
   /// Create tensor from a specified value
-  /// \param rows Number of rows
-  /// \param cols Number of columns
   /// \param value all components are set equal to this
   ///
   KOKKOS_INLINE_FUNCTION
   explicit
   Matrix(Filler const value);
 
+  ///
+  /// Create matrix from a specified value.
+  /// \param rows Number of rows
+  /// \param cols Number of columns
+  /// \param value all components are set equal to this
+  ///
   KOKKOS_INLINE_FUNCTION
   explicit
   Matrix(Index const rows, Index cols, Filler const value);
 
   ///
   /// Create tensor from array
-  /// \param dimension the space dimension
-  /// \param data_ptr pointer into the array
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
   ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
@@ -101,6 +115,13 @@ public:
       ArrayT & data,
       Index index1);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -109,6 +130,14 @@ public:
       Index index1,
       Index index2);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -118,6 +147,15 @@ public:
       Index index2,
       Index index3);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -128,6 +166,16 @@ public:
       Index index3,
       Index index4);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  /// \param index5 fifth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -139,6 +187,17 @@ public:
       Index index4,
       Index index5);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  /// \param index5 fifth index into the array
+  /// \param index6 sixth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -151,6 +210,14 @@ public:
       Index index5,
       Index index6);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param rows Number of rows
+  /// \param cols Number of columns
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -160,6 +227,15 @@ public:
       ArrayT & data,
       Index index1);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param rows Number of rows
+  /// \param cols Number of columns
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -170,6 +246,16 @@ public:
       Index index1,
       Index index2);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param rows Number of rows
+  /// \param cols Number of columns
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -181,6 +267,17 @@ public:
       Index index2,
       Index index3);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param rows Number of rows
+  /// \param cols Number of columns
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -193,6 +290,18 @@ public:
       Index index3,
       Index index4);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param rows Number of rows
+  /// \param cols Number of columns
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  /// \param index5 fifth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -206,6 +315,19 @@ public:
       Index index4,
       Index index5);
 
+  ///
+  /// Create matrix from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param rows Number of rows
+  /// \param cols Number of columns
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  /// \param index5 fifth index into the array
+  /// \param index6 sixth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Matrix(
@@ -220,10 +342,20 @@ public:
       Index index5,
       Index index6);
 
+  ///
+  /// Create matrix from array defined by pointer.
+  /// \param data_ptr pointer into the array
+  ///
   KOKKOS_INLINE_FUNCTION
   explicit
   Matrix(T const * data_ptr);
 
+  ///
+  /// Create matrix from array defined by pointer.
+  /// \param rows Number of rows
+  /// \param cols Number of columns
+  /// \param data_ptr pointer into the array
+  ///
   KOKKOS_INLINE_FUNCTION
   explicit
   Matrix(Index const rows, Index cols, T const * data_ptr);
@@ -280,7 +412,8 @@ public:
   get_num_cols() const;
 
   ///
-  /// \param dimension of vector
+  /// \param rows Number of rows
+  /// \param cols Number of columns
   ///
   KOKKOS_INLINE_FUNCTION
   void
@@ -288,9 +421,15 @@ public:
 
 private:
 
+  ///
+  /// Number of rows.
+  ///
   Index
   rows_{M};
 
+  ///
+  /// Number of columns.
+  ///
   Index
   cols_{N};
 
@@ -1730,6 +1869,7 @@ operator<<(std::ostream & os, Matrix<T, M, N> const & A)
   return os;
 }
 
+/// @}
 } // namespace minitensor
 
 #endif //MiniTensor_Matrix_h

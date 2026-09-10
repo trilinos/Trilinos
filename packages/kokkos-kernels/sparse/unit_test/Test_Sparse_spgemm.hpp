@@ -129,7 +129,6 @@ int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgor
   KernelHandle kh;
   kh.set_team_work_size(16);
   kh.set_dynamic_scheduling(true);
-  // kh.set_verbose(true);
 
   kh.create_spgemm_handle(spgemm_algorithm);
   {
@@ -312,7 +311,10 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
     if (!is_expected_to_fail) {
       EXPECT_TRUE((res == 0)) << algo;
       bool is_identical = is_same_matrix<crsMat_t, device>(output_mat, output_mat2);
-      EXPECT_TRUE(is_identical) << algo;
+      EXPECT_TRUE(is_identical) << "SpGEMM result incorrect: algo=" << algo << ", callMode=" << int(callMode)
+                                << ", testReuse=" << int(testReuse) << ", m=" << m << ", k=" << k << ", n=" << n
+                                << ", nnz=" << nnz << ", bandwidth=" << bandwidth
+                                << ", row_size_variance=" << row_size_variance;
       // EXPECT_TRUE( equal) << algo;
     }
     // std::cout << "algo:" << algo << " spgemm_time:" << spgemm_time << "

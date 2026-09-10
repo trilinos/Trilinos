@@ -31,7 +31,7 @@ IF(${PACKAGE_NAME}_ENABLE_Galeri)
   TRIBITS_ADD_TEST(
     BlockTriDiagonalSolver
     NAME BlockTriDiLargeBlock
-    ARGS "--matrixType=Laplace3D --blockSize=32 --nx=20 --ny=20 --nz=20"
+    ARGS "--matrixType=Laplace3D --blockSize=64 --nx=10 --ny=10 --nz=10"
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT
@@ -40,7 +40,7 @@ IF(${PACKAGE_NAME}_ENABLE_Galeri)
   TRIBITS_ADD_TEST(
     BlockTriDiagonalSolver
     NAME BlockTriDiLargeBlockSchur
-    ARGS "--matrixType=Laplace3D --blockSize=32 --nx=20 --ny=20 --nz=20 --sublinesPerLine=1 --sublinesPerLineSchur=2"
+    ARGS "--matrixType=Laplace3D --blockSize=64 --nx=10 --ny=10 --nz=10 --sublinesPerLine=1 --sublinesPerLineSchur=2"
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT

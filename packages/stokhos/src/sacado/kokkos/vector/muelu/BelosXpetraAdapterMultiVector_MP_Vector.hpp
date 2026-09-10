@@ -32,7 +32,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
   template<class Storage, class LO, class GO, class Node>
   class MultiVecTraits<typename Storage::value_type,
                        Xpetra::MultiVector<Sacado::MP::Vector<Storage>,
-                                           LO,GO,Node> > {
+                                           LO,GO,Node>,
+                       ::Belos::DefaultDenseMatrix<int, typename Storage::value_type> > {
   public:
     typedef typename Storage::ordinal_type s_ordinal;
     typedef typename Storage::value_type BaseScalar;
@@ -43,7 +44,8 @@ namespace Belos { // should be moved to Belos or Xpetra?
   private:
 
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node>                   TpetraMultiVector;
-    typedef MultiVecTraits<dot_type,Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
+    typedef ::Belos::DefaultDenseMatrix<int, BaseScalar>                   DM;
+    typedef MultiVecTraits<dot_type,Tpetra::MultiVector<Scalar,LO,GO,Node>,DM> MultiVecTraitsTpetra;
 
   public:
 
@@ -130,7 +132,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
     }
 
     static void MvTimesMatAddMv( dot_type alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A,
-                                 const Teuchos::SerialDenseMatrix<int,dot_type>& B,
+                                 const DM& B,
                                  dot_type beta, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 #ifdef HAVE_BELOS_XPETRA_TIMERS
@@ -175,7 +177,7 @@ namespace Belos { // should be moved to Belos or Xpetra?
       }
     }
 
-    static void MvTransMv( dot_type alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, Teuchos::SerialDenseMatrix<int,dot_type>& C)
+    static void MvTransMv( dot_type alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, DM& C)
     {
 #ifdef HAVE_BELOS_XPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);

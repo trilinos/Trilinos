@@ -58,7 +58,7 @@ using global_ordinal_type = unsigned;
 /// \typedef execution_space
 /// \brief Default Tpetra execution space and Node type.
 #if defined(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
-using execution_space = ::Kokkos::Experimental::SYCL;
+using execution_space = ::Kokkos::SYCL;
 using node_type       = Tpetra::KokkosCompat::KokkosSYCLWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
 using execution_space     = ::Kokkos::HIP;
@@ -104,8 +104,8 @@ struct CommBufferMemorySpace<Kokkos::HIP> {
 
 #ifdef KOKKOS_ENABLE_SYCL
 template <>
-struct CommBufferMemorySpace<Kokkos::Experimental::SYCL> {
-  using type = Kokkos::Experimental::SYCLDeviceUSMSpace;
+struct CommBufferMemorySpace<Kokkos::SYCL> {
+  using type = Kokkos::SYCLDeviceUSMSpace;
 };
 #endif
 

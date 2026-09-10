@@ -17,7 +17,18 @@ namespace NS {
 
 class LSCPrecondState;  // forward declaration
 
-// constant, not very flexible strategy for driving LSCPreconditioenrFactory
+/** \brief A fixed LSCStrategy built from operators the caller supplies directly.
+ *
+ * This is the simplest LSCStrategy: rather than assembling its operators from an
+ * inverse library at build time, it is handed the already-formed inverses
+ * (\f$F^{-1}\f$, the \f$BQ_u^{-1}B^T\f$ Schur-complement inverse, the optional
+ * outer stabilization \f$\alpha D^{-1}\f$, and the inverse mass matrix) in its
+ * constructor and simply returns them. Because nothing is recomputed it is not
+ * flexible, but it is useful when the operators are known ahead of time or are
+ * produced outside Teko. Compare with the parameter-driven InvLSCStrategy /
+ * PresLaplaceLSCStrategy / LSCSIMPLECStrategy variants used by
+ * LSCPreconditionerFactory.
+ */
 class StaticLSCStrategy : public LSCStrategy {
  public:
   // Staiblized constructor

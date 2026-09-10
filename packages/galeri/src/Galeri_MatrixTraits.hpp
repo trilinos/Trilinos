@@ -13,6 +13,8 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 
+#include "Tpetra_CrsMatrix.hpp"
+
 #include "Galeri_config.h"
 #ifdef HAVE_GALERI_XPETRA
 // needed for the specialized traits:

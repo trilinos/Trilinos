@@ -108,7 +108,7 @@ namespace Intrepid2
       
       using UnmanagedPointScalarView = Kokkos::View<PointScalarType*, Layout, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
       UnmanagedPointScalarView pointView;
-#if defined(HAVE_INTREPID2_SACADO) && defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
+#if defined(HAVE_INTREPID2_SACADO)
       if constexpr (Sacado::is_view_fad<UnmanagedPointScalarView>::value) {
         // This is super weird and doesn't actually wrap the Sacado derivatives
         pointView = UnmanagedPointScalarView(&x.val(), numPoints, 1);

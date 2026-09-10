@@ -45,7 +45,7 @@ run_mat_vec_scratch(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 
   const int m = A.extent(0);
   const int n = A.extent(1);
-  const int p = dimension_scalar(A);
+  const int p = Sacado::dimension_scalar(A);
 
 #ifdef KOKKOS_ENABLE_CUDA
   const bool is_cuda = std::is_same<execution_space,Kokkos::Cuda>::value;
@@ -308,14 +308,14 @@ do_time_fad(const size_t m, const size_t n, const size_t p, const size_t nloop,
   perf.throughput = perf.flops / perf.time / 1.0e9;
 
 // FIXME: this needs a new way of getting a flattened Kokkos::View from FadView
-#if !defined(SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
-  if (check) {
-    typename ViewTypeA::type A_flat = A;
-    typename ViewTypeB::type b_flat = b;
-    typename ViewTypeC::type c_flat = c;
-    check_deriv(A_flat, b_flat, c_flat);
-  }
-#endif
+// #if !defined(SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
+//   if (check) {
+//     typename ViewTypeA::type A_flat = A;
+//     typename ViewTypeB::type b_flat = b;
+//     typename ViewTypeC::type c_flat = c;
+//     check_deriv(A_flat, b_flat, c_flat);
+//   }
+// #endif
 
   return perf;
 }
@@ -364,14 +364,14 @@ do_time_scratch(const size_t m, const size_t n, const size_t p, const size_t nlo
   perf.throughput = perf.flops / perf.time / 1.0e9;
 
 // FIXME: this needs a new way of getting a flattened Kokkos::View from FadView
-#if !defined(SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
-  if (check) {
-    typename ViewTypeA::type A_flat = A;
-    typename ViewTypeB::type b_flat = b;
-    typename ViewTypeC::type c_flat = c;
-    check_deriv(A_flat, b_flat, c_flat);
-  }
-#endif
+// #if !defined(SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
+//   if (check) {
+//     typename ViewTypeA::type A_flat = A;
+//     typename ViewTypeB::type b_flat = b;
+//     typename ViewTypeC::type c_flat = c;
+//     check_deriv(A_flat, b_flat, c_flat);
+//   }
+// #endif
 
   return perf;
 }

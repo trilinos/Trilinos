@@ -51,15 +51,7 @@ public:
 
     void generate_initial_ids(unsigned numIdsNeeded);
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-    STK_DEPRECATED stk::mesh::EntityId get_available_id();
-#endif
-
     void generate_additional_ids_collective(size_t num_additional_ids_needed);
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
-    STK_DEPRECATED void reset_suggested_side_id_iter(size_t numIdsNotReallyUsed);
-#endif
 
     void clear()
     {

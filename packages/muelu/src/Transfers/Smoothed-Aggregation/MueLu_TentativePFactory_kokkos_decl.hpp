@@ -10,21 +10,19 @@
 #ifndef MUELU_TENTATIVEPFACTORY_KOKKOS_DECL_HPP
 #define MUELU_TENTATIVEPFACTORY_KOKKOS_DECL_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-
-#include "MueLu_TentativePFactory_kokkos_fwd.hpp"
-
+#include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
-#include "Teuchos_ScalarTraits.hpp"
+#include <Xpetra_CrsGraphFactory_fwd.hpp>
 
-#include "Xpetra_CrsGraphFactory_fwd.hpp"
+#include "MueLu_ConfigDefs.hpp"
 
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
@@ -66,17 +64,15 @@ namespace MueLu {
   | P       | TentativePFactory   | Non-smoothed "tentative" prolongation operator (with piece-wise constant transfer operator basis functions)
   | Nullspace | TentativePFactory | Coarse near null space vectors. Please also check the documentation of the NullspaceFactory for the special dependency tree of the "Nullspace" variable throughout all multigrid levels.
 */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
 class TentativePFactory_kokkos : public PFactory {
  public:
-  typedef LocalOrdinal local_ordinal_type;
-  typedef GlobalOrdinal global_ordinal_type;
-  typedef typename Node::execution_space execution_space;
-  typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-  typedef typename Node::device_type DeviceType;
-  typedef Node node_type;
-  typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType real_type;
-  typedef Xpetra::MultiVector<real_type, LocalOrdinal, GlobalOrdinal, node_type> RealValuedMultiVector;
+  using execution_space = typename Node::execution_space;
+  using range_type      = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
+  using DeviceType      = typename Node::device_type;
 
  private:
 #undef MUELU_TENTATIVEPFACTORY_KOKKOS_SHORT
@@ -87,45 +83,43 @@ class TentativePFactory_kokkos : public PFactory {
   //@{
 
   //! Constructor
-  TentativePFactory_kokkos() {}
+  TentativePFactory_kokkos();
 
   //! Destructor.
-  virtual ~TentativePFactory_kokkos() {}
+  ~TentativePFactory_kokkos() override;
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const override;
 
   //! Input
   //@{
 
-  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const override;
 
   //@}
 
   //! @name Build methods.
   //@{
 
-  void Build(Level& fineLevel, Level& coarseLevel) const;
-  void BuildP(Level& fineLevel, Level& coarseLevel) const;
+  void Build(Level& fineLevel, Level& coarseLevel) const override;
+  void BuildP(Level& fineLevel, Level& coarseLevel) const override;
 
   //@}
 
-  // NOTE: All of thess should really be private, but CUDA doesn't like that
+  // NOTE: All of these should really be private, but CUDA doesn't like that
+
+  void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates,
+                       RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
+                       RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
+                       RCP<MultiVector>& coarseNullspace, int levelID) const;
 
   void BuildPuncoupledBlockCrs(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo,
-                               RCP<MultiVector> fineNullspace, RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
-
-  bool isGoodMap(const Map& rowMap, const Map& colMap) const;
+                               RCP<MultiVector> fineNullspace, RCP<const Map> coarsePointMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, int levelID) const;
 
   void BuildPcoupled(RCP<Matrix> A, RCP<Aggregates> aggregates,
                      RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                      RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
                      RCP<MultiVector>& coarseNullspace) const;
-
-  void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates> aggregates,
-                       RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
-                       RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
-                       RCP<MultiVector>& coarseNullspace, const int levelID) const;
 
   mutable bool bTransferCoordinates_ = false;
 };

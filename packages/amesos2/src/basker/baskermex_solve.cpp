@@ -163,7 +163,7 @@ void mexFunction
 
     for (i=0; i < ancol; i++)
       {
-	//cout << solution[i] << endl;
+	//std::cout << solution[i] << std::endl;
 	sol_out[i] = solution[i];
       }
 

@@ -1153,11 +1153,11 @@ class Map : public Teuchos::Describable {
 
   /// \brief The min global index in this Map over all processes in
   ///   its communicator \c comm (see above).
-  global_ordinal_type minAllGID_;
+  mutable global_ordinal_type minAllGID_;
 
   /// \brief The max global index in this Map over all processes in
   ///   its communicator \c comm (see above).
-  global_ordinal_type maxAllGID_;
+  mutable global_ordinal_type maxAllGID_;
 
   /// \brief First contiguous GID.
   ///
@@ -1200,10 +1200,10 @@ class Map : public Teuchos::Describable {
   /// otherwise (if the Map is locally replicated).  See the
   /// documentation of isDistributed() for a definition of these two
   /// mutually exclusive terms.
-  bool distributed_;
+  mutable bool distributed_;
 
  private:
-  bool haveGlobalConstants_ = false;
+  mutable bool haveGlobalConstants_ = false;
 
  public:
   bool haveGlobalConstants() const { return haveGlobalConstants_; }
@@ -1211,7 +1211,13 @@ class Map : public Teuchos::Describable {
   /// \brief Compute global constants for the map. This method needs
   /// to be called collectively over all processes in the Map's
   /// communicator.
-  void computeGlobalConstants();
+  void computeGlobalConstants() const;
+
+  /// \brief Copy global constants from a different map.
+  ///
+  /// This is useful when two maps have the same global IDs but different
+  /// distributions. This situation arise for example in repartitioning.
+  void copyGlobalConstants(const Map<local_ordinal_type, global_ordinal_type, Node>& map);
 
   /// \brief A mapping from local IDs to global IDs.
   ///

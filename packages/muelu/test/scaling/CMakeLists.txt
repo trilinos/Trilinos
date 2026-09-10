@@ -133,6 +133,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     scaling-ml.xml
     scaling-with-rerun.xml
     scaling-withglobalconstants.xml
+    scaling.extreme.xml
+    scaling.low.xml
+    scaling.medium.xml
+    scaling.none.xml
     scaling.xml
     scaling.yaml
     scaling_apex.xml
@@ -142,6 +146,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     smoother_complex.xml
     smooVec.mm
     smooVecCoalesce.xml
+    test.globalConstants.xml
     tripleMatrixProduct.xml
     zeroAggTest.xml
   CATEGORIES BASIC PERFORMANCE
@@ -427,6 +432,18 @@ TRIBITS_ADD_TEST(
   POSTFIX_AND_ARGS_1 "Repeat" --linAlgebra=Tpetra --reruns=3 --stacked-timer
   NUM_MPI_PROCS 4
   COMM mpi # HAVE_MPI required
+)
+
+TRIBITS_ADD_TEST(
+  Driver
+  NAME "Verbosity"
+  POSTFIX_AND_ARGS_0 "None" --xml=scaling.none.xml
+  POSTFIX_AND_ARGS_1 "Low" --xml=scaling.low.xml
+  POSTFIX_AND_ARGS_2 "Medium" --xml=scaling.medium.xml
+  POSTFIX_AND_ARGS_3 "Extreme" --xml=scaling.extreme.xml
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Belos converged"
 )
 
 IF(${PACKAGE_NAME}_ENABLE_Zoltan)
@@ -908,5 +925,14 @@ TRIBITS_ADD_TEST(
   COMM mpi
   NUM_MPI_PROCS 4
   ARGS "--matrix=A_rankWithoutUnknowns.m --rowmap=map_rankWithoutUnknowns.m --coords=coords_rankWithoutUnknowns.m --xml=rankWithoutUnknowns.xml"
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
+
+TRIBITS_ADD_TEST(
+  Driver
+  NAME GlobalConstants
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--nx=400 --ny=400 --xml=test.globalConstants.xml"
   PASS_REGULAR_EXPRESSION "Belos converged"
 )

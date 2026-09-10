@@ -122,6 +122,8 @@ static Node parse_yaml_file(const std::string & inputFileName)
 }
 
 bool Node::is_scalar() const { return Type() == YAML::NodeType::Scalar; }
+bool Node::is_map() const { return Type() == YAML::NodeType::Map; }
+bool Node::is_sequence() const { return Type() == YAML::NodeType::Sequence; }
 
 Node Node::get_if_present(const std::string& key) const
 {

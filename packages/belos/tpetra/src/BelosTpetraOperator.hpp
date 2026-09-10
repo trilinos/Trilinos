@@ -40,7 +40,8 @@ namespace Belos {
 template<class Scalar = Tpetra::Operator<>::scalar_type,
          class LocalOrdinal = Tpetra::Operator<>::local_ordinal_type,
          class GlobalOrdinal = Tpetra::Operator<>::global_ordinal_type,
-         class Node = Tpetra::Operator<>::node_type>
+         class Node = Tpetra::Operator<>::node_type,
+         class DM = DefaultDenseMatrix<int, Scalar>>
 class TpetraOperator : public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 private:
 
@@ -49,8 +50,8 @@ private:
   using Tpetra_Operator = Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using Tpetra_Map = Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
 
-  Teuchos::RCP<SolverManager<Scalar,Tpetra_MultiVector,Tpetra_Operator> > solver_;
-  Teuchos::RCP<LinearProblem<Scalar,Tpetra_MultiVector,Tpetra_Operator> > lp_;
+  Teuchos::RCP<SolverManager<Scalar,Tpetra_MultiVector,Tpetra_Operator,DM> > solver_;
+  Teuchos::RCP<LinearProblem<Scalar,Tpetra_MultiVector,Tpetra_Operator,DM> > lp_;
   Teuchos::RCP<Teuchos::ParameterList> plist_;
 
   //! Name of solver to be passed into solver factory. 
@@ -76,7 +77,7 @@ public:
     /// When true, the bool \c initSolnVec causes the solution vector \c Y to be itialized to zero
     /// when apply(X,Y) is called.
 
-  TpetraOperator( const Teuchos::RCP<LinearProblem<Scalar,Tpetra_MultiVector,Tpetra_Operator> >& lp, 
+  TpetraOperator( const Teuchos::RCP<LinearProblem<Scalar,Tpetra_MultiVector,Tpetra_Operator,DM> >& lp,
 		  const Teuchos::RCP<Teuchos::ParameterList>& plist,
       const std::string solver_name,
       bool initSolnVec = false )  
@@ -85,7 +86,7 @@ public:
     solver_name_(solver_name),
     initSolnVec_(initSolnVec)
   {
-    Belos::SolverFactory<Scalar,Tpetra_MultiVector,Tpetra_Operator> factory;
+    Belos::SolverFactory<Scalar,Tpetra_MultiVector,Tpetra_Operator,DM> factory;
     solver_ = factory.create( solver_name_, plist );
     solver_->setProblem( lp_ );
   }

@@ -392,10 +392,10 @@ public:
 
 #if defined(KOKKOS_ENABLE_SYCL)
 template <typename ValueType>
-class NumericToolsFactory<ValueType, typename UseThisDevice<Kokkos::Experimental::SYCL>::type> {
+class NumericToolsFactory<ValueType, typename UseThisDevice<Kokkos::SYCL>::type> {
 public:
   using value_type = ValueType;
-  using device_type = typename UseThisDevice<Kokkos::Experimental::SYCL>::type;
+  using device_type = typename UseThisDevice<Kokkos::SYCL>::type;
   using numeric_tools_base_type = NumericToolsBase<value_type, device_type>;
   using numeric_tools_serial_type = NumericToolsSerial<value_type, device_type>;
   using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type, device_type, 0>;

@@ -202,6 +202,11 @@ public:
   void addNonParameterGlobalEvaluationData(const std::string & name,
                                            const Teuchos::RCP<GlobalEvaluationData> & ged);
 
+  // Add generic global evaluation data to include in Assembly Engine input arguments
+  void addGlobalEvaluationDataToAssemblyInArgs(
+      const std::string & name,
+      const Teuchos::RCP<GlobalEvaluationData> & ged);
+
   /** Add a response specified by a list of WorksetDescriptor objects. The specifics of the
     * response are specified by the response factory builder. This version supports computing derivatives with
     * respect to both the state ('x') and control ('p') variables and is thus ``flexible''.
@@ -670,6 +675,7 @@ private: // data members
 
   GlobalEvaluationDataContainer nonParamGlobalEvaluationData_;
   GlobalEvaluationDataContainer distrParamGlobalEvaluationData_;
+  GlobalEvaluationDataContainer assemblyGlobalEvaluationData_;
 
   mutable bool oneTimeDirichletBeta_on_;
   mutable Scalar oneTimeDirichletBeta_;

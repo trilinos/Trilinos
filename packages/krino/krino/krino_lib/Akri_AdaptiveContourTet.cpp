@@ -7,6 +7,7 @@
 #include <Akri_AdaptiveContourTet.hpp>
 
 #include <Akri_AdaptiveContourUtils.hpp>
+#include <Akri_ContourTet.hpp>
 #include <Akri_ContourUtils.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <stk_math/StkVector.hpp>
@@ -14,6 +15,8 @@
 #include <Akri_RefinerUtils.hpp>
 #include <Akri_Faceted_Surface.hpp>
 #include <stk_topology/topology.hpp>
+
+using krino::ContourTet;
 
 namespace krino {
 
@@ -135,108 +138,15 @@ std::array<double,10> get_child_tet10_distance(const std::array<double,10> & tet
   return subTet10Dist;
 }
 
-void append_facets_for_converged_tet(const std::array<stk::math::Vector3d,4> & coords,
-  const std::array<double,10> & tet10Dist,
-  const double /*lengthScale*/,
-  FacetedSurfaceBase & facets)
-{
-  const int caseId = ContourTet::compute_case_id({{compute_node_sign(tet10Dist[0]), compute_node_sign(tet10Dist[1]), compute_node_sign(tet10Dist[2]), compute_node_sign(tet10Dist[3])}});
-
-  if (caseId == 0 || // ls[0]<0 && ls[1]<0 && ls[2]<0 && ls[3]<0
-      caseId == 80)  // ls[0]>0 && ls[1]>0 && ls[2]>0 && ls[3]>0
-    return;
-
-  const std::array<unsigned,10> & i = ContourTet::get_permuted_node_ordinals(caseId);
-  const int permutedCaseId = ContourTet::get_permuted_case_id(caseId);
-
-  switch (permutedCaseId)
-  {
-    case 0:  // ls[0]<0 && ls[1]<0 && ls[2]<0 && ls[3]<0
-    case 1:  // ls[0]=0 && ls[1]<0 && ls[2]<0 && ls[3]<0
-    case 4:  // ls[0]=0 && ls[1]=0 && ls[2]<0 && ls[3]<0
-    case 13: // ls[0]=0 && ls[1]=0 && ls[2]=0 && ls[3]<0
-    case 40: // ls[0]=0 && ls[1]=0 && ls[2]=0 && ls[3]=0
-    case 67: // ls[0]=0 && ls[1]=0 && ls[2]=0 && ls[3]>0
-    case 76: // ls[0]=0 && ls[1]=0 && ls[2]>0 && ls[3]>0
-    case 79: // ls[0]=0 && ls[1]>0 && ls[2]>0 && ls[3]>0
-    case 80: // ls[0]>0 && ls[1]>0 && ls[2]>0 && ls[3]>0
-    {
-      // empty
-    }
-    break;
-
-    case 2:  // ls[0]>0 && ls[1]<0 && ls[2]<0 && ls[3]<0
-    case 78: // ls[0]<0 && ls[1]>0 && ls[2]>0 && ls[3]>0
-    {
-      const stk::math::Vector3d x4 = compute_quadratic_edge_crossing(coords, tet10Dist, i[0], i[1], i[4]);
-      const stk::math::Vector3d x6 = compute_quadratic_edge_crossing(coords, tet10Dist, i[0], i[2], i[6]);
-      const stk::math::Vector3d x7 = compute_quadratic_edge_crossing(coords, tet10Dist, i[0], i[3], i[7]);
-
-      if (2 == permutedCaseId)
-        facets.emplace_back_3d(x6, x4, x7);
-      else
-        facets.emplace_back_3d(x4, x6, x7);
-    }
-    break;
-
-    case 5:  // ls[0]>0 && ls[1]=0 && ls[2]<0 && ls[3]<0
-    case 75: // ls[0]<0 && ls[1]=0 && ls[2]>0 && ls[3]>0
-    {
-      const stk::math::Vector3d x6 = compute_quadratic_edge_crossing(coords, tet10Dist, i[0], i[2], i[6]);
-      const stk::math::Vector3d x7 = compute_quadratic_edge_crossing(coords, tet10Dist, i[0], i[3], i[7]);
-
-      if (5 == permutedCaseId)
-        facets.emplace_back_3d(x6, coords[i[1]], x7);
-      else
-        facets.emplace_back_3d(x7, coords[i[1]], x6);
-    }
-    break;
-
-    case 8:  // ls[0]>0 && ls[1]>0 && ls[2]<0 && ls[3]<0
-    {
-      const stk::math::Vector3d x5 = compute_quadratic_edge_crossing(coords, tet10Dist, i[1], i[2], i[5]);
-      const stk::math::Vector3d x6 = compute_quadratic_edge_crossing(coords, tet10Dist, i[0], i[2], i[6]);
-      const stk::math::Vector3d x7 = compute_quadratic_edge_crossing(coords, tet10Dist, i[0], i[3], i[7]);
-      const stk::math::Vector3d x8 = compute_quadratic_edge_crossing(coords, tet10Dist, i[1], i[3], i[8]);
-
-      // face 4: true: connect 6 and 8, false: connect 7 and 5
-      const bool face4 = will_cutting_quad_from_0to2_cut_largest_angle(x8, x7, x6, x5);
-
-      if (face4)
-      {
-        facets.emplace_back_3d(x8, x7, x6);
-        facets.emplace_back_3d(x8, x6, x5);
-      }
-      else
-      {
-        facets.emplace_back_3d(x5, x8, x7);
-        facets.emplace_back_3d(x5, x7, x6);
-      }
-    }
-    break;
-
-    case 14: // ls[0]>0 && ls[1]=0 && ls[2]=0 && ls[3]<0
-    {
-      const stk::math::Vector3d x7 = compute_quadratic_edge_crossing(coords, tet10Dist, i[0], i[3], i[7]);
-
-      facets.emplace_back_3d(coords[i[1]], x7, coords[i[2]]);
-    }
-    break;
-
-    default: ThrowRuntimeError("Subelement decomposition error. caseId,permutedCaseId=" << caseId << "," << permutedCaseId);
-  }
-}
-
 void append_facets_for_subtet_of_converged_tet(const std::array<stk::math::Vector3d,10> & tet10Coords,
   const std::array<double,10> & tet10Dist,
   const std::array<double,25> & subTetDist,
-  const double lengthScale,
   FacetedSurfaceBase & facets,
   const std::array<int, 4> & subElemVertexIndices,
   const std::array<int, 6> & subElemMidsideIndices)
 {
   const std::array<double,10> subTet10Dist = get_child_tet10_distance(tet10Dist, subTetDist, subElemVertexIndices, subElemMidsideIndices);
-  append_facets_for_converged_tet(subarray(tet10Coords, subElemVertexIndices), subTet10Dist, lengthScale, facets);
+  ContourTet::append_facets_for_tet4_with_tet10_distance(subarray(tet10Coords, subElemVertexIndices), subTet10Dist, facets);
 }
 
 int determine_tet_edge_refinement_case_id(const std::array<double,10> & tet10Dist,
@@ -278,14 +188,14 @@ void append_facets_for_refined_subtet_using_interpolated_distance(const std::arr
   std::array<double,25> subSubTetDist = interpolate_subtet(subTet10Dist);
   snap_distance(subSubTetDist, snapTol*lengthScale);
 
-  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, lengthScale, facets, {{0,4,6,7}}, {{0,7,5,9,10,17}});
-  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, lengthScale, facets, {{1,5,4,8}}, {{2,8,1,12,13,11}});
-  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, lengthScale, facets, {{2,6,5,9}}, {{4,6,3,15,16,14}});
-  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, lengthScale, facets, {{7,8,9,3}}, {{18,19,20,21,22,23}});
-  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, lengthScale, facets, {{4,5,6,8}}, {{8,6,7,11,13,24}});
-  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, lengthScale, facets, {{6,5,9,8}}, {{6,14,16,24,13,19}});
-  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, lengthScale, facets, {{6,9,7,8}}, {{16,20,17,24,19,18}});
-  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, lengthScale, facets, {{6,7,4,8}}, {{17,10,7,24,18,11}});
+  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, facets, {{0,4,6,7}}, {{0,7,5,9,10,17}});
+  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, facets, {{1,5,4,8}}, {{2,8,1,12,13,11}});
+  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, facets, {{2,6,5,9}}, {{4,6,3,15,16,14}});
+  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, facets, {{7,8,9,3}}, {{18,19,20,21,22,23}});
+  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, facets, {{4,5,6,8}}, {{8,6,7,11,13,24}});
+  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, facets, {{6,5,9,8}}, {{6,14,16,24,13,19}});
+  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, facets, {{6,9,7,8}}, {{16,20,17,24,19,18}});
+  append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, facets, {{6,7,4,8}}, {{17,10,7,24,18,11}});
 }
 
 void adaptively_append_facets_for_subtet_using_semilagrangian_distance(const std::array<stk::math::Vector3d,10> & parentCoords,

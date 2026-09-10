@@ -22,7 +22,7 @@
 #include "Phalanx_Print.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 namespace panzer {
 
@@ -125,7 +125,7 @@ evaluateFields(
     const WorksetDetails & details = workset;
 
     //const bool is_normalize = true;
-    auto work = Kokkos::create_mirror_view(Kokkos::createDynRankView(residual.get_static_view(),"work", 4, cellDim));
+    auto work = Kokkos::create_mirror_view(Sacado::createDynRankView(residual.get_static_view(),"work", 4, cellDim));
 
     // compute residual
     auto residual_h = Kokkos::create_mirror_view(residual.get_static_view());

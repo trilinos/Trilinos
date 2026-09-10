@@ -128,13 +128,6 @@ constexpr topology::topology_t topology_data<topology::HEX_8                    
 constexpr topology::topology_t topology_data<topology::HEX_20                       >::face_topology_vector[];
 constexpr topology::topology_t topology_data<topology::HEX_27                       >::face_topology_vector[];
 
-constexpr topology::topology_t topology_data<topology::SHELL_TRI_3                  >::shell_side_topology_vector[];
-constexpr topology::topology_t topology_data<topology::SHELL_TRI_4                  >::shell_side_topology_vector[];
-constexpr topology::topology_t topology_data<topology::SHELL_TRI_6                  >::shell_side_topology_vector[];
-constexpr topology::topology_t topology_data<topology::SHELL_QUAD_4                 >::shell_side_topology_vector[];
-constexpr topology::topology_t topology_data<topology::SHELL_QUAD_8                 >::shell_side_topology_vector[];
-constexpr topology::topology_t topology_data<topology::SHELL_QUAD_9                 >::shell_side_topology_vector[];
-
 constexpr uint8_t topology_data<topology::INVALID_TOPOLOGY             >::face_node_ordinals_offsets[];
 constexpr uint8_t topology_data<topology::NODE                         >::face_node_ordinals_offsets[];
 constexpr uint8_t topology_data<topology::LINE_2                       >::face_node_ordinals_offsets[];

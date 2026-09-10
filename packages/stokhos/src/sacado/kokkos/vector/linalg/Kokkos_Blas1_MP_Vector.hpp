@@ -14,7 +14,7 @@
 
 #include "Sacado_MP_Vector.hpp"
 #include "Kokkos_View_MP_Vector.hpp"
-#include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits_MP_Vector.hpp"
 #include "KokkosBlas.hpp"
 
 //----------------------------------------------------------------------------
@@ -30,7 +30,7 @@ template <typename XD, typename ... XP,
 typename std::enable_if<
   Kokkos::is_view_mp_vector< Kokkos::View<XD,XP...> >::value &&
   Kokkos::is_view_mp_vector< Kokkos::View<YD,YP...> >::value,
-  typename Kokkos::Details::InnerProductSpaceTraits<
+  typename KokkosKernels::Details::InnerProductSpaceTraits<
     typename Kokkos::View<XD,XP...>::non_const_value_type >::dot_type
   >::type
 dot(const Kokkos::View<XD,XP...>& x,

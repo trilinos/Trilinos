@@ -10,7 +10,6 @@
 #include "Teuchos_TestingHelpers.hpp"
 
 #include "Sacado.hpp"
-#include "Kokkos_DynRankView_Fad.hpp"
 
 template <typename FadType1, typename FadType2>
 bool checkFads(const FadType1& x, const FadType2& x2,

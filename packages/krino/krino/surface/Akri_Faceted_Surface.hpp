@@ -34,6 +34,7 @@ public:
 
   virtual void swap(FacetedSurfaceBase & other) = 0;
   virtual void clear() = 0;
+  virtual bool empty() const = 0;
   virtual size_t size() const = 0;
   virtual size_t nonlocal_size() const = 0;
   virtual double point_distance(const stk::math::Vector3d &x, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance) const = 0;
@@ -98,6 +99,7 @@ public:
   
   // query/modify facets
   virtual void clear() override { myLocalFacets.clear(); }
+  virtual bool empty() const override { return my_facet_tree->empty(); } // valid after prepare_to_compute
   virtual size_t size() const override { return myLocalFacets.size(); }
   virtual void swap(FacetedSurfaceBase & other) override;
 

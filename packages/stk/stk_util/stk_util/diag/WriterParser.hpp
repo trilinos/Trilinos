@@ -81,19 +81,6 @@ public:
    */
   Mask parse(const char *mask_string) const override;
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2026
-  /**
-   * @brief Member function <b>parseArg</b> parses the argument and its argument
-   * values.
-   *
-   * @param name    a <b>std::string</b> const reference to the argument
-   *        name.
-   *
-   * @param arg      a <b>std::string</b> const reference to the argument
-   *        values.
-   */
-  STK_DEPRECATED virtual void parseArg(const std::string &name, const std::string &arg) const override;
-#endif
 };
 
 ///

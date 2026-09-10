@@ -46,6 +46,7 @@
 #include <stk_tools/mesh_tools/DisconnectBlocks.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocksImpl.hpp>
 #include <stk_tools/mesh_tools/DetectHinges.hpp>
+#include <stk_tools/mesh_tools/EdgeMidNodeDetector.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/BuildMesh.hpp>
 #include <stk_util/environment/WallTime.hpp>
@@ -409,9 +410,14 @@ TEST(DetectHinge3D, SingleBlockTwoElementsNoHingeFaceTest)
   setup_mesh_1block_2hex_face_test(bulk);
 
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 7u);
-  stk::tools::impl::PairwiseSideInfoVector infoVec = stk::tools::impl::get_hinge_info_vec(bulk, node);
+
+  stk::tools::impl::PairwiseSideInfoVector infoVec;
+  bool autoHinge{false};
+
+  std::tie(infoVec, autoHinge) = stk::tools::impl::get_hinge_info_vec(bulk, node);
 
   EXPECT_EQ(1u, get_side_count(infoVec));
+  EXPECT_FALSE(autoHinge);
   output_mesh(bulk);
 }
 
@@ -571,35 +577,37 @@ TEST(DetectHinge3D, AreNodesPartOfAnEdge)
 
   stk::mesh::EntityVector nodes = get_nodes_from_id_range(bulk, 8);
 
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[0], nodes[1]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[1], nodes[2]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[2], nodes[3]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[3], nodes[0]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[4], nodes[5]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[5], nodes[6]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[6], nodes[7]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[7], nodes[3]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[0], nodes[4]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[1], nodes[5]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[2], nodes[6]));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[3], nodes[7]));
+  stk::tools::EdgeMidNodeDetector midNodeDetector(bulk);
 
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[0], nodes[2]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[1], nodes[3]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[4], nodes[6]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[5], nodes[7]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[1], nodes[6]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[2], nodes[5]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[0], nodes[7]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[3], nodes[4]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[2], nodes[7]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[3], nodes[6]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[0], nodes[5]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[1], nodes[4]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[3], nodes[5]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[0], nodes[6]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[1], nodes[7]));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(bulk, nodes[2], nodes[4]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[0], nodes[1]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[1], nodes[2]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[2], nodes[3]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[3], nodes[0]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[4], nodes[5]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[5], nodes[6]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[6], nodes[7]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[7], nodes[3]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[0], nodes[4]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[1], nodes[5]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[2], nodes[6]));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[3], nodes[7]));
+
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[0], nodes[2]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[1], nodes[3]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[4], nodes[6]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[5], nodes[7]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[1], nodes[6]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[2], nodes[5]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[0], nodes[7]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[3], nodes[4]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[2], nodes[7]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[3], nodes[6]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[0], nodes[5]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[1], nodes[4]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[3], nodes[5]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[0], nodes[6]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[1], nodes[7]));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_an_edge(midNodeDetector, nodes[2], nodes[4]));
 }
 
 
@@ -907,13 +915,66 @@ TEST(DetectHinge3D, DetectHingeRing)
   stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_with_hinge_ring(bulk);
 
-  stk::tools::HingeNodeVector hingeNodes = stk::tools::impl::get_hinge_nodes(bulk);
-  stk::tools::HingeEdgeVector hingeEdges = stk::tools::impl::get_hinge_edges(bulk, hingeNodes);
-  stk::tools::HingeNodeVector hingeCyclicNodes = stk::tools::impl::get_cyclic_hinge_nodes(bulk, hingeNodes);
+  stk::tools::EdgeMidNodeDetector midNodeDetector(bulk);
+  stk::tools::HingeNodeVector hingeNodes = stk::tools::impl::get_hinge_nodes(midNodeDetector);
+  stk::tools::HingeEdgeVector hingeEdges = stk::tools::impl::get_hinge_edges(midNodeDetector, hingeNodes);
+  stk::tools::HingeNodeVector hingeCyclicNodes = stk::tools::impl::get_cyclic_hinge_nodes(midNodeDetector, hingeNodes);
 
   EXPECT_EQ(4u, hingeNodes.size());
   EXPECT_EQ(4u, hingeEdges.size());
   EXPECT_EQ(4u, hingeCyclicNodes.size());
+}
+
+TEST(DetectHinge3D, twoTet10HingeAtEdge)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3,MPI_COMM_WORLD);
+  setup_mesh_two_tet10_hinge_at_edge(*bulk);
+
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
+  EXPECT_EQ(0u, hingeCount.first);
+  EXPECT_EQ(1u, hingeCount.second);
+  output_mesh(*bulk);
+}
+
+TEST(DetectHinge3D, twoTet10HingeAtEdgeMidNodes)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3,MPI_COMM_WORLD);
+  setup_mesh_two_tet10_hinge_at_edge_mid_nodes(*bulk);
+
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
+  EXPECT_EQ(1u, hingeCount.first);
+  EXPECT_EQ(0u, hingeCount.second);
+  output_mesh(*bulk);
+}
+
+TEST(DetectHinge3D, twoTet10HingeAtVertexAndEdgeMidNode)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3,MPI_COMM_WORLD);
+  setup_mesh_two_tet10_hinge_at_vertex_and_edge_mid_node(*bulk);
+
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
+  EXPECT_EQ(1u, hingeCount.first);
+  EXPECT_EQ(0u, hingeCount.second);
+  output_mesh(*bulk);
+}
+
+TEST(DetectHinge3D, tet10UseCase)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3,MPI_COMM_WORLD);
+  setup_mesh_tet10_use_case(*bulk);
+
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
+  EXPECT_EQ(0u, hingeCount.first);
+  EXPECT_EQ(0u, hingeCount.second);
+  output_mesh(*bulk);
 }
 
 TEST(GraphTester, NoCycle)
@@ -1113,7 +1174,8 @@ TEST(ElementGroups3D, SingleBlockTwoHexOneNodeHinge)
   two_elements_decomposition(bulk);
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 5u);
 
-  test_two_element_one_hinge_grouping(bulk, stk::tools::impl::convert_to_hinge_node(bulk, node));
+  stk::tools::EdgeMidNodeDetector midNodeDetector(bulk);
+  test_two_element_one_hinge_grouping(bulk, stk::tools::impl::convert_to_hinge_node(midNodeDetector, node));
   output_mesh(bulk);
 }
 

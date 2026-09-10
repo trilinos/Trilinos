@@ -30,11 +30,12 @@ FieldRef get_nodal_gradient_for_scalar_field(const stk::mesh::MetaData & meta, c
   return meta.get_field(stk::topology::NODE_RANK, get_nodal_gradient_field_name(scalarField.name()));
 }
 
-FieldRef register_nodal_gradient_for_scalar_field(stk::mesh::MetaData & meta, const FieldRef scalarField)
+FieldRef register_nodal_gradient_for_scalar_field(stk::mesh::MetaData & meta, const FieldRef scalarField, unsigned nStates)
 {
   const FieldType & vecType = (meta.spatial_dimension() == 3) ? FieldType::VECTOR_3D : FieldType::VECTOR_2D;
   AuxMetaData & auxMeta = krino::AuxMetaData::get(meta);
-  FieldRef gradField = auxMeta.register_stk_field(get_nodal_gradient_field_name(scalarField.name()), vecType, stk::topology::NODE_RANK, 2, 1, stk::mesh::selectField(scalarField));
+  FieldRef gradField = auxMeta.register_stk_field(get_nodal_gradient_field_name(scalarField.name()), 
+    vecType, stk::topology::NODE_RANK, nStates, 1, stk::mesh::selectField(scalarField));
   return gradField;
 }
 

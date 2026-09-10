@@ -21,7 +21,7 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
-#include "Kokkos_View_Fad.hpp"
+#include "Sacado_Fad_Kokkos.hpp"
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_CellData.hpp"

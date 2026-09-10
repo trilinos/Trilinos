@@ -42,6 +42,8 @@ public:
 
   operator bool() const { return bool(mNode); }
   bool is_scalar() const;
+  bool is_map() const;
+  bool is_sequence() const;
 
   Node get_if_present(const std::string& key) const;
   Node get_null_if_present(const std::string& key) const;
@@ -94,6 +96,8 @@ class Node {
 public:
   operator bool() const { return false; }
   bool is_scalar() const { return false; }
+  bool is_map() const { return false; }
+  bool is_sequence() const { return false; }
 
   Node get_if_present(const std::string& key) const { return Node(); }
   Node get_null_if_present(const std::string& key) const { return Node(); }

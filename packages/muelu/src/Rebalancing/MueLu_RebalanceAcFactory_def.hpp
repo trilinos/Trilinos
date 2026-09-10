@@ -69,6 +69,13 @@ void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level 
   else
     coarseMatrixName = matrixName + "_coarse";
 
+  // ugly hack to fix issue with MinvA when number of max levels is small. Arises because
+  // M, Minv, or MinvA are not needed or requested/produced on last level and so we shouldn't
+  // try to rebalance them in this case. Note: Limiting the possible early return from this
+  // function only for M, Minv, or MinvA as in the reuse case data might not be available
+  // but Get() knows how to produce (or reuse it).
+
+  if (!(coarseLevel.IsAvailable(matrixName, GetFactory("A").get())) && ((matrixName == "M") || (matrixName == "Minv") || (matrixName == "MinvA"))) return;
   FactoryMonitor m(*this, "Computing " + coarseMatrixName, coarseLevel);
 
   RCP<Matrix> originalAc = coarseLevel.Get<RCP<Matrix> >(matrixName, GetFactory("A").get());
@@ -102,6 +109,7 @@ void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level 
         GetOStream(Runtime0) << "Replacing maps with a subcommunicator" << std::endl;
         XpetraList.set("Restrict Communicator", true);
       }
+      XpetraList.set("compute global constants", IsPrint(Statistics1));
       // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
       XpetraList.set("Timer Label", "MueLu::RebalanceAc-" + Teuchos::toString(coarseLevel.GetLevelID()));
       {

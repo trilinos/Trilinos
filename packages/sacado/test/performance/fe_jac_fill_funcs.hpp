@@ -11,7 +11,6 @@
 #define FE_JAC_FILL_FUNCS_HPP
 
 #include "Sacado_No_Kokkos.hpp"
-#include "Sacado_Fad_SimpleFad.hpp"
 
 #include "Teuchos_Time.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"

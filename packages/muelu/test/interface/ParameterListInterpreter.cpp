@@ -219,7 +219,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           if (paramList.isParameter("parameter list: syntax"))
             paramList.remove("parameter list: syntax");
 
-          RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList, "SA"));
+          RCP<Teuchos::ParameterList> mueluParamList = MueLu::ML2MueLuParameterTranslator::translate(paramList, "SA");
           mueluParamList->set("multigrid algorithm", "sa");
           mueluParamList->set("use kokkos refactor", useKokkos);
 
@@ -236,7 +236,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
 
         } else if (dirList[k] == prefix + "MLParameterListInterpreter2/") {
-          RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList, "SA"));
+          RCP<Teuchos::ParameterList> mueluParamList = MueLu::ML2MueLuParameterTranslator::translate(paramList, "SA");
 
           mueluParamList->set("multigrid algorithm", "sa");
           mueluParamList->set("use kokkos refactor", useKokkos);
@@ -335,6 +335,12 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
         // Ignore the value of "lambdaMin"
         run_sed("'s/lambdaMin: [0-9]*.[0-9]*/lambdaMin = <ignored>/'", baseFile);
+
+        // Ignore Chebyshev eigenvalue
+        run_sed("'s/chebyshev: max eigenvalue (calculated by Ifpack2) = [0-9]*.[0-9]*/chebyshev: max eigenvalue (calculated by Ifpack2) = <ignored>/'", baseFile);
+
+        // Ignore prolongator damping factor
+        run_sed("'s/Prolongator damping factor = [0-9]*.[0-9]* (|[0-9]*.[0-9]* \\/ [0-9]*.[0-9]*|)/Prolongator damping factor = <ignored>/'", baseFile);
 
         // Ignore the value of "chebyshev: max eigenvalue"
         // NOTE: we skip lines with default value ([default])

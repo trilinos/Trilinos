@@ -73,7 +73,9 @@ static PhaseVec create_named_phases_for_levelset_per_phase(const unsigned numLev
 std::vector<LS_Field> LSPerPhasePolicy::setup_levelsets_on_all_blocks(stk::mesh::MetaData & meta, const unsigned numLevelSets)
 {
   Block_Surface_Connectivity inputBlockSurfaceInfo(meta);
-  return setup_levelsets_on_blocks(meta, numLevelSets, get_all_block_parts(meta), inputBlockSurfaceInfo, true);
+  const auto allBlocks = get_all_block_parts(meta);
+  STK_ThrowRequireMsg(!allBlocks.empty(), "Must create blocks before calling LSPerPhasePolicy::setup_levelsets_on_all_blocks\n");
+  return setup_levelsets_on_blocks(meta, numLevelSets, allBlocks, inputBlockSurfaceInfo, true);
 }
 
 static void register_levelset_fields(stk::mesh::MetaData & meta,
@@ -167,7 +169,9 @@ static PhaseVec create_named_phases_with_void_phase_for_any_negative_levelset(co
 std::vector<LS_Field> LSPerInterfacePolicy::setup_levelsets_on_all_blocks(stk::mesh::MetaData & meta, const unsigned numLevelSets)
 {
   Block_Surface_Connectivity inputBlockSurfaceInfo(meta);
-  return setup_levelsets_on_blocks(meta, numLevelSets, get_all_block_parts(meta), inputBlockSurfaceInfo, true, nullptr);
+  const auto allBlocks = get_all_block_parts(meta);
+  STK_ThrowRequireMsg(!allBlocks.empty(), "Must create blocks before calling LSPerInterfacePolicy::setup_levelsets_on_all_blocks\n");
+  return setup_levelsets_on_blocks(meta, numLevelSets, allBlocks, inputBlockSurfaceInfo, true, nullptr);
 }
 
 std::vector<LS_Field> LSPerInterfacePolicy::setup_levelsets_on_blocks_with_void_phase_for_any_negative_levelset(stk::mesh::MetaData & meta, 
@@ -184,7 +188,9 @@ std::vector<LS_Field> LSPerInterfacePolicy::setup_levelsets_on_blocks_with_void_
 
 std::vector<LS_Field> LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(stk::mesh::MetaData & meta, const unsigned numLevelSets)
 {
-  return setup_levelsets_on_blocks_with_void_phase_for_any_negative_levelset(meta, numLevelSets, get_all_block_parts(meta));
+  const auto allBlocks = get_all_block_parts(meta);
+  STK_ThrowRequireMsg(!allBlocks.empty(), "Must create blocks before calling LSPerInterfacePolicy::setup_levelsets_on_all_blocks\n");
+  return setup_levelsets_on_blocks_with_void_phase_for_any_negative_levelset(meta, numLevelSets, allBlocks);
 }
 
 std::vector<LS_Field> LSPerInterfacePolicy::setup_levelsets_on_blocks(stk::mesh::MetaData & meta,

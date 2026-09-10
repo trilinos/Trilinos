@@ -17,6 +17,16 @@
 
 #include "BelosConfigDefs.hpp"
 #include "Teuchos_Assert.hpp"
+#ifdef HAVE_BELOS_DENSEMATRIXKOKKOSDEFAULT
+#include "Kokkos_DualView.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
+#else
+#include "Teuchos_SerialDenseMatrix.hpp"
+#endif
+
+#ifdef HAVE_BELOS_TPETRA
+#include "Tpetra_MultiVector.hpp"
+#endif
 
 namespace Belos {
 
@@ -326,6 +336,35 @@ namespace Belos {
     static const double impTolScale;
   };
 
+  enum DenseMatrixType {
+    TeuchosSerialDenseMatrix,
+    KokkosDualView
+  };
+
+#ifdef HAVE_BELOS_DENSEMATRIXKOKKOSDEFAULT
+
+#ifdef HAVE_BELOS_TPETRA
+
+  template <class Ordinal, class Scalar>
+  using DefaultDenseMatrix = typename ::Tpetra::MultiVector<Scalar>::wrapped_dual_view_type::DVT;
+
+#else
+
+  template <class Ordinal, class Scalar>
+  using DefaultDenseMatrix = Kokkos::DualView<typename KokkosKernels::ArithTraits<Scalar>::val_type **, Kokkos::LayoutLeft>;
+
+#endif
+
+  constexpr const DenseMatrixType defaultDenseMatrixType = KokkosDualView;
+
+#else
+
+  template <class Ordinal, class Scalar>
+  using DefaultDenseMatrix = Teuchos::SerialDenseMatrix<Ordinal, Scalar>;
+
+  constexpr const DenseMatrixType defaultDenseMatrixType = TeuchosSerialDenseMatrix;
+
+#endif
 
 } // end Belos namespace
 

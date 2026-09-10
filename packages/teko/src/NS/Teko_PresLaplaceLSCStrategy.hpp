@@ -17,14 +17,19 @@ namespace NS {
 
 class LSCPrecondState;  // forward declration
 
-/** \brief A strategy that takes a single inverse factory and
- *        uses that for all inverses. If no mass matrix is
- *        passed in the diagonal of the 1,1 block is used.
+/** \brief Pressure-Laplace LSC strategy: build the Schur-complement approximation
+ *        from a supplied pressure Laplacian and velocity mass operator.
  *
- * A strategy that takes a single inverse factory and uses that
- * for all inverses. Optionally the mass matrix can be passed
- * in, if it is the diagonal is extracted and that is used to
- * form the inverse approximation.
+ * A least-squares-commutator strategy that forms the pressure Schur-complement
+ * approximation from an explicitly provided pressure Laplacian operator
+ * (requested through the RequestHandler as <tt>"Pressure Laplace Operator"</tt>)
+ * and, optionally, a velocity mass operator (<tt>"Velocity Mass Operator"</tt>).
+ * A power-iteration eigenvalue estimate is used when scaling the stabilization
+ * term. It uses one inverse factory for the velocity block \f$F\f$ and one for
+ * the pressure Laplacian, and can apply either the full LDU decomposition or the
+ * upper-triangular approximation. See the getPressureLaplaceString() /
+ * getVelocityMassString() request names and the
+ * \ref teko_navier_stokes "Navier-Stokes Preconditioners" guide page.
  */
 class PresLaplaceLSCStrategy : public LSCStrategy {
  public:

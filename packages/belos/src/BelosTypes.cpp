@@ -166,8 +166,6 @@ namespace Belos {
   {
     if (result == Belos::Converged) {
       return "Converged";
-    } else if (result == Belos::Unconverged) {
-      return "Unconverged";
     } else if (result == Belos::MaxItersReached) {
       return "MaxItersReached";
     } else if (result == Belos::MaxRestartsReached) {
@@ -186,6 +184,8 @@ namespace Belos {
       return "InconsistentState";
     } else if (result == Belos::Undetermined) {
       return "Undetermined";
+    } else if (result == Belos::Unconverged) {
+      return "Unconverged";
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Belos::convertReturnTypeToString: Invalid ReturnType enum value "

@@ -15,7 +15,7 @@
 #include "Phalanx_DataLayout.hpp"
 
 #include "Panzer_PureBasis.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 #include "Intrepid2_Kernels.hpp"
 #include "Intrepid2_OrientationTools.hpp"
@@ -86,8 +86,8 @@ postRegistrationSetup(typename Traits::SetupData d,
 
   // allocate space that is sized correctly for AD
   int cellDim = parentCell.getDimension();
-  refEdges_ = Kokkos::createDynRankViewWithType<Kokkos::DynRankView<ScalarT,PHX::Device>>(gatherFieldNormals_.get_static_view(),"ref_edges", (*d.worksets_)[0].num_cells, sideDim, cellDim);
-  phyEdges_ = Kokkos::createDynRankViewWithType<Kokkos::DynRankView<ScalarT,PHX::Device>>(gatherFieldNormals_.get_static_view(),"phy_edges", (*d.worksets_)[0].num_cells, sideDim, cellDim);
+  refEdges_ = Sacado::createDynRankViewWithType<Kokkos::DynRankView<ScalarT,PHX::Device>>(gatherFieldNormals_.get_static_view(),"ref_edges", (*d.worksets_)[0].num_cells, sideDim, cellDim);
+  phyEdges_ = Sacado::createDynRankViewWithType<Kokkos::DynRankView<ScalarT,PHX::Device>>(gatherFieldNormals_.get_static_view(),"phy_edges", (*d.worksets_)[0].num_cells, sideDim, cellDim);
 }
 
 // **********************************************************************

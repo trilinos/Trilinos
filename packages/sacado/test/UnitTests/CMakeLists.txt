@@ -35,6 +35,7 @@ IF (Sacado_ENABLE_TeuchosCore)
       ARGS
       COMM serial mpi
       STANDARD_PASS_OUTPUT
+      RUN_SERIAL
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -43,6 +44,7 @@ IF (Sacado_ENABLE_TeuchosCore)
       ARGS
       COMM serial mpi
       STANDARD_PASS_OUTPUT
+      RUN_SERIAL
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -51,6 +53,7 @@ IF (Sacado_ENABLE_TeuchosCore)
       ARGS
       COMM serial mpi
       STANDARD_PASS_OUTPUT
+      RUN_SERIAL
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -59,6 +62,7 @@ IF (Sacado_ENABLE_TeuchosCore)
       ARGS
       COMM serial mpi
       STANDARD_PASS_OUTPUT
+      RUN_SERIAL
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -68,6 +72,7 @@ IF (Sacado_ENABLE_TeuchosCore)
       COMM serial mpi
       STANDARD_PASS_OUTPUT
       XHOSTTYPE Windows Windows_NT
+      RUN_SERIAL
       )
 
   ENDIF()
@@ -82,6 +87,7 @@ IF (Sacado_ENABLE_TeuchosCore)
           ARGS
           COMM serial mpi
           STANDARD_PASS_OUTPUT
+          RUN_SERIAL
           )
       ENDIF()
 
@@ -147,6 +153,7 @@ IF (Sacado_ENABLE_TeuchosCore)
           ARGS
           COMM serial mpi
           STANDARD_PASS_OUTPUT
+          RUN_SERIAL
           )
       ENDIF()
 
@@ -209,6 +216,7 @@ IF (Sacado_ENABLE_TeuchosCore)
           ARGS
           COMM serial mpi
           STANDARD_PASS_OUTPUT
+          RUN_SERIAL
           )
       ENDIF()
 
@@ -271,6 +279,7 @@ IF (Sacado_ENABLE_TeuchosCore)
           ARGS
           COMM serial mpi
           STANDARD_PASS_OUTPUT
+          RUN_SERIAL
           )
       ENDIF()
 
@@ -393,6 +402,7 @@ IF (Sacado_ENABLE_TeuchosCore)
           ARGS
           COMM serial mpi
           STANDARD_PASS_OUTPUT
+          RUN_SERIAL
           )
       ENDIF()
 

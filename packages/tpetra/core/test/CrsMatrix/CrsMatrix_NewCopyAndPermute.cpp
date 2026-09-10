@@ -13,6 +13,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
 #include <Tpetra_Details_Behavior.hpp>
+#include <Teuchos_EnvVariables.hpp>
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -148,7 +149,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup) {
   }
 
 TEUCHOS_STATIC_SETUP() {
-  setenv("TPETRA_USE_NEW_COPY_AND_PERMUTE", "ON", 1);
+  Teuchos::setEnvironmentVariable("TPETRA_USE_NEW_COPY_AND_PERMUTE", "ON", 1);
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
   clp.setOption(
       "filedir", &filedir, "Directory of expected matrix files.");

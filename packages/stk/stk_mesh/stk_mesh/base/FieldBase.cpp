@@ -502,7 +502,7 @@ unsigned FieldBase::max_extent(unsigned dimension) const
   }
 }
 
-void FieldBase::rotate_multistate_data(bool alsoRotateOnDevice)
+void FieldBase::rotate_multistate_data([[maybe_unused]] bool alsoRotateOnDevice)
 {
   const int numStates = number_of_states();
 

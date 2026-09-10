@@ -130,15 +130,16 @@ template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> {
 };
 
 // diagonal scaling
+// from left
 template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> {
   template <typename ViewTypeD, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(const ViewTypeD &D, const ViewTypeA &A) {
-    ordinal_type m = A.extent(0);
-    ordinal_type n = A.extent(1);
+    const ordinal_type m = A.extent(0);
+    const ordinal_type n = A.extent(1);
     if (m == ordinal_type(D.extent(0))) {
       // apply from left
-      for (ordinal_type j=0; j<n; j++) {
-        for (ordinal_type i=0; i<m; i++) {
+      for (ordinal_type i=0; i<m; i++) {
+        for (ordinal_type j=0; j<n; j++) {
           A(i, j) /= D(i, i);
         }
       }
@@ -151,8 +152,8 @@ template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> {
   template <typename MemberType, typename ViewTypeD, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeD &D, const ViewTypeA &A) {
     KOKKOS_IF_ON_DEVICE((
-      ordinal_type m = A.extent(0);
-      ordinal_type n = A.extent(1);
+      const ordinal_type m = A.extent(0);
+      const ordinal_type n = A.extent(1);
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const ordinal_type &i) {
         for (ordinal_type j=0; j<n; j++) {
           A(i, j) /= D(i, i);
@@ -166,6 +167,7 @@ template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> {
  }
 };
 
+// from right
 template <> struct Scale_BlockInverseDiagonals<Side::Right, Algo::Internal> {
   template <typename ViewTypeD, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(const ViewTypeD &D, const ViewTypeA &A) {

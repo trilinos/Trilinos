@@ -274,7 +274,7 @@ private:
                         // as appropriate
 
   Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
-  Teuchos::RCP<typename TpetraLinearObjContainer<double,LO,GO,NodeT>::VectorType> x_vector;
+  Teuchos::RCP<typename TpetraLinearObjContainer<double,LO,GO,NodeT>::MultiVectorType> x_vector;
 
   GatherSolution_Tpetra();
 

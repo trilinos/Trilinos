@@ -406,27 +406,18 @@ void Jacobi(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
 
   {
     Tpetra::Details::ProfilingRegion r("TpetraExt: Jacobi: All I&X");
-    // Enable globalConstants by default
+    // Disable globalConstants by default
     // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
-    RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
+    RCP<Teuchos::ParameterList> importParams = Teuchos::rcp(new Teuchos::ParameterList);
+    importParams->set("compute global constants", false);
     if (!params.is_null()) {
-      importParams1->set("compute global constants", params->get("compute global constants: temporaries", false));
-      int mm_optimization_core_count  = 0;
-      auto slist                      = params->sublist("matrixmatrix: kernel params", false);
-      mm_optimization_core_count      = slist.get("MM_TAFC_OptimizationCoreCount", ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount());
-      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-      if (mm_optimization_core_count2 < mm_optimization_core_count) mm_optimization_core_count = mm_optimization_core_count2;
-      bool isMM              = slist.get("isMatrixMatrix_TransferAndFillComplete", false);
-      bool overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck", false);
-      auto& ip1slist         = importParams1->sublist("matrixmatrix: kernel params", false);
-      ip1slist.set("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-      ip1slist.set("isMatrixMatrix_TransferAndFillComplete", isMM);
-      ip1slist.set("MM_TAFC_OverrideAllreduceCheck", overrideAllreduce);
+      importParams->setParameters(*params);
+      importParams->set("compute global constants", params->get("compute global constants: temporaries", false));
     }
 
     // Now import any needed remote rows and populate the Aview struct.
     RCP<const import_type> dummyImporter;
-    MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, true, label, importParams1);
+    MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, true, label, importParams);
 
     // We will also need local access to all rows of B that correspond to the
     // column-map of op(A).
@@ -434,25 +425,7 @@ void Jacobi(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
       targetMap_B = Aprime->getColMap();
 
     // Now import any needed remote rows and populate the Bview struct.
-    // Enable globalConstants by default
-    // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
-    RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
-    if (!params.is_null()) {
-      importParams2->set("compute global constants", params->get("compute global constants: temporaries", false));
-
-      auto slist                      = params->sublist("matrixmatrix: kernel params", false);
-      int mm_optimization_core_count  = slist.get("MM_TAFC_OptimizationCoreCount", ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount());
-      bool isMM                       = slist.get("isMatrixMatrix_TransferAndFillComplete", false);
-      bool overrideAllreduce          = slist.get("MM_TAFC_OverrideAllreduceCheck", false);
-      auto& ip2slist                  = importParams2->sublist("matrixmatrix: kernel params", false);
-      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-      if (mm_optimization_core_count2 < mm_optimization_core_count) mm_optimization_core_count = mm_optimization_core_count2;
-      ip2slist.set("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-      ip2slist.set("isMatrixMatrix_TransferAndFillComplete", isMM);
-      ip2slist.set("MM_TAFC_OverrideAllreduceCheck", overrideAllreduce);
-    }
-
-    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), Aprime->getGraph()->getImporter().is_null(), label, importParams2);
+    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), Aprime->getGraph()->getImporter().is_null(), label, importParams);
   }
   MM = Teuchos::null;
   MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi All Multiply"));
@@ -1104,6 +1077,690 @@ void Add(
 
 namespace MMdetails {
 
+// nvcc 12.3 and 12.4 report getApplyHelper() as inaccessible even if
+// CrsMatrix friends kokkos_kernels_mult_A_B_newmatrix. Use this non-template
+// wrapper instead. Someone had the same problem in 2011 here:
+// https://forums.developer.nvidia.com/t/24378.
+struct CrsMatrixApplyHelperAccess {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  static auto get(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& matrix) {
+    return matrix.getApplyHelper();
+  }
+};
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class LocalOrdinalViewType>
+void kokkos_kernels_mult_A_B_newmatrix(
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+    const LocalOrdinalViewType& Acol2Brow,
+    const LocalOrdinalViewType& Acol2Irow,
+    const LocalOrdinalViewType& Bcol2Ccol,
+    const LocalOrdinalViewType& Icol2Ccol,
+    CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> Cimport,
+    const std::string& label,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  using backend_type = KokkosKernelsSPGEMMBackend<Node>;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  using KCRS           = typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
+  using device_t       = typename KCRS::device_type;
+  using graph_t        = typename KCRS::StaticCrsGraphType;
+  using lno_view_t     = typename graph_t::row_map_type::non_const_type;
+  using int_view_t     = Kokkos::View<int*, typename lno_view_t::array_layout, typename lno_view_t::memory_space, typename lno_view_t::memory_traits>;
+  using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
+  using scalar_view_t  = typename KCRS::values_type::non_const_type;
+  using KernelHandle   = KokkosKernels::Experimental::KokkosKernelsHandle<
+      typename lno_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
+      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
+  using IntKernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
+      typename int_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
+      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
+
+  const std::string wrapperLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Wrapper";
+  RCP<Tpetra::Details::ProfilingRegion> MM =
+      rcp(new Tpetra::Details::ProfilingRegion(wrapperLabel));
+
+  int team_work_size = 16;
+  std::string myalg("SPGEMM_DEFAULT");
+  if (!params.is_null()) {
+    const std::string prefixedAlg  = backend_type::parameter_prefix() + ": algorithm";
+    const std::string prefixedTeam = backend_type::parameter_prefix() + ": team work size";
+    if (params->isParameter(prefixedAlg))
+      myalg = params->get(prefixedAlg, myalg);
+    if (params->isParameter(prefixedTeam))
+      team_work_size = params->get(prefixedTeam, team_work_size);
+  }
+
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixDevice();
+
+  const std::string genericAlg = backend_type::algorithm_label() + " algorithm";
+  if (!params.is_null() && params->isParameter(genericAlg))
+    myalg = params->get(genericAlg, myalg);
+  KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
+
+  KCRS Bmerged = Tpetra::MMdetails::merge_matrices(
+      Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C.getColMap()->getLocalNumElements());
+  backend_type::pre_spgemm(Bmerged);
+
+  const std::string coreLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Core";
+  MM                          = Teuchos::null;
+  MM                          = rcp(new Tpetra::Details::ProfilingRegion(coreLabel));
+
+  typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
+  typename KernelHandle::nnz_lno_t BnumRows = Bmerged.numRows();
+  typename KernelHandle::nnz_lno_t BnumCols = Bmerged.numCols();
+
+  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lno_row"), AnumRows + 1);
+  lno_nnz_view_t entriesC;
+  scalar_view_t valuesC;
+
+  Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
+  const bool useIntRowptrs =
+      irph.shouldUseIntRowptrs() &&
+      CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->shouldUseIntRowptrs();
+
+  if (useIntRowptrs) {
+    IntKernelHandle kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
+
+    int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
+
+    auto Aint = CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->getIntRowptrMatrix(Amat);
+    auto Bint = irph.getIntRowptrMatrix(Bmerged);
+
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic int");
+      KokkosSparse::spgemm_symbolic(
+          &kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, false, Bint.graph.row_map, Bint.graph.entries, false, int_row_mapC);
+    }
+
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric int");
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size) {
+      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+    KokkosSparse::spgemm_numeric(
+        &kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, Aint.values, false,
+        Bint.graph.row_map, Bint.graph.entries, Bint.values, false, int_row_mapC, entriesC, valuesC);
+    Kokkos::parallel_for(
+        Kokkos::RangePolicy<typename device_t::execution_space>(0, int_row_mapC.size()),
+        KOKKOS_LAMBDA(const int i) { row_mapC(i) = int_row_mapC(i); });
+    kh.destroy_spgemm_handle();
+
+  } else {
+    KernelHandle kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
+
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic non-int");
+      KokkosSparse::spgemm_symbolic(
+          &kh, AnumRows, BnumRows, BnumCols, Amat.graph.row_map, Amat.graph.entries, false, Bmerged.graph.row_map, Bmerged.graph.entries, false, row_mapC);
+    }
+
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric non-int");
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size) {
+      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+    KokkosSparse::spgemm_numeric(
+        &kh, AnumRows, BnumRows, BnumCols, Amat.graph.row_map, Amat.graph.entries, Amat.values, false,
+        Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false, row_mapC, entriesC, valuesC);
+    kh.destroy_spgemm_handle();
+  }
+
+  const std::string sortLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Sort";
+  MM                          = Teuchos::null;
+  MM                          = rcp(new Tpetra::Details::ProfilingRegion(sortLabel));
+
+  if (params.is_null() || params->get("sort entries", true))
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+  C.setAllValues(row_mapC, entriesC, valuesC);
+
+  const std::string esfcLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "ESFC";
+  MM                          = Teuchos::null;
+  MM                          = rcp(new Tpetra::Details::ProfilingRegion(esfcLabel));
+
+  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  labelList->set("Timer Label", label);
+  if (!params.is_null())
+    labelList->set("compute global constants", params->get("compute global constants", true));
+  RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>> dummyExport;
+  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport, dummyExport, labelList);
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class LocalOrdinalViewType>
+void host_mult_A_B_reuse(
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+    const LocalOrdinalViewType& targetMapToOrigRow_dev,
+    const LocalOrdinalViewType& targetMapToImportRow_dev,
+    const LocalOrdinalViewType& Bcol2Ccol_dev,
+    const LocalOrdinalViewType& Icol2Ccol_dev,
+    CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> Cimport,
+    const std::string& label,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  // FIXME: Right now, this is a cut-and-paste of the serial kernel
+
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  // By default, if A*B results in an entry that is not supported by the graph of C, we throw.
+  // This option allows to override this behavior and silently ignores such entries.
+  bool throwOnInsert = true;
+  if (!params.is_null() && params->isType<bool>("MM Throw For Non-Existent Entries"))
+    throwOnInsert = params->get<bool>("MM Throw For Non-Existent Entries");
+
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Reuse SerialCore"));
+
+  // Lots and lots of typedefs
+  typedef typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type KCRS;
+  typedef typename KCRS::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename KCRS::values_type::non_const_type scalar_view_t;
+
+  typedef Scalar SC;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Node NO;
+  typedef Map<LO, GO, NO> map_type;
+  const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  const LO LO_INVALID     = Teuchos::OrdinalTraits<LO>::invalid();
+  const SC SC_ZERO        = Teuchos::ScalarTraits<Scalar>::zero();
+
+  // Since this is being run on Cuda, we need to fence because the below code will use UVM
+  // typename graph_t::execution_space().fence();
+
+  // KDDKDD UVM Without UVM, need to copy targetMap arrays to host.
+  // KDDKDD UVM Ideally, this function would run on device and use
+  // KDDKDD UVM KokkosKernels instead of this host implementation.
+  auto targetMapToOrigRow =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                          targetMapToOrigRow_dev);
+  auto targetMapToImportRow =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                          targetMapToImportRow_dev);
+  auto Bcol2Ccol =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                          Bcol2Ccol_dev);
+  auto Icol2Ccol =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                          Icol2Ccol_dev);
+
+  // Sizes
+  RCP<const map_type> Ccolmap = C.getColMap();
+  size_t m                    = Aview.origMatrix->getLocalNumRows();
+  size_t n                    = Ccolmap->getLocalNumElements();
+
+  // Grab the  Kokkos::SparseCrsMatrices & inner stuff
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS Cmat = C.getLocalMatrixHost();
+
+  c_lno_view_t Arowptr         = Amat.graph.row_map,
+               Browptr         = Bmat.graph.row_map,
+               Crowptr         = Cmat.graph.row_map;
+  const lno_nnz_view_t Acolind = Amat.graph.entries,
+                       Bcolind = Bmat.graph.entries,
+                       Ccolind = Cmat.graph.entries;
+  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  scalar_view_t Cvals = Cmat.values;
+
+  c_lno_view_t Irowptr;
+  lno_nnz_view_t Icolind;
+  scalar_view_t Ivals;
+  if (!Bview.importMatrix.is_null()) {
+    auto lclB = Bview.importMatrix->getLocalMatrixHost();
+    Irowptr   = lclB.graph.row_map;
+    Icolind   = lclB.graph.entries;
+    Ivals     = lclB.values;
+  }
+
+  // Classic csr assembly (low memory edition)
+  // mfh 27 Sep 2016: The c_status array is an implementation detail
+  // of the local sparse matrix-matrix multiply routine.
+
+  // The status array will contain the index into colind where this entry was last deposited.
+  //   c_status[i] <  CSR_ip - not in the row yet
+  //   c_status[i] >= CSR_ip - this is the entry where you can find the data
+  // We start with this filled with INVALID's indicating that there are no entries yet.
+  // Sadly, this complicates the code due to the fact that size_t's are unsigned.
+  std::vector<size_t> c_status(n, ST_INVALID);
+
+  // For each row of A/C
+  size_t CSR_ip = 0, OLD_ip = 0;
+  for (size_t i = 0; i < m; i++) {
+    // First fill the c_status array w/ locations where we're allowed to
+    // generate nonzeros for this row
+    OLD_ip = Crowptr[i];
+    CSR_ip = Crowptr[i + 1];
+    for (size_t k = OLD_ip; k < CSR_ip; k++) {
+      c_status[Ccolind[k]] = k;
+
+      // Reset values in the row of C
+      Cvals[k] = SC_ZERO;
+    }
+
+    for (size_t k = Arowptr[i]; k < Arowptr[i + 1]; k++) {
+      LO Aik        = Acolind[k];
+      const SC Aval = Avals[k];
+      if (Aval == SC_ZERO)
+        continue;
+
+      if (targetMapToOrigRow[Aik] != LO_INVALID) {
+        // Local matrix
+        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
+
+        for (size_t j = Browptr[Bk]; j < Browptr[Bk + 1]; ++j) {
+          LO Bkj = Bcolind[j];
+          LO Cij = Bcol2Ccol[Bkj];
+
+          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
+          if (!badInsert)
+            Cvals[c_status[Cij]] += Aval * Bvals[j];
+          else if (throwOnInsert)
+            TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
+                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
+                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
+        }
+
+      } else {
+        // Remote matrix
+        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        for (size_t j = Irowptr[Ik]; j < Irowptr[Ik + 1]; ++j) {
+          LO Ikj = Icolind[j];
+          LO Cij = Icol2Ccol[Ikj];
+
+          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
+          if (!badInsert)
+            Cvals[c_status[Cij]] += Aval * Ivals[j];
+          else if (throwOnInsert)
+            TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
+                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
+                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
+        }
+      }
+    }
+  }
+
+  C.fillComplete(C.getDomainMap(), C.getRangeMap());
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class LocalOrdinalViewType>
+void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
+                                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
+                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                         const LocalOrdinalViewType& Acol2Brow,
+                                         const LocalOrdinalViewType& Acol2Irow,
+                                         const LocalOrdinalViewType& Bcol2Ccol,
+                                         const LocalOrdinalViewType& Icol2Ccol,
+                                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                         Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> Cimport,
+                                         const std::string& label,
+                                         const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  using backend_type = KokkosKernelsSPGEMMBackend<Node>;
+  // Check if the diagonal entries exist in debug mode
+  const bool debug = Tpetra::Details::Behavior::debug();
+  if (debug) {
+    auto rowMap = Aview.origMatrix->getRowMap();
+    Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> diags(rowMap);
+    Aview.origMatrix->getLocalDiagCopy(diags);
+    size_t diagLength = rowMap->getLocalNumElements();
+    Teuchos::Array<Scalar> diagonal(diagLength);
+    diags.get1dCopy(diagonal());
+
+    for (size_t i = 0; i < diagLength; ++i) {
+      TEUCHOS_TEST_FOR_EXCEPTION(diagonal[i] == Teuchos::ScalarTraits<Scalar>::zero(),
+                                 std::runtime_error,
+                                 "Matrix A has a zero/missing diagonal: " << diagonal[i] << std::endl
+                                                                          << "KokkosKernels Jacobi-fused SpGEMM requires nonzero diagonal entries in A" << std::endl);
+    }
+  }
+
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix KokkosKernels"));
+
+  // Usings
+  using device_t       = typename Node::device_type;
+  using matrix_t       = typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
+  using graph_t        = typename matrix_t::StaticCrsGraphType;
+  using lno_view_t     = typename graph_t::row_map_type::non_const_type;
+  using int_view_t     = Kokkos::View<int*,
+                                  typename lno_view_t::array_layout,
+                                  typename lno_view_t::memory_space,
+                                  typename lno_view_t::memory_traits>;
+  using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
+  using scalar_view_t  = typename matrix_t::values_type::non_const_type;
+
+  // KokkosKernels handle
+  using handle_t = typename KokkosKernels::Experimental::KokkosKernelsHandle<
+      typename lno_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
+      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
+
+  using int_handle_t = typename KokkosKernels::Experimental::KokkosKernelsHandle<
+      typename int_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
+      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
+
+  // Merge the B and Bimport matrices
+  const matrix_t Bmerged = Tpetra::MMdetails::merge_matrices(Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C.getColMap()->getLocalNumElements());
+
+  // Get the properties and arrays of input matrices
+  const matrix_t Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const matrix_t Bmat = Bview.origMatrix->getLocalMatrixDevice();
+
+  typename handle_t::nnz_lno_t AnumRows = Amat.numRows();
+  typename handle_t::nnz_lno_t BnumRows = Bmerged.numRows();
+  typename handle_t::nnz_lno_t BnumCols = Bmerged.numCols();
+
+  // Arrays of the output matrix
+  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("row_mapC"), AnumRows + 1);
+  lno_nnz_view_t entriesC;
+  scalar_view_t valuesC;
+
+  // Options
+  int team_work_size = 16;
+  std::string myalg("SPGEMM_DEFAULT");
+  if (!params.is_null()) {
+    const std::string prefixedAlg  = backend_type::parameter_prefix() + ": algorithm";
+    const std::string prefixedTeam = backend_type::parameter_prefix() + ": team work size";
+    if (params->isParameter(prefixedAlg))
+      myalg = params->get(prefixedAlg, myalg);
+    if (params->isParameter(prefixedTeam))
+      team_work_size = params->get(prefixedTeam, team_work_size);
+  }
+
+  // Get the algorithm mode
+  const std::string genericAlg = backend_type::algorithm_label() + " algorithm";
+  if (!params.is_null() && params->isParameter(genericAlg))
+    myalg = params->get(genericAlg, myalg);
+  KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
+
+  // decide whether to use integer-typed row pointers for this spgemm
+  Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
+  const bool useIntRowptrs =
+      irph.shouldUseIntRowptrs() &&
+      CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->shouldUseIntRowptrs();
+
+  const Scalar jacobiOmega = omega * Teuchos::ScalarTraits<Scalar>::one();
+
+  if (useIntRowptrs) {
+    int_handle_t kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
+
+    int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("int_row_mapC"), AnumRows + 1);
+
+    auto Aint = CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->getIntRowptrMatrix(Amat);
+    auto Bint = irph.getIntRowptrMatrix(Bmerged);
+
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels symbolic int");
+      KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                                    Aint.graph.row_map, Aint.graph.entries, false,
+                                    Bint.graph.row_map, Bint.graph.entries, false,
+                                    int_row_mapC);
+    }
+
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size) {
+      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels numeric int");
+
+    if (c_nnz_size) {
+      // even though there is no TPL for this, we have to use the same handle that was used in the symbolic phase,
+      // so need to have a special int-typed call for this as well.
+      KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
+                                                Aint.graph.row_map, Aint.graph.entries, Amat.values, false,
+                                                Bint.graph.row_map, Bint.graph.entries, Bint.values, false,
+                                                int_row_mapC, entriesC, valuesC,
+                                                jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
+    }
+    // transfer the integer rowptrs back to the correct rowptr type
+    Kokkos::parallel_for(
+        Kokkos::RangePolicy<typename device_t::execution_space>(0, int_row_mapC.size()),
+        KOKKOS_LAMBDA(int i) { row_mapC(i) = int_row_mapC(i); });
+    kh.destroy_spgemm_handle();
+  } else {
+    handle_t kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
+
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels symbolic non-int");
+      KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                                    Amat.graph.row_map, Amat.graph.entries, false,
+                                    Bmerged.graph.row_map, Bmerged.graph.entries, false,
+                                    row_mapC);
+    }
+
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size) {
+      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels numeric non-int");
+    if (c_nnz_size) {
+      KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
+                                                Amat.graph.row_map, Amat.graph.entries, Amat.values, false,
+                                                Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false,
+                                                row_mapC, entriesC, valuesC,
+                                                jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
+    }
+    kh.destroy_spgemm_handle();
+  }
+
+  const std::string sortLabel = "TpetraExt: Jacobi: Newmatrix " + backend_type::algorithm_label() + "Sort";
+  MM                          = Teuchos::null;
+  MM                          = rcp(new Tpetra::Details::ProfilingRegion(sortLabel));
+
+  // Sort & set values
+  if (params.is_null() || params->get("sort entries", true))
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+  C.setAllValues(row_mapC, entriesC, valuesC);
+
+  const std::string esfcLabel = "TpetraExt: Jacobi: Newmatrix " + backend_type::algorithm_label() + "ESFC";
+  MM                          = Teuchos::null;
+  MM                          = rcp(new Tpetra::Details::ProfilingRegion(esfcLabel));
+
+  // Final Fillcomplete
+  Teuchos::RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  labelList->set("Timer Label", label);
+  if (!params.is_null()) labelList->set("compute global constants", params->get("compute global constants", true));
+  Teuchos::RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>> dummyExport;
+  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport, dummyExport, labelList);
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class LocalOrdinalViewType>
+void host_jacobi_A_B_reuse(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
+                           const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
+                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                           const LocalOrdinalViewType& targetMapToOrigRow_dev,
+                           const LocalOrdinalViewType& targetMapToImportRow_dev,
+                           const LocalOrdinalViewType& Bcol2Ccol_dev,
+                           const LocalOrdinalViewType& Icol2Ccol_dev,
+                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                           Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> Cimport,
+                           const std::string& label,
+                           const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  // FIXME: Right now, this is a cut-and-paste of the serial kernel
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse CudaCore"));
+
+  // Lots and lots of typedefs
+  typedef typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type KCRS;
+  typedef typename KCRS::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename KCRS::values_type::non_const_type scalar_view_t;
+  typedef typename scalar_view_t::memory_space scalar_memory_space;
+
+  typedef Scalar SC;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Node NO;
+  typedef Map<LO, GO, NO> map_type;
+  const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  const LO LO_INVALID     = Teuchos::OrdinalTraits<LO>::invalid();
+  const SC SC_ZERO        = Teuchos::ScalarTraits<Scalar>::zero();
+
+  // Since this is being run on Cuda, we need to fence because the below host code will use UVM
+  // KDDKDD typename graph_t::execution_space().fence();
+
+  // KDDKDD UVM Without UVM, need to copy targetMap arrays to host.
+  // KDDKDD UVM Ideally, this function would run on device and use
+  // KDDKDD UVM KokkosKernels instead of this host implementation.
+  auto targetMapToOrigRow =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                          targetMapToOrigRow_dev);
+  auto targetMapToImportRow =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                          targetMapToImportRow_dev);
+  auto Bcol2Ccol =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                          Bcol2Ccol_dev);
+  auto Icol2Ccol =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                          Icol2Ccol_dev);
+
+  // Sizes
+  RCP<const map_type> Ccolmap = C.getColMap();
+  size_t m                    = Aview.origMatrix->getLocalNumRows();
+  size_t n                    = Ccolmap->getLocalNumElements();
+
+  // Grab the  Kokkos::SparseCrsMatrices & inner stuff
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS Cmat = C.getLocalMatrixHost();
+
+  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
+  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
+  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  scalar_view_t Cvals = Cmat.values;
+
+  c_lno_view_t Irowptr;
+  lno_nnz_view_t Icolind;
+  scalar_view_t Ivals;
+  if (!Bview.importMatrix.is_null()) {
+    auto lclB = Bview.importMatrix->getLocalMatrixHost();
+    Irowptr   = lclB.graph.row_map;
+    Icolind   = lclB.graph.entries;
+    Ivals     = lclB.values;
+  }
+
+  // Jacobi-specific inner stuff
+  auto Dvals =
+      Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
+
+  // The status array will contain the index into colind where this entry was last deposited.
+  //   c_status[i] <  CSR_ip - not in the row yet
+  //   c_status[i] >= CSR_ip - this is the entry where you can find the data
+  // We start with this filled with INVALID's indicating that there are no entries yet.
+  // Sadly, this complicates the code due to the fact that size_t's are unsigned.
+  std::vector<size_t> c_status(n, ST_INVALID);
+
+  // For each row of A/C
+  size_t CSR_ip = 0, OLD_ip = 0;
+  for (size_t i = 0; i < m; i++) {
+    // First fill the c_status array w/ locations where we're allowed to
+    // generate nonzeros for this row
+    OLD_ip = Crowptr[i];
+    CSR_ip = Crowptr[i + 1];
+    for (size_t k = OLD_ip; k < CSR_ip; k++) {
+      c_status[Ccolind[k]] = k;
+
+      // Reset values in the row of C
+      Cvals[k] = SC_ZERO;
+    }
+
+    SC minusOmegaDval = -omega * Dvals(i, 0);
+
+    // Entries of B
+    for (size_t j = Browptr[i]; j < Browptr[i + 1]; j++) {
+      Scalar Bval = Bvals[j];
+      if (Bval == SC_ZERO)
+        continue;
+      LO Bij = Bcolind[j];
+      LO Cij = Bcol2Ccol[Bij];
+
+      TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+                                 std::runtime_error, "Trying to insert a new entry into a static graph");
+
+      Cvals[c_status[Cij]] = Bvals[j];
+    }
+
+    // Entries of -omega * Dinv * A * B
+    for (size_t k = Arowptr[i]; k < Arowptr[i + 1]; k++) {
+      LO Aik        = Acolind[k];
+      const SC Aval = Avals[k];
+      if (Aval == SC_ZERO)
+        continue;
+
+      if (targetMapToOrigRow[Aik] != LO_INVALID) {
+        // Local matrix
+        size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
+
+        for (size_t j = Browptr[Bk]; j < Browptr[Bk + 1]; ++j) {
+          LO Bkj = Bcolind[j];
+          LO Cij = Bcol2Ccol[Bkj];
+
+          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+                                     std::runtime_error, "Trying to insert a new entry into a static graph");
+
+          Cvals[c_status[Cij]] += minusOmegaDval * Aval * Bvals[j];
+        }
+
+      } else {
+        // Remote matrix
+        size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+        for (size_t j = Irowptr[Ik]; j < Irowptr[Ik + 1]; ++j) {
+          LO Ikj = Icolind[j];
+          LO Cij = Icol2Ccol[Ikj];
+
+          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+                                     std::runtime_error, "Trying to insert a new entry into a static graph");
+
+          Cvals[c_status[Cij]] += minusOmegaDval * Aval * Ivals[j];
+        }
+      }
+    }
+  }
+
+  MM = Teuchos::null;
+  MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse ESFC"));
+
+  C.fillComplete(C.getDomainMap(), C.getRangeMap());
+}
+
 /*********************************************************************************************************/
 //// Prints MMM-style statistics on communication done with an Import or Export object
 // template <class TransferType>
@@ -1203,62 +1860,22 @@ void mult_AT_B_newmatrix(
   RCP<const Import<LO, GO, NO>> dummyImporter;
 
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
-  RCP<Teuchos::ParameterList> importParams1(new ParameterList);
+  RCP<Teuchos::ParameterList> importParams = Teuchos::rcp(new ParameterList);
+  importParams->set("compute global constants", false);
   if (!params.is_null()) {
-    importParams1->set("compute global constants",
-                       params->get("compute global constants: temporaries",
-                                   false));
-    auto slist             = params->sublist("matrixmatrix: kernel params", false);
-    bool isMM              = slist.get("isMatrixMatrix_TransferAndFillComplete", false);
-    bool overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck", false);
-    int mm_optimization_core_count =
-        ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
-    mm_optimization_core_count =
-        slist.get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-    int mm_optimization_core_count2 =
-        params->get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-    if (mm_optimization_core_count2 < mm_optimization_core_count) {
-      mm_optimization_core_count = mm_optimization_core_count2;
-    }
-    auto& sip1 = importParams1->sublist("matrixmatrix: kernel params", false);
-    sip1.set("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-    sip1.set("isMatrixMatrix_TransferAndFillComplete", isMM);
-    sip1.set("MM_TAFC_OverrideAllreduceCheck", overrideAllreduce);
+    importParams->setParameters(*params);
+    if (params->isParameter("compute global constants: temporaries"))
+      importParams->set("compute global constants",
+                        params->get<bool>("compute global constants: temporaries"));
   }
-
   MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(),
                                       Aview, dummyImporter, true,
-                                      label, importParams1);
-
-  RCP<ParameterList> importParams2(new ParameterList);
-  if (!params.is_null()) {
-    importParams2->set("compute global constants",
-                       params->get("compute global constants: temporaries",
-                                   false));
-    auto slist             = params->sublist("matrixmatrix: kernel params", false);
-    bool isMM              = slist.get("isMatrixMatrix_TransferAndFillComplete", false);
-    bool overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck", false);
-    int mm_optimization_core_count =
-        ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
-    mm_optimization_core_count =
-        slist.get("MM_TAFC_OptimizationCoreCount",
-                  mm_optimization_core_count);
-    int mm_optimization_core_count2 =
-        params->get("MM_TAFC_OptimizationCoreCount",
-                    mm_optimization_core_count);
-    if (mm_optimization_core_count2 < mm_optimization_core_count) {
-      mm_optimization_core_count = mm_optimization_core_count2;
-    }
-    auto& sip2 = importParams2->sublist("matrixmatrix: kernel params", false);
-    sip2.set("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-    sip2.set("isMatrixMatrix_TransferAndFillComplete", isMM);
-    sip2.set("MM_TAFC_OverrideAllreduceCheck", overrideAllreduce);
-  }
+                                      label, importParams);
 
   if (B.getRowMap()->isSameAs(*Atrans->getColMap())) {
-    MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter, true, label, importParams2);
+    MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter, true, label, importParams);
   } else {
-    MMdetails::import_and_extract_views(B, Atrans->getColMap(), Bview, dummyImporter, false, label, importParams2);
+    MMdetails::import_and_extract_views(B, Atrans->getColMap(), Bview, dummyImporter, false, label, importParams);
   }
 
   MM = Teuchos::null;
@@ -1274,7 +1891,12 @@ void mult_AT_B_newmatrix(
     Ctemp = rcp(&C, false);
   }
 
-  mult_A_B_newmatrix(Aview, Bview, *Ctemp, label, params);
+  RCP<Teuchos::ParameterList> multParams = Teuchos::rcp(new ParameterList);
+  if (!params.is_null()) {
+    multParams->setParameters(*params);
+  }
+  multParams->set("compute global constants", !needs_final_export);
+  mult_A_B_newmatrix(Aview, Bview, *Ctemp, label, multParams);
 
   /*************************************************************/
   /* 4) exportAndFillComplete matrix                           */
@@ -1288,21 +1910,12 @@ void mult_AT_B_newmatrix(
     ParameterList labelList;
     labelList.set("Timer Label", label);
     if (!params.is_null()) {
-      ParameterList& params_sublist    = params->sublist("matrixmatrix: kernel params", false);
-      ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params", false);
-      int mm_optimization_core_count   = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
-      mm_optimization_core_count       = params_sublist.get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-      int mm_optimization_core_count2  = params->get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-      if (mm_optimization_core_count2 < mm_optimization_core_count) mm_optimization_core_count = mm_optimization_core_count2;
-      labelList_subList.set("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count, "Core Count above which the optimized neighbor discovery is used");
-      bool isMM              = params_sublist.get("isMatrixMatrix_TransferAndFillComplete", false);
-      bool overrideAllreduce = params_sublist.get("MM_TAFC_OverrideAllreduceCheck", false);
-
-      labelList_subList.set("isMatrixMatrix_TransferAndFillComplete", isMM,
-                            "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
-      labelList.set("compute global constants", params->get("compute global constants", true));
-      labelList.set("MM_TAFC_OverrideAllreduceCheck", overrideAllreduce);
+      labelList.setParameters(*params);
     }
+    ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params", false);
+    labelList_subList.set("isMatrixMatrix_TransferAndFillComplete", true,
+                          "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
+
     Ctemp->exportAndFillComplete(Crcp,
                                  *Ctemp->getGraph()->getExporter(),
                                  B.getDomainMap(),
@@ -1647,11 +2260,11 @@ void mult_A_B_newmatrix(
 
     // Choose the right variant of setUnion
     if (!Bimport.is_null() && !Iimport.is_null()) {
-      Cimport = Bimport->setUnion(*Iimport);
+      Cimport = Bimport->setUnion(*Iimport, params);
     } else if (!Bimport.is_null() && Iimport.is_null()) {
-      Cimport = Bimport->setUnion();
+      Cimport = Bimport->setUnion(params);
     } else if (Bimport.is_null() && !Iimport.is_null()) {
-      Cimport = Iimport->setUnion();
+      Cimport = Iimport->setUnion(params);
     } else {
       throw std::runtime_error("TpetraExt::MMM status of matrix importers is nonsensical");
     }
@@ -2231,133 +2844,12 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
                                                                                                                     const LocalOrdinalViewType& Bcol2Ccol,
                                                                                                                     const LocalOrdinalViewType& Icol2Ccol,
                                                                                                                     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                                                    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> /* Cimport */,
+                                                                                                                    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> Cimport,
                                                                                                                     const std::string& label,
                                                                                                                     const Teuchos::RCP<Teuchos::ParameterList>& params) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type KCRS;
-  typedef typename KCRS::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  typedef typename KCRS::values_type::non_const_type scalar_view_t;
-
-  typedef Scalar SC;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Node NO;
-  typedef Map<LO, GO, NO> map_type;
-  const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-  const LO LO_INVALID     = Teuchos::OrdinalTraits<LO>::invalid();
-  const SC SC_ZERO        = Teuchos::ScalarTraits<Scalar>::zero();
-
-  // By default, if A*B results in an entry that is not supported by the graph of C, we throw.
-  // This option allows to override this behavior and silently ignores such entries.
-  bool throwOnInsert = true;
-  if (!params.is_null() && params->isType<bool>("MM Throw For Non-Existent Entries"))
-    throwOnInsert = params->get<bool>("MM Throw For Non-Existent Entries");
-
-  Tpetra::Details::ProfilingRegion MM("TpetraExt: MMM: Reuse SerialCore");
-  (void)label;
-
-  // Sizes
-  RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m                    = Aview.origMatrix->getLocalNumRows();
-  size_t n                    = Ccolmap->getLocalNumElements();
-
-  // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
-  const KCRS Bmat = Bview.origMatrix->getLocalMatrixHost();
-  const KCRS Cmat = C.getLocalMatrixHost();
-
-  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
-  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
-  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
-  scalar_view_t Cvals = Cmat.values;
-
-  c_lno_view_t Irowptr;
-  lno_nnz_view_t Icolind;
-  scalar_view_t Ivals;
-  if (!Bview.importMatrix.is_null()) {
-    auto lclB = Bview.importMatrix->getLocalMatrixHost();
-    Irowptr   = lclB.graph.row_map;
-    Icolind   = lclB.graph.entries;
-    Ivals     = lclB.values;
-  }
-
-  // Classic csr assembly (low memory edition)
-  // mfh 27 Sep 2016: The c_status array is an implementation detail
-  // of the local sparse matrix-matrix multiply routine.
-
-  // The status array will contain the index into colind where this entry was last deposited.
-  //   c_status[i] <  CSR_ip - not in the row yet
-  //   c_status[i] >= CSR_ip - this is the entry where you can find the data
-  // We start with this filled with INVALID's indicating that there are no entries yet.
-  // Sadly, this complicates the code due to the fact that size_t's are unsigned.
-  std::vector<size_t> c_status(n, ST_INVALID);
-
-  // For each row of A/C
-  size_t CSR_ip = 0, OLD_ip = 0;
-  for (size_t i = 0; i < m; i++) {
-    // First fill the c_status array w/ locations where we're allowed to
-    // generate nonzeros for this row
-    OLD_ip = Crowptr[i];
-    CSR_ip = Crowptr[i + 1];
-    for (size_t k = OLD_ip; k < CSR_ip; k++) {
-      c_status[Ccolind[k]] = k;
-
-      // Reset values in the row of C
-      Cvals[k] = SC_ZERO;
-    }
-
-    for (size_t k = Arowptr[i]; k < Arowptr[i + 1]; k++) {
-      LO Aik        = Acolind[k];
-      const SC Aval = Avals[k];
-      if (Aval == SC_ZERO)
-        continue;
-
-      if (targetMapToOrigRow[Aik] != LO_INVALID) {
-        // Local matrix
-        size_t Bk = static_cast<size_t>(targetMapToOrigRow[Aik]);
-
-        for (size_t j = Browptr[Bk]; j < Browptr[Bk + 1]; ++j) {
-          LO Bkj = Bcolind[j];
-          LO Cij = Bcol2Ccol[Bkj];
-
-          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
-          if (!badInsert)
-            Cvals[c_status[Cij]] += Aval * Bvals[j];
-          else if (throwOnInsert)
-            TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
-                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
-                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-        }
-
-      } else {
-        // Remote matrix
-        size_t Ik = static_cast<size_t>(targetMapToImportRow[Aik]);
-        for (size_t j = Irowptr[Ik]; j < Irowptr[Ik + 1]; ++j) {
-          LO Ikj = Icolind[j];
-          LO Cij = Icol2Ccol[Ikj];
-
-          const bool badInsert = (Cij == LO_INVALID) || (c_status[Cij] < OLD_ip) || (c_status[Cij] >= CSR_ip);
-          if (!badInsert)
-            Cvals[c_status[Cij]] += Aval * Ivals[j];
-          else if (throwOnInsert)
-            TEUCHOS_TEST_FOR_EXCEPTION(badInsert,
-                                       std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph "
-                                                                                            << "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
-        }
-      }
-    }
-  }
-
-  {
-    Tpetra::Details::ProfilingRegion MM3("TpetraExt: MMM: Reuse ESFC");
-    C.fillComplete(C.getDomainMap(), C.getRangeMap());
-  }
+  Tpetra::MMdetails::host_mult_A_B_reuse(
+      Aview, Bview, targetMapToOrigRow, targetMapToImportRow,
+      Bcol2Ccol, Icol2Ccol, C, Cimport, label, params);
 }
 
 /*********************************************************************************************************/
@@ -2442,14 +2934,14 @@ void jacobi_A_B_newmatrix(
 
     // Choose the right variant of setUnion
     if (!Bimport.is_null() && !Iimport.is_null()) {
-      Cimport = Bimport->setUnion(*Iimport);
+      Cimport = Bimport->setUnion(*Iimport, params);
       Ccolmap = Cimport->getTargetMap();
 
     } else if (!Bimport.is_null() && Iimport.is_null()) {
-      Cimport = Bimport->setUnion();
+      Cimport = Bimport->setUnion(params);
 
     } else if (Bimport.is_null() && !Iimport.is_null()) {
-      Cimport = Iimport->setUnion();
+      Cimport = Iimport->setUnion(params);
 
     } else
       throw std::runtime_error("TpetraExt::Jacobi status of matrix importers is nonsensical");
@@ -2870,139 +3362,10 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
                                                                                                                        const LocalOrdinalViewType& Bcol2Ccol,
                                                                                                                        const LocalOrdinalViewType& Icol2Ccol,
                                                                                                                        CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                                                                                       Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> /* Cimport */,
+                                                                                                                       Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> Cimport,
                                                                                                                        const std::string& label,
-                                                                                                                       const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
-  Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Reuse Serial Core");
-  (void)label;
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type KCRS;
-  typedef typename KCRS::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  typedef typename KCRS::values_type::non_const_type scalar_view_t;
-  typedef typename scalar_view_t::memory_space scalar_memory_space;
-
-  typedef Scalar SC;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Node NO;
-  typedef Map<LO, GO, NO> map_type;
-  const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-  const LO LO_INVALID     = Teuchos::OrdinalTraits<LO>::invalid();
-  const SC SC_ZERO        = Teuchos::ScalarTraits<Scalar>::zero();
-
-  // Sizes
-  RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m                    = Aview.origMatrix->getLocalNumRows();
-  size_t n                    = Ccolmap->getLocalNumElements();
-
-  // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
-  const KCRS Bmat = Bview.origMatrix->getLocalMatrixHost();
-  const KCRS Cmat = C.getLocalMatrixHost();
-
-  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
-  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
-  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
-  scalar_view_t Cvals = Cmat.values;
-
-  c_lno_view_t Irowptr;
-  lno_nnz_view_t Icolind;
-  scalar_view_t Ivals;
-  if (!Bview.importMatrix.is_null()) {
-    auto lclB = Bview.importMatrix->getLocalMatrixHost();
-    Irowptr   = lclB.graph.row_map;
-    Icolind   = lclB.graph.entries;
-    Ivals     = lclB.values;
-  }
-
-  // Jacobi-specific inner stuff
-  auto Dvals =
-      Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
-
-  // The status array will contain the index into colind where this entry was last deposited.
-  //   c_status[i] <  CSR_ip - not in the row yet
-  //   c_status[i] >= CSR_ip - this is the entry where you can find the data
-  // We start with this filled with INVALID's indicating that there are no entries yet.
-  // Sadly, this complicates the code due to the fact that size_t's are unsigned.
-  std::vector<size_t> c_status(n, ST_INVALID);
-
-  // For each row of A/C
-  size_t CSR_ip = 0, OLD_ip = 0;
-  for (size_t i = 0; i < m; i++) {
-    // First fill the c_status array w/ locations where we're allowed to
-    // generate nonzeros for this row
-    OLD_ip = Crowptr[i];
-    CSR_ip = Crowptr[i + 1];
-    for (size_t k = OLD_ip; k < CSR_ip; k++) {
-      c_status[Ccolind[k]] = k;
-
-      // Reset values in the row of C
-      Cvals[k] = SC_ZERO;
-    }
-
-    SC minusOmegaDval = -omega * Dvals(i, 0);
-
-    // Entries of B
-    for (size_t j = Browptr[i]; j < Browptr[i + 1]; j++) {
-      Scalar Bval = Bvals[j];
-      if (Bval == SC_ZERO)
-        continue;
-      LO Bij = Bcolind[j];
-      LO Cij = Bcol2Ccol[Bij];
-
-      TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                 std::runtime_error, "Trying to insert a new entry into a static graph");
-
-      Cvals[c_status[Cij]] = Bvals[j];
-    }
-
-    // Entries of -omega * Dinv * A * B
-    for (size_t k = Arowptr[i]; k < Arowptr[i + 1]; k++) {
-      LO Aik        = Acolind[k];
-      const SC Aval = Avals[k];
-      if (Aval == SC_ZERO)
-        continue;
-
-      if (targetMapToOrigRow[Aik] != LO_INVALID) {
-        // Local matrix
-        size_t Bk = static_cast<size_t>(targetMapToOrigRow[Aik]);
-
-        for (size_t j = Browptr[Bk]; j < Browptr[Bk + 1]; ++j) {
-          LO Bkj = Bcolind[j];
-          LO Cij = Bcol2Ccol[Bkj];
-
-          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                     std::runtime_error, "Trying to insert a new entry into a static graph");
-
-          Cvals[c_status[Cij]] += minusOmegaDval * Aval * Bvals[j];
-        }
-
-      } else {
-        // Remote matrix
-        size_t Ik = static_cast<size_t>(targetMapToImportRow[Aik]);
-        for (size_t j = Irowptr[Ik]; j < Irowptr[Ik + 1]; ++j) {
-          LO Ikj = Icolind[j];
-          LO Cij = Icol2Ccol[Ikj];
-
-          TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
-                                     std::runtime_error, "Trying to insert a new entry into a static graph");
-
-          Cvals[c_status[Cij]] += minusOmegaDval * Aval * Ivals[j];
-        }
-      }
-    }
-  }
-
-  {
-    Tpetra::Details::ProfilingRegion MM3("TpetraExt: Jacobi: Reuse ESFC");
-    C.fillComplete(C.getDomainMap(), C.getRangeMap());
-  }
+                                                                                                                       const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  host_jacobi_A_B_reuse(omega, Dinv, Aview, Bview, targetMapToOrigRow, targetMapToImportRow, Bcol2Ccol, Icol2Ccol, C, Cimport, label, params);
 }
 
 /*********************************************************************************************************/
@@ -3146,25 +3509,15 @@ void import_and_extract_views(
     // Now create a new matrix into which we can import the remote rows of A that we need.
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
-    auto& labelList_subList = labelList.sublist("matrixmatrix: kernel params", false);
-
-    bool isMM                      = true;
-    bool overrideAllreduce         = false;
-    int mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
     // Minor speedup tweak - avoid computing the global constants
-    Teuchos::ParameterList params_sublist;
+    labelList.set("compute global constants", false);
+    auto& labelList_subList = labelList.sublist("matrixmatrix: kernel params", false);
+    labelList_subList.set("isMatrixMatrix_TransferAndFillComplete", true);
+
     if (!params.is_null()) {
-      labelList.set("compute global constants", params->get("compute global constants", false));
-      params_sublist                  = params->sublist("matrixmatrix: kernel params", false);
-      mm_optimization_core_count      = params_sublist.get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-      if (mm_optimization_core_count2 < mm_optimization_core_count) mm_optimization_core_count = mm_optimization_core_count2;
-      isMM              = params_sublist.get("isMatrixMatrix_TransferAndFillComplete", false);
-      overrideAllreduce = params_sublist.get("MM_TAFC_OverrideAllreduceCheck", false);
+      if (params->isParameter("compute global constants"))
+        labelList.set("compute global constants", params->get<bool>("compute global constants"));
     }
-    labelList_subList.set("isMatrixMatrix_TransferAndFillComplete", isMM);
-    labelList_subList.set("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-    labelList_subList.set("MM_TAFC_OverrideAllreduceCheck", overrideAllreduce);
 
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                                                                  A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));

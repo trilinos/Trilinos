@@ -26,7 +26,7 @@ namespace MueLu {
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const LWGraph& graph) {
   numAggregates_       = 0;
-  numGlobalAggregates_ = 0;
+  numGlobalAggregates_ = -1;
 
   vertex2AggId_ = LOMultiVectorFactory::Build(graph.GetImportMap(), 1, false);
   vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
@@ -44,7 +44,7 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Aggregates<LocalOrdinal, GlobalOrdinal, Node>::
     Aggregates(LWGraph_kokkos graph) {
   numAggregates_       = 0;
-  numGlobalAggregates_ = 0;
+  numGlobalAggregates_ = -1;
 
   vertex2AggId_ = LOMultiVectorFactory::Build(graph.GetImportMap(), 1, false);
   vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
@@ -62,7 +62,7 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Aggregates<LocalOrdinal, GlobalOrdinal, Node>::
     Aggregates(const RCP<const Map>& map) {
   numAggregates_       = 0;
-  numGlobalAggregates_ = 0;
+  numGlobalAggregates_ = -1;
 
   vertex2AggId_ = LOMultiVectorFactory::Build(map, 1, false);
   vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
@@ -264,7 +264,7 @@ void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream&
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 GlobalOrdinal Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetNumGlobalAggregatesComputeIfNeeded() {
-  if (numGlobalAggregates_ != -1) {
+  if (numGlobalAggregates_ == -1) {
     LO nAggregates = GetNumAggregates();
     GO nGlobalAggregates;
     MueLu_sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);

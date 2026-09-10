@@ -127,24 +127,28 @@ def generate_package_enables(source_dir, packageEnablesFile, pr_base, pr_target,
     return out
 
 
-def image_available(image, tag):
-    cmd = ["podman", "image", "exists", f"{image}:{tag}"]
+def image_available(container_engine, image, tag):
+    if container_engine == "podman":
+        cmd = [container_engine, "image", "exists", f"{image}:{tag}"]
+    else:
+        cmd = [container_engine, "image", "inspect", f"{image}:{tag}"]
     ret = subprocess.run(cmd,
-                         capture_output=False, universal_newlines=True)
+                         capture_output=True, universal_newlines=True)
     return ret.returncode == 0
 
 
-def pull_image(image, tag):
-    cmd = ["podman", "pull", f"{image}:{tag}"]
+def pull_image(container_engine, image, tag):
+    cmd = [container_engine, "pull", f"{image}:{tag}"]
     subprocess.run(cmd,
                    capture_output=False, universal_newlines=True)
 
 
-def launch_container(source_dir, packageEnablesFile, image, tag, genconfig_build_id, extra_cmake_args=""):
+def launch_container(container_engine, source_dir, packageEnablesFile, image, tag,
+                     genconfig_build_id, extra_cmake_args=""):
     script_location = Path(os.path.abspath(__file__)).parent
 
     # command
-    cmd = ["podman", "run"]
+    cmd = [container_engine, "run"]
     # delete container after exit
     cmd += ["--rm"]
     # interactive
@@ -168,7 +172,10 @@ def launch_container(source_dir, packageEnablesFile, image, tag, genconfig_build
     cmd += ["--workdir", "/workspace/trilinos"]
     # map GPU
     if which("nvidia-smi") is not None and image.find("cuda") >= 0:
-        cmd += ["--device", "nvidia.com/gpu=all"]
+        if container_engine == "podman":
+            cmd += ["--device", "nvidia.com/gpu=all"]
+        else:
+            cmd += ["--gpus", "all"]
 
     # deal with certificates
     if Path("/etc/ssl/certs/ca-bundle.crt").exists():
@@ -205,20 +212,21 @@ def launch_container(source_dir, packageEnablesFile, image, tag, genconfig_build
     cmd += [f"{image}:{tag}"]
     # command to be executed
     cmd += ["bash", "-c", "echo \". /scripts/container_commands.sh\" >> $HOME/.bashrc; bash"]
-    logger.debug(f"podman command = {cmd}")
+    logger.debug(f"{container_engine} command = {cmd}")
     ret = subprocess.run(cmd,
                          capture_output=False, universal_newlines=True)
     if ret.returncode != 0:
-        message = """
-        The podman container launch failed. Unfortunately there are lots of situations
+        message = f"""
+        The {container_engine} container launch failed. Unfortunately there are lots of situations
         in which this can happen. Some suggestions for narrowing down the problem:
 
-        - The podman installation is simply broken. Try running
-            podman run -it --rm docker.io/rockylinux/rockylinux bash -c "echo \\"That worked\\""
+        - The container engine installation is simply broken. Try running
+            {container_engine} run -it --rm rockylinux/rockylinux bash -c "echo \\"That worked\\""
           to run a minimal Linux container as a test.
 
-        - Podman might be provided by a module. Try e.g.
-            module load aue/podman
+        - Docker may require elevated privileges. Try running the command with sudo,
+          or ensure your user belongs to the docker group. Podman might instead be
+          provided by a module (for example, module load aue/podman).
         """
         print(message)
         exit(1)

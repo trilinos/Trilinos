@@ -131,6 +131,45 @@ void make_mesh_one_spider_particle_body(stk::mesh::BulkData & bulk)
 }
 
 inline
+void make_mesh_one_spider_particle_body_balanced_elems(stk::mesh::BulkData & bulk)
+{
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
+                         "0,2,HEX_8,5,6,7,8,9,10,11,12\n"
+                         "0,3,HEX_8,9,10,11,12,13,14,15,16\n"
+                         "0,4,HEX_8,13,14,15,16,17,18,19,20\n"
+                         "1,5,HEX_8,17,18,19,20,21,22,23,24\n"
+                         "1,6,HEX_8,21,22,23,24,25,26,27,28\n"
+                         "1,7,HEX_8,25,26,27,28,29,30,31,32\n"
+                         "1,8,HEX_8,29,30,31,32,33,34,35,36\n"
+                         "1,9,HEX_8,33,34,35,36,37,38,39,40\n"
+                         "1,10,HEX_8,37,38,39,40,41,42,43,44\n"
+                         "0,20,BEAM_2,13,100\n"
+                         "0,21,BEAM_2,16,100\n"
+                         "0,22,BEAM_2,17,100\n"
+                         "0,23,BEAM_2,20,100\n"
+                         "1,24,BEAM_2,21,100\n"
+                         "1,25,BEAM_2,24,100\n"
+                         "0,50,PARTICLE,100\n";
+
+  std::vector<double> coordinates {
+    0,1,1, 0,0,1, 0,0,0, 0,1,0,
+    1,1,1, 1,0,1, 1,0,0, 1,1,0,
+    2,1,1, 2,0,1, 2,0,0, 2,1,0,
+    3,1,1, 3,0,1, 3,0,0, 3,1,0,
+    4,1,1, 4,0,1, 4,0,0, 4,1,0,
+    5,1,1, 5,0,1, 5,0,0, 5,1,0,
+    6,1,1, 6,0,1, 6,0,0, 6,1,0,
+    7,1,1, 7,0,1, 7,0,0, 7,1,0,
+    8,1,1, 8,0,1, 8,0,0, 8,1,0,
+    9,1,1, 9,0,1, 9,0,0, 9,1,0,
+    10,1,1, 10,0,1, 10,0,0, 10,1,0,
+    4,2,0.5
+  };
+
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
+}
+
+inline
 void make_mesh_one_spider_beam_body(stk::mesh::BulkData & bulk)
 {
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"

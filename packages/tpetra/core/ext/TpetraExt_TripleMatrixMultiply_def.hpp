@@ -278,27 +278,13 @@ void MultiplyRAP(
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
     Teuchos::ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params", false);
-
-    RCP<crs_matrix_type> Acprime   = rcpFromRef(Ac);
-    bool isMM                      = true;
-    bool overrideAllreduce         = false;
-    int mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
-    if (!params.is_null()) {
-      Teuchos::ParameterList& params_sublist = params->sublist("matrixmatrix: kernel params", false);
-      mm_optimization_core_count             = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
-      mm_optimization_core_count             = params_sublist.get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-      int mm_optimization_core_count2        = params->get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-      if (mm_optimization_core_count2 < mm_optimization_core_count) mm_optimization_core_count = mm_optimization_core_count2;
-      isMM              = params_sublist.get("isMatrixMatrix_TransferAndFillComplete", false);
-      overrideAllreduce = params_sublist.get("MM_TAFC_OverrideAllreduceCheck", false);
-
-      labelList.set("compute global constants", params->get("compute global constants", true));
-    }
-    labelList_subList.set("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count, "Core Count above which the optimized neighbor discovery is used");
-
-    labelList_subList.set("isMatrixMatrix_TransferAndFillComplete", isMM,
+    labelList_subList.set("isMatrixMatrix_TransferAndFillComplete", true,
                           "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
-    labelList_subList.set("MM_TAFC_OverrideAllreduceCheck", overrideAllreduce);
+
+    RCP<crs_matrix_type> Acprime = rcpFromRef(Ac);
+    if (!params.is_null()) {
+      labelList.setParameters(*params);
+    }
 
     export_type exporter = export_type(*Pprime->getGraph()->getImporter());
     Actemp->exportAndFillComplete(Acprime,

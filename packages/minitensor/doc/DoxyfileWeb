@@ -1,0 +1,2 @@
+@INCLUDE               = Doxyfile.options
+INPUT                  = MiniTensor_DoxygenDocumentation.hpp ../src

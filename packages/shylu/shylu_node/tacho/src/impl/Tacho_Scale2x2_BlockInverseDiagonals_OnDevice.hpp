@@ -88,16 +88,16 @@ template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice> {
   inline static int invoke(MemberType &exec_instance, const ViewTypeD &D, const ViewTypeA &A) {
     typedef typename ViewTypeA::non_const_value_type value_type;
 
+    using value_type = typename ViewTypeA::non_const_value_type;
     const ordinal_type m = A.extent(0), n = A.extent(1);
+
     if (A.extent(0) == D.extent(0)) {
       if (A.span() > 0) {
         using exec_space = MemberType;
-
         if (n == 1) {
           Kokkos::RangePolicy<exec_space> policy(exec_instance, 0, m);
           Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type &i) {
-              const value_type dii = D(i, i);
-              A(i, 0) /= dii;
+              A(i, 0) /= D(i, i);
           });
         } else {
           using policy_type = Kokkos::TeamPolicy<exec_space>;

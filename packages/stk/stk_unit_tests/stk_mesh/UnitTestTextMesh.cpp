@@ -1746,12 +1746,12 @@ TEST_F(TestTextMesh2d, singleQuadWithSideset_nonStandardName)
   verify_single_sideset("my_ss", 1, SideVector{{1, 1}});
 }
 
-TEST_F(TestTextMesh1d, oneDimensionNotSupported)
+TEST_F(TestTextMesh1d, oneDimensionSupported)
 {
   if (get_parallel_size() != 1) return;
 
   std::string meshDesc = "0,1,LINE_2_1D,1,2";
-  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
 }
 
 TEST_F(TestTextMeshGraph, singleHex)

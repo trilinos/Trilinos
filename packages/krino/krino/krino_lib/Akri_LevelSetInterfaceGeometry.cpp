@@ -19,6 +19,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Relation.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
+#include <Akri_SimplexGradient.hpp>
 #include <Akri_Surface_Identifier.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 
@@ -1217,6 +1218,31 @@ void LevelSetInterfaceGeometry::store_phase_for_elements_that_will_be_uncut_afte
       }
     }
   }
+}
+
+FieldRef LevelSetInterfaceGeometry::get_coordinates_field(const stk::mesh::BulkData & mesh) const
+{
+  FieldRef coordsField = myCdfemSupport.get_coords_field();
+  if (!coordsField.valid())
+  {
+    coordsField = mesh.mesh_meta_data().coordinate_field();
+    STK_ThrowRequireMsg(coordsField.valid(), "No valid coordinates field.");
+  }
+  return coordsField;
+}
+
+stk::math::Vector3d LevelSetInterfaceGeometry::compute_interface_normal(const stk::mesh::BulkData & mesh, const Surface_Identifier surfaceIdentifier, const stk::mesh::Entity element) const
+{
+  const LS_Field & lsField = get_ls_field_with_identifier(surfaceIdentifier);
+  if (!stk::mesh::selectField(lsField.isovar.field())(mesh.bucket(element)))
+    return stk::math::Vector3d::ZERO;
+  std::vector<stk::math::Vector3d> elemNodesCoords;
+  fill_element_node_coordinates(mesh, element, get_coordinates_field(mesh), elemNodesCoords);
+  std::vector<double> elemNodesDist;
+  fill_node_levelset(mesh, lsField, element, elemNodesDist);
+  stk::math::Vector3d grad = calculate_simplex_gradient(elemNodesCoords, elemNodesDist);
+  grad.unitize();
+  return grad;
 }
 
 }

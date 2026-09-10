@@ -18,7 +18,7 @@
 #include <Akri_Phase_Support.hpp>
 #include <Akri_Snap.hpp>
 #include <Akri_Unit_BoundingBoxMesh.hpp>
-#include <Akri_Unit_LogRedirecter.hpp>
+#include <Akri_LogRedirecter.hpp>
 #include <gtest/gtest.h>
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/WriteMesh.hpp>

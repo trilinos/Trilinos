@@ -14,25 +14,216 @@
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_Base.hpp"
-#include "Sacado_Fad_ExpressionFwd.hpp"
+#include "Sacado_cmath.hpp"
 #include "Sacado_SFINAE_Macros.hpp"
 
 // Note:  Sacado::Fad::Ops are forward-declared here, instead of in macros
 // below.
 #include "Sacado_Fad_Ops_Fwd.hpp"
 
-#define UNARYFUNC_MACRO(OP,FADOP)                                       \
+#define SACADO_UNARYFUNC_MACRO(OP,FADOP)                                \
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
+    template <typename T> class Expr;                                   \
     template <typename T>                                               \
     SACADO_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
-                                                                        \
-    template <typename T> class SimpleFad;                              \
-    template <typename T>                                               \
-    SimpleFad<T> OP (const SimpleFad<T>&);                              \
+    FADOP< typename Expr<T>::derived_type,                              \
+           typename T::expr_spec_type >                                 \
+    OP (const Expr<T>&);                                                \
   }                                                                     \
+                                                                        \
+}                                                                       \
+                                                                        \
+namespace std {                                                         \
+  using Sacado::Fad::OP;                                                \
+}
+
+SACADO_UNARYFUNC_MACRO(exp, ExpOp)
+SACADO_UNARYFUNC_MACRO(expm1, ExpM1Op)
+SACADO_UNARYFUNC_MACRO(log, LogOp)
+SACADO_UNARYFUNC_MACRO(log1p, Log1POp)
+SACADO_UNARYFUNC_MACRO(log10, Log10Op)
+SACADO_UNARYFUNC_MACRO(sqrt, SqrtOp)
+SACADO_UNARYFUNC_MACRO(safe_sqrt, SafeSqrtOp)
+SACADO_UNARYFUNC_MACRO(cos, CosOp)
+SACADO_UNARYFUNC_MACRO(sin, SinOp)
+SACADO_UNARYFUNC_MACRO(tan, TanOp)
+SACADO_UNARYFUNC_MACRO(acos, ACosOp)
+SACADO_UNARYFUNC_MACRO(asin, ASinOp)
+SACADO_UNARYFUNC_MACRO(atan, ATanOp)
+SACADO_UNARYFUNC_MACRO(cosh, CoshOp)
+SACADO_UNARYFUNC_MACRO(sinh, SinhOp)
+SACADO_UNARYFUNC_MACRO(tanh, TanhOp)
+SACADO_UNARYFUNC_MACRO(acosh, ACoshOp)
+SACADO_UNARYFUNC_MACRO(asinh, ASinhOp)
+SACADO_UNARYFUNC_MACRO(atanh, ATanhOp)
+SACADO_UNARYFUNC_MACRO(abs, AbsOp)
+SACADO_UNARYFUNC_MACRO(fabs, FAbsOp)
+SACADO_UNARYFUNC_MACRO(cbrt, CbrtOp)
+
+#undef SACADO_UNARYFUNC_MACRO
+
+#define SACADO_BINARYFUNC_MACRO(OP,FADOP)                               \
+namespace Sacado {                                                      \
+                                                                        \
+  namespace Fad {                                                       \
+                                                                        \
+    template <typename T> class Expr;                                   \
+    template <typename T> struct IsFadExpr;                             \
+    template <typename T> struct ExprLevel;                             \
+    template <typename T1, typename T2>                                 \
+    SACADO_INLINE_FUNCTION                                              \
+    SACADO_FAD_EXP_OP_ENABLE_EXPR_EXPR(FADOP)                           \
+    OP (const T1&, const T2&);                                          \
+                                                                        \
+    template <typename T>                                               \
+    SACADO_INLINE_FUNCTION                                              \
+    FADOP< typename T::value_type, typename Expr<T>::derived_type,      \
+           true, false, typename T::expr_spec_type >                    \
+    OP (const typename T::value_type&, const Expr<T>&);                 \
+                                                                        \
+    template <typename T>                                               \
+    SACADO_INLINE_FUNCTION                                              \
+    FADOP< typename Expr<T>::derived_type, typename T::value_type,      \
+           false, true, typename T::expr_spec_type >                    \
+    OP (const Expr<T>&, const typename T::value_type&);                 \
+                                                                        \
+    template <typename T>                                               \
+    SACADO_INLINE_FUNCTION                                              \
+    SACADO_FAD_EXP_OP_ENABLE_SCALAR_EXPR(FADOP)                         \
+    OP (const typename T::scalar_type&, const Expr<T>&);                \
+                                                                        \
+    template <typename T>                                               \
+    SACADO_INLINE_FUNCTION                                              \
+    SACADO_FAD_EXP_OP_ENABLE_EXPR_SCALAR(FADOP)                         \
+    OP (const Expr<T>&, const typename T::scalar_type&);                \
+  }                                                                     \
+                                                                        \
+}                                                                       \
+                                                                        \
+namespace std {                                                         \
+  using Sacado::Fad::OP;                                                \
+}
+
+SACADO_BINARYFUNC_MACRO(atan2, Atan2Op)
+SACADO_BINARYFUNC_MACRO(pow, PowerOp)
+SACADO_BINARYFUNC_MACRO(max, MaxOp)
+SACADO_BINARYFUNC_MACRO(min, MinOp)
+
+#undef SACADO_BINARYFUNC_MACRO
+
+#if defined(HAVE_SACADO_KOKKOS)
+
+namespace Sacado {
+  namespace Fad {
+    template <typename S> class GeneralFad;
+    template <typename ValT, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr;
+
+    template <typename S>
+    SACADO_INLINE_FUNCTION
+    void atomic_add(GeneralFad<S>* dst, const GeneralFad<S>& x);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION
+    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_max_fetch(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_max_fetch(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_min_fetch(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_min_fetch(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_add_fetch(GeneralFad<S>* dst, const GeneralFad<S>& x);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_add_fetch(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_sub_fetch(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_sub_fetch(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_mul_fetch(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_mul_fetch(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_div_fetch(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_div_fetch(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_max(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_max(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_min(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_min(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_add(GeneralFad<S>* dst, const GeneralFad<S>& x);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_sub(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_sub(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_mul(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_mul(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_div(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_div(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+  }
+}
+
+namespace Kokkos {
+  using Sacado::Fad::atomic_add;
+  using Sacado::Fad::atomic_max_fetch;
+  using Sacado::Fad::atomic_min_fetch;
+  using Sacado::Fad::atomic_add_fetch;
+  using Sacado::Fad::atomic_sub_fetch;
+  using Sacado::Fad::atomic_mul_fetch;
+  using Sacado::Fad::atomic_div_fetch;
+  using Sacado::Fad::atomic_fetch_max;
+  using Sacado::Fad::atomic_fetch_min;
+  using Sacado::Fad::atomic_fetch_add;
+  using Sacado::Fad::atomic_fetch_sub;
+  using Sacado::Fad::atomic_fetch_mul;
+  using Sacado::Fad::atomic_fetch_div;
+}
+
+#endif
+
+#define SACADO_UNARYFUNC_MACRO(OP,FADOP)                                \
+namespace Sacado {                                                      \
                                                                         \
   namespace ELRFad {                                                    \
     template <typename T> class FADOP;                                  \
@@ -95,100 +286,34 @@ namespace std {                                                         \
   using Sacado::Rad::OP;                                                \
 }
 
-UNARYFUNC_MACRO(exp, ExpOp)
-UNARYFUNC_MACRO(expm1, ExpM1Op)
-UNARYFUNC_MACRO(log, LogOp)
-UNARYFUNC_MACRO(log1p, Log1POp)
-UNARYFUNC_MACRO(log10, Log10Op)
-UNARYFUNC_MACRO(sqrt, SqrtOp)
-UNARYFUNC_MACRO(cos, CosOp)
-UNARYFUNC_MACRO(sin, SinOp)
-UNARYFUNC_MACRO(tan, TanOp)
-UNARYFUNC_MACRO(acos, ACosOp)
-UNARYFUNC_MACRO(asin, ASinOp)
-UNARYFUNC_MACRO(atan, ATanOp)
-UNARYFUNC_MACRO(cosh, CoshOp)
-UNARYFUNC_MACRO(sinh, SinhOp)
-UNARYFUNC_MACRO(tanh, TanhOp)
-UNARYFUNC_MACRO(acosh, ACoshOp)
-UNARYFUNC_MACRO(asinh, ASinhOp)
-UNARYFUNC_MACRO(atanh, ATanhOp)
-UNARYFUNC_MACRO(abs, AbsOp)
-UNARYFUNC_MACRO(fabs, FAbsOp)
-UNARYFUNC_MACRO(cbrt, CbrtOp)
+SACADO_UNARYFUNC_MACRO(exp, ExpOp)
+SACADO_UNARYFUNC_MACRO(expm1, ExpM1Op)
+SACADO_UNARYFUNC_MACRO(log, LogOp)
+SACADO_UNARYFUNC_MACRO(log1p, Log1POp)
+SACADO_UNARYFUNC_MACRO(log10, Log10Op)
+SACADO_UNARYFUNC_MACRO(sqrt, SqrtOp)
+SACADO_UNARYFUNC_MACRO(cos, CosOp)
+SACADO_UNARYFUNC_MACRO(sin, SinOp)
+SACADO_UNARYFUNC_MACRO(tan, TanOp)
+SACADO_UNARYFUNC_MACRO(acos, ACosOp)
+SACADO_UNARYFUNC_MACRO(asin, ASinOp)
+SACADO_UNARYFUNC_MACRO(atan, ATanOp)
+SACADO_UNARYFUNC_MACRO(cosh, CoshOp)
+SACADO_UNARYFUNC_MACRO(sinh, SinhOp)
+SACADO_UNARYFUNC_MACRO(tanh, TanhOp)
+SACADO_UNARYFUNC_MACRO(acosh, ACoshOp)
+SACADO_UNARYFUNC_MACRO(asinh, ASinhOp)
+SACADO_UNARYFUNC_MACRO(atanh, ATanhOp)
+SACADO_UNARYFUNC_MACRO(abs, AbsOp)
+SACADO_UNARYFUNC_MACRO(fabs, FAbsOp)
+SACADO_UNARYFUNC_MACRO(cbrt, CbrtOp)
 
-#undef UNARYFUNC_MACRO
+#undef SACADO_UNARYFUNC_MACRO
 
-namespace Sacado {
-  namespace Fad {
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
-  }
-
-  namespace ELRFad {
-    template <typename T> class SafeSqrtOp;
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
-  }
-
-  namespace CacheFad {
-    template <typename T> class SafeSqrtOp;
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
-  }
-
-  namespace ELRCacheFad {
-    template <typename T> class SafeSqrtOp;
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
-  }
-}
-
-#define BINARYFUNC_MACRO(OP,FADOP)                                      \
+#define SACADO_BINARYFUNC_MACRO(OP,FADOP)                               \
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
-    template <typename T> class ConstExpr;                              \
-    template <typename T> struct IsFadExpr;                             \
-    template <typename T> struct ExprLevel;                             \
-    template <typename T1, typename T2>                                 \
-    SACADO_INLINE_FUNCTION                                              \
-    typename mpl::enable_if_c<                                          \
-       ExprLevel< Expr<T1> >::value == ExprLevel< Expr<T2> >::value,    \
-       Expr< FADOP< Expr<T1>, Expr<T2> > >                              \
-      >::type                                                           \
-    /*SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)*/                           \
-    OP (const Expr<T1>&, const Expr<T2>&);                              \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T>, Expr<T> > >                                   \
-    OP (const Expr<T>&, const Expr<T>&);                                \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >   \
-    OP (const typename Expr<T>::value_type&, const Expr<T>&);           \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
-    OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(FADOP)                             \
-    OP (const typename Expr<T>::scalar_type&, const Expr<T>&);          \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(FADOP)                             \
-    OP (const Expr<T>&, const typename Expr<T>::scalar_type&);          \
-                                                                        \
     template <typename T> class SimpleFad;                              \
     template <typename T>                                               \
     SimpleFad<T>                                                        \
@@ -433,37 +558,16 @@ namespace std {                                                         \
   using Sacado::Rad::OP;                                                \
 }
 
-BINARYFUNC_MACRO(atan2, Atan2Op)
-BINARYFUNC_MACRO(pow, PowerOp)
-BINARYFUNC_MACRO(max, MaxOp)
-BINARYFUNC_MACRO(min, MinOp)
+SACADO_BINARYFUNC_MACRO(atan2, Atan2Op)
+SACADO_BINARYFUNC_MACRO(pow, PowerOp)
+SACADO_BINARYFUNC_MACRO(max, MaxOp)
+SACADO_BINARYFUNC_MACRO(min, MinOp)
 
-#undef BINARYFUNC_MACRO
+#undef SACADO_BINARYFUNC_MACRO
 
 #if defined(HAVE_SACADO_KOKKOS)
 
 namespace Sacado {
-#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-  namespace Fad {
-    template <typename ValT, unsigned sl, unsigned ss, typename U>
-    class ViewFadPtr;
-    template <typename T> class DFad;
-    template <typename T, int N> class SFad;
-    template <typename T, int N> class SLFad;
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    void atomic_add(DFad<T>* dst, const DFad<T>& x);
-    template <typename T, int N>
-    SACADO_INLINE_FUNCTION
-    void atomic_add(SFad<T,N>* dst, const SFad<T,N>& x);
-    template <typename T, int N>
-    SACADO_INLINE_FUNCTION
-    void atomic_add(SLFad<T,N>* dst, const SLFad<T,N>& x);
-    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
-    SACADO_INLINE_FUNCTION
-    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
-  }
-#endif
   namespace ELRFad {
     template <typename ValT, unsigned sl, unsigned ss, typename U>
     class ViewFadPtr;
@@ -524,18 +628,11 @@ namespace Sacado {
 }
 
 namespace Kokkos {
-#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-  using Sacado::Fad::atomic_add;
-#endif
   using Sacado::ELRFad::atomic_add;
   using Sacado::CacheFad::atomic_add;
   using Sacado::ELRCacheFad::atomic_add;
 }
 
-#endif
-
-#ifdef SACADO_ENABLE_NEW_DESIGN
-#include "Sacado_Fad_Exp_MathFunctions.hpp"
 #endif
 
 #endif // SACADO_MATHFUNCTIONS_HPP

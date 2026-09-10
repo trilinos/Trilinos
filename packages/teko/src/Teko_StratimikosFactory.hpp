@@ -21,9 +21,19 @@
 
 namespace Teko {
 
-/** \brief Concrete preconditioner factory subclass based on ML.
+/** \brief Adapts Teko block preconditioners to the Stratimikos framework.
  *
- * ToDo: Finish documentation!
+ * This factory is what registers Teko as a Stratimikos preconditioner named
+ * <tt>"Teko"</tt> (see Teko::addTekoToStratimikosBuilder). Once registered, an entire
+ * Teko block preconditioner can be configured from the Stratimikos parameter list /
+ * XML: the top-level keys describe how to segregate the monolithic operator into blocks
+ * (<tt>"Strided Blocking"</tt>, <tt>"Reorder Type"</tt>) and which named inverse to apply
+ * to the whole system (<tt>"Inverse Type"</tt>), while the <tt>"Inverse Factory Library"</tt>
+ * sublist defines every named inverse. The complete list of valid parameters is returned by
+ * getValidParameters().
+ *
+ * See the \ref teko_config_model "Configuration Model" page of the Teko user's guide for
+ * the parameter reference and worked XML examples.
  */
 class StratimikosFactory : public Thyra::PreconditionerFactoryBase<double> {
  public:

@@ -98,6 +98,7 @@ namespace Stokhos {
     using value_t_1 = typename VectorType1::value_type;
     using value_t_2 = typename VectorType2::value_type;
     static_assert(std::is_same<value_t_1,value_t_2>::value,"Inconsistent types.");
+    using std::abs;
 
     bool success = true;
 

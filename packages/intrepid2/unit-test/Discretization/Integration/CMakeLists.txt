@@ -45,6 +45,7 @@ FOREACH(I RANGE ${ETI_DEVICE_COUNT})
         ARGS PrintItAll
         NUM_MPI_PROCS 1
         PASS_REGULAR_EXPRESSION "TEST PASSED"
+        RUN_SERIAL
         ADD_DIR_TO_NAME
       )
 

@@ -75,14 +75,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SafeSqrt, SafeSqrt, ELRCacheFad_DFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SafeSqrt, SafeSqrt, ELRCacheFad_SLFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SafeSqrt, SafeSqrt, ELRCacheFad_SFadType )
 
-#if defined(SACADO_ENABLE_NEW_DESIGN) && !defined(SACADO_NEW_FAD_DESIGN_IS_DEFAULT)
-typedef Sacado::Fad::Exp::DFad<double> ExpFad_DFadType;
-typedef Sacado::Fad::Exp::SLFad<double,N> ExpFad_SLFadType;
-typedef Sacado::Fad::Exp::SFad<double,N> ExpFad_SFadType;
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SafeSqrt, SafeSqrt, ExpFad_DFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SafeSqrt, SafeSqrt, ExpFad_SLFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( SafeSqrt, SafeSqrt, ExpFad_SFadType )
-#endif
+
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

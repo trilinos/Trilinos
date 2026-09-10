@@ -726,6 +726,14 @@ void RILUK<MatrixType>::
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Tpetra::CrsGraph<local_ordinal_type,
+                           global_ordinal_type,
+                           node_type>
+      crs_graph_type;
+
+  auto crsMat = Details::getCrsMatrix(A_);
+  if (!crsMat.is_null())
+    Teuchos::rcp_const_cast<crs_graph_type>(crsMat->getCrsGraph())->computeGlobalConstants();
 
   size_t NumIn = 0, NumL = 0, NumU = 0;
   bool DiagFound         = false;
@@ -1478,9 +1486,11 @@ std::string RILUK<MatrixType>::description() const {
   if (A_.is_null()) {
     os << "Matrix: null";
   } else {
+    auto crsMat = Details::getCrsMatrix(A_);
     os << "Global matrix dimensions: ["
-       << A_->getGlobalNumRows() << ", " << A_->getGlobalNumCols() << "]"
-       << ", Global nnz: " << A_->getGlobalNumEntries();
+       << A_->getGlobalNumRows() << ", " << A_->getGlobalNumCols() << "]";
+    if (!crsMat.is_null() && crsMat->haveGlobalConstants())
+      os << ", Global nnz: " << A_->getGlobalNumEntries();
   }
 
   if (!L_solver_.is_null()) os << ", " << L_solver_->description();

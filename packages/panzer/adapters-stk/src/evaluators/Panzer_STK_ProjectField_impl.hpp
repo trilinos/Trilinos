@@ -19,7 +19,7 @@
 
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_HierarchicParallelism.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 

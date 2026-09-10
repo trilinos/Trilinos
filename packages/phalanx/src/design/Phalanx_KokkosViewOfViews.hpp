@@ -433,7 +433,7 @@ namespace PHX {
       // the non-fad adjusted layout.
       if (Sacado::IsADType<typename InnerViewType::value_type>::value) {
         auto layout = v.layout();
-        layout.dimension[InnerViewType::rank] = Kokkos::dimension_scalar(v);
+        layout.dimension[InnerViewType::rank] = Sacado::dimension_scalar(v);
         view_host_unmanaged_(i...) = InnerViewType(v.data(),layout);
       }
       else

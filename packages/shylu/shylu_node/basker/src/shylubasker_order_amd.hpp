@@ -75,15 +75,15 @@ namespace BaskerNS
   BASKER_INLINE
   int my_amesos_csymamd <>
   (
-   long n, 
-   long *Ap,
-   long *Ai,
-   long *p, 
-   long *cmember
+   UF_long n,
+   UF_long *Ap,
+   UF_long *Ai,
+   UF_long *p,
+   UF_long *cmember
   )
   {
     double knobs[TRILINOS_CCOLAMD_KNOBS];
-    long    stats[TRILINOS_CCOLAMD_STATS];
+    UF_long    stats[TRILINOS_CCOLAMD_STATS];
 
     //use default knob settings
     trilinos_ccolamd_l_set_defaults(knobs);
@@ -196,13 +196,13 @@ namespace BaskerNS
   BASKER_INLINE
   int trilinos_colamd<>
   (
-   long n_row,
-   long n_col,
-   long Alen,
-   long *A,
-   long *p,
+   UF_long n_row,
+   UF_long n_col,
+   UF_long Alen,
+   UF_long *A,
+   UF_long *p,
    double *knobs,
-   long *stats
+   UF_long *stats
   )
   {
     trilinos_colamd_l(n_row, n_col, Alen, A, p, knobs, stats);

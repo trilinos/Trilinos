@@ -15,6 +15,7 @@
 #include <Tpetra_Details_Behavior.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_EnvVariables.hpp>
 
 /*
  * Note: The tests for the Behavior class are scattered across several files,
@@ -28,10 +29,10 @@
 namespace {
 
 TEUCHOS_STATIC_SETUP() {
-  setenv("TPETRA_DEBUG", "OFF", 1);
-  setenv("TPETRA_VERBOSE", "OFF", 1);
-  setenv("TPETRA_ASSUME_GPU_AWARE_MPI", "OFF", 1);
-  setenv("CUDA_LAUNCH_BLOCKING", "0", 1);
+  Teuchos::setEnvironmentVariable("TPETRA_DEBUG", "OFF", 1);
+  Teuchos::setEnvironmentVariable("TPETRA_VERBOSE", "OFF", 1);
+  Teuchos::setEnvironmentVariable("TPETRA_ASSUME_GPU_AWARE_MPI", "OFF", 1);
+  Teuchos::setEnvironmentVariable("CUDA_LAUNCH_BLOCKING", "0", 1);
 }
 
 TEUCHOS_UNIT_TEST(Behavior, Off) {

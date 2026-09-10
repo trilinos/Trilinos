@@ -21,7 +21,7 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
 // Kokkos
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 // Panzer
 #include "Panzer_BasisIRLayout.hpp"
@@ -168,7 +168,7 @@ namespace panzer
     typename Traits::SetupData sd,
     PHX::FieldManager<Traits>& /* fm */)
   {
-    using Kokkos::createDynRankView;
+    using Sacado::createDynRankView;
     using panzer::getBasisIndex;
 
     // Get the PHX::Views of the fields.

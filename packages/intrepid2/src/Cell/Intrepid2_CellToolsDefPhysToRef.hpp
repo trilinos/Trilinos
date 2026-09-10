@@ -225,7 +225,7 @@ namespace Intrepid2 {
     auto physTmp = Impl::createMatchingDynRankView(refPoints, "CellTools::mapToReferenceFrameInitGuess::physTmp", numCells, numPoints, physDim);
 
     // deep copy may not work with FAD but this is right thing to do as it can move data between devices
-    Kokkos::deep_copy(xOld, Kokkos::subview(refPoints, Kokkos::ALL(), Kokkos::ALL(), refDimRange));
+    Kokkos::deep_copy(xOld, Kokkos::subdynrankview(refPoints, Kokkos::ALL(), Kokkos::ALL(), refDimRange));
 
     // jacobian should select fad dimension between xOld and worksetCell as they are input; no front interface yet
     using valueTypeJ = std::common_type_t<typename decltype(refPoints)::value_type, typename decltype(worksetCell)::value_type>;    
@@ -259,7 +259,7 @@ namespace Intrepid2 {
     using FunctorType = FunctorCellTools::F_maxNorm<errorViewType>;
     Kokkos::parallel_reduce("MaxReduction", policy, FunctorType(errorPointwise), Kokkos::Max<errorType>(physInfNorm));
     
-    auto refPts = Kokkos::subview(refPoints,Kokkos::ALL(), Kokkos::ALL(), refDimRange);
+    auto refPts = Kokkos::subdynrankview(refPoints,Kokkos::ALL(), Kokkos::ALL(), refDimRange);
       
 
     // Newton method to solve the equation F(refPoints) - physPoints = 0:
@@ -267,10 +267,7 @@ namespace Intrepid2 {
     bool converged(false);
     for (ordinal_type iter=0;iter<Parameters::MaxNewton;++iter) {
       
-      // Jacobians at the old iterates and their inverses. 
-      setJacobian(jacobian, xOld, worksetCell, basis);
-      
-      // The Newton step.
+      // The Newton residual at the old iterate.
       mapToPhysicalFrame(physTmp, xOld, worksetCell, basis); // physTmp <- F(xOld)
       rst::subtract(physTmp, physPoints, physTmp);           // physTmp <- physPoints - F(xOld)
 
@@ -283,9 +280,14 @@ namespace Intrepid2 {
 
       if (error < tol*physInfNorm) {
         converged = true;
+        if(isShell) { // update Jacobian so that it is consistent with xOld/refPoints
+          setJacobian(jacobian, xOld, worksetCell, basis);
+        }
         break;
       }
 
+      // Jacobians at the old iterates and their inverses. 
+      setJacobian(jacobian, xOld, worksetCell, basis);
 
       if(refDim < physDim) {
         rst::matvec(xTmp, jacobian, physTmp, true);          // xTmp <- DF^{T}( physPoints - F(xOld) ))
@@ -299,14 +301,14 @@ namespace Intrepid2 {
       }
   
       // extract values
-      rst::extractScalarValues(Kokkos::subview(xScalarTmp, Kokkos::ALL(), Kokkos::ALL(), refDimRange), refPts);
+      rst::extractScalarValues(Kokkos::subdynrankview(xScalarTmp, Kokkos::ALL(), Kokkos::ALL(), refDimRange), refPts);
 
       rst::add(refPts, xOld);                                 // refPoints <- refPoints + xOld
 
       
       error = 0;
       // l2 error (Euclidean distance) between old and new iterates: |xOld - xNew|
-      rst::vectorNorm(errorPointwise, Kokkos::subview(xScalarTmp, Kokkos::ALL(), Kokkos::ALL(), refDimRange), NORM_TWO);
+      rst::vectorNorm(errorPointwise, Kokkos::subdynrankview(xScalarTmp, Kokkos::ALL(), Kokkos::ALL(), refDimRange), NORM_TWO);
       Kokkos::parallel_reduce("MaxReduction", policy, FunctorType(errorPointwise), Kokkos::Max<errorType>(error));    
     
       // Stopping criterion:
@@ -331,7 +333,7 @@ namespace Intrepid2 {
       //(physPoints - F(xOld)) * n /|n|^2 / (H/2)
       //where H is the shell thickness and  n is the normal to the manifold defined by the map to physical frame (n is orthogonal to the tangents defined by the Jacobian)
       scaledResidualNormalComponent(
-               Kokkos::subview(refPoints,Kokkos::ALL(), Kokkos::ALL(), refDim),
+               Kokkos::subdynrankview(refPoints,Kokkos::ALL(), Kokkos::ALL(), refDim),
                jacobian,
                physTmp,
                2.0/shellThickness);

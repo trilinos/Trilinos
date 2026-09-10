@@ -375,8 +375,12 @@ inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType>
                                       const double shift = 0.0, const bool verbose = false) {
   const bool test = (size_t(A.NumRows()) != size_t(A.NumCols()) || size_t(A.NumRows()) != size_t(b.extent(0)) ||
                      size_t(x.extent(0)) != size_t(b.extent(0)) || size_t(x.extent(1)) != size_t(b.extent(1)));
-  if (test)
+  if (test) {
+    std::cout << std::endl
+              << "ERROR: A,x and b dimensions are not compatible for ComputeRelativeResidual"
+              << std::endl << std::endl;
     throw std::logic_error("A,x and b dimensions are not compatible");
+  }
 
   typedef ValueType value_type;
   typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
@@ -397,7 +401,7 @@ inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType>
   for (ordinal_type p = 0; p < k; ++p) {
     double diff_p = 0, norm_p = 0;
     for (ordinal_type i = 0; i < m; ++i) {
-      value_type s = value_type(shift) * h_x(i, p);;
+      value_type s = value_type(shift) * h_x(i, p);
       const ordinal_type jbeg = h_A.RowPtrBegin(i), jend = h_A.RowPtrEnd(i);
       for (ordinal_type j = jbeg; j < jend; ++j) {
         const ordinal_type col = h_A.Col(j);
@@ -415,11 +419,11 @@ inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType>
       if (shift != 0.0) {
         std::cout << " (with shift = " << shift << ")";
       }
-      std::cout << std::endl;
+      std::cout << std::endl << std::flush;
     }
   }
   if (verbose)
-    std::cout << " Relative residual norm = " << sqrt(diff) << " / " << sqrt(norm) << " = " << sqrt(diff/norm) << std::endl;
+    std::cout << " Total Relative residual norm = " << sqrt(diff) << " / " << sqrt(norm) << " = " << sqrt(diff/norm) << std::endl;
   return sqrt(diff / norm);
 }
 

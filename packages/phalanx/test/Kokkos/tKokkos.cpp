@@ -17,11 +17,7 @@
 #include <map>
 
 #include "Sacado.hpp"
-#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
-#include "Kokkos_View_Fad.hpp"
-#include "Kokkos_DynRankView_Fad.hpp"
-#include "Kokkos_DynRankView.hpp"
-#endif
+#include "Sacado_Fad_Kokkos.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Kokkos_Random.hpp"
 
@@ -649,10 +645,7 @@ namespace phalanx_test {
       Kokkos::deep_copy(host_c,c);
 
       TEST_EQUALITY(c.rank(),2);
-      TEST_EQUALITY(Kokkos::dimension_scalar(c),2);
-#if !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
-      TEST_EQUALITY(c.impl_map().dimension_scalar(),2);
-#endif
+      TEST_EQUALITY(Sacado::dimension_scalar(c),2);
 
       double tol = std::numeric_limits<double>::epsilon() * 100.0;
       for (int i = 0; i < num_cells; ++i) {

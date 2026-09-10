@@ -127,7 +127,7 @@ void Region::commit()
   if (refinementSupport.get_initial_refinement_levels() > 0 || refinementSupport.get_interface_maximum_refinement_level() > 0 ||
       (krino::CDFEM_Support::is_active(meta) && cdfem_support.get_post_cdfem_refinement_levels() > 0))
   {
-    RefinementManager & refinement = RefinementManager::create(meta);
+    RefinementManager & refinement = RefinementManager::get_or_create(meta);
     refinementSupport.set_non_interface_conforming_refinement(refinement);
   }
 

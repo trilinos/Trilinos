@@ -17,7 +17,30 @@ if(WIN32 AND TPL_ENABLE_MPI)
   find_package(MPI)
   include_directories(${MPI_INCLUDE_PATH})
   global_set(TPL_MPI_INCLUDE_DIRS ${MPI_INCLUDE_PATH})
-  global_set(TPL_MPI_LIBRARIES ${MPI_LIBRARIES})
+  # FindMPI often leaves MPI_LIBRARIES empty on Windows while MPI_C/CXX_LIBRARIES
+  # hold msmpi.lib.  Also, global_set() does not use FORCE, so avoid leaving a
+  # stale empty TPL_MPI_LIBRARIES in the cache from an earlier configure.
+  set(_tpl_mpi_link_libs "")
+  if(MPI_LIBRARIES)
+    set(_tpl_mpi_link_libs "${MPI_LIBRARIES}")
+  elseif(MPI_CXX_LIBRARIES)
+    set(_tpl_mpi_link_libs "${MPI_CXX_LIBRARIES}")
+  elseif(MPI_C_LIBRARIES)
+    set(_tpl_mpi_link_libs "${MPI_C_LIBRARIES}")
+  endif()
+  if(_tpl_mpi_link_libs)
+    set(TPL_MPI_LIBRARIES "${_tpl_mpi_link_libs}" CACHE INTERNAL "" FORCE)
+  endif()
+  # When MPI_LIBRARY_NAMES is empty, tribits_tpl_find_include_dirs_and_libraries(MPI)
+  # calls global_null_set(TPL_MPI_LIBRARIES) and clears the cache.  If FindMPI
+  # already produced MPI::MPI_C / MPI::MPI_CXX, create MPI::all_libs here so
+  # that generic finder is skipped.
+  if(MPI_C_FOUND AND MPI_CXX_FOUND AND NOT TARGET MPI::all_libs)
+    tribits_extpkg_create_imported_all_libs_target_and_config_file(
+      MPI
+      INNER_FIND_PACKAGE_NAME MPI
+      IMPORTED_TARGETS_FOR_ALL_LIBS MPI::MPI_C MPI::MPI_CXX)
+  endif()
 endif()
 
 # Don't allow calling find_package(MPI) by default.  Force the user to set

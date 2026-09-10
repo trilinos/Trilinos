@@ -207,7 +207,7 @@ void SymbolicTools::computeSupernodes(const ordinal_type m, const size_type_arra
     if (parent(i) >= 0)
       ++count(parent(i));
 
-  // parent has more than a child, it becomes a supernode candidate
+  // parent has more than one child, it becomes a supernode candidate
   // roots are supernodes
   for (ordinal_type i = 0; i < m; ++i)
     if (count(i) > 1 || parent(i) < 0)
@@ -215,7 +215,7 @@ void SymbolicTools::computeSupernodes(const ordinal_type m, const size_type_arra
 
   // accumulate subtree sizes in count.
   for (ordinal_type i = 0; i < m; ++i)
-    count(i) = 1;
+    count(i) = 1; // include itself (# of immediate child + me)
   for (ordinal_type i = 0; i < m; ++i)
     if (parent(i) >= 0)
       count(parent(i)) += count(i);
@@ -224,11 +224,12 @@ void SymbolicTools::computeSupernodes(const ordinal_type m, const size_type_arra
   for (ordinal_type i = 0; i < m; ++i) {
     const ordinal_type ii = perm(i);
     for (size_type p = ap(ii); p < ap(ii + 1); ++p) {
-      const ordinal_type j = peri(aj(p));
-      if (i < j) {
-        const ordinal_type k = prev(j);
-        if (k < (i - count(i) + 1))
+      const ordinal_type j = peri(aj(p)); // j col id of nonzeros in ith row = one of i's ancestors (higher in e-tree)
+      if (i < j) { // upper
+        const ordinal_type k = prev(j); // k updated j last, or zero if j has not been updated
+        if (k < (i - count(i) + 1)) {
           flag(i) = true;
+        }
         prev(j) = i;
       }
     }
@@ -240,23 +241,25 @@ void SymbolicTools::computeSupernodes(const ordinal_type m, const size_type_arra
     flag(k) = true; // supernodes begin
 
     ordinal_type supernode_size = 0;
-    ordinal_type supernode_size_threshold = m; // max supernode threshold (todo: not used, but could pass in as arg)
+    ordinal_type supernode_max_size_threshold = m; // max supernode threshold (todo: not used, but could pass in as arg)
     for (ordinal_type i = 0; i < m; ++i)
     {
       supernode_size ++;
-      if (flag(i) || supernode_size >= supernode_size_threshold) {
+      if (flag(i) || supernode_size >= supernode_max_size_threshold) {
         supernode_size = 0;
         k ++;
       }
     }
-    supernodes = ordinal_type_array(do_not_initialize_tag("supernodes"), k + 1);
 
     // record supernodes
+    supernodes = ordinal_type_array(do_not_initialize_tag("supernodes"), k + 1);
+    supernodes(0) = 0;
+
     k = 0;
     supernode_size = 0;
     for (ordinal_type i = 0; i < m; ++i) {
       supernode_size ++;
-      if (flag(i) || supernode_size >= supernode_size_threshold) {
+      if (flag(i) || supernode_size >= supernode_max_size_threshold) {
         supernode_size = 0;
         supernodes(k++) = i;
       }

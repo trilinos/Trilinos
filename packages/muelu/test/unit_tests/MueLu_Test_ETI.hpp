@@ -290,7 +290,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 
         if (config) {
           *out << "Node type: " << Node::execution_space::name() << std::endl;
-          Kokkos::Experimental::SYCL().print_configuration(*out, true /*details*/);
+          Kokkos::SYCL().print_configuration(*out, true /*details*/);
         }
 
 #ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION

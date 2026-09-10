@@ -17,7 +17,7 @@
 
 #define ETI_SACADO @ETI_SACADO@
 #if (ETI_SACADO != 0)  /// SACADO
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 #include "Sacado.hpp"
 #endif
 

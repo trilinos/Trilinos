@@ -1,29 +1,27 @@
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 #ifndef KRINO_KRINO_KRINO_LIB_AKRI_CONTOURUTILS_HPP_
 #define KRINO_KRINO_KRINO_LIB_AKRI_CONTOURUTILS_HPP_
 #include <array>
 
+#include <stk_math/StkVector.hpp>
+
 namespace krino {
 
-class ContourTri
-{
-public:
-  static unsigned get_permutation_for_case(const unsigned caseId);
-  static std::array<unsigned, 6> get_permuted_node_ordinals(const unsigned caseId);
-  static unsigned get_permuted_case_id(const unsigned caseId);
-  static unsigned compute_case_id(const std::array<int,3> & nodeSigns);
-};
+template <size_t NCOORDS>
+stk::math::Vector3d compute_linear_edge_crossing(const std::array<stk::math::Vector3d,NCOORDS> & coords,
+  const std::array<double,NCOORDS> & distance,
+  const unsigned i0, const unsigned i1);
 
-class ContourTet
-{
-public:
-  static unsigned get_permutation_for_case(const unsigned caseId);
-  static std::array<unsigned, 10> get_permuted_node_ordinals(const unsigned caseId);
-  static std::array<unsigned, 10> get_permuted_node_ordinals_for_permutation(const unsigned permutation);
-  static const std::array<unsigned, 4> & get_permuted_side_ordinals(const unsigned caseId);
-  static const std::array<unsigned, 4> & get_permuted_side_ordinals_for_permutation(const unsigned permutation);
-  static unsigned get_permuted_case_id(const unsigned caseId);
-  static unsigned compute_case_id(const std::array<int,4> & nodeSigns);
-};
+template <size_t NCOORDS, size_t NDIST>
+stk::math::Vector3d compute_quadratic_edge_crossing(const std::array<stk::math::Vector3d,NCOORDS> & coords,
+  const std::array<double,NDIST> & distance,
+  const unsigned i0, const unsigned i1, const unsigned i2);
 
 }
 

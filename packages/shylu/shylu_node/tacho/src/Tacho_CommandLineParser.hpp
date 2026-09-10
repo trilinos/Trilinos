@@ -93,6 +93,7 @@ public:
       // parse
       for (int i = 1; i < argc; ++i) {
         std::string s = argv[i];
+        bool used = false;
         for (auto it = _map.begin(); it != _map.end(); ++it) {
           const auto t = it->second;
           // find option starting with --
@@ -115,9 +116,12 @@ public:
                   } else if (type == "bool") {
                     *((bool *)tval) = (sval == "true");
                   } else {
-                    std::cout << " int somethng wrong\n";
+                    std::cout << "\n somethng wrong with command-line argument " << it->first
+                              << " missing/wrong argument\n\n";
+                    return true;
                   }
                   _map[it->first] = std::make_tuple(desc, type, sval, (void *)NULL);
+                  used = true;
                 }
               }
             } else {
@@ -129,13 +133,23 @@ public:
                   if (type == "bool") {
                     *((bool *)tval) = true;
                   } else {
-                    std::cout << " bool somethng wrong(" << desc << ", " << type << ")\n";
+                    std::cout << "\n somethng wrong with bool command-line argument for " << it->first
+                              << " (" << desc << ", " << type << ")\n\n";
+                    return true;
                   }
                   _map[it->first] = std::make_tuple(desc, type, "1", (void *)NULL);
+                  used = true;
                 }
               }
             }
+          } else {
+            std::cout << "\n invaild command-line argument : " << s << std::endl << std::endl;
+            return true;
           }
+        }
+        if (!used) {
+          std::cout << "\n invaild command-line argument : " << s << std::endl << std::endl;
+          return true;
         }
       }
 

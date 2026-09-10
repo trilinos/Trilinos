@@ -146,8 +146,8 @@ public:
     pvec_[k]->setMultiplier(multiplier);
   }
 
-  void updateMultiplier( const Vector<Real> &x, Real &tol, const int k ) {
-    pvec_[k]->updateMultiplier(x,tol);
+  Real updateMultiplier( const Vector<Real> &x, Real &tol, const int k ) {
+   return pvec_[k]->updateMultiplier(x,tol);
   }
 
   // Return objective function value

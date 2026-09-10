@@ -34,6 +34,14 @@ BlockLowerTriInverseOp::BlockLowerTriInverseOp(BlockedLinearOp& L,
   productDomain_ = L_->productRange();
 }
 
+namespace {
+bool compatibleMultiVectors(const BlockedMultiVector& a, const BlockedMultiVector& b) {
+  if (!a || !b) return false;
+
+  return a->domain()->dim() == b->domain()->dim();
+}
+}  // namespace
+
 /** @brief Perform a matrix vector multiply with this operator.
  *
  * The <code>apply</code> function takes one vector as input
@@ -53,7 +61,10 @@ void BlockLowerTriInverseOp::implicitApply(const BlockedMultiVector& src, Blocke
   TEUCHOS_ASSERT(blocks == blockRowCount(L_));
   TEUCHOS_ASSERT(blocks == blockCount(dst));
 
-  if (!allocated) {
+  bool needsAlloc = !allocated;
+  needsAlloc |= !compatibleMultiVectors(srcScrap_, src);
+  needsAlloc |= !compatibleMultiVectors(dstScrap_, dst);
+  if (needsAlloc) {
     srcScrap_ = deepcopy(src);
     dstScrap_ = deepcopy(dst);
     allocated = true;
