@@ -71,6 +71,7 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate) {
   goldList.set("aggregation: type", "uncoupled");
   goldList.set("aggregation: coloring algorithm", "mis2 aggregation");
   goldList.set("aggregation: backend", "kokkos");
+  goldList.set("aggregation: symmetrize graph after dropping", true);
   goldList.set("aggregation: match ML phase1", true);
   goldList.set("aggregation: match ML phase2a", true);
   goldList.set("aggregation: match ML phase2b", true);
@@ -120,6 +121,7 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate_plus_MueLu) {
   goldList.set("aggregation: type", "uncoupled");
   goldList.set("aggregation: coloring algorithm", "mis2 aggregation");
   goldList.set("aggregation: backend", "kokkos");
+  goldList.set("aggregation: symmetrize graph after dropping", true);
   goldList.set("aggregation: match ML phase1", true);
   goldList.set("aggregation: match ML phase2a", true);
   goldList.set("aggregation: match ML phase2b", true);

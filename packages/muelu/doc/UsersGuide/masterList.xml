@@ -1779,7 +1779,7 @@ Only used when tentative: calculate qr is set to false.</description>
       <type>string</type>
       <default>"zoltan2"</default>
       <description>Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).</description>
-      <default-ML>Zoltan</default-ML>
+      <default-ML>zoltan</default-ML>
       <comment-ML>needs special handling</comment-ML>
     </parameter>
 
