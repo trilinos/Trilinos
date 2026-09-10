@@ -564,6 +564,18 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   )
   LIST(APPEND SOURCES ${FECRSGRAPH_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::Details::GraphAssembly.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(
+    GRAPHASSEMBLY_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "Details_GraphAssembly"
+    "DETAILS_GRAPHASSEMBLY"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+  )
+  LIST(APPEND SOURCES ${GRAPHASSEMBLY_OUTPUT_FILES})
+
   # Generate ETI .cpp files for Tpetra::Directory.
   TPETRA_PROCESS_ALL_LGN_TEMPLATES(
     DIRECTORY_OUTPUT_FILES
