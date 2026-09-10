@@ -19,7 +19,7 @@
                   </ParameterList>
                 </ParameterList>
                 <ParameterList name="VerboseObject">
-                  <Parameter name="Verbosity Level" type="string" value="medium" />
+                  <Parameter name="Verbosity Level" type="string" value="none" />
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -45,7 +45,7 @@
                   </ParameterList>
                 </ParameterList>
                 <ParameterList name="VerboseObject">
-                  <Parameter name="Verbosity Level" type="string" value="medium" />
+                  <Parameter name="Verbosity Level" type="string" value="none" />
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -71,7 +71,7 @@
                   </ParameterList>
                 </ParameterList>
                 <ParameterList name="VerboseObject">
-                  <Parameter name="Verbosity Level" type="string" value="medium" />
+                  <Parameter name="Verbosity Level" type="string" value="none" />
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -97,7 +97,7 @@
                   </ParameterList>
                 </ParameterList>
                 <ParameterList name="VerboseObject">
-                  <Parameter name="Verbosity Level" type="string" value="medium" />
+                  <Parameter name="Verbosity Level" type="string" value="none" />
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -142,7 +142,7 @@
                     </ParameterList>
                   </ParameterList>
                   <ParameterList name="VerboseObject">
-                    <Parameter name="Verbosity Level" type="string" value="low" />
+                    <Parameter name="Verbosity Level" type="string" value="none" />
                   </ParameterList>
                 </ParameterList>
               </ParameterList>
@@ -203,26 +203,27 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Analysis">
-      <Parameter name="Output Level" type="int" value="4" />
+      <Parameter name="Output Level" type="int" value="2" />
       <Parameter name="Analysis Package" type="string" value="HDSA" />
      
       <ParameterList name="HDSA">
         <Parameter name="Number Of Parameters" type="int" value="1" />
         <Parameter name="Check Derivatives" type="bool" value="false" />
-        <Parameter name="Perform HDSA Analysis With OED" type="bool" value="false" />    
+        <Parameter name="Perform HDSA Analysis With OED" type="bool" value="true" />    
+        <Parameter name="Number Of OED Steps" type="int" value="2" /> 
         <ParameterList name="Derivative Checks">
           <Parameter name="Perform Reduced Derivative Checks" type="bool" value="false" />
           <Parameter name="Perform Expensive Derivative Checks" type="bool" value="false" />
         </ParameterList>
-        <ParameterList name="Prior Elliptic Operator">
+          <ParameterList name="Prior Elliptic Operator">
           <Parameter name="Operator Type" type="string" value="Hessian Of Response" />
           <Parameter name="Response Index" type="int" value="1" />
         </ParameterList>
-        <ParameterList name="Prior Mass Operator">
+          <ParameterList name="Prior Mass Operator">
           <Parameter name="Operator Type" type="string" value="Hessian Of Response" />
           <Parameter name="Response Index" type="int" value="2" />
         </ParameterList>
-        <ParameterList name="Prior Mass Cholesky Operator">
+          <ParameterList name="Prior Mass Cholesky Operator">
           <Parameter name="Operator Type" type="string" value="Hessian Of Response" />
           <Parameter name="Response Index" type="int" value="3" />
         </ParameterList>
@@ -239,18 +240,21 @@
         <ParameterList name="MD Prior">
           <Parameter name="alpha_u" type="double" value="0.25" />
           <Parameter name="alpha_z" type="double" value="0.25" />
-          <Parameter name="Number Of Singular Values" type="int" value="50" />
-          <Parameter name="Oversampling Factor" type="int" value="1" />
-          <Parameter name="Number Of Subspace Iterations" type="int" value="2" />    
+          <Parameter name="Number Of Singular Values" type="int" value="51" />
+          <Parameter name="Oversampling Factor" type="int" value="0" />
+          <Parameter name="Number Of Subspace Iterations" type="int" value="3" />    
           <Parameter name="Number Of Prior Samples" type="int" value="0" />    
         </ParameterList>
         <ParameterList name="MD Posterior">
           <Parameter name="alpha_d" type="double" value="1.e-5" />
-          <Parameter name="Number Of Prior Samples" type="int" value="50" />    
+          <Parameter name="Number Of Posterior Samples" type="int" value="0" />    
         </ParameterList>
         <ParameterList name="MD Hessian Analysis">
-          <Parameter name="Rank"  type="int" value="20" />
+          <Parameter name="Rank"  type="int" value="10" />
           <Parameter name="Oversampling Factor" type="int" value="10" />    
+        </ParameterList>
+        <ParameterList name="MD Continuation Update">
+          <Parameter name="Number Of Continuation Steps" type="int" value="3" />    
         </ParameterList>
       </ParameterList>
     
@@ -283,7 +287,7 @@
         <ParameterList name="ROL Options">
           <!-- =========== BEGIN GENERAL INPUT PARAMETER SUBLIST =========== -->
           <ParameterList name="General">
-            <Parameter name="Output Level" type="int" value="4" />
+            <Parameter name="Output Level" type="int" value="0" />
             <Parameter name="Variable Objective Function" type="bool" value="false" />
             <Parameter name="Scale for Epsilon Active Sets" type="double" value="1.0" />
 
