@@ -607,7 +607,8 @@ public:
   //! The StackedTimer used by the TimeMonitor.
   static Teuchos::RCP<Teuchos::StackedTimer> getStackedTimer();
 
-  static bool stackedTimerNameIsDefault();
+  //! StackedTimer is either null, or it exists but has the default name and no child timers.
+  static bool stackedTimerHasDefaultState();
 
  private:
   /// \brief Valid output formats for report().
