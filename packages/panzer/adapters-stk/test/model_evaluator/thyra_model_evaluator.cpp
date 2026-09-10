@@ -194,20 +194,20 @@ namespace panzer {
 
     // Apply W(alpha,beta) to t and return the result.
     auto applyW = [&](double alpha,double beta) {
-      MEB::InArgs<double> in = me->createInArgs();
+      MEB::InArgs<double> in_args = me->createInArgs();
       RCP<Thyra::VectorBase<double> > x    = Thyra::createMember(me->get_x_space());
       RCP<Thyra::VectorBase<double> > xdot = Thyra::createMember(me->get_x_space());
       Thyra::put_scalar(0.3,x.ptr());
       Thyra::put_scalar(0.0,xdot.ptr());
-      in.set_x(x);
-      if (in.supports(MEB::IN_ARG_x_dot)) in.set_x_dot(xdot);
-      if (in.supports(MEB::IN_ARG_t))     in.set_t(0.0);
-      if (in.supports(MEB::IN_ARG_alpha)) in.set_alpha(alpha);
-      if (in.supports(MEB::IN_ARG_beta))  in.set_beta(beta);
-      MEB::OutArgs<double> out = me->createOutArgs();
+      in_args.set_x(x);
+      if (in_args.supports(MEB::IN_ARG_x_dot)) in_args.set_x_dot(xdot);
+      if (in_args.supports(MEB::IN_ARG_t))     in_args.set_t(0.0);
+      if (in_args.supports(MEB::IN_ARG_alpha)) in_args.set_alpha(alpha);
+      if (in_args.supports(MEB::IN_ARG_beta))  in_args.set_beta(beta);
+      MEB::OutArgs<double> out_args = me->createOutArgs();
       RCP<Thyra::LinearOpBase<double> > W = me->create_W_op();
-      out.set_W_op(W);
-      me->evalModel(in,out);
+      out_args.set_W_op(W);
+      me->evalModel(in_args,out_args);
       RCP<Thyra::VectorBase<double> > y = Thyra::createMember(me->get_f_space());
       Thyra::apply(*W,Thyra::NOTRANS,*t,y.ptr());
       return y;
