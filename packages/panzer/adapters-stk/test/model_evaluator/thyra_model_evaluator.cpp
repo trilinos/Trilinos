@@ -899,11 +899,6 @@ namespace panzer {
     }
   }
 
-  // A distributed parameter needs a linear object factory whose range and
-  // domain indexers differ. BlockedTpetraLinearObjFactory has no column
-  // provider at all, so cloneWithNewRangeAndDomain() rejects it outright.
-#ifdef PANZER_HAVE_EPETRA_STACK
-
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(thyra_model_evaluator, distro_blocked_parameters_dgdp)
   {
@@ -1031,7 +1026,6 @@ namespace panzer {
     }
   }
 
-#endif // PANZER_HAVE_EPETRA_STACK
 
   // Testing that nominal values are correctly built and initialized
   //    specifically testing that adding distributed parameters doesn't wipe out

@@ -628,13 +628,6 @@ namespace panzer {
       }
     }
   }
-// A distributed parameter needs a linear object factory whose range and domain
-// indexers differ. BlockedTpetraLinearObjFactory has no column-provider concept
-// at all, so panzer::cloneWithNewDomain() throws for it and this test cannot be
-// built on the blocked Tpetra path. The non-blocked coverage above is the same
-// test through TpetraLinearObjFactory, which does support it.
-#ifdef PANZER_BLOCKED_TPETRA_HAS_NONSQUARE_LOF
-
   // Test that the response library can build the correct residual and jacobian
   TEUCHOS_UNIT_TEST(response_residual, blocked_dfdp_in_model_eval)
   {
@@ -797,7 +790,6 @@ namespace panzer {
       }
     }
   }
-#endif // PANZER_BLOCKED_TPETRA_HAS_NONSQUARE_LOF
 
   bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a,
                                   const Thyra::VectorBase<double> & b,
