@@ -69,6 +69,8 @@
 //  Tempus
 // *************************************************
 
+#include <limits>
+
 int main(int argc, char *argv[])
 {
   using namespace Teuchos;
@@ -94,7 +96,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     // Parse the command line arguments
-    std::string input_file_name = "energy-transient-tempus-opt-blocked.xml";
+    std::string input_file_name = "energy-transient-tempus-opt-blocked-fd-deriv.xml";
     int exodus_io_num_procs = 0;
     bool printTimers = true;
     bool printInputPL = false;
@@ -139,16 +141,87 @@ int main(int argc, char *argv[])
     input_params->remove("Objective");
     input_params->remove("ROL");
 
+    // Optional, and pulled off for the same reason. Finite difference
+    // gradients converge the parameter less tightly than analytic ones, so the
+    // tolerance on the recovered parameter is per problem.
+    double target_tolerance = 1.0e-9;
+    if (input_params->isSublist("Optimization Check")) {
+      ParameterList opt_check = input_params->sublist("Optimization Check");
+      input_params->remove("Optimization Check");
+      ParameterList valid_opt_check;
+      valid_opt_check.set("Target Tolerance",1.0e-9,
+                          "Largest relative difference allowed between the recovered "
+                          "parameter and the target used to build the response");
+      opt_check.validateParametersAndSetDefaults(valid_opt_check);
+      target_tolerance = opt_check.get<double>("Target Tolerance");
+    }
+
+    // Optional, and pulled off for the same reason.
+    RCP<ParameterList> gradient_check_params;
+    if (input_params->isSublist("Gradient Check")) {
+      gradient_check_params = parameterList(input_params->sublist("Gradient Check"));
+      input_params->remove("Gradient Check");
+
+      ParameterList valid_params;
+      valid_params.set("Parameter Value",1.0,
+                       "Parameter value at which the gradient is evaluated");
+      valid_params.set("Step",1.0e-6,
+                       "Step size for the central finite difference");
+      valid_params.set("Tolerance",1.0e-5,
+                       "Largest relative difference allowed between the analytic "
+                       "and finite difference gradients");
+      gradient_check_params->validateParametersAndSetDefaults(valid_params);
+    }
+
     {
       RCP<ParameterList> tempus_params = parameterList(input_params->sublist("Solution Control",true).sublist("Tempus",true));
-      auto objective = ROL::makePtr<ROL::TransientReducedObjective<double>>(input_params,comm,objective_params,out);
+      auto objective = ROL::makePtr<ROL::TransientReducedObjective<double>>(input_params,tempus_params,comm,objective_params,out);
 
       // Create target -- do forward integration with perturbed parameter values
       RCP<ROL::Vector<double>> p = objective->create_design_vector();
-      p->setScalar(2.0);
+      const double p_target = 2.0;
+      p->setScalar(p_target);
       RCP<ROL::Vector<double>> r = objective->create_response_vector();
       objective->run_tempus(*r, *p);
       objective->set_target(r);
+
+      // Compare the analytic gradient against a central finite difference. The
+      // optimization below reaches the target even when dg/dp is badly wrong,
+      // so this is the part of the test that actually exercises the
+      // sensitivity path (dg/dx * dx/dp + dg/dp) rather than just ROL.
+      if (nonnull(gradient_check_params)) {
+        const double p0  = gradient_check_params->get<double>("Parameter Value");
+        const double h   = gradient_check_params->get<double>("Step");
+        const double gtol = gradient_check_params->get<double>("Tolerance");
+
+        RCP<ROL::Vector<double>> p_check = objective->create_design_vector();
+        RCP<ROL::Vector<double>> grad    = objective->create_design_vector();
+        double rtol = 1.0e-12;
+
+        p_check->setScalar(p0);
+        objective->gradient(*grad,*p_check,rtol);
+        const double g_analytic =
+          Thyra::get_ele(*(dyn_cast<const ROL::ThyraVector<double> >(*grad).getVector()),0);
+
+        p_check->setScalar(p0+h);
+        const double obj_plus = objective->value(*p_check,rtol);
+        p_check->setScalar(p0-h);
+        const double obj_minus = objective->value(*p_check,rtol);
+        const double g_fd = (obj_plus-obj_minus)/(2.0*h);
+
+        const double g_err = std::fabs(g_analytic-g_fd)/
+                             std::max(std::fabs(g_fd),std::numeric_limits<double>::min());
+
+        *out << "Gradient check: analytic = " << g_analytic
+             << ", finite difference = " << g_fd
+             << ", relative error = " << g_err << std::endl;
+
+        if (g_err > gtol) {
+          status = -1;
+          *out << "******* Analytic gradient does not match finite difference! ********" << std::endl;
+          *out << "\tTolerance = " << gtol << std::endl;
+        }
+      }
 
       p->setScalar(1.5);
       ROL::OptimizationProblem<double> problem(objective, p);
@@ -162,9 +235,16 @@ int main(int argc, char *argv[])
       {
         const ROL::ThyraVector<double>& thyra_p = dyn_cast<const ROL::ThyraVector<double> >(*p);
         ROL::ThyraVector<double>& thyra_r = dyn_cast<ROL::ThyraVector<double> >(*r);
-        *out << "Final Values: p = " << Thyra::get_ele(*(thyra_p.getVector()),0)
+        const double p_final = Thyra::get_ele(*(thyra_p.getVector()),0);
+        *out << "Final Values: p = " << p_final
              << ", g = " << Thyra::get_ele(*(thyra_r.getVector()),0)
              << std::endl;
+        if (fabs(p_target - p_final) / fabs(p_target) > target_tolerance) {
+          status = -1;
+          *out <<"******* Optimization solution does not match expected target! ********" << std::endl;
+          *out <<"\tExpected p = " << p_target
+               << " within relative tolerance " << target_tolerance << std::endl;
+        }
       }
     }
 
@@ -188,10 +268,22 @@ int main(int argc, char *argv[])
     *out << e.what() << std::endl;
     *out << "************ Caught Exception: End Error Report ************" << std::endl;
     status = -1;
+
+    Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
+    if (true) {
+      Teuchos::StackedTimer::OutputOptions options;
+      options.output_fraction = true;
+      options.output_minmax = false;
+      options.output_histogram = false;
+      options.num_histogram = 5;
+      std::string timing_file_name = "exception_timing.log";
+      std::fstream timing_file{timing_file_name,std::ios::out | std::ios::trunc};
+      Teuchos::TimeMonitor::getStackedTimer()->report(timing_file, Teuchos::DefaultComm<int>::getComm(), options);
+    }
   }
 
   if (status == 0)
-    *out << "panzer::MainDriver run completed." << std::endl;
+    *out << "panzer::MainDriverOpt run completed." << std::endl;
 
   return status;
 }

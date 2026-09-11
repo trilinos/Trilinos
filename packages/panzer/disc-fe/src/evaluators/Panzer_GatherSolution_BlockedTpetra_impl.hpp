@@ -19,6 +19,8 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
+#include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GatherSolution_Input.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
@@ -511,8 +513,39 @@ template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
-   // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_),true);
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+   using BVROGED = panzer::BlockedVector_ReadOnly_GlobalEvaluationData;
+   using TVROGED = panzer::TpetraVector_ReadOnly_GlobalEvaluationData<S,LO,GO,NodeT>;
+
+   solutionBlocks_.clear();
+
+   // First try the refactored read-only container, which is how the model
+   // evaluator supplies the solution. Unwrap each block to its Tpetra vector
+   // here so the gather loop never touches Thyra.
+   const std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
+   if(d.gedc->containsDataObject(globalDataKey_+post)) {
+      RCP<BVROGED> blockedGed = rcp_dynamic_cast<BVROGED>(d.gedc->getDataObject(globalDataKey_+post),true);
+      const int numBlocks = static_cast<int>(globalIndexer_->getFieldDOFManagers().size());
+      for(int blk=0;blk<numBlocks;++blk)
+         solutionBlocks_.push_back(rcp_dynamic_cast<TVROGED>(blockedGed->getGEDBlock(blk),true)->getGhostedVector_Tpetra());
+
+      return;
+   }
+
+   // Otherwise the solution arrives in a linear object container.
+   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_),true);
+
+   RCP<const Thyra::VectorBase<double> > blockedSolution = useTimeDerivativeSolutionVector_
+                                                         ? blockedContainer_->get_dxdt()
+                                                         : blockedContainer_->get_x();
+   TEUCHOS_TEST_FOR_EXCEPTION(blockedSolution==Teuchos::null,std::logic_error,
+     "GatherSolution_BlockedTpetra: the container under \"" << globalDataKey_ << "\" holds no "
+     << (useTimeDerivativeSolutionVector_ ? "dxdt" : "x") << " vector to gather from.");
+
+   auto prodSolution = rcp_dynamic_cast<const Thyra::ProductVectorBase<double> >(blockedSolution,true);
+   for(int blk=0;blk<prodSolution->productSpace()->numBlocks();++blk)
+      solutionBlocks_.push_back(rcp_dynamic_cast<const Thyra::TpetraVector<S,LO,GO,NodeT> >(prodSolution->getVectorBlock(blk),true)->getConstTpetraVector());
 }
 
 // **********************************************************************
@@ -528,15 +561,10 @@ evaluateFields(typename TRAITS::EvalData workset)
   const auto& localCellIds = this->wda(workset).cell_local_ids_k;
   
   RealType seedValue = RealType(0.0);
-  RCP<ProductVectorBase<double>> blockedSolution;
-  if (useTimeDerivativeSolutionVector_) {
-    blockedSolution = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
+  if (useTimeDerivativeSolutionVector_)
     seedValue = workset.alpha;
-  }
-  else {
-    blockedSolution = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
+  else
     seedValue = workset.beta;
-  }
 
   // turn off sensitivies: this may be faster if we don't expand the term
   // but I suspect not because anywhere it is used the full complement of
@@ -557,8 +585,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     }
 
     const int blockRowIndex = productVectorBlockIndex_[fieldIndex];
-    const auto& subblockSolution = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(blockedSolution->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
-    const auto kokkosSolution = subblockSolution.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    const auto kokkosSolution = solutionBlocks_[blockRowIndex]->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
     // Class data fields for lambda capture
     const PHX::View<const int*> fieldOffsets = fieldOffsets_[fieldIndex];

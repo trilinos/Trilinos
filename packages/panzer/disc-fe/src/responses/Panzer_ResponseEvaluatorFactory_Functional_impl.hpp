@@ -11,6 +11,7 @@
 #ifndef __Panzer_ResponseEvaluatorFactory_Functional_impl_hpp__
 #define __Panzer_ResponseEvaluatorFactory_Functional_impl_hpp__
 
+#include <Panzer_GlobalIndexer_Utilities.hpp>
 #include <string>
 
 #include "PanzerDiscFE_config.hpp"
@@ -75,14 +76,11 @@ buildAndRegisterEvaluators(const std::string & responseName,
         auto ugi = Teuchos::rcp_dynamic_cast<const GlobalIndexer>(linearObjFactory_->getDomainGlobalIndexer());
         auto bugi = Teuchos::rcp_dynamic_cast<const BlockedDOFManager>(linearObjFactory_->getDomainGlobalIndexer());
 
-        if(ugi!=Teuchos::null) {
-          std::vector<Teuchos::RCP<const GlobalIndexer> > ugis; 
-          ugis.push_back(ugi);
-
-          scatterObj = Teuchos::rcp(new FunctionalScatter<LO,GO>(ugis));
-        }
-        else if(bugi!=Teuchos::null) {
+        if(bugi!=Teuchos::null) {
           scatterObj = Teuchos::rcp(new FunctionalScatter<LO,GO>(nc2c_vector(bugi->getFieldDOFManagers())));
+        }
+        else if(ugi!=Teuchos::null) { // this needs to be second since a BlockedDOFManager is a child of GlobalIndexer
+          scatterObj = Teuchos::rcp(new FunctionalScatter<LO,GO>(ugi));
         }
         else {
           TEUCHOS_ASSERT(false); // no real global indexer to use
@@ -106,6 +104,10 @@ template <typename EvalT,typename LO,typename GO>
 bool ResponseEvaluatorFactory_Functional<EvalT,LO,GO>::
 typeSupported() const
 {
+  // A Tangent response accumulates Fad-valued scalars and needs no linear
+  // object factory, so it must not be gated on one: responses registered
+  // through the plain addResponse() path never get a factory, and gating it
+  // there silently drops DgDp instead of failing.
   if(   PHX::print<EvalT>()==PHX::print<panzer::Traits::Residual>() ||
         PHX::print<EvalT>()==PHX::print<panzer::Traits::Tangent>()
     )

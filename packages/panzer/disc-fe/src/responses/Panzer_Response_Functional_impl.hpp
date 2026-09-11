@@ -98,6 +98,10 @@ template < >
 void Response_Functional<panzer::Traits::Tangent>::
 scatterResponse()
 {
+  // Nothing to scatter into: DgDp was not requested for this response.
+  if (!this->hasTargetVector())
+    return;
+
   const int n = value.size();
   const int num_deriv = this->numDeriv();
   TEUCHOS_ASSERT(n == 0 || n == num_deriv);

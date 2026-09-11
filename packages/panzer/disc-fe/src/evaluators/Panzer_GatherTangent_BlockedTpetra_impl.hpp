@@ -20,6 +20,8 @@
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
+#include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
@@ -115,21 +117,33 @@ template <typename EvalT,typename TRAITS,typename S,typename LO,typename GO,type
 void panzer::GatherTangent_BlockedTpetra<EvalT, TRAITS,S,LO,GO,NodeT>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
-  // try to extract linear object container
-  if (d.gedc->containsDataObject(globalDataKey_)) {
-    Teuchos::RCP<GlobalEvaluationData> ged = d.gedc->getDataObject(globalDataKey_);
-    Teuchos::RCP<LOCPair_GlobalEvaluationData> loc_pair =
-      Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using BVROGED = panzer::BlockedVector_ReadOnly_GlobalEvaluationData;
 
-    if(loc_pair!=Teuchos::null) {
-      Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
-      blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(loc,true);
-    }
+  if (!d.gedc->containsDataObject(globalDataKey_))
+    return;
 
-    if(blockedContainer_==Teuchos::null) {
-      blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(ged,true);
+  RCP<GlobalEvaluationData> ged = d.gedc->getDataObject(globalDataKey_);
+
+  // try to extract a linear object container, possibly wrapped in a LOCPair
+  {
+    RCP<const ContainerType> blockedContainer = rcp_dynamic_cast<const ContainerType>(ged);
+    RCP<LOCPair_GlobalEvaluationData> loc_pair =
+      rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+
+    if(loc_pair!=Teuchos::null)
+      blockedContainer = rcp_dynamic_cast<const ContainerType>(loc_pair->getGhostedLOC(),true);
+
+    if(blockedContainer!=Teuchos::null) {
+      blockedContainer_ = blockedContainer;
+      return;
     }
   }
+
+  // otherwise it must be a blocked read-only ghosted vector, which is what the
+  // model evaluator hands out for the tangent gather containers (throws if not)
+  xBvRoGed_ = rcp_dynamic_cast<BVROGED>(ged,true);
 }
 
 // **********************************************************************
@@ -142,17 +156,19 @@ evaluateFields(typename TRAITS::EvalData workset)
   using Thyra::VectorBase;
   using Thyra::ProductVectorBase;
 
-  // If blockedContainer_ was not initialized, then no global evaluation data
+  // If neither source was initialized, then no global evaluation data
   // container was set, in which case this evaluator becomes a no-op
-  if (blockedContainer_ == Teuchos::null) return;
-  
+  if (blockedContainer_ == Teuchos::null && xBvRoGed_ == Teuchos::null) return;
+
   const PHX::View<const int*>& localCellIds = this->wda(workset).cell_local_ids_k;
-  
+
   RCP<ProductVectorBase<ScalarT>> thyraBlockSolution;
-  if (useTimeDerivativeSolutionVector_)
-    thyraBlockSolution = rcp_dynamic_cast<ProductVectorBase<ScalarT>>(blockedContainer_->get_dxdt(),true);
-  else
-    thyraBlockSolution = rcp_dynamic_cast<ProductVectorBase<ScalarT>>(blockedContainer_->get_x(),true);
+  if (blockedContainer_ != Teuchos::null) {
+    if (useTimeDerivativeSolutionVector_)
+      thyraBlockSolution = rcp_dynamic_cast<ProductVectorBase<ScalarT>>(blockedContainer_->get_dxdt(),true);
+    else
+      thyraBlockSolution = rcp_dynamic_cast<ProductVectorBase<ScalarT>>(blockedContainer_->get_x(),true);
+  }
   
   // Loop over gathered fields
   int currentWorksetLIDSubBlock = -1;
@@ -165,8 +181,19 @@ evaluateFields(typename TRAITS::EvalData workset)
       currentWorksetLIDSubBlock = productVectorBlockIndex_[fieldIndex];
     }
 
-    const auto& tpetraSolution = *((rcp_dynamic_cast<Thyra::TpetraVector<ScalarT,LO,GO,NodeT>>(thyraBlockSolution->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
-    const auto& kokkosSolution = tpetraSolution.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    // Pull the ghosted sub-block vector from whichever source preEvaluate() found
+    const int blockIndex = productVectorBlockIndex_[fieldIndex];
+    RCP<const VectorType> tpetraSolution;
+    if (thyraBlockSolution != Teuchos::null) {
+      tpetraSolution = rcp_dynamic_cast<Thyra::TpetraVector<ScalarT,LO,GO,NodeT>>(
+        thyraBlockSolution->getNonconstVectorBlock(blockIndex),true)->getConstTpetraVector();
+    }
+    else {
+      using TVROGED = panzer::TpetraVector_ReadOnly_GlobalEvaluationData<S,LO,GO,NodeT>;
+      tpetraSolution = rcp_dynamic_cast<TVROGED>(xBvRoGed_->getGEDBlock(blockIndex),true)
+        ->getGhostedVector_Tpetra();
+    }
+    const auto& kokkosSolution = tpetraSolution->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
     // Class data fields for lambda capture
     const auto& fieldOffsets = fieldOffsets_[fieldIndex];

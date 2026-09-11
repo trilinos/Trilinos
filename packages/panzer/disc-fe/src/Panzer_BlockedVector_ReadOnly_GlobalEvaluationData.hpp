@@ -171,7 +171,6 @@ namespace panzer
       } // end of getBlockCount()
 
 
-#ifdef PANZER_HAVE_EPETRA_STACK
       /**
        *  \brief Get the `i`-th block (non const version).
        *
@@ -195,7 +194,6 @@ namespace panzer
       {
         return gedBlocks_[i];
       } // end of getGEDBlock()
-#endif // PANZER_HAVE_EPETRA_STACK
 
       /**
        *  \brief Determine if a Dirichlet adjustment is necessary.

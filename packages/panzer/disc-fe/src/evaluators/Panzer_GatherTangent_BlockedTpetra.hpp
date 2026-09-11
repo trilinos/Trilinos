@@ -22,6 +22,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 
+#include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
@@ -99,7 +100,11 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
+  // The tangent gather source, resolved in preEvaluate(). Exactly one of these
+  // is set: a linear object container, or the blocked read-only ghosted vector
+  // the model evaluator hands out for tangent gather containers.
   Teuchos::RCP<const BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> > blockedContainer_;
+  Teuchos::RCP<panzer::BlockedVector_ReadOnly_GlobalEvaluationData> xBvRoGed_;
 
   //! Local indices for unknowns
   PHX::View<LO**> worksetLIDs_;

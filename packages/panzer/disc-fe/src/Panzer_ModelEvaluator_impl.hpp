@@ -46,6 +46,8 @@
 #include "Thyra_TpetraVector.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "lof/Panzer_LinearObjContainer.hpp"
+#include <Teuchos_RCPDecl.hpp>
 
 // Constructors/Initializers/Accessors
 
@@ -601,6 +603,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
         {
           RCP<ROVGED> dxdpContainer = lof_->buildReadOnlyDomainContainer();
           dxdpContainer->setOwnedVector(dxdpBlock->getNonconstVectorBlock(j));
+
           string name("X TANGENT GATHER CONTAINER: " +
             (*parameters_[i]->names)[j]);
           ae_inargs.addGlobalEvaluationData(name, dxdpContainer);
@@ -651,24 +654,40 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
 
     // add in dg/dx (if appropriate)
     for(std::size_t i=0;i<responses_.size();i++) {
-      typedef panzer::Traits::Jacobian RespEvalT;
+      {
+        typedef panzer::Traits::Jacobian RespEvalT;
 
-      // check dg/dx and add it in if appropriate
-      Teuchos::RCP<panzer::ResponseBase> respJacBase
-          = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
-      if(respJacBase!=Teuchos::null) {
-        // cast is guranteed to succeed because of check in addResponse
-        Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
-           = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
+        // check dg/dx and add it in if appropriate
+        Teuchos::RCP<panzer::ResponseBase> respJacBase
+            = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
+        if(respJacBase!=Teuchos::null) {
+          // cast is guranteed to succeed because of check in addResponse
+          Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
+             = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
 
-        // class must supppot a derivative
-        if(resp->supportsDerivative()) {
-          outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+          // class must supppot a derivative
+          if(resp->supportsDerivative()) {
+            outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
 
+            // dg/dp for a distributed parameter is evaluated through that
+            // parameter's own response library, which fills the Jacobian type
+            // response, so it needs the same derivative support as dg/dx.
+            for(std::size_t p=0;p<parameters_.size();p++) {
+              if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
+                outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+            }
+          }
+        }
+      }
+      {
+        typedef panzer::Traits::Tangent RespEvalT;
 
+        // dg/dp for a scalar parameter is evaluated from the Tangent response,
+        // so it only requires that the response has a Tangent type.
+        Teuchos::RCP<panzer::ResponseBase> respTanBase
+            = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
+        if(respTanBase!=Teuchos::null) {
           for(std::size_t p=0;p<parameters_.size();p++) {
-            if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
-              outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
             if(!parameters_[p]->is_distributed)
               outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
           }
@@ -1705,6 +1724,8 @@ evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs
 
   for(std::size_t i=0;i<responses_.size();i++) {
     // get "Vector" out of derivative, if its something else, throw an exception
+    if (outArgs.supports(MEB::OUT_ARG_DgDx,i).none())
+      continue;
     MEB::Derivative<Scalar> deriv = outArgs.get_DgDx(i);
     if(deriv.isEmpty())
       continue;
@@ -1764,6 +1785,11 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     bool is_active = false;
     for(std::size_t i=0;i<responses_.size(); i++) {
 
+      // TODO BWR NEEDED? the check above only sees if there are ANY dgdp to eval
+      // TODO BWR so that can fail if we only want some tangents
+      // TODO BWR need to check this more broadly
+      if (outArgs.supports(MEB::OUT_ARG_DgDp,i,j).none())
+        continue;
       MEB::Derivative<Scalar> deriv = outArgs.get_DgDp(i,j);
       if(deriv.isEmpty())
         continue;
