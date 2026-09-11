@@ -195,6 +195,11 @@ private:
 
   /// Storage for the tangent data
   PHX::ViewOfViews<1,Kokkos::View<RealT**,Kokkos::LayoutLeft,PHX::Device>> dfdpFieldsVoV_;
+
+  /// The df/dp vectors dfdpFieldsVoV_ is filled from. The device views are
+  /// acquired and released within evaluateFields() so that they never outlive
+  /// the kernel launches, which would block host access to the same vectors.
+  std::vector<Teuchos::RCP<typename LOC::MultiVectorType> > dfdpVectors_;
 };
 
 // **************************************************************

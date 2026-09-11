@@ -421,17 +421,13 @@ preEvaluate(typename TRAITS::PreEvalData d)
   std::vector<std::string> activeParameters =
     rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc->getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
+  // Only the outer view is allocated here. The device views of the df/dp
+  // vectors are acquired and released in evaluateFields().
   dfdpFieldsVoV_.initialize("ScatterResidual_Tpetra<Tangent>::dfdpFieldsVoV_",activeParameters.size());
 
-  for(std::size_t i=0;i<activeParameters.size();i++) {
-    RCP<typename LOC::MultiVectorType> vec =
-      rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f_mv();
-    auto dfdp_view = vec->getLocalViewDevice(Tpetra::Access::ReadWrite);
-
-    dfdpFieldsVoV_.addView(dfdp_view,i);
-  }
-
-  dfdpFieldsVoV_.syncHostToDevice();
+  dfdpVectors_.resize(activeParameters.size());
+  for(std::size_t i=0;i<activeParameters.size();i++)
+    dfdpVectors_[i] = rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f_mv();
 
 }
 
@@ -547,6 +543,12 @@ evaluateFields(typename TRAITS::EvalData workset)
      tpetraContainer_->get_f_mv() :
      tpetraContainer_->get_x_mv();
 
+  // Acquire the df/dp device views for the duration of this method only. See
+  // the release loop at the end of this method.
+  for(std::size_t i=0;i<dfdpVectors_.size();i++)
+    dfdpFieldsVoV_.addView(dfdpVectors_[i]->getLocalViewDevice(Tpetra::Access::ReadWrite),i);
+  dfdpFieldsVoV_.syncHostToDevice();
+
   if (scatterIC_) {
     ScatterDirichletResidualIC_Tangent_Functor<ScalarT,LO,GO,NodeT> functor;
     functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
@@ -584,6 +586,11 @@ evaluateFields(typename TRAITS::EvalData workset)
     }
   }
 
+  // Release the df/dp device views. Holding a device view past the return of
+  // this method makes any subsequent host access to the same vector throw, e.g.
+  // AssemblyEngine::evaluateDirichletBCs() -> adjustForDirichletConditions().
+  for(std::size_t i=0;i<dfdpVectors_.size();i++)
+    dfdpFieldsVoV_.addView(Kokkos::View<RealT**,Kokkos::LayoutLeft,PHX::Device>(),i);
 }
 
 // **********************************************************************

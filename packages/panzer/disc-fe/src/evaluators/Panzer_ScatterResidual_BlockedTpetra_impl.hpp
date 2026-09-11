@@ -622,20 +622,19 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
   const int numBlocks = static_cast<int>(globalIndexer_->getFieldDOFManagers().size());
 
+  // Only the outer view is allocated here. The device views of the df/dp
+  // sub-blocks are acquired and released in evaluateFields().
   dfdpFieldsVoV_.initialize("ScatterResidual_Tpetra<Tangent>::dfdpFieldsVoV_",activeParameters.size(),numBlocks);
 
+  dfdpVectors_.resize(activeParameters.size());
   for(std::size_t i=0;i<activeParameters.size();i++) {
     RCP<ContainerType> paramBlockedContainer = rcp_dynamic_cast<ContainerType>(d.gedc->getDataObject(activeParameters[i]),true);
     RCP<ProductVectorBase<double>> productVector =
       rcp_dynamic_cast<ProductVectorBase<double>>(paramBlockedContainer->get_f(),true);
-    for(int j=0;j<numBlocks;j++) {
-      auto& tpetraBlock = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(productVector->getNonconstVectorBlock(j),true))->getTpetraVector());
-      const auto& dfdp_view = tpetraBlock.getLocalViewDevice(Tpetra::Access::ReadWrite);
-      dfdpFieldsVoV_.addView(dfdp_view,i,j);
-    }
+    dfdpVectors_[i].resize(numBlocks);
+    for(int j=0;j<numBlocks;j++)
+      dfdpVectors_[i][j] = rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(productVector->getNonconstVectorBlock(j),true)->getTpetraVector();
   }
-
-  dfdpFieldsVoV_.syncHostToDevice();
 
   // extract linear object container
   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_));
@@ -658,6 +657,13 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   const auto& localCellIds = this->wda(workset).cell_local_ids_k;
   const RCP<ProductVectorBase<double>> thyraBlockResidual = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f(),true);
+
+  // Acquire the df/dp device views for the duration of this method only. See
+  // the release loop at the end of this method.
+  for(std::size_t i=0;i<dfdpVectors_.size();i++)
+    for(std::size_t j=0;j<dfdpVectors_[i].size();j++)
+      dfdpFieldsVoV_.addView(dfdpVectors_[i][j]->getLocalViewDevice(Tpetra::Access::ReadWrite),i,j);
+  dfdpFieldsVoV_.syncHostToDevice();
 
   // Loop over scattered fields
   int currentWorksetLIDSubBlock = -1;
@@ -688,6 +694,13 @@ evaluateFields(typename TRAITS::EvalData workset)
       }
     });
   }
+
+  // Release the df/dp device views. Holding a device view past the return of
+  // this method makes any subsequent host access to the same vector throw, e.g.
+  // AssemblyEngine::evaluateDirichletBCs() -> adjustForDirichletConditions().
+  for(std::size_t i=0;i<dfdpVectors_.size();i++)
+    for(std::size_t j=0;j<dfdpVectors_[i].size();j++)
+      dfdpFieldsVoV_.addView(Kokkos::View<RealType**,Kokkos::LayoutLeft,PHX::Device>(),i,j);
 }
 
 // **********************************************************************
