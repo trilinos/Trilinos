@@ -54,31 +54,12 @@ struct ScalarViewTraits {
   ///
   /// \return One-dimensional array of \c value_type, all instances of
   ///   which have the same (run-time) size as \c x.
-  ///
-  /// \note To implementers of specializations: If the number of bytes
-  ///   to pack or unpack your type may be determined at run time, you
-  ///   might be able just to use this implementation as-is, and just
-  ///   reimplement numValuesPerScalar().
   static Kokkos::View<value_type*, device_type>
-  allocateArray(const value_type& x,
+  allocateArray(const value_type&,
                 const size_t numEnt,
                 const std::string& label = "") {
     using view_type = Kokkos::View<value_type*, device_type>;
-
-    // When the traits::specialize type is non-void this exploits
-    // the fact that Kokkos::View's constructor ignores
-    // size arguments beyond what the View's type specifies.  For
-    // value_type = Stokhos::UQ::PCE<S>, numValuesPerScalar returns
-    // something other than 1, and the constructor will actually use
-    // that value.
-    // Otherwise, the number of arguments must match the dynamic rank
-    // (i.e. number *'s with the value_type of the View)
-    const size_t numVals = PackTraits<value_type>::numValuesPerScalar(x);
-    if (std::is_same<typename view_type::traits::specialize, void>::value) {
-      return view_type(label, numEnt);
-    } else {
-      return view_type(label, numEnt, numVals);
-    }
+    return view_type(label, numEnt);
   }
 };  // struct ScalarViewTraits
 
