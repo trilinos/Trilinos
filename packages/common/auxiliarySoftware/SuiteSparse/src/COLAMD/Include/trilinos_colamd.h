@@ -243,7 +243,7 @@ void trilinos_symamd_l_report
 ) ;
 
 #ifndef EXTERN
-#define EXTERN extern
+#define EXTERN extern TRILINOSSS_LIB_DLL_EXPORT
 #endif
 
 EXTERN int (*trilinos_colamd_printf) (const char *, ...) ;

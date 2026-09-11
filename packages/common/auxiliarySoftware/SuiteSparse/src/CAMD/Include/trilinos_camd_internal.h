@@ -279,7 +279,7 @@ GLOBAL void TRILINOS_CAMD_preprocess
 #include <assert.h>
 
 #ifndef EXTERN
-#define EXTERN extern
+#define EXTERN extern TRILINOSSS_LIB_DLL_EXPORT
 #endif
 
 EXTERN Int TRILINOS_CAMD_debug ;

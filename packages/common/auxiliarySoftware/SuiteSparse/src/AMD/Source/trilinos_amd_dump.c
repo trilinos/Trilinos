@@ -19,7 +19,7 @@
 #ifndef NDEBUG
 
 /* This global variable is present only when debugging */
-GLOBAL Int TRILINOS_AMD_debug = -999 ;		/* default is no debug printing */
+GLOBAL TRILINOSSS_LIB_DLL_EXPORT Int TRILINOS_AMD_debug = -999 ;		/* default is no debug printing */
 
 /* ========================================================================= */
 /* === TRILINOS_AMD_debug_init ====================================================== */
