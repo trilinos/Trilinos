@@ -43,6 +43,7 @@ class BlockedVector
   using Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoGlobalValue;  // overloading, not hiding
   using Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceLocalValue;   // overloading, not hiding
   using Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoLocalValue;   // overloading, not hiding
+  using Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedMultiVector;
 
  private:
 #undef XPETRA_BLOCKEDVECTOR_SHORT
