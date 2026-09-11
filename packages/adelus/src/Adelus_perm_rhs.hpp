@@ -30,12 +30,21 @@ namespace Adelus {
     using execution_space = typename ZViewType::device_type::execution_space ;
     using memory_space    = typename ZViewType::device_type::memory_space ;
     using ViewVectorType  = Kokkos::View<value_type*, Kokkos::LayoutLeft, memory_space>;
-#ifdef ADELUS_HOST_PINNED_MEM_MPI
-  #if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
     using ViewVectorHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
-  #elif defined(KOKKOS_ENABLE_HIP)
+#elif defined(KOKKOS_ENABLE_HIP)
     using ViewVectorHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
-  #endif
+#else
+    using ViewVectorHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft>;//fallback placeholder
+#endif
+
+    constexpr bool isOnDeviceSpace =
+#if defined( KOKKOS_ENABLE_CUDA )
+      std::is_same_v<memory_space, Kokkos::CudaSpace>;
+#elif defined( KOKKOS_ENABLE_HIP )
+      std::is_same_v<memory_space, Kokkos::HIPSpace>;
+#else
+      false;
 #endif
 
     MPI_Comm col_comm = ahandle.get_col_comm();
@@ -46,10 +55,11 @@ namespace Adelus {
     int pivot_row, k_row;
     ViewVectorType tmpr( "tmpr", RHS.extent(1) );
     ViewVectorType tmps( "tmps", RHS.extent(1) );
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-    ViewVectorHostPinnType h_tmpr( "h_tmpr", RHS.extent(1) );
-    ViewVectorHostPinnType h_tmps( "h_tmps", RHS.extent(1) );
-#endif
+    ViewVectorHostPinnType h_tmpr, h_tmps;
+    if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
+      h_tmpr = ViewVectorHostPinnType( Kokkos::view_alloc(Kokkos::WithoutInitializing, "h_tmpr"), RHS.extent(1) );
+      h_tmps = ViewVectorHostPinnType( Kokkos::view_alloc(Kokkos::WithoutInitializing, "h_tmps"), RHS.extent(1) );
+    }
 
     MPI_Status msgstatus;
 
@@ -96,17 +106,18 @@ namespace Adelus {
                 tmps(i) = RHS(curr_lrid,i);
               });
 
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-              Kokkos::deep_copy(h_tmps,tmps);
-              MPI_Send(reinterpret_cast<char *>(h_tmps.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,pivot_row_pid,2,col_comm);
-              MPI_Recv(reinterpret_cast<char *>(h_tmpr.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,pivot_row_pid,3,col_comm,&msgstatus);
-              Kokkos::deep_copy(tmpr,h_tmpr);
-#else //GPU-aware MPI
-              Kokkos::fence();
+              if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
+                Kokkos::deep_copy(h_tmps,tmps);
+                MPI_Send(reinterpret_cast<char *>(h_tmps.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,pivot_row_pid,2,col_comm);
+                MPI_Recv(reinterpret_cast<char *>(h_tmpr.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,pivot_row_pid,3,col_comm,&msgstatus);
+                Kokkos::deep_copy(tmpr,h_tmpr);
+              }
+              else { //GPU-aware MPI
+                Kokkos::fence();
 
-              MPI_Send(reinterpret_cast<char *>(tmps.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,pivot_row_pid,2,col_comm);
-              MPI_Recv(reinterpret_cast<char *>(tmpr.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,pivot_row_pid,3,col_comm,&msgstatus);
-#endif
+                MPI_Send(reinterpret_cast<char *>(tmps.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,pivot_row_pid,2,col_comm);
+                MPI_Recv(reinterpret_cast<char *>(tmpr.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,pivot_row_pid,3,col_comm,&msgstatus);
+              }
 
               Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,RHS.extent(1)), KOKKOS_LAMBDA (const int i) {
                 RHS(curr_lrid,i) = tmpr(i);
@@ -119,17 +130,18 @@ namespace Adelus {
                 tmps(i) = RHS(piv_lrid,i);
               });
 
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-              Kokkos::deep_copy(h_tmps,tmps);
-              MPI_Recv(reinterpret_cast<char *>(h_tmpr.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,k_row,2,col_comm,&msgstatus);
-              MPI_Send(reinterpret_cast<char *>(h_tmps.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,k_row,3,col_comm);
-              Kokkos::deep_copy(tmpr,h_tmpr);
-#else // GPU-aware MPI
-              Kokkos::fence();
+              if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
+                Kokkos::deep_copy(h_tmps,tmps);
+                MPI_Recv(reinterpret_cast<char *>(h_tmpr.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,k_row,2,col_comm,&msgstatus);
+                MPI_Send(reinterpret_cast<char *>(h_tmps.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,k_row,3,col_comm);
+                Kokkos::deep_copy(tmpr,h_tmpr);
+              }
+              else { // GPU-aware MPI
+                Kokkos::fence();
 
-              MPI_Recv(reinterpret_cast<char *>(tmpr.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,k_row,2,col_comm,&msgstatus);
-              MPI_Send(reinterpret_cast<char *>(tmps.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,k_row,3,col_comm);
-#endif
+                MPI_Recv(reinterpret_cast<char *>(tmpr.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,k_row,2,col_comm,&msgstatus);
+                MPI_Send(reinterpret_cast<char *>(tmps.data()),RHS.extent(1)*sizeof(value_type),MPI_CHAR,k_row,3,col_comm);
+              }
 
               Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,RHS.extent(1)), KOKKOS_LAMBDA (const int i) {
                 RHS(piv_lrid,i) = tmpr(i);
