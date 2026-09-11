@@ -212,9 +212,26 @@ template <typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                               const Teuchos::ParameterList& p)
+   : ScatterResidual_BlockedTpetra(indexer,std::vector<Teuchos::RCP<const panzer::GlobalIndexer> >(),p)
+{ }
+
+template <typename TRAITS,typename LO,typename GO,typename NodeT>
+panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
+ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
+                              const std::vector<Teuchos::RCP<const panzer::GlobalIndexer> > & colIndexers,
+                              const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
+   , colGlobalIndexers_(colIndexers)
+   , hasColIndexers_(!colIndexers.empty())
 {
+  // When the columns are not indexed separately they are the rows, so resolve
+  // that here and let everything below read colGlobalIndexers_ unconditionally.
+  if(!hasColIndexers_) {
+    const auto & rowManagers = globalIndexer_->getFieldDOFManagers();
+    colGlobalIndexers_.assign(rowManagers.begin(),rowManagers.end());
+  }
+
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ =
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
@@ -298,11 +315,35 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   hostBlockOffsets(numBlocks) = hostBlockOffsets(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
   Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
 
+  // The columns carry the derivative components, so when they are indexed
+  // separately from the rows they need their own offsets and LIDs. When they
+  // are not, both alias the row-side objects and everything below is unchanged.
+  auto hostColBlockOffsets = hostBlockOffsets;
+  if (!hasColIndexers_) {
+    colBlockOffsets_ = blockOffsets_;
+    colWorksetLIDs_ = worksetLIDs_;
+  }
+  else {
+    const int numColBlocks = static_cast<int>(colGlobalIndexers_.size());
+    colBlockOffsets_ = PHX::View<LO*>("ScatterResidual_BlockedTpetra(Jacobian):colBlockOffsets_",
+                                      numColBlocks+1);
+    auto hostColOffsets = Kokkos::create_mirror_view(colBlockOffsets_);
+    hostColOffsets(0) = 0;
+    for (int blk=0;blk<numColBlocks;blk++)
+      hostColOffsets(blk+1) = hostColOffsets(blk) + colGlobalIndexers_[blk]->getElementBlockGIDCount(blockId);
+    Kokkos::deep_copy(colBlockOffsets_,hostColOffsets);
+
+    colWorksetLIDs_ = Kokkos::View<LO**, Kokkos::LayoutRight, PHX::Device>(
+                        "ScatterResidual_BlockedTpetra(Jacobian):colWorksetLIDs_",
+                        scatterFields_[0].extent(0), hostColOffsets(numColBlocks) );
+    hostColBlockOffsets = hostColOffsets;
+  }
+
   // Make sure the that derivative dimension in the evaluate call is large
   // enough to hold all derivatives for each sub block load
   int max_blockDerivativeSize = 0;
-  for (int blk=0;blk<numBlocks;blk++) {
-    const int blockDerivativeSize = hostBlockOffsets(blk+1) - hostBlockOffsets(blk);
+  for (int blk=0;blk<static_cast<int>(colGlobalIndexers_.size());blk++) {
+    const int blockDerivativeSize = hostColBlockOffsets(blk+1) - hostColBlockOffsets(blk);
     if ( blockDerivativeSize > max_blockDerivativeSize )
       max_blockDerivativeSize = blockDerivativeSize;
   }
@@ -342,6 +383,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   const auto& localCellIds = this->wda(workset).cell_local_ids_k;
 
   const int numFieldBlocks = globalIndexer_->getNumFieldBlocks();
+  const int numColFieldBlocks = static_cast<int>(colGlobalIndexers_.size());
   const RCP<const ContainerType> blockedContainer = blockedContainer_;
   const RCP<ProductVectorBase<double>> thyraBlockResidual = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f());
   const bool haveResidual = Teuchos::nonnull(thyraBlockResidual);
@@ -353,13 +395,13 @@ evaluateFields(typename TRAITS::EvalData workset)
   // host.
   using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>, size_t>;
   typename PHX::View<LocalMatrixType**>::host_mirror_type
-    hostJacTpetraBlocks("panzer::ScatterResidual_BlockTpetra<Jacobian>::hostJacTpetraBlocks", numFieldBlocks,numFieldBlocks);
+    hostJacTpetraBlocks("panzer::ScatterResidual_BlockTpetra<Jacobian>::hostJacTpetraBlocks", numFieldBlocks,numColFieldBlocks);
 
-  PHX::View<int**> blockExistsInJac =   PHX::View<int**>("blockExistsInJac_",numFieldBlocks,numFieldBlocks);
+  PHX::View<int**> blockExistsInJac =   PHX::View<int**>("blockExistsInJac_",numFieldBlocks,numColFieldBlocks);
   auto hostBlockExistsInJac = Kokkos::create_mirror_view(blockExistsInJac);
 
   for (int row=0; row < numFieldBlocks; ++row) {
-    for (int col=0; col < numFieldBlocks; ++col) {
+    for (int col=0; col < numColFieldBlocks; ++col) {
       const auto thyraTpetraOperator = rcp_dynamic_cast<Thyra::TpetraLinearOp<double,LO,GO,NodeT>>(Jac->getNonconstBlock(row,col),false);
       if (nonnull(thyraTpetraOperator)) {
 
@@ -401,7 +443,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     }
   }
   typename PHX::View<LocalMatrixType**>
-    jacTpetraBlocks("panzer::ScatterResidual_BlockedTpetra<Jacobian>::jacTpetraBlocks",numFieldBlocks,numFieldBlocks);
+    jacTpetraBlocks("panzer::ScatterResidual_BlockedTpetra<Jacobian>::jacTpetraBlocks",numFieldBlocks,numColFieldBlocks);
   Kokkos::deep_copy(jacTpetraBlocks,hostJacTpetraBlocks);
   Kokkos::deep_copy(blockExistsInJac,hostBlockExistsInJac);
 
@@ -418,6 +460,15 @@ evaluateFields(typename TRAITS::EvalData workset)
     globalIndexers[block]->getElementLIDs(localCellIds,subviewOfBlockLIDs);
   }
 
+  auto colBlockOffsets_h = Kokkos::create_mirror_view(colBlockOffsets_);
+  Kokkos::deep_copy(colBlockOffsets_h, colBlockOffsets_);
+  if (hasColIndexers_) {
+    for (size_t block=0; block < colGlobalIndexers_.size(); ++block) {
+      const auto subviewOfBlockLIDs = Kokkos::subview(colWorksetLIDs_,Kokkos::ALL(), std::make_pair(colBlockOffsets_h(block),colBlockOffsets_h(block+1)));
+      colGlobalIndexers_[block]->getElementLIDs(localCellIds,subviewOfBlockLIDs);
+    }
+  }
+
   // Loop over scattered fields
   for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
 
@@ -431,9 +482,10 @@ evaluateFields(typename TRAITS::EvalData workset)
     // Class data fields for lambda capture
     const PHX::View<const int*> fieldOffsets = fieldOffsets_[fieldIndex];
     const PHX::View<const ScalarT**> fieldValues = scatterFields_[fieldIndex].get_static_view();
-    const PHX::View<const LO*> blockOffsets = blockOffsets_;
+    const PHX::View<const LO*> colBlockOffsets = colBlockOffsets_;
 
     const Kokkos::View<const LO**, Kokkos::LayoutRight, PHX::Device> worksetLIDs = worksetLIDs_;
+    const Kokkos::View<const LO**, Kokkos::LayoutRight, PHX::Device> colWorksetLIDs = colWorksetLIDs_;
     Kokkos::View<typename Sacado::ScalarType<ScalarT>::type**, Kokkos::LayoutRight, PHX::Device> workset_vals = workset_vals_;
 
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
@@ -445,16 +497,16 @@ evaluateFields(typename TRAITS::EvalData workset)
         if (haveResidual)
           Kokkos::atomic_add(&kokkosResidual(rowLID,0), tmpFieldVal.val());
 
-        for (int blockColIndex=0; blockColIndex < numFieldBlocks; ++blockColIndex) {
+        for (int blockColIndex=0; blockColIndex < numColFieldBlocks; ++blockColIndex) {
           if (blockExistsInJac(blockRowIndex,blockColIndex)) {
-            const int start = blockOffsets(blockColIndex);
-            const int stop = blockOffsets(blockColIndex+1);
+            const int start = colBlockOffsets(blockColIndex);
+            const int stop = colBlockOffsets(blockColIndex+1);
             const int sensSize = stop-start;
 
             for (int i=0; i < sensSize; ++i)
               workset_vals(cell,i) = tmpFieldVal.fastAccessDx(start+i);
 
-            jacTpetraBlocks(blockRowIndex,blockColIndex).sumIntoValues(rowLID, &worksetLIDs(cell,start), sensSize, &workset_vals(cell,0), true,true);
+            jacTpetraBlocks(blockRowIndex,blockColIndex).sumIntoValues(rowLID, &colWorksetLIDs(cell,start), sensSize, &workset_vals(cell,0), true,true);
           }
         }
       }
@@ -464,7 +516,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   // Placement delete on view of matrices
   for (int row=0; row < numFieldBlocks; ++row) {
-    for (int col=0; col < numFieldBlocks; ++col) {
+    for (int col=0; col < numColFieldBlocks; ++col) {
       if (hostBlockExistsInJac(row,col)) {
         hostJacTpetraBlocks(row,col).~CrsMatrix();
       }
