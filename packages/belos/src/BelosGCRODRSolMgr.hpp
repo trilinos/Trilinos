@@ -3128,4 +3128,17 @@ std::string GCRODRSolMgr<ScalarType,MV,OP,DM,true>::description () const {
 
 } // namespace Belos
 
+#ifdef HAVE_BELOS_TPETRA
+#include "BelosTpetraETIHelpers.hpp"
+
+#define BELOS_TPETRA_GCRODRSOLMGR_NOEXTERN_CALL(SC, LO, GO, NT)            \
+  BELOS_TPETRA_CALL(Belos::GCRODRSolMgr, SC, LO, GO, NT)
+
+#define BELOS_TPETRA_GCRODRSOLMGR_EXTERN_CALL(SC, LO, GO, NT)              \
+  BELOS_TPETRA_EXTERN_CALL(Belos::GCRODRSolMgr, SC, LO, GO, NT)
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(BELOS_TPETRA_GCRODRSOLMGR_EXTERN_CALL)
+#endif
+
+
 #endif /* BELOS_GCRODR_SOLMGR_HPP */

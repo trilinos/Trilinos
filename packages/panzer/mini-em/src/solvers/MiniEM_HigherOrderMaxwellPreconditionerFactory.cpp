@@ -56,8 +56,6 @@ Teko::LinearOp HigherOrderMaxwellPreconditionerFactory::buildPreconditionerOpera
    int cols = Teko::blockColCount(blo);
    TEUCHOS_ASSERT(rows==cols);
    TEUCHOS_ASSERT(rows==2);
-   // Interpolation between FE spaces not implemented for Epetra
-   TEUCHOS_ASSERT(Teko::TpetraHelpers::isTpetraLinearOp(Teko::getBlock(0,0,blo)));
 
    // Notation:
    // 0 - Hgrad

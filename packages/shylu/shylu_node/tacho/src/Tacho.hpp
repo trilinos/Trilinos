@@ -102,16 +102,16 @@ template <typename T> struct UseThisFuture<T, Kokkos::HIP> {
 };
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-template <> struct UseThisDevice<Kokkos::Experimental::SYCL> {
-  using type = Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLDeviceUSMSpace>;
+template <> struct UseThisDevice<Kokkos::SYCL> {
+  using type = Kokkos::Device<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>;
   using device_type = type;
 };
-template <> struct UseThisScheduler<Kokkos::Experimental::SYCL> {
-  using type = DummyTaskScheduler<Kokkos::Experimental::SYCL>;
+template <> struct UseThisScheduler<Kokkos::SYCL> {
+  using type = DummyTaskScheduler<Kokkos::SYCL>;
   using scheduler_type = type;
 };
-template <typename T> struct UseThisFuture<T, Kokkos::Experimental::SYCL> {
-  using type = DummyFuture<T, Kokkos::Experimental::SYCL>;
+template <typename T> struct UseThisFuture<T, Kokkos::SYCL> {
+  using type = DummyFuture<T, Kokkos::SYCL>;
   using future_type = type;
 };
 #endif

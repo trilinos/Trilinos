@@ -40,7 +40,9 @@ public:
    //! Initialize the sub-solver inverse factories and options from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 
-private: 
+private:
+
+  void debugInfo(const std::string &name, const Teko::LinearOp &mat) const;
 
    // Holds all inverse factories
    Teko::InverseLibrary invLib;

@@ -65,8 +65,8 @@ TEUCHOS_UNIT_TEST(Distributor, Issue1454) {
       typename device_type::memory_space>::type;
 #elif defined(KOKKOS_ENABLE_SYCL)
   using buffer_memory_space = typename std::conditional<
-      std::is_same<typename device_type::execution_space, Kokkos::Experimental::SYCL>::value,
-      Kokkos::Experimental::SYCLDeviceUSMSpace,
+      std::is_same<typename device_type::execution_space, Kokkos::SYCL>::value,
+      Kokkos::SYCLDeviceUSMSpace,
       typename device_type::memory_space>::type;
 #else
   using buffer_memory_space = typename device_type::memory_space;

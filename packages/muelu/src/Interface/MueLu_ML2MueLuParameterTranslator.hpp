@@ -50,7 +50,7 @@ class ML2MueLuParameterTranslator {
   ///
   /// @param [in] paramList_in: ML parameter list
   /// @return std::string with MueLu XML parameters
-  static std::string translate(Teuchos::ParameterList& paramList, const std::string& defaultVals = "") {
+  static Teuchos::RCP<Teuchos::ParameterList> translate(Teuchos::ParameterList& paramList, const std::string& defaultVals = "") {
     return SetParameterList(paramList, defaultVals);
   }
 
@@ -58,7 +58,7 @@ class ML2MueLuParameterTranslator {
   ///
   /// @param [in] xmlFileName: file name with ML xml parameters
   /// @return std::string with MueLu XML parameters
-  static std::string translate(const std::string& xmlFileName, const std::string& defaultVals = "") {
+  static Teuchos::RCP<Teuchos::ParameterList> translate(const std::string& xmlFileName, const std::string& defaultVals = "") {
     Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
     return SetParameterList(*paramList, defaultVals);
   }
@@ -153,7 +153,7 @@ class ML2MueLuParameterTranslator {
   ///
   /// @param [in] paramList_in: ML parameter list
   /// @return std::string with MueLu XML parameters
-  static std::string SetParameterList(const Teuchos::ParameterList& paramList_in, const std::string& defaultVals);
+  static Teuchos::RCP<Teuchos::ParameterList> SetParameterList(const Teuchos::ParameterList& paramList_in, const std::string& defaultVals);
 
   /// @brief: Helper function which translates ML smoother/solver paramters to MueLu XML string
   ///

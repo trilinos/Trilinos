@@ -88,13 +88,14 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   using execution_space = typename Node::execution_space;
   using memory_space    = typename Node::memory_space;
 
-  const auto one_Scalar      = Teuchos::ScalarTraits<Scalar>::one();
-  const auto one_impl_scalar = ATS::one();
-  const auto zero_LO         = KokkosKernels::ArithTraits<LocalOrdinal>::zero();
-  const auto one_LO          = KokkosKernels::ArithTraits<LocalOrdinal>::one();
-  const auto one_mag         = magATS::one();
-  const auto eps_mag         = magATS::epsilon();
-  const auto INVALID_GO      = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+  const auto one_Scalar       = Teuchos::ScalarTraits<Scalar>::one();
+  const auto one_impl_scalar  = ATS::one();
+  const auto zero_impl_scalar = ATS::zero();
+  const auto zero_LO          = KokkosKernels::ArithTraits<LocalOrdinal>::zero();
+  const auto one_LO           = KokkosKernels::ArithTraits<LocalOrdinal>::one();
+  const auto one_mag          = magATS::one();
+  const auto eps_mag          = magATS::epsilon();
+  const auto INVALID_GO       = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
 
   // Using a nodal prolongator Pn and the discrete gradient matrix D0, this factory constructs
   // a coarse discrete gradient matrix D0H and an edge prolongator Pe such that the commuting
@@ -267,6 +268,8 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
                 values(i) = one_LO;
               else if (values_scalar(i) == -one_impl_scalar)
                 values(i) = -one_LO;
+              else if (values_scalar(i) == zero_impl_scalar)
+                values(i) = zero_LO;
               else
                 Kokkos::abort("D0 contains bad values");
             });

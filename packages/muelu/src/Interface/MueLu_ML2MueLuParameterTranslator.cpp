@@ -8,6 +8,8 @@
 // @HEADER
 
 #include "MueLu_ConfigDefs.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TestForException.hpp"
 
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
 using Teuchos::ParameterList;
@@ -300,7 +302,7 @@ std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::Param
   return mueluss.str();
 }
 
-std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::ParameterList& paramList_in, const std::string& defaultVals) {
+Teuchos::RCP<Teuchos::ParameterList> ML2MueLuParameterTranslator::SetParameterList(const Teuchos::ParameterList& paramList_in, const std::string& defaultVals) {
   Teuchos::ParameterList paramList = paramList_in;
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));  // TODO: use internal out (GetOStream())
@@ -380,6 +382,10 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
   // make sure that MueLu's SaP diagonal behavior matches ML's
   mueluss << "<Parameter name=\"sa: diagonal replacement tolerance\"      type=\"double\"     value=\"0.0\"/>" << std::endl;
 
+  // We allow MueLu parameter to be passed through the translation.
+  // We split them off and then check if we have conflicts.
+  Teuchos::ParameterList mueluList;
+
   // loop over all ML parameters in provided parameter list
   for (ParameterList::ConstIterator param = paramListWithSubList.begin(); param != paramListWithSubList.end(); ++param) {
     // extract ML parameter name
@@ -403,6 +409,7 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
     // transform ML parameter to corresponding MueLu parameter and generate XML string
     std::string valueInterpreterStr = "\"" + valuestr + "\"";
     std::string ret                 = MasterList::interpretParameterName(MasterList::ML2MueLu(pname), valueInterpreterStr);
+    bool hasBeenProcessed           = false;
 
     if ((pname == "aggregation: aux: enable") && (paramListWithSubList.get<bool>("aggregation: aux: enable"))) {
       mueluss << "<Parameter name=\"aggregation: drop scheme\" type=\"string\"     value=\""
@@ -432,6 +439,8 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
 
       // remove parameter from ML parameter list
       adaptingParamList.remove(pname, false);
+
+      hasBeenProcessed = true;
     }
 
     // special handling for energy minimization
@@ -440,11 +449,13 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
     if (pname == "energy minimization: enable") {
       mueluss << "<Parameter name=\"problem: symmetric\"      type=\"bool\"     value=\"false\"/>" << std::endl;
       mueluss << "<Parameter name=\"transpose: use implicit\" type=\"bool\"     value=\"false\"/>" << std::endl;
+      hasBeenProcessed = true;
     }
 
     // special handling for smoothers
     if (pname == "smoother: type") {
       mueluss << GetSmootherFactory(paramList, adaptingParamList, pname, valuestr);
+      hasBeenProcessed = true;
     }
 
     // special handling for level-specific smoothers
@@ -472,6 +483,7 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
         mueluss << GetSmootherFactory(paramList.sublist(pname), adaptingParamList.sublist(pname), "smoother: type", paramList.sublist(pname).get<std::string>("smoother: type"));
         mueluss << "</ParameterList>" << std::endl;
       }
+      hasBeenProcessed = true;
     }
     // special handling for coarse level
     TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("coarse: type"), Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): The parameter \"coarse: type\" should not exist but being stored in \"coarse: list\" instead.");
@@ -488,11 +500,56 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
         coarse_smoother = paramList.sublist("coarse: list").get<std::string>("smoother: type");
 
       mueluss << GetSmootherFactory(paramList.sublist("coarse: list"), adaptingParamList.sublist("coarse: list"), "coarse: type", coarse_smoother);
+      hasBeenProcessed = true;
+    }
+
+    if (pname == "aggregation: type") {
+      if (valuestr == "Uncoupled")
+        mueluss << "<Parameter name=\"aggregation: type\"      type=\"string\"     value=\"uncoupled\"/>" << std::endl;
+      else if (valuestr == "Uncoupled-MIS") {
+        mueluss << "<Parameter name=\"aggregation: type\"      type=\"string\"     value=\"uncoupled\"/>" << std::endl;
+        mueluss << "<Parameter name=\"aggregation: coloring algorithm\"      type=\"string\"     value=\"mis2 aggregation\"/>" << std::endl;
+        mueluss << "<Parameter name=\"aggregation: backend\"      type=\"string\"     value=\"kokkos\"/>" << std::endl;
+      } else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Only \"Uncoupled\" aggregation is supported, not \"" << valuestr << "\"\n");
+      hasBeenProcessed = true;
+    }
+
+    if (pname == "problem: type" ||
+        pname == "smoother: sweeps" ||
+        pname == "smoother: damping factor" ||
+        pname == "smoother: pre or post" ||
+        pname == "coarse: max size")
+      hasBeenProcessed = true;
+
+    if (paramList.isSublist(pname))
+      hasBeenProcessed = true;
+
+    if (!hasBeenProcessed) {
+      std::cout << "Could not translate \"" << pname << "\" = \"" << valuestr << "\"\n";
+      if (MasterList::List()->isParameter(pname)) {
+        std::cout << "Is valid MueLu parameter \"" << pname << "\"\n";
+        mueluList.setEntry(pname, paramList.entry(param));
+      }
     }
   }  // for
   mueluss << "</ParameterList>" << std::endl;
 
-  return mueluss.str();
+  auto translatedList = Teuchos::getParametersFromXmlString(mueluss.str());
+
+  std::cout << "\n\ntranslatedList " << *translatedList << std::endl
+            << "muelu list " << mueluList << std::endl
+            << std::endl;
+
+  // Check that none of the MueLu parameters that were passed in clash with interpreted ML parameters
+  for (auto it = mueluList.begin(); it != mueluList.end(); ++it) {
+    auto& pname = mueluList.name(it);
+    TEUCHOS_TEST_FOR_EXCEPTION(translatedList->isParameter(pname), MueLu::Exceptions::RuntimeError, "The parameter \"" << pname << "\" has been set both using ML and MueLu parameter names.");
+  }
+  // Add the MueLu parameters to the translated list
+  translatedList->setParameters(mueluList);
+
+  return translatedList;
 }
 
 static void ML_OverwriteDefaults(ParameterList& inList, ParameterList& List, bool OverWrite) {

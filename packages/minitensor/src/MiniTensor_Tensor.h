@@ -1389,7 +1389,7 @@ KOKKOS_INLINE_FUNCTION
 Index
 Tensor<T, N>::get_dimension() const
 {
-  return TensorBase<T, Store>::get_dimension(ORDER);
+  return bound_dimension<N>(TensorBase<T, Store>::get_dimension(ORDER));
 }
 
 //
