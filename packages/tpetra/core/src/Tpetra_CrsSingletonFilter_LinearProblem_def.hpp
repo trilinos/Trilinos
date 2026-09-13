@@ -1283,6 +1283,7 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     // Check if ColSingletonPivotLIDs_, ColSingletonPivot_ can be accessed on host
     bool canRunOnHost = std::is_same_v<typename device_type::memory_space, Kokkos::HostSpace>;
     if (run_on_host_ && canRunOnHost) {
+      ReducedMatrix()->resumeFill();
       for (LocalOrdinal i = 0; i < localNumRows; i++) {
         GlobalOrdinal curGRID = FullMatrixRowMap()->getGlobalElement(i);
         if (ReducedMatrixRowMap()->isNodeGlobalElement(curGRID)) {  // Check if this row should go into reduced matrix
@@ -1330,6 +1331,7 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
           }
         }
       }
+      ReducedMatrix()->fillComplete(ReducedMatrix()->getDomainMap(), ReducedMatrix()->getRangeMap());
     } else {
       // Not part of the reduced matrix
       {
