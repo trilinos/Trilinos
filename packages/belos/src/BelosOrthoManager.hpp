@@ -61,7 +61,9 @@ namespace Belos {
     //! @name Constructor/Destructor
     //@{
     //! Default constructor.
-    OrthoManager() {};
+    OrthoManager()
+    : maxBlockSizeHint_(0)
+    , maxNumBlocksHint_(0) {};
 
     //! Destructor.
     virtual ~OrthoManager() {};
@@ -253,6 +255,27 @@ namespace Belos {
 
     //@}
 
+    //! @name Size hint methods
+
+    void setMaxBlockSizeHint(int maxBlockSize) {
+      maxBlockSizeHint_ = maxBlockSize;
+    }
+
+    int getMaxBlockSizeHint() const {
+      return maxBlockSizeHint_;
+    }
+
+    void setMaxNumBlocksHint(int maxNumBlocks) {
+      maxNumBlocksHint_ = maxNumBlocks;
+    }
+
+    int getMaxNumBlocksHint() const {
+      return maxNumBlocksHint_;
+    }
+
+  private:
+    int maxBlockSizeHint_;
+    int maxNumBlocksHint_;
   };
 
 } // end of Belos namespace
