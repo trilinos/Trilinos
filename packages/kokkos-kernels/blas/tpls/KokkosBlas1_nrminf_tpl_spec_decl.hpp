@@ -25,152 +25,136 @@ inline void nrminf_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DNRMINF_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)                                     \
-  template <class ExecSpace>                                                                                         \
-  struct NrmInf<ExecSpace, Kokkos::View<double, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                             \
-                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                               \
-                1, true, ETI_SPEC_AVAIL> {                                                                           \
-    typedef Kokkos::View<double, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> RV;             \
-    typedef Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>                                                    \
-        XV;                                                                                                          \
-    typedef typename XV::size_type size_type;                                                                        \
-    typedef KokkosKernels::Details::InnerProductSpaceTraits<double> IPT;                                             \
-                                                                                                                     \
-    static void nrminf(const ExecSpace& space, RV& R, const XV& X) {                                                 \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,double]");                                          \
-      const size_type numElems = X.extent(0);                                                                        \
-      if (numElems == 0) {                                                                                           \
-        R() = 0.0;                                                                                                   \
-        return;                                                                                                      \
-      }                                                                                                              \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                                                              \
-        nrminf_print_specialization<RV, XV>();                                                                       \
-        int N   = numElems;                                                                                          \
-        int one = 1;                                                                                                 \
-        int idx = HostBlas<double>::iamax(N, X.data(), one) - 1;                                                     \
-        R()     = IPT::norm(X(idx));                                                                                 \
-      } else {                                                                                                       \
-        NrmInf<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrminf(space, R, X);                                    \
-      }                                                                                                              \
-      Kokkos::Profiling::popRegion();                                                                                \
-    }                                                                                                                \
-  };
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct NrmInf<ExecSpace,
+              Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+              Kokkos::View<const double*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, 1,
+              true, ETI_SPEC_AVAIL> {
+  typedef Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> RV;
+  typedef Kokkos::View<const double*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> XV;
+  typedef typename XV::size_type size_type;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<double> IPT;
 
-#define KOKKOSBLAS1_SNRMINF_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)                                    \
-  template <class ExecSpace>                                                                                        \
-  struct NrmInf<ExecSpace, Kokkos::View<float, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                             \
-                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                              \
-                1, true, ETI_SPEC_AVAIL> {                                                                          \
-    typedef Kokkos::View<float, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> RV;             \
-    typedef Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                                 \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>                                                   \
-        XV;                                                                                                         \
-    typedef typename XV::size_type size_type;                                                                       \
-    typedef KokkosKernels::Details::InnerProductSpaceTraits<float> IPT;                                             \
-                                                                                                                    \
-    static void nrminf(const ExecSpace& space, RV& R, const XV& X) {                                                \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,float]");                                          \
-      const size_type numElems = X.extent(0);                                                                       \
-      if (numElems == 0) {                                                                                          \
-        R() = 0.0f;                                                                                                 \
-        return;                                                                                                     \
-      }                                                                                                             \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                                                             \
-        nrminf_print_specialization<RV, XV>();                                                                      \
-        int N   = numElems;                                                                                         \
-        int one = 1;                                                                                                \
-        int idx = HostBlas<float>::iamax(N, X.data(), one) - 1;                                                     \
-        R()     = IPT::norm(X(idx));                                                                                \
-      } else {                                                                                                      \
-        NrmInf<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrminf(space, R, X);                                   \
-      }                                                                                                             \
-      Kokkos::Profiling::popRegion();                                                                               \
-    }                                                                                                               \
-  };
+  static void nrminf(const ExecSpace& space, RV& R, const XV& X) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,double]");
+    const size_type numElems = X.extent(0);
+    if (numElems == 0) {
+      R() = 0.0;
+      return;
+    }
+    if (numElems < static_cast<size_type>(INT_MAX)) {
+      nrminf_print_specialization<RV, XV>();
+      int N   = numElems;
+      int one = 1;
+      int idx = HostBlas<double>::iamax(N, X.data(), one) - 1;
+      R()     = IPT::norm(X(idx));
+    } else {
+      NrmInf<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrminf(space, R, X);
+    }
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-#define KOKKOSBLAS1_ZNRMINF_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)                                     \
-  template <class ExecSpace>                                                                                         \
-  struct NrmInf<ExecSpace, Kokkos::View<double, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-                Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,            \
-                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                               \
-                1, true, ETI_SPEC_AVAIL> {                                                                           \
-    typedef Kokkos::View<double, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> RV;             \
-    typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>                                                    \
-        XV;                                                                                                          \
-    typedef typename XV::size_type size_type;                                                                        \
-    typedef KokkosKernels::Details::InnerProductSpaceTraits<Kokkos::complex<double>> IPT;                            \
-                                                                                                                     \
-    static void nrminf(const ExecSpace& space, RV& R, const XV& X) {                                                 \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,complex<double>]");                                 \
-      const size_type numElems = X.extent(0);                                                                        \
-      if (numElems == 0) {                                                                                           \
-        R() = 0.0;                                                                                                   \
-        return;                                                                                                      \
-      }                                                                                                              \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                                                              \
-        nrminf_print_specialization<RV, XV>();                                                                       \
-        int N   = numElems;                                                                                          \
-        int one = 1;                                                                                                 \
-        int idx =                                                                                                    \
-            HostBlas<std::complex<double>>::iamax(N, reinterpret_cast<const std::complex<double>*>(X.data()), one) - \
-            1;                                                                                                       \
-        R() = IPT::norm(X(idx));                                                                                     \
-      } else {                                                                                                       \
-        NrmInf<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrminf(space, R, X);                                    \
-      }                                                                                                              \
-      Kokkos::Profiling::popRegion();                                                                                \
-    }                                                                                                                \
-  };
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct NrmInf<ExecSpace,
+              Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+              Kokkos::View<const float*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, 1,
+              true, ETI_SPEC_AVAIL> {
+  typedef Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> RV;
+  typedef Kokkos::View<const float*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> XV;
+  typedef typename XV::size_type size_type;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<float> IPT;
 
-#define KOKKOSBLAS1_CNRMINF_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)                                      \
-  template <class ExecSpace>                                                                                          \
-  struct NrmInf<ExecSpace, Kokkos::View<float, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
-                Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,              \
-                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                \
-                1, true, ETI_SPEC_AVAIL> {                                                                            \
-    typedef Kokkos::View<float, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> RV;               \
-    typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>                                                     \
-        XV;                                                                                                           \
-    typedef typename XV::size_type size_type;                                                                         \
-    typedef KokkosKernels::Details::InnerProductSpaceTraits<Kokkos::complex<float>> IPT;                              \
-                                                                                                                      \
-    static void nrminf(const ExecSpace& space, RV& R, const XV& X) {                                                  \
-      Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,complex<float>]");                                   \
-      const size_type numElems = X.extent(0);                                                                         \
-      if (numElems == 0) {                                                                                            \
-        R() = 0.0f;                                                                                                   \
-        return;                                                                                                       \
-      }                                                                                                               \
-      if (numElems < static_cast<size_type>(INT_MAX)) {                                                               \
-        nrminf_print_specialization<RV, XV>();                                                                        \
-        int N   = numElems;                                                                                           \
-        int one = 1;                                                                                                  \
-        int idx =                                                                                                     \
-            HostBlas<std::complex<float>>::iamax(N, reinterpret_cast<const std::complex<float>*>(X.data()), one) - 1; \
-        R() = IPT::norm(X(idx));                                                                                      \
-      } else {                                                                                                        \
-        NrmInf<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrminf(space, R, X);                                     \
-      }                                                                                                               \
-      Kokkos::Profiling::popRegion();                                                                                 \
-    }                                                                                                                 \
-  };
+  static void nrminf(const ExecSpace& space, RV& R, const XV& X) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,float]");
+    const size_type numElems = X.extent(0);
+    if (numElems == 0) {
+      R() = 0.0f;
+      return;
+    }
+    if (numElems < static_cast<size_type>(INT_MAX)) {
+      nrminf_print_specialization<RV, XV>();
+      int N   = numElems;
+      int one = 1;
+      int idx = HostBlas<float>::iamax(N, X.data(), one) - 1;
+      R()     = IPT::norm(X(idx));
+    } else {
+      NrmInf<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrminf(space, R, X);
+    }
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-KOKKOSBLAS1_DNRMINF_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_DNRMINF_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct NrmInf<ExecSpace,
+              Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+              Kokkos::View<const Kokkos::complex<double>*, Kokkos::LayoutLeft, ExecSpace,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+              1, true, ETI_SPEC_AVAIL> {
+  typedef Kokkos::View<double, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> RV;
+  typedef Kokkos::View<const Kokkos::complex<double>*, Kokkos::LayoutLeft, ExecSpace,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+      XV;
+  typedef typename XV::size_type size_type;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<Kokkos::complex<double>> IPT;
 
-KOKKOSBLAS1_SNRMINF_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_SNRMINF_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+  static void nrminf(const ExecSpace& space, RV& R, const XV& X) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,complex<double>]");
+    const size_type numElems = X.extent(0);
+    if (numElems == 0) {
+      R() = 0.0;
+      return;
+    }
+    if (numElems < static_cast<size_type>(INT_MAX)) {
+      nrminf_print_specialization<RV, XV>();
+      int N   = numElems;
+      int one = 1;
+      int idx =
+          HostBlas<std::complex<double>>::iamax(N, reinterpret_cast<const std::complex<double>*>(X.data()), one) - 1;
+      R() = IPT::norm(X(idx));
+    } else {
+      NrmInf<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrminf(space, R, X);
+    }
+    Kokkos::Profiling::popRegion();
+  }
+};
 
-KOKKOSBLAS1_ZNRMINF_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ZNRMINF_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+template <typename ExecSpace, bool ETI_SPEC_AVAIL>
+  requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)
+struct NrmInf<
+    ExecSpace, Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+    Kokkos::View<const Kokkos::complex<float>*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,
+    1, true, ETI_SPEC_AVAIL> {
+  typedef Kokkos::View<float, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> RV;
+  typedef Kokkos::View<const Kokkos::complex<float>*, Kokkos::LayoutLeft, ExecSpace,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+      XV;
+  typedef typename XV::size_type size_type;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<Kokkos::complex<float>> IPT;
 
-KOKKOSBLAS1_CNRMINF_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_CNRMINF_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+  static void nrminf(const ExecSpace& space, RV& R, const XV& X) {
+    Kokkos::Profiling::pushRegion("KokkosBlas::nrminf[TPL_BLAS,complex<float>]");
+    const size_type numElems = X.extent(0);
+    if (numElems == 0) {
+      R() = 0.0f;
+      return;
+    }
+    if (numElems < static_cast<size_type>(INT_MAX)) {
+      nrminf_print_specialization<RV, XV>();
+      int N   = numElems;
+      int one = 1;
+      int idx =
+          HostBlas<std::complex<float>>::iamax(N, reinterpret_cast<const std::complex<float>*>(X.data()), one) - 1;
+      R() = IPT::norm(X(idx));
+    } else {
+      NrmInf<ExecSpace, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrminf(space, R, X);
+    }
+    Kokkos::Profiling::popRegion();
+  }
+};
 
 }  // namespace Impl
 }  // namespace KokkosBlas

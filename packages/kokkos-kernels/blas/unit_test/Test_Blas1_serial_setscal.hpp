@@ -60,7 +60,7 @@ struct Functor_TestBlasSerialMatUtil {
   inline int run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBlas::Test::SerialMatUtil");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name_work_tag         = (std::is_same<AlgoTagType, KokkosKernelTag>::value ? "::KokkosBlas"
                                          : std::is_same<AlgoTagType, NaiveTag>::value      ? "::Naive"
                                                                                            : "::UnknownWorkTag");

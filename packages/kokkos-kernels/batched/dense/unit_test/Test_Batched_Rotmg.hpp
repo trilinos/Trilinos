@@ -35,7 +35,7 @@ struct Functor_BatchedRotmg {
   inline void run() {
     using value_type = typename DXViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::Rotmg");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space> policy(0, m_d1.extent(0));
@@ -71,14 +71,14 @@ void impl_test_batched_rotmg_analytical(const std::size_t Nb, DXType d1_in, DXTy
 
   typename ats::mag_type eps = 1.0e1 * ats::epsilon();
   for (std::size_t i = 0; i < Nb; i++) {
-    EXPECT_NEAR_KK_REL(h_d1(i), ref[0], eps, "rotmg: d1 does not match reference");
-    EXPECT_NEAR_KK_REL(h_d2(i), ref[1], eps, "rotmg: d2 does not match reference");
-    EXPECT_NEAR_KK_REL(h_x1(i), ref[2], eps, "rotmg: x1 does not match reference");
-    EXPECT_NEAR_KK_REL(h_param(i, 0), ref[3], eps, "rotmg: param[0] (flag) does not match reference");
-    EXPECT_NEAR_KK_REL(h_param(i, 1), ref[4], eps, "rotmg: param[1] (h11) does not match reference");
-    EXPECT_NEAR_KK_REL(h_param(i, 2), ref[5], eps, "rotmg: param[2] (h21) does not match reference");
-    EXPECT_NEAR_KK_REL(h_param(i, 3), ref[6], eps, "rotmg: param[3] (h12) does not match reference");
-    EXPECT_NEAR_KK_REL(h_param(i, 4), ref[7], eps, "rotmg: param[4] (h22) does not match reference");
+    EXPECT_NEAR_KK_REL(h_d1(i), ref[0], eps) << "rotmg: d1 does not match reference";
+    EXPECT_NEAR_KK_REL(h_d2(i), ref[1], eps) << "rotmg: d2 does not match reference";
+    EXPECT_NEAR_KK_REL(h_x1(i), ref[2], eps) << "rotmg: x1 does not match reference";
+    EXPECT_NEAR_KK_REL(h_param(i, 0), ref[3], eps) << "rotmg: param[0] (flag) does not match reference";
+    EXPECT_NEAR_KK_REL(h_param(i, 1), ref[4], eps) << "rotmg: param[1] (h11) does not match reference";
+    EXPECT_NEAR_KK_REL(h_param(i, 2), ref[5], eps) << "rotmg: param[2] (h21) does not match reference";
+    EXPECT_NEAR_KK_REL(h_param(i, 3), ref[6], eps) << "rotmg: param[3] (h12) does not match reference";
+    EXPECT_NEAR_KK_REL(h_param(i, 4), ref[7], eps) << "rotmg: param[4] (h22) does not match reference";
   }
 }
 

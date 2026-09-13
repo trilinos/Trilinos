@@ -21,27 +21,27 @@ void test_rotmg_impl(View0& d1, View0& d2, View0& x1, View0& y1, PView& param, R
 #endif
   auto d1_h = Kokkos::create_mirror_view(d1);
   Kokkos::deep_copy(d1_h, d1);
-  EXPECT_NEAR_KK_REL(d1_h(), ref_vals(0), tol, "rotmg: d1 is off");
+  EXPECT_NEAR_KK_REL(d1_h(), ref_vals(0), tol) << "rotmg: d1 is off";
 
   auto d2_h = Kokkos::create_mirror_view(d2);
   Kokkos::deep_copy(d2_h, d2);
-  EXPECT_NEAR_KK_REL(d2_h(), ref_vals(1), tol, "rotmg: d2 is off");
+  EXPECT_NEAR_KK_REL(d2_h(), ref_vals(1), tol) << "rotmg: d2 is off";
 
   auto x1_h = Kokkos::create_mirror_view(x1);
   Kokkos::deep_copy(x1_h, x1);
-  EXPECT_NEAR_KK_REL(x1_h(), ref_vals(2), tol, "rotmg: x1 is off");
+  EXPECT_NEAR_KK_REL(x1_h(), ref_vals(2), tol) << "rotmg: x1 is off";
 
   auto y1_h = Kokkos::create_mirror_view(y1_const);
   Kokkos::deep_copy(y1_h, y1_const);
-  EXPECT_NEAR_KK_REL(y1_h(), ref_vals(3), tol, "rotmg: y1 is off");
+  EXPECT_NEAR_KK_REL(y1_h(), ref_vals(3), tol) << "rotmg: y1 is off";
 
   auto param_h = Kokkos::create_mirror_view(param);
   Kokkos::deep_copy(param_h, param);
-  EXPECT_NEAR_KK_REL(param_h(0), ref_vals(4), tol, "rotmg: param(0) is off");
-  EXPECT_NEAR_KK_REL(param_h(1), ref_vals(5), tol, "rotmg: param(1) is off");
-  EXPECT_NEAR_KK_REL(param_h(2), ref_vals(6), tol, "rotmg: param(2) is off");
-  EXPECT_NEAR_KK_REL(param_h(3), ref_vals(7), tol, "rotmg: param(3) is off");
-  EXPECT_NEAR_KK_REL(param_h(4), ref_vals(8), tol, "rotmg: param(4) is off");
+  EXPECT_NEAR_KK_REL(param_h(0), ref_vals(4), tol) << "rotmg: param(0) is off";
+  EXPECT_NEAR_KK_REL(param_h(1), ref_vals(5), tol) << "rotmg: param(1) is off";
+  EXPECT_NEAR_KK_REL(param_h(2), ref_vals(6), tol) << "rotmg: param(2) is off";
+  EXPECT_NEAR_KK_REL(param_h(3), ref_vals(7), tol) << "rotmg: param(3) is off";
+  EXPECT_NEAR_KK_REL(param_h(4), ref_vals(8), tol) << "rotmg: param(4) is off";
 }
 
 template <class View0, class PView, class RView>

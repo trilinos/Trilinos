@@ -44,7 +44,7 @@ struct Functor_TestBatchedSerialAxpy {
   inline void run() {
     using value_type = typename ViewType::value_type;
     std::string name_region("KokkosBatched::Test::SerialAxpy");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space> policy(0, m_X.extent(0));

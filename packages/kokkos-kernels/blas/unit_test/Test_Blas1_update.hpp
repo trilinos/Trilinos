@@ -19,26 +19,26 @@ void impl_test_update(int N) {
   ScalarC c  = 7;
   double eps = std::is_same<ScalarC, float>::value ? 2 * 1e-5 : 1e-7;
 
-  view_stride_adapter<ViewTypeA> x("X", N);
-  view_stride_adapter<ViewTypeB> y("Y", N);
-  view_stride_adapter<ViewTypeC> z("Z", N);
-  view_stride_adapter<ViewTypeC> org_z("Org_Z", N);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
+  TestUtils::view_stride_adapter<ViewTypeC> z("Z", N);
+  TestUtils::view_stride_adapter<ViewTypeC> org_z("Org_Z", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarC randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(z.d_view, rand_pool, randStart, randEnd);
   }
 
@@ -74,26 +74,26 @@ void impl_test_update_mv(int N, int K) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
 
-  view_stride_adapter<ViewTypeA> x("X", N, K);
-  view_stride_adapter<ViewTypeB> y("Y", N, K);
-  view_stride_adapter<ViewTypeC> z("Z", N, K);
-  view_stride_adapter<ViewTypeC> org_z("Org_Z", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N, K);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N, K);
+  TestUtils::view_stride_adapter<ViewTypeC> z("Z", N, K);
+  TestUtils::view_stride_adapter<ViewTypeC> org_z("Org_Z", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarC randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(z.d_view, rand_pool, randStart, randEnd);
   }
 
