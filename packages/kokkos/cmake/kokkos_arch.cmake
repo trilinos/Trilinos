@@ -95,6 +95,7 @@ kokkos_arch_option(ADA89 GPU "NVIDIA Ada generation CC 8.9" "KOKKOS_SHOW_CUDA_AR
 kokkos_arch_option(HOPPER90 GPU "NVIDIA Hopper generation CC 9.0" "KOKKOS_SHOW_CUDA_ARCHS")
 kokkos_arch_option(BLACKWELL100 GPU "NVIDIA Blackwell generation CC 10.0" "KOKKOS_SHOW_CUDA_ARCHS")
 kokkos_arch_option(BLACKWELL103 GPU "NVIDIA Blackwell generation CC 10.3" "KOKKOS_SHOW_CUDA_ARCHS")
+kokkos_arch_option(RUBIN107 GPU "NVIDIA Rubin generation CC 10.7" "KOKKOS_SHOW_CUDA_ARCHS")
 kokkos_arch_option(BLACKWELL120 GPU "NVIDIA Blackwell generation CC 12.0" "KOKKOS_SHOW_CUDA_ARCHS")
 kokkos_arch_option(BLACKWELL121 GPU "NVIDIA Blackwell generation CC 12.1" "KOKKOS_SHOW_CUDA_ARCHS")
 
@@ -144,6 +145,7 @@ kokkos_arch_option(INTEL_GEN11 GPU "Intel GPU Gen11" "KOKKOS_SHOW_SYCL_ARCHS")
 kokkos_arch_option(INTEL_GEN12LP GPU "Intel GPU Gen12LP" "KOKKOS_SHOW_SYCL_ARCHS")
 kokkos_arch_option(INTEL_XEHP GPU "Intel GPU Xe-HP" "KOKKOS_SHOW_SYCL_ARCHS")
 kokkos_arch_option(INTEL_PVC GPU "Intel GPU Ponte Vecchio" "KOKKOS_SHOW_SYCL_ARCHS")
+kokkos_arch_option(INTEL_BMG GPU "Intel Battlemage" "KOKKOS_SHOW_SYCL_ARCHS")
 
 if(KOKKOS_ENABLE_COMPILER_WARNINGS)
   set(COMMON_WARNINGS
@@ -959,7 +961,9 @@ endif()
 if(KOKKOS_ENABLE_SYCL)
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${KOKKOS_COMPILE_OPTIONS}")
   include(CheckCXXSymbolExists)
-  if(Kokkos_ARCH_INTEL_PVC OR Kokkos_ARCH_INTEL_GEN
+  if(Kokkos_ARCH_INTEL_BMG
+     OR Kokkos_ARCH_INTEL_PVC
+     OR Kokkos_ARCH_INTEL_GEN
      OR (KOKKOS_ENABLE_UNSUPPORTED_ARCHS AND KOKKOS_CXX_COMPILER_ID STREQUAL IntelLLVM
          AND KOKKOS_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 2025.1.1)
   )
@@ -1058,6 +1062,7 @@ check_cuda_arch(ADA89 sm_89)
 check_cuda_arch(HOPPER90 sm_90)
 check_cuda_arch(BLACKWELL100 sm_100)
 check_cuda_arch(BLACKWELL103 sm_103)
+check_cuda_arch(RUBIN107 sm_107)
 check_cuda_arch(BLACKWELL120 sm_120)
 check_cuda_arch(BLACKWELL121 sm_121)
 
@@ -1143,6 +1148,9 @@ if(KOKKOS_ARCH_INTEL_XEHP)
   check_multiple_intel_arch()
 endif()
 if(KOKKOS_ARCH_INTEL_PVC)
+  check_multiple_intel_arch()
+endif()
+if(KOKKOS_ARCH_INTEL_BMG)
   check_multiple_intel_arch()
 endif()
 
@@ -1244,6 +1252,8 @@ if(KOKKOS_ENABLE_SYCL)
       set(SYCL_TARGET_BACKEND_FLAG -Xsycl-target-backend "-device 12.50.4")
     elseif(KOKKOS_ARCH_INTEL_PVC)
       set(SYCL_TARGET_BACKEND_FLAG -Xsycl-target-backend "-device 12.60.7")
+    elseif(KOKKOS_ARCH_INTEL_BMG)
+      set(SYCL_TARGET_BACKEND_FLAG -Xsycl-target-backend "-device bmg")
     endif()
 
     if(Kokkos_ENABLE_SYCL_RELOCATABLE_DEVICE_CODE)
@@ -1348,6 +1358,10 @@ if(KOKKOS_ARCH_BLACKWELL100
    OR KOKKOS_ARCH_BLACKWELL121
 )
   set(KOKKOS_ARCH_BLACKWELL ON)
+endif()
+
+if(KOKKOS_ARCH_RUBIN107)
+  set(KOKKOS_ARCH_RUBIN ON)
 endif()
 
 function(CHECK_AMD_APU ARCH)

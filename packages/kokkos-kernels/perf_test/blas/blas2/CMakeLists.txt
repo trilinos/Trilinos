@@ -1,4 +1,0 @@
-kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
-kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-kokkoskernels_add_executable(KokkosBlas2_gemv_perf_test SOURCES KokkosBlas2_gemv_perf_test.cpp)

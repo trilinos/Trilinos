@@ -4,33 +4,33 @@
 TEST_F(TestCategory, batched_scalar_serial_gemm_nt_nt_bhalf_bhalf) {
   using param_tag_type = ::Test::Gemm::ParamTag<KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::NoTranspose>;
 
-  test_batched_gemm<TestDevice, ::Test::bhalfScalarType, ::Test::bhalfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::bhalfScalarType, TestUtils::bhalfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Blocked>();
-  test_batched_gemm<TestDevice, ::Test::bhalfScalarType, ::Test::bhalfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::bhalfScalarType, TestUtils::bhalfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Unblocked>();
 }
 TEST_F(TestCategory, batched_scalar_serial_gemm_t_nt_bhalf_bhalf) {
   using param_tag_type = ::Test::Gemm::ParamTag<KokkosBatched::Trans::Transpose, KokkosBatched::Trans::NoTranspose>;
 
-  test_batched_gemm<TestDevice, ::Test::bhalfScalarType, ::Test::bhalfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::bhalfScalarType, TestUtils::bhalfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Blocked>();
-  test_batched_gemm<TestDevice, ::Test::bhalfScalarType, ::Test::bhalfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::bhalfScalarType, TestUtils::bhalfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Unblocked>();
 }
 TEST_F(TestCategory, batched_scalar_serial_gemm_nt_t_bhalf_bhalf) {
   using param_tag_type = ::Test::Gemm::ParamTag<KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::Transpose>;
 
-  test_batched_gemm<TestDevice, ::Test::bhalfScalarType, ::Test::bhalfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::bhalfScalarType, TestUtils::bhalfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Blocked>();
-  test_batched_gemm<TestDevice, ::Test::bhalfScalarType, ::Test::bhalfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::bhalfScalarType, TestUtils::bhalfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Unblocked>();
 }
 TEST_F(TestCategory, batched_scalar_serial_gemm_t_t_bhalf_bhalf) {
   using param_tag_type = ::Test::Gemm::ParamTag<KokkosBatched::Trans::Transpose, KokkosBatched::Trans::Transpose>;
 
-  test_batched_gemm<TestDevice, ::Test::bhalfScalarType, ::Test::bhalfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::bhalfScalarType, TestUtils::bhalfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Blocked>();
-  test_batched_gemm<TestDevice, ::Test::bhalfScalarType, ::Test::bhalfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::bhalfScalarType, TestUtils::bhalfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Unblocked>();
 }
 #endif  // KOKKOS_BHALF_T_IS_FLOAT
@@ -39,33 +39,33 @@ TEST_F(TestCategory, batched_scalar_serial_gemm_t_t_bhalf_bhalf) {
 TEST_F(TestCategory, batched_scalar_serial_gemm_nt_nt_half_half) {
   using param_tag_type = ::Test::Gemm::ParamTag<KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::NoTranspose>;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Blocked>();
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Unblocked>();
 }
 TEST_F(TestCategory, batched_scalar_serial_gemm_t_nt_half_half) {
   using param_tag_type = ::Test::Gemm::ParamTag<KokkosBatched::Trans::Transpose, KokkosBatched::Trans::NoTranspose>;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Blocked>();
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Unblocked>();
 }
 TEST_F(TestCategory, batched_scalar_serial_gemm_nt_t_half_half) {
   using param_tag_type = ::Test::Gemm::ParamTag<KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::Transpose>;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Blocked>();
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Unblocked>();
 }
 TEST_F(TestCategory, batched_scalar_serial_gemm_t_t_half_half) {
   using param_tag_type = ::Test::Gemm::ParamTag<KokkosBatched::Trans::Transpose, KokkosBatched::Trans::Transpose>;
 
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Blocked>();
-  test_batched_gemm<TestDevice, ::Test::halfScalarType, ::Test::halfScalarType, param_tag_type,
+  test_batched_gemm<TestDevice, TestUtils::halfScalarType, TestUtils::halfScalarType, param_tag_type,
                     KokkosBatched::Algo::Gemm::Unblocked>();
 }
 #endif  // KOKKOS_HALF_T_IS_FLOAT

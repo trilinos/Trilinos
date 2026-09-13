@@ -158,11 +158,11 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
   const scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv);
-  // create_random_x_vector operates on host mirror, then copies to device. But
+  // TestUtils::create_random_x_vector operates on host mirror, then copies to device. But
   // create_y does everything on device.
-  create_random_x_vector(solution_x);
+  TestUtils::create_random_x_vector(solution_x);
   exec_space().fence();
-  scalar_view_t y_vector = create_random_y_vector(crsmat2, solution_x);
+  scalar_view_t y_vector = TestUtils::create_random_y_vector(crsmat2, solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
 
   for (const auto gs_algorithm : params.gs_algorithms) {
@@ -237,8 +237,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   const lno_t numVecs = params.numVecs;
 
   scalar_view2d_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv, params.numVecs);
-  create_random_x_vector(solution_x);
-  scalar_view2d_t y_vector = create_random_y_vector_mv(crsmat2, solution_x);
+  TestUtils::create_random_x_vector(solution_x);
+  scalar_view2d_t y_vector = TestUtils::create_random_y_vector_mv(crsmat2, solution_x);
   exec_space().fence();
   auto solution_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), solution_x);
   // Need to fence before reading from solution_host
@@ -293,7 +293,6 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
 template <KokkosSparse::SparseMatrixFormat mtx_format, typename scalar_t, typename lno_t, typename size_type,
           typename device>
 void test_block_gauss_seidel_empty() {
-  using namespace Test;
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type row_map_type;

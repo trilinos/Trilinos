@@ -218,9 +218,9 @@ void spgemm_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t
     return;
   }
 
-  if (Impl::is_spgemm_algorithm_native(algo)) {
-    // Never call a TPL if serial/debug is requested (this is needed for
-    // testing)
+  const bool useFallback =
+      !spgemmHandle->get_input_sorted() && Impl::algorithm_may_require_sorted_input<c_exec_t>(algo);
+  if (Impl::is_spgemm_algorithm_native(algo) || useFallback) {
     KokkosSparse::Impl::SPGEMM_NUMERIC<
         const_handle_type,  // KernelHandle,
         Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_, Internal_blno_row_view_t_,

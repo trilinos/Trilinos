@@ -585,15 +585,15 @@ class TwostageGaussSeidel {
     // shift ptr so that it now contains offsets (combine it with the previous
     // functor calls?)
     if (direction == GS_FORWARD || direction == GS_SYMMETRIC) {
-      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(1 + num_rows, rowmap_viewL);
+      KokkosKernels::inclusive_parallel_prefix_sum(execution_space(), rowmap_viewL);
       if (compact_form) {
-        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(1 + num_rows, rowmap_viewLa);
+        KokkosKernels::inclusive_parallel_prefix_sum(execution_space(), rowmap_viewLa);
       }
     }
     if (direction == GS_BACKWARD || direction == GS_SYMMETRIC) {
-      KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(1 + num_rows, rowmap_viewU);
+      KokkosKernels::inclusive_parallel_prefix_sum(execution_space(), rowmap_viewU);
       if (compact_form) {
-        KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(1 + num_rows, rowmap_viewUa);
+        KokkosKernels::inclusive_parallel_prefix_sum(execution_space(), rowmap_viewUa);
       }
     }
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
@@ -828,7 +828,7 @@ class TwostageGaussSeidel {
       NumSweeps *= 2;
     }
     if (init_zero_x_vector) {
-      KokkosKernels::Impl::zero_vector<x_value_array_type, execution_space>(nrhs, localX);
+      Kokkos::deep_copy(execution_space(), localX, scalar_t(0));
     }
     for (int sweep = 0; sweep < NumSweeps; ++sweep) {
       bool forward_sweep = (direction == GS_FORWARD || (direction == GS_SYMMETRIC && sweep % 2 == 0));

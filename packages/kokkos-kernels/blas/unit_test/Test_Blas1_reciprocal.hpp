@@ -20,14 +20,14 @@ void impl_test_reciprocal(int N) {
   const MagnitudeA one     = AT::abs(AT::one());
   const MagnitudeA max_val = 10;
 
-  view_stride_adapter<ViewTypeA> x("X", N);
-  view_stride_adapter<ViewTypeB> y("Y", N);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, one, randEnd);
   }
 
@@ -54,14 +54,14 @@ void impl_test_reciprocal_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
 
-  view_stride_adapter<ViewTypeA> x("X", N, K);
-  view_stride_adapter<ViewTypeB> y("Y", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N, K);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10, randStart, randEnd);
+    TestUtils::getRandomBounds(10, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, KokkosKernels::ArithTraits<ScalarA>::one(), randEnd);
   }
 
