@@ -344,6 +344,12 @@ namespace Belos {
     //! Set the linear problem to solve.
     void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem) override {
       problem_ = problem;
+      // Force the status tests to be rebuilt on the next solve() (as
+      // BlockGmresSolMgr does).  Without this, a solver manager reused across
+      // multiple solves keeps the status-test tree from the first solve, so a
+      // status test installed via setDebugStatusTest() before a later solve is
+      // never wired into sTest_ and never evaluated.
+      isSTSet_ = false;
     }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
@@ -1419,6 +1425,22 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
 
           } // end of restarting
 
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for a debug status test requesting termination
+          //
+          // A status test installed via setDebugStatusTest() is OR-combined
+          // into sTest_, so it can legitimately stop iterate() (e.g. a
+          // wall-clock time limit).  Treat that as an unconverged termination
+          // rather than an inconsistent internal state.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if (nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            retType = Unconverged;
+            isConverged = false;
+            break;  // break from while(1){block_gmres_iter->iterate()}
+          }
           ////////////////////////////////////////////////////////////////////////////////////
           //
           // we returned from iterate(), but none of our status tests Passed.

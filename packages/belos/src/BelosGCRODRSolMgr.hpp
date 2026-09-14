@@ -333,10 +333,21 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     //! Set the linear problem that needs to be solved.
     void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) override {
       problem_ = problem;
+      // Force the status tests to be rebuilt on the next solve() so that a
+      // status test installed via setDebugStatusTest() is wired into sTest_.
+      isSet_ = false;
     }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
+
+    //! Set a debug status test, OR-combined into the top-level status test.
+    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override {
+      debugStatusTest_ = debugStatusTest;
+      // Force the status-test tree to be rebuilt on the next solve() so the
+      // debug test gets OR-combined into sTest_.
+      isSet_ = false;
+    }
 
     //@}
 
@@ -451,6 +462,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > convTest_;
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > expConvTest_, impConvTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
 
     /// Orthogonalization manager.  It is created by the
     /// OrthoManagerFactory instance, and may be changed if the
@@ -1127,6 +1139,17 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR,
                                        maxIterTest_,
                                        convTest_));
+
+  // Add a debug status test if one was provided (e.g. a wall-clock time limit).
+  // OR-combining it into the top-level test lets it stop the solve; the
+  // dispatch in solve() treats such a stop as an unconverged (recoverable)
+  // termination.
+  if (nonnull(debugStatusTest_)) {
+    sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR,
+                                         sTest_,
+                                         debugStatusTest_));
+  }
+
   // Create the status test output class.
   // This class manages and formats the output from the status test.
   StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory (outputStyle_);
@@ -1972,6 +1995,20 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
           } // end of restarting
 
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for a debug status test requesting termination
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if (nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            // A debug status test (e.g. a wall-clock time limit) stopped the
+            // iteration. Treat as an unconverged termination rather than an
+            // inconsistent state.
+            retType = Unconverged;
+            isConverged = false;
+            break; // break from while(1){gcrodr_iter->iterate()}
+          }
           ////////////////////////////////////////////////////////////////////////////////////
           //
           // we returned from iterate(), but none of our status tests Passed.

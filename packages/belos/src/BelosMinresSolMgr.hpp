@@ -230,6 +230,18 @@ namespace Belos {
     void
     setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) override;
 
+    //! Set a debug status test, OR-combined into the top-level status test.
+    void
+    setDebugStatusTest (const Teuchos::RCP<StatusTest<ScalarType, MV, OP, DM> >& debugStatusTest) override
+    {
+      debugStatusTest_ = debugStatusTest;
+      // Force the full status-test tree (including this debug test) to be
+      // rebuilt on the next solve().  MINRES has no single isSTSet_-style flag,
+      // so we drop sTest_ and clear parametersSet_ to trigger a rebuild.
+      sTest_ = Teuchos::null;
+      parametersSet_ = false;
+    }
+
     //@}
 
     //! @name Reset methods (overridden from \c SolverManager)
@@ -316,6 +328,11 @@ namespace Belos {
     /// This object keeps a pointer to printer_ and sTest_.  If you
     /// reallocate either of them, outputTest_ needs to know.
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
+
+    /// \brief Debug status test (e.g. a wall-clock time limit).
+    ///
+    /// If nonnull, this is OR-combined into sTest_.
+    Teuchos::RCP<StatusTest<ScalarType, MV, OP, DM> > debugStatusTest_;
 
     /// \brief List of default parameters.
     ///
@@ -610,6 +627,14 @@ namespace Belos {
       sTest_ = rcp (new combo_type (combo_type::OR, maxIterTest_, convTest_));
     }
 
+    // Add a debug status test if one was provided (e.g. a wall-clock time
+    // limit). OR-combining it into the top-level test lets it stop the solve;
+    // the dispatch in solve() treats such a stop as an unconverged
+    // (recoverable) termination.
+    if (nonnull(debugStatusTest_)) {
+      sTest_ = rcp (new combo_type (combo_type::OR, sTest_, debugStatusTest_));
+    }
+
     // If necessary, create the status test output class.  This class
     // manages and formats the output from the status test.  We have
     // to recreate the output test if we had to (re)allocate either
@@ -724,6 +749,16 @@ namespace Belos {
             dbg << "---- Did not converge after " << maxIterTest_->getNumIters()
                 << " iterations" << endl;
             // This right-hand side didn't converge!
+            notConverged.push_back (currentRHS);
+            break;
+          }
+          // Now check whether a debug status test stopped the iteration.
+          else if (nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            // A debug status test (e.g. a wall-clock time limit) stopped the
+            // iteration. Treat as an unconverged termination rather than an
+            // inconsistent state.
+            retType = Unconverged;
             notConverged.push_back (currentRHS);
             break;
           } else {

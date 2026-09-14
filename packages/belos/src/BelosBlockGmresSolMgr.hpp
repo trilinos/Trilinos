@@ -1117,6 +1117,22 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
 
           ////////////////////////////////////////////////////////////////////////////////////
           //
+          // check for a debug status test requesting termination
+          //
+          // A status test installed via setDebugStatusTest() is OR-combined
+          // into sTest_, so it can legitimately stop iterate() (e.g. a
+          // wall-clock time limit).  Treat that as an unconverged termination
+          // rather than an inconsistent internal state.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if (nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            retType = Unconverged;
+            isConverged = false;
+            break;  // break from while(1){block_gmres_iter->iterate()}
+          }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
           // we returned from iterate(), but none of our status tests Passed.
           // something is wrong, and it is probably our fault.
           //

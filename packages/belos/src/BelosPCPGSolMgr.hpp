@@ -260,10 +260,18 @@ namespace Belos {
     //@{
 
     //! Set the linear problem that needs to be solved.
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) { problem_ = problem; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) { problem_ = problem; isSet_ = false; }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+
+    //! Set a debug status test, OR-combined into the top-level status test.
+    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override {
+      debugStatusTest_ = debugStatusTest;
+      // Force the status-test tree to be rebuilt on the next solve() so the
+      // debug test gets OR-combined into sTest_.
+      isSet_ = false;
+    }
 
     //@}
 
@@ -326,6 +334,7 @@ namespace Belos {
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
 
     // Orthogonalization manager.
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > ortho_;
@@ -630,6 +639,14 @@ void PCPGSolMgr<ScalarType,MV,OP,DM,true>::setParameters( const Teuchos::RCP<Teu
 
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
+  // Add a debug status test if one was provided (e.g. a wall-clock time limit).
+  // OR-combining it into the top-level test lets it stop the solve; the
+  // dispatch in solve() treats such a stop as an unconverged (recoverable)
+  // termination.
+  if (nonnull(debugStatusTest_)) {
+    sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, sTest_, debugStatusTest_ ) );
+  }
+
   // Create the status test output class.
   // This class manages and formats the output from the status test.
   StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_ );
@@ -845,6 +862,20 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
             retType = MaxItersReached;
+            isConverged = false;
+            break;  // break from while(1){pcpg_iter->iterate()}
+          }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for a debug status test requesting termination
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if (nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            // A debug status test (e.g. a wall-clock time limit) stopped the
+            // iteration. Treat as an unconverged termination rather than an
+            // inconsistent state.
+            retType = Unconverged;
             isConverged = false;
             break;  // break from while(1){pcpg_iter->iterate()}
           }

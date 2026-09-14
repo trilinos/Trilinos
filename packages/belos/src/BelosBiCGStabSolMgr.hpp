@@ -167,6 +167,18 @@ namespace Belos {
     //! Set the parameters the solver manager should use to solve the linear problem.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
+    //! Set a debug status test, OR-combined into the top-level status test.
+    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override {
+      debugStatusTest_ = debugStatusTest;
+      // This manager has no dedicated status-test-set flag; the status-test tree
+      // is cached behind a null check.  Drop the cached tree (and its output
+      // wrapper) and clear isSet_ so the next solve() rebuilds them and
+      // OR-combines the debug test.
+      sTest_ = Teuchos::null;
+      outputTest_ = Teuchos::null;
+      isSet_ = false;
+    }
+
     //@}
 
     //! @name Reset methods
@@ -223,6 +235,7 @@ namespace Belos {
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
 
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -493,8 +506,17 @@ void BiCGStabSolMgr<ScalarType,MV,OP,DM>::setParameters( const Teuchos::RCP<Teuc
     convTest_->defineScaleForm( convertStringToScaleType( resScale_ ), Belos::TwoNorm );
   }
 
-  if (sTest_ == Teuchos::null || newResTest)
+  if (sTest_ == Teuchos::null || newResTest) {
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
+
+    // Add a debug status test if one was provided (e.g. a wall-clock time
+    // limit). OR-combining it into the top-level test lets it stop the solve;
+    // the dispatch in solve() treats such a stop as an unconverged
+    // (recoverable) termination.
+    if (nonnull(debugStatusTest_)) {
+      sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, sTest_, debugStatusTest_ ) );
+    }
+  }
 
   if (outputTest_ == Teuchos::null || newResTest) {
 
@@ -744,6 +766,23 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP,DM>::solve ()
               "Belos::BiCGStabSolMgr::solve(): Warning! Solver has experienced a breakdown!" << std::endl;
             break;  // break from while(1){bicgstab_iter->iterate()}
           } 
+
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for a debug status test requesting termination
+          //
+          // A status test installed via setDebugStatusTest() is OR-combined
+          // into sTest_, so it can legitimately stop iterate() (e.g. a
+          // wall-clock time limit).  Treat that as an unconverged termination
+          // rather than an inconsistent internal state.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if (nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            isConverged = false;
+            retType = Unconverged;
+            break;  // break from while(1){bicgstab_iter->iterate()}
+          }
 
           ////////////////////////////////////////////////////////////////////////////////////
           //

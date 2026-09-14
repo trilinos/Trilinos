@@ -216,6 +216,18 @@ namespace Belos {
     //! Set the parameters the solver manager should use to solve the linear problem.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
+    //! Set a debug status test, OR-combined into the top-level status test.
+    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override {
+      debugStatusTest_ = debugStatusTest;
+      // Force the cached status-test tree (and its output wrapper) to be rebuilt
+      // on the next solve so the debug test is wired into sTest_.  This manager
+      // caches sTest_/outputTest_ behind null checks, so clear them and re-run
+      // setParameters.
+      sTest_ = Teuchos::null;
+      outputTest_ = Teuchos::null;
+      isSet_ = false;
+    }
+
     //@}
 
     //! @name Reset methods
@@ -279,6 +291,7 @@ namespace Belos {
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
 
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -620,6 +633,10 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   if (sTest_.is_null () || newResTest) {
     sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, maxIterTest_, convTest_));
+    if (nonnull(debugStatusTest_)) {
+      // Add the debug convergence test, if it exists.
+      sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, sTest_, debugStatusTest_));
+    }
   }
 
   if (outputTest_.is_null () || newResTest) {
@@ -878,6 +895,19 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve ()
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
             retType = MaxItersReached;
+            isConverged = false;
+            break;  // break from while(1){block_cg_iter->iterate()}
+          }
+
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // a debug status test (if any) stopped the iteration
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if (nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            // we don't have convergence, but a debug test asked us to stop
+            retType = Unconverged;
             isConverged = false;
             break;  // break from while(1){block_cg_iter->iterate()}
           }

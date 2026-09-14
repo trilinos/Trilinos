@@ -160,6 +160,18 @@ namespace Belos {
     //! Set the parameters the solver manager should use to solve the linear problem. 
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
     
+    //! Set a debug status test, OR-combined into the top-level status test.
+    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override
+    {
+      debugStatusTest_ = debugStatusTest;
+      // Force the full status-test tree (including this debug test) to be
+      // rebuilt on the next solve().  FixedPoint builds sTest_/outputTest_ lazily
+      // (guarded by null checks), so we drop them and clear isSet_ to trigger it.
+      sTest_ = Teuchos::null;
+      outputTest_ = Teuchos::null;
+      isSet_ = false;
+    }
+
     //! Set user-defined convergence status test.
     void replaceUserConvStatusTest( const Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP,DM> > &userConvStatusTest )
     {
@@ -241,6 +253,9 @@ namespace Belos {
 
     //! Output "status test" that controls all the other status tests.
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
+
+    //! Debug status test (e.g. a wall-clock time limit), OR-combined into sTest_.
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
 
     //! Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -479,8 +494,17 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   if (convTest_ == Teuchos::null)
     convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
 
-  if (sTest_ == Teuchos::null)
+  if (sTest_ == Teuchos::null) {
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
+
+    // Add a debug status test if one was provided (e.g. a wall-clock time
+    // limit). OR-combining it into the top-level test lets it stop the solve;
+    // the dispatch in solve() treats such a stop as an unconverged
+    // (recoverable) termination.
+    if (nonnull(debugStatusTest_)) {
+      sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, sTest_, debugStatusTest_ ) );
+    }
+  }
 
   if (outputTest_ == Teuchos::null) {
 
@@ -710,6 +734,17 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP,DM>::solve() {
           // iterate() returned, but none of our status tests Passed.
           // This indicates a bug.
           //
+          //
+          // A debug status test (e.g. a wall-clock time limit) stopped the
+          // iteration.  Treat as an unconverged termination rather than an
+          // inconsistent state.
+          //
+          else if (nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            retType = Unconverged;
+            isConverged = false;
+            break;  // break from while(1){block_fp_iter->iterate()}
+          }
           else {
             retType = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
