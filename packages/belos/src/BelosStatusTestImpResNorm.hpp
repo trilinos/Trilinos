@@ -16,7 +16,7 @@
 */
 
 #include "BelosStatusTestResNorm.hpp"
-#include "BelosGmresIteration.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "Teuchos_as.hpp"
@@ -614,8 +614,8 @@ checkStatus (Iteration<ScalarType,MV,OP,DM>* iSolver)
     //
     // Compute the explicit residual norm(s) from the current solution update.
     //
-    GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
-      dynamic_cast<GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>*>(iSolver);
+    CurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
+      dynamic_cast<CurrentSolutionProvider<ScalarType,MV,OP,DM>*>(iSolver);
     if (solProvider != NULL && solProvider->hasCurrentSolution()) {
       curSoln_ = solProvider->getCurrentSolution ();
     }

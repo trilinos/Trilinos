@@ -29,6 +29,7 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosMinresIteration.hpp"
 
 #include "BelosLinearProblem.hpp"
@@ -58,7 +59,8 @@ namespace Belos {
 /// \ingroup belos_solver_framework
 ///
 template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
-class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
+class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM>,
+                   public CurrentSolutionProvider<ScalarType,MV,OP,DM> {
 
   public:
 

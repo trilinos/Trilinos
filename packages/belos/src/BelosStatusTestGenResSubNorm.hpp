@@ -16,7 +16,7 @@
 */
 
 #include "BelosStatusTestResNorm.hpp"
-#include "BelosGmresIteration.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
@@ -406,8 +406,8 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
     //
     // Request the true residual for this block of right-hand sides.
     //
-    GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
-      dynamic_cast<GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>*>(iSolver);
+    CurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
+      dynamic_cast<CurrentSolutionProvider<ScalarType,MV,OP,DM>*>(iSolver);
     if (solProvider != NULL && solProvider->hasCurrentSolution()) {
       curSoln_ = solProvider->getCurrentSolution();
     }

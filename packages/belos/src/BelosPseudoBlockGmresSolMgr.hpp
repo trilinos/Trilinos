@@ -1007,8 +1007,8 @@ template<class ScalarType, class MV, class OP, class DM>
 void PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::updateSolution(
   const Teuchos::RCP<PseudoBlockGmresIter<ScalarType,MV,OP,DM> >& block_gmres_iter)
 {
-  GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
-    dynamic_cast<GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>*>(block_gmres_iter.getRawPtr());
+  CurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
+    dynamic_cast<CurrentSolutionProvider<ScalarType,MV,OP,DM>*>(block_gmres_iter.getRawPtr());
   if (useFlexibleGmresUpdateForOneIter_ && solProvider != NULL &&
       solProvider->hasCurrentSolution()) {
     Teuchos::RCP<const MV> update = solProvider->getCurrentSolutionUpdate();
@@ -1028,8 +1028,8 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::updateSolution(
   const Teuchos::RCP<PseudoBlockGmresIter<ScalarType,MV,OP,DM> >& block_gmres_iter,
   const std::vector<int>& updateIdx)
 {
-  GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
-    dynamic_cast<GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>*>(block_gmres_iter.getRawPtr());
+  CurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
+    dynamic_cast<CurrentSolutionProvider<ScalarType,MV,OP,DM>*>(block_gmres_iter.getRawPtr());
   if (useFlexibleGmresUpdateForOneIter_ && solProvider != NULL &&
       solProvider->hasCurrentSolution()) {
     Teuchos::RCP<const MV> update = solProvider->getCurrentSolutionUpdate();
