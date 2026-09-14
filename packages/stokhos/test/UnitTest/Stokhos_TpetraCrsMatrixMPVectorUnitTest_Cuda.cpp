@@ -17,7 +17,7 @@
 #include <Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 // Instantiate tests for cuda node
-typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<Kokkos::Cuda> CudaWrapperNode;
+typedef Tpetra::KokkosCompat::KokkosCudaWrapperNode CudaWrapperNode;
 CRSMATRIX_MP_VECTOR_TESTS_N( CudaWrapperNode )
 
 int main( int argc, char* argv[] ) {
