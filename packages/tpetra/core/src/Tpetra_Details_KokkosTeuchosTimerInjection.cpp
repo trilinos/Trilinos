@@ -107,7 +107,7 @@ void kokkosp_begin_deep_copy(Kokkos::Tools::SpaceHandle dst_handle, const char* 
     label_ = std::string("Kokkos::deep_copy [") + src_handle.name + "=>" + dst_handle.name + "]" + extra_label;
 
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-  if (!Teuchos::TimeMonitor::stackedTimerNameIsDefault()) {
+  if (!Teuchos::TimeMonitor::stackedTimerHasDefaultState()) {
     const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
     stackedTimer->start(label_);
   } else
@@ -121,7 +121,7 @@ void kokkosp_begin_deep_copy(Kokkos::Tools::SpaceHandle dst_handle, const char* 
 
 void kokkosp_end_deep_copy() {
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-  if (!Teuchos::TimeMonitor::stackedTimerNameIsDefault()) {
+  if (!Teuchos::TimeMonitor::stackedTimerHasDefaultState()) {
     try {
       const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
       stackedTimer->stop(label_);
@@ -172,7 +172,7 @@ void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
   label_ = std::string("Kokkos::fence ") + name + " " + device_label;
 
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-  if (!Teuchos::TimeMonitor::stackedTimerNameIsDefault()) {
+  if (!Teuchos::TimeMonitor::stackedTimerHasDefaultState()) {
     const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
     stackedTimer->start(label_);
   } else
@@ -187,7 +187,7 @@ void kokkosp_begin_fence(const char* name, const uint32_t deviceId,
 void kokkosp_end_fence(const uint64_t handle) {
   if (handle == active_handle) {
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-    if (!Teuchos::TimeMonitor::stackedTimerNameIsDefault()) {
+    if (!Teuchos::TimeMonitor::stackedTimerHasDefaultState()) {
       try {
         const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
         stackedTimer->stop(label_);
@@ -236,7 +236,7 @@ void kokkosp_begin_kernel(const char* kernelName, const char* kernelPrefix, cons
   label_ = std::string("Kokkos::") + kernelName + " " + kernelPrefix + " " + device_label;
 
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-  if (!Teuchos::TimeMonitor::stackedTimerNameIsDefault()) {
+  if (!Teuchos::TimeMonitor::stackedTimerHasDefaultState()) {
     const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
     stackedTimer->start(label_);
   } else
@@ -262,7 +262,7 @@ void kokkosp_begin_reduce(const char* kernelPrefix, const uint32_t devID, uint64
 
 void kokkosp_end_kernel(const uint64_t handle) {
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-  if (!Teuchos::TimeMonitor::stackedTimerNameIsDefault()) {
+  if (!Teuchos::TimeMonitor::stackedTimerHasDefaultState()) {
     try {
       const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
       stackedTimer->stop(label_);
