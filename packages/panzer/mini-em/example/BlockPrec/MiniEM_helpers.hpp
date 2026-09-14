@@ -40,7 +40,6 @@ namespace mini_em {
 
   //! Which preconditioning/solver strategy to use.
   enum solverType {
-    AUGMENTATION,
     MUELU,
     CG,
     GMRES,
