@@ -126,12 +126,10 @@ message(">>> CDash URL2 = ${build_url2}")
 message(">>> CDash URL3 = ${build_url3}")
 message(">>> CDash URL4 = ${build_url4}")
 
-if (EXISTS /home/runner/)
-    # Write the URL into the filesystem so AT2 can read it later
-    message(">>> Writing URLs to /home/runner/AT2_URL.txt and AT2_ALL_BUILDS.txt")
-    file(WRITE /home/runner/AT2_URL.txt ${build_url3})
-    file(WRITE /home/runner/AT2_ALL_BUILDS.txt ${build_url4})
-endif()
+# Write the URL into the filesystem so AT2 can read it later
+message(">>> Writing URLs to ${CTEST_BINARY_DIRECTORY}/AT2_URL.txt and AT2_ALL_BUILDS.txt")
+file(WRITE ${CTEST_BINARY_DIRECTORY}/AT2_URL.txt ${build_url3})
+file(WRITE ${CTEST_BINARY_DIRECTORY}/AT2_ALL_BUILDS.txt ${build_url4})
 
 # -----------------------------------------------------------
 # -- Optionally update the repository
