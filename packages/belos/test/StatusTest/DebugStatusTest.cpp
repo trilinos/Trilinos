@@ -11,8 +11,8 @@
 // Verify that a *debug status test* installed via
 // SolverManager::setDebugStatusTest() which trips mid-solve cleanly stops the
 // Krylov iteration and yields Belos::Unconverged WITHOUT throwing -- for every
-// solver manager returned by Belos::Details::canonicalSolverNames(), and that
-// this still holds when the same manager instance is reused for a second solve.
+// canonical solver manager supported by this factory, and that this still holds
+// when the same manager instance is reused for a second solve.
 //
 // The debug test used here (TripAtIter) is fully deterministic: it trips
 // exactly when the solver reaches a fixed iteration count, independent of
@@ -103,7 +103,7 @@ TEUCHOS_UNIT_TEST(StatusTest, DebugStatusTestStopsSolve) {
 
   Teuchos::OSTab tab0(out);
   out << "Verify setDebugStatusTest() stop => Belos::Unconverged (no throw), "
-         "for every canonical solver, including manager reuse"
+         "for every supported canonical solver, including manager reuse"
       << endl;
   Teuchos::OSTab tab1(out);
 
@@ -178,15 +178,14 @@ TEUCHOS_UNIT_TEST(StatusTest, DebugStatusTestStopsSolve) {
 
   for (size_t k = 0; k < names.size(); ++k) {
     const std::string &name = names[k];
-    // "HYBRID BLOCK GMRES" (GmresPoly) delegates to an inner solver.  On its
-    // outer-solver path the debug test is forwarded, but with default
-    // parameters it may instead build a polynomial and NOT forward the debug
-    // test (a documented limitation).  So for that one name we only require
-    // no-throw, not strict Unconverged.
-    const bool strict = (name != "HYBRID BLOCK GMRES");
+    RCP<factory_type> factory = rcp(new factory_type());
+    if (!factory->isSupported(name)) {
+      out << "=== Solver: \"" << name << "\" (not registered; skipped) ==="
+          << endl;
+      continue;
+    }
 
-    out << "=== Solver: \"" << name << "\""
-        << (strict ? "" : " (delegating; relaxed)") << " ===" << endl;
+    out << "=== Solver: \"" << name << "\" ===" << endl;
     Teuchos::OSTab tabN(out);
 
     // Report failures per-solver but keep going, so one bad manager does not
@@ -195,8 +194,15 @@ TEUCHOS_UNIT_TEST(StatusTest, DebugStatusTestStopsSolve) {
       RCP<ParameterList> params = parameterList("Belos");
       params->set("Maximum Iterations", maxIters);
       params->set("Convergence Tolerance", tol);
+      if (name == "HYBRID BLOCK GMRES") {
+        // Exercise GmresPolySolMgr's outer-solver path, where the underlying
+        // Krylov solver can honor the debug status test.
+        params->set("Maximum Degree", 0);
+        params->set("Outer Solver", "PSEUDOBLOCK GMRES");
+        params->sublist("Outer Solver Params").set("Maximum Iterations", maxIters);
+        params->sublist("Outer Solver Params").set("Convergence Tolerance", tol);
+      }
 
-      RCP<factory_type> factory = rcp(new factory_type());
       RCP<solver_type> solver;
       TEST_NOTHROW(solver = factory->create(name, params));
       TEST_ASSERT(!solver.is_null());
@@ -221,20 +227,11 @@ TEUCHOS_UNIT_TEST(StatusTest, DebugStatusTestStopsSolve) {
           << (ret1 == Belos::Unconverged ? "Unconverged" : "Converged")
           << ", numIters=" << iters1 << endl;
 
-      if (strict) {
-        TEST_EQUALITY(ret1, Belos::Unconverged);
-        TEST_EQUALITY(trip1->getStatus(), Belos::Passed);
-        // The debug test -- not maxiter -- stopped the solve.
-        TEST_ASSERT(iters1 >= tripIter);
-        TEST_ASSERT(iters1 < maxIters);
-      } else if (ret1 != Belos::Unconverged) {
-        out << "NOTE: HYBRID BLOCK GMRES did not return Unconverged; its "
-               "debug-test "
-               "coverage depends on the inner (outer-solver) path. Only "
-               "no-throw "
-               "is required for this solver."
-            << endl;
-      }
+      TEST_EQUALITY(ret1, Belos::Unconverged);
+      TEST_EQUALITY(trip1->getStatus(), Belos::Passed);
+      // The debug test -- not maxiter -- stopped the solve.
+      TEST_ASSERT(iters1 >= tripIter);
+      TEST_ASSERT(iters1 < maxIters);
 
       // -------- Second solve (REUSE the same manager instance) --------
       // A fresh debug test is installed and setProblem() is called again on the
@@ -255,16 +252,10 @@ TEUCHOS_UNIT_TEST(StatusTest, DebugStatusTestStopsSolve) {
           << (ret2 == Belos::Unconverged ? "Unconverged" : "Converged")
           << ", numIters=" << iters2 << endl;
 
-      if (strict) {
-        TEST_EQUALITY(ret2, Belos::Unconverged);
-        TEST_EQUALITY(trip2->getStatus(), Belos::Passed);
-        TEST_ASSERT(iters2 >= tripIter);
-        TEST_ASSERT(iters2 < maxIters);
-      } else if (ret2 != Belos::Unconverged) {
-        out << "NOTE: HYBRID BLOCK GMRES (reused) did not return Unconverged; "
-               "see note above."
-            << endl;
-      }
+      TEST_EQUALITY(ret2, Belos::Unconverged);
+      TEST_EQUALITY(trip2->getStatus(), Belos::Passed);
+      TEST_ASSERT(iters2 >= tripIter);
+      TEST_ASSERT(iters2 < maxIters);
     } catch (std::exception &e) {
       out << "*** Solver \"" << name << "\" threw an exception: " << e.what()
           << endl;

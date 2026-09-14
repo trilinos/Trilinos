@@ -1648,6 +1648,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
         // Perform one cycle of GMRES
         bool primeConverged = false;
+        bool debugTestPassed = false;
         try {
           gcrodr_prime_iter->iterate();
 
@@ -1655,6 +1656,15 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           if ( convTest_->getStatus() == Passed ) {
             // we have convergence
             primeConverged = true;
+          }
+          // Check whether a debug status test requested termination while
+          // building the initial recycle space.  This is a valid early exit from
+          // iterate(), not an inconsistent solver state.
+          else if (nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            retType = Unconverged;
+            isConverged = false;
+            debugTestPassed = true;
           }
         }
         catch (const GCRODRIterOrthoFailure &e) {
@@ -1685,6 +1695,10 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
         }
         // Record number of iterations in generating initial recycle spacec
         prime_iterations = gcrodr_prime_iter->getNumIters();
+
+        if (debugTestPassed) {
+          break;
+        }
 
         // Update the linear problem.
         RCP<MV> update = gcrodr_prime_iter->getCurrentUpdate();

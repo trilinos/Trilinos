@@ -197,7 +197,7 @@ public:
     // Check state of problem object before proceeding
     if (! problem->isProblemSet()) {
       const bool success = problem->setProblem();
-      TEUCHOS_TEST_FOR_EXCEPTION(success, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error,
         "Belos::BlockGCRODRSolMgr::setProblem: Calling the input LinearProblem's setProblem() method failed.  This likely means that the "
         "LinearProblem has a missing (null) matrix A, solution vector X, or right-hand side vector B.  Please set these items in the LinearProblem and try again.");
     }
@@ -1797,7 +1797,10 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
 
   ReturnType retType = Undetermined;
 
-  // MLP: NEED TO ADD CHECK IF PARAMETERS ARE SET LATER
+  // Set the current parameters if they were not set before.
+  // NOTE:  This may occur if the user generated the solver manager with the default constructor and
+  // then didn't set any parameters using setParameters().
+  if (!isSet_) { setParameters( params_ ); }
 
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -2000,6 +2003,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
       block_gmres_iter->initializeGmres(newstate);
 
       bool primeConverged = false;
+      bool debugTestPassed = false;
 
       try {
         printer_->stream(Debug) << " Preparing to Iterate!!!!" << std::endl << std::endl;
@@ -2023,6 +2027,18 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
         else if( maxIterTest_->getStatus() == Passed ) {
           // we don't have convergence
           primeConverged = false;
+        }
+        // **********************************************
+        // Check for a debug status test requesting termination
+        // **********************************************
+        else if (nonnull(debugStatusTest_) &&
+                 debugStatusTest_->getStatus() == Passed) {
+          // A debug status test stopped the priming iteration. Treat it as an
+          // unconverged termination rather than building an invalid recycle
+          // space from a partially completed priming cycle.
+          retType = Unconverged;
+          isConverged = false;
+          debugTestPassed = true;
         }
         // ****************************************************************
         // We need to recycle and continue, print a message indicating this
@@ -2071,6 +2087,10 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
 
       // Record number of iterations in generating initial recycle spacec
       //prime_iterations = block_gmres_iter->getNumIters();//instantiated here because it is not needed outside of else{} scope;  we'll see if this is true or not
+
+      if (debugTestPassed) {
+        break;
+      }
 
       // Update the linear problem.
       RCP<MV> update = block_gmres_iter->getCurrentUpdate();
