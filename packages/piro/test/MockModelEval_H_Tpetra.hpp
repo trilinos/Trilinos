@@ -75,7 +75,7 @@ typedef Thyra::TpetraOperatorVectorExtraction<
  * p_opt = (1+X)
  * x_opt = (1+X)^3
  * 
- * f_true  = x - p^3 + 0.2 p^2
+ * f_true  = x - p^3 - 0.2 p^2
  *
  * p_sample_0 = p_opt
  * p_sample_1 = X + X^2
@@ -166,6 +166,7 @@ class MockModelEval_H_Tpetra
   Teuchos::RCP<Thyra::VectorBase<double>> get_param_samples(int k) const;
   /** \brief . */
   Teuchos::RCP<Thyra::VectorBase<double>> get_solution_diff_at_samples(int k) const;
+  Teuchos::RCP<Thyra::VectorBase<double>> get_solution_diff_at_param(const Teuchos::RCP<const Thyra::VectorBase<double>> thyra_param_k) const;
 
   /** \brief . */
   Teuchos::RCP<Thyra::LinearOpBase<double>>
