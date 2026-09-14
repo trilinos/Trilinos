@@ -178,6 +178,11 @@ namespace Belos {
      *   "DGKS", "ICGS", "IMGS", and optionally "TSQR" (depending on
      *   build settings).  Please refer to Belos' documentation for
      *   more details.
+     * - "Use Flexible Gmres Update for One Iteration" (\c bool): If
+     *   true, use a flexible-GMRES-style solution update after exactly
+     *   one iteration with right preconditioning.  This avoids applying
+     *   the right preconditioner a second time in the one-iteration
+     *   case.  The default is false.
      *
      * For an explanation of "implicit" vs. "explicit" residuals,
      * please see the documentation of isLOADetected().  The
@@ -436,6 +441,15 @@ namespace Belos {
     ///   this method.  If it does, it checks the return value.
     bool checkStatusTest();
 
+    //! Update the current solution with the iterator's current update.
+    void updateSolution(
+      const Teuchos::RCP<PseudoBlockGmresIter<ScalarType,MV,OP,DM> >& block_gmres_iter);
+
+    //! Update selected systems with the iterator's current update.
+    void updateSolution(
+      const Teuchos::RCP<PseudoBlockGmresIter<ScalarType,MV,OP,DM> >& block_gmres_iter,
+      const std::vector<int>& updateIdx);
+
     //! The current linear problem to solve.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > problem_;
 
@@ -470,6 +484,7 @@ namespace Belos {
     static constexpr int outputStyle_default_ = Belos::General;
     static constexpr int outputFreq_default_ = -1;
     static constexpr int defQuorum_default_ = 1;
+    static constexpr bool useFlexibleGmresUpdateForOneIter_default_ = false;
     static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
     static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
@@ -479,7 +494,7 @@ namespace Belos {
     MagnitudeType convtol_, orthoKappa_, achievedTol_;
     int maxRestarts_, maxIters_, numIters_;
     int blockSize_, numBlocks_, verbosity_, outputStyle_, outputFreq_, defQuorum_;
-    bool showMaxResNormOnly_;
+    bool showMaxResNormOnly_, useFlexibleGmresUpdateForOneIter_;
     std::string orthoType_;
     std::string impResScale_, expResScale_;
     MagnitudeType resScaleFactor_;
@@ -512,6 +527,7 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::PseudoBlockGmresSolMgr() :
   outputFreq_(outputFreq_default_),
   defQuorum_(defQuorum_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
+  useFlexibleGmresUpdateForOneIter_(useFlexibleGmresUpdateForOneIter_default_),
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
   expResScale_(expResScale_default_),
@@ -544,6 +560,7 @@ PseudoBlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > 
   outputFreq_(outputFreq_default_),
   defQuorum_(defQuorum_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
+  useFlexibleGmresUpdateForOneIter_(useFlexibleGmresUpdateForOneIter_default_),
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
   expResScale_(expResScale_default_),
@@ -928,6 +945,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     }
   }
 
+  if (params->isParameter ("Use Flexible Gmres Update for One Iteration")) {
+    useFlexibleGmresUpdateForOneIter_ =
+      Teuchos::getParameter<bool> (*params, "Use Flexible Gmres Update for One Iteration");
+
+    params_->set ("Use Flexible Gmres Update for One Iteration", useFlexibleGmresUpdateForOneIter_);
+  }
+
   // Create status tests if we need to.
 
   // Get the deflation quorum, or number of converged systems before deflation is allowed
@@ -979,6 +1003,48 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::setDebugStatusTest(
 }
 
 
+template<class ScalarType, class MV, class OP, class DM>
+void PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::updateSolution(
+  const Teuchos::RCP<PseudoBlockGmresIter<ScalarType,MV,OP,DM> >& block_gmres_iter)
+{
+  GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
+    dynamic_cast<GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>*>(block_gmres_iter.getRawPtr());
+  if (useFlexibleGmresUpdateForOneIter_ && solProvider != NULL &&
+      solProvider->hasCurrentSolution()) {
+    Teuchos::RCP<const MV> update = solProvider->getCurrentSolutionUpdate();
+    Teuchos::RCP<MV> curX = problem_->getCurrLHSVec();
+    if (update != Teuchos::null)
+      MVT::MvAddMv( SCT::one(), *curX, SCT::one(), *update, *curX );
+  }
+  else {
+    Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
+    problem_->updateSolution( update, true );
+  }
+}
+
+
+template<class ScalarType, class MV, class OP, class DM>
+void PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::updateSolution(
+  const Teuchos::RCP<PseudoBlockGmresIter<ScalarType,MV,OP,DM> >& block_gmres_iter,
+  const std::vector<int>& updateIdx)
+{
+  GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
+    dynamic_cast<GmresCurrentSolutionProvider<ScalarType,MV,OP,DM>*>(block_gmres_iter.getRawPtr());
+  if (useFlexibleGmresUpdateForOneIter_ && solProvider != NULL &&
+      solProvider->hasCurrentSolution()) {
+    Teuchos::RCP<const MV> update = solProvider->getCurrentSolutionUpdate();
+    Teuchos::RCP<const MV> selectedUpdate = MVT::CloneView( *update, updateIdx );
+    Teuchos::RCP<MV> curX = problem_->getCurrLHSVec();
+    MVT::MvAddMv( SCT::one(), *curX, SCT::one(), *selectedUpdate, *curX );
+  }
+  else {
+    Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
+    Teuchos::RCP<MV> selectedUpdate = MVT::CloneViewNonConst( *update, updateIdx );
+    problem_->updateSolution( selectedUpdate, true );
+  }
+}
+
+
 
 template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
@@ -1024,6 +1090,10 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::getValidParameters() const
     pl->set("Show Maximum Residual Norm Only", static_cast<bool>(showMaxResNormOnly_default_),
       "When convergence information is printed, only show the maximum\n"
       "relative residual norm when the block size is greater than one.");
+    pl->set("Use Flexible Gmres Update for One Iteration", static_cast<bool>(useFlexibleGmresUpdateForOneIter_default_),
+      "When using right preconditioning, form the current solution after\n"
+      "exactly one GMRES iteration from the stored right-preconditioned\n"
+      "basis vector to avoid a second right preconditioner application.");
     pl->set("Implicit Residual Scaling", static_cast<const char *>(impResScale_default_),
       "The type of scaling used in the implicit residual convergence test.");
     pl->set("Explicit Residual Scaling", static_cast<const char *>(expResScale_default_),
@@ -1191,6 +1261,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
   // Parameter list
   Teuchos::ParameterList plist;
   plist.set("Num Blocks",numBlocks_);
+  plist.set("Use Flexible Gmres Update for One Iteration", useFlexibleGmresUpdateForOneIter_);
 
   // Reset the status test.
   outputTest_->reset();
@@ -1334,14 +1405,11 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
 
             // Compute the current solution that needs to be deflated if this solver has taken any steps.
             if (curDim) {
-              Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
-              Teuchos::RCP<MV> defUpdate = MVT::CloneViewNonConst( *update, defRHSIdx );
-
               // Set the deflated indices so we can update the solution.
               problem_->setLSIndex( convIdx );
 
               // Update the linear problem.
-              problem_->updateSolution( defUpdate, true );
+              updateSolution( block_gmres_iter, defRHSIdx );
             }
 
             // Set the remaining indices after deflation.
@@ -1381,8 +1449,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
             printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
 
             // Update the linear problem.
-            Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
-            problem_->updateSolution( update, true );
+            updateSolution( block_gmres_iter );
 
             // Get the state.
             PseudoBlockGmresIterState<ScalarType,MV,DM> oldState = block_gmres_iter->getState();
@@ -1468,8 +1535,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
       // Update the linear problem.
       if (nonnull(userConvStatusTest_)) {
         //std::cout << "\nnonnull(userConvStatusTest_)\n";
-        Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
-        problem_->updateSolution( update, true );
+        updateSolution( block_gmres_iter );
       }
       else if (nonnull(expConvTest_->getSolution())) {
         //std::cout << "\nexpConvTest_->getSolution()\n";
@@ -1479,8 +1545,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
       }
       else {
         //std::cout << "\nblock_gmres_iter->getCurrentUpdate()\n";
-        Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
-        problem_->updateSolution( update, true );
+        updateSolution( block_gmres_iter );
       }
 
       // Inform the linear problem that we are finished with this block linear system.

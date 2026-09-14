@@ -160,6 +160,22 @@ namespace Belos {
   //@}
 
 template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
+class GmresCurrentSolutionProvider {
+public:
+  virtual ~GmresCurrentSolutionProvider() {}
+
+  //! Whether this iteration can currently provide a solution-space update.
+  virtual bool hasCurrentSolution() const = 0;
+
+  //! Get the current update in solution space.
+  virtual Teuchos::RCP<const MV> getCurrentSolutionUpdate() const = 0;
+
+  //! Get the current solution estimate for the linear system.
+  virtual Teuchos::RCP<MV> getCurrentSolution() const = 0;
+};
+
+
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class GmresIteration : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:
