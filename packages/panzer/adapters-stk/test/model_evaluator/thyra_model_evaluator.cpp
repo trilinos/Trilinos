@@ -21,6 +21,10 @@ using Teuchos::rcp;
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
+
+#include "Tpetra_Access.hpp"
+#include "Tpetra_Vector.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -525,14 +529,20 @@ namespace panzer {
       me->evalModel(inArgs,outArgs);
       TEST_ASSERT(Thyra::norm_2(*dfdp)>0);
 
-      Teuchos::ArrayRCP<const double> dfdp_data;
-      Teuchos::ArrayRCP<const double> f1_data;
-      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*dfdp).getLocalData(Teuchos::ptrFromRef(dfdp_data));
-      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*f1).getLocalData(Teuchos::ptrFromRef(f1_data));
-      for(int i=0;i<dfdp_data.size();i++) {
-        if(dfdp_data[i]!=0.0)
-        { TEST_FLOATING_EQUALITY(f1_data[i],20.0*dfdp_data[i],1e-10); }
-        out << f1_data[i] << "    " << dfdp_data[i] << std::endl;
+      {
+        typedef Thyra::TpetraOperatorVectorExtraction<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> ConverterT;
+
+        auto dfdp_tpetra = ConverterT::getConstTpetraVector(dfdp.getConst());
+        auto f1_tpetra   = ConverterT::getConstTpetraVector(f1.getConst());
+
+        auto dfdp_data = dfdp_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly);
+        auto f1_data   = f1_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly);
+
+        for(size_t i=0;i<dfdp_data.extent(0);i++) {
+          if(dfdp_data(i,0)!=0.0)
+          { TEST_FLOATING_EQUALITY(f1_data(i,0),20.0*dfdp_data(i,0),1e-10); }
+          out << f1_data(i,0) << "    " << dfdp_data(i,0) << std::endl;
+        }
       }
 
       outArgs.set_DfDp(0,MEB::Derivative<double>(dfdp,MEB::DERIV_MV_BY_COL));
@@ -622,16 +632,20 @@ namespace panzer {
 
       // (df/dx)*v + df/dp = f(x + 1 * v, p + 1) - f(x,p)
       // since the problem is linear
-      Teuchos::ArrayRCP<const double> dfdp_data;
-      Teuchos::ArrayRCP<const double> f_data;
-      Teuchos::ArrayRCP<const double> fd_data;
-      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*dfdp).getLocalData(Teuchos::ptrFromRef(dfdp_data));
-      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*f).getLocalData(Teuchos::ptrFromRef(f_data));
-      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*fd).getLocalData(Teuchos::ptrFromRef(fd_data));
-      for(int i=0;i<dfdp_data.size();i++) {
-        if(std::abs(dfdp_data[i]) > 1e-13)
-        { TEST_FLOATING_EQUALITY(fd_data[i]-f_data[i],dfdp_data[i],1e-10); }
-        out << fd_data[i]-f_data[i] << "    " << dfdp_data[i] << std::endl;
+      typedef Thyra::TpetraOperatorVectorExtraction<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> ConverterT;
+
+      auto dfdp_tpetra = ConverterT::getConstTpetraVector(dfdp.getConst());
+      auto f_tpetra    = ConverterT::getConstTpetraVector(f.getConst());
+      auto fd_tpetra   = ConverterT::getConstTpetraVector(fd.getConst());
+
+      auto dfdp_data = dfdp_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto f_data    = f_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto fd_data   = fd_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly);
+
+      for(size_t i=0;i<dfdp_data.extent(0);i++) {
+        if(std::abs(dfdp_data(i,0)) > 1e-13)
+        { TEST_FLOATING_EQUALITY(fd_data(i,0)-f_data(i,0),dfdp_data(i,0),1e-10); }
+        out << fd_data(i,0)-f_data(i,0) << "    " << dfdp_data(i,0) << std::endl;
       }
     }
   }
