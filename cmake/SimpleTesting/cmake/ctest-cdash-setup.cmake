@@ -18,7 +18,10 @@ print_options_list()
 # -- Specify the Generator
 # -----------------------------------------------------------
 set(CTEST_CMAKE_GENERATOR "Ninja")
-
+if(${CTEST_BUILD_NAME} MATCHES "coverage")
+    # Ninja messed up coverage builds
+    set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+endif()
 
 set(CTEST_CONFIGURE_COMMAND_ARGS
     "${CMAKE_COMMAND}"
