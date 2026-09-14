@@ -446,7 +446,7 @@ public:
   Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> dirichlet_counter;
 
   Kokkos::View<Kokkos::View<double**,Kokkos::LayoutLeft,PHX::Device>*>  dfdp_fields; // tangent fields
-  double num_params;
+  std::size_t num_params;
 
   PHX::View<const LO**> lids;    // local indices for unknowns
   PHX::View<const int*> offsets; // how to get a particular field
@@ -473,7 +473,7 @@ public:
        r_data(lid,0) = field(cell,basisId).val();
 
        // loop over the tangents
-       for(int i_param=0; i_param<num_params; i_param++)
+       for(std::size_t i_param=0; i_param<num_params; i_param++)
          dfdp_fields(i_param)(lid,0) = field(cell,basisId).fastAccessDx(i_param);
 
        // record that you set a dirichlet condition
@@ -494,7 +494,7 @@ public:
   Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> dirichlet_counter;
 
   Kokkos::View<Kokkos::View<double**,Kokkos::LayoutLeft,PHX::Device>*>  dfdp_fields; // tangent fields
-  double num_params;
+  std::size_t num_params;
 
   PHX::View<const LO**> lids;    // local indices for unknowns
   PHX::View<const int*> offsets; // how to get a particular field
@@ -513,7 +513,7 @@ public:
        r_data(lid,0) = field(cell,basis).val();
 
        // loop over the tangents
-       for(int i_param=0; i_param<num_params; i_param++)
+       for(std::size_t i_param=0; i_param<num_params; i_param++)
           dfdp_fields(i_param)(lid,0) = field(cell,basis).fastAccessDx(i_param);
 
        // record that you set a dirichlet condition

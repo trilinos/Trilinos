@@ -401,7 +401,7 @@ public:
   Kokkos::View<const LO**> lids; // local indices for unknowns.
   PHX::View<const int*> offsets; // how to get a particular field
   FieldType field;
-  double num_params;
+  std::size_t num_params;
 
   Kokkos::View<Kokkos::View<double**,Kokkos::LayoutLeft,PHX::Device>*>  dfdp_fields; // tangent fields
 
@@ -420,8 +420,8 @@ public:
          Kokkos::atomic_add(&r_data(lid,0), scatterField.val());
 
        // loop over the tangents
-       for(int i_param=0; i_param<num_params; i_param++)
-          dfdp_fields(i_param)(lid,0) += scatterField.fastAccessDx(i_param);
+       for(std::size_t i_param=0; i_param<num_params; i_param++)
+          Kokkos::atomic_add(&dfdp_fields(i_param)(lid,0), scatterField.fastAccessDx(i_param));
 
     } // end basis
   }

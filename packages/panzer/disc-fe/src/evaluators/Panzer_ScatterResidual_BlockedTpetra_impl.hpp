@@ -683,14 +683,14 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto& fieldValues = scatterFields_[fieldIndex].get_static_view();
     const auto& tangentFieldsDevice = dfdpFieldsVoV_.getViewDevice();
     const auto& kokkosTangents = Kokkos::subview(tangentFieldsDevice,Kokkos::ALL(),productVectorBlockIndex_[fieldIndex]);
-    const double num_params = Sacado::dimension_scalar(fieldValues)-1;
+    const std::size_t num_params = Sacado::dimension_scalar(fieldValues)-1;
 
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
 	      const int lid = worksetLIDs(cell,fieldOffsets(basis));
 	      Kokkos::atomic_add(&kokkosResidual(lid,0), fieldValues(cell,basis).val());
-        for(int i_param=0; i_param<num_params; i_param++)
-          kokkosTangents(i_param)(lid,0) += fieldValues(cell,basis).fastAccessDx(i_param);
+        for(std::size_t i_param=0; i_param<num_params; i_param++)
+          Kokkos::atomic_add(&kokkosTangents(i_param)(lid,0), fieldValues(cell,basis).fastAccessDx(i_param));
       }
     });
   }
