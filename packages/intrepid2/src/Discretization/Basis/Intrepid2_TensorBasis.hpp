@@ -2403,4 +2403,11 @@ struct OperatorTensorDecomposition
   };
 } // end namespace Intrepid2
 
+#define INTREPID2_TENSORBASIS_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN) \
+  EXTERN template class Intrepid2::Basis_TensorBasis<                          \
+      Intrepid2::Basis<DEVICE, OUTPUT_TYPE, POINT_TYPE>>;
+
+INTREPID2_ETI_DEVICE_DEF(INTREPID2_TENSORBASIS_INSTANT);
+
+
 #endif /* Intrepid2_TensorBasis_h */

@@ -141,4 +141,11 @@ namespace Intrepid2 {
   }
 
 }
+
+#define HVOL_C0_FEM_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)           \
+  EXTERN template class Intrepid2::Basis_HVOL_C0_FEM<DEVICE, OUTPUT_TYPE,      \
+                                                     POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(HVOL_C0_FEM_INSTANT);
+
 #endif

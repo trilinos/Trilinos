@@ -105,6 +105,7 @@ namespace Intrepid2
   numCells_(cellGeometry.numCells_),
   numNodesPerCell_(cellGeometry.numNodesPerCell_)
   {
+    static_assert(Kokkos::is_device_v<DeviceType>);
     // host-only registration with HostMemberLookup:
 #ifndef INTREPID2_COMPILE_DEVICE_CODE
     shards::CellTopology cellTopo = cellGeometry.cellTopology();
@@ -395,6 +396,8 @@ namespace Intrepid2
   domainExtents_(domainExtents),
   gridCellCounts_(gridCellCounts)
   {
+    static_assert(Kokkos::is_device_v<DeviceType>);
+
     numCells_ = 1;
     for (int d=0; d<spaceDim; d++)
     {
@@ -480,6 +483,7 @@ namespace Intrepid2
   cellToNodes_(cellToNodes),
   nodes_(nodes)
   {
+    static_assert(Kokkos::is_device_v<DeviceType>);
     if(cellToNodes.is_allocated())
     {
       numCells_ = cellToNodes.extent_int(0);
@@ -536,6 +540,7 @@ namespace Intrepid2
   cellGeometryType_(HIGHER_ORDER),
   nodes_(cellNodes)
   {
+    static_assert(Kokkos::is_device_v<DeviceType>);
     numCells_ = cellNodes.extent_int(0);
     numNodesPerCell_ = cellNodes.extent_int(1);
     

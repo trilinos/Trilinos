@@ -44,8 +44,8 @@ namespace panzer {
    
     // check gen_a
     {
-      Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
-          intrepid_basis = createIntrepid2Basis<PHX::Device::execution_space,double,double>("HDiv",4,myHex);
+      Teuchos::RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> >
+          intrepid_basis = createIntrepid2Basis<PHX::Device::device_type,double,double>("HDiv",4,myHex);
 
       auto hex_pts = gen_a.getPoints(myHex);
 
@@ -55,10 +55,10 @@ namespace panzer {
 
     // check gen_b
     {
-      Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
-          intrepid_basis_hex = createIntrepid2Basis<PHX::Device::execution_space,double,double>("HGrad",2,myHex);
-      Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
-          intrepid_basis_tet = createIntrepid2Basis<PHX::Device::execution_space,double,double>("HGrad",2,myTet);
+      Teuchos::RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> >
+          intrepid_basis_hex = createIntrepid2Basis<PHX::Device::device_type,double,double>("HGrad",2,myHex);
+      Teuchos::RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> >
+          intrepid_basis_tet = createIntrepid2Basis<PHX::Device::device_type,double,double>("HGrad",2,myTet);
 
       auto tet_pts = gen_b.getPoints(myTet);
       auto hex_pts = gen_b.getPoints(myHex);

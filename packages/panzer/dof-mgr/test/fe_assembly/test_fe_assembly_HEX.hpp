@@ -191,6 +191,7 @@ int feAssemblyHex(int argc, char *argv[]) {
       Kokkos::Device<do_not_use_host_execution_space,
                      do_not_use_host_memory_space>>;
 
+  using ExecSpaceType = typename DeviceSpaceType::execution_space;
   using HostSpaceType = typename host_mirror_space::execution_space;
 
   using DynRankView = Kokkos::DynRankView<ValueType,DeviceSpaceType>;
@@ -266,7 +267,7 @@ int feAssemblyHex(int argc, char *argv[]) {
       getFancyOStream(Teuchos::rcpFromRef (std::cout)) :
       getFancyOStream(Teuchos::rcp (new Teuchos::oblackholestream ()));
 
-    *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*outStream, false);
+    *outStream << "DeviceSpace::  "; ExecSpaceType().print_configuration(*outStream, false);
     *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(*outStream, false);
     *outStream << "\n";
 
@@ -561,7 +562,7 @@ int feAssemblyHex(int argc, char *argv[]) {
 
     Kokkos::parallel_for
       ("Assemble FE matrix and right-hand side",
-       Kokkos::RangePolicy<DeviceSpaceType, int> (0, numOwnedElems),
+       Kokkos::RangePolicy<ExecSpaceType, int> (0, numOwnedElems),
        KOKKOS_LAMBDA (const size_t elemId) {
         // Get subviews
         auto elemRHS    = Kokkos::subview(elemsRHS,elemId, Kokkos::ALL());
