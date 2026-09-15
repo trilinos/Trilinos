@@ -93,7 +93,6 @@ def parse_workflow(workflow_file):
                 if len(extraArgs) > 0 and extraArgs[0] == "--extra-configure-args":
                     cmake_extra_args = "=".join(extraArgs[1:])
                     cmake_extra_args = cmake_extra_args.replace("${GITHUB_WORKSPACE}", "/workspace/trilinos/source").replace(";", " ")
-                    print(cmake_extra_args)
         else:
             logger.debug("Could not parse job")
             continue
