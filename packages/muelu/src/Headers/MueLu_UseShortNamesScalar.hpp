@@ -362,6 +362,9 @@ using StructuredAggregationFactory [[maybe_unused]] = MueLu::StructuredAggregati
 #ifdef MUELU_STRUCTUREDLINEDETECTIONFACTORY_SHORT
 using StructuredLineDetectionFactory [[maybe_unused]] = MueLu::StructuredLineDetectionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
+#ifdef MUELU_STRUCTUREDRAPFACTORY_SHORT
+using StructuredRAPFactory [[maybe_unused]] = MueLu::StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
 #ifdef MUELU_SUBBLOCKAFACTORY_SHORT
 using SubBlockAFactory [[maybe_unused]] = MueLu::SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
