@@ -126,7 +126,7 @@ bool runCase(const bool useFlexibleOneIterUpdate, const bool useUserStatusTest,
   auto A = rcp(new CountingDiagonalOperator<SC, LO, GO, NT>(map, STS::one(),
                                                             STS::one()));
   auto rightPrec =
-      rcp(new CountingDiagonalOperator<SC, LO, GO, NT>(map, SC(2), SC(3)));
+      rcp(new CountingDiagonalOperator<SC, LO, GO, NT>(map, SC(1), SC(100)));
 
   auto b = rcp(new MV(map, 1));
   auto x = rcp(new MV(map, 1));
@@ -141,7 +141,7 @@ bool runCase(const bool useFlexibleOneIterUpdate, const bool useUserStatusTest,
   params->set("Num Blocks", 2);
   params->set("Maximum Iterations", 2);
   params->set("Maximum Restarts", 0);
-  params->set("Convergence Tolerance", MT(0.25));
+  params->set("Convergence Tolerance", MT(0.99));
   params->set("Use Flexible Gmres Update for One Iteration",
               useFlexibleOneIterUpdate);
   params->set("Verbosity", Belos::Errors);
@@ -178,15 +178,15 @@ bool runCase(const bool useFlexibleOneIterUpdate, const bool useUserStatusTest,
   }
 
   // For A = I, b = [1, ...], x0 = 0, and right preconditioner
-  // M^{-1} = diag(2,3,2,3,...), one GMRES step gives
+  // M^{-1} = diag(1,100,1,100,...), one GMRES step gives
   // x = (mean(diag(M^{-1})) / mean(diag(M^{-1})^2)) * diag(M^{-1}).
   auto expected = rcp(new MV(map, 1));
   auto expectedView = expected->getLocalViewHost(Tpetra::Access::ReadWrite);
-  const SC coefficient = SC(2.5 / 6.5);
+  const SC coefficient = SC(50.5 / 5000.5);
   for (LO lclRow = 0; lclRow < static_cast<LO>(expected->getLocalLength());
        ++lclRow) {
     const GO gblRow = map->getGlobalElement(lclRow);
-    const SC diag = (gblRow % 2 == 0) ? SC(2) : SC(3);
+    const SC diag = (gblRow % 2 == 0) ? SC(1) : SC(100);
     expectedView(lclRow, 0) = coefficient * diag;
   }
 
