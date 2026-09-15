@@ -706,12 +706,16 @@ evaluateFields(typename TRAITS::EvalData workset)
    Teuchos::RCP<typename LOC::MultiVectorType> r = tpetraContainer_->get_f_mv(); 
    Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();
 
-   Teuchos::ArrayRCP<double> r_array;
-   if (r != Teuchos::null)
-     r_array = r->get1dViewNonConst();
-   Teuchos::ArrayRCP<double> dc_array;
-   if (dirichletCounter_ != Teuchos::null)
-     dc_array = dirichletCounter_->get1dViewNonConst();
+   using HostView = typename LOC::MultiVectorType::host_view_type;
+   const bool haveResidual = Teuchos::nonnull(r);
+   const bool haveDirichletCounter = Teuchos::nonnull(dirichletCounter_);
+
+   HostView r_view;
+   if (haveResidual)
+     r_view = r->getLocalViewHost(Tpetra::Access::ReadWrite);
+   HostView dc_view;
+   if (haveDirichletCounter)
+     dc_view = dirichletCounter_->getLocalViewHost(Tpetra::Access::ReadWrite);
 
    // Size the row scratch to the widest row in this matrix, once, so the
    // scatter loop below allocates nothing. getLocalRowCopy() explicitly allows
@@ -792,10 +796,10 @@ evaluateFields(typename TRAITS::EvalData workset)
             GO gid = GIDs[offset];
             const ScalarT scatterField = scatterFields_h(worksetCellIndex,basisId);
     
-            if (r_array != Teuchos::null)
-              r_array[lid] = scatterField.val();
-            if (dc_array != Teuchos::null)
-              dc_array[lid] = 1.0; // mark row as dirichlet
+            if (haveResidual)
+              r_view(lid,0) = scatterField.val();
+            if (haveDirichletCounter)
+              dc_view(lid,0) = 1.0; // mark row as dirichlet
     
             // loop over the sensitivity indices: all DOFs on a cell
             jacRow_.resize(scatterField.size());
