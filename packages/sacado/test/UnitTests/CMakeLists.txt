@@ -517,6 +517,21 @@ IF (Sacado_ENABLE_TeuchosCore)
 #        )
     ENDIF()
 
+    IF (Kokkos_ENABLE_SYCL)
+      # Diagnostic probe, not a correctness test:  reports the actual vector
+      # width of a TeamPolicy on this device and validates that the oneAPI
+      # free-function work-item queries give the thread indices the
+      # hierarchical Fad code needs.
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        SyclIndexProbe
+        SOURCES SyclIndexProbe.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+    ENDIF()
+
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       ViewFactoryTests
       SOURCES ViewFactoryTests.cpp
