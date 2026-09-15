@@ -8,15 +8,18 @@
 // @HEADER
 //
 // Test the optional one-step right-preconditioned update path in
-// PseudoBlockGmresSolMgr.  With one GMRES iteration, the preconditioned
-// Arnoldi basis vector can be reused to form the solution update, avoiding a
-// second right-preconditioner application.
+// PseudoBlockGmresIter.  The test runs exactly one Arnoldi step directly in the
+// iteration object, then compares the optimized solution-space update against
+// the baseline update after applying the right preconditioner.
 //
 
 #include "BelosConfigDefs.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
+#include "BelosICGSOrthoManager.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosPseudoBlockGmresSolMgr.hpp"
-#include "BelosStatusTest.hpp"
+#include "BelosOutputManager.hpp"
+#include "BelosPseudoBlockGmresIter.hpp"
+#include "BelosStatusTestMaxIters.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosTypes.hpp"
 
@@ -33,7 +36,6 @@
 
 #include <cstdlib>
 #include <iostream>
-#include <string>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -46,24 +48,26 @@ public:
   using map_type = Tpetra::Map<LO, GO, NT>;
   using mv_type = Tpetra::MultiVector<SC, LO, GO, NT>;
 
-  CountingDiagonalOperator(const RCP<const map_type> &map, const SC evenDiag,
+  CountingDiagonalOperator(const RCP<const map_type>& map,
+                           const SC evenDiag,
                            const SC oddDiag)
-      : map_(map), evenDiag_(evenDiag), oddDiag_(oddDiag), numApply_(0) {}
+    : map_(map), evenDiag_(evenDiag), oddDiag_(oddDiag), numApply_(0)
+  {}
 
-  void apply(const mv_type &X, mv_type &Y,
+  void apply(const mv_type& X,
+             mv_type& Y,
              Teuchos::ETransp /* mode */ = Teuchos::NO_TRANS,
              SC alpha = Teuchos::ScalarTraits<SC>::one(),
-             SC beta = Teuchos::ScalarTraits<SC>::zero()) const override {
+             SC beta = Teuchos::ScalarTraits<SC>::zero()) const override
+  {
     auto xView = X.getLocalViewHost(Tpetra::Access::ReadOnly);
     auto yView = Y.getLocalViewHost(Tpetra::Access::ReadWrite);
 
     for (size_t j = 0; j < X.getNumVectors(); ++j) {
-      for (LO lclRow = 0; lclRow < static_cast<LO>(X.getLocalLength());
-           ++lclRow) {
+      for (LO lclRow = 0; lclRow < static_cast<LO>(X.getLocalLength()); ++lclRow) {
         const GO gblRow = map_->getGlobalElement(lclRow);
         const SC diag = (gblRow % 2 == 0) ? evenDiag_ : oddDiag_;
-        yView(lclRow, j) =
-            beta * yView(lclRow, j) + alpha * diag * xView(lclRow, j);
+        yView(lclRow, j) = beta * yView(lclRow, j) + alpha * diag * xView(lclRow, j);
       }
     }
     ++numApply_;
@@ -84,38 +88,21 @@ private:
   mutable int numApply_;
 };
 
-template <class SC, class MV, class OP, class DM>
-class PassAfterOneIterStatusTest : public Belos::StatusTest<SC, MV, OP, DM> {
-public:
-  Belos::StatusType
-  checkStatus(Belos::Iteration<SC, MV, OP, DM> *iter) override {
-    status_ = iter->getNumIters() >= 1 ? Belos::Passed : Belos::Failed;
-    return status_;
-  }
-
-  Belos::StatusType getStatus() const override { return status_; }
-
-  void reset() override { status_ = Belos::Undefined; }
-
-  void print(std::ostream &os, int indent = 0) const override {
-    os << std::string(indent, ' ') << "PassAfterOneIterStatusTest\n";
-  }
-
-private:
-  Belos::StatusType status_ = Belos::Undefined;
-};
-
 template <class SC>
-bool runCase(const bool useFlexibleOneIterUpdate, const bool useUserStatusTest,
-             const bool verbose) {
-  using LO = typename Tpetra::MultiVector<SC>::local_ordinal_type;
-  using GO = typename Tpetra::MultiVector<SC>::global_ordinal_type;
-  using NT = typename Tpetra::MultiVector<SC>::node_type;
-  using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-  using OP = Tpetra::Operator<SC, LO, GO, NT>;
+bool runCase(const bool useFlexibleOneIterUpdate,
+             RCP<Tpetra::MultiVector<SC,
+                                      typename Tpetra::MultiVector<SC>::local_ordinal_type,
+                                      typename Tpetra::MultiVector<SC>::global_ordinal_type,
+                                      typename Tpetra::MultiVector<SC>::node_type> >& solutionUpdate,
+             const bool verbose)
+{
+  using LO  = typename Tpetra::MultiVector<SC>::local_ordinal_type;
+  using GO  = typename Tpetra::MultiVector<SC>::global_ordinal_type;
+  using NT  = typename Tpetra::MultiVector<SC>::node_type;
+  using MV  = Tpetra::MultiVector<SC, LO, GO, NT>;
+  using OP  = Tpetra::Operator<SC, LO, GO, NT>;
   using SDM = Teuchos::SerialDenseMatrix<int, SC>;
   using STS = Teuchos::ScalarTraits<SC>;
-  using MT = typename STS::magnitudeType;
 
   auto comm = Tpetra::getDefaultComm();
   const int me = comm->getRank();
@@ -123,10 +110,8 @@ bool runCase(const bool useFlexibleOneIterUpdate, const bool useUserStatusTest,
   const GO numGlobalRows = 10;
   auto map = rcp(new Tpetra::Map<LO, GO, NT>(numGlobalRows, 0, comm));
 
-  auto A = rcp(new CountingDiagonalOperator<SC, LO, GO, NT>(map, STS::one(),
-                                                            STS::one()));
-  auto rightPrec =
-      rcp(new CountingDiagonalOperator<SC, LO, GO, NT>(map, SC(1), SC(100)));
+  auto A = rcp(new CountingDiagonalOperator<SC, LO, GO, NT>(map, SC(1), SC(2)));
+  auto rightPrec = rcp(new CountingDiagonalOperator<SC, LO, GO, NT>(map, SC(2), SC(2)));
 
   auto b = rcp(new MV(map, 1));
   auto x = rcp(new MV(map, 1));
@@ -136,83 +121,117 @@ bool runCase(const bool useFlexibleOneIterUpdate, const bool useUserStatusTest,
   auto problem = rcp(new Belos::LinearProblem<SC, MV, OP, SDM>(A, x, b));
   problem->setRightPrec(rightPrec);
   problem->setProblem();
+  std::vector<int> currIdx(1, 0);
+  problem->setLSIndex(currIdx);
 
-  auto params = rcp(new Teuchos::ParameterList);
-  params->set("Num Blocks", 2);
-  params->set("Maximum Iterations", 2);
-  params->set("Maximum Restarts", 0);
-  params->set("Convergence Tolerance", MT(0.99));
-  params->set("Use Flexible Gmres Update for One Iteration",
-              useFlexibleOneIterUpdate);
-  params->set("Verbosity", Belos::Errors);
+  auto printer = rcp(new Belos::OutputManager<SC>(Belos::Errors));
+  auto statusTest = rcp(new Belos::StatusTestMaxIters<SC, MV, OP, SDM>(1));
+  auto ortho = rcp(new Belos::ICGSOrthoManager<SC, MV, OP, SDM>());
 
-  Belos::PseudoBlockGmresSolMgr<SC, MV, OP, SDM> solver(problem, params);
-  if (useUserStatusTest) {
-    auto userTest = rcp(new PassAfterOneIterStatusTest<SC, MV, OP, SDM>());
-    solver.setUserConvStatusTest(userTest);
+  Teuchos::ParameterList params;
+  params.set("Num Blocks", 2);
+  params.set("Use Flexible Gmres Update for One Iteration", useFlexibleOneIterUpdate);
+
+  Belos::PseudoBlockGmresIter<SC, MV, OP, SDM> iter(problem, printer, statusTest, ortho, params);
+
+  Belos::PseudoBlockGmresIterState<SC, MV, SDM> state;
+  Teuchos::RCP<MV> R0 = Belos::MultiVecTraits<SC, MV, SDM>::CloneCopy(*problem->getInitPrecResVec(), currIdx);
+  Teuchos::RCP<SDM> z0 = Belos::DenseMatTraits<SC, SDM>::Create(1, 1);
+  const int rank = ortho->normalize(*R0, z0);
+  if (rank != 1) {
+    if (me == 0)
+      std::cerr << "  FAIL: initial basis normalization failed.\n";
+    return false;
   }
-  Belos::ReturnType ret = solver.solve();
+  state.V.resize(1);
+  state.Z.resize(1);
+  state.V[0] = R0;
+  state.Z[0] = z0;
+  state.curDim = 0;
+  iter.initialize(state);
+
+  iter.iterate();
 
   bool ok = true;
-  if (ret != Belos::Converged) {
+  if (iter.getNumIters() != 1 || iter.getCurSubspaceDim() != 1) {
     if (me == 0)
-      std::cerr << "  FAIL: solver did not converge.\n";
+      std::cerr << "  FAIL: expected one Arnoldi iteration, got "
+                << iter.getNumIters() << " iterations and subspace dimension "
+                << iter.getCurSubspaceDim() << ".\n";
     ok = false;
   }
 
-  if (solver.getNumIters() != 1) {
+  const int expectedIterPrecApplies = 1;
+  if (rightPrec->getNumApply() != expectedIterPrecApplies) {
     if (me == 0)
-      std::cerr << "  FAIL: expected 1 GMRES iteration, got "
-                << solver.getNumIters() << ".\n";
-    ok = false;
-  }
-
-  const int expectedPrecApplies =
-      useFlexibleOneIterUpdate ? 1 : (useUserStatusTest ? 3 : 2);
-  if (rightPrec->getNumApply() != expectedPrecApplies) {
-    if (me == 0)
-      std::cerr << "  FAIL: expected " << expectedPrecApplies
-                << " right preconditioner application(s), got "
+      std::cerr << "  FAIL: expected " << expectedIterPrecApplies
+                << " right preconditioner application(s) during iteration, got "
                 << rightPrec->getNumApply() << ".\n";
     ok = false;
   }
 
-  // For A = I, b = [1, ...], x0 = 0, and right preconditioner
-  // M^{-1} = diag(1,100,1,100,...), one GMRES step gives
-  // x = (mean(diag(M^{-1})) / mean(diag(M^{-1})^2)) * diag(M^{-1}).
-  auto expected = rcp(new MV(map, 1));
-  auto expectedView = expected->getLocalViewHost(Tpetra::Access::ReadWrite);
-  const SC coefficient = SC(50.5 / 5000.5);
-  for (LO lclRow = 0; lclRow < static_cast<LO>(expected->getLocalLength());
-       ++lclRow) {
-    const GO gblRow = map->getGlobalElement(lclRow);
-    const SC diag = (gblRow % 2 == 0) ? SC(1) : SC(100);
-    expectedView(lclRow, 0) = coefficient * diag;
+  if (useFlexibleOneIterUpdate) {
+    auto* provider = dynamic_cast<Belos::CurrentSolutionProvider<SC, MV, OP, SDM>*>(&iter);
+    if (provider == nullptr || !provider->hasCurrentSolution()) {
+      if (me == 0)
+        std::cerr << "  FAIL: optimized iteration did not provide current solution update.\n";
+      ok = false;
+    }
+    solutionUpdate = rcp(new MV(*provider->getCurrentSolutionUpdate(), Teuchos::Copy));
   }
-
-  auto error = rcp(new MV(*x, Teuchos::Copy));
-  error->update(-STS::one(), *expected, STS::one());
-  Teuchos::Array<MT> norms(1);
-  error->norm2(norms);
-  if (norms[0] > MT(1e-12)) {
-    if (me == 0)
-      std::cerr << "  FAIL: solution error norm is " << norms[0] << ".\n";
-    ok = false;
+  else {
+    auto update = iter.getCurrentUpdate();
+    solutionUpdate = Belos::MultiVecTraits<SC, MV, SDM>::Clone(*update,
+      Belos::MultiVecTraits<SC, MV, SDM>::GetNumberVecs(*update));
+    problem->applyRightPrec(*update, *solutionUpdate);
+    const int expectedTotalPrecApplies = 2;
+    if (rightPrec->getNumApply() != expectedTotalPrecApplies) {
+      if (me == 0)
+        std::cerr << "  FAIL: expected " << expectedTotalPrecApplies
+                  << " total right preconditioner applications after baseline conversion, got "
+                  << rightPrec->getNumApply() << ".\n";
+      ok = false;
+    }
   }
 
   if (verbose && me == 0) {
-    std::cout << "  " << (useFlexibleOneIterUpdate ? "optimized" : "baseline")
-              << (useUserStatusTest ? " user-status" : "") << " case used "
-              << rightPrec->getNumApply()
-              << " right preconditioner application(s).\n";
+    std::cout << "  "
+              << (useFlexibleOneIterUpdate ? "optimized" : "baseline")
+              << " case used " << rightPrec->getNumApply()
+              << " right preconditioner application(s) during iteration.\n";
   }
 
   return ok;
 }
 
+template <class SC>
+bool compareSolutions(const RCP<const Tpetra::MultiVector<SC,
+                                                          typename Tpetra::MultiVector<SC>::local_ordinal_type,
+                                                          typename Tpetra::MultiVector<SC>::global_ordinal_type,
+                                                          typename Tpetra::MultiVector<SC>::node_type> >& baseline,
+                      const RCP<const Tpetra::MultiVector<SC,
+                                                          typename Tpetra::MultiVector<SC>::local_ordinal_type,
+                                                          typename Tpetra::MultiVector<SC>::global_ordinal_type,
+                                                          typename Tpetra::MultiVector<SC>::node_type> >& optimized)
+{
+  using MV  = Tpetra::MultiVector<SC,
+                                  typename Tpetra::MultiVector<SC>::local_ordinal_type,
+                                  typename Tpetra::MultiVector<SC>::global_ordinal_type,
+                                  typename Tpetra::MultiVector<SC>::node_type>;
+  using MT  = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  using STS = Teuchos::ScalarTraits<SC>;
+
+  auto diff = rcp(new MV(*optimized, Teuchos::Copy));
+  diff->update(-STS::one(), *baseline, STS::one());
+  Teuchos::Array<MT> norms(1);
+  diff->norm2(norms);
+  return norms[0] <= MT(1e-12);
+}
+
 } // namespace
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
   bool verbose = false;
@@ -226,20 +245,25 @@ int main(int argc, char *argv[]) {
       if (std::string(argv[i]) == "--verbose")
         verbose = true;
 
+    using MV = Tpetra::MultiVector<double>;
+    RCP<MV> baselineUpdate;
+    RCP<MV> optimizedUpdate;
+
     bool ok = true;
 
     if (verbose && me == 0)
       std::cout << "\nCase 1: one-step update option disabled\n";
-    ok &= runCase<double>(false, false, verbose);
+    ok &= runCase<double>(false, baselineUpdate, verbose);
 
     if (verbose && me == 0)
       std::cout << "\nCase 2: one-step update option enabled\n";
-    ok &= runCase<double>(true, false, verbose);
+    ok &= runCase<double>(true, optimizedUpdate, verbose);
 
-    if (verbose && me == 0)
-      std::cout
-          << "\nCase 3: one-step update option enabled with user status test\n";
-    ok &= runCase<double>(true, true, verbose);
+    if (!compareSolutions<double>(baselineUpdate, optimizedUpdate)) {
+      if (me == 0)
+        std::cerr << "  FAIL: optimized solution-space update differs from baseline update.\n";
+      ok = false;
+    }
 
     success = ok;
 
