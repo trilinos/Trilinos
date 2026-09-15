@@ -53,7 +53,7 @@ struct Functor_TestBatchedTeamVectorCG {
   inline void run() {
     typedef typename ValuesViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamVectorCG");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::TeamPolicy<execution_space> policy(_D.extent(0) / _N_team, Kokkos::AUTO(), Kokkos::AUTO());

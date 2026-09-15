@@ -77,19 +77,13 @@ void lapackGeqrfWrapper(const AViewType& A, const TauViewType& Tau, const InfoVi
 }
 
 #define KOKKOSLAPACK_GEQRF_LAPACK(SCALAR, LAYOUT, EXECSPACE, MEM_SPACE)                                                \
-  template <>                                                                                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct GEQRF<                                                                                                        \
       EXECSPACE,                                                                                                       \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true, \
-      geqrf_eti_spec_avail<EXECSPACE,                                                                                  \
-                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                        \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                         \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                            \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
+      ETI_SPEC_AVAIL> {                                                                                                \
     using AViewType =                                                                                                  \
         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
     using TauViewType =                                                                                                \
@@ -191,21 +185,14 @@ void cusolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A, const
 }
 
 #define KOKKOSLAPACK_GEQRF_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                         \
-  template <>                                                                                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct GEQRF<                                                                                                        \
       Kokkos::Cuda,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                          \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
-      true,                                                                                                            \
-      geqrf_eti_spec_avail<Kokkos::Cuda,                                                                               \
-                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                     \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                      \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
+      true, ETI_SPEC_AVAIL> {                                                                                          \
     using AViewType   = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                        \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
     using TauViewType = Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
@@ -282,20 +269,13 @@ void rocsolverGeqrfWrapper(const ExecutionSpace& space, const AViewType& A, cons
 }
 
 #define KOKKOSLAPACK_GEQRF_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                        \
-  template <>                                                                                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct GEQRF<                                                                                                        \
       Kokkos::HIP,                                                                                                     \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
-      true,                                                                                                            \
-      geqrf_eti_spec_avail<Kokkos::HIP,                                                                                \
-                           Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                      \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                       \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                           Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                          \
-                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
+      true, ETI_SPEC_AVAIL> {                                                                                          \
     using AViewType   = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                         \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                         \
     using TauViewType = Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                          \

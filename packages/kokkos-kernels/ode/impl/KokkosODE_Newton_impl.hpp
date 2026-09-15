@@ -34,7 +34,6 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
   const norm_type norm0 = KokkosBlas::serial_nrm2(rhs);
   norm_type norm        = KokkosKernels::ArithTraits<norm_type>::zero();
   norm_type norm_old    = KokkosKernels::ArithTraits<norm_type>::zero();
-  norm_type norm_new    = KokkosKernels::ArithTraits<norm_type>::zero();
   norm_type rate        = KokkosKernels::ArithTraits<norm_type>::zero();
 
   const norm_type tol = Kokkos::max(10 * KokkosKernels::ArithTraits<norm_type>::eps() / params.rel_tol,
@@ -67,8 +66,9 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     norm = KokkosBlas::serial_nrm2(rhs);
 
     // Compute rms norm of the scaled update
+    norm_type norm_new = KokkosKernels::ArithTraits<norm_type>::zero();
     for (int idx = 0; idx < sys.neqs; ++idx) {
-      norm_new = (update(idx) * update(idx)) / (scale(idx) * scale(idx));
+      norm_new += (update(idx) * update(idx)) / (scale(idx) * scale(idx));
     }
     norm_new = Kokkos::sqrt(norm_new / sys.neqs);
     if ((it > 0) && norm_old > KokkosKernels::ArithTraits<norm_type>::zero()) {

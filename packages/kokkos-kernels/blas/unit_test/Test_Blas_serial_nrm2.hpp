@@ -46,7 +46,7 @@ struct Functor_TestBlasSerialNrm2 {
 
   inline void run() {
     std::string name_region("KokkosBlas::Test::SerialNrm2");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name_work_tag         = (std::is_same<AlgoTagType, KokkosKernelTag>::value ? "::KokkosBlas"
                                          : std::is_same<AlgoTagType, NaiveTag>::value      ? "::Naive"
                                                                                            : "::UnknownWorkTag");
@@ -97,7 +97,7 @@ struct Functor_TestBlasSerialNrm2MV {
 
   inline void run() {
     std::string name_region("KokkosBlas::Test::SerialNrm2MV");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name_work_tag         = (std::is_same<AlgoTagType, KokkosKernelTag>::value ? "::KokkosBlas"
                                          : std::is_same<AlgoTagType, NaiveTag>::value      ? "::Naive"
                                                                                            : "::UnknownWorkTag");

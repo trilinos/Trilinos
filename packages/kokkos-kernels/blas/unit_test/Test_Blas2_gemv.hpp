@@ -30,10 +30,10 @@ void impl_test_gemv_streams(ExecutionSpace& space, const char* mode, int M, int 
     ldy = N;
   }
 
-  view_stride_adapter<ViewTypeA> A("A", M, N);
-  view_stride_adapter<ViewTypeX> x("X", ldx);
-  view_stride_adapter<ViewTypeY> y("Y", ldy);
-  view_stride_adapter<ViewTypeY> org_y("Org_Y", ldy);
+  TestUtils::view_stride_adapter<ViewTypeA> A("A", M, N);
+  TestUtils::view_stride_adapter<ViewTypeX> x("X", ldx);
+  TestUtils::view_stride_adapter<ViewTypeY> y("Y", ldy);
+  TestUtils::view_stride_adapter<ViewTypeY> org_y("Org_Y", ldy);
 
   Kokkos::Random_XorShift64_Pool<ExecutionSpace> rand_pool(13718);
 
@@ -42,17 +42,17 @@ void impl_test_gemv_streams(ExecutionSpace& space, const char* mode, int M, int 
   constexpr double max_valA = 1;
   {
     ScalarX randStart, randEnd;
-    Test::getRandomBounds(max_valX, randStart, randEnd);
+    TestUtils::getRandomBounds(max_valX, randStart, randEnd);
     Kokkos::fill_random(space, x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarY randStart, randEnd;
-    Test::getRandomBounds(max_valY, randStart, randEnd);
+    TestUtils::getRandomBounds(max_valY, randStart, randEnd);
     Kokkos::fill_random(space, y.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(max_valA, randStart, randEnd);
+    TestUtils::getRandomBounds(max_valA, randStart, randEnd);
     Kokkos::fill_random(space, A.d_view, rand_pool, randStart, randEnd);
   }
 

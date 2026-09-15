@@ -177,6 +177,60 @@ struct SerialApplyQ_RightForwardInternal {
   }
 };
 
+struct SerialApplyQ_RightBackwardInternal {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const int k,
+                                           /* */ ValueType *A, const int as0, const int as1,
+                                           /* */ ValueType *t, const int ts,
+                                           /* */ ValueType *B, const int bs0, const int bs1,
+                                           /* */ ValueType *w) {
+    using value_type = ValueType;
+    using KAT        = KokkosKernels::ArithTraits<value_type>;
+
+    /// Given a matrix A that includes a series of householder vectors,
+    /// it applies a unitary matrix Q to B from right with transpose
+    ///   B = B Q^H = B (H(k-1)^H H(k-2)^H ... H0^H)
+    /// where
+    ///   A is n x k (holding H0, H1 ... H(k-1)
+    ///   t is k x 1
+    ///   B is m x n
+
+    // partitions used for loop iteration
+    Partition2x2<value_type> A_part2x2(as0, as1);
+    Partition3x3<value_type> A_part3x3(as0, as1);
+
+    Partition2x1<value_type> t_part2x1(ts);
+    Partition3x1<value_type> t_part3x1(ts);
+
+    Partition1x2<value_type> B_part1x2(bs1);
+    Partition1x3<value_type> B_part1x3(bs1);
+
+    // initial partition of A where ABR has a zero dimension
+    A_part2x2.partWithABR(A, n, k, n - k, 0);
+    t_part2x1.partWithAB(t, k, 0);
+    B_part1x2.partWithAR(B, n, n - k);
+
+    for (int n_A0 = (k - 1); n_A0 >= 0; --n_A0) {
+      // part 2x2 into 3x3
+      A_part3x3.partWithATL(A_part2x2, 1, 1);
+      t_part3x1.partWithAT(t_part2x1, 1);
+      const value_type tau = KAT::conj(*t_part3x1.A1);
+
+      B_part1x3.partWithAL(B_part1x2, 1);
+      const int n_B2 = n - n_A0 - 1;
+      /// -----------------------------------------------------
+      // right apply transposed householder to partitioned B1 and B2
+      SerialApplyRightHouseholderInternal::invoke(m, n_B2, &tau, A_part3x3.A21, as0, B_part1x3.A1, bs0, B_part1x3.A2,
+                                                  bs0, bs1, w);
+      /// -----------------------------------------------------
+      A_part2x2.mergeToABR(A_part3x3);
+      t_part2x1.mergeToAB(t_part3x1);
+      B_part1x2.mergeToAR(B_part1x3);
+    }
+    return 0;
+  }
+};
+
 }  // end namespace KokkosBatched
 
 #endif

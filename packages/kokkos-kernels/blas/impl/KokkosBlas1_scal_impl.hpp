@@ -6,6 +6,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_InnerProductSpaceTraits.hpp>
+#include <KokkosBlas1_axpby_unification.hpp>
 #include <KokkosBlas1_scal_spec.hpp>
 
 #ifndef KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL
@@ -15,20 +16,15 @@
 namespace KokkosBlas {
 namespace Impl {
 
-// Single-vector version of MV_Scal_Functor.  By default, a is still a
-// 1-D View.  Below is a partial specialization that lets a be a
-// scalar.  This functor computes any of the following:
+// Single-vector functor for R(i) = alpha * X(i).
 //
-// 1. Y(i) = alpha*X(i) for alpha in -1,0,1
-// 2. Y(i) = a(0)*X(i)
+// AV may be a scalar, a rank-0 View, or a rank-1 View (in which case only
+// element 0 is used, after any startingColumn adjustment).
+// getCoefficient() dispatches uniformly across all three cases, so no
+// partial specialisations are required.
 //
-// The template parameter scalar_x corresponds to alpha in the
-// operation y = alpha*x + beta*y.  The values -1, 0, and -1
-// correspond to literal values of this coefficient.  The value 2
-// tells the functor to use the corresponding vector of coefficients.
-// Any literal coefficient of zero has BLAS semantics of ignoring the
-// corresponding (multi)vector entry.  This does not apply to
-// coefficients in the a vector, if used.
+// scalar_x encodes the compile-time shortcut:
+//   -1 → negate, 0 → zero, 1 → copy, 2 → general multiply.
 template <class RV, class AV, class XV, int scalar_x, class SizeType>
 struct V_Scal_Functor {
   typedef SizeType size_type;
@@ -40,55 +36,16 @@ struct V_Scal_Functor {
 
   V_Scal_Functor(const RV& r, const XV& x, const AV& a, const SizeType startingColumn) : m_r(r), m_x(x), m_a(a) {
     static_assert(Kokkos::is_view<RV>::value, "V_Scal_Functor: RV is not a Kokkos::View.");
-    static_assert(Kokkos::is_view<AV>::value, "V_Scal_Functor: AV is not a Kokkos::View.");
     static_assert(Kokkos::is_view<XV>::value, "V_Scal_Functor: XV is not a Kokkos::View.");
     static_assert(RV::rank == 1, "V_Scal_Functor: RV is not rank 1.");
-    static_assert(AV::rank == 1, "V_Scal_Functor: AV is not rank 1.");
     static_assert(XV::rank == 1, "V_Scal_Functor: XV is not rank 1.");
 
-    if (startingColumn != 0) {
-      m_a = Kokkos::subview(a, std::make_pair(startingColumn, static_cast<SizeType>(a.extent(0))));
+    if constexpr (isRank1View<AV>()) {
+      if (startingColumn != 0) {
+        m_a = Kokkos::subview(a, std::make_pair(startingColumn, static_cast<SizeType>(a.extent(0))));
+      }
     }
   }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_type& i) const {
-    // scalar_x is a compile-time constant (since it is a template
-    // parameter), so the compiler should evaluate these branches at
-    // compile time.
-    if (scalar_x == 0) {
-      m_r(i) = ATS::zero();
-    }
-    if (scalar_x == -1) {
-      m_r(i) = -m_x(i);
-    }
-    if (scalar_x == 1) {
-      m_r(i) = m_x(i);
-    }
-    if (scalar_x == 2) {
-      m_r(i) = m_a(0) * m_x(i);
-    }
-  }
-};
-
-// Partial specialization of V_Scal_Functor that lets a be a scalar
-// (rather than a 1-D View, as in the most general version above).
-// This functor computes any of the following:
-//
-// 1. Y(i) = alpha*X(i) for alpha in -1,0,1
-// 2. Y(i) = a*X(i)
-template <class RV, class XV, int scalar_x, class SizeType>
-struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x, SizeType> {
-  typedef SizeType size_type;
-  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> ATS;
-
-  RV m_r;
-  XV m_x;
-  const typename XV::non_const_value_type m_a;
-
-  V_Scal_Functor(const RV& r, const XV& x, const typename XV::non_const_value_type& a,
-                 const SizeType /* startingColumn */)
-      : m_r(r), m_x(x), m_a(a) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type& i) const {
@@ -102,7 +59,7 @@ struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x, SizeT
       m_r(i) = m_x(i);
     }
     if (scalar_x == 2) {
-      m_r(i) = m_a * m_x(i);
+      m_r(i) = getCoefficient(m_a) * m_x(i);
     }
   }
 };

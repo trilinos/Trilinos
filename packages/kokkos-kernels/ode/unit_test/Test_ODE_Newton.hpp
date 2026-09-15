@@ -407,6 +407,100 @@ void test_simple_systems() {
   }
 }
 
+// Two decoupled equations used to guard against a regression where the norm of
+// the scaled update was overwritten instead of accumulated across equations
+// (and not reset between iterations). The last equation is linear and is solved
+// exactly in a single Newton step, so from the second iteration on its update is
+// zero. If only that last equation feeds the scaled-update norm, the norm
+// becomes zero on the second iteration and the solver falsely reports
+// convergence -- even though the nonlinear first component, started far from its
+// root, is still nowhere near converged.
+// Equations:  f0 = x**2 - 2 = 0   (solution: sqrt(2) ~ 1.41421356)
+//             f1 = y - 5   = 0   (solution: 5, reached in one step)
+//
+// Jacobian:   J00 = 2*x    J01 = 0
+//             J10 = 0      J11 = 1
+template <typename Device, typename scalar_type>
+struct DecoupledEquations {
+  using vec_type = Kokkos::View<scalar_type*, Device>;
+  using mat_type = Kokkos::View<scalar_type**, Device>;
+
+  static constexpr int neqs = 2;
+
+  DecoupledEquations() {}
+
+  KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& f) const {
+    f(0) = y(0) * y(0) - 2;
+    f(1) = y(1) - 5;
+  }
+
+  KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
+    jac(0, 0) = 2 * y(0);
+    jac(0, 1) = 0;
+    jac(1, 0) = 0;
+    jac(1, 1) = 1;
+  }
+};
+
+template <typename Device, typename scalar_type>
+void test_newton_norm_accumulation() {
+  using execution_space      = typename Device::execution_space;
+  using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
+  using vec_type             = typename Kokkos::View<scalar_type*, Device>;
+  using mat_type             = typename Kokkos::View<scalar_type**, Device>;
+  using system_type          = DecoupledEquations<Device, scalar_type>;
+
+  double abs_tol, rel_tol;
+  if (std::is_same_v<scalar_type, float>) {
+    rel_tol = 10e-5;
+    abs_tol = 10e-7;
+  } else if (std::is_same_v<scalar_type, double>) {
+    rel_tol = 10e-8;
+    abs_tol = 10e-15;
+  } else {
+    throw std::runtime_error("scalar_type is neither float, nor double!");
+  }
+  KokkosODE::Experimental::Newton_params params(50, abs_tol, rel_tol);
+
+  system_type my_system{};
+
+  Kokkos::View<newton_solver_status*, Device> status("Newton status", 1);
+
+  vec_type scale("scaling factors", my_system.neqs);
+  Kokkos::deep_copy(scale, 1);
+
+  vec_type x("solution vector", my_system.neqs), rhs("right hand side vector", my_system.neqs);
+  vec_type update("update", my_system.neqs);
+  mat_type J("jacobian", my_system.neqs, my_system.neqs), tmp("temp mem", my_system.neqs, my_system.neqs + 4);
+
+  // Start the nonlinear component far from its root so it needs several Newton
+  // iterations, while the linear component converges in one step.
+  auto x_h = Kokkos::create_mirror_view(x);
+  x_h(0)   = 100.0;
+  x_h(1)   = 0.0;
+  Kokkos::deep_copy(x, x_h);
+
+  Kokkos::RangePolicy<execution_space> my_policy(0, 1);
+  NewtonSolve_wrapper solve_wrapper(my_system, params, x, rhs, update, J, tmp, status, scale);
+  Kokkos::parallel_for(my_policy, solve_wrapper);
+
+  auto status_h = Kokkos::create_mirror_view(status);
+  Kokkos::deep_copy(status_h, status);
+  Kokkos::deep_copy(x_h, x);
+
+  EXPECT_TRUE(status_h(0) == newton_solver_status::NLS_SUCCESS);
+
+  // The nonlinear first component must actually be converged. With the norm bug
+  // the scaled-update norm sees only the already-solved linear equation, hits
+  // zero on the second iteration, and the solver reports success with x(0) still
+  // far from sqrt(2) (~50 rather than ~1.414).
+  const scalar_type solution[2] = {static_cast<scalar_type>(Kokkos::sqrt(static_cast<scalar_type>(2.0))),
+                                   static_cast<scalar_type>(5.0)};
+  const scalar_type rel_check   = static_cast<scalar_type>(1e-2);
+  EXPECT_NEAR(x_h(0), solution[0], rel_check * solution[0]);
+  EXPECT_NEAR(x_h(1), solution[1], rel_check * solution[1]);
+}
+
 ////////////////////////////////////////////
 // Finally, solving systems of equations  //
 // within a parallel_for loop as it would //
@@ -487,6 +581,9 @@ TEST_F(TestCategory, Newton_simple_double) { ::Test::test_simple_problems<TestDe
 
 TEST_F(TestCategory, Newton_system_float) { ::Test::test_simple_systems<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_system_double) { ::Test::test_simple_systems<TestDevice, double>(); }
+
+TEST_F(TestCategory, Newton_norm_accumulation_float) { ::Test::test_newton_norm_accumulation<TestDevice, float>(); }
+TEST_F(TestCategory, Newton_norm_accumulation_double) { ::Test::test_newton_norm_accumulation<TestDevice, double>(); }
 
 TEST_F(TestCategory, Newton_parallel_float) { ::Test::test_newton_on_device<TestDevice, float>(); }
 TEST_F(TestCategory, Newton_parallel_double) { ::Test::test_newton_on_device<TestDevice, double>(); }

@@ -6,6 +6,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_InnerProductSpaceTraits.hpp>
+#include <KokkosBlas1_axpby_unification.hpp>
 #include <KokkosBlas1_scal_spec.hpp>
 #include <KokkosBlas1_scal_impl.hpp>
 
@@ -16,19 +17,14 @@
 namespace KokkosBlas {
 namespace Impl {
 
-// Functor for multivectors R and X and 1-D View a, that computes any
-// of the following:
+// Functor for multivectors R and X where aVector may be a scalar, a rank-0
+// View, or a rank-1 View.  getCoefficient() dispatches uniformly so no partial
+// specialisations for scalar or rank-0 View are needed.
 //
-// 1. R(i,j) = alpha*X(i,j) for alpha in -1,0,1
-// 2. R(i,j) = a(j)*X(i,j)
-//
-// The template parameter scalar_x corresponds to alpha in the
-// operation y = alpha*x.  The values -1, 0, and -1 correspond to
-// literal values of this coefficient.  The value 2 tells the functor
-// to use the corresponding vector of coefficients.  Any literal
-// coefficient of zero has BLAS semantics of ignoring the
-// corresponding (multi)vector entry.  This does not apply to
-// coefficients in the a vector, if they are used.
+// scalar_x encodes the compile-time shortcut:
+//   -1 → negate, 0 → zero, 1 → copy, 2 → general multiply.
+// For the rank-1 View case each column k gets its own coefficient via
+// getCoefficient(a_, k); for scalar/rank-0 View the column index is ignored.
 template <class RMV, class aVector, class XMV, int scalar_x, class SizeType = typename RMV::size_type>
 struct MV_Scal_Functor {
   typedef SizeType size_type;
@@ -41,17 +37,16 @@ struct MV_Scal_Functor {
 
   MV_Scal_Functor(const RMV& R, const XMV& X, const aVector& a, const SizeType startingColumn)
       : numCols(X.extent(1)), R_(R), X_(X), a_(a) {
-    if (startingColumn != 0) {
-      auto rng = std::make_pair(startingColumn, static_cast<SizeType>(a.extent(0)));
-      a_       = Kokkos::subview(a, rng);
+    if constexpr (isRank1View<aVector>()) {
+      if (startingColumn != 0) {
+        auto rng = std::make_pair(startingColumn, static_cast<SizeType>(a.extent(0)));
+        a_       = Kokkos::subview(a, rng);
+      }
     }
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type& i) const {
-    // scalar_x is a compile-time constant (since it is a template
-    // parameter), so the compiler should evaluate these branches at
-    // compile time.
     if (scalar_x == 0) {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
@@ -93,88 +88,15 @@ struct MV_Scal_Functor {
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
-        R_(i, k) = a_(k) * X_(i, k);
+        R_(i, k) = getCoefficient(a_, k) * X_(i, k);
       }
     }
   }
 };
 
-// Variant of MV_Scal_Functor, where a is a scalar.
-// This functor computes any of the following:
-//
-// 1. R(i,j) = alpha*X(i,j) for alpha,beta in -1,0,1
-// 2. R(i,j) = a*X(i,j)
-//
-// This version works by partial specialization on aVector.
-// In this partial specialization, aVector is a scalar.
-template <class RMV, class XMV, int scalar_x, class SizeType>
-struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type, XMV, scalar_x, SizeType> {
-  typedef SizeType size_type;
-  typedef KokkosKernels::ArithTraits<typename RMV::non_const_value_type> ATS;
-
-  const size_type numCols;
-  RMV m_r;
-  XMV m_x;
-  const typename XMV::non_const_value_type m_a;
-
-  MV_Scal_Functor(const RMV& r, const XMV& x, const typename XMV::non_const_value_type& a,
-                  const SizeType /* startingColumn */)
-      : numCols(x.extent(1)), m_r(r), m_x(x), m_a(a) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_type& i) const {
-    // scalar_x and scalar_y are compile-time constants (since they
-    // are template parameters), so the compiler should evaluate these
-    // branches at compile time.
-    if (scalar_x == 0) {
-#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-      for (size_type k = 0; k < numCols; ++k) {
-        m_r(i, k) = ATS::zero();
-      }
-    }
-    if (scalar_x == -1) {
-#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-      for (size_type k = 0; k < numCols; ++k) {
-        m_r(i, k) = -m_x(i, k);
-      }
-    }
-    if (scalar_x == 1) {
-#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-      for (size_type k = 0; k < numCols; ++k) {
-        m_r(i, k) = m_x(i, k);
-      }
-    }
-    if (scalar_x == 2) {
-#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
-#pragma ivdep
-#endif
-#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
-#pragma vector always
-#endif
-      for (size_type k = 0; k < numCols; ++k) {
-        m_r(i, k) = m_a * m_x(i, k);
-      }
-    }
-  }
-};
-
-// Column-unrolled variant of MV_Scal_Functor.  The number of columns
-// in X and Y, UNROLL, is a compile-time constant.
+// Column-unrolled variant of MV_Scal_Functor.  UNROLL is a compile-time
+// constant.  aVector may be a scalar, rank-0 View, or rank-1 View; the same
+// getCoefficient() idiom is used so no partial specialisations are needed.
 template <class RMV, class aVector, class XMV, int scalar_x, int UNROLL, class SizeType>
 struct MV_Scal_Unroll_Functor {
   typedef SizeType size_type;
@@ -186,9 +108,11 @@ struct MV_Scal_Unroll_Functor {
 
   MV_Scal_Unroll_Functor(const RMV& r, const XMV& x, const aVector& a, const SizeType startingColumn)
       : m_r(r), m_x(x), m_a(a) {
-    if (startingColumn != 0) {
-      auto rng = std::make_pair(startingColumn, static_cast<SizeType>(a.extent(0)));
-      m_a      = Kokkos::subview(a, rng);
+    if constexpr (isRank1View<aVector>()) {
+      if (startingColumn != 0) {
+        auto rng = std::make_pair(startingColumn, static_cast<SizeType>(a.extent(0)));
+        m_a      = Kokkos::subview(a, rng);
+      }
     }
   }
 
@@ -223,60 +147,7 @@ struct MV_Scal_Unroll_Functor {
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
-        m_r(i, k) = m_a(k) * m_x(i, k);
-      }
-    }
-  }
-};
-
-// Variant of MV_Scal_Unroll_Functor for a single coefficient (rather
-// than a vector of coefficients) a.  The number of columns in X,
-// UNROLL, is a compile-time constant.
-template <class RMV, class XMV, int scalar_x, int UNROLL, class SizeType>
-struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type, XMV, scalar_x, UNROLL, SizeType> {
-  typedef SizeType size_type;
-  typedef KokkosKernels::ArithTraits<typename RMV::non_const_value_type> ATS;
-
-  RMV m_r;
-  XMV m_x;
-  const typename XMV::non_const_value_type m_a;
-
-  MV_Scal_Unroll_Functor(const RMV& r, const XMV& x, const typename XMV::non_const_value_type& a,
-                         const SizeType /* startingColumn */)
-      : m_r(r), m_x(x), m_a(a) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_type& i) const {
-    if (scalar_x == 0) {
-#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
-#pragma unroll
-#endif
-      for (int k = 0; k < UNROLL; ++k) {
-        m_r(i, k) = ATS::zero();
-      }
-    }
-    if (scalar_x == -1) {
-#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
-#pragma unroll
-#endif
-      for (int k = 0; k < UNROLL; ++k) {
-        m_r(i, k) = -m_x(i, k);
-      }
-    }
-    if (scalar_x == 1) {
-#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
-#pragma unroll
-#endif
-      for (int k = 0; k < UNROLL; ++k) {
-        m_r(i, k) = m_x(i, k);
-      }
-    }
-    if (scalar_x == 2) {
-#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
-#pragma unroll
-#endif
-      for (int k = 0; k < UNROLL; ++k) {
-        m_r(i, k) = m_a * m_x(i, k);
+        m_r(i, k) = getCoefficient(m_a, k) * m_x(i, k);
       }
     }
   }

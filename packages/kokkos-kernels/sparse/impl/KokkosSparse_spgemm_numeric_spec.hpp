@@ -122,9 +122,11 @@ struct SPGEMM_NUMERIC<KernelHandle, a_size_view_t_, a_lno_view_t, a_scalar_view_
         kspgemm.KokkosSPGEMM_numeric(row_mapC, entriesC, valuesC);
       } break;
     }
-    // Current implementation does not produce sorted matrix
-    // TODO: remove this call when impl sorts
-    KokkosSparse::sort_crs_matrix<typename KernelHandle::HandleExecSpace>(row_mapC, entriesC, valuesC);
+    // native impl does not produce a sorted matrix, so
+    // if the user requested sorted output, sort it now.
+    if (sh->get_result_sorted()) {
+      KokkosSparse::sort_crs_matrix<typename KernelHandle::HandleExecSpace>(row_mapC, entriesC, valuesC);
+    }
     sh->set_call_numeric();
     sh->set_computed_entries();
   }
