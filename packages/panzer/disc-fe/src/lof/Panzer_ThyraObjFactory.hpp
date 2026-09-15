@@ -30,6 +30,7 @@ public:
    
    //! Get the domain space
    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraDomainSpace() const = 0;
+   virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getGhostedThyraDomainSpace() const = 0;
 
    //! Get the range space
    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraRangeSpace() const = 0;

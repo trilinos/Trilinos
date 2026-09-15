@@ -721,6 +721,19 @@ print(std::ostream & os) const
    }
 }
 
+template <typename TraitsT>
+template <typename EvalT>
+void ResponseLibrary<TraitsT>::
+writeGraphvizFiles(const std::string& prefix)
+{
+  auto mb = ae_tm2_.template getAsObject<EvalT>()->getManagerBuilder();
+  auto workset_descriptors = mb->getVolumeWorksetDescriptors();
+  for (auto& w : workset_descriptors) {
+    std::string prefix_with_eb_info = prefix+"element_block_"+w.getElementBlock();
+    mb->getVolumeFieldManager(w)->writeGraphvizFile(prefix_with_eb_info);
+  }
+}
+
 }
 
 #endif

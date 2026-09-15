@@ -12,6 +12,7 @@
 #define USER_APP_TEMPUS_OBSERVER_WRITE_TO_EXODUS_HPP
 
 #include "Tempus_Integrator.hpp"
+#include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Tempus_IntegratorObserver.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -67,6 +68,17 @@ namespace user_app {
         std::cout << "Writing to expdus with time step=" << integrator.getSolutionHistory()->getCurrentTime() << std::endl;
       }
       Teuchos::RCP<const Thyra::VectorBase<double> > solution = integrator.getSolutionHistory()->getStateTimeIndexN()->getX();
+
+      // A forward sensitivity integrator stores the augmented state: column 0
+      // is the solution and the remaining columns are dx/dp. Write the state
+      // only, otherwise the solution writer is handed a product vector it
+      // cannot cast to a Tpetra vector.
+      {
+        auto augmented =
+          Teuchos::rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<double> >(solution);
+        if (Teuchos::nonnull(augmented))
+          solution = augmented->getMultiVector()->col(0);
+      }
 
       // initialize the assembly container
       panzer::AssemblyEngineInArgs ae_inargs;

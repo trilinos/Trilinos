@@ -29,7 +29,8 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedTpetraLinearObjFactory.hpp"
+#include "Panzer_NodeType.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
@@ -47,23 +48,32 @@ using Teuchos::rcp;
 #include "Panzer_ThyraObjFactory.hpp"
 #include "Panzer_Response_Residual.hpp"
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
 #include "Thyra_LinearOpTester.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 #include <limits>
 
 namespace panzer {
+
+  // Pull the Tpetra CrsMatrix out of a Thyra operator so row entries can be
+  // inspected directly.
+  typedef Tpetra::CrsMatrix<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> TestCrsMatrix;
+  Teuchos::RCP<const TestCrsMatrix>
+  getCrsMatrix(const Teuchos::RCP<const Thyra::LinearOpBase<double> >& op)
+  {
+    typedef Thyra::TpetraLinearOp<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> TpetraOp;
+    auto thyra_tpetra_op = Teuchos::rcp_dynamic_cast<const TpetraOp>(op,true);
+    return Teuchos::rcp_dynamic_cast<const TestCrsMatrix>(thyra_tpetra_op->getConstTpetraOperator(),true);
+  }
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
@@ -402,17 +412,17 @@ namespace panzer {
       volume[6] = 1./288.;  volume[7] = 1./288.;  volume[8] = 1./72.;
 
       RCP<const Thyra::LinearOpBase<double> > thJac = response_jacobian->getJacobian();
-      RCP<const Epetra_CrsMatrix> jac = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*thJac));
+      RCP<const TestCrsMatrix> jac = getCrsMatrix(thJac);
 
       TEUCHOS_ASSERT(jac!=Teuchos::null);
 
-      for(int i=0;i<jac->NumMyRows();i++) {
-        int numEntries = -1;
-        int * indices = 0;
-        double * values = 0;
+      for(int i=0;i<static_cast<int>(jac->getLocalNumRows());i++) {
+        TestCrsMatrix::local_inds_host_view_type indices;
+        TestCrsMatrix::values_host_view_type values;
 
         // get a view of the row entries
-        jac->ExtractMyRowView(i,numEntries,values,indices);
+        jac->getLocalRowView(i,indices,values);
+        const int numEntries = static_cast<int>(indices.extent(0));
 
         TEUCHOS_ASSERT(numEntries>0);
 
@@ -551,17 +561,17 @@ namespace panzer {
       volume[3] = 1./1152.; volume[4] = 1./288.;  volume[5] = 1./288.;
       volume[6] = 1./288.;  volume[7] = 1./288.;  volume[8] = 1./72.;
 
-      RCP<const Epetra_CrsMatrix> jac = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*DfDp));
+      RCP<const TestCrsMatrix> jac = getCrsMatrix(DfDp);
 
       TEUCHOS_ASSERT(jac!=Teuchos::null);
 
-      for(int i=0;i<jac->NumMyRows();i++) {
-        int numEntries = -1;
-        int * indices = 0;
-        double * values = 0;
+      for(int i=0;i<static_cast<int>(jac->getLocalNumRows());i++) {
+        TestCrsMatrix::local_inds_host_view_type indices;
+        TestCrsMatrix::values_host_view_type values;
 
         // get a view of the row entries
-        jac->ExtractMyRowView(i,numEntries,values,indices);
+        jac->getLocalRowView(i,indices,values);
+        const int numEntries = static_cast<int>(indices.extent(0));
 
         TEUCHOS_ASSERT(numEntries>0);
 
@@ -618,7 +628,6 @@ namespace panzer {
       }
     }
   }
-
   // Test that the response library can build the correct residual and jacobian
   TEUCHOS_UNIT_TEST(response_residual, blocked_dfdp_in_model_eval)
   {
@@ -707,23 +716,24 @@ namespace panzer {
 
       {
         TEUCHOS_ASSERT(DfDp_blocked->getBlock(1,0)!=Teuchos::null);
-        auto J_10 = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*DfDp_blocked->getBlock(1,0)));
+        auto J_10 = getCrsMatrix(DfDp_blocked->getBlock(1,0));
         TEST_ASSERT(J_10!=Teuchos::null);
 
-        TEST_EQUALITY(J_10->NormInf(),0.0);
+        // The assertion is that this block is entirely zero, so any norm does.
+        TEST_EQUALITY(J_10->getFrobeniusNorm(),0.0);
       }
 
-      RCP<const Epetra_CrsMatrix> jac = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*DfDp_blocked->getBlock(0,0)));
+      RCP<const TestCrsMatrix> jac = getCrsMatrix(DfDp_blocked->getBlock(0,0));
 
       TEST_ASSERT(jac!=Teuchos::null);
 
-      for(int i=0;i<jac->NumMyRows();i++) {
-        int numEntries = -1;
-        int * indices = 0;
-        double * values = 0;
+      for(int i=0;i<static_cast<int>(jac->getLocalNumRows());i++) {
+        TestCrsMatrix::local_inds_host_view_type indices;
+        TestCrsMatrix::values_host_view_type values;
 
         // get a view of the row entries
-        jac->ExtractMyRowView(i,numEntries,values,indices);
+        jac->getLocalRowView(i,indices,values);
+        const int numEntries = static_cast<int>(indices.extent(0));
 
         TEUCHOS_ASSERT(numEntries>0);
 
@@ -966,7 +976,7 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
+          = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal,panzer::GlobalOrdinal>(mpiComm,dofManager));
       ap.lof = linObjFactory;
     }
     else {
@@ -977,7 +987,8 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
+        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal,panzer::GlobalOrdinal>(
+            mpiComm,Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager>(dofManager)));
       ap.lof = linObjFactory;
     }
 
