@@ -41,7 +41,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     SET(CrsMatrix_ETI_SCALARS ${MultiVector_ETI_SCALARS})
   ENDIF()
 
-  # Generate ETI .cpp files for Tpetra::MatrixMatrix.
+  # Generate ETI .cpp files for Tpetra::MatrixMarket.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(
     MATRIXMARKET_OUTPUT_FILES
     "TpetraInOut_ETI_SC_LO_GO_NT.tmpl"
@@ -54,6 +54,20 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     TRUE
   )
   LIST(APPEND SOURCES ${MATRIXMARKET_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::BinaryIO.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(
+    BINARYIO_OUTPUT_FILES
+    "TpetraInOut_ETI_SC_LO_GO_NT.tmpl"
+    "Tpetra_BinaryIO"
+    "BINARYIO"
+    "${CrsMatrix_ETI_SCALARS}"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+    TRUE
+  )
+  LIST(APPEND SOURCES ${BINARYIO_OUTPUT_FILES})
 
 ENDIF()
 

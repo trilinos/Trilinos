@@ -374,6 +374,24 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_BinaryIO_InOutTest
+  SOURCES Tpetra_BinaryIO_InOutTest.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_BinaryIO_PerfTest
+  SOURCES Tpetra_BinaryIO_PerfTest.cpp
+  ARGS "--globalNumRows=2000 --numVectors=2 --numRepeats=1 --nnzPerRow=5"
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+)
+
 # This test has an upper bound on the number of MPI processes for
 # which it works, since one of the test matrices has fixed dimensions.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
