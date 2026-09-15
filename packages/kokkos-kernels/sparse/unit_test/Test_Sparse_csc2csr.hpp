@@ -7,7 +7,7 @@
 namespace Test {
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val, bool fully_sparse = false) {
-  RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> cscMat(n, m, min_val, max_val, fully_sparse);
+  TestUtils::RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> cscMat(n, m, min_val, max_val, fully_sparse);
 
   auto csrMat = KokkosSparse::csc2csr(cscMat.get_dim2(), cscMat.get_dim1(), cscMat.get_nnz(), cscMat.get_vals(),
                                       cscMat.get_map(), cscMat.get_ids());

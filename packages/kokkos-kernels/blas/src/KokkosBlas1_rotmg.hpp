@@ -36,22 +36,21 @@ void rotmg(execution_space const& space, DXView const& d1, DXView const& d2, DXV
 
   using DXView_Internal =
       Kokkos::View<typename DXView::value_type, typename KokkosKernels::Impl::GetUnifiedLayout<DXView>::array_layout,
-                   Kokkos::Device<execution_space, typename DXView::memory_space>,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                   execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   using YView_Internal =
       Kokkos::View<typename YView::value_type, typename KokkosKernels::Impl::GetUnifiedLayout<YView>::array_layout,
-                   Kokkos::Device<execution_space, typename YView::memory_space>,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                   execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   using PView_Internal =
       Kokkos::View<typename PView::value_type[5], typename KokkosKernels::Impl::GetUnifiedLayout<PView>::array_layout,
-                   Kokkos::Device<execution_space, typename PView::memory_space>,
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                   execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  DXView_Internal d1_(d1), d2_(d2), x1_(x1);
-  YView_Internal y1_(y1);
-  PView_Internal param_(param);
+  DXView_Internal d1_   = KokkosKernels::Impl::unificationCast<DXView_Internal>(d1);
+  DXView_Internal d2_   = KokkosKernels::Impl::unificationCast<DXView_Internal>(d2);
+  DXView_Internal x1_   = KokkosKernels::Impl::unificationCast<DXView_Internal>(x1);
+  YView_Internal y1_    = KokkosKernels::Impl::unificationCast<YView_Internal>(y1);
+  PView_Internal param_ = KokkosKernels::Impl::unificationCast<PView_Internal>(param);
 
   Kokkos::Profiling::pushRegion("KokkosBlas::rotmg");
   Impl::Rotmg<execution_space, DXView_Internal, YView_Internal, PView_Internal>::rotmg(space, d1_, d2_, x1_, y1_,

@@ -43,7 +43,14 @@
 #define KOKKOS_LAMBDA [=] __host__ __device__
 #define KOKKOS_CLASS_LAMBDA [ =, *this ] __host__ __device__
 
+// Starting from Clang 22.1, CUDA target attributes on deduction guides are
+// deprecated and will be rejected in a future Clang release
+#if defined(__clang__) && \
+    (__clang_major__ > 22 || (__clang_major__ == 22 && __clang_minor__ >= 1))
+#define KOKKOS_DEDUCTION_GUIDE
+#else
 #define KOKKOS_DEDUCTION_GUIDE __host__ __device__
+#endif
 
 #define KOKKOS_IMPL_FORCEINLINE_FUNCTION __device__ __host__ __forceinline__
 #define KOKKOS_IMPL_FORCEINLINE_ATTRIBUTE __forceinline__
@@ -62,8 +69,8 @@
 // clang-format on
 
 #if !(defined(KOKKOS_ARCH_MAXWELL50) || defined(KOKKOS_ARCH_MAXWELL52))
-#define KOKKOS_IMPL_HALF_TYPE_DEFINED
-#define KOKKOS_IMPL_BHALF_TYPE_DEFINED
+#define KOKKOS_HAS_NATIVE_HALF_TYPE
+#define KOKKOS_HAS_NATIVE_BHALF_TYPE
 #if defined(__CUDA_ARCH__)
 #define KOKKOS_HALF_IS_FULL_TYPE_ON_ARCH
 #endif

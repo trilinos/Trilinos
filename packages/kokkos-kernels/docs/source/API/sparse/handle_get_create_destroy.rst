@@ -75,14 +75,20 @@ create
 
 .. code:: c++
 
-  void create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm spgemm_algo = KokkosSparse::SPGEMM_DEFAULT);
+  void create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm spgemm_algo = KokkosSparse::SPGEMM_DEFAULT,
+                            bool input_sorted = false,
+                            bool result_sorted = true);
 
-Destroy any previous spgemm sub-handle and create a new owned one specifying which algorithm to use.
+Destroy any previous spgemm sub-handle and create a new owned one. 
 
 Parameters
 ^^^^^^^^^^
 
 :spgemm_algo: Specify the algorithm to be used to perform the spgemm operation.
+:input_sorted: Whether the input matrices (A and B) that will be multiplied with this handle are known to be sorted. When this is
+  `false`, KokkosKernels may internally switch to a slower SpGEMM algorithm that accepts unsorted inputs.
+:result_sorted: Whether the user requires that the output matrix C is sorted. Setting this to `false` may skip an explicit sort
+  and thus reduce the time spgemm takes. Default is `true` for backward compatibility.
 
 .. _handle_spgemm_destroy:
 

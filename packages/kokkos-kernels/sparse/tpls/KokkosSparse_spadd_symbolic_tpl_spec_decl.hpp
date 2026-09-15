@@ -10,9 +10,8 @@ namespace Impl {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
 #define KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE(TOKEN, KOKKOS_SCALAR_TYPE, TPL_SCALAR_TYPE, ORDINAL_TYPE,   \
-                                                           OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE,  \
-                                                           ETI_SPEC_AVAIL)                                             \
-  template <>                                                                                                          \
+                                                           OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)  \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct SPADD_SYMBOLIC<                                                                                               \
       EXEC_SPACE_TYPE,                                                                                                 \
       KokkosKernels::Experimental::KokkosKernelsHandle<const OFFSET_TYPE, const ORDINAL_TYPE,                          \
@@ -85,27 +84,21 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-#define KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE_EXT(ETI_SPEC_AVAIL)                                      \
-  KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE(S, float, float, int, int, Kokkos::LayoutLeft, Kokkos::Cuda,   \
-                                                     Kokkos::CudaSpace, ETI_SPEC_AVAIL)                             \
-  KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE(D, double, double, int, int, Kokkos::LayoutLeft, Kokkos::Cuda, \
-                                                     Kokkos::CudaSpace, ETI_SPEC_AVAIL)                             \
-  KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE(C, Kokkos::complex<float>, cuComplex, int, int,                \
-                                                     Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace,           \
-                                                     ETI_SPEC_AVAIL)                                                \
-  KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE(Z, Kokkos::complex<double>, cuDoubleComplex, int, int,         \
-                                                     Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace,           \
-                                                     ETI_SPEC_AVAIL)
-
-KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE_EXT(true)
-KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE_EXT(false)
+KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE(S, float, float, int, int, Kokkos::LayoutLeft, Kokkos::Cuda,
+                                                   Kokkos::CudaSpace)
+KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE(D, double, double, int, int, Kokkos::LayoutLeft, Kokkos::Cuda,
+                                                   Kokkos::CudaSpace)
+KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE(C, Kokkos::complex<float>, cuComplex, int, int, Kokkos::LayoutLeft,
+                                                   Kokkos::Cuda, Kokkos::CudaSpace)
+KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE(Z, Kokkos::complex<double>, cuDoubleComplex, int, int,
+                                                   Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 
-#define KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE(                                                           \
-    KOKKOS_SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE, LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE, ETI_SPEC_AVAIL)       \
-  template <>                                                                                                          \
+#define KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE(KOKKOS_SCALAR_TYPE, ORDINAL_TYPE, OFFSET_TYPE,             \
+                                                            LAYOUT_TYPE, EXEC_SPACE_TYPE, MEM_SPACE_TYPE)              \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct SPADD_SYMBOLIC<                                                                                               \
       EXEC_SPACE_TYPE,                                                                                                 \
       KokkosKernels::Experimental::KokkosKernelsHandle<const OFFSET_TYPE, const ORDINAL_TYPE,                          \
@@ -160,20 +153,14 @@ KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE_EXT(false)
     }                                                                                                                  \
   };
 
-#define KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE_EXT(ETI_SPEC_AVAIL)                                 \
-  KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE(float, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft,  \
-                                                      Kokkos::HIP, Kokkos::HIPSpace, ETI_SPEC_AVAIL)            \
-  KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE(double, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, \
-                                                      Kokkos::HIP, Kokkos::HIPSpace, ETI_SPEC_AVAIL)            \
-  KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE(Kokkos::complex<float>, rocsparse_int, rocsparse_int,     \
-                                                      Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace,        \
-                                                      ETI_SPEC_AVAIL)                                           \
-  KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE(Kokkos::complex<double>, rocsparse_int, rocsparse_int,    \
-                                                      Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace,        \
-                                                      ETI_SPEC_AVAIL)
-
-KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE_EXT(true)
-KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE_EXT(false)
+KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE(float, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft,
+                                                    Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE(double, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft,
+                                                    Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE(Kokkos::complex<float>, rocsparse_int, rocsparse_int,
+                                                    Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_ROCSPARSE(Kokkos::complex<double>, rocsparse_int, rocsparse_int,
+                                                    Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
 #endif
 
 }  // namespace Impl

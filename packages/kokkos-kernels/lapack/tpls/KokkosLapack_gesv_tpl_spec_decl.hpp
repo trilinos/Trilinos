@@ -59,21 +59,14 @@ void lapackGesvWrapper(const AViewType& A, const BViewType& B, const IPIVViewTyp
 }
 
 #define KOKKOSLAPACK_GESV_LAPACK(SCALAR, LAYOUT, EXECSPACE, MEM_SPACE)                                                 \
-  template <>                                                                                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct GESV<                                                                                                         \
       EXECSPACE,                                                                                                       \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                                         \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      true,                                                                                                            \
-      gesv_eti_spec_avail<EXECSPACE,                                                                                   \
-                          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                         \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                       \
-                          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>,                         \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                       \
-                          Kokkos::View<int*, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                     \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                             \
+      true, ETI_SPEC_AVAIL> {                                                                                          \
     using AViewType =                                                                                                  \
         Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>; \
     using BViewType =                                                                                                  \
@@ -186,22 +179,14 @@ void magmaGesvWrapper(const ExecSpace& space, const AViewType& A, const BViewTyp
 }
 
 #define KOKKOSLAPACK_GESV_MAGMA(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                                \
-  template <>                                                                                                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct GESV<                                                                                                        \
       EXEC_SPACE,                                                                                                     \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,        \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
-      true,                                                                                                           \
-      gesv_eti_spec_avail<                                                                                            \
-          EXEC_SPACE,                                                                                                 \
-          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                      \
-          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                      \
-          Kokkos::View<magma_int_t*, LAYOUT, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,    \
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                                            \
+      true, ETI_SPEC_AVAIL> {                                                                                         \
     using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                           \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
     using BViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                           \
@@ -309,7 +294,7 @@ void cusolverGesvWrapper(const ExecutionSpace& space, const IPIVViewType& IPIV, 
 }
 
 #define KOKKOSLAPACK_GESV_CUSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                         \
-  template <>                                                                                                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct GESV<                                                                                                        \
       Kokkos::Cuda,                                                                                                   \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                         \
@@ -317,14 +302,7 @@ void cusolverGesvWrapper(const ExecutionSpace& space, const IPIVViewType& IPIV, 
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                                         \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
       Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
-      true,                                                                                                           \
-      gesv_eti_spec_avail<Kokkos::Cuda,                                                                               \
-                          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                     \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                     \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                      \
-                          Kokkos::View<int*, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                            \
+      true, ETI_SPEC_AVAIL> {                                                                                         \
     using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                          \
     using BViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEM_SPACE>,                         \
@@ -402,21 +380,14 @@ void rocsolverGesvWrapper(const ExecutionSpace& space, const IPIVViewType& IPIV,
 }
 
 #define KOKKOSLAPACK_GESV_ROCSOLVER(SCALAR, LAYOUT, MEM_SPACE)                                                         \
-  template <>                                                                                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct GESV<                                                                                                         \
       Kokkos::HIP,                                                                                                     \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<rocblas_int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                                       \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      true,                                                                                                            \
-      gesv_eti_spec_avail<Kokkos::HIP,                                                                                 \
-                          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                       \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                       \
-                          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                       \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                       \
-                          Kokkos::View<rocblas_int*, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                   \
-                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>>::value> {                             \
+      true, ETI_SPEC_AVAIL> {                                                                                          \
     using AViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                           \
                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                           \
     using BViewType = Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEM_SPACE>,                           \

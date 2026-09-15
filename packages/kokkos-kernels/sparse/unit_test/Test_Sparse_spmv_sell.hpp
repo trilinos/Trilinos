@@ -150,13 +150,13 @@ void test_spmv_sell_analytic() {
   Kokkos::deep_copy(y_h, y);
 
   constexpr int row_length = 3;
-  Test::EXPECT_NEAR_KK_REL(y_h(0), scalar_t(-1), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
-  Test::EXPECT_NEAR_KK_REL(y_h(1), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
-  Test::EXPECT_NEAR_KK_REL(y_h(2), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
-  Test::EXPECT_NEAR_KK_REL(y_h(3), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
-  Test::EXPECT_NEAR_KK_REL(y_h(4), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
-  Test::EXPECT_NEAR_KK_REL(y_h(5), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
-  Test::EXPECT_NEAR_KK_REL(y_h(6), scalar_t(47), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  EXPECT_NEAR_KK_REL(y_h(0), scalar_t(-1), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  EXPECT_NEAR_KK_REL(y_h(1), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  EXPECT_NEAR_KK_REL(y_h(2), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  EXPECT_NEAR_KK_REL(y_h(3), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  EXPECT_NEAR_KK_REL(y_h(4), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  EXPECT_NEAR_KK_REL(y_h(5), scalar_t(-2), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+  EXPECT_NEAR_KK_REL(y_h(6), scalar_t(47), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
 }
 
 template <typename scalar_t, typename ordinal_t, typename size_type, typename Device>
@@ -208,8 +208,7 @@ void test_spmv_sell(ordinal_t num_rows, ordinal_t num_cols, ordinal_t row_length
   Kokkos::deep_copy(y_ref_h, y_ref);
 
   for (int rowIdx = 0; rowIdx < num_rows; ++rowIdx) {
-    Test::EXPECT_NEAR_KK_REL(y_h(rowIdx), y_ref_h(rowIdx),
-                             10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
+    EXPECT_NEAR_KK_REL(y_h(rowIdx), y_ref_h(rowIdx), 10 * row_length * KokkosKernels::ArithTraits<scalar_t>::eps());
   }
 }
 

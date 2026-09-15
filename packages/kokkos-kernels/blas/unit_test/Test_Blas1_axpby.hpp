@@ -24,15 +24,15 @@ void impl_test_axpby(int N) {
                                 KokkosKernels::ArithTraits<ScalarB>::abs(b)) *
                                max_val * eps;
 
-  view_stride_adapter<ViewTypeA> x("X", N);
-  view_stride_adapter<ViewTypeB> y("Y", N);
-  view_stride_adapter<ViewTypeB> org_y("Org_Y", N);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
+  TestUtils::view_stride_adapter<ViewTypeB> org_y("Org_Y", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
 
@@ -62,9 +62,9 @@ void impl_test_axpby_mv(int N, int K) {
   using ScalarB    = typename ViewTypeB::value_type;
   using MagnitudeB = typename KokkosKernels::ArithTraits<ScalarB>::mag_type;
 
-  view_stride_adapter<ViewTypeA> x("X", N, K);
-  view_stride_adapter<ViewTypeB> y("Y", N, K);
-  view_stride_adapter<ViewTypeB> org_y("Org_Y", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N, K);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N, K);
+  TestUtils::view_stride_adapter<ViewTypeB> org_y("Org_Y", N, K);
 
   ScalarA a                  = 3;
   ScalarB b                  = 5;
@@ -78,12 +78,12 @@ void impl_test_axpby_mv(int N, int K) {
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
   }
 

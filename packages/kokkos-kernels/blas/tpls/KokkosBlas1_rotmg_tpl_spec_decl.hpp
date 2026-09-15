@@ -25,49 +25,27 @@ inline void rotmg_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                    \
-  template <>                                                                                                          \
-  struct Rotmg<                                                                                                        \
-      EXEC_SPACE,                                                                                                      \
-      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
-      Kokkos::View<SCALAR const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                        \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      Kokkos::View<SCALAR[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      true, ETI_SPEC_AVAIL> {                                                                                          \
-    using DXView =                                                                                                     \
-        Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-    using YView = Kokkos::View<SCALAR const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                            \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                               \
-    using PView = Kokkos::View<SCALAR[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                               \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                               \
-    static void rotmg(EXEC_SPACE const& /* space */, DXView& d1, DXView& d2, DXView& x1, YView& y1, PView& param) {    \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_BLAS,double]");                                             \
-      HostBlas<SCALAR>::rotmg(d1.data(), d2.data(), x1.data(), y1.data(), param.data());                               \
-      Kokkos::Profiling::popRegion();                                                                                  \
-    }                                                                                                                  \
+#define KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(SCALAR, LAYOUT)                                                       \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                               \
+    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                  \
+  struct Rotmg<ExecSpace, Kokkos::View<SCALAR, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,        \
+               Kokkos::View<SCALAR const, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,             \
+               Kokkos::View<SCALAR[5], LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,          \
+               ETI_SPEC_AVAIL> {                                                                                   \
+    using DXView = Kokkos::View<SCALAR, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;               \
+    using YView  = Kokkos::View<SCALAR const, LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;         \
+    using PView  = Kokkos::View<SCALAR[5], LAYOUT, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;            \
+    static void rotmg(ExecSpace const& /* space */, DXView& d1, DXView& d2, DXView& x1, YView& y1, PView& param) { \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_BLAS,double]");                                         \
+      HostBlas<SCALAR>::rotmg(d1.data(), d2.data(), x1.data(), y1.data(), param.data());                           \
+      Kokkos::Profiling::popRegion();                                                                              \
+    }                                                                                                              \
   };
 
-#ifdef KOKKOS_ENABLE_SERIAL
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, false)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, false)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft, Kokkos::Serial, Kokkos::HostSpace, false)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight, Kokkos::Serial, Kokkos::HostSpace, false)
-#endif
-
-#ifdef KOKKOS_ENABLE_OPENMP
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, false)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, false)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft, Kokkos::OpenMP, Kokkos::HostSpace, false)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::HostSpace, false)
-#endif
+KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutLeft)
+KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(double, Kokkos::LayoutRight)
+KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutLeft)
+KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -81,79 +59,63 @@ KOKKOSBLAS1_ROTMG_TPL_SPEC_DECL_BLAS(float, Kokkos::LayoutRight, Kokkos::OpenMP,
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                         \
-  template <>                                                                                                          \
-  struct Rotmg<                                                                                                        \
-      EXEC_SPACE,                                                                                                      \
-      Kokkos::View<double, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
-      Kokkos::View<double const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                        \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      Kokkos::View<double[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      true, ETI_SPEC_AVAIL> {                                                                                          \
-    using DXView =                                                                                                     \
-        Kokkos::View<double, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-    using YView = Kokkos::View<double const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                            \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                               \
-    using PView = Kokkos::View<double[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                               \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                               \
-                                                                                                                       \
-    static void rotmg(EXEC_SPACE const& space, DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1,  \
-                      PView const& param) {                                                                            \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_CUBLAS,double]");                                           \
-      rotmg_print_specialization<double>();                                                                            \
-      KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                       \
-      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                                \
-      cublasPointerMode_t pointer_mode;                                                                                \
-      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(s.handle, &pointer_mode));                                 \
-      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));                    \
-      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(                                                                                \
-          cublasDrotmg(s.handle, d1.data(), d2.data(), x1.data(), y1.data(), param.data()));                           \
-      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, pointer_mode));                                  \
-      Kokkos::Profiling::popRegion();                                                                                  \
-    }                                                                                                                  \
+#define KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                           \
+  template <bool ETI_SPEC_AVAIL>                                                                                  \
+  struct Rotmg<Kokkos::Cuda, Kokkos::View<double, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+               Kokkos::View<double const, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,         \
+               Kokkos::View<double[5], LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,      \
+               ETI_SPEC_AVAIL> {                                                                                  \
+    using DXView = Kokkos::View<double, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;           \
+    using YView  = Kokkos::View<double const, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
+    using PView  = Kokkos::View<double[5], LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;        \
+                                                                                                                  \
+    static void rotmg(Kokkos::Cuda const& space, DXView const& d1, DXView const& d2, DXView const& x1,            \
+                      YView const& y1, PView const& param) {                                                      \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_CUBLAS,double]");                                      \
+      rotmg_print_specialization<double>();                                                                       \
+      KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                  \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                           \
+      cublasPointerMode_t pointer_mode;                                                                           \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(s.handle, &pointer_mode));                            \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));               \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(                                                                           \
+          cublasDrotmg(s.handle, d1.data(), d2.data(), x1.data(), y1.data(), param.data()));                      \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, pointer_mode));                             \
+      Kokkos::Profiling::popRegion();                                                                             \
+    }                                                                                                             \
   };
 
-KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, true)
-KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, true)
-KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, false)
-KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, false)
+KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 
-#define KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_CUBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                        \
-  template <>                                                                                                         \
-  struct Rotmg<                                                                                                       \
-      EXEC_SPACE,                                                                                                     \
-      Kokkos::View<float, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
-      Kokkos::View<float const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                        \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
-      Kokkos::View<float[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      true, ETI_SPEC_AVAIL> {                                                                                         \
-    using DXView =                                                                                                    \
-        Kokkos::View<float, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-    using YView = Kokkos::View<float const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                            \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                              \
-    using PView = Kokkos::View<float[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                               \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                              \
-                                                                                                                      \
-    static void rotmg(EXEC_SPACE const& space, DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1, \
-                      PView const& param) {                                                                           \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_CUBLAS,float]");                                           \
-      rotmg_print_specialization<float>();                                                                            \
-      KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                      \
-      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                               \
-      cublasPointerMode_t pointer_mode;                                                                               \
-      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(s.handle, &pointer_mode));                                \
-      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));                   \
-      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(                                                                               \
-          cublasSrotmg(s.handle, d1.data(), d2.data(), x1.data(), y1.data(), param.data()));                          \
-      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, pointer_mode));                                 \
-      Kokkos::Profiling::popRegion();                                                                                 \
-    }                                                                                                                 \
+#define KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_CUBLAS(LAYOUT)                                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                 \
+  struct Rotmg<Kokkos::Cuda, Kokkos::View<float, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+               Kokkos::View<float const, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,         \
+               Kokkos::View<float[5], LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,      \
+               ETI_SPEC_AVAIL> {                                                                                 \
+    using DXView = Kokkos::View<float, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;           \
+    using YView  = Kokkos::View<float const, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;     \
+    using PView  = Kokkos::View<float[5], LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;        \
+                                                                                                                 \
+    static void rotmg(Kokkos::Cuda const& space, DXView const& d1, DXView const& d2, DXView const& x1,           \
+                      YView const& y1, PView const& param) {                                                     \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_CUBLAS,float]");                                      \
+      rotmg_print_specialization<float>();                                                                       \
+      KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                          \
+      cublasPointerMode_t pointer_mode;                                                                          \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasGetPointerMode(s.handle, &pointer_mode));                           \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, CUBLAS_POINTER_MODE_DEVICE));              \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(                                                                          \
+          cublasSrotmg(s.handle, d1.data(), d2.data(), x1.data(), y1.data(), param.data()));                     \
+      KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetPointerMode(s.handle, pointer_mode));                            \
+      Kokkos::Profiling::popRegion();                                                                            \
+    }                                                                                                            \
   };
 
-KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, true)
-KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, true)
-KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace, false)
-KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace, false)
+KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -167,23 +129,17 @@ KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutRight, Kokkos::Cuda, Kokko
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                        \
-  template <>                                                                                                          \
-  struct Rotmg<                                                                                                        \
-      EXEC_SPACE,                                                                                                      \
-      Kokkos::View<double, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
-      Kokkos::View<double const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                        \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      Kokkos::View<double[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      true, ETI_SPEC_AVAIL> {                                                                                          \
-    using DXView =                                                                                                     \
-        Kokkos::View<double, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-    using YView = Kokkos::View<double const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                            \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                               \
-    using PView = Kokkos::View<double[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                               \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                               \
+#define KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_ROCBLAS(LAYOUT)                                                               \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
+  struct Rotmg<Kokkos::HIP, Kokkos::View<double, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,        \
+               Kokkos::View<double const, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,               \
+               Kokkos::View<double[5], LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,            \
+               ETI_SPEC_AVAIL> {                                                                                       \
+    using DXView = Kokkos::View<double, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                 \
+    using YView  = Kokkos::View<double const, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;           \
+    using PView  = Kokkos::View<double[5], LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;              \
                                                                                                                        \
-    static void rotmg(EXEC_SPACE const& space, DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1,  \
+    static void rotmg(Kokkos::HIP const& space, DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1, \
                       PView const& param) {                                                                            \
       Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_ROCBLAS,double]");                                          \
       rotmg_print_specialization<double>();                                                                            \
@@ -199,47 +155,37 @@ namespace Impl {
     }                                                                                                                  \
   };
 
-KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, true)
-KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace, true)
-KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, false)
-KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace, false)
+KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_DROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight)
 
-#define KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXEC_SPACE, MEM_SPACE, ETI_SPEC_AVAIL)                       \
-  template <>                                                                                                         \
-  struct Rotmg<                                                                                                       \
-      EXEC_SPACE,                                                                                                     \
-      Kokkos::View<float, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,    \
-      Kokkos::View<float const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                        \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
-      Kokkos::View<float[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      true, ETI_SPEC_AVAIL> {                                                                                         \
-    using DXView =                                                                                                    \
-        Kokkos::View<float, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;  \
-    using YView = Kokkos::View<float const, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                            \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                              \
-    using PView = Kokkos::View<float[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                               \
-                               Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                              \
-                                                                                                                      \
-    static void rotmg(EXEC_SPACE const& space, DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1, \
-                      PView const& param) {                                                                           \
-      Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_ROCBLAS,float]");                                          \
-      rotmg_print_specialization<float>();                                                                            \
-      KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                        \
-      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                            \
-      rocblas_pointer_mode pointer_mode;                                                                              \
-      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(s.handle, &pointer_mode));                           \
-      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));             \
-      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                              \
-          rocblas_srotmg(s.handle, d1.data(), d2.data(), x1.data(), y1.data(), param.data()));                        \
-      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, pointer_mode));                            \
-      Kokkos::Profiling::popRegion();                                                                                 \
-    }                                                                                                                 \
+#define KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_ROCBLAS(LAYOUT)                                                               \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
+  struct Rotmg<Kokkos::HIP, Kokkos::View<float, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,         \
+               Kokkos::View<float const, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                \
+               Kokkos::View<float[5], LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, true,             \
+               ETI_SPEC_AVAIL> {                                                                                       \
+    using DXView = Kokkos::View<float, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                  \
+    using YView  = Kokkos::View<float const, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;            \
+    using PView  = Kokkos::View<float[5], LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;               \
+                                                                                                                       \
+    static void rotmg(Kokkos::HIP const& space, DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1, \
+                      PView const& param) {                                                                            \
+      Kokkos::Profiling::pushRegion("KokkosBlas::rotmg[TPL_ROCBLAS,float]");                                           \
+      rotmg_print_specialization<float>();                                                                             \
+      KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                         \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                             \
+      rocblas_pointer_mode pointer_mode;                                                                               \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(s.handle, &pointer_mode));                            \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_device));              \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(                                                                               \
+          rocblas_srotmg(s.handle, d1.data(), d2.data(), x1.data(), y1.data(), param.data()));                         \
+      KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, pointer_mode));                             \
+      Kokkos::Profiling::popRegion();                                                                                  \
+    }                                                                                                                  \
   };
 
-KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, true)
-KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace, true)
-KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, false)
-KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace, false)
+KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft)
+KOKKOSBLAS1_SROTMG_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutRight)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

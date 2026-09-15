@@ -34,12 +34,6 @@ if(KOKKOS_ENABLE_SYCL)
     COMPONENTS lapack)
 endif()
 
-if(KOKKOS_ENABLE_OPENMPTARGET)
-  # kokkoskernels_add_unit_test(lapack_openmptarget
-  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Lapack.cpp
-  #   COMPONENTS lapack)
-endif()
-
 #####################
 #                   #
 # Add CPU backends  #

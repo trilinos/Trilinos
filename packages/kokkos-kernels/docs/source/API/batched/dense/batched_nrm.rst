@@ -27,15 +27,20 @@ Computes the :math:`L1`, :math:`L2` or :math:`L_\infty` norm of a vector :math:`
 
 .. math::
 
-   \begin{align}
-   norm &= ||x|| \: \text{(if NrmType == KokkosBatched::Norm::L1)} \\
-   norm &= ||x||_2 \: \text{(if NrmType == KokkosBatched::Norm::L2 or NrmType == KokkosBatched::Norm::ScaledL2)} \\
-   norm &= ||x||_\infty \: \text{(if NrmType == KokkosBatched::Norm::LInf)}
-   \end{align}
+   \begin{aligned}
+   \|x\|_1 &= \sum_{i=1}^n \left( |\operatorname{Re}(x_i)| + |\operatorname{Im}(x_i)| \right) \: \text{if NrmType == KokkosBatched::Norm::L1} \\
+   \|x\| &= \sum_{i=1}^n \sqrt{|\operatorname{Re}(x_i)|^2 + |\operatorname{Im}(x_i)|^2} \: \text{if NrmType == KokkosBatched::Norm::GenuineL1} \\
+   \|x\|_2 &= \sqrt{\sum_{i=1}^n \left(|\operatorname{Re}(x_i)|^2 + |\operatorname{Im}(x_i)|^2\right)} \: \text{if NrmType == KokkosBatched::Norm::L2 or NrmType == KokkosBatched::Norm::ScaledL2} \\
+   \|x\|_\infty &= \max_i \left( |\operatorname{Re}(x_i)| + |\operatorname{Im}(x_i)| \right) \: \text{if NrmType == KokkosBatched::Norm::LInf} \\
+   \|x\|_\infty &= \max_i \sqrt{|\operatorname{Re}(x_i)|^2 + |\operatorname{Im}(x_i)|^2} \: \text{if NrmType == KokkosBatched::Norm::GenuineLInf}
+   \end{aligned}
 
-1. If ``NrmType == KokkosBatched::Norm::L1``, this operation is equivalent to the BLAS routine `SASUM <https://www.netlib.org/blas/sasum.f>`_ (`SCASUM <https://www.netlib.org/blas/scasum.f>`_) or `DASUM <https://www.netlib.org/blas/dasum.f>`_ (`DZASUM <https://www.netlib.org/blas/dzasum.f>`_) for single or double precision for real (complex) vectors.
-2. If ``NrmType == KokkosBatched::Norm::L2`` or ``NrmType == KokkosBatched::Norm::ScaledL2``, this operation is equivalent to the BLAS routine `SNRM2 <https://www.netlib.org/lapack/lapack-3.1.1/html/snrm2.f.html>`_ (`SCNRM2 <https://www.netlib.org/lapack/lapack-3.1.1/html/scnrm2.f.html>`_) or `DNRM2 <https://www.netlib.org/lapack/lapack-3.1.1/html/dnrm2.f.html>`_ (`DZNRM2 <https://www.netlib.org/lapack/lapack-3.1.1/html/dznrm2.f.html>`_) for single or double precision for real (complex) vectors.
-3. If ``NrmType == KokkosBatched::Norm::LInf``, this operation is related to the BLAS routine `ISAMAX <https://www.netlib.org/blas/isamax.f>`_ (`ICAMAX <https://www.netlib.org/blas/icamax.f>`_) or `IDAMAX <https://www.netlib.org/blas/idamax.f>`_ (`IZAMAX <https://www.netlib.org/blas/izamax.f>`_) for single or double precision for real (complex) vectors, where the index of the maximum absolute value is returned in the output :math:`norm`. This routine returns the maximum absolute value instead.
+- If ``NrmType == KokkosBatched::Norm::L1``, this operation is equivalent to the BLAS routine `SASUM <https://www.netlib.org/blas/sasum.f>`_ (`SCASUM <https://www.netlib.org/blas/scasum.f>`_) or `DASUM <https://www.netlib.org/blas/dasum.f>`_ (`DZASUM <https://www.netlib.org/blas/dzasum.f>`_) for single or double precision for real (complex) vectors.
+- If ``NrmType == KokkosBatched::Norm::GenuineL1``, this operation is equivalent to the BLAS routine `SASUM <https://www.netlib.org/blas/sasum.f>`_ (`SCSUM1 <https://www.netlib.org/lapack/lapack_routine/scsum1.f>`_) or `DASUM <https://www.netlib.org/blas/dasum.f>`_ (`DZSUM1 <https://www.netlib.org/lapack/lapack_routine/dzsum1.f>`_) for single or double precision for real (complex) vectors.
+- If ``NrmType == KokkosBatched::Norm::L2`` or ``NrmType == KokkosBatched::Norm::ScaledL2``, this operation is equivalent to the BLAS routine `SNRM2 <https://www.netlib.org/lapack/lapack-3.1.1/html/snrm2.f.html>`_ (`SCNRM2 <https://www.netlib.org/lapack/lapack-3.1.1/html/scnrm2.f.html>`_) or `DNRM2 <https://www.netlib.org/lapack/lapack-3.1.1/html/dnrm2.f.html>`_ (`DZNRM2 <https://www.netlib.org/lapack/lapack-3.1.1/html/dznrm2.f.html>`_) for single or double precision for real (complex) vectors.
+- If ``NrmType == KokkosBatched::Norm::LInf``, this operation is related to the BLAS routine `ISAMAX <https://www.netlib.org/blas/isamax.f>`_ (`ICAMAX <https://www.netlib.org/blas/icamax.f>`_) or `IDAMAX <https://www.netlib.org/blas/idamax.f>`_ (`IZAMAX <https://www.netlib.org/blas/izamax.f>`_) for single or double precision for real (complex) vectors, where the index of the maximum absolute value is returned in the output :math:`norm`. This routine returns the maximum absolute value (sum of absolute values of real and imaginary parts) instead.
+- If ``NrmType == KokkosBatched::Norm::GenuineLInf``, this operation is related to the BLAS routine `ISAMAX <https://www.netlib.org/blas/isamax.f>`_ (`ICMAX1 <https://www.netlib.org/lapack/lapack-3.1.1/html/icmax1.f.html>`_) or `IDAMAX <https://www.netlib.org/blas/idamax.f>`_ (`IZMAX1 <https://www.netlib.org/lapack/lapack-3.1.1/html/izmax1.f.html>`_) for single or double precision for real (complex) vectors, where the index of the maximum absolute value is returned in the output :math:`norm`. This routine returns the maximum absolute value instead.
+
 
 .. note::
   
@@ -53,9 +58,11 @@ Type Requirements
 - ``MemberType`` must be a Kokkos team member handle (only for ``TeamNrm`` and ``TeamVectorNrm``)
 
 - ``NrmType`` must be one of the following:
-   - ``KokkosBatched::Norm::L1`` for :math:`L1` norm
+   - ``KokkosBatched::Norm::L1`` for :math:`L1` norm that sums the absolute values of real and imaginary parts of complex vectors
+   - ``KokkosBatched::Norm::GenuineL1`` for :math:`L1` norm that sums the absolute values of complex vectors
    - ``KokkosBatched::Norm::L2`` or ``KokkosBatched::Norm::ScaledL2`` for :math:`L2` norm
-   - ``KokkosBatched::Norm::LInf`` for :math:`L_\infty` norm
+   - ``KokkosBatched::Norm::LInf`` for :math:`L_\infty` norm where the maximum absolute values of real and imaginary parts of complex vectors
+   - ``KokkosBatched::Norm::GenuineLInf`` for :math:`L_\infty` norm where the maximum absolute value of complex vectors is computed
 
 - ``XViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 containing a vector or matrix :math:`X`
 - ``NormViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 0 containing the output :math:`norm`. The norm is accumulated in the type of the elements of ``NormViewType``

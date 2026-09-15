@@ -793,7 +793,7 @@ bool KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
       if (KOKKOSKERNELS_VERBOSE) {
         std::cout << "\t\tCompression Count Kernel:" << timer_count.seconds() << std::endl;
       }
-      KokkosKernels::Impl::exclusive_parallel_prefix_sum<out_rowmap_view_t, MyExecSpace>(n + 1, out_row_map);
+      KokkosKernels::exclusive_parallel_prefix_sum(MyExecSpace(), out_row_map);
 
       {
         nnz_lno_t compressed_maxNumRoughZeros = 0;

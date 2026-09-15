@@ -35,17 +35,16 @@ typename XVector::size_type iamax(const execution_space& space, const XVector& x
                 "KokkosBlas::iamax: "
                 "Both Vector inputs must have rank 1.");
 
-  typedef typename XVector::size_type index_type;
+  using index_type = typename XVector::size_type;
 
-  typedef Kokkos::View<typename XVector::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-                       typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XVector_Internal;
+  using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
+                                        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+                                        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   using layout_t = typename XVector_Internal::array_layout;
 
-  typedef Kokkos::View<index_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      RVector_Internal;
+  using RVector_Internal =
+      Kokkos::View<index_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   index_type result;
   RVector_Internal R = RVector_Internal(&result, layout_t());
@@ -111,7 +110,7 @@ void iamax(const execution_space& space, const RV& R, const XMV& X,
                 "KokkosBlas::iamax: "
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
-  typedef typename XMV::size_type index_type;
+  using index_type = typename XMV::size_type;
   static_assert(std::is_same<typename RV::value_type, index_type>::value,
                 "KokkosBlas::iamax: R must have the type of"
                 "the Xvectors size_type it is an output argument "
@@ -129,24 +128,19 @@ void iamax(const execution_space& space, const RV& R, const XMV& X,
 
   using UnifiedXLayout  = typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
   using UnifiedRVLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<RV, UnifiedXLayout>::array_layout;
+  using UnifiedRVDevice =
+      std::conditional_t<Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename RV::memory_space>::assignable,
+                         Kokkos::HostSpace, execution_space>;
 
   // Create unmanaged versions of the input Views.  RV may be rank 0 or rank 1.
   // XMV may be rank 1 or rank 2.
-  typedef Kokkos::View<
-      typename std::conditional<RV::rank == 0, typename RV::non_const_value_type,
-                                typename RV::non_const_value_type*>::type,
-      UnifiedRVLayout,
-      typename std::conditional<std::is_same<typename RV::device_type::memory_space, Kokkos::HostSpace>::value,
-                                Kokkos::HostSpace, typename RV::device_type>::type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      RV_Internal;
-  typedef Kokkos::View<typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
-                                                 typename XMV::const_value_type**>::type,
-                       UnifiedXLayout, typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XMV_Internal;
+  using RV_Internal  = Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, UnifiedRVDevice,
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  RV_Internal R_internal  = R;
-  XMV_Internal X_internal = X;
+  RV_Internal R_internal  = KokkosKernels::Impl::unificationCast<RV_Internal>(R);
+  XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);
 
   Impl::Iamax<execution_space, RV_Internal, XMV_Internal>::iamax(space, R_internal, X_internal);
 }

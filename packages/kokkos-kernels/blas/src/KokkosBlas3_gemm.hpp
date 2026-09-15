@@ -34,10 +34,10 @@ bool gemv_based_gemm(
     // since B/C both have a single column and are not LayoutStride,
     // can create a raw contiguous rank-1 vector from them rather than using
     // subview.
-    Kokkos::View<typename BViewType::value_type*, typename BViewType::array_layout, typename BViewType::device_type,
+    Kokkos::View<typename BViewType::value_type*, typename BViewType::array_layout, execution_space,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>
         Bvec(B.data(), B.extent(0));
-    Kokkos::View<typename CViewType::value_type*, typename CViewType::array_layout, typename CViewType::device_type,
+    Kokkos::View<typename CViewType::value_type*, typename CViewType::array_layout, execution_space,
                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>
         Cvec(C.data(), C.extent(0));
     KokkosBlas::gemv(space, "N", alpha, A, Bvec, beta, Cvec);
@@ -151,17 +151,17 @@ void gemm(const execution_space& space, const char transA[], const char transB[]
   // Minimize the number of Impl::GEMM instantiations, by
   // standardizing on particular View specializations for its template
   // parameters.
-  typedef Kokkos::View<typename AViewType::const_value_type**, typename AViewType::array_layout,
-                       typename AViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      AVT;
-  typedef Kokkos::View<typename BViewType::const_value_type**, typename BViewType::array_layout,
-                       typename BViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      BVT;
-  typedef Kokkos::View<typename CViewType::non_const_value_type**, typename CViewType::array_layout,
-                       typename CViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      CVT;
-  typedef Impl::GEMM<execution_space, AVT, BVT, CVT> impl_type;
-  impl_type::gemm(space, transA, transB, alpha, A, B, beta, C);
+  using AVT = Kokkos::View<typename AViewType::const_value_type**, typename AViewType::array_layout, execution_space,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using BVT = Kokkos::View<typename BViewType::const_value_type**, typename BViewType::array_layout, execution_space,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using CVT = Kokkos::View<typename CViewType::non_const_value_type**, typename CViewType::array_layout,
+                           execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using impl_type = Impl::GEMM<execution_space, AVT, BVT, CVT>;
+  AVT A_internal  = KokkosKernels::Impl::unificationCast<AVT>(A);
+  BVT B_internal  = KokkosKernels::Impl::unificationCast<BVT>(B);
+  CVT C_internal  = KokkosKernels::Impl::unificationCast<CVT>(C);
+  impl_type::gemm(space, transA, transB, alpha, A_internal, B_internal, beta, C_internal);
 }
 
 /// \brief Dense matrix-matrix multiply: C = beta*C + alpha*op(A)*op(B).
