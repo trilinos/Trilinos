@@ -8,7 +8,6 @@ TRIBITS_INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/bcstrategy)
 
 SET(UNIT_TEST_DRIVER ${PANZER_UNIT_TEST_MAIN})
 
-# Runs on Tpetra, so it is available in Epetra-free builds.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   thyra_model_evaluator
   SOURCES thyra_model_evaluator.cpp ${UNIT_TEST_DRIVER}

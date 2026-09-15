@@ -8,12 +8,7 @@ IF (PANZER_HAVE_EPETRA_STACK)
     ADD_SUBDIRECTORY(initial_condition_builder)
 ENDIF (PANZER_HAVE_EPETRA_STACK)
 
-# The model evaluator tests are being migrated off the Epetra stack. This
-# directory is configured unconditionally so the tests that already run on
-# Tpetra provide coverage in Epetra-free builds; the ones still tied to Epetra
-# are guarded individually inside it.
 ADD_SUBDIRECTORY(model_evaluator)
-
 ADD_SUBDIRECTORY(stk_interface_test)
 ADD_SUBDIRECTORY(stk_connmngr)
 ADD_SUBDIRECTORY(panzer_workset_builder)

@@ -62,13 +62,10 @@ setup(const panzer::PhysicsBlock& side_pb,
       this->basis = dof_it->second;
   }
 
-
-
   TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(this->basis), std::runtime_error,
 		     "Error the name \"" << this->m_bc.equationSetName()
 		     << "\" is not a valid DOF for the boundary condition:\n"
 		     << this->m_bc << "\n");
-
 }
 
 // ***********************************************************************
@@ -103,5 +100,4 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     this->template registerEvaluator<EvalT>(fm, op_ip);
     this->template registerEvaluator<EvalT>(fm, op_basis);
   }
-
 }

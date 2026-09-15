@@ -362,7 +362,7 @@ namespace panzer_stk {
           ss2 << "Initial Value " << j;
           (*p_values[i])[j] = pList.get<double>(ss2.str());
 
-          // this is a band-aid/hack to make sure parameters are registered before they are accessed
+          // This is to make sure parameters are registered before they are accessed
           panzer::registerScalarParameter((*p_names[i])[j],*global_data->pl,(*p_values[i])[j]);
           tangent_param_names.push_back((*p_names[i])[j]);
         }

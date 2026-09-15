@@ -141,9 +141,7 @@ int main(int argc, char *argv[])
     input_params->remove("Objective");
     input_params->remove("ROL");
 
-    // Optional, and pulled off for the same reason. Finite difference
-    // gradients converge the parameter less tightly than analytic ones, so the
-    // tolerance on the recovered parameter is per problem.
+    // Optional check of final parameter value of the optimization problem
     double target_tolerance = 1.0e-9;
     if (input_params->isSublist("Optimization Check")) {
       ParameterList opt_check = input_params->sublist("Optimization Check");
@@ -156,7 +154,7 @@ int main(int argc, char *argv[])
       target_tolerance = opt_check.get<double>("Target Tolerance");
     }
 
-    // Optional, and pulled off for the same reason.
+    // Optional check of the final gradient values against finite difference
     RCP<ParameterList> gradient_check_params;
     if (input_params->isSublist("Gradient Check")) {
       gradient_check_params = parameterList(input_params->sublist("Gradient Check"));

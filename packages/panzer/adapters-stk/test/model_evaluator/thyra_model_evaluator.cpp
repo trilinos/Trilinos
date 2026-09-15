@@ -175,9 +175,9 @@ namespace panzer {
   // (alpha=0,beta=1) evaluation must give the same operator. There
   // was a previous path that sped up the evaluation by ignoring alpha
   // and beta, assuming the values don't change once set. But this is
-  // only treu for very simple circumstances. Multiple corner cases
+  // only true for very simple circumstances. Multiple corner cases
   // were found and we decided it was too dangerous to keep
-  // supporting. The sedd value is now always written for safety.
+  // supporting. The seed value is now always written for safety.
   TEUCHOS_UNIT_TEST(thyra_model_evaluator, jacobian_alpha_beta)
   {
     using Teuchos::RCP;
@@ -1041,9 +1041,10 @@ namespace panzer {
   }
 
 
-  // Testing that nominal values are correctly built and initialized
-  //    specifically testing that adding distributed parameters doesn't wipe out
-  //    previously set nominal values (like the inital condition)
+  // Testing that nominal values are correctly built and initialized,
+  // specifically testing that adding distributed parameters doesn't
+  // wipe out previously set nominal values (like the inital
+  // condition)
   TEUCHOS_UNIT_TEST(model_evaluator, nominal_values)
   {
     typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;

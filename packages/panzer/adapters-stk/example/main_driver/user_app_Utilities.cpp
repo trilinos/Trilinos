@@ -88,7 +88,6 @@ void user_app::addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList&
       for(std::size_t i=0;i<eblocks.size();i++)
         wkst_descs.push_back(panzer::blockDescriptor(eblocks[i]));
 
-      // TODO BWR DO WE WANT THIS?
       const bool add_derivatives = lst.isParameter("Request Derivatives") ? lst.get<bool>("Request Derivatives") : false;
       if (add_derivatives) {
         me_factory.addResponseWithDerivatives(name,wkst_descs,builder);
@@ -111,7 +110,6 @@ void user_app::addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList&
       for(std::size_t i=0;i<eblocks.size();i++)
         descriptors.push_back(panzer::blockDescriptor(eblocks[i]));
 
-      // TODO BWR DO WE WANT THIS?
       const bool add_derivatives = lst.isParameter("Request Derivatives") ? lst.get<bool>("Request Derivatives") : false;
       if (add_derivatives) {
         me_factory.addResponseWithDerivatives("Value In Middle",descriptors,builder);

@@ -1785,9 +1785,6 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     bool is_active = false;
     for(std::size_t i=0;i<responses_.size(); i++) {
 
-      // TODO BWR NEEDED? the check above only sees if there are ANY dgdp to eval
-      // TODO BWR so that can fail if we only want some tangents
-      // TODO BWR need to check this more broadly
       if (outArgs.supports(MEB::OUT_ARG_DgDp,i,j).none())
         continue;
       MEB::Derivative<Scalar> deriv = outArgs.get_DgDp(i,j);
