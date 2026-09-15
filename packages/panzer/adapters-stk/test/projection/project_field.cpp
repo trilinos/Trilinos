@@ -136,7 +136,7 @@ class GetCoeffsEvaluator
     DynRankView local_refTargetAtEvalPoints, local_physTargetAtEvalPoints;
     ElemShape elemShape;
     Intrepid2::ProjectionStruct<PHX::Device,double> projStruct;
-    Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > it2basis;
+    Teuchos::RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > it2basis;
   
 }; // end of class
 
@@ -170,7 +170,7 @@ GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> in_basis,
       "ERROR: Element shape not supported!");
   }
 
-  it2basis = basis->template getIntrepid2Basis<PHX::exec_space,double,double>();
+  it2basis = basis->template getIntrepid2Basis<PHX::Device::device_type,double,double>();
   
   // set up projection structure
   projStruct.createL2ProjectionStruct(it2basis.get(), 3); // cubature order 3
@@ -210,7 +210,7 @@ GetCoeffsEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  workset)
 {
-  using ct = Intrepid2::CellTools<PHX::Device>;
+  using ct = Intrepid2::CellTools<PHX::Device::device_type>;
   using fst = Intrepid2::FunctionSpaceTools<PHX::Device>;
   using pts = Intrepid2::ProjectionTools<PHX::Device>;
 

@@ -97,7 +97,7 @@ namespace panzer_stk {
 
     // KK: invoke serial interface; cubDegree is 1 and integration point is one 
     //     for debugging statement, use max dimension
-    auto side_parametrization = Intrepid2::RefSubcellParametrization<Kokkos::HostSpace>::get(2,parentTopology->getKey());
+    auto side_parametrization = Intrepid2::RefSubcellParametrization<typename Kokkos::HostSpace::device_type>::get(2,parentTopology->getKey());
     Kokkos::DynRankView<double,Kokkos::HostSpace> normal_at_point("normal",3); // parentTopology->getDimension());
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
     

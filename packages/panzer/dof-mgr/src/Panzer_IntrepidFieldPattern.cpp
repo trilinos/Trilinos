@@ -17,7 +17,7 @@
 namespace panzer {
 
   Intrepid2FieldPattern::
-  Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > &intrepidBasis)
+  Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> > &intrepidBasis)
     : intrepidBasis_(intrepidBasis) {
     const auto dofOrd = intrepidBasis_->getAllDofOrdinal(); // rank 3 view
     const auto dofTag = intrepidBasis_->getAllDofTags(); // rank 2 view
@@ -227,7 +227,7 @@ namespace panzer {
     coords = Kokkos::DynRankView<double,PHX::Device>("coords",numCells,localCoords.extent(0),getDimension());
 
     if(numCells>0) {
-      Intrepid2::CellTools<PHX::Device> cellTools;
+      Intrepid2::CellTools<PHX::Device::device_type> cellTools;
       // For backwards compatability, allow the FE basis to supply the mesh cell topology (via the FEM base cell topo)
       // This will occur if no meshCellTopology is provided (defaults to Teuchos::null)
       // If provided, use the mesh topology directly
@@ -239,7 +239,7 @@ namespace panzer {
     }
   }
 
-  Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> >
+  Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> >
   Intrepid2FieldPattern::getIntrepidBasis() const
   { return intrepidBasis_; }
   

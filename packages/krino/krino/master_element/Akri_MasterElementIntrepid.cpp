@@ -33,34 +33,34 @@ static std::unique_ptr<MasterElementIntrepid::IntrepidBasis> get_basis_for_topol
 {
   using PointType = double;
   using OutputType = double;
-  using ExecutionSpace = MasterElementIntrepid::ExecutionSpace;
+  using Device = MasterElementIntrepid::Device;
 
   switch(t())
   {
   case stk::topology::LINE_2:
-      return std::make_unique<Intrepid2::Basis_HGRAD_LINE_C1_FEM<ExecutionSpace, OutputType, PointType>>();
+      return std::make_unique<Intrepid2::Basis_HGRAD_LINE_C1_FEM<Device, OutputType, PointType>>();
   case stk::topology::LINE_3:
-      return std::make_unique<Intrepid2::Basis_HGRAD_LINE_C2_FEM<ExecutionSpace, OutputType, PointType>>();
+      return std::make_unique<Intrepid2::Basis_HGRAD_LINE_C2_FEM<Device, OutputType, PointType>>();
   case stk::topology::TRI_3:
   case stk::topology::TRI_3_2D:
-      return std::make_unique<Intrepid2::Basis_HGRAD_TRI_C1_FEM<ExecutionSpace, OutputType, PointType>>();
+      return std::make_unique<Intrepid2::Basis_HGRAD_TRI_C1_FEM<Device, OutputType, PointType>>();
   case stk::topology::TRI_6:
   case stk::topology::TRI_6_2D:
-      return std::make_unique<Intrepid2::Basis_HGRAD_TRI_C2_FEM<ExecutionSpace, OutputType, PointType>>();
+      return std::make_unique<Intrepid2::Basis_HGRAD_TRI_C2_FEM<Device, OutputType, PointType>>();
   case stk::topology::QUAD_4:
   case stk::topology::QUAD_4_2D:
-      return std::make_unique<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ExecutionSpace, OutputType, PointType>>();
+      return std::make_unique<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<Device, OutputType, PointType>>();
   case stk::topology::QUAD_9:
   case stk::topology::QUAD_9_2D:
-      return std::make_unique<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<ExecutionSpace, OutputType, PointType>>();
+      return std::make_unique<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<Device, OutputType, PointType>>();
   case stk::topology::TET_4:
-      return std::make_unique<Intrepid2::Basis_HGRAD_TET_C1_FEM<ExecutionSpace, OutputType, PointType>>();
+      return std::make_unique<Intrepid2::Basis_HGRAD_TET_C1_FEM<Device, OutputType, PointType>>();
   case stk::topology::TET_10:
-      return std::make_unique<Intrepid2::Basis_HGRAD_TET_C2_FEM<ExecutionSpace, OutputType, PointType>>();
+      return std::make_unique<Intrepid2::Basis_HGRAD_TET_C2_FEM<Device, OutputType, PointType>>();
   case stk::topology::HEX_8:
-      return std::make_unique<Intrepid2::Basis_HGRAD_HEX_C1_FEM<ExecutionSpace, OutputType, PointType>>();
+      return std::make_unique<Intrepid2::Basis_HGRAD_HEX_C1_FEM<Device, OutputType, PointType>>();
   case stk::topology::HEX_27:
-      return std::make_unique<Intrepid2::Basis_HGRAD_HEX_C2_FEM<ExecutionSpace, OutputType, PointType>>();
+      return std::make_unique<Intrepid2::Basis_HGRAD_HEX_C2_FEM<Device, OutputType, PointType>>();
   default:
       throw std::runtime_error("Element topology not found in get_basis_for_topology(): " + t.name());
   }
@@ -101,7 +101,7 @@ MasterElementIntrepid::MasterElementIntrepid(stk::topology topology)
   m_intrepidBasis = get_basis_for_topology(topology);
   using WeightType = double;
   shards::CellTopology cellType = stk::mesh::get_cell_topology(topology);
-  auto intrepidCubature = Intrepid2::DefaultCubatureFactory().create<ExecutionSpace, PointType, WeightType>(cellType, 2*m_intrepidBasis->getDegree());
+  auto intrepidCubature = Intrepid2::DefaultCubatureFactory().create<Device, PointType, WeightType>(cellType, 2*m_intrepidBasis->getDegree());
 
   m_numIntgPts = intrepidCubature->getNumPoints();
   m_numNodes = topology.num_nodes();
@@ -115,12 +115,12 @@ MasterElementIntrepid::MasterElementIntrepid(stk::topology topology)
   m_refCoords.resize(m_numNodes*m_numElemDims);
   m_refVolume = parametric_volume_for_topology(topology);
 
-  Kokkos::DynRankView<double, ExecutionSpace> refPoints(m_refPoints.data(), m_numIntgPts, m_numElemDims);
-  Kokkos::DynRankView<double, ExecutionSpace> refWeights(m_refWeights.data(), m_numIntgPts);
+  Kokkos::DynRankView<double, Device> refPoints(m_refPoints.data(), m_numIntgPts, m_numElemDims);
+  Kokkos::DynRankView<double, Device> refWeights(m_refWeights.data(), m_numIntgPts);
   intrepidCubature->getCubature(refPoints, refWeights);
 
-  Kokkos::DynRankView<double, ExecutionSpace> pointVals("pointVals", m_numNodes, m_numIntgPts);
-  Kokkos::DynRankView<double, ExecutionSpace> pointGrads("pointGrads", m_numNodes, m_numIntgPts, m_numElemDims);
+  Kokkos::DynRankView<double, Device> pointVals("pointVals", m_numNodes, m_numIntgPts);
+  Kokkos::DynRankView<double, Device> pointGrads("pointGrads", m_numNodes, m_numIntgPts, m_numElemDims);
 
   m_intrepidBasis->getValues(pointVals, refPoints, Intrepid2::OPERATOR_VALUE);
   m_intrepidBasis->getValues(pointGrads, refPoints, Intrepid2::OPERATOR_GRAD);
@@ -139,9 +139,9 @@ MasterElementIntrepid::MasterElementIntrepid(stk::topology topology)
     }
   }
 
-  Kokkos::DynRankView<double, ExecutionSpace> nodeCoords("nodeCoords", m_numElemDims);
+  Kokkos::DynRankView<double, Device> nodeCoords("nodeCoords", m_numElemDims);
   for ( int node(0); node < m_numNodes; ++node ) {
-    Intrepid2::CellTools<ExecutionSpace>::getReferenceNode( nodeCoords, cellType, node );
+    Intrepid2::CellTools<Device>::getReferenceNode( nodeCoords, cellType, node );
     for ( int dim(0); dim < m_numElemDims; ++dim ) {
       m_refCoords[node*m_numElemDims + dim] = nodeCoords[dim];
     }
@@ -165,8 +165,8 @@ MasterElementIntrepid::shape_fcn(
     const double* p_coords,
     double* result) const
 {
-  Kokkos::DynRankView<double, ExecutionSpace> pointVals("pointVals", m_numNodes, nint);
-  const Kokkos::DynRankView<double, ExecutionSpace> pcoordVec(const_cast<double*>(p_coords), nint, m_numElemDims);
+  Kokkos::DynRankView<double, Device> pointVals("pointVals", m_numNodes, nint);
+  const Kokkos::DynRankView<double, Device> pcoordVec(const_cast<double*>(p_coords), nint, m_numElemDims);
 
   m_intrepidBasis->getValues(pointVals, pcoordVec, Intrepid2::OPERATOR_VALUE);
 
@@ -184,8 +184,8 @@ MasterElementIntrepid::shape_fcn_deriv(
     const double* p_coords,
     double* result ) const
 {
-  Kokkos::DynRankView<double, ExecutionSpace> pointGrads("pointGrads", m_numNodes, nint, m_numElemDims);
-  const Kokkos::DynRankView<double, ExecutionSpace> pcoordVec(const_cast<double*>(p_coords), nint, m_numElemDims);
+  Kokkos::DynRankView<double, Device> pointGrads("pointGrads", m_numNodes, nint, m_numElemDims);
+  const Kokkos::DynRankView<double, Device> pcoordVec(const_cast<double*>(p_coords), nint, m_numElemDims);
 
   m_intrepidBasis->getValues(pointGrads, pcoordVec, Intrepid2::OPERATOR_GRAD);
 

@@ -37,8 +37,8 @@ namespace panzer {
 
       \returns A newly allocated panzer::Basis object.
   */
-  template <typename ExecutionSpace, typename OutputValueType, typename PointValueType>
-  Teuchos::RCP<Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType> >
+  template <typename DeviceType, typename OutputValueType, typename PointValueType>
+  Teuchos::RCP<Intrepid2::Basis<DeviceType,OutputValueType,PointValueType> >
   createIntrepid2Basis(const std::string basis_type, int basis_order,
                        const shards::CellTopology & cell_topology);
 
@@ -56,8 +56,8 @@ namespace panzer {
 
       \returns A newly allocated panzer::Basis object.
   */
-  template <typename ExecutionSpace, typename OutputValueType, typename PointValueType>
-  Teuchos::RCP<Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType> >
+  template <typename DeviceType, typename OutputValueType, typename PointValueType>
+  Teuchos::RCP<Intrepid2::Basis<DeviceType,OutputValueType,PointValueType> >
   createIntrepid2Basis(const std::string basis_type, int basis_order,
                        const Teuchos::RCP<const shards::CellTopology> & cell_topology);
 }

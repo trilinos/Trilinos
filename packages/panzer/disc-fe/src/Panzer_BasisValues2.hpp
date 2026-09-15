@@ -68,7 +68,7 @@ namespace panzer {
   class BasisValues2 {
   public:
     typedef typename ArrayTraits<Scalar,PHX::MDField<Scalar> >::size_type size_type;
-    using IntrepidBasis = Intrepid2::Basis<PHX::Device::execution_space,Scalar,Scalar>;
+    using IntrepidBasis = Intrepid2::Basis<PHX::Device::device_type,Scalar,Scalar>;
 
     typedef PHX::MDField<Scalar>                    ArrayDynamic;
     typedef PHX::MDField<Scalar,BASIS,IP>           Array_BasisIP;

@@ -90,10 +90,10 @@ postRegistrationSetup(
   const int edgeDim = 1;
   const int faceDim = 2;
   if(cellTopo.getDimension() > edgeDim)
-    edgeParam = Intrepid2::RefSubcellParametrization<Kokkos::HostSpace>::get(edgeDim, cellTopo.getKey());
+    edgeParam = Intrepid2::RefSubcellParametrization<typename Kokkos::HostSpace::device_type>::get(edgeDim, cellTopo.getKey());
 
   if(cellTopo.getDimension() > faceDim)
-    faceParam = Intrepid2::RefSubcellParametrization<Kokkos::HostSpace>::get(faceDim, cellTopo.getKey());
+    faceParam = Intrepid2::RefSubcellParametrization<typename Kokkos::HostSpace::device_type>::get(faceDim, cellTopo.getKey());
 }
 
 //**********************************************************************

@@ -165,8 +165,9 @@
       Searcher* m_searcher;
       //const CellTopologyData * m_cached_topo;
 
-      using BasisType = Intrepid2::Basis<Kokkos::HostSpace, double, double >;
-      using BasisTypeRCP = Intrepid2::BasisPtr<Kokkos::HostSpace, double, double >;
+      using device_type = typename Kokkos::DefaultHostExecutionSpace::device_type;
+      using BasisType = Intrepid2::Basis<device_type, double, double >;
+      using BasisTypeRCP = Intrepid2::BasisPtr<device_type, double, double >;
 
       unsigned m_cached_topo_key;
       BasisTypeRCP m_cached_basis;
@@ -301,8 +302,8 @@
           PerceptMesh::fillCellNodes(*get_bulk_data(), bucket_or_element,  m_coordinatesField, cellWorkset, spatialDim);
           Jac = MDArray("Jac", numCells, numInterpPoints, spatialDim, spatialDim);
           JacInverse = MDArray("JacInverse", numCells, numInterpPoints, spatialDim, spatialDim);
-          Intrepid2::CellTools<Kokkos::HostSpace>::setJacobian(Jac, parametric_coordinates, cellWorkset, topo);
-          Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianInv(JacInverse, Jac);
+          Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::setJacobian(Jac, parametric_coordinates, cellWorkset, topo);
+          Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::setJacobianInv(JacInverse, Jac);
         }
       else 
         {

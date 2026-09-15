@@ -40,7 +40,7 @@ namespace panzer::unit_test {
 using Triplet = CartesianConnManager::Triplet<panzer::GlobalOrdinal>;
 
 RCP<const panzer::FieldPattern> buildFieldPattern(
-  RCP<Intrepid2::Basis<PHX::Device, double, double>> basis
+  RCP<Intrepid2::Basis<PHX::Device::device_type, double, double>> basis
 ) {
   // build a geometric pattern from a single basis
   return Teuchos::make_rcp<panzer::Intrepid2FieldPattern>(basis);
@@ -77,8 +77,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 
   const int poly_U = 4;
   const int poly_P = 3;
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_U));
-  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_P));
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type, double, double>>(poly_U));
+  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type, double, double>>(poly_P));
 
   // build the topology
   const auto connManager = Teuchos::make_rcp<CCM>();
@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
   // const int poly_U = 4, poly_P = 1, poly_T = 3;
   const int poly_U = 1;
 
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_U));
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type, double, double>>(poly_U));
 
   // build the topology
   const auto connManager = Teuchos::make_rcp<CCM>();
@@ -269,9 +269,9 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
   // build velocity, temperature and pressure fields
   const int poly_U = 4, poly_P = 1, poly_T = 3;
 
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_U));
-  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_P));
-  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device, double, double>>(poly_T));
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type, double, double>>(poly_U));
+  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type, double, double>>(poly_P));
+  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type, double, double>>(poly_T));
   
   // build the topology
   const auto connManager = Teuchos::make_rcp<CCM>();

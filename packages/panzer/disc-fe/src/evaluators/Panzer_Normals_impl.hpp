@@ -16,6 +16,7 @@
 #include "Panzer_Workset_Utilities.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_CellTools.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_Scratch_Utilities.hpp"
 
 namespace panzer {
@@ -71,9 +72,9 @@ evaluateFields(
   // ECC Fix: Get Physical Side Normals
 
   if(workset.num_cells>0) {
-    Intrepid2::CellTools<PHX::exec_space>::getPhysicalSideNormals(normals.get_view(),
-                                                                  this->wda(workset).int_rules[quad_index]->jac.get_view(),
-                                                                  side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
+    Intrepid2::CellTools<PHX::Device::device_type>::getPhysicalSideNormals(normals.get_view(),
+                                                                           this->wda(workset).int_rules[quad_index]->jac.get_view(),
+                                                                           side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
       
     if(normalize) {
       // normalize vector: getPhysicalSideNormals does not 

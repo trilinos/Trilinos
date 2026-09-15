@@ -114,7 +114,7 @@ findCellAndComputeBasisValues(typename Traits::EvalData d)
   // This evaluator needs to run on host until checkPointwiseInclusion
   // is moved to device.
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
-  using CTD = Intrepid2::CellTools<HostSpace>;
+  using CTD = Intrepid2::CellTools<HostSpace::device_type>;
   using FST = Intrepid2::FunctionSpaceTools<HostSpace>;
 
   // Find which cell contains our point
@@ -182,7 +182,7 @@ findCellAndComputeBasisValues(typename Traits::EvalData d)
 
     // Evaluate basis at reference values
     Kokkos::DynRankView<double,HostSpace> ref_basis_values("ref_basis_values", num_basis, 1); // <B,P>
-    basis_->getIntrepid2Basis<HostSpace,double,double>()->getValues(ref_basis_values,
+    basis_->getIntrepid2Basis<HostSpace::device_type,double,double>()->getValues(ref_basis_values,
                                                                     reference_points_cell,
                                                                     Intrepid2::OPERATOR_VALUE);
 
@@ -196,7 +196,7 @@ findCellAndComputeBasisValues(typename Traits::EvalData d)
 
     // Evaluate basis at reference values
     Kokkos::DynRankView<double,HostSpace> ref_basis_values("ref_basis_values", num_basis, 1, num_dim); // <B,P,D>
-    basis_->getIntrepid2Basis<HostSpace,double,double>()->getValues(ref_basis_values,
+    basis_->getIntrepid2Basis<HostSpace::device_type,double,double>()->getValues(ref_basis_values,
                                                                     reference_points_cell,
                                                                     Intrepid2::OPERATOR_VALUE);
 
