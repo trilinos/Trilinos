@@ -845,7 +845,7 @@ bool BlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
   // Add debug status test, if one is provided by the user
-  if (nonnull(debugStatusTest_) ) {
+  if (Teuchos::nonnull(debugStatusTest_) ) {
     // Add debug convergence test
     Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(sTest_)->addStatusTest( debugStatusTest_ );
   }
@@ -1115,6 +1115,22 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
 
           } // end of restarting
 
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for a debug status test requesting termination
+          //
+          // A status test installed via setDebugStatusTest() is OR-combined
+          // into sTest_, so it can legitimately stop iterate() (e.g. a
+          // wall-clock time limit).  Treat that as an unconverged termination
+          // rather than an inconsistent internal state.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if (Teuchos::nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            retType = Unconverged;
+            isConverged = false;
+            break;  // break from while(1){block_gmres_iter->iterate()}
+          }
           ////////////////////////////////////////////////////////////////////////////////////
           //
           // we returned from iterate(), but none of our status tests Passed.
