@@ -17,6 +17,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosCGIteration.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 
 #include "BelosLinearProblem.hpp"
 #include "BelosMatOrthoManager.hpp"
@@ -161,7 +162,8 @@ public:
 /// This is the (non-stub) actual implementation of BlockCGIter.
 template<class ScalarType, class MV, class OP, class DM>
 class BlockCGIter<ScalarType, MV, OP, DM, true> :
-    virtual public CGIteration<ScalarType,MV,OP,DM>
+    virtual public CGIteration<ScalarType,MV,OP,DM>,
+    public CurrentSolutionProvider<ScalarType,MV,OP,DM>
 {
 public:
   //

@@ -16,6 +16,7 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosGmresIteration.hpp"
 
 #include "BelosLinearProblem.hpp"
@@ -49,7 +50,8 @@
 namespace Belos {
 
 template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
-class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
+class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM>,
+                         public CurrentSolutionProvider<ScalarType,MV,OP,DM> {
 
   public:
 
@@ -184,6 +186,15 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
             problem contains the current solution.
   */
   Teuchos::RCP<MV> getCurrentUpdate() const;
+
+  //! Whether this iteration can currently provide a solution estimate.
+  bool hasCurrentSolution() const override;
+
+  //! Get the current update in solution space.
+  Teuchos::RCP<const MV> getCurrentSolutionUpdate() const override;
+
+  //! Get the current solution estimate for the linear system.
+  Teuchos::RCP<MV> getCurrentSolution() const override;
 
   //! Method for updating QR factorization of upper Hessenberg matrix
   /*! \note If \c dim >= \c getCurSubspaceDim() and \c dim < \c getMaxSubspaceDim(), then
@@ -518,6 +529,37 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       MVT::MvTimesMatAddMv (one, *Zjp1, *y, zero, *currentUpdate);
     }
     return currentUpdate;
+  }
+
+
+  template <class ScalarType, class MV, class OP, class DM>
+  bool BlockFGmresIter<ScalarType,MV,OP,DM>::hasCurrentSolution() const
+  {
+    return initialized_ && curDim_ > 0 && lp_->getCurrLHSVec() != Teuchos::null;
+  }
+
+
+  template <class ScalarType, class MV, class OP, class DM>
+  Teuchos::RCP<const MV> BlockFGmresIter<ScalarType,MV,OP,DM>::getCurrentSolutionUpdate() const
+  {
+    if (!hasCurrentSolution()) {
+      return Teuchos::null;
+    }
+    return getCurrentUpdate();
+  }
+
+
+  template <class ScalarType, class MV, class OP, class DM>
+  Teuchos::RCP<MV> BlockFGmresIter<ScalarType,MV,OP,DM>::getCurrentSolution() const
+  {
+    if (!hasCurrentSolution()) {
+      return Teuchos::null;
+    }
+    Teuchos::RCP<const MV> update = getCurrentSolutionUpdate();
+    Teuchos::RCP<MV> curX = lp_->getCurrLHSVec();
+    Teuchos::RCP<MV> currentSolution = MVT::Clone(*curX, MVT::GetNumberVecs(*curX));
+    MVT::MvAddMv(SCT::one(), *curX, SCT::one(), *update, *currentSolution);
+    return currentSolution;
   }
 
 
