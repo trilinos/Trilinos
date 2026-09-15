@@ -2959,7 +2959,10 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numRows, Teuchos::ptr(&numRowsGlobal));
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, nnz, Teuchos::ptr(&numNNZGlobal));
 
-  oss << "(2, 2)" << std::setw(rowspacer) << numRowsGlobal << std::setw(nnzspacer) << numNNZGlobal << std::setw(9) << as<double>(numNNZGlobal) / numRowsGlobal << std::endl;
+  if (numRowsGlobal > 0)
+    oss << "(2, 2)" << std::setw(rowspacer) << numRowsGlobal << std::setw(nnzspacer) << numNNZGlobal << std::setw(9) << as<double>(numNNZGlobal) / numRowsGlobal << std::endl;
+  else
+    oss << "(2, 2)" << std::setw(rowspacer) << numRowsGlobal << std::setw(nnzspacer) << numNNZGlobal << std::endl;
 
   oss << std::endl;
 
