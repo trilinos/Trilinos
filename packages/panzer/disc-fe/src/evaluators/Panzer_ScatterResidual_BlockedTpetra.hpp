@@ -23,6 +23,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
@@ -270,6 +271,23 @@ private:
   //! Column LIDs and derivative offsets. Aliases of the row members when square.
   Kokkos::View<LO**, Kokkos::LayoutRight, PHX::Device> colWorksetLIDs_;
   PHX::View<LO*> colBlockOffsets_;
+
+  //! Sub-block matrix type handed to the scatter kernel.
+  using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>,size_t>;
+
+  /** Scratch reused across evaluateFields() calls. Their extents are fixed by
+    * the block structure, so they are sized once in postRegistrationSetup();
+    * only the contents change per call. Allocating these per call is costly,
+    * particularly on device.
+    */
+  PHX::View<LocalMatrixType**> jacTpetraBlocks_;
+  typename PHX::View<LocalMatrixType**>::host_mirror_type hostJacTpetraBlocks_;
+  PHX::View<int**> blockExistsInJac_;
+  typename PHX::View<int**>::host_mirror_type hostBlockExistsInJac_;
+
+  //! Host copies of the offsets, filled once since the offsets never change.
+  typename PHX::View<LO*>::host_mirror_type blockOffsets_h_;
+  typename PHX::View<LO*>::host_mirror_type colBlockOffsets_h_;
 
   ScatterResidual_BlockedTpetra();
 };

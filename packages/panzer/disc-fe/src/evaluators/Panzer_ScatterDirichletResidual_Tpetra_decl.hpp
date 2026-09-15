@@ -268,6 +268,16 @@ private:
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
   std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
+
+  /** Scratch reused across evaluateFields() calls, so the scatter loop does no
+    * allocation of its own. Each is grown on demand and never shrunk, so a
+    * buffer always fits the largest request seen so far.
+    */
+  typename PHX::View<const LO**>::host_mirror_type lids_h_;
+  std::vector<typename PHX::View<const ScalarT**>::host_mirror_type> scatterFields_h_;
+  typename LOC::CrsMatrixType::nonconst_local_inds_host_view_type rowIndices_;
+  typename LOC::CrsMatrixType::nonconst_values_host_view_type rowValues_;
+  std::vector<double> jacRow_;
 };
 
 }

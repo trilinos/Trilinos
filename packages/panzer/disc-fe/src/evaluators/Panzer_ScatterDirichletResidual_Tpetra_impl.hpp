@@ -713,6 +713,17 @@ evaluateFields(typename TRAITS::EvalData workset)
    if (dirichletCounter_ != Teuchos::null)
      dc_array = dirichletCounter_->get1dViewNonConst();
 
+   // Size the row scratch to the widest row in this matrix, once, so the
+   // scatter loop below allocates nothing. getLocalRowCopy() explicitly allows
+   // a buffer larger than the row it is asked for.
+   if (Jac != Teuchos::null) {
+     const std::size_t maxRowEntries = Jac->getLocalMaxNumRowEntries();
+     if (rowIndices_.extent(0) < maxRowEntries) {
+       rowIndices_ = typename LOC::CrsMatrixType::nonconst_local_inds_host_view_type("indices", maxRowEntries);
+       rowValues_  = typename LOC::CrsMatrixType::nonconst_values_host_view_type("values", maxRowEntries);
+     }
+   }
+
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
@@ -720,13 +731,24 @@ evaluateFields(typename TRAITS::EvalData workset)
 
    // scatter operation for each cell in workset
    auto LIDs = globalIndexer_->getLIDs();
-   auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+   // Reuse the host copies below rather than allocating a mirror per call. The
+   // contents still have to be refreshed, but the buffers are only grown.
+   if (lids_h_.extent(0) != LIDs.extent(0) || lids_h_.extent(1) != LIDs.extent(1))
+     lids_h_ = Kokkos::create_mirror_view(LIDs);
+   auto& LIDs_h = lids_h_;
    Kokkos::deep_copy(LIDs_h, LIDs);
+
+   if (scatterFields_h_.size() != scatterFields_.size())
+     scatterFields_h_.resize(scatterFields_.size());
    // loop over each field to be scattered
    for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
      int fieldNum = fieldIds_[fieldIndex];
-     auto scatterFields_h = Kokkos::create_mirror_view(scatterFields_[fieldIndex].get_static_view());
-     Kokkos::deep_copy(scatterFields_h, scatterFields_[fieldIndex].get_static_view());
+     const auto scatterFieldsDevice = scatterFields_[fieldIndex].get_static_view();
+     if (scatterFields_h_[fieldIndex].extent(0) != scatterFieldsDevice.extent(0) ||
+         scatterFields_h_[fieldIndex].extent(1) != scatterFieldsDevice.extent(1))
+       scatterFields_h_[fieldIndex] = Kokkos::create_mirror_view(scatterFieldsDevice);
+     auto& scatterFields_h = scatterFields_h_[fieldIndex];
+     Kokkos::deep_copy(scatterFields_h, scatterFieldsDevice);
      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
        std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
@@ -753,18 +775,18 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 	 // zero out matrix row
 	 {
-               std::size_t sz = Jac->getNumEntriesInLocalRow(lid);
                std::size_t numEntries = 0;
-	       typename LOC::CrsMatrixType::nonconst_local_inds_host_view_type rowIndices("indices", sz);
-	       typename LOC::CrsMatrixType::nonconst_values_host_view_type rowValues("values", sz);
 
-               // Jac->getLocalRowView(lid,numEntries,rowValues,rowIndices);
-               Jac->getLocalRowCopy(lid,rowIndices,rowValues,numEntries);
+               Jac->getLocalRowCopy(lid,rowIndices_,rowValues_,numEntries);
 
                for(std::size_t i=0;i<numEntries;i++)
-		 rowValues(i) = 0.0;
+                 rowValues_(i) = 0.0;
 
-               Jac->replaceLocalValues(lid,rowIndices,rowValues);
+               // Only the first numEntries of the scratch belong to this row.
+               const auto rowRange = std::make_pair(std::size_t(0),numEntries);
+               Jac->replaceLocalValues(lid,
+                                       Kokkos::subview(rowIndices_,rowRange),
+                                       Kokkos::subview(rowValues_,rowRange));
             }
  
             GO gid = GIDs[offset];
@@ -776,13 +798,13 @@ evaluateFields(typename TRAITS::EvalData workset)
               dc_array[lid] = 1.0; // mark row as dirichlet
     
             // loop over the sensitivity indices: all DOFs on a cell
-            std::vector<double> jacRow(scatterField.size(),0.0);
+            jacRow_.resize(scatterField.size());
     
             for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
-               jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
-            TEUCHOS_ASSERT(jacRow.size()==GIDs.size());
+               jacRow_[sensIndex] = scatterField.fastAccessDx(sensIndex);
+            TEUCHOS_ASSERT(jacRow_.size()==GIDs.size());
     
-            Jac->replaceGlobalValues(gid, GIDs, jacRow);
+            Jac->replaceGlobalValues(gid, GIDs, jacRow_);
        }
      }
    }

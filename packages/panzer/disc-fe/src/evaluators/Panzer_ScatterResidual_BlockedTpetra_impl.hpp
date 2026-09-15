@@ -339,6 +339,27 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     hostColBlockOffsets = hostColOffsets;
   }
 
+  // The offsets never change after this point, so copy them to the host once
+  // here rather than rebuilding a mirror on every evaluateFields() call.
+  blockOffsets_h_ = Kokkos::create_mirror_view(blockOffsets_);
+  Kokkos::deep_copy(blockOffsets_h_, blockOffsets_);
+  colBlockOffsets_h_ = Kokkos::create_mirror_view(colBlockOffsets_);
+  Kokkos::deep_copy(colBlockOffsets_h_, colBlockOffsets_);
+
+  // Size the scatter scratch once. The contents are rebuilt per call, but the
+  // extents only depend on the block structure.
+  {
+    // Size with the same expression evaluateFields() indexes with.
+    const int numRowBlocks = globalIndexer_->getNumFieldBlocks();
+    const int numColBlocks = static_cast<int>(colGlobalIndexers_.size());
+    hostJacTpetraBlocks_ = typename PHX::View<LocalMatrixType**>::host_mirror_type(
+      "ScatterResidual_BlockedTpetra(Jacobian):hostJacTpetraBlocks", numRowBlocks, numColBlocks);
+    jacTpetraBlocks_ = PHX::View<LocalMatrixType**>(
+      "ScatterResidual_BlockedTpetra(Jacobian):jacTpetraBlocks", numRowBlocks, numColBlocks);
+    blockExistsInJac_ = PHX::View<int**>("ScatterResidual_BlockedTpetra(Jacobian):blockExistsInJac", numRowBlocks, numColBlocks);
+    hostBlockExistsInJac_ = Kokkos::create_mirror_view(blockExistsInJac_);
+  }
+
   // Make sure the that derivative dimension in the evaluate call is large
   // enough to hold all derivatives for each sub block load
   int max_blockDerivativeSize = 0;
@@ -393,12 +414,12 @@ evaluateFields(typename TRAITS::EvalData workset)
   // on host and then deep_copy to device. The sub-blocks are
   // unmanaged since they are allocated and ref counted separately on
   // host.
-  using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>, size_t>;
-  typename PHX::View<LocalMatrixType**>::host_mirror_type
-    hostJacTpetraBlocks("panzer::ScatterResidual_BlockTpetra<Jacobian>::hostJacTpetraBlocks", numFieldBlocks,numColFieldBlocks);
-
-  PHX::View<int**> blockExistsInJac =   PHX::View<int**>("blockExistsInJac_",numFieldBlocks,numColFieldBlocks);
-  auto hostBlockExistsInJac = Kokkos::create_mirror_view(blockExistsInJac);
+  // Scratch sized in postRegistrationSetup(); only the contents are rebuilt here.
+  TEUCHOS_ASSERT(static_cast<int>(jacTpetraBlocks_.extent(0))==numFieldBlocks &&
+                 static_cast<int>(jacTpetraBlocks_.extent(1))==numColFieldBlocks);
+  auto& hostJacTpetraBlocks = hostJacTpetraBlocks_;
+  auto& blockExistsInJac = blockExistsInJac_;
+  auto& hostBlockExistsInJac = hostBlockExistsInJac_;
 
   for (int row=0; row < numFieldBlocks; ++row) {
     for (int col=0; col < numColFieldBlocks; ++col) {
@@ -442,8 +463,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       }
     }
   }
-  typename PHX::View<LocalMatrixType**>
-    jacTpetraBlocks("panzer::ScatterResidual_BlockedTpetra<Jacobian>::jacTpetraBlocks",numFieldBlocks,numColFieldBlocks);
+  auto& jacTpetraBlocks = jacTpetraBlocks_;
   Kokkos::deep_copy(jacTpetraBlocks,hostJacTpetraBlocks);
   Kokkos::deep_copy(blockExistsInJac,hostBlockExistsInJac);
 
@@ -453,15 +473,13 @@ evaluateFields(typename TRAITS::EvalData workset)
   // lids for the sub-block that it is scattering to. The subviews
   // below are to offset the LID blocks correctly.
   const auto& globalIndexers = globalIndexer_->getFieldDOFManagers();
-  auto blockOffsets_h = Kokkos::create_mirror_view(blockOffsets_);
-  Kokkos::deep_copy(blockOffsets_h, blockOffsets_);
+  const auto& blockOffsets_h = blockOffsets_h_;
   for (size_t block=0; block < globalIndexers.size(); ++block) {
     const auto subviewOfBlockLIDs = Kokkos::subview(worksetLIDs_,Kokkos::ALL(), std::make_pair(blockOffsets_h(block),blockOffsets_h(block+1)));
     globalIndexers[block]->getElementLIDs(localCellIds,subviewOfBlockLIDs);
   }
 
-  auto colBlockOffsets_h = Kokkos::create_mirror_view(colBlockOffsets_);
-  Kokkos::deep_copy(colBlockOffsets_h, colBlockOffsets_);
+  const auto& colBlockOffsets_h = colBlockOffsets_h_;
   if (hasColIndexers_) {
     for (size_t block=0; block < colGlobalIndexers_.size(); ++block) {
       const auto subviewOfBlockLIDs = Kokkos::subview(colWorksetLIDs_,Kokkos::ALL(), std::make_pair(colBlockOffsets_h(block),colBlockOffsets_h(block+1)));
