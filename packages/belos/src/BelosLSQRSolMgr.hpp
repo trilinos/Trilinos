@@ -804,7 +804,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // limit).  OR-combining it into the top-level test lets it stop the solve;
   // the dispatch in solve() treats such a stop as an unconverged
   // (recoverable) termination.
-  if (nonnull(debugStatusTest_)) {
+  if (Teuchos::nonnull(debugStatusTest_)) {
     sTest_ = rcp (new combo_type (combo_type::OR, sTest_, debugStatusTest_));
   }
 
@@ -944,7 +944,7 @@ LSQRSolMgr<ScalarType,MV,OP,DM,false>::solve ()
     } else if (maxIterTest_->getStatus () == Belos::Passed) {
       retType = MaxItersReached;
       isConverged = false;
-    } else if (nonnull(debugStatusTest_) &&
+    } else if (Teuchos::nonnull(debugStatusTest_) &&
                debugStatusTest_->getStatus() == Belos::Passed) {
       // A debug status test (e.g. a wall-clock time limit) stopped the
       // iteration. Treat as an unconverged termination rather than an

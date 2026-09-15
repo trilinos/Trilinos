@@ -633,7 +633,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   if (sTest_.is_null () || newResTest) {
     sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, maxIterTest_, convTest_));
-    if (nonnull(debugStatusTest_)) {
+    if (Teuchos::nonnull(debugStatusTest_)) {
       // Add the debug convergence test, if it exists.
       sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, sTest_, debugStatusTest_));
     }
@@ -904,7 +904,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve ()
           // a debug status test (if any) stopped the iteration
           //
           ////////////////////////////////////////////////////////////////////////////////////
-          else if (nonnull(debugStatusTest_) &&
+          else if (Teuchos::nonnull(debugStatusTest_) &&
                    debugStatusTest_->getStatus() == Passed) {
             // we don't have convergence, but a debug test asked us to stop
             retType = Unconverged;

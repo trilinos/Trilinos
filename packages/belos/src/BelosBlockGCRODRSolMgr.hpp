@@ -1025,7 +1025,7 @@ private:
      // OR-combining it into the top-level test lets it stop the solve; the
      // dispatch in solve() treats such a stop as an unconverged (recoverable)
      // termination.
-     if (nonnull(debugStatusTest_)) {
+     if (Teuchos::nonnull(debugStatusTest_)) {
        sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR,
                                             sTest_, debugStatusTest_));
      }
@@ -2031,7 +2031,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
         // **********************************************
         // Check for a debug status test requesting termination
         // **********************************************
-        else if (nonnull(debugStatusTest_) &&
+        else if (Teuchos::nonnull(debugStatusTest_) &&
                  debugStatusTest_->getStatus() == Passed) {
           // A debug status test stopped the priming iteration. Treat it as an
           // unconverged termination rather than building an invalid recycle
@@ -2278,7 +2278,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
         // **********************************************
         // Check for a debug status test requesting termination
         // **********************************************
-        else if (nonnull(debugStatusTest_) &&
+        else if (Teuchos::nonnull(debugStatusTest_) &&
                  debugStatusTest_->getStatus() == Passed) {
           // A debug status test (e.g. a wall-clock time limit) stopped the
           // iteration. Treat as an unconverged termination rather than an

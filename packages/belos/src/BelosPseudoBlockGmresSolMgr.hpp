@@ -1112,7 +1112,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
     convTest_ = impConvTest_;
   }
 
-  if (nonnull(userConvStatusTest_) ) {
+  if (Teuchos::nonnull(userConvStatusTest_) ) {
     // Check if this is a combination of several StatusTestResNorm objects
     Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(userConvStatusTest_);
     if (tmpComboTest != Teuchos::null) {
@@ -1140,7 +1140,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
   // Add debug status test, if one is provided by the user
-  if (nonnull(debugStatusTest_) ) {
+  if (Teuchos::nonnull(debugStatusTest_) ) {
     // Add debug convergence test
     Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(sTest_)->addStatusTest( debugStatusTest_ );
   }
@@ -1435,7 +1435,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
           // rather than an inconsistent internal state.
           //
           ////////////////////////////////////////////////////////////////////////////////////
-          else if (nonnull(debugStatusTest_) &&
+          else if (Teuchos::nonnull(debugStatusTest_) &&
                    debugStatusTest_->getStatus() == Passed) {
             retType = Unconverged;
             isConverged = false;
@@ -1488,12 +1488,12 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
 
       // Compute the current solution.
       // Update the linear problem.
-      if (nonnull(userConvStatusTest_)) {
-        //std::cout << "\nnonnull(userConvStatusTest_)\n";
+      if (Teuchos::nonnull(userConvStatusTest_)) {
+        //std::cout << "\nTeuchos::nonnull(userConvStatusTest_)\n";
         Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
         problem_->updateSolution( update, true );
       }
-      else if (nonnull(expConvTest_->getSolution())) {
+      else if (Teuchos::nonnull(expConvTest_->getSolution())) {
         //std::cout << "\nexpConvTest_->getSolution()\n";
         Teuchos::RCP<MV> newX = expConvTest_->getSolution();
         Teuchos::RCP<MV> curX = problem_->getCurrLHSVec();

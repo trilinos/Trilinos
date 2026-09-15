@@ -631,7 +631,7 @@ namespace Belos {
     // limit). OR-combining it into the top-level test lets it stop the solve;
     // the dispatch in solve() treats such a stop as an unconverged
     // (recoverable) termination.
-    if (nonnull(debugStatusTest_)) {
+    if (Teuchos::nonnull(debugStatusTest_)) {
       sTest_ = rcp (new combo_type (combo_type::OR, sTest_, debugStatusTest_));
     }
 
@@ -753,7 +753,7 @@ namespace Belos {
             break;
           }
           // Now check whether a debug status test stopped the iteration.
-          else if (nonnull(debugStatusTest_) &&
+          else if (Teuchos::nonnull(debugStatusTest_) &&
                    debugStatusTest_->getStatus() == Passed) {
             // A debug status test (e.g. a wall-clock time limit) stopped the
             // iteration. Treat as an unconverged termination rather than an

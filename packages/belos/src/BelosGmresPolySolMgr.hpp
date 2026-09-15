@@ -701,7 +701,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP,DM>::solve ()
 
     // Forward any debug status test (e.g. a wall-clock time limit) to the outer
     // solver manager, which runs the actual Krylov iteration and honors it.
-    if (nonnull(debugStatusTest_)) {
+    if (Teuchos::nonnull(debugStatusTest_)) {
       solver->setDebugStatusTest(debugStatusTest_);
     }
 

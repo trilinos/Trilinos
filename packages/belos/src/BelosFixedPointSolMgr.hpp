@@ -501,7 +501,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     // limit). OR-combining it into the top-level test lets it stop the solve;
     // the dispatch in solve() treats such a stop as an unconverged
     // (recoverable) termination.
-    if (nonnull(debugStatusTest_)) {
+    if (Teuchos::nonnull(debugStatusTest_)) {
       sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, sTest_, debugStatusTest_ ) );
     }
   }
@@ -739,7 +739,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP,DM>::solve() {
           // iteration.  Treat as an unconverged termination rather than an
           // inconsistent state.
           //
-          else if (nonnull(debugStatusTest_) &&
+          else if (Teuchos::nonnull(debugStatusTest_) &&
                    debugStatusTest_->getStatus() == Passed) {
             retType = Unconverged;
             isConverged = false;

@@ -845,7 +845,7 @@ bool BlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
   // Add debug status test, if one is provided by the user
-  if (nonnull(debugStatusTest_) ) {
+  if (Teuchos::nonnull(debugStatusTest_) ) {
     // Add debug convergence test
     Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(sTest_)->addStatusTest( debugStatusTest_ );
   }
@@ -1125,7 +1125,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
           // rather than an inconsistent internal state.
           //
           ////////////////////////////////////////////////////////////////////////////////////
-          else if (nonnull(debugStatusTest_) &&
+          else if (Teuchos::nonnull(debugStatusTest_) &&
                    debugStatusTest_->getStatus() == Passed) {
             retType = Unconverged;
             isConverged = false;

@@ -555,7 +555,7 @@ bool TFQMRSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
   // OR-combining it into the top-level test lets it stop the solve; the
   // dispatch in solve() treats such a stop as an unconverged (recoverable)
   // termination.
-  if (nonnull(debugStatusTest_)) {
+  if (Teuchos::nonnull(debugStatusTest_)) {
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, sTest_, debugStatusTest_ ) );
   }
 
@@ -740,7 +740,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP,DM>::solve() {
           //
           ////////////////////////////////////////////////////////////////////////////////////
 
-          else if (nonnull(debugStatusTest_) &&
+          else if (Teuchos::nonnull(debugStatusTest_) &&
                    debugStatusTest_->getStatus() == Passed) {
             // A debug status test (e.g. a wall-clock time limit) stopped the
             // iteration. Treat as an unconverged termination rather than an

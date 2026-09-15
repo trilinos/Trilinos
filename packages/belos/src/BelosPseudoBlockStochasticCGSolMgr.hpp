@@ -506,7 +506,7 @@ void PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP,DM>::setParameters( const Te
 
   if (sTest_ == Teuchos::null || newResTest) {
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
-    if (nonnull(debugStatusTest_)) {
+    if (Teuchos::nonnull(debugStatusTest_)) {
       // Add the debug convergence test, if it exists.
       sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, sTest_, debugStatusTest_ ) );
     }
@@ -743,7 +743,7 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP,DM>::solve() {
           // a debug status test (if any) stopped the iteration
           //
           ////////////////////////////////////////////////////////////////////////////////////
-          else if (nonnull(debugStatusTest_) &&
+          else if (Teuchos::nonnull(debugStatusTest_) &&
                    debugStatusTest_->getStatus() == Passed) {
             // we don't have convergence, but a debug test asked us to stop
             retType = Unconverged;

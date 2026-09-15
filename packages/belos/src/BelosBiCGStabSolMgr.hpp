@@ -513,7 +513,7 @@ void BiCGStabSolMgr<ScalarType,MV,OP,DM>::setParameters( const Teuchos::RCP<Teuc
     // limit). OR-combining it into the top-level test lets it stop the solve;
     // the dispatch in solve() treats such a stop as an unconverged
     // (recoverable) termination.
-    if (nonnull(debugStatusTest_)) {
+    if (Teuchos::nonnull(debugStatusTest_)) {
       sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, sTest_, debugStatusTest_ ) );
     }
   }
@@ -777,7 +777,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP,DM>::solve ()
           // rather than an inconsistent internal state.
           //
           ////////////////////////////////////////////////////////////////////////////////////
-          else if (nonnull(debugStatusTest_) &&
+          else if (Teuchos::nonnull(debugStatusTest_) &&
                    debugStatusTest_->getStatus() == Passed) {
             isConverged = false;
             retType = Unconverged;
