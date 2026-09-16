@@ -320,14 +320,67 @@ namespace Sacado {
 #elif defined(KOKKOS_ENABLE_SYCL)
 
       // Our implementation of Kokkos::atomic_oper_fetch() and
-      // Kokkos::atomic_fetch_oper() for Sacado types on device
+      // Kokkos::atomic_fetch_oper() for Sacado types on device.
+      //
+      // Unlike Cuda/HIP there is no team-based fast path here:  Sacado's
+      // hierarchical Fad partitioning is not enabled for SYCL, so dest_val
+      // always refers to a single Fad's value and every work item locks it
+      // individually.  We still have to avoid deadlocking within a sub-group,
+      // whose work items advance in lockstep:  if one acquires the lock while
+      // a sibling spins waiting for it, the sub-group can hang.  The
+      // ballot loop below is the same one desul uses for exactly this reason,
+      // see desul/atomics/Lock_Based_Fetch_Op_SYCL.hpp.
+      //
+      // The spelling of the free-function sub-group query changed in the
+      // 2025.0 compilers; mirror desul's switch.
+#if defined(__INTEL_LLVM_COMPILER) && __INTEL_LLVM_COMPILER >= 20250000
+#define SACADO_SYCL_THIS_SUB_GROUP() sycl::ext::oneapi::this_work_item::get_sub_group()
+#else
+#define SACADO_SYCL_THIS_SUB_GROUP() sycl::ext::oneapi::experimental::this_sub_group()
+#endif
+
       template <typename Oper, typename DestPtrT, typename ValT, typename T>
       typename Sacado::BaseExprType< Expr<T> >::type
       atomic_oper_fetch_device(const Oper& op, DestPtrT dest, ValT* dest_val,
                                const Expr<T>& x)
       {
-        Kokkos::abort("Not implemented!");
+        typedef typename Sacado::BaseExprType< Expr<T> >::type return_type;
+        const typename Expr<T>::derived_type& val = x.derived();
+
+#if defined(DESUL_SYCL_DEVICE_GLOBAL_SUPPORTED)
+        auto scope = desul::MemoryScopeDevice();
+
+        return_type return_val;
+        int done = 0;
+        auto sg = SACADO_SYCL_THIS_SUB_GROUP();
+        using sycl::ext::oneapi::group_ballot;
+        using sycl::ext::oneapi::sub_group_mask;
+        sub_group_mask active = group_ballot(sg, 1);
+        sub_group_mask done_active = group_ballot(sg, 0);
+        while (active != done_active) {
+          if (!done) {
+            if (desul::Impl::lock_address_sycl((void*)dest_val, scope)) {
+              desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
+              return_val = op.apply(*dest, val);
+              *dest      = return_val;
+              desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+              desul::Impl::unlock_address_sycl((void*)dest_val, scope);
+              done = 1;
+            }
+          }
+          done_active = group_ballot(sg, done);
+        }
+        return return_val;
+#else
+        // Without device global support desul's lock_address_sycl() is a stub
+        // that always claims success, which would silently race rather than
+        // fail.  Refuse instead.
+        (void)op; (void)dest; (void)dest_val; (void)val;
+        Kokkos::abort("Sacado: atomics on Fad types require SYCL device global "
+                      "support.  Configure Kokkos with Kokkos_ARCH_INTEL_PVC "
+                      "(or another arch for which it is enabled).");
         return {};
+#endif
       }
 
       template <typename Oper, typename DestPtrT, typename ValT, typename T>
@@ -335,9 +388,44 @@ namespace Sacado {
       atomic_fetch_oper_device(const Oper& op, DestPtrT dest, ValT* dest_val,
                                const Expr<T>& x)
       {
-        Kokkos::abort("Not implemented!");
+        typedef typename Sacado::BaseExprType< Expr<T> >::type return_type;
+        const typename Expr<T>::derived_type& val = x.derived();
+
+#if defined(DESUL_SYCL_DEVICE_GLOBAL_SUPPORTED)
+        auto scope = desul::MemoryScopeDevice();
+
+        return_type return_val;
+        int done = 0;
+        auto sg = SACADO_SYCL_THIS_SUB_GROUP();
+        using sycl::ext::oneapi::group_ballot;
+        using sycl::ext::oneapi::sub_group_mask;
+        sub_group_mask active = group_ballot(sg, 1);
+        sub_group_mask done_active = group_ballot(sg, 0);
+        while (active != done_active) {
+          if (!done) {
+            if (desul::Impl::lock_address_sycl((void*)dest_val, scope)) {
+              desul::atomic_thread_fence(desul::MemoryOrderAcquire(), scope);
+              return_val = *dest;
+              *dest      = op.apply(return_val, val);
+              desul::atomic_thread_fence(desul::MemoryOrderRelease(), scope);
+              desul::Impl::unlock_address_sycl((void*)dest_val, scope);
+              done = 1;
+            }
+          }
+          done_active = group_ballot(sg, done);
+        }
+        return return_val;
+#else
+        (void)op; (void)dest; (void)dest_val; (void)val;
+        Kokkos::abort("Sacado: atomics on Fad types require SYCL device global "
+                      "support.  Configure Kokkos with Kokkos_ARCH_INTEL_PVC "
+                      "(or another arch for which it is enabled).");
         return {};
+#endif
       }
+
+#undef SACADO_SYCL_THIS_SUB_GROUP
+
 #endif
 
       // Overloads of Kokkos::atomic_oper_fetch/Kokkos::atomic_fetch_oper

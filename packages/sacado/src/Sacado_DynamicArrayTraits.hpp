@@ -657,7 +657,7 @@ namespace Sacado {
     SACADO_INLINE_FUNCTION
     static T* get_and_fill(int sz) {
       T* m = Impl::ds_alloc<T>(sz);
-#if defined(__CUDACC__ ) || defined(__HIPCC__ )
+#if defined(__CUDACC__ ) || defined(__HIPCC__ ) || defined(__SYCL_DEVICE_ONLY__)
       for (int i=0; i<sz; ++i)
         m[i] = 0.0;
 #else
@@ -695,7 +695,7 @@ namespace Sacado {
     SACADO_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
       if (sz > 0 && dest != NULL && src != NULL)
-#if defined( __CUDACC__) || defined(__HIPCC__ )
+#if defined( __CUDACC__) || defined(__HIPCC__ ) || defined(__SYCL_DEVICE_ONLY__)
         for (int i=0; i<sz; ++i)
           dest[i] = src[i];
 #else
@@ -718,7 +718,7 @@ namespace Sacado {
     SACADO_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       if (sz > 0 && dest != NULL)
-#if defined(__CUDACC__ ) || defined(__HIPCC__ )
+#if defined(__CUDACC__ ) || defined(__HIPCC__ ) || defined(__SYCL_DEVICE_ONLY__)
         for (int i=0; i<sz; ++i)
           dest[i] = T(0.);
 #else
