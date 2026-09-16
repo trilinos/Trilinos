@@ -11,6 +11,8 @@
 #ifndef PANZER_EVALUATOR_SCATTER_DIRICHLET_RESIDUAL_TPETRA_DECL_HPP
 #define PANZER_EVALUATOR_SCATTER_DIRICHLET_RESIDUAL_TPETRA_DECL_HPP
 
+#include <utility>
+#include <type_traits>
 #include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
@@ -276,8 +278,14 @@ private:
   using LIDsDeviceView = Kokkos::View<const panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device>;
   using ScatterFieldDeviceView = typename PHX::MDField<const ScalarT,Cell,NODE>::array_type;
 
-  typename LIDsDeviceView::host_mirror_type lids_h_;
-  std::vector<typename ScatterFieldDeviceView::host_mirror_type> scatterFields_h_;
+  // create_mirror_view() returns the source view itself when it is already in
+  // the requested space, so let it name its own result rather than assuming
+  // host_mirror_type.
+  static constexpr bool lidsAreHostResident_ =
+    std::is_same<typename LIDsDeviceView::memory_space,Kokkos::HostSpace>::value;
+
+  decltype(Kokkos::create_mirror_view(Kokkos::HostSpace(),std::declval<LIDsDeviceView>())) lids_h_;
+  std::vector<decltype(Kokkos::create_mirror_view(std::declval<ScatterFieldDeviceView>()))> scatterFields_h_;
   typename LOC::CrsMatrixType::nonconst_local_inds_host_view_type rowIndices_;
   typename LOC::CrsMatrixType::nonconst_values_host_view_type rowValues_;
   std::vector<double> jacRow_;

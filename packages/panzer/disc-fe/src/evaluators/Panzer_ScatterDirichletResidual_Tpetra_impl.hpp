@@ -737,10 +737,16 @@ evaluateFields(typename TRAITS::EvalData workset)
    auto LIDs = globalIndexer_->getLIDs();
    // Reuse the host copies below rather than allocating a mirror per call. The
    // contents still have to be refreshed, but the buffers are only grown.
-   if (lids_h_.extent(0) != LIDs.extent(0) || lids_h_.extent(1) != LIDs.extent(1))
+   if constexpr (lidsAreHostResident_) {
+     // The mirror is the source view; aliasing it costs nothing and cannot go stale.
      lids_h_ = Kokkos::create_mirror_view(Kokkos::HostSpace(),LIDs);
+   }
+   else {
+     if (lids_h_.extent(0) != LIDs.extent(0) || lids_h_.extent(1) != LIDs.extent(1))
+       lids_h_ = Kokkos::create_mirror_view(Kokkos::HostSpace(),LIDs);
+     Kokkos::deep_copy(lids_h_, LIDs);
+   }
    auto& LIDs_h = lids_h_;
-   Kokkos::deep_copy(LIDs_h, LIDs);
 
    if (scatterFields_h_.size() != scatterFields_.size())
      scatterFields_h_.resize(scatterFields_.size());
