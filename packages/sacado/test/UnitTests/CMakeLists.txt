@@ -518,6 +518,57 @@ IF (Sacado_ENABLE_TeuchosCore)
     ENDIF()
 
     IF (Kokkos_ENABLE_SYCL)
+      IF (Sacado_ENABLE_TeuchosKokkosComm)
+        TRIBITS_ADD_EXECUTABLE_AND_TEST(
+          Fad_Kokkos_CommTests_SYCL
+          SOURCES Fad_Kokkos_CommTests_SYCL.cpp Fad_CommTests.hpp ${UTILS_SOURCES}
+          ARGS
+          COMM serial mpi
+          STANDARD_PASS_OUTPUT
+          RUN_SERIAL
+          )
+      ENDIF()
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosTests_SYCL
+        SOURCES Fad_KokkosTests.hpp
+                Fad_KokkosTests_SYCL.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosTests_NoViewSpec_SYCL
+        SOURCES Fad_KokkosTests.hpp
+                Fad_KokkosTests_NoViewSpec_SYCL.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_SYCL
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_SYCL.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_NoViewSpec_SYCL
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_NoViewSpec_SYCL.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
       # Diagnostic probe, not a correctness test:  reports the actual vector
       # width of a TeamPolicy on this device and validates that the oneAPI
       # free-function work-item queries give the thread indices the
