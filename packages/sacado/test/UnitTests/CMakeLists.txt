@@ -569,6 +569,16 @@ IF (Sacado_ENABLE_TeuchosCore)
         RUN_SERIAL
         )
 
+      # TEMPORARY diagnostic for the SLFad failures; delete once understood.
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        SyclFadDeepCopyRepro
+        SOURCES SyclFadDeepCopyRepro.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
       # Diagnostic probe, not a correctness test:  reports the actual vector
       # width of a TeamPolicy on this device and validates that the oneAPI
       # free-function work-item queries give the thread indices the
