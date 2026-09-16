@@ -9,8 +9,9 @@
 //
 // Test the optional one-step right-preconditioned update path in
 // PseudoBlockGmresIter.  The test runs exactly one Arnoldi step directly in the
-// iteration object, then compares the optimized solution-space update against
-// the baseline update after applying the right preconditioner.
+// iteration object and compares the optimized solution-space update with the
+// standard update after explicitly applying the right preconditioner, all from
+// the same iterator state.
 //
 
 #include "BelosConfigDefs.hpp"
@@ -88,13 +89,30 @@ private:
   mutable int numApply_;
 };
 
+template <class SC, class MV>
+bool compareUpdates(const RCP<const MV>& expected,
+                    const RCP<const MV>& actual,
+                    const char label[],
+                    const int me)
+{
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  using STS = Teuchos::ScalarTraits<SC>;
+
+  auto diff = rcp(new MV(*actual, Teuchos::Copy));
+  diff->update(-STS::one(), *expected, STS::one());
+  Teuchos::Array<MT> norms(1);
+  diff->norm2(norms);
+  if (norms[0] > MT(1e-12)) {
+    if (me == 0)
+      std::cerr << "  FAIL: " << label << " differs from standard solution-space update; norm = "
+                << norms[0] << ".\n";
+    return false;
+  }
+  return true;
+}
+
 template <class SC>
-bool runCase(const bool useFlexibleOneIterUpdate,
-             RCP<Tpetra::MultiVector<SC,
-                                      typename Tpetra::MultiVector<SC>::local_ordinal_type,
-                                      typename Tpetra::MultiVector<SC>::global_ordinal_type,
-                                      typename Tpetra::MultiVector<SC>::node_type> >& solutionUpdate,
-             const bool verbose)
+bool runCase(const bool useFlexibleOneIterUpdate, const bool verbose)
 {
   using LO  = typename Tpetra::MultiVector<SC>::local_ordinal_type;
   using GO  = typename Tpetra::MultiVector<SC>::global_ordinal_type;
@@ -103,6 +121,7 @@ bool runCase(const bool useFlexibleOneIterUpdate,
   using OP  = Tpetra::Operator<SC, LO, GO, NT>;
   using SDM = Teuchos::SerialDenseMatrix<int, SC>;
   using STS = Teuchos::ScalarTraits<SC>;
+  using MVT = Belos::MultiVecTraits<SC, MV, SDM>;
 
   auto comm = Tpetra::getDefaultComm();
   const int me = comm->getRank();
@@ -110,6 +129,9 @@ bool runCase(const bool useFlexibleOneIterUpdate,
   const GO numGlobalRows = 10;
   auto map = rcp(new Tpetra::Map<LO, GO, NT>(numGlobalRows, 0, comm));
 
+  // A non-scalar diagonal operator avoids a first-step lucky breakdown; the
+  // right preconditioner is scalar and counted so the optimized path can be
+  // compared directly with the standard update conversion.
   auto A = rcp(new CountingDiagonalOperator<SC, LO, GO, NT>(map, SC(1), SC(2)));
   auto rightPrec = rcp(new CountingDiagonalOperator<SC, LO, GO, NT>(map, SC(2), SC(2)));
 
@@ -135,7 +157,7 @@ bool runCase(const bool useFlexibleOneIterUpdate,
   Belos::PseudoBlockGmresIter<SC, MV, OP, SDM> iter(problem, printer, statusTest, ortho, params);
 
   Belos::PseudoBlockGmresIterState<SC, MV, SDM> state;
-  Teuchos::RCP<MV> R0 = Belos::MultiVecTraits<SC, MV, SDM>::CloneCopy(*problem->getInitPrecResVec(), currIdx);
+  Teuchos::RCP<MV> R0 = MVT::CloneCopy(*problem->getInitPrecResVec(), currIdx);
   Teuchos::RCP<SDM> z0 = Belos::DenseMatTraits<SC, SDM>::Create(1, 1);
   const int rank = ortho->normalize(*R0, z0);
   if (rank != 1) {
@@ -161,15 +183,14 @@ bool runCase(const bool useFlexibleOneIterUpdate,
     ok = false;
   }
 
-  const int expectedIterPrecApplies = 1;
-  if (rightPrec->getNumApply() != expectedIterPrecApplies) {
+  if (rightPrec->getNumApply() != 1) {
     if (me == 0)
-      std::cerr << "  FAIL: expected " << expectedIterPrecApplies
-                << " right preconditioner application(s) during iteration, got "
+      std::cerr << "  FAIL: expected one preconditioner application during iteration, got "
                 << rightPrec->getNumApply() << ".\n";
     ok = false;
   }
 
+  RCP<const MV> optimizedUpdate;
   if (useFlexibleOneIterUpdate) {
     auto* provider = dynamic_cast<Belos::CurrentSolutionProvider<SC, MV, OP, SDM>*>(&iter);
     if (provider == nullptr || !provider->hasCurrentSolution()) {
@@ -177,55 +198,47 @@ bool runCase(const bool useFlexibleOneIterUpdate,
         std::cerr << "  FAIL: optimized iteration did not provide current solution update.\n";
       ok = false;
     }
-    solutionUpdate = rcp(new MV(*provider->getCurrentSolutionUpdate(), Teuchos::Copy));
+    else {
+      optimizedUpdate = provider->getCurrentSolutionUpdate();
+      if (rightPrec->getNumApply() != 1) {
+        if (me == 0)
+          std::cerr << "  FAIL: optimized provider applied the right preconditioner again.\n";
+        ok = false;
+      }
+    }
   }
   else {
-    auto update = iter.getCurrentUpdate();
-    solutionUpdate = Belos::MultiVecTraits<SC, MV, SDM>::Clone(*update,
-      Belos::MultiVecTraits<SC, MV, SDM>::GetNumberVecs(*update));
-    problem->applyRightPrec(*update, *solutionUpdate);
-    const int expectedTotalPrecApplies = 2;
-    if (rightPrec->getNumApply() != expectedTotalPrecApplies) {
+    auto* provider = dynamic_cast<Belos::CurrentSolutionProvider<SC, MV, OP, SDM>*>(&iter);
+    if (provider != nullptr && provider->hasCurrentSolution()) {
       if (me == 0)
-        std::cerr << "  FAIL: expected " << expectedTotalPrecApplies
-                  << " total right preconditioner applications after baseline conversion, got "
-                  << rightPrec->getNumApply() << ".\n";
+        std::cerr << "  FAIL: disabled optimization unexpectedly provided a solution update.\n";
       ok = false;
     }
+  }
+
+  auto standardUpdate = iter.getCurrentUpdate();
+  auto standardSolutionUpdate = MVT::Clone(*standardUpdate, MVT::GetNumberVecs(*standardUpdate));
+  problem->applyRightPrec(*standardUpdate, *standardSolutionUpdate);
+  if (rightPrec->getNumApply() != 2) {
+    if (me == 0)
+      std::cerr << "  FAIL: expected two total preconditioner applications after standard conversion, got "
+                << rightPrec->getNumApply() << ".\n";
+    ok = false;
+  }
+
+  if (useFlexibleOneIterUpdate && optimizedUpdate != Teuchos::null) {
+    ok = compareUpdates<SC, MV>(standardSolutionUpdate, optimizedUpdate,
+                                "optimized solution-space update", me) && ok;
   }
 
   if (verbose && me == 0) {
     std::cout << "  "
               << (useFlexibleOneIterUpdate ? "optimized" : "baseline")
               << " case used " << rightPrec->getNumApply()
-              << " right preconditioner application(s) during iteration.\n";
+              << " total right preconditioner application(s).\n";
   }
 
   return ok;
-}
-
-template <class SC>
-bool compareSolutions(const RCP<const Tpetra::MultiVector<SC,
-                                                          typename Tpetra::MultiVector<SC>::local_ordinal_type,
-                                                          typename Tpetra::MultiVector<SC>::global_ordinal_type,
-                                                          typename Tpetra::MultiVector<SC>::node_type> >& baseline,
-                      const RCP<const Tpetra::MultiVector<SC,
-                                                          typename Tpetra::MultiVector<SC>::local_ordinal_type,
-                                                          typename Tpetra::MultiVector<SC>::global_ordinal_type,
-                                                          typename Tpetra::MultiVector<SC>::node_type> >& optimized)
-{
-  using MV  = Tpetra::MultiVector<SC,
-                                  typename Tpetra::MultiVector<SC>::local_ordinal_type,
-                                  typename Tpetra::MultiVector<SC>::global_ordinal_type,
-                                  typename Tpetra::MultiVector<SC>::node_type>;
-  using MT  = typename Teuchos::ScalarTraits<SC>::magnitudeType;
-  using STS = Teuchos::ScalarTraits<SC>;
-
-  auto diff = rcp(new MV(*optimized, Teuchos::Copy));
-  diff->update(-STS::one(), *baseline, STS::one());
-  Teuchos::Array<MT> norms(1);
-  diff->norm2(norms);
-  return norms[0] <= MT(1e-12);
 }
 
 } // namespace
@@ -245,25 +258,15 @@ int main(int argc, char* argv[])
       if (std::string(argv[i]) == "--verbose")
         verbose = true;
 
-    using MV = Tpetra::MultiVector<double>;
-    RCP<MV> baselineUpdate;
-    RCP<MV> optimizedUpdate;
-
     bool ok = true;
 
     if (verbose && me == 0)
       std::cout << "\nCase 1: one-step update option disabled\n";
-    ok &= runCase<double>(false, baselineUpdate, verbose);
+    ok &= runCase<double>(false, verbose);
 
     if (verbose && me == 0)
       std::cout << "\nCase 2: one-step update option enabled\n";
-    ok &= runCase<double>(true, optimizedUpdate, verbose);
-
-    if (!compareSolutions<double>(baselineUpdate, optimizedUpdate)) {
-      if (me == 0)
-        std::cerr << "  FAIL: optimized solution-space update differs from baseline update.\n";
-      ok = false;
-    }
+    ok &= runCase<double>(true, verbose);
 
     success = ok;
 
