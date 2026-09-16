@@ -661,10 +661,12 @@ void blockJacobiUpdate(const ViewY& Y,
                              "blockJacobiUpdate: Y.extent(0) = " << Y.extent(0) << " != "
                                                                                    "Z.extent(0) = "
                                                                  << Z.extent(0) << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(Y.extent(1) != Z.extent(1), std::invalid_argument,
-                             "blockJacobiUpdate: Y.extent(1) = " << Y.extent(1) << " != "
-                                                                                   "Z.extent(1) = "
-                                                                 << Z.extent(1) << ".");
+  if constexpr (ViewY::rank == 2 && ViewZ::rank == 2) {
+    TEUCHOS_TEST_FOR_EXCEPTION(Y.extent(1) != Z.extent(1), std::invalid_argument,
+                               "blockJacobiUpdate: Y.extent(1) = " << Y.extent(1) << " != "
+                                                                                     "Z.extent(1) = "
+                                                                   << Z.extent(1) << ".");
+  }
 #endif  // HAVE_TPETRA_DEBUG
 
   BlockJacobiUpdate<ViewY, Scalar, ViewD, ViewZ, LO> functor(Y, alpha, D, Z, beta);
