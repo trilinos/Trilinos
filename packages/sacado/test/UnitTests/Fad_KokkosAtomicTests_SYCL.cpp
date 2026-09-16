@@ -13,13 +13,11 @@
 
 #include "Kokkos_Macros.hpp"
 
-// Temporarily disable DFad testing on SYCL, matching the HIP backend.  DFad's
-// temporary allocations need device-side "new", which SYCL does not provide.
-#ifdef KOKKOS_ENABLE_SYCL
-#define SACADO_TEST_DFAD 0
-#else
+// DFad is tested on SYCL as it is on Cuda.  Inside a Kokkos::View the
+// derivative array belongs to the View's allocation, so no device-side
+// allocation is involved; the Fad temporaries a few kernels create fall back
+// to operator new in device code, which the oneAPI/DPC++ extensions support.
 #define SACADO_TEST_DFAD 1
-#endif
 
 #include "Fad_KokkosAtomicTests.hpp"
 
