@@ -217,6 +217,18 @@ namespace Belos {
     //! Set the parameters the solver manager should use to solve the linear problem.
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
+    //! Set a debug status test, OR-combined into the top-level status test.
+    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override {
+      debugStatusTest_ = debugStatusTest;
+      // Force the cached status-test tree (and its output wrapper) to be rebuilt
+      // on the next solve so the debug test is wired into sTest_.  This manager
+      // caches sTest_/outputTest_ behind null checks, so clear them and re-run
+      // setParameters.
+      sTest_ = Teuchos::null;
+      outputTest_ = Teuchos::null;
+      isSet_ = false;
+    }
+
     //@}
 
     //! @name Reset methods
@@ -284,6 +296,7 @@ namespace Belos {
 
     //! Output "status test" that controls all the other status tests.
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
 
     //! Orthogonalization manager.
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > ortho_;
@@ -666,8 +679,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
     convTest_->defineScaleForm (convertStringToScaleType (resScale_), Belos::TwoNorm);
   }
 
-  if (sTest_.is_null () || newResTest)
+  if (sTest_.is_null () || newResTest) {
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
+    if (Teuchos::nonnull(debugStatusTest_)) {
+      // Add the debug convergence test, if it exists.
+      sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, sTest_, debugStatusTest_ ) );
+    }
+  }
 
   if (outputTest_.is_null () || newResTest) {
 
@@ -955,6 +973,15 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           else if (maxIterTest_->getStatus() == Passed) {
             retType = MaxItersReached;
             isConverged = false; // None of the linear systems converged.
+            break;  // break from while(1){block_cg_iter->iterate()}
+          }
+          //
+          // A debug status test (if any) stopped the iteration.
+          //
+          else if (Teuchos::nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            retType = Unconverged;
+            isConverged = false; // A debug test asked us to stop.
             break;  // break from while(1){block_cg_iter->iterate()}
           }
           //

@@ -163,10 +163,16 @@ namespace Belos {
     //@{
     
     //! Set the linear problem that needs to be solved. 
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) override { problem_ = problem; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) override { problem_ = problem; isSTSet_ = false; }
     
     //! Set the parameters the solver manager should use to solve the linear problem. 
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
+
+    //! Set a debug status test, OR-combined into the top-level status test.
+    void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override {
+      debugStatusTest_ = debugStatusTest;
+      isSTSet_ = false;
+    }
 
     //@}
     //! @name Reset methods
@@ -227,6 +233,9 @@ namespace Belos {
     Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > convTest_;
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > expConvTest_, impConvTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
+
+    // Debug status test (e.g. a wall-clock time limit), OR-combined into sTest_.
+    Teuchos::RCP<StatusTest<ScalarType, MV, OP, DM> > debugStatusTest_;
 
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -535,6 +544,14 @@ bool PseudoBlockTFQMRSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
   }
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
+  // Add a debug status test if one was provided (e.g. a wall-clock time limit).
+  // OR-combining it into the top-level test lets it stop the solve; the
+  // dispatch in solve() treats such a stop as an unconverged (recoverable)
+  // termination.
+  if (Teuchos::nonnull(debugStatusTest_)) {
+    sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, sTest_, debugStatusTest_ ) );
+  }
+
   // Create the status test output class.
   // This class manages and formats the output from the status test.
   StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_ );
@@ -775,7 +792,15 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP,DM>::solve() {
           //
           ////////////////////////////////////////////////////////////////////////////////////
 
-          else {
+          else if (Teuchos::nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            // A debug status test (e.g. a wall-clock time limit) stopped the
+            // iteration. Treat as an unconverged termination rather than an
+            // inconsistent state.
+            retType = Unconverged;
+            isConverged = false;
+            break; // break from while(1){block_tfqmr_iter->iterate()}
+          } else {
             retType = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PseudoBlockTFQMRSolMgr::solve(): Invalid return from PseudoBlockTFQMRIter::iterate().");

@@ -349,6 +349,12 @@ namespace Belos {
     //! Set the linear problem to solve.
     void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem) override {
       problem_ = problem;
+      // Force the status tests to be rebuilt on the next solve() (as
+      // BlockGmresSolMgr does).  Without this, a solver manager reused across
+      // multiple solves keeps the status-test tree from the first solve, so a
+      // status test installed via setDebugStatusTest() before a later solve is
+      // never wired into sTest_ and never evaluated.
+      isSTSet_ = false;
     }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
@@ -1176,7 +1182,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
     convTest_ = impConvTest_;
   }
 
-  if (nonnull(userConvStatusTest_) ) {
+  if (Teuchos::nonnull(userConvStatusTest_) ) {
     // Check if this is a combination of several StatusTestResNorm objects
     Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(userConvStatusTest_);
     if (tmpComboTest != Teuchos::null) {
@@ -1204,7 +1210,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
   // Add debug status test, if one is provided by the user
-  if (nonnull(debugStatusTest_) ) {
+  if (Teuchos::nonnull(debugStatusTest_) ) {
     // Add debug convergence test
     Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(sTest_)->addStatusTest( debugStatusTest_ );
   }
@@ -1488,6 +1494,22 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
 
           ////////////////////////////////////////////////////////////////////////////////////
           //
+          // check for a debug status test requesting termination
+          //
+          // A status test installed via setDebugStatusTest() is OR-combined
+          // into sTest_, so it can legitimately stop iterate() (e.g. a
+          // wall-clock time limit).  Treat that as an unconverged termination
+          // rather than an inconsistent internal state.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if (Teuchos::nonnull(debugStatusTest_) &&
+                   debugStatusTest_->getStatus() == Passed) {
+            retType = Unconverged;
+            isConverged = false;
+            break;  // break from while(1){block_gmres_iter->iterate()}
+          }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
           // we returned from iterate(), but none of our status tests Passed.
           // something is wrong, and it is probably our fault.
           //
@@ -1533,11 +1555,11 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
 
       // Compute the current solution.
       // Update the linear problem.
-      if (nonnull(userConvStatusTest_)) {
-        //std::cout << "\nnonnull(userConvStatusTest_)\n";
+      if (Teuchos::nonnull(userConvStatusTest_)) {
+        //std::cout << "\nTeuchos::nonnull(userConvStatusTest_)\n";
         updateSolution( block_gmres_iter );
       }
-      else if (nonnull(expConvTest_->getSolution())) {
+      else if (Teuchos::nonnull(expConvTest_->getSolution())) {
         //std::cout << "\nexpConvTest_->getSolution()\n";
         Teuchos::RCP<MV> newX = expConvTest_->getSolution();
         Teuchos::RCP<MV> curX = problem_->getCurrLHSVec();

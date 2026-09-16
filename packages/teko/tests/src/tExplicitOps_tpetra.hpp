@@ -42,6 +42,7 @@ class tExplicitOps_tpetra : public UnitTest {
 
   bool test_add(int verbosity, std::ostream& os);
   bool test_add_mod(int verbosity, std::ostream& os);
+  bool test_add_zero(int verbosity, std::ostream& os);
 
  protected:
   double tolerance_;

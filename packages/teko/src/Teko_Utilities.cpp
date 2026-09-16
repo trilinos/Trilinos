@@ -1982,32 +1982,12 @@ const LinearOp explicitAdd(const LinearOp &opl_in, const LinearOp &opr_in) {
   // if one of the operators in the sum is a thyra zero op
   if (isZeroOp(opl)) {
     if (isZeroOp(opr)) return opr;  // return a zero op if both are zero
-    if (isTpetrar) {                // if other op is tpetra, replace this with a zero crs matrix
-      ST scalar     = 0.0;
-      bool transp   = false;
-      auto crs_op   = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalar, &transp);
-      auto zero_crs = Tpetra::createCrsMatrix<ST, LO, GO, NT>(crs_op->getRowMap());
-      zero_crs->fillComplete();
-      opl = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
-          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crs_op->getRangeMap()),
-          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crs_op->getDomainMap()), zero_crs);
-      isTpetral = true;
-    } else
-      return opr->clone();
+    if (isTpetrar) return Teko::TpetraHelpers::materializeTpetraLinearOp(opr, Teuchos::null);
+    return opr->clone();
   }
   if (isZeroOp(opr)) {
-    if (isTpetral) {  // if other op is tpetra, replace this with a zero crs matrix
-      ST scalar     = 0.0;
-      bool transp   = false;
-      auto crs_op   = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalar, &transp);
-      auto zero_crs = Tpetra::createCrsMatrix<ST, LO, GO, NT>(crs_op->getRowMap());
-      zero_crs->fillComplete();
-      opr = Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
-          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crs_op->getRangeMap()),
-          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crs_op->getDomainMap()), zero_crs);
-      isTpetrar = true;
-    } else
-      return opl->clone();
+    if (isTpetral) return Teko::TpetraHelpers::materializeTpetraLinearOp(opl, Teuchos::null);
+    return opl->clone();
   }
 
   if (isTpetral && isTpetrar) {  // Both operators are Tpetra matrices so use the explicit Tpetra
@@ -2144,6 +2124,20 @@ const ModifiableLinearOp explicitAdd(const LinearOp &opl_in, const LinearOp &opr
 
   bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
   bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
+
+  // if one of the operators in the sum is a thyra zero op (as happens with a true
+  // zero (2,2) block in a saddle-point system), short-circuit before the backend
+  // add path, which cannot unwrap a Thyra::DefaultZeroLinearOp. Materialize the
+  // nonzero operand directly rather than assembling an explicit zero matrix.
+  if (isZeroOp(opl)) {
+    if (isZeroOp(opr)) return Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST>>(opr);
+    if (isTpetrar) return Teko::TpetraHelpers::materializeTpetraLinearOp(opr, destOp);
+    return Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST>>(opr->clone());
+  }
+  if (isZeroOp(opr)) {
+    if (isTpetral) return Teko::TpetraHelpers::materializeTpetraLinearOp(opl, destOp);
+    return Teuchos::rcp_const_cast<Thyra::LinearOpBase<ST>>(opl->clone());
+  }
 
   if (isTpetral && isTpetrar) {  // Both operators are Tpetra matrices so use the explicit
                                  // Tpetra matrix-matrix add

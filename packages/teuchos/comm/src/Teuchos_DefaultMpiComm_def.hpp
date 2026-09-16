@@ -402,6 +402,21 @@ int MpiComm<Ordinal>::getSize() const
 
 
 template<typename Ordinal>
+void MpiComm<Ordinal>::alltoAll(
+  const Ordinal sendBytes, const char sendBuffer[],
+  const Ordinal recvBytes, char recvBuffer[]) const
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::alltoAll(...)"
+    );
+  const int err = MPI_Alltoall (sendBuffer, sendBytes, MPI_CHAR, recvBuffer, recvBytes, MPI_CHAR, *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::alltoAll: MPI_Alltoall failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
+}
+
+
+template<typename Ordinal>
 void MpiComm<Ordinal>::barrier() const
 {
   TEUCHOS_COMM_TIME_MONITOR(

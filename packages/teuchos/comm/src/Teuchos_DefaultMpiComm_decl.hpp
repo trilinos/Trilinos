@@ -351,6 +351,11 @@ public:
   //! Execute a barrier; must be called collectively.
   virtual void barrier() const;
 
+  //! Scatter values from all processes to all processes.
+  virtual void
+  alltoAll(const Ordinal sendBytes, const char sendBuffer[],
+           const Ordinal recvBytes, char recvBuffer[]) const;
+
   /** \brief . */
   virtual void broadcast(
     const int rootRank, const Ordinal bytes, char buffer[]

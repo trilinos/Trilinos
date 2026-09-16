@@ -22,6 +22,7 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
+#include "Thyra_DefaultZeroLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 
 // Galeri / Xpetra includes
@@ -150,6 +151,12 @@ int tExplicitOps_tpetra::runTest(int verbosity, std::ostream& stdstrm, std::ostr
 
   status = test_add_mod(verbosity, failstrm);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"add_mod\" ... PASSED", "   \"add\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
+
+  status = test_add_zero(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"add_zero\" ... PASSED", "   \"add_zero\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
@@ -542,6 +549,118 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
                     << " tExplicitOps_tpetra::test_add_mod3"
                     << ": Testing matrix addition returns new pointer");
     if (not(eop3.getRawPtr() == eop6.getRawPtr()) || verbosity >= 10) os << ss.str();
+  }
+
+  return allPassed;
+}
+
+// Regression test for a true Thyra zero operand, as produced for the (2,2) block
+// of a reordered saddle-point system (a Thyra::DefaultZeroLinearOp). SIMPLE builds
+// its Schur complement as explicitAdd(C, scale(-1, B*H*Bt), destOp); when C is a
+// zero block, explicitAdd must materialize the nonzero operand directly instead of
+// trying to unwrap the zero operand through the backend add path.
+bool tExplicitOps_tpetra::test_add_zero(int verbosity, std::ostream& os) {
+  bool status    = false;
+  bool allPassed = true;
+
+  Thyra::LinearOpTester<ST> tester;
+  tester.set_all_error_tol(1e-10);
+  tester.show_all_tests(true);
+
+  Teko::LinearOp Z                         = Thyra::zero<ST>(F_->range(), F_->domain());
+  RCP<const Thyra::LinearOpBase<ST>> thyOp = Teko::scale(-4.0, F_);
+
+  {
+    Teko::ModifiableLinearOp expOp;
+    expOp = Teko::explicitAdd(Z, Teko::scale(-4.0, F_), expOp);
+
+    RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp =
+        Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+    (void)tOp;
+
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    const bool result = tester.compare(*thyOp, *expOp, Teuchos::ptrFromRef(fos));
+    TEST_ASSERT(result, std::endl
+                            << "   tExplicitOps_tpetra::test_add_zero"
+                            << ": Testing explicit add with zero left operand");
+    if (not result || verbosity >= 10) os << ss.str();
+  }
+
+  {
+    Teko::ModifiableLinearOp expOp;
+    expOp = Teko::explicitAdd(Teko::scale(-4.0, F_), Z, expOp);
+
+    RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp =
+        Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+    (void)tOp;
+
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    const bool result = tester.compare(*thyOp, *expOp, Teuchos::ptrFromRef(fos));
+    TEST_ASSERT(result, std::endl
+                            << "   tExplicitOps_tpetra::test_add_zero"
+                            << ": Testing explicit add with zero right operand");
+    if (not result || verbosity >= 10) os << ss.str();
+  }
+
+  {
+    Teko::ModifiableLinearOp expOp;
+    expOp = Teko::explicitAdd(Z, Teko::scale(-4.0, F_), expOp);
+    RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp1 =
+        Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+    RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop1 = tOp1->getConstTpetraOperator();
+
+    expOp = Teko::explicitAdd(Z, Teko::scale(-4.0, F_), expOp);
+    RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp2 =
+        Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+    RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop2 = tOp2->getConstTpetraOperator();
+
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    TEST_ASSERT(eop1.getRawPtr() != eop2.getRawPtr(),
+                std::endl
+                    << " tExplicitOps_tpetra::test_add_zero"
+                    << ": Testing zero-op short-circuit rebuilds destination explicitly");
+    if (not(eop1.getRawPtr() != eop2.getRawPtr()) || verbosity >= 10) os << ss.str();
+
+    std::stringstream ss2;
+    Teuchos::FancyOStream fos2(rcpFromRef(ss2), "      |||");
+    const bool result = tester.compare(*thyOp, *expOp, Teuchos::ptrFromRef(fos2));
+    TEST_ASSERT(result, std::endl
+                            << "   tExplicitOps_tpetra::test_add_zero"
+                            << ": Testing explicit add with zero operand and reused destination");
+    if (not result || verbosity >= 10) os << ss2.str();
+  }
+
+  {
+    Teko::LinearOp expOp = Teko::explicitAdd(Z, Teko::scale(-4.0, F_));
+
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    const bool result = tester.compare(*thyOp, *expOp, Teuchos::ptrFromRef(fos));
+    TEST_ASSERT(result, std::endl
+                            << "   tExplicitOps_tpetra::test_add_zero"
+                            << ": Testing two-argument explicit add with zero operand");
+    if (not result || verbosity >= 10) os << ss.str();
+  }
+
+  {
+    RCP<const Thyra::LinearOpBase<ST>> thyAdj = Teko::adjoint(G_);
+    Teko::ModifiableLinearOp expOp;
+    expOp = Teko::explicitAdd(Z, thyAdj, expOp);
+
+    RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp =
+        Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+    (void)tOp;
+
+    std::stringstream ss;
+    Teuchos::FancyOStream fos(rcpFromRef(ss), "      |||");
+    const bool result = tester.compare(*thyAdj, *expOp, Teuchos::ptrFromRef(fos));
+    TEST_ASSERT(result, std::endl
+                            << "   tExplicitOps_tpetra::test_add_zero"
+                            << ": Testing explicit add with zero operand and adjoint operand");
+    if (not result || verbosity >= 10) os << ss.str();
   }
 
   return allPassed;

@@ -470,7 +470,7 @@ ENDIF()
 
 
 #
-# RCP_PerforamnceTests
+# RCP_PerformanceTests
 #
 
 
@@ -497,11 +497,12 @@ TRIBITS_ADD_TEST(
     --max-rcp-create-destroy-ratio=1.05
     --max-rcp-raw-adjust-ref-count-ratio=20.0 --max-rcp-sp-adjust-ref-count-ratio=1.7
     --max-rcp-raw-obj-access-ratio=1.02
+  RUN_SERIAL
   STANDARD_PASS_OUTPUT
   )
 
 #
-# Array_PerforamnceTests
+# Array_PerformanceTests
 #
 
 # Build the executable no matter what
@@ -526,6 +527,7 @@ TRIBITS_ADD_TEST(
     --details=ALL --max-array-size=100000
     --max-array-bracket-ratio=1.02 --max-array-iter-ratio=1.02
     --max-arrayrcp-self-iter-ratio=1.5
+  RUN_SERIAL
   STANDARD_PASS_OUTPUT
   )
 

@@ -19,6 +19,7 @@
 #include "Teuchos_RCP.hpp"
 
 // Thyra includes
+#include "Thyra_LinearOpBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_TpetraMultiVector.hpp"
 #include "Thyra_DefaultSpmdMultiVector.hpp"
@@ -30,7 +31,8 @@
 
 namespace Teko {
 
-typedef Teuchos::RCP<const Thyra::LinearOpBase<double> > LinearOp;
+typedef Teuchos::RCP<const Thyra::LinearOpBase<ST> > LinearOp;
+typedef Teuchos::RCP<Thyra::LinearOpBase<ST> > ModifiableLinearOp;
 
 namespace TpetraHelpers {
 
@@ -114,6 +116,18 @@ bool isTpetraLinearOp(const Teko::LinearOp& op);
  */
 Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > getTpetraCrsMatrix(const Teko::LinearOp& op,
                                                                           ST* scalar, bool* transp);
+
+/** Materialize a wrapped Tpetra operator as an explicit CrsMatrix, preserving
+ * scale and transpose state encoded in the Thyra wrapper.
+ */
+Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > materializeTpetraCrsMatrix(
+    const Teko::LinearOp& op);
+
+/** Materialize a wrapped Tpetra operator as an explicit Thyra::TpetraLinearOp,
+ * optionally reusing the destination wrapper.
+ */
+Teko::ModifiableLinearOp materializeTpetraLinearOp(const Teko::LinearOp& op,
+                                                   const Teko::ModifiableLinearOp& destOp);
 
 /** A class that zeros out chosen rows of a matrix-vector
  * product.

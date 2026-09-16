@@ -31,6 +31,7 @@
 #include "Tpetra_Vector.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
 
 using Teuchos::null;
 using Teuchos::RCP;
@@ -257,6 +258,33 @@ RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > getTpetraCrsMatrix(const LinearOp&
   }
 
   return Teuchos::null;
+}
+
+RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > materializeTpetraCrsMatrix(const LinearOp& op) {
+  ST scalar          = 0.0;
+  bool transp        = false;
+  auto tCrsOp        = getTpetraCrsMatrix(op, &scalar, &transp);
+  auto explicitCrsOp = transp
+                           ? Tpetra::RowMatrixTransposer<ST, LO, GO, NT>(tCrsOp).createTranspose()
+                           : rcp(new Tpetra::CrsMatrix<ST, LO, GO, NT>(*tCrsOp, Teuchos::Copy));
+  if (scalar != Teuchos::ScalarTraits<ST>::one()) explicitCrsOp->scale(scalar);
+  return explicitCrsOp;
+}
+
+ModifiableLinearOp materializeTpetraLinearOp(const LinearOp& op, const ModifiableLinearOp& destOp) {
+  auto explicitCrsOp = materializeTpetraCrsMatrix(op);
+
+  RCP<Thyra::LinearOpBase<ST> > explicitOp;
+  if (destOp != Teuchos::null)
+    explicitOp = destOp;
+  else
+    explicitOp = rcp(new Thyra::TpetraLinearOp<ST, LO, GO, NT>());
+
+  auto tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT> >(explicitOp, true);
+  tExplicitOp->initialize(Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getRangeMap()),
+                          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getDomainMap()),
+                          explicitCrsOp);
+  return tExplicitOp;
 }
 
 }  // end namespace TpetraHelpers

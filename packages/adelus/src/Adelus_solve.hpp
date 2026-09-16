@@ -49,6 +49,7 @@ void elimination_rhs(int N, ZView& ptr2, RHSView& ptr3, DView& ptr4, int act_col
 #endif
 }
 
+#if 0
 template<class HandleType, class ZViewType, class RHSViewType>
 inline
 void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
@@ -359,6 +360,7 @@ void back_solve_rhs_pipelined_comm(HandleType& ahandle, ZViewType& Z, RHSViewTyp
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Total time in solve",&totalsolvetime);
 #endif
 }
+#endif
 
 template<class HandleType, class ZViewType, class RHSViewType>
 inline
@@ -371,12 +373,21 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
   using memory_space    = typename ZViewType::device_type::memory_space;
   using View2DType      = Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space>;
 
-#if defined(ADELUS_HOST_PINNED_MEM_MPI)
 #if defined(KOKKOS_ENABLE_CUDA)
   using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
   using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
+#else
+  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft>;//fallback placeholder
 #endif
+
+  constexpr bool isOnDeviceSpace =
+#if defined( KOKKOS_ENABLE_CUDA )
+    std::is_same_v<memory_space, Kokkos::CudaSpace>;
+#elif defined( KOKKOS_ENABLE_HIP )
+    std::is_same_v<memory_space, Kokkos::HIPSpace>;
+#else
+    false;
 #endif
 
 #if defined(GET_TIMING) || defined(PRINT_STATUS)
@@ -402,9 +413,7 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
   double t1,t2;
   double allocviewtime,eliminaterhstime,bcastrowtime,updrhstime,bcastcoltime,copycoltime;
   double totalsolvetime;
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
   double copyhostpinnedtime;
-#endif
 #endif
 
 #ifdef GET_TIMING
@@ -413,19 +422,19 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
 
 #ifdef GET_TIMING
   allocviewtime=eliminaterhstime=bcastrowtime=updrhstime=bcastcoltime=copycoltime=0.0;
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  copyhostpinnedtime=0.0;
-#endif
+  if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) copyhostpinnedtime=0.0;
 
   t1 = MPI_Wtime();
 #endif
 
   View2DType curr_col( "curr_col", my_rows, 1 ); //current column
   View2DType rhs_row ( "rhs_row", 1, my_rhs );   //current row of RHS to hold the elimination results (i.e row of solution)
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  View2DHostPinnType h_curr_col( "h_curr_col", my_rows, 1 );
-  View2DHostPinnType h_rhs_row( "h_rhs_row", 1, my_rhs );
-#endif
+  View2DHostPinnType h_curr_col, h_rhs_row;
+
+  if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
+    h_curr_col = View2DHostPinnType( Kokkos::view_alloc(Kokkos::WithoutInitializing, "h_curr_col"), my_rows, 1 );
+    h_rhs_row  = View2DHostPinnType( Kokkos::view_alloc(Kokkos::WithoutInitializing, "h_rhs_row"), 1, my_rhs );
+  }
 
   //Kokkos::fence();//NOTE: Should we need this?
 
@@ -455,38 +464,37 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
     copycoltime += (MPI_Wtime()-t1);
 #endif
 
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+    if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
 #ifdef GET_TIMING
-    t1 = MPI_Wtime();
+      t1 = MPI_Wtime();
 #endif
-    Kokkos::deep_copy(h_curr_col,curr_col);
+      Kokkos::deep_copy(h_curr_col,curr_col);
 #ifdef GET_TIMING
     copyhostpinnedtime += (MPI_Wtime()-t1);
 #endif
-#endif
+    }
 
 #ifdef GET_TIMING
     t1 = MPI_Wtime();
 #endif
     //Step 2: broadcast the current column to all ranks in the row_comm
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-    MPI_Bcast(reinterpret_cast<char *>(h_curr_col.data()), end_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
-#else //GPU-aware MPI
-    MPI_Bcast(reinterpret_cast<char *>(curr_col.data()), end_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
-#endif
+    if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace)
+      MPI_Bcast(reinterpret_cast<char *>(h_curr_col.data()), end_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
+    else //GPU-aware MPI
+      MPI_Bcast(reinterpret_cast<char *>(curr_col.data()), end_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
 #ifdef GET_TIMING
     bcastcoltime += (MPI_Wtime()-t1);
 #endif
 
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+    if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
 #ifdef GET_TIMING
-    t1 = MPI_Wtime();
+      t1 = MPI_Wtime();
 #endif
-    Kokkos::deep_copy(curr_col,h_curr_col);
+      Kokkos::deep_copy(curr_col,h_curr_col);
 #ifdef GET_TIMING
-    copyhostpinnedtime += (MPI_Wtime()-t1);
+      copyhostpinnedtime += (MPI_Wtime()-t1);
 #endif
-#endif
+    }
 
 #ifdef GET_TIMING
     t1 = MPI_Wtime();
@@ -509,39 +517,37 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
 
     if (my_rhs > 0) { //only on ranks having rhs
       if (k >= 1) {//still have row(s) to do rhs updates with elimination results
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+        if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
 #ifdef GET_TIMING
-        t1 = MPI_Wtime();
+          t1 = MPI_Wtime();
 #endif
-        Kokkos::deep_copy(h_rhs_row,rhs_row);
+          Kokkos::deep_copy(h_rhs_row,rhs_row);
 #ifdef GET_TIMING
-        copyhostpinnedtime += (MPI_Wtime()-t1);
+          copyhostpinnedtime += (MPI_Wtime()-t1);
 #endif
-#endif
+        }
 
 #ifdef GET_TIMING
         t1 = MPI_Wtime();
 #endif
         //Step 4: broadcast elimination results to all ranks in col_comm
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-        MPI_Bcast(reinterpret_cast<char *>(h_rhs_row.data()), my_rhs*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
-#else //GPU-aware MPI
-        MPI_Bcast(reinterpret_cast<char *>(rhs_row.data()), my_rhs*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
-#endif
-
+        if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace)
+          MPI_Bcast(reinterpret_cast<char *>(h_rhs_row.data()), my_rhs*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
+        else //GPU-aware MPI
+          MPI_Bcast(reinterpret_cast<char *>(rhs_row.data()), my_rhs*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
 #ifdef GET_TIMING
         bcastrowtime += (MPI_Wtime()-t1);
 #endif
 
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+        if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
 #ifdef GET_TIMING
-        t1 = MPI_Wtime();
+          t1 = MPI_Wtime();
 #endif
-        Kokkos::deep_copy(rhs_row,h_rhs_row);
+          Kokkos::deep_copy(rhs_row,h_rhs_row);
 #ifdef GET_TIMING
-        copyhostpinnedtime += (MPI_Wtime()-t1);
+          copyhostpinnedtime += (MPI_Wtime()-t1);
 #endif
-#endif
+        }
 
 #ifdef GET_TIMING
         t1 = MPI_Wtime();
@@ -572,9 +578,8 @@ void back_solve_currcol_bcast(HandleType& ahandle, ZViewType& Z, RHSViewType& RH
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to eliminate rhs",&eliminaterhstime);
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to bcast temp row",&bcastrowtime);
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to update rhs",&updrhstime);
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);
-#endif
+  if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace)
+    showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);
   showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Total time in solve",&totalsolvetime);
 #endif
 }
