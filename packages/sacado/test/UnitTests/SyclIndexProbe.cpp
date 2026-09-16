@@ -197,6 +197,15 @@ host_result_view probe_range(int n, int chunk_size) {
 
   Kokkos::parallel_for(
       "sacado_sycl_probe_range", policy, KOKKOS_LAMBDA(const int) {
+        // Touch `r` unconditionally, OUTSIDE the __SYCL_DEVICE_ONLY__ guard.
+        // KOKKOS_LAMBDA captures by [=], so implicit capture only picks up
+        // what the body names.  If every use of `r` sat behind the guard, the
+        // host pass would capture nothing while the device pass captured the
+        // View, the two passes would disagree on sizeof(lambda), and DPC++
+        // rejects that with "Unexpected kernel lambda size".  This also
+        // doubles as a count of the work items that actually ran.
+        Kokkos::atomic_add(&r(R_WORK_ITEMS), 1);
+
 #if defined(__SYCL_DEVICE_ONLY__)
 
 #if SACADO_PROBE_RANGE_SUBGROUP
@@ -365,9 +374,9 @@ int main(int argc, char *argv[]) {
     std::printf("\nRangePolicy (flat) kernels:\n");
     {
       host_result_view h = probe_range(1024, 0);
-      std::printf("  default chunk size : sub_group size=%d, max sg "
-                  "local_id=%d, ballot ok=%s\n",
-                  h(R_SUB_GROUP_SIZE), h(R_MAX_SG_LOCAL_ID),
+      std::printf("  default chunk size : work items=%d, sub_group size=%d, "
+                  "max sg local_id=%d, ballot ok=%s\n",
+                  h(R_WORK_ITEMS), h(R_SUB_GROUP_SIZE), h(R_MAX_SG_LOCAL_ID),
                   h(R_BALLOT_RAN) ? "yes" : "NO");
 #if SACADO_PROBE_RANGE_ND_ITEM
       std::printf("  default chunk size : nd_item query ran=%s, "
@@ -378,9 +387,9 @@ int main(int argc, char *argv[]) {
     }
     {
       host_result_view h = probe_range(1024, 64);
-      std::printf("  chunk_size = 64    : sub_group size=%d, max sg "
-                  "local_id=%d, ballot ok=%s\n",
-                  h(R_SUB_GROUP_SIZE), h(R_MAX_SG_LOCAL_ID),
+      std::printf("  chunk_size = 64    : work items=%d, sub_group size=%d, "
+                  "max sg local_id=%d, ballot ok=%s\n",
+                  h(R_WORK_ITEMS), h(R_SUB_GROUP_SIZE), h(R_MAX_SG_LOCAL_ID),
                   h(R_BALLOT_RAN) ? "yes" : "NO");
 #if SACADO_PROBE_RANGE_ND_ITEM
       std::printf("  chunk_size = 64    : nd_item query ran=%s, "
