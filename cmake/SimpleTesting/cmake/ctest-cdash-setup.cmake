@@ -14,6 +14,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/ctest-common.cmake)
 # ===============================================================================
 print_options_list()
 
+# Generates icon on CDash that links to the GitHub PR
+if(DEFINED PULLREQUESTNUM AND NOT "${PULLREQUESTNUM}" STREQUAL "")
+    set(CTEST_CHANGE_ID "${PULLREQUESTNUM}")
+endif()
+
 # -----------------------------------------------------------
 # -- Specify the Generator
 # -----------------------------------------------------------
