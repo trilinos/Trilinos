@@ -336,4 +336,11 @@ Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order ) {
 }
 
 }
+
+#define HGRAD_TRI_Cn_FEM_ORTH_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)      \
+  EXTERN template class Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH<DEVICE, OUTPUT_TYPE, \
+                                                          POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(HGRAD_TRI_Cn_FEM_ORTH_INSTANT);
+
 #endif

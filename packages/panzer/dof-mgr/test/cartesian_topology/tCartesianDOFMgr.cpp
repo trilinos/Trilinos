@@ -41,7 +41,7 @@ namespace panzer::unit_test {
 using Triplet = CartesianConnManager::Triplet<panzer::GlobalOrdinal>;
 
 RCP<const panzer::FieldPattern> buildFieldPattern(
-  RCP<Intrepid2::Basis<PHX::Device, double, double>> basis
+  RCP<Intrepid2::Basis<PHX::Device::device_type, double, double>> basis
 ) {
   // build a geometric pattern from a single basis
   return Teuchos::make_rcp<panzer::Intrepid2FieldPattern>(basis);
@@ -76,11 +76,11 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
   int bx =  1, by = 2, bz = 1;
 
   // build velocity, temperature and pressure fields
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device, double, double>>());
-  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device, double, double>>());
-  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device, double, double>>());
-  RCP<const panzer::FieldPattern> pattern_B = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HDIV_HEX_I1_FEM< PHX::Device, double, double>>());
-  RCP<const panzer::FieldPattern> pattern_E = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HCURL_HEX_I1_FEM<PHX::Device, double, double>>());
+  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::device_type, double, double>>());
+  RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::device_type, double, double>>());
+  RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::device_type, double, double>>());
+  RCP<const panzer::FieldPattern> pattern_B = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HDIV_HEX_I1_FEM< PHX::Device::device_type, double, double>>());
+  RCP<const panzer::FieldPattern> pattern_E = buildFieldPattern(Teuchos::make_rcp<Intrepid2::Basis_HCURL_HEX_I1_FEM<PHX::Device::device_type, double, double>>());
 
   // build the topology
   const auto connManager = Teuchos::make_rcp<CCM>();

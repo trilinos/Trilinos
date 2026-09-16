@@ -16,6 +16,7 @@
 #define __INTREPID2_CELLDATA_CPP__
 
 #include "Intrepid2_CellData.hpp"
+#include "Intrepid2_CellDataDef.hpp"
 
 const CellTopologyData*
 Intrepid2::getCellTopologyData(const unsigned& cellTopologyKey){
@@ -89,6 +90,8 @@ Intrepid2::getCellTopologyData(const unsigned& cellTopologyKey){
     }
     return cellTopologyData;
 }
+
+INTREPID2_CELLDATA_INSTANT(Kokkos::DefaultExecutionSpace::device_type, );
 
 #endif
 

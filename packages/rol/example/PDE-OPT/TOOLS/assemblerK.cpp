@@ -13,4 +13,4 @@
 
 #include "assemblerK.hpp"
 
-template class Assembler<double,Kokkos::HostSpace>;
+template class Assembler<double,typename Kokkos::HostSpace::device_type>;

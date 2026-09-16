@@ -42,7 +42,7 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    typedef Intrepid2::Basis<PHX::Device::execution_space,double,double> IntrepidBasis;
+    typedef Intrepid2::Basis<PHX::Device::device_type,double,double> IntrepidBasis;
 
     std::string element_block = "eblock-0_0_0";
     std::string sideset = "left";
@@ -76,7 +76,7 @@ namespace panzer {
     // build an intrepid basis and a related field pattern for seeding the DOFManager
     {
        RCP<IntrepidBasis> intrepid_basis
-           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HGrad",1,
+           = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>("HGrad",1,
                                                                                       *mesh->getCellTopology(element_block));
       RCP<panzer::Intrepid2FieldPattern> field_pattern = rcp(new panzer::Intrepid2FieldPattern(intrepid_basis));
 

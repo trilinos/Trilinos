@@ -16,6 +16,7 @@
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {
 
@@ -43,7 +44,7 @@ SubcellSum(
   this->addEvaluatedField(outField);
 
   // build a field pattern object so that looking up closure indices is easy
-  fieldPattern_ = Teuchos::rcp(new Intrepid2FieldPattern(basis->getIntrepid2Basis<PHX::exec_space,double,double>()));
+  fieldPattern_ = Teuchos::rcp(new Intrepid2FieldPattern(basis->getIntrepid2Basis<PHX::Device::device_type,double,double>()));
     
   std::string n = "SubcellSum: " + outField.fieldTag().name();
   this->setName(n);

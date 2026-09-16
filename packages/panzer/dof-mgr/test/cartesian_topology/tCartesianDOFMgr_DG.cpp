@@ -91,21 +91,21 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
   const auto dofManager = Teuchos::make_rcp<DOFManager>();
   dofManager->setConnManager(connManager,*comm.getRawMpiComm());
 
-  using Basis = Intrepid2::Basis<PHX::Device,double,double>;
+  using Basis = Intrepid2::Basis<PHX::Device::device_type,double,double>;
   
-  RCP<Basis> bhgrad2 = Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device, double, double>>(2);
+  RCP<Basis> bhgrad2 = Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device::device_type, double, double>>(2);
   RCP<const FieldPattern> hgrad2 = Teuchos::make_rcp<Intrepid2FieldPattern>(bhgrad2);
   out << "HGRAD2\n" << *hgrad2 << std::endl;
 
-  RCP<Basis> bhgrad1 = Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device, double, double>>(1);
+  RCP<Basis> bhgrad1 = Teuchos::make_rcp<Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device::device_type, double, double>>(1);
   RCP<const FieldPattern> hgrad1 = Teuchos::make_rcp<Intrepid2FieldPattern>(bhgrad1);
   out << "HGRAD1\n" << *hgrad1 << std::endl;
   
-  RCP<Basis> bhcurl = Teuchos::make_rcp<Intrepid2::Basis_HCURL_HEX_In_FEM<PHX::Device, double, double>>(1);
+  RCP<Basis> bhcurl = Teuchos::make_rcp<Intrepid2::Basis_HCURL_HEX_In_FEM<PHX::Device::device_type, double, double>>(1);
   RCP<const FieldPattern> hcurl = Teuchos::make_rcp<Intrepid2FieldPattern>(bhcurl);
   out << "HCURL2\n" << *hcurl << std::endl;
   
-  RCP<Basis> bhdiv = Teuchos::make_rcp<Intrepid2::Basis_HDIV_HEX_In_FEM<PHX::Device, double, double>>(1);
+  RCP<Basis> bhdiv = Teuchos::make_rcp<Intrepid2::Basis_HDIV_HEX_In_FEM<PHX::Device::device_type, double, double>>(1);
   RCP<const FieldPattern> hdiv = Teuchos::make_rcp<Intrepid2FieldPattern>(bhdiv);
   out << "HDIV2\n" << *hdiv << std::endl;
 

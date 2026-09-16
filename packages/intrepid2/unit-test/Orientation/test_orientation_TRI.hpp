@@ -877,7 +877,7 @@ int OrientationTri(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> sideBasis(order-1);
+          Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace::device_type> sideBasis(order-1);
           ordinal_type sideBasisCardinality = sideBasis.getCardinality();
           ordinal_type numInternalDofs = sideBasis.getDofCount(dim-1,0);
           DynRankView ConstructWithLabel(sideDofCoords, sideBasisCardinality, dim-1);
