@@ -273,8 +273,11 @@ private:
     * allocation of its own. Each is grown on demand and never shrunk, so a
     * buffer always fits the largest request seen so far.
     */
-  typename PHX::View<const LO**>::host_mirror_type lids_h_;
-  std::vector<typename PHX::View<const ScalarT**>::host_mirror_type> scatterFields_h_;
+  using LIDsDeviceView = Kokkos::View<const panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device>;
+  using ScatterFieldDeviceView = typename PHX::MDField<const ScalarT,Cell,NODE>::array_type;
+
+  typename LIDsDeviceView::host_mirror_type lids_h_;
+  std::vector<typename ScatterFieldDeviceView::host_mirror_type> scatterFields_h_;
   typename LOC::CrsMatrixType::nonconst_local_inds_host_view_type rowIndices_;
   typename LOC::CrsMatrixType::nonconst_values_host_view_type rowValues_;
   std::vector<double> jacRow_;

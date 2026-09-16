@@ -738,7 +738,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    // Reuse the host copies below rather than allocating a mirror per call. The
    // contents still have to be refreshed, but the buffers are only grown.
    if (lids_h_.extent(0) != LIDs.extent(0) || lids_h_.extent(1) != LIDs.extent(1))
-     lids_h_ = Kokkos::create_mirror_view(LIDs);
+     lids_h_ = Kokkos::create_mirror_view(Kokkos::HostSpace(),LIDs);
    auto& LIDs_h = lids_h_;
    Kokkos::deep_copy(LIDs_h, LIDs);
 
