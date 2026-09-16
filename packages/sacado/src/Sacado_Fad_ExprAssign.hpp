@@ -86,10 +86,10 @@ namespace Sacado {
       {
         const int xsz = x.size(), sz = dst.size();
 
-#if defined(SACADO_DEBUG)
-        if ((xsz != sz) && (xsz != 0) && (sz != 0)) {
-	  Kokkos::abort("Fad Error:  Attempt to assign with incompatible sizes");
-	}
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
+        if ((xsz != sz) && (xsz != 0) && (sz != 0))
+          throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
 
         if (xsz) {
@@ -122,7 +122,8 @@ namespace Sacado {
       {
         const int xsz = x.size(), sz = dst.size();
 
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
         if ((xsz != sz) && (xsz != 0) && (sz != 0))
           throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
@@ -159,7 +160,8 @@ namespace Sacado {
         const value_type xval = x.val();
         const value_type v = dst.val();
 
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
         if ((xsz != sz) && (xsz != 0) && (sz != 0))
           throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
@@ -202,7 +204,8 @@ namespace Sacado {
         const value_type xval = x.val();
         const value_type v = dst.val();
 
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
         if ((xsz != sz) && (xsz != 0) && (sz != 0))
           throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif

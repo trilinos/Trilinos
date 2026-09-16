@@ -64,7 +64,8 @@ namespace Sacado {
       StaticStorage(const int sz, const T & x,
                     const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
         if (sz > Num)
           throw "StaticStorage::StaticStorage() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
@@ -141,10 +142,10 @@ namespace Sacado {
       //! Resize the derivative array to sz
       SACADO_INLINE_FUNCTION
       void resize(int sz) {
-#if defined(SACADO_DEBUG)
-        if (sz > Num) {
-	  Kokkos::abort("StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.");
-	}
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
+        if (sz > Num)
+          throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
         sz_ = sz;
       }
@@ -156,10 +157,10 @@ namespace Sacado {
        */
       SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {
-#if defined(SACADO_DEBUG)
-        if (sz > Num) {
-	  Kokkos::abort("StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.");
-	}
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
+        if (sz > Num)
+          throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
         if (sz > sz_)
           ss_array<T>::zero(dx_+sz_, sz-sz_);
@@ -173,10 +174,10 @@ namespace Sacado {
        */
       SACADO_INLINE_FUNCTION
       void expand(int sz) {
-#if defined(SACADO_DEBUG)
-        if (sz > Num) {
-	  Kokkos::abort("StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.");
-	}
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
+        if (sz > Num)
+          throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
 #endif
         if (sz > sz_)
           ss_array<T>::zero(dx_+sz_, sz-sz_);

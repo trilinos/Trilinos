@@ -29,8 +29,9 @@
 // is obvious.  It also reports the two build settings that turn a Sacado debug
 // check into a hard device failure:
 //
-//   SACADO_DEBUG  -- enables the size checks in ExprAssign/StaticStorage that
-//                    now call Kokkos::abort() in device code
+//   SACADO_DEBUG  -- enables the size checks in ExprAssign/StaticStorage.  If
+//                    they are reachable from device code they emit a
+//                    Kokkos::abort(), which on SYCL is a device-side printf.
 //   NDEBUG        -- when NOT set, Kokkos::abort() on SYCL calls __assert_fail
 //                    (Kokkos_SYCL_Abort.hpp), which surfaces as an opaque
 //                    UR_RESULT_ERROR_UNKNOWN rather than a message
@@ -159,8 +160,8 @@ int main(int argc, char *argv[]) {
     std::printf("Build configuration:\n");
 #if defined(SACADO_DEBUG)
     std::printf("  SACADO_DEBUG : DEFINED -- the size checks in ExprAssign and\n"
-                "                 Static{,Fixed}Storage are active, and now\n"
-                "                 call Kokkos::abort() in device code\n");
+                "                 Static{,Fixed}Storage are active on the host;\n"
+                "                 they are guarded out of device code\n");
 #else
     std::printf("  SACADO_DEBUG : not defined -- Sacado's debug size checks "
                 "are compiled out\n");
