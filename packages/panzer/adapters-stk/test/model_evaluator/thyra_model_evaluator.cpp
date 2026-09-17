@@ -21,9 +21,14 @@ using Teuchos::rcp;
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
+
+#include "Tpetra_Access.hpp"
+#include "Tpetra_Vector.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
+#include "PanzerDiscFE_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
@@ -32,7 +37,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
@@ -48,7 +53,6 @@ using Teuchos::rcp;
 #include "Panzer_ParameterLibraryUtilities.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_LinearObjFactory_Utilities.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
@@ -160,6 +164,76 @@ namespace panzer {
 
       me->evalModel(in_args, out_args);
     }
+  }
+
+  // Regression test: W must honor alpha and beta on EVERY evaluation,
+  // not just the first. The Jacobian gather writes the AD seed into
+  // Phalanx field memory that persists between evaluations, so an
+  // unseeded (beta=0) gather that merely skips the write leaves the
+  // previous evaluation's seed in place and W keeps contributing
+  // df/dx. Evaluating (alpha=1,beta=0) before and after an
+  // (alpha=0,beta=1) evaluation must give the same operator. There
+  // was a previous path that sped up the evaluation by ignoring alpha
+  // and beta, assuming the values don't change once set. But this is
+  // only true for very simple circumstances. Multiple corner cases
+  // were found and we decided it was too dangerous to keep
+  // supporting. The seed value is now always written for safety.
+  TEUCHOS_UNIT_TEST(thyra_model_evaluator, jacobian_alpha_beta)
+  {
+    using Teuchos::RCP;
+    typedef Thyra::ModelEvaluatorBase MEB;
+    typedef panzer::ModelEvaluator<double> PME;
+
+    AssemblyPieces ap;
+    buildAssemblyPieces(false,false,ap);
+
+    const bool build_transient_support = true;
+    RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
+    me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                   *ap.eqset_factory,*ap.bc_factory,ap.cm_factory,ap.cm_factory,
+                   ap.closure_models,ap.user_data,false,"");
+
+    RCP<Thyra::VectorBase<double> > t = Thyra::createMember(me->get_x_space());
+    Thyra::put_scalar(1.0,t.ptr());
+
+    // Apply W(alpha,beta) to t and return the result.
+    auto applyW = [&](double alpha,double beta) {
+      MEB::InArgs<double> in_args = me->createInArgs();
+      RCP<Thyra::VectorBase<double> > x    = Thyra::createMember(me->get_x_space());
+      RCP<Thyra::VectorBase<double> > xdot = Thyra::createMember(me->get_x_space());
+      Thyra::put_scalar(0.3,x.ptr());
+      Thyra::put_scalar(0.0,xdot.ptr());
+      in_args.set_x(x);
+      if (in_args.supports(MEB::IN_ARG_x_dot)) in_args.set_x_dot(xdot);
+      if (in_args.supports(MEB::IN_ARG_t))     in_args.set_t(0.0);
+      if (in_args.supports(MEB::IN_ARG_alpha)) in_args.set_alpha(alpha);
+      if (in_args.supports(MEB::IN_ARG_beta))  in_args.set_beta(beta);
+      MEB::OutArgs<double> out_args = me->createOutArgs();
+      RCP<Thyra::LinearOpBase<double> > W = me->create_W_op();
+      out_args.set_W_op(W);
+      me->evalModel(in_args,out_args);
+      RCP<Thyra::VectorBase<double> > y = Thyra::createMember(me->get_f_space());
+      Thyra::apply(*W,Thyra::NOTRANS,*t,y.ptr());
+      return y;
+    };
+
+    RCP<Thyra::VectorBase<double> > mass_first = applyW(1.0,0.0);
+    RCP<Thyra::VectorBase<double> > stiffness  = applyW(0.0,1.0);
+    RCP<Thyra::VectorBase<double> > mass_again = applyW(1.0,0.0);
+
+    // The two (alpha=1,beta=0) operators must agree.
+    RCP<Thyra::VectorBase<double> > diff = Thyra::createMember(me->get_f_space());
+    Thyra::V_VmV(diff.ptr(),*mass_again,*mass_first);
+    out << "||W(1,0)*t|| first = " << Thyra::norm_2(*mass_first)
+        << ", again = "           << Thyra::norm_2(*mass_again)
+        << ", ||W(0,1)*t|| = "    << Thyra::norm_2(*stiffness) << std::endl;
+    TEST_COMPARE(Thyra::norm_2(*diff), <, 1.0e-12*(Thyra::norm_2(*mass_first)+1.0));
+
+    // Guard the guard: alpha and beta must actually select different operators
+    // in this problem, otherwise the check above would pass trivially.
+    RCP<Thyra::VectorBase<double> > sep = Thyra::createMember(me->get_f_space());
+    Thyra::V_VmV(sep.ptr(),*stiffness,*mass_first);
+    TEST_COMPARE(Thyra::norm_2(*sep), >, 0.1*Thyra::norm_2(*mass_first));
   }
 
   TEUCHOS_UNIT_TEST(thyra_model_evaluator, response)
@@ -455,14 +529,20 @@ namespace panzer {
       me->evalModel(inArgs,outArgs);
       TEST_ASSERT(Thyra::norm_2(*dfdp)>0);
 
-      Teuchos::ArrayRCP<const double> dfdp_data;
-      Teuchos::ArrayRCP<const double> f1_data;
-      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*dfdp).getLocalData(Teuchos::ptrFromRef(dfdp_data));
-      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*f1).getLocalData(Teuchos::ptrFromRef(f1_data));
-      for(int i=0;i<dfdp_data.size();i++) {
-        if(dfdp_data[i]!=0.0)
-        { TEST_FLOATING_EQUALITY(f1_data[i],20.0*dfdp_data[i],1e-10); }
-        out << f1_data[i] << "    " << dfdp_data[i] << std::endl;
+      {
+        typedef Thyra::TpetraOperatorVectorExtraction<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> ConverterT;
+
+        auto dfdp_tpetra = ConverterT::getConstTpetraVector(dfdp.getConst());
+        auto f1_tpetra   = ConverterT::getConstTpetraVector(f1.getConst());
+
+        auto dfdp_data = dfdp_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly);
+        auto f1_data   = f1_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly);
+
+        for(size_t i=0;i<dfdp_data.extent(0);i++) {
+          if(dfdp_data(i,0)!=0.0)
+          { TEST_FLOATING_EQUALITY(f1_data(i,0),20.0*dfdp_data(i,0),1e-10); }
+          out << f1_data(i,0) << "    " << dfdp_data(i,0) << std::endl;
+        }
       }
 
       outArgs.set_DfDp(0,MEB::Derivative<double>(dfdp,MEB::DERIV_MV_BY_COL));
@@ -542,6 +622,9 @@ namespace panzer {
 
       out << "evalModel(fd)" << std::endl;
       OutArgs outArgs_delta = me->createOutArgs();
+      // The tangent vector must live in the same space as x for this update to
+      // be meaningful; assert it rather than discovering it as a segfault.
+      TEST_ASSERT(x->space()->isCompatible(*(v->space())));
       Thyra::Vp_StV(x.ptr(),1.0,*v); // x = x + 1 * v
       Thyra::put_scalar(6.0,p.ptr());// p = p + 1
       outArgs_delta.set_f(fd);
@@ -549,16 +632,20 @@ namespace panzer {
 
       // (df/dx)*v + df/dp = f(x + 1 * v, p + 1) - f(x,p)
       // since the problem is linear
-      Teuchos::ArrayRCP<const double> dfdp_data;
-      Teuchos::ArrayRCP<const double> f_data;
-      Teuchos::ArrayRCP<const double> fd_data;
-      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*dfdp).getLocalData(Teuchos::ptrFromRef(dfdp_data));
-      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*f).getLocalData(Teuchos::ptrFromRef(f_data));
-      dynamic_cast<const Thyra::SpmdVectorBase<double> &>(*fd).getLocalData(Teuchos::ptrFromRef(fd_data));
-      for(int i=0;i<dfdp_data.size();i++) {
-        if(std::abs(dfdp_data[i]) > 1e-13)
-        { TEST_FLOATING_EQUALITY(fd_data[i]-f_data[i],dfdp_data[i],1e-10); }
-        out << fd_data[i]-f_data[i] << "    " << dfdp_data[i] << std::endl;
+      typedef Thyra::TpetraOperatorVectorExtraction<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> ConverterT;
+
+      auto dfdp_tpetra = ConverterT::getConstTpetraVector(dfdp.getConst());
+      auto f_tpetra    = ConverterT::getConstTpetraVector(f.getConst());
+      auto fd_tpetra   = ConverterT::getConstTpetraVector(fd.getConst());
+
+      auto dfdp_data = dfdp_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto f_data    = f_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto fd_data   = fd_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly);
+
+      for(size_t i=0;i<dfdp_data.extent(0);i++) {
+        if(std::abs(dfdp_data(i,0)) > 1e-13)
+        { TEST_FLOATING_EQUALITY(fd_data(i,0)-f_data(i,0),dfdp_data(i,0),1e-10); }
+        out << fd_data(i,0)-f_data(i,0) << "    " << dfdp_data(i,0) << std::endl;
       }
     }
   }
@@ -953,9 +1040,11 @@ namespace panzer {
     }
   }
 
-  // Testing that nominal values are correctly built and initialized
-  //    specifically testing that adding distributed parameters doesn't wipe out
-  //    previously set nominal values (like the inital condition)
+
+  // Testing that nominal values are correctly built and initialized,
+  // specifically testing that adding distributed parameters doesn't
+  // wipe out previously set nominal values (like the inital
+  // condition)
   TEUCHOS_UNIT_TEST(model_evaluator, nominal_values)
   {
     typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
@@ -1303,7 +1392,7 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
+        = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal,panzer::GlobalOrdinal>(mpiComm,dofManager));
       ap.lof = linObjFactory;
     }
     else {
@@ -1314,7 +1403,8 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
+        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal,panzer::GlobalOrdinal>(
+            mpiComm,Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager>(dofManager)));
       ap.lof = linObjFactory;
     }
 

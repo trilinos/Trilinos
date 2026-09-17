@@ -296,7 +296,7 @@ buildReadOnlyDomainContainer() const
   using TVROGED = TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,
     LocalOrdinalT, GlobalOrdinalT, NodeT>;
   auto ged = rcp(new TVROGED);
-  ged->initialize(getGhostedImport(), getGhostedColMap(), getColMap());
+  ged->initialize(getGhostedColImport(), getGhostedColMap(), getColMap());
   return ged;
 } // end of buildReadOnlyDomainContainer()
 
@@ -342,6 +342,22 @@ getThyraDomainSpace() const
    }
 
    return domainSpace_;
+}
+
+//! Get the domain space
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> >
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getGhostedThyraDomainSpace() const
+{
+   if(ghostedDomainSpace_==Teuchos::null) {
+     if(!hasColProvider_)
+       ghostedDomainSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGhostedMap());
+     else
+       ghostedDomainSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGhostedColMap());
+   }
+
+   return ghostedDomainSpace_;
 }
 
 //! Get the range space
