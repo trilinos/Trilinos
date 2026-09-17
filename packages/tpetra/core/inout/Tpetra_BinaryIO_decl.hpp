@@ -187,6 +187,11 @@ class BinaryIO {
                                   const trcp_tcomm_t& comm);
 };
 
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
+readBinaryMapFile(const std::string& filename,
+                  const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+
 }  // namespace Tpetra
 
 #endif  // TPETRA_BINARYIO_DECL_HPP
