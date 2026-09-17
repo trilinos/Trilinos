@@ -13,11 +13,12 @@
 
 #include "Kokkos_Macros.hpp"
 
-// DFad is tested on SYCL as it is on Cuda.  Inside a Kokkos::View the
-// derivative array belongs to the View's allocation, so no device-side
-// allocation is involved; the Fad temporaries a few kernels create fall back
-// to operator new in device code, which the oneAPI/DPC++ extensions support.
-#define SACADO_TEST_DFAD 1
+// DFad is not tested on SYCL.  Every atomic test builds a local Fad value from
+// the View -- "local_scalar_type x = m_v(i)" in AtomicKernel -- which for DFad
+// is a device-side allocation, and SYCL has none:  neither operator new nor
+// malloc resolves in device code.  SFad and SLFad keep their storage on the
+// stack and are unaffected.
+#define SACADO_TEST_DFAD 0
 
 #include "Fad_KokkosAtomicTests.hpp"
 

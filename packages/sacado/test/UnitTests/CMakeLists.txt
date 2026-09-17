@@ -540,6 +540,16 @@ IF (Sacado_ENABLE_TeuchosCore)
         )
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosTests_DFad_SYCL
+        SOURCES Fad_KokkosTests.hpp
+                Fad_KokkosTests_DFad_SYCL.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
         FadKokkosTests_NoViewSpec_SYCL
         SOURCES Fad_KokkosTests.hpp
                 Fad_KokkosTests_NoViewSpec_SYCL.cpp

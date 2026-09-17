@@ -13,11 +13,11 @@
 
 #include "Kokkos_Macros.hpp"
 
-// DFad is tested on SYCL as it is on Cuda.  Inside a Kokkos::View the
-// derivative array belongs to the View's allocation, so no device-side
-// allocation is involved; the Fad temporaries a few kernels create fall back
-// to operator new in device code, which the oneAPI/DPC++ extensions support.
-#define SACADO_TEST_DFAD 1
+// DFad is covered by its own driver, Fad_KokkosTests_DFad_SYCL:  it cannot run
+// the tests that construct a Fad value in device code, because SYCL provides no
+// device-side allocation.  Keeping it out of here lets SFad and SLFad run the
+// full set.
+#define SACADO_TEST_DFAD 0
 
 #include "Fad_KokkosTests.hpp"
 
