@@ -228,6 +228,7 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
                            const bool callFillComplete) {
   using map_type         = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   using matrix_type      = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using import_type      = Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
   using local_graph_type = typename matrix_type::local_graph_device_type;
   using rowptr_type      = typename local_graph_type::row_map_type::non_const_type;
   using colidx_type      = typename local_graph_type::entries_type::non_const_type;
@@ -241,129 +242,83 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
   const int m   = legacyHeader.numRows;
   const int n   = legacyHeader.numCols;
   const int nnz = legacyHeader.numEntries;
+  const int myRank = comm->getRank();
 
-  std::ifstream in(oldFileName.c_str(), std::ios::binary);
-  TEUCHOS_TEST_FOR_EXCEPTION(!in.good(),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Failed to open legacy binary file '" << oldFileName << "'.");
-  in.seekg(static_cast<std::streamoff>(3 * sizeof(int)), std::ios::beg);
-  TEUCHOS_TEST_FOR_EXCEPTION(!in.good(),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Failed to seek past the header of legacy binary file '" << oldFileName << "'.");
+  const size_t fileLocalNumRows = (myRank == 0) ? static_cast<size_t>(m) : static_cast<size_t>(0);
+  const size_t fileLocalNumCols = (myRank == 0) ? static_cast<size_t>(n) : static_cast<size_t>(0);
+  const auto fileRowMap    = Teuchos::rcp(new map_type(static_cast<Tpetra::global_size_t>(m), fileLocalNumRows, static_cast<GlobalOrdinal>(0), comm));
+  const auto fileColMap    = Teuchos::rcp(new map_type(static_cast<Tpetra::global_size_t>(n), fileLocalNumCols, static_cast<GlobalOrdinal>(0), comm));
+  const auto fileDomainMap = fileColMap;
+  const auto fileRangeMap  = fileRowMap;
 
-  RCP<const map_type> rowMap;
-  if (rowMapInput.is_null()) {
-    rowMap = Teuchos::rcp(new map_type(static_cast<Tpetra::global_size_t>(m), static_cast<GlobalOrdinal>(0), comm));
-  } else {
-    rowMap = rowMapInput;
-  }
-  RCP<const map_type> domainMap;
-  if (domainMapInput.is_null()) {
-    domainMap = Teuchos::rcp(new map_type(static_cast<Tpetra::global_size_t>(n), static_cast<GlobalOrdinal>(0), comm));
-  } else {
-    domainMap = domainMapInput;
-  }
-  RCP<const map_type> rangeMap = rangeMapInput.is_null() ? rowMap : rangeMapInput;
-  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<Tpetra::global_size_t>(rowMap->getGlobalNumElements()) != static_cast<Tpetra::global_size_t>(m),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Requested row map has " << rowMap->getGlobalNumElements()
-                                                                   << " entries, but legacy binary file '" << oldFileName
-                                                                   << "' has " << m << " rows.");
-  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<Tpetra::global_size_t>(domainMap->getGlobalNumElements()) != static_cast<Tpetra::global_size_t>(n),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Requested domain map has " << domainMap->getGlobalNumElements()
-                                                                      << " entries, but legacy binary file '" << oldFileName
-                                                                      << "' has " << n << " columns.");
-  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<Tpetra::global_size_t>(rangeMap->getGlobalNumElements()) != static_cast<Tpetra::global_size_t>(m),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Requested range map has " << rangeMap->getGlobalNumElements()
-                                                                     << " entries, but legacy binary file '" << oldFileName
-                                                                     << "' has " << m << " rows.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!rowMap->isOneToOne() ||
-                                 rowMap->getIndexBase() != static_cast<GlobalOrdinal>(0) ||
-                                 (m > 0 && (rowMap->getMinAllGlobalIndex() != static_cast<GlobalOrdinal>(0) ||
-                                           rowMap->getMaxAllGlobalIndex() != static_cast<GlobalOrdinal>(m - 1))),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Legacy binary fallback with explicit maps requires a zero-based row map "
-                                 << "with global IDs [0, numRows). Use ConvertLegacyBinaryToBinary followed by a new-format read "
-                                 << "for other row-map distributions.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!domainMap->isOneToOne() ||
-                                 domainMap->getIndexBase() != static_cast<GlobalOrdinal>(0) ||
-                                 (n > 0 && (domainMap->getMinAllGlobalIndex() != static_cast<GlobalOrdinal>(0) ||
-                                           domainMap->getMaxAllGlobalIndex() != static_cast<GlobalOrdinal>(n - 1))),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Legacy binary fallback with explicit maps requires a zero-based domain map "
-                                 << "with global IDs [0, numCols). Use ConvertLegacyBinaryToBinary followed by a new-format read "
-                                 << "for other domain-map distributions.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!rangeMap->isOneToOne() ||
-                                 rangeMap->getIndexBase() != static_cast<GlobalOrdinal>(0) ||
-                                 (m > 0 && (rangeMap->getMinAllGlobalIndex() != static_cast<GlobalOrdinal>(0) ||
-                                           rangeMap->getMaxAllGlobalIndex() != static_cast<GlobalOrdinal>(m - 1))),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Legacy binary fallback with explicit maps requires a zero-based range map "
-                                 << "with global IDs [0, numRows). Use ConvertLegacyBinaryToBinary followed by a new-format read "
-                                 << "for other range-map distributions.");
-  const size_t localNumRows = rowMap->getLocalNumElements();
-
-  Kokkos::View<unsigned long long*, Kokkos::HostSpace> rowLengths("Xpetra::IO::legacyRowLengths", localNumRows);
+  Kokkos::View<unsigned long long*, Kokkos::HostSpace> rowLengths("Xpetra::IO::legacyRowLengths", fileLocalNumRows);
   Kokkos::deep_copy(rowLengths, 0ull);
   unsigned long long entriesRead = 0;
 
-  for (int record = 0; record < m; ++record) {
-    int row = 0;
-    int rownnz = 0;
-    readLegacyBinaryValue(in, row, oldFileName, "row index");
-    readLegacyBinaryValue(in, rownnz, oldFileName, "row entry count");
-    TEUCHOS_TEST_FOR_EXCEPTION(row < 0 || row >= m || rownnz < 0,
+  std::ifstream in;
+  if (myRank == 0) {
+    in.open(oldFileName.c_str(), std::ios::binary);
+    TEUCHOS_TEST_FOR_EXCEPTION(!in.good(),
                                Exceptions::RuntimeError,
-                               "Xpetra::IO: Legacy binary file '" << oldFileName << "' has an invalid row record.");
-    entriesRead += static_cast<unsigned long long>(rownnz);
-    const LocalOrdinal lclRow = rowMap->getLocalElement(static_cast<GlobalOrdinal>(row));
-    if (lclRow != Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid()) {
-      rowLengths(static_cast<size_t>(lclRow)) += static_cast<unsigned long long>(rownnz);
-    }
-    for (int j = 0; j < rownnz; ++j) {
-      int col = 0;
-      readLegacyBinaryValue(in, col, oldFileName, "column index");
-      TEUCHOS_TEST_FOR_EXCEPTION(col < 0 || col >= n,
-                                 Exceptions::RuntimeError,
-                                 "Xpetra::IO: Legacy binary file '" << oldFileName << "' has a column index outside [0, n).");
-    }
-    for (int j = 0; j < rownnz; ++j) {
-      double value = 0.0;
-      readLegacyBinaryValue(in, value, oldFileName, "matrix value");
-    }
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION(entriesRead != static_cast<unsigned long long>(nnz),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Legacy binary file '" << oldFileName << "' header entry count does not match row records.");
-  TEUCHOS_TEST_FOR_EXCEPTION(entriesRead > static_cast<unsigned long long>(std::numeric_limits<size_t>::max()),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Legacy binary file '" << oldFileName << "' has too many entries for this platform.");
+                               "Xpetra::IO: Failed to open legacy binary file '" << oldFileName << "'.");
+    in.seekg(static_cast<std::streamoff>(3 * sizeof(int)), std::ios::beg);
+    TEUCHOS_TEST_FOR_EXCEPTION(!in.good(),
+                               Exceptions::RuntimeError,
+                               "Xpetra::IO: Failed to seek past the header of legacy binary file '" << oldFileName << "'.");
 
-  Kokkos::View<unsigned long long*, Kokkos::HostSpace> rowPtrHost("Xpetra::IO::legacyRowPtr", localNumRows + 1);
+    for (int record = 0; record < m; ++record) {
+      int row = 0;
+      int rownnz = 0;
+      readLegacyBinaryValue(in, row, oldFileName, "row index");
+      readLegacyBinaryValue(in, rownnz, oldFileName, "row entry count");
+      TEUCHOS_TEST_FOR_EXCEPTION(row < 0 || row >= m || rownnz < 0,
+                                 Exceptions::RuntimeError,
+                                 "Xpetra::IO: Legacy binary file '" << oldFileName << "' has an invalid row record.");
+      entriesRead += static_cast<unsigned long long>(rownnz);
+      rowLengths(static_cast<size_t>(row)) += static_cast<unsigned long long>(rownnz);
+      for (int j = 0; j < rownnz; ++j) {
+        int col = 0;
+        readLegacyBinaryValue(in, col, oldFileName, "column index");
+        TEUCHOS_TEST_FOR_EXCEPTION(col < 0 || col >= n,
+                                   Exceptions::RuntimeError,
+                                   "Xpetra::IO: Legacy binary file '" << oldFileName << "' has a column index outside [0, n).");
+      }
+      for (int j = 0; j < rownnz; ++j) {
+        double value = 0.0;
+        readLegacyBinaryValue(in, value, oldFileName, "matrix value");
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(entriesRead != static_cast<unsigned long long>(nnz),
+                               Exceptions::RuntimeError,
+                               "Xpetra::IO: Legacy binary file '" << oldFileName << "' header entry count does not match row records.");
+    TEUCHOS_TEST_FOR_EXCEPTION(entriesRead > static_cast<unsigned long long>(std::numeric_limits<size_t>::max()),
+                               Exceptions::RuntimeError,
+                               "Xpetra::IO: Legacy binary file '" << oldFileName << "' has too many entries for this platform.");
+  }
+
+  Kokkos::View<unsigned long long*, Kokkos::HostSpace> rowPtrHost("Xpetra::IO::legacyRowPtr", fileLocalNumRows + 1);
   unsigned long long localNnz64 = 0;
   Kokkos::parallel_scan(
       "Xpetra::IO::legacyRowPtrScan",
-      Kokkos::RangePolicy<host_execution_space>(0, localNumRows),
+      Kokkos::RangePolicy<host_execution_space>(0, fileLocalNumRows),
       KOKKOS_LAMBDA(const size_t row, unsigned long long& count, const bool finalPass) {
         if (finalPass) {
           rowPtrHost(row) = count;
         }
         count += rowLengths(row);
-        if (finalPass && row + 1 == localNumRows) {
+        if (finalPass && row + 1 == fileLocalNumRows) {
           rowPtrHost(row + 1) = count;
         }
       },
       localNnz64);
-  if (localNumRows == 0) {
+  if (fileLocalNumRows == 0) {
     rowPtrHost(0) = 0;
   }
   const size_t localNnz = static_cast<size_t>(localNnz64);
-  Kokkos::View<unsigned long long*, Kokkos::HostSpace> nextPtr("Xpetra::IO::legacyNextPtr", localNumRows);
+  Kokkos::View<unsigned long long*, Kokkos::HostSpace> nextPtr("Xpetra::IO::legacyNextPtr", fileLocalNumRows);
   Kokkos::parallel_for(
       "Xpetra::IO::legacyInitNextPtr",
-      Kokkos::RangePolicy<host_execution_space>(0, localNumRows),
+      Kokkos::RangePolicy<host_execution_space>(0, fileLocalNumRows),
       KOKKOS_LAMBDA(const size_t row) {
         nextPtr(row) = rowPtrHost(row);
       });
@@ -371,31 +326,25 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
   Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> globalColumnsHost("Xpetra::IO::legacyGlobalColumns", localNnz);
   Kokkos::View<Scalar*, Kokkos::HostSpace> valuesHost("Xpetra::IO::legacyValues", localNnz);
 
-  in.clear();
-  in.seekg(static_cast<std::streamoff>(3 * sizeof(int)), std::ios::beg);
-  TEUCHOS_TEST_FOR_EXCEPTION(!in.good(),
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: Failed to rewind legacy binary file '" << oldFileName << "'.");
+  if (myRank == 0) {
+    in.clear();
+    in.seekg(static_cast<std::streamoff>(3 * sizeof(int)), std::ios::beg);
+    TEUCHOS_TEST_FOR_EXCEPTION(!in.good(),
+                               Exceptions::RuntimeError,
+                               "Xpetra::IO: Failed to rewind legacy binary file '" << oldFileName << "'.");
 
-  for (int record = 0; record < m; ++record) {
-    int row = 0;
-    int rownnz = 0;
-    readLegacyBinaryValue(in, row, oldFileName, "row index");
-    readLegacyBinaryValue(in, rownnz, oldFileName, "row entry count");
+    for (int record = 0; record < m; ++record) {
+      int row = 0;
+      int rownnz = 0;
+      readLegacyBinaryValue(in, row, oldFileName, "row index");
+      readLegacyBinaryValue(in, rownnz, oldFileName, "row entry count");
 
-    Kokkos::View<int*, Kokkos::HostSpace> columns("Xpetra::IO::legacyRowColumns", static_cast<size_t>(rownnz));
-    for (int j = 0; j < rownnz; ++j) {
-      readLegacyBinaryValue(in, columns(static_cast<size_t>(j)), oldFileName, "column index");
-    }
-
-    const LocalOrdinal lclRow = rowMap->getLocalElement(static_cast<GlobalOrdinal>(row));
-    if (lclRow == Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid()) {
+      Kokkos::View<int*, Kokkos::HostSpace> columns("Xpetra::IO::legacyRowColumns", static_cast<size_t>(rownnz));
       for (int j = 0; j < rownnz; ++j) {
-        double value = 0.0;
-        readLegacyBinaryValue(in, value, oldFileName, "matrix value");
+        readLegacyBinaryValue(in, columns(static_cast<size_t>(j)), oldFileName, "column index");
       }
-    } else {
-      size_t offset = static_cast<size_t>(nextPtr(static_cast<size_t>(lclRow)));
+
+      size_t offset = static_cast<size_t>(nextPtr(static_cast<size_t>(row)));
       for (int j = 0; j < rownnz; ++j) {
         const int col = columns(static_cast<size_t>(j));
         globalColumnsHost(offset + static_cast<size_t>(j)) = static_cast<GlobalOrdinal>(col);
@@ -405,15 +354,15 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
         readLegacyBinaryValue(in, value, oldFileName, "matrix value");
         valuesHost(offset + static_cast<size_t>(j)) = static_cast<Scalar>(value);
       }
-      nextPtr(static_cast<size_t>(lclRow)) += static_cast<unsigned long long>(rownnz);
+      nextPtr(static_cast<size_t>(row)) += static_cast<unsigned long long>(rownnz);
     }
   }
 
-  rowptr_type rowPtrDevice("Xpetra::IO::legacyRowPtrDevice", localNumRows + 1);
+  rowptr_type rowPtrDevice("Xpetra::IO::legacyRowPtrDevice", fileLocalNumRows + 1);
   auto rowPtrDeviceHost = Kokkos::create_mirror_view(rowPtrDevice);
   Kokkos::parallel_for(
       "Xpetra::IO::legacyCopyRowPtrToDeviceHost",
-      Kokkos::RangePolicy<host_execution_space>(0, localNumRows + 1),
+      Kokkos::RangePolicy<host_execution_space>(0, fileLocalNumRows + 1),
       KOKKOS_LAMBDA(const size_t i) {
         rowPtrDeviceHost(i) = static_cast<typename rowptr_type::non_const_value_type>(rowPtrHost(i));
       });
@@ -421,25 +370,16 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
 
   Kokkos::View<GlobalOrdinal*, device_type> globalColumnsDevice("Xpetra::IO::legacyGlobalColumnsDevice", localNnz);
   Kokkos::deep_copy(globalColumnsDevice, globalColumnsHost);
-  RCP<const map_type> generatedColMap;
-  if (colMapInput.is_null()) {
-    std::ostringstream errStrm;
-    const int makeColMapErr = Tpetra::Details::makeColMap<LocalOrdinal, GlobalOrdinal, Node>(generatedColMap, domainMap, globalColumnsDevice, &errStrm);
-    TEUCHOS_TEST_FOR_EXCEPTION(makeColMapErr != 0 || generatedColMap.is_null(),
-                               Exceptions::RuntimeError,
-                               "Xpetra::IO: Failed to construct a column map while converting legacy binary file '" << oldFileName << "'. " << errStrm.str());
-  }
-  const RCP<const map_type> colMap = colMapInput.is_null() ? generatedColMap : colMapInput;
 
   colidx_type localColumnsDevice("Xpetra::IO::legacyLocalColumns", localNnz);
-  const auto localColMap                 = colMap->getLocalMap();
+  const auto localFileColMap             = fileColMap->getLocalMap();
   const LocalOrdinal invalidLocalOrdinal = Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid();
   unsigned long long invalidCount        = 0;
   Kokkos::parallel_reduce(
       "Xpetra::IO::legacyReindexColumns",
       Kokkos::RangePolicy<execution_space>(0, localNnz),
       KOKKOS_LAMBDA(const size_t i, unsigned long long& lclInvalidCount) {
-        const LocalOrdinal lclCol = localColMap.getLocalElement(globalColumnsDevice(i));
+        const LocalOrdinal lclCol = localFileColMap.getLocalElement(globalColumnsDevice(i));
         localColumnsDevice(i)     = lclCol;
         if (lclCol == invalidLocalOrdinal) {
           ++lclInvalidCount;
@@ -449,7 +389,7 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
   TEUCHOS_TEST_FOR_EXCEPTION(invalidCount != 0,
                              Exceptions::RuntimeError,
                              "Xpetra::IO: Column map construction missed " << invalidCount
-                                                                            << " column GID(s) while converting legacy binary file '"
+                                                                            << " column GID(s) while reading legacy binary file '"
                                                                             << oldFileName << "'.");
 
   values_type valuesDevice("Xpetra::IO::legacyValuesDevice", localNnz);
@@ -463,9 +403,28 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
   Kokkos::deep_copy(valuesDevice, valuesDeviceHost);
 
   Tpetra::Import_Util::sortCrsEntries(rowPtrDevice, localColumnsDevice, valuesDevice);
-  auto matrix = Teuchos::rcp(new matrix_type(rowMap, colMap, rowPtrDevice, localColumnsDevice, valuesDevice));
+  auto fileMatrix = Teuchos::rcp(new matrix_type(fileRowMap, fileColMap, rowPtrDevice, localColumnsDevice, valuesDevice));
+  fileMatrix->fillComplete(fileDomainMap, fileRangeMap);
+
+  if (rowMapInput.is_null()) {
+    return fileMatrix;
+  }
+
+  RCP<const map_type> requestedDomainMap = domainMapInput.is_null() ? rowMapInput : domainMapInput;
+  RCP<const map_type> requestedRangeMap  = rangeMapInput.is_null() ? rowMapInput : rangeMapInput;
+  import_type importer(fileRowMap, rowMapInput);
+  RCP<matrix_type> matrix;
+  if (colMapInput.is_null()) {
+    matrix = Teuchos::rcp(new matrix_type(rowMapInput,
+                                          static_cast<size_t>(fileMatrix->getGlobalMaxNumRowEntries())));
+  } else {
+    matrix = Teuchos::rcp(new matrix_type(rowMapInput,
+                                          colMapInput,
+                                          static_cast<size_t>(fileMatrix->getGlobalMaxNumRowEntries())));
+  }
+  matrix->doImport(*fileMatrix, importer, Tpetra::INSERT);
   if (callFillComplete) {
-    matrix->fillComplete(domainMap, rangeMap);
+    matrix->fillComplete(requestedDomainMap, requestedRangeMap);
   }
   return matrix;
 }
@@ -514,22 +473,13 @@ readBinarySparseFile(const std::string& fileName,
     return binary_reader_type::readSparseFile(fileName, comm);
   }
 
-  if (comm->getSize() == 1) {
-    return readLegacyBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fileName,
-                                                                                 Teuchos::null,
-                                                                                 Teuchos::null,
-                                                                                 Teuchos::null,
-                                                                                 Teuchos::null,
-                                                                                 comm,
-                                                                                 true);
-  }
-
-  TEUCHOS_TEST_FOR_EXCEPTION(true,
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: The file '" << fileName << "' is not in the current Tpetra binary format. "
-                                                       << "Automatic fallback for legacy Xpetra binary files is only enabled for serial reads "
-                                                       << "because the legacy format is not scalable. Use ConvertLegacyBinaryToBinary first.");
-  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+  return readLegacyBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fileName,
+                                                                               Teuchos::null,
+                                                                               Teuchos::null,
+                                                                               Teuchos::null,
+                                                                               Teuchos::null,
+                                                                               comm,
+                                                                               true);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -546,22 +496,13 @@ readBinarySparseFile(const std::string& fileName,
     return binary_reader_type::readSparseFile(fileName, rowMap, colMap, domainMap, rangeMap, callFillComplete);
   }
 
-  if (rowMap->getComm()->getSize() == 1) {
-    return readLegacyBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fileName,
-                                                                                 rowMap,
-                                                                                 colMap,
-                                                                                 domainMap,
-                                                                                 rangeMap,
-                                                                                 rowMap->getComm(),
-                                                                                 callFillComplete);
-  }
-
-  TEUCHOS_TEST_FOR_EXCEPTION(true,
-                             Exceptions::RuntimeError,
-                             "Xpetra::IO: The file '" << fileName << "' is not in the current Tpetra binary format. "
-                                                       << "Automatic fallback for legacy Xpetra binary files is only enabled for serial reads "
-                                                       << "because the legacy format is not scalable. Use ConvertLegacyBinaryToBinary first.");
-  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+  return readLegacyBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fileName,
+                                                                               rowMap,
+                                                                               colMap,
+                                                                               domainMap,
+                                                                               rangeMap,
+                                                                               rowMap->getComm(),
+                                                                               callFillComplete);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
