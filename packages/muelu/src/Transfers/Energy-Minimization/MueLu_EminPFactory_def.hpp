@@ -237,7 +237,7 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
     // Convert from vector to matrix
     P = X->GetMatrixWithEntriesFromVector(*vecP);
   } else {
-    P = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(P0);
+    P = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(P0, false);
   }
   if (P0->IsView("stridedMaps"))
     P->CreateView("stridedMaps", P0);
