@@ -11,7 +11,6 @@
 #define SACADO_DYNAMICARRAYTRAITS_HPP
 
 #include <new>
-#include <cstdlib>
 #include <cstring>
 #include <stdint.h>
 
@@ -192,16 +191,6 @@ namespace Sacado {
         else
           m = static_cast<T* >(operator new(sz*sizeof(T)));
       }
-#elif defined(__SYCL_DEVICE_ONLY__)
-      // SYCL device code has no operator new -- DPC++ leaves _Znwm/_ZdlPv
-      // unresolved at JIT time -- so go through malloc, which the oneAPI
-      // device library provides where it is available at all.
-      T* m = 0;
-      if (sz > 0) {
-        m = static_cast<T*>(std::malloc(sz*sizeof(T)));
-        if (m == 0)
-          Kokkos::abort("Allocation failed.");
-      }
 #else
       T* m = 0;
       if (sz > 0) {
@@ -234,9 +223,6 @@ namespace Sacado {
         else
           operator delete((void*) m);
       }
-#elif defined(__SYCL_DEVICE_ONLY__)
-      if (sz > 0)
-        std::free((void*) m);
 #else
       if (sz > 0)
         operator delete((void*) m);
