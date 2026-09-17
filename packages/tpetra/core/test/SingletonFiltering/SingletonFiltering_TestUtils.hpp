@@ -337,54 +337,58 @@ void test_Singleton_fwd(std::string Matrix_Original_file, std::string LHS_Origin
   RHS_Original                    = Reader_t::readDenseFile(RHS_Original_file, Comm, A_Original_Map);
 
   bool verbose                             = true;
-  bool run_on_host                         = false;
   RCP<MultiVector_t> x                     = rcp(new MultiVector_t(A_Original_Map, LHS_Original->getNumVectors()));
   RCP<LinearProblem_t> preSingletonProblem = rcp(new LinearProblem_t(A_Original, x, RHS_Original));
-  CrsSingletonFiltering_t SingletonTransform(run_on_host, verbose);
-  RCP<LinearProblem_t> postSingletonProblem = SingletonTransform(preSingletonProblem);
+  for (int i=0; i<2; i++) {
+    bool run_on_host (i == 0 ? true : false);
+    CrsSingletonFiltering_t SingletonTransform(run_on_host, verbose);
+    RCP<LinearProblem_t> postSingletonProblem = SingletonTransform(preSingletonProblem);
 
-  SingletonTransform.fwd();
+    RCP<CrsMatrix_t> A_Reduced;
+    RCP<MultiVector_t> LHS_Reduced, RHS_Reduced;
 
-  RCP<CrsMatrix_t> A_Reduced;
-  RCP<MultiVector_t> LHS_Reduced, RHS_Reduced;
+    // reset reduced A to be zero, and call fwd
+    Teuchos::rcp_dynamic_cast<CrsMatrix_t>(postSingletonProblem->getMatrix())->setAllToScalar(Scalar(0));
+    SingletonTransform.fwd();
 
-  auto reducedRowMap    = postSingletonProblem->getMatrix()->getRowMap();
-  auto reducedColMap    = postSingletonProblem->getMatrix()->getColMap();
-  auto reducedDomainMap = postSingletonProblem->getMatrix()->getDomainMap();
-  auto reducedRangeMap  = postSingletonProblem->getMatrix()->getRangeMap();
-  postSingletonProblem->getMatrix()->getRangeMap()->describe(out, Teuchos::VERB_EXTREME);
-  A_Reduced = Reader_t::readSparseFile(Matrix_Reduced_file, reducedRowMap, reducedColMap, reducedDomainMap, reducedRangeMap);
+    auto reducedRowMap    = postSingletonProblem->getMatrix()->getRowMap();
+    auto reducedColMap    = postSingletonProblem->getMatrix()->getColMap();
+    auto reducedDomainMap = postSingletonProblem->getMatrix()->getDomainMap();
+    auto reducedRangeMap  = postSingletonProblem->getMatrix()->getRangeMap();
+    postSingletonProblem->getMatrix()->getRangeMap()->describe(out, Teuchos::VERB_EXTREME);
 
-  LHS_Reduced = Reader_t::readDenseFile(LHS_Reduced_file, Comm, reducedDomainMap);
-  RHS_Reduced = Reader_t::readDenseFile(RHS_Reduced_file, Comm, reducedRangeMap);
+    A_Reduced = Reader_t::readSparseFile(Matrix_Reduced_file, reducedRowMap, reducedColMap, reducedDomainMap, reducedRangeMap);
 
-  TEUCHOS_ASSERT(compareCrsMatrices(
-      Teuchos::rcp_dynamic_cast<const CrsMatrix_t>(A_Reduced, true),
-      Teuchos::rcp_dynamic_cast<const CrsMatrix_t>(postSingletonProblem->getMatrix(), true),
-      Comm, out, 1.0e-05));
+    LHS_Reduced = Reader_t::readDenseFile(LHS_Reduced_file, Comm, reducedDomainMap);
+    RHS_Reduced = Reader_t::readDenseFile(RHS_Reduced_file, Comm, reducedRangeMap);
 
-  TEUCHOS_ASSERT(compareMultiVectors(
-      Teuchos::rcp_dynamic_cast<const MultiVector_t>(LHS_Reduced, true),
-      Teuchos::rcp_dynamic_cast<const MultiVector_t>(postSingletonProblem->getLHS(), true),
-      Comm, out));
-  TEUCHOS_ASSERT(compareMultiVectors(
-      Teuchos::rcp_dynamic_cast<const MultiVector_t>(RHS_Reduced, true),
-      Teuchos::rcp_dynamic_cast<const MultiVector_t>(postSingletonProblem->getRHS(), true),
-      Comm, out));
+    TEUCHOS_ASSERT(compareCrsMatrices(
+        Teuchos::rcp_dynamic_cast<const CrsMatrix_t>(A_Reduced, true),
+        Teuchos::rcp_dynamic_cast<const CrsMatrix_t>(postSingletonProblem->getMatrix(), true),
+        Comm, out, 1.0e-05));
 
-  if (displayMatrices) {
-    Display_Matrix(Teuchos::rcp_dynamic_cast<CrsMatrix_t>(A_Original, true), Comm, out, false, true);
-    Display_Matrix(Teuchos::rcp_dynamic_cast<CrsMatrix_t>(postSingletonProblem->getMatrix(), true), Comm, out, false, false);
-  }
+    TEUCHOS_ASSERT(compareMultiVectors(
+        Teuchos::rcp_dynamic_cast<const MultiVector_t>(LHS_Reduced, true),
+        Teuchos::rcp_dynamic_cast<const MultiVector_t>(postSingletonProblem->getLHS(), true),
+        Comm, out));
+    TEUCHOS_ASSERT(compareMultiVectors(
+        Teuchos::rcp_dynamic_cast<const MultiVector_t>(RHS_Reduced, true),
+        Teuchos::rcp_dynamic_cast<const MultiVector_t>(postSingletonProblem->getRHS(), true),
+        Comm, out));
 
-  if (outputBaseline) {
-    if constexpr (std::is_same<Scalar, double>::value) {
-      using Writer_t     = Tpetra::MatrixMarket::Writer<CrsMatrix_t>;
-      auto reducedMatrix = Teuchos::rcp_dynamic_cast<const CrsMatrix_t>(postSingletonProblem->getMatrix(), true);
-      Writer_t::writeSparseFile("baseline_" + Matrix_Reduced_file, reducedMatrix);
-      Writer_t::writeMapFile("baseline_Map_" + Matrix_Reduced_file, *(reducedMatrix->getRowMap()));
-      Writer_t::writeDenseFile("baseline_" + LHS_Reduced_file, postSingletonProblem->getLHS());
-      Writer_t::writeDenseFile("baseline_" + RHS_Reduced_file, postSingletonProblem->getRHS());
+    if (displayMatrices) {
+      Display_Matrix(Teuchos::rcp_dynamic_cast<CrsMatrix_t>(A_Original, true), Comm, out, false, true);
+      Display_Matrix(Teuchos::rcp_dynamic_cast<CrsMatrix_t>(postSingletonProblem->getMatrix(), true), Comm, out, false, false);
+    }
+    if (outputBaseline) {
+      if constexpr (std::is_same<Scalar, double>::value) {
+        using Writer_t     = Tpetra::MatrixMarket::Writer<CrsMatrix_t>;
+        auto reducedMatrix = Teuchos::rcp_dynamic_cast<const CrsMatrix_t>(postSingletonProblem->getMatrix(), true);
+        Writer_t::writeSparseFile("baseline_" + Matrix_Reduced_file + std::to_string(i), reducedMatrix);
+        Writer_t::writeMapFile("baseline_Map_" + Matrix_Reduced_file + std::to_string(i), *(reducedMatrix->getRowMap()));
+        Writer_t::writeDenseFile("baseline_" + LHS_Reduced_file + std::to_string(i), postSingletonProblem->getLHS());
+        Writer_t::writeDenseFile("baseline_" + RHS_Reduced_file + std::to_string(i), postSingletonProblem->getRHS());
+      }
     }
   }
 }
