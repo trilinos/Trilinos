@@ -38,7 +38,7 @@
 #include "obj_thermal-fluidsK.hpp"
 
 using RealT = double;
-using DeviceT = Kokkos::HostSpace;
+using DeviceT = typename Kokkos::HostSpace::device_type;
 
 template<class Real>
 void print(ROL::Objective<Real> &obj,

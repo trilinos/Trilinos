@@ -44,7 +44,7 @@ template <typename Intrepid2Type>
 Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   Teuchos::RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
+   Teuchos::RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2Type);
    Teuchos::RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1
-     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type,double,double> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
 
@@ -250,7 +250,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1
-     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type,double,double> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
    dofManager.addField("block_0","Ux", patternC1);
@@ -364,7 +364,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1
-     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type,double,double> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
    dofManager.addField("block_0","Ux", patternC1);
@@ -627,7 +627,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
    RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
    RCP<const panzer::FieldPattern> patternC1
-     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
+     = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type,double,double> >();
 
    // Setup two DOF managers that will correspond to the blocks of the
    // system.

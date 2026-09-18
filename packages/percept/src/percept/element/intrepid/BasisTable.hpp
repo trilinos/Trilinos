@@ -20,8 +20,9 @@
     class BasisTable
     {
     public:
-      using BasisType = Intrepid2::Basis<Kokkos::HostSpace, double, double >;
-      using BasisTypeRCP =  Intrepid2::BasisPtr<Kokkos::HostSpace, double, double >;
+      using device_type = typename Kokkos::DefaultHostExecutionSpace::device_type;
+      using BasisType = Intrepid2::Basis<device_type, double, double >;
+      using BasisTypeRCP = Intrepid2::BasisPtr<device_type, double, double >;
       using BasisTableMap = std::map<unsigned, BasisTypeRCP >;
 
       BasisTypeRCP getBasis(shards::CellTopology& topo);

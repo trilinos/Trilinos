@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiScope (&argc, &argv);
   Kokkos::ScopeGuard kokkosScope (argc, argv);
   
-  const int r_val = Discretization::Example::feProjection<double,PHX::Device>(argc, argv);
+  const int r_val = Discretization::Example::feProjection<double,PHX::Device::device_type>(argc, argv);
 
   return r_val;
 }

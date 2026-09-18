@@ -42,7 +42,7 @@
 //#include "fenv.h"
 
 using RealT = double;
-using DeviceT = Kokkos::HostSpace;
+using DeviceT = typename Kokkos::HostSpace::device_type;
 
 int main(int argc, char *argv[]) {
   //feenableexcept(FE_DIVBYZERO | FE_OVERFLOW);

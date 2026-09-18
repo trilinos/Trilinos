@@ -72,7 +72,7 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
   }
   // End deprecated basis support
 
-  intrepid_basis_ = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>(basis_type, basis_order, *topology_);
+  intrepid_basis_ = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(basis_type, basis_order, *topology_);
 
   basis_type_ = basis_type;
 
@@ -189,7 +189,7 @@ std::string panzer::PureBasis::fieldNameD2() const
   return field_basis_name_D2_;
 }    
 
-Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
+Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> >
 panzer::PureBasis::getIntrepid2Basis() const
 {
    return intrepid_basis_;
