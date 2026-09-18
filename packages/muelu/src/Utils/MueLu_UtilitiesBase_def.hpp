@@ -50,6 +50,9 @@
 
 namespace MueLu {
 
+template <class ViewType, class EntriesType, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, bool onlyCntNnzs, bool symScale, bool retainLower>
+void GetThresholded_Helper(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& threshold, typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type::row_map_type::non_const_type& rowptr, LocalOrdinal& nnz, ViewType diag, EntriesType entries);
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -154,7 +157,8 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       LocalOrdinal nnz = 0;
       Kokkos::parallel_scan(
           range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& my_nnz, const bool is_final) {
-            auto row = lclA.rowConst(rlid);
+            auto row           = lclA.rowConst(rlid);
+            bool rowptrUpdated = false;
 
             for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
               auto val = row.value(offset);
@@ -162,9 +166,11 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                 ++my_nnz;
                 if (is_final && (rlid + 1 < lclA.numRows())) {
                   rowptr(rlid + 2) = my_nnz;
+                  rowptrUpdated    = true;
                 }
               }
             }
+            if (!rowptrUpdated) rowptr(rlid + 2) = my_nnz;
           },
           nnz);
 
@@ -197,7 +203,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    GetThresholdedGraph(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const Magnitude threshold) {
+    GetThresholdedGraph(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const Magnitude threshold, const bool symScaled) {
   RCP<CrsGraph> sparsityPattern;
   {
     using matrix_type      = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -213,62 +219,30 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     auto lclRowmap         = A->getRowMap()->getLocalMap();
     auto lclColmap         = A->getColMap()->getLocalMap();
 
+    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> diagVec;
+    if (symScaled) {
+      diagVec = GetMatrixOverlappedDiagonal(*A);
+    } else {
+      diagVec = GetMatrixDiagonal(*A);
+    }
+    auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto diag      = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+
     rowmap_type rowptr("MueLu::GetThresholdedGraph::rowptr", lclA.numRows() + 1);
 
     LocalOrdinal nnz = 0;
-    Kokkos::parallel_scan(
-        range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& my_nnz, const bool is_final) {
-          auto row   = lclA.rowConst(rlid);
-          auto rclid = lclColmap.getLocalElement(lclRowmap.getGlobalElement(rlid));
-
-          typename implATS::magnitudeType d = magATS::one();
-          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
-            auto clid = row.colidx(offset);
-            if (rclid == clid) {
-              auto val = implATS::magnitude(row.value(offset));
-              if (val > implATS::epsilon())
-                d = val;
-            }
-          }
-
-          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
-            auto clid = row.colidx(offset);
-            auto val  = row.value(offset);
-            if ((rclid == clid) || implATS::magnitude(val) > d * threshold) {
-              ++my_nnz;
-              if (is_final && (rlid + 1 < lclA.numRows())) {
-                rowptr(rlid + 2) = my_nnz;
-              }
-            }
-          }
-        },
-        nnz);
+    entries_type dummy(Kokkos::ViewAllocateWithoutInitializing("MueLu::GetThresholdedGraph::indices"), 1);
+    if (symScaled)
+      GetThresholded_Helper<decltype(diag), entries_type, Scalar, LocalOrdinal, GlobalOrdinal, Node, true, true, false>(A, threshold, rowptr, nnz, diag, dummy);
+    else
+      GetThresholded_Helper<decltype(diag), entries_type, Scalar, LocalOrdinal, GlobalOrdinal, Node, true, false, false>(A, threshold, rowptr, nnz, diag, dummy);
 
     entries_type entries(Kokkos::ViewAllocateWithoutInitializing("MueLu::GetThresholdedGraph::indices"), nnz);
-    Kokkos::parallel_for(
-        range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid) {
-          auto row   = lclA.rowConst(rlid);
-          auto rclid = lclColmap.getLocalElement(lclRowmap.getGlobalElement(rlid));
 
-          typename implATS::magnitudeType d = magATS::one();
-          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
-            auto clid = row.colidx(offset);
-            if (rclid == clid) {
-              auto val = implATS::magnitude(row.value(offset));
-              if (val > implATS::epsilon())
-                d = val;
-            }
-          }
-
-          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
-            auto clid = row.colidx(offset);
-            auto val  = row.value(offset);
-            if ((rclid == clid) || implATS::magnitude(val) > d * threshold) {
-              entries(rowptr(rlid + 1)) = clid;
-              ++rowptr(rlid + 1);
-            }
-          }
-        });
+    if (symScaled)
+      GetThresholded_Helper<decltype(diag), entries_type, Scalar, LocalOrdinal, GlobalOrdinal, Node, false, true, false>(A, threshold, rowptr, nnz, diag, entries);
+    else
+      GetThresholded_Helper<decltype(diag), entries_type, Scalar, LocalOrdinal, GlobalOrdinal, Node, false, false, false>(A, threshold, rowptr, nnz, diag, entries);
 
     sparsityPattern = CrsGraphFactory::Build(A->getRowMap(), A->getColMap(), rowptr, entries);
     sparsityPattern->fillComplete(A->getDomainMap(), A->getRangeMap());
@@ -280,7 +254,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    GetThresholdedLowerTriangularGraph(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const Magnitude threshold) {
+    GetThresholdedLowerTriangularGraph(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const Magnitude threshold, const bool symScaled) {
   RCP<CrsGraph> sparsityPattern;
   {
     using matrix_type      = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -296,66 +270,30 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     auto lclRowmap         = A->getRowMap()->getLocalMap();
     auto lclColmap         = A->getColMap()->getLocalMap();
 
-    rowmap_type rowptr("MueLu::GetLowerTriangularGraph::rowptr", lclA.numRows() + 1);
+    rowmap_type rowptr("MueLu::GetThresholdedLowerTriangularGraph::rowptr", lclA.numRows() + 1);
+
+    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> diagVec;
+    if (symScaled) {
+      diagVec = GetMatrixOverlappedDiagonal(*A);
+    } else {
+      diagVec = GetMatrixDiagonal(*A);
+    }
+    auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto diag      = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
 
     LocalOrdinal nnz = 0;
-    Kokkos::parallel_scan(
-        range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& my_nnz, const bool is_final) {
-          auto row     = lclA.rowConst(rlid);
-          auto row_gid = lclRowmap.getGlobalElement(rlid);
-
-          typename implATS::magnitudeType d = magATS::one();
-          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
-            auto clid    = row.colidx(offset);
-            auto col_gid = lclColmap.getGlobalElement(clid);
-            if (row_gid == col_gid) {
-              auto val = implATS::magnitude(row.value(offset));
-              if (val > implATS::epsilon())
-                d = val;
-            }
-          }
-
-          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
-            auto clid    = row.colidx(offset);
-            auto val     = row.value(offset);
-            auto col_gid = lclColmap.getGlobalElement(clid);
-            if ((row_gid == col_gid) || ((row_gid > col_gid) && implATS::magnitude(val) > d * threshold)) {
-              ++my_nnz;
-              if (is_final && (rlid + 1 < lclA.numRows())) {
-                rowptr(rlid + 2) = my_nnz;
-              }
-            }
-          }
-        },
-        nnz);
+    entries_type dummy(Kokkos::ViewAllocateWithoutInitializing("MueLu::GetThresholdedLowerTriangularGraph::indices"), 1);
+    if (symScaled)
+      GetThresholded_Helper<decltype(diag), entries_type, Scalar, LocalOrdinal, GlobalOrdinal, Node, true, true, true>(A, threshold, rowptr, nnz, diag, dummy);
+    else
+      GetThresholded_Helper<decltype(diag), entries_type, Scalar, LocalOrdinal, GlobalOrdinal, Node, true, false, true>(A, threshold, rowptr, nnz, diag, dummy);
 
     entries_type entries(Kokkos::ViewAllocateWithoutInitializing("MueLu::GetThresholdedLowerTriangularGraph::indices"), nnz);
-    Kokkos::parallel_for(
-        range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid) {
-          auto row     = lclA.rowConst(rlid);
-          auto row_gid = lclRowmap.getGlobalElement(rlid);
 
-          typename implATS::magnitudeType d = magATS::one();
-          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
-            auto clid    = row.colidx(offset);
-            auto col_gid = lclColmap.getGlobalElement(clid);
-            if (row_gid == col_gid) {
-              auto val = implATS::magnitude(row.value(offset));
-              if (val > implATS::epsilon())
-                d = val;
-            }
-          }
-
-          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
-            auto clid    = row.colidx(offset);
-            auto val     = row.value(offset);
-            auto col_gid = lclColmap.getGlobalElement(clid);
-            if ((row_gid == col_gid) || ((row_gid > col_gid) && implATS::magnitude(val) > d * threshold)) {
-              entries(rowptr(rlid + 1)) = clid;
-              ++rowptr(rlid + 1);
-            }
-          }
-        });
+    if (symScaled)
+      GetThresholded_Helper<decltype(diag), entries_type, Scalar, LocalOrdinal, GlobalOrdinal, Node, false, true, true>(A, threshold, rowptr, nnz, diag, entries);
+    else
+      GetThresholded_Helper<decltype(diag), entries_type, Scalar, LocalOrdinal, GlobalOrdinal, Node, false, false, true>(A, threshold, rowptr, nnz, diag, entries);
 
     sparsityPattern = CrsGraphFactory::Build(A->getRowMap(), A->getColMap(), rowptr, entries);
     sparsityPattern->fillComplete(A->getDomainMap(), A->getRangeMap());
@@ -2533,6 +2471,103 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   if (Behavior::debug())
     MatrixUtils::checkLocalRowMapMatchesColMap(*Ac);
+}
+
+template <class ViewType, class EntriesType, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, bool onlyCntNnzs, bool symScale, bool retainLower>
+void GetThresholded_Helper(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& threshold,
+                           typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type::row_map_type::non_const_type& rowptr,
+                           LocalOrdinal& nnz, ViewType diag, EntriesType entries) {
+  auto lclA      = A->getLocalMatrixDevice();
+  auto lclRowmap = A->getRowMap()->getLocalMap();
+  auto lclColmap = A->getColMap()->getLocalMap();
+
+  using matrix_type     = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using implATS         = KokkosKernels::ArithTraits<typename matrix_type::impl_scalar_type>;
+  using magATS          = KokkosKernels::ArithTraits<typename implATS::magnitudeType>;
+  using execution_space = typename Node::execution_space;
+  using range_type      = Kokkos::RangePolicy<execution_space, LocalOrdinal>;
+
+  [[maybe_unused]] typename implATS::magnitudeType threshold_sqd = magATS::zero();
+
+  if constexpr (symScale) {
+    threshold_sqd = threshold * threshold;
+  }
+  if constexpr (!onlyCntNnzs) {
+    Kokkos::parallel_for(
+        range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+          auto row                          = lclA.rowConst(rlid);
+          auto rclid                        = lclColmap.getLocalElement(lclRowmap.getGlobalElement(rlid));
+          typename implATS::magnitudeType d = magATS::one();
+
+          [[maybe_unused]] GlobalOrdinal row_gid = 0;
+          if constexpr (retainLower) {
+            row_gid = lclRowmap.getGlobalElement(rlid);
+          }
+          if constexpr (!symScale) {
+            d = implATS::magnitude(diag(rclid));
+          }
+
+          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+            auto clid  = row.colidx(offset);
+            auto val   = row.value(offset);
+            bool match = false;
+            if constexpr (symScale && retainLower) {
+              auto col_gid = lclColmap.getGlobalElement(clid);
+              match        = ((rclid == clid) || ((row_gid > col_gid) && implATS::magnitude(val * val) > threshold_sqd * implATS::magnitude(diag(rclid) * diag(clid))));
+            } else if constexpr (!symScale && retainLower) {
+              auto col_gid = lclColmap.getGlobalElement(clid);
+              match        = ((rclid == clid) || ((row_gid > col_gid) && implATS::magnitude(val) > d * threshold));
+            } else if constexpr (symScale && !retainLower) {
+              match = ((rclid == clid) || implATS::magnitude(val * val) > threshold_sqd * implATS::magnitude(diag(rclid) * diag(clid)));
+            } else {
+              match = ((rclid == clid) || implATS::magnitude(val) > d * threshold);
+            }
+            if (match) {
+              entries(rowptr(rlid + 1)) = clid;
+              ++rowptr(rlid + 1);
+            }
+          }
+        });
+  } else {
+    Kokkos::parallel_scan(
+        range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& my_nnz, const bool is_final) {
+          auto row   = lclA.rowConst(rlid);
+          auto rclid = lclColmap.getLocalElement(lclRowmap.getGlobalElement(rlid));
+
+          [[maybe_unused]] GlobalOrdinal row_gid = 0;
+          if constexpr (retainLower) {
+            row_gid = lclRowmap.getGlobalElement(rlid);
+          }
+          typename implATS::magnitudeType d = magATS::one();
+          if constexpr (!symScale) {
+            d = implATS::magnitude(diag(rclid));
+          }
+
+          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+            auto clid = row.colidx(offset);
+            auto val  = row.value(offset);
+            bool match;
+            if constexpr (symScale && retainLower) {
+              auto col_gid = lclColmap.getGlobalElement(clid);
+              match        = ((rclid == clid) || ((row_gid > col_gid) && implATS::magnitude(val * val) > threshold_sqd * implATS::magnitude(diag(rclid) * diag(clid))));
+            } else if constexpr (!symScale && retainLower) {
+              auto col_gid = lclColmap.getGlobalElement(clid);
+              match        = ((rclid == clid) || ((row_gid > col_gid) && implATS::magnitude(val) > d * threshold));
+            } else if constexpr (symScale && !retainLower) {
+              match = ((rclid == clid) || implATS::magnitude(val * val) > threshold_sqd * implATS::magnitude(diag(rclid) * diag(clid)));
+            } else {
+              match = ((rclid == clid) || implATS::magnitude(val) > d * threshold);
+            }
+            if (match) {
+              ++my_nnz;
+              if (is_final && (rlid + 1 < lclA.numRows())) {
+                rowptr(rlid + 2) = my_nnz;
+              }
+            }
+          }
+        },
+        nnz);
+  }
 }
 
 }  // namespace MueLu

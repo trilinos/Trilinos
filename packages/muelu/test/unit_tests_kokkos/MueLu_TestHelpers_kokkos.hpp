@@ -145,7 +145,7 @@ class TestFactory {
       numGlobalElements = nx;
     else if (matrixType == "Laplace2D" || matrixType == "Star2D")
       numGlobalElements = nx * ny;
-    else if (matrixType == "Laplace3D")
+    else if (matrixType == "Laplace3D" || matrixType == "Scalar3D_27Pt")
       numGlobalElements = nx * ny * nz;
     else {
       std::string msg = matrixType + " is unsupported (in unit testing)";
@@ -176,7 +176,7 @@ class TestFactory {
     } else if (matrixType == "Elasticity2D") {
       DofsPerNode = 2;
       mapType     = "Cartesian2D";
-    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D") {
+    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Scalar3D_27Pt") {
       mapType = "Cartesian3D";
     } else if (matrixType == "Elasticity3D") {
       DofsPerNode = 3;

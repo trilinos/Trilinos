@@ -1421,7 +1421,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: dropping may create Dirichlet", dropParams);
     if (useKokkos_) {
       test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: use blocking", dropParams);
-      test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: symmetrize graph after dropping", dropParams);
+      test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: symmetrize color graph", dropParams);
+      test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: symmetrize graph after dropping", dropParams);
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: strength-of-connection: matrix", dropParams);
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: strength-of-connection: measure", dropParams);
       test_and_set_param_2list<bool>(paramList, defaultList, "filtered matrix: use lumping", dropParams);
@@ -1527,10 +1528,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     if (test_param_2list<std::string>(paramList, defaultList, "aggregation: coloring algorithm", "mis2 aggregation") ||
         test_param_2list<std::string>(paramList, defaultList, "aggregation: coloring algorithm", "mis2 coarsening")) {
-      if (test_param_2list<bool>(paramList, defaultList, "aggregation: symmetrize graph after dropping", false))
+      if (test_param_2list<std::string>(paramList, defaultList, "aggregation: symmetrize graph after dropping", "no symmetrization") ||
+          (test_param_2list<std::string>(paramList, defaultList, "aggregation: symmetrize graph after dropping", "weak wins") &&
+           test_param_2list<bool>(paramList, defaultList, "aggregation: dropping may create Dirichlet", false)))
         TEUCHOS_TEST_FOR_EXCEPTION(true,
                                    Exceptions::RuntimeError,
-                                   "MIS2 algorithms require the use of a symmetrized graph. Please set \"aggregation: symmetrize graph after dropping\" to \"true\".");
+                                   "MIS2 algorithms require the use of a symmetrized graph. Please set \"aggregation: symmetrize graph after dropping\" to either \"strong wins\" or set it to \"weak wins\" with \"aggregation: dropping may create Dirichlet\" set to \"true\".");
     }
   } else if (aggType == "brick") {
     aggFactory = rcp(new BrickAggregationFactory());

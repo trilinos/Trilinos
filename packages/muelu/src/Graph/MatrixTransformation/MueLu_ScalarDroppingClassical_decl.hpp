@@ -44,7 +44,7 @@ class ScalarDroppingClassical : private ScalarDroppingBase<Scalar, LocalOrdinal,
                                        const std::string& droppingMethod,
                                        const magnitudeType threshold,
                                        const bool aggregationMayCreateDirichlet,
-                                       const bool symmetrizeDroppedGraph,
+                                       const std::string& symmetrizeDroppedGraph,
                                        const bool useBlocking,
                                        Level& level,
                                        const Factory& factory);

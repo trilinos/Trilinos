@@ -429,9 +429,17 @@
 
     <parameter>
       <name>aggregation: symmetrize graph after dropping</name>
-      <type>bool</type>
-      <default>false</default>
+      <type>string</type>
+      <default>"no symmetrization"</default>
       <description>Symmetrize the graph used for aggregation.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: symmetrize color graph</name>
+      <type>string</type>
+      <default>"strong wins"</default>
+      <description>Symmetrize graph used for coloring when "aggregation: coloring: use color graph" is set.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
