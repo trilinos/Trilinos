@@ -209,10 +209,8 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using matrix_type      = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using graph_type       = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
     using local_graph_type = typename graph_type::local_graph_device_type;
-    using execution_space  = typename Node::execution_space;
     using rowmap_type      = typename local_graph_type::row_map_type::non_const_type;
     using entries_type     = typename local_graph_type::entries_type::non_const_type;
-    using implATS          = KokkosKernels::ArithTraits<typename matrix_type::impl_scalar_type>;
     auto lclA              = A->getLocalMatrixDevice();
     auto lclRowmap         = A->getRowMap()->getLocalMap();
     auto lclColmap         = A->getColMap()->getLocalMap();
@@ -258,10 +256,8 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using matrix_type      = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using graph_type       = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
     using local_graph_type = typename graph_type::local_graph_device_type;
-    using execution_space  = typename Node::execution_space;
     using rowmap_type      = typename local_graph_type::row_map_type::non_const_type;
     using entries_type     = typename local_graph_type::entries_type::non_const_type;
-    using implATS          = KokkosKernels::ArithTraits<typename matrix_type::impl_scalar_type>;
     auto lclA              = A->getLocalMatrixDevice();
     auto lclRowmap         = A->getRowMap()->getLocalMap();
     auto lclColmap         = A->getColMap()->getLocalMap();
