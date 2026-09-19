@@ -1286,9 +1286,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, StrongWeakSymmetry
   typedef Teuchos::ScalarTraits<SC> STS;
   typedef typename STS::magnitudeType real_type;
   typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
-  using scalar_type        = real_type;
   using local_ordinal_type = LO;
-  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+  using ATS                = KokkosKernels::ArithTraits<Scalar>;
   using impl_scalar_type   = typename ATS::val_type;
   using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
   using magATS             = KokkosKernels::ArithTraits<typename implATS::magnitudeType>;
