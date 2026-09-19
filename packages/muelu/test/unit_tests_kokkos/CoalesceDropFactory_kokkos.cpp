@@ -1310,7 +1310,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, StrongWeakSymmetry
   RCP<Matrix> A;
   const int nx = 4;  // mesh is 4 x 4 x 4
   {
-    // Make a Scalar3D_27Pt Star2D Matrix with some big and small coefficieints
+    // Make a Scalar3D_27Pt Star2D Matrix with some big and small coefficients
     // Specifically, with a threshold of 5.5, abs(A) has no vertical coupling
     // and has 268 strong entries (732 weak entries). Since all horizontal
     // planes have no strong coupling between them, the weak/strong pattern
@@ -1418,22 +1418,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, StrongWeakSymmetry
     Kokkos::parallel_for("MueLu:Symmetrize:StrongWins", range, symmetrize);
   }
   // count up the number of strong and weak connections
-  Kokkos::Array<size_t, 2> counts;
+  struct DropKeepCounts {
+    size_t drop, keep;
+    KOKKOS_FUNCTION
+    DropKeepCounts()
+      : drop(0)
+      , keep(0) {}
+    KOKKOS_FUNCTION
+    void operator+=(const DropKeepCounts &rhs) {
+      drop += rhs.drop;
+      keep += rhs.keep;
+    }
+  };
+  DropKeepCounts counts;
+
   auto rangeNnz = range_type(0, results.extent(0));
   {
     Kokkos::parallel_reduce(
         "MueLu:CountKeepDrop", rangeNnz,
-        KOKKOS_LAMBDA(const LO i, Kokkos::Array<size_t, 2> &lsum) {
+        KOKKOS_LAMBDA(const LO i, DropKeepCounts &lsum) {
           if (results(i) == MueLu::DROP)
-            ++lsum[0];
+            ++lsum.drop;
           else if (results(i) == MueLu::KEEP)
-            ++lsum[1];
+            ++lsum.keep;
         },
         counts);
   }
   size_t globalDrop, globalKeep;
-  MueLu_sumAll(comm, counts[0], globalDrop);
-  MueLu_sumAll(comm, counts[1], globalKeep);
+  MueLu_sumAll(comm, counts.drop, globalDrop);
+  MueLu_sumAll(comm, counts.keep, globalKeep);
   TEST_EQUALITY(globalKeep, 400);
   TEST_EQUALITY(globalDrop, 600);
 
@@ -1446,21 +1459,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, StrongWeakSymmetry
   }
 
   // count up the number of strong and weak connections
-  counts[0] = 0;
-  counts[1] = 0;
+  counts.drop = 0;
+  counts.keep = 0;
   {
     Kokkos::parallel_reduce(
         "MueLu:CountKeepDrop", rangeNnz,
-        KOKKOS_LAMBDA(const LO i, Kokkos::Array<size_t, 2> &lsum) {
+        KOKKOS_LAMBDA(const LO i, DropKeepCounts &lsum) {
           if (results(i) == MueLu::DROP)
-            ++lsum[0];
+            ++lsum.drop;
           else if (results(i) == MueLu::KEEP)
-            ++lsum[1];
+            ++lsum.keep;
         },
         counts);
   }
-  MueLu_sumAll(comm, counts[0], globalDrop);
-  MueLu_sumAll(comm, counts[1], globalKeep);
+  MueLu_sumAll(comm, counts.drop, globalDrop);
+  MueLu_sumAll(comm, counts.keep, globalKeep);
   TEST_EQUALITY(globalKeep, 136);
   TEST_EQUALITY(globalDrop, 864);
 
@@ -1473,21 +1486,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, StrongWeakSymmetry
     Kokkos::parallel_for("MueLu:Symmetrize:WeakWinsCanDirCreate", range, symmetrize);
   }
   // count up the number of strong and weak connections
-  counts[0] = 0;
-  counts[1] = 0;
+  counts.drop = 0;
+  counts.keep = 0;
   {
     Kokkos::parallel_reduce(
         "MueLu:CountKeepDrop", rangeNnz,
-        KOKKOS_LAMBDA(const LO i, Kokkos::Array<size_t, 2> &lsum) {
+        KOKKOS_LAMBDA(const LO i, DropKeepCounts &lsum) {
           if (results(i) == MueLu::DROP)
-            ++lsum[0];
+            ++lsum.drop;
           else if (results(i) == MueLu::KEEP)
-            ++lsum[1];
+            ++lsum.keep;
         },
         counts);
   }
-  MueLu_sumAll(comm, counts[0], globalDrop);
-  MueLu_sumAll(comm, counts[1], globalKeep);
+  MueLu_sumAll(comm, counts.drop, globalDrop);
+  MueLu_sumAll(comm, counts.keep, globalKeep);
   TEST_EQUALITY(globalKeep, 140);
   TEST_EQUALITY(globalDrop, 860);
 }
