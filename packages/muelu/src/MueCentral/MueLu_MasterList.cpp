@@ -189,6 +189,13 @@ namespace MueLu {
   "<Parameter name=\"aggregation: distance laplacian directional weights\" type=\"Array(double)\" value=\"{1,1,1}\"/>"
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: distance laplacian metric\" type=\"string\" value=\"unweighted\"/>"
+  "<Parameter name=\"aggregation: material distance: interface penalty\" type=\"string\" value=\"none\"/>"
+  "<Parameter name=\"aggregation: material distance: interface penalty strength\" type=\"double\" value=\"1.0\"/>"
+  "<Parameter name=\"aggregation: material distance: interface penalty floor\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"aggregation: material distance: interface penalty shape weight\" type=\"double\" value=\"1.0\"/>"
+  "<Parameter name=\"aggregation: material distance diagnostics\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: material distance diagnostics threshold\" type=\"double\" value=\"0.5\"/>"
+  "<Parameter name=\"aggregation: material distance diagnostics contrast\" type=\"double\" value=\"2.0\"/>"
   "<Parameter name=\"aggregation: Minv scheme\" type=\"string\" value=\"fsai\"/>"
   "<Parameter name=\"aggregation: classical algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
@@ -659,7 +666,21 @@ namespace MueLu {
          ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
       
          ("aggregation: distance laplacian metric","aggregation: distance laplacian metric")
-      
+
+         ("aggregation: material distance: interface penalty","aggregation: material distance: interface penalty")
+
+         ("aggregation: material distance: interface penalty strength","aggregation: material distance: interface penalty strength")
+
+         ("aggregation: material distance: interface penalty floor","aggregation: material distance: interface penalty floor")
+
+         ("aggregation: material distance: interface penalty shape weight","aggregation: material distance: interface penalty shape weight")
+
+         ("aggregation: material distance diagnostics","aggregation: material distance diagnostics")
+
+         ("aggregation: material distance diagnostics threshold","aggregation: material distance diagnostics threshold")
+
+         ("aggregation: material distance diagnostics contrast","aggregation: material distance diagnostics contrast")
+
          ("aggregation: Minv scheme","aggregation: Minv scheme")
       
          ("aggregation: classical algo","aggregation: classical algo")
