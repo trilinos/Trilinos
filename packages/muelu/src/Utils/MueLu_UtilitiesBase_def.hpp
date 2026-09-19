@@ -206,7 +206,6 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GetThresholdedGraph(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const Magnitude threshold, const bool symScaled) {
   RCP<CrsGraph> sparsityPattern;
   {
-    using matrix_type      = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using graph_type       = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
     using local_graph_type = typename graph_type::local_graph_device_type;
     using rowmap_type      = typename local_graph_type::row_map_type::non_const_type;
@@ -253,7 +252,6 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GetThresholdedLowerTriangularGraph(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const Magnitude threshold, const bool symScaled) {
   RCP<CrsGraph> sparsityPattern;
   {
-    using matrix_type      = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using graph_type       = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
     using local_graph_type = typename graph_type::local_graph_device_type;
     using rowmap_type      = typename local_graph_type::row_map_type::non_const_type;
