@@ -970,8 +970,22 @@ class View
   // Compatible subview constructor
   // may assign unmanaged from managed.
 
+// This annotation lets std::pair slice arguments be used from device code
+// when relaxed constexpr support is enabled, while avoiding warnings about
+// calling a host function from a host device function: constexpr alone is
+// enough to silence that warning, including when using Clang (and its
+// derivatives, e.g. hipcc, amdclang++) as the device compiler.  NVCC is the
+// exception: there, constexpr alone instead triggers the warning, so we use
+// KOKKOS_FUNCTION in that specific configuration.
+#if defined(KOKKOS_COMPILER_NVCC) && defined(KOKKOS_ENABLE_CUDA_CONSTEXPR)
+#define KOKKOS_IMPL_SUBVIEW_STD_PAIR_SPECIFIER KOKKOS_FUNCTION
+#else
+#define KOKKOS_IMPL_SUBVIEW_STD_PAIR_SPECIFIER constexpr
+#endif
+
   template <class RT, class... RP, class Arg0, class... Args>
-  View(const View<RT, RP...>& src_view, const Arg0 arg0, Args... args)
+  KOKKOS_IMPL_SUBVIEW_STD_PAIR_SPECIFIER View(const View<RT, RP...>& src_view,
+                                              const Arg0 arg0, Args... args)
       : base_t(Impl::subview_ctor_tag, src_view,
                Impl::convert_to_kokkos_pair_if_std_pair(arg0),
                Impl::convert_to_kokkos_pair_if_std_pair(args)...) {}
@@ -1639,9 +1653,12 @@ struct ApplyToViewOfStaticRank {
 //----------------------------------------------------------------------------
 
 template <class D, class... P, class... Args>
-auto subview(const View<D, P...>& src, Args... args) {
+KOKKOS_IMPL_SUBVIEW_STD_PAIR_SPECIFIER auto subview(const View<D, P...>& src,
+                                                    Args... args) {
   return subview(src, Impl::convert_to_kokkos_pair_if_std_pair(args)...);
 }
+
+#undef KOKKOS_IMPL_SUBVIEW_STD_PAIR_SPECIFIER
 
 // std::pair isn't device-compatible
 template <class D, class... P, class... Args>

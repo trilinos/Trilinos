@@ -400,7 +400,11 @@ auto common_view_alloc_prop(const Kokkos::View<ViewArgs...> &view,
     using value_type =
         std::common_type_t<typename Kokkos::View<ViewArgs...>::value_type,
                            typename OtherViews::value_type...>;
+#if KOKKOS_VERSION_LESS(5,2,99)
     return Kokkos::Impl::CommonViewAllocProp<void, value_type>();
+#else
+    return Kokkos::Impl::CommonViewAllocProp<value_type>();
+#endif
   }
 }
 template <class... ViewArgs, class... OtherViews>
@@ -421,7 +425,11 @@ auto common_view_alloc_prop(const Kokkos::DynRankView<ViewArgs...> &view,
     using value_type =
         std::common_type_t<typename Kokkos::View<ViewArgs...>::value_type,
                            typename OtherViews::value_type...>;
+#if KOKKOS_VERSION_LESS(5,2,99)
     return Kokkos::Impl::CommonViewAllocProp<void, value_type>();
+#else
+    return Kokkos::Impl::CommonViewAllocProp<value_type>();
+#endif
   }
 }
 

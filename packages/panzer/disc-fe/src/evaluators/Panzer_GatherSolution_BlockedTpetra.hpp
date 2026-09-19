@@ -282,6 +282,13 @@ private:
 
   Teuchos::RCP<const BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> > blockedContainer_;
 
+  /** The solution, resolved once per evaluation into one Tpetra vector per
+    * product-vector block. preEvaluate() accepts either a read-only ghosted
+    * vector or a linear object container under the global data key, so the
+    * Thyra unwrapping happens there rather than in the gather loop.
+    */
+  std::vector<Teuchos::RCP<const VectorType> > solutionBlocks_;
+
   //! Local indices for unknowns
   PHX::View<LO**> worksetLIDs_;
 

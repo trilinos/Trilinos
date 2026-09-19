@@ -31,12 +31,17 @@ class ProbeScatterBase {
 public:
   virtual ~ProbeScatterBase() {}
 
+  /** \param[in] derivativeOffset First Fad derivative component belonging to
+    *            the probed field's product vector block. Zero when the global
+    *            indexer is not blocked.
+    */
   virtual void scatterDerivative(
     const panzer::Traits::Jacobian::ScalarT& probeValue,
     const size_t cell_index,
     const bool has_probe,
     panzer::Traits::EvalData workset,
     WorksetDetailsAccessor& wda,
+    const int derivativeOffset,
     Teuchos::ArrayRCP<double> & dgdx) const = 0;
 };
 
@@ -52,6 +57,7 @@ public:
      const bool has_probe,
      panzer::Traits::EvalData workset,
      WorksetDetailsAccessor& wda,
+     const int derivativeOffset,
      Teuchos::ArrayRCP<double> & dgdx) const;
 
 private:
@@ -87,6 +93,22 @@ public:
 
   // Should be protected, but is public for cuda lambda support
   bool findCellAndComputeBasisValues(typename Traits::EvalData d);
+
+  /** Index of the product vector block holding the probed field, or 0 when the
+    * global indexer is not blocked. The response evaluator factory selects the
+    * scatter's indexer with this same index, so the two must agree or the
+    * derivative is scattered into the wrong block.
+    */
+  int getProductVectorBlockIndex() const;
+
+  /** \brief First Fad derivative component belonging to the probed field's
+    * product vector block, or 0 when the global indexer is not blocked.
+    *
+    * getProductVectorBlockIndex() selects which vector block the derivative is
+    * scattered into; this selects which derivative components it is read from.
+    * Both are needed for a blocked system.
+    */
+  int getDerivativeOffset(const std::string& blockId) const;
 
 protected:
   typedef typename EvalT::ScalarT ScalarT;
@@ -166,6 +188,7 @@ void ProbeScatter<LO,GO>::scatterDerivative(
   const bool has_probe,
   panzer::Traits::EvalData workset,
   WorksetDetailsAccessor& wda,
+  const int derivativeOffset,
   Teuchos::ArrayRCP<double> & dgdx) const
 {
 
@@ -174,7 +197,9 @@ void ProbeScatter<LO,GO>::scatterDerivative(
 
     // loop over basis functions
     for(std::size_t i=0; i<LIDs.size(); ++i) {
-      dgdx[LIDs[i]] += probeValue.dx(i);
+      // In a blocked system this field's DOFs occupy derivative components
+      // starting at derivativeOffset, not at zero.
+      dgdx[LIDs[i]] += probeValue.dx(derivativeOffset+i);
     }
   }
 }

@@ -88,7 +88,10 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
-  Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
+  // The ghosted dx/dp vector this evaluator gathers from. Resolved in
+  // preEvaluate() from either a linear object container or a read-only ghosted
+  // vector, depending on which the model evaluator supplied.
+  Teuchos::RCP<typename TpetraLinearObjContainer<double,LO,GO,NodeT>::MultiVectorType > x_vector_;
 
   GatherTangent_Tpetra();
 };

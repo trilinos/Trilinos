@@ -73,7 +73,8 @@ namespace Sacado {
       StaticFixedStorage(const int sz, const T & x,
                          const DerivInit zero_out = InitDerivArray) :
         val_(x) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
         if (sz != Num)
           throw "StaticFixedStorage::StaticFixedStorage() Error:  Supplied derivative dimension does not equal static length.";
 #endif
@@ -156,7 +157,8 @@ namespace Sacado {
       //! Resize the derivative array to sz
       SACADO_INLINE_FUNCTION
       void resize(int sz) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
         if (sz != 0 && sz != Num)
           throw "StaticFixedStorage::resize() Error:  Cannot resize fixed storage length.";
 #endif
@@ -170,7 +172,8 @@ namespace Sacado {
       //! Resize the derivative array to sz
       SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
         if (sz != 0 && sz != Num)
           throw "StaticFixedStorage::resize() Error:  Cannot resize fixed storage length.";
 #endif
@@ -180,7 +183,8 @@ namespace Sacado {
       //! Expand derivative array to size sz
       SACADO_INLINE_FUNCTION
       void expand(int sz) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__) &&        \
+    !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
         if (sz != Num)
           throw "StaticFixedStorage::expand() Error:  Cannot resize fixed storage length.";
 #endif

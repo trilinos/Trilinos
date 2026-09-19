@@ -21,7 +21,7 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     if: ${{ github.repository == 'trilinos/Trilinos' }}
-    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6]
+    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20260507]
 
     permissions:
       # required for all workflows

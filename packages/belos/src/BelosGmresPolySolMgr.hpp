@@ -237,6 +237,11 @@ public:
   //! Set the parameters the solver manager should use to solve the linear problem.
   void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
+  //! Set a debug status test, forwarded to the outer solver manager (if any).
+  void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override {
+    debugStatusTest_ = debugStatusTest;
+  }
+
   //@}
   //! @name Reset methods
   //@{
@@ -297,6 +302,12 @@ private:
 
   // Output manager.
   Teuchos::RCP<std::ostream> outputStream_;
+
+  // Optional debug status test (e.g. a wall-clock time limit).  This manager
+  // has no Krylov iteration of its own; it is forwarded to the outer solver
+  // manager, which runs the actual iteration, whenever forwarding is
+  // type-compatible.
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
 
   // Current parameter list.
   Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -687,6 +698,12 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP,DM>::solve ()
       "Belos::GmresPolySolMgr::solve(): Selected solver is not valid.");
 
     solver->setProblem( problem_ );
+
+    // Forward any debug status test (e.g. a wall-clock time limit) to the outer
+    // solver manager, which runs the actual Krylov iteration and honors it.
+    if (Teuchos::nonnull(debugStatusTest_)) {
+      solver->setDebugStatusTest(debugStatusTest_);
+    }
 
     retType = solver->solve();
     numIters_ = solver->getNumIters();

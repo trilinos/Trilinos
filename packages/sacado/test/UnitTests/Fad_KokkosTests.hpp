@@ -1731,7 +1731,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(h_s), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(h_s.extent(0), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(h_s.extent(1), 1, out, success);
-  TEUCHOS_TEST_EQUALITY(h_s.extent(7), 1, out, success);
 
   for (size_type i=0; i<num_rows; ++i) {
     FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, col);
@@ -1786,7 +1785,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_TEST_EQUALITY(h_s.extent(0), num_cols, out, success);
   TEUCHOS_TEST_EQUALITY(h_s.extent(1), num_planes, out, success);
   TEUCHOS_TEST_EQUALITY(h_s.extent(2), 1, out, success);
-  TEUCHOS_TEST_EQUALITY(h_s.extent(7), 1, out, success);
 
   for (size_type j=0; j<num_cols; ++j) {
     FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, row, j);
@@ -2684,6 +2682,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
 #endif
 
+// Tests that construct a Fad *value* -- not a ViewFad -- in device code.  For
+// DFad that means allocating the derivative array on the device, which SYCL
+// has no mechanism for:  neither operator new nor malloc resolves in device
+// code, so the kernels fail to build.  Define SACADO_TEST_DEVICE_ALLOC to 0 in
+// a driver whose Fad type needs device-side allocation on such a backend.
+#ifndef SACADO_TEST_DEVICE_ALLOC
+#define SACADO_TEST_DEVICE_ALLOC 1
+#endif
+
+#if SACADO_TEST_DEVICE_ALLOC
+#define VIEW_FAD_TESTS_FLD_DEVICE_ALLOC( F, L, D )                      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, LocalDeepCopy, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, LocalDeepCopyTeam, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ValueAssign, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AtomicAdd, F, L, D )
+#else
+#define VIEW_FAD_TESTS_FLD_DEVICE_ALLOC( F, L, D )
+#endif
+
 #define VIEW_FAD_TESTS_FLD( F, L, D )                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Size, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AsScalarView, F, L, D ) \
@@ -2693,10 +2710,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy_ConstantZero, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy_ConstantFad, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy_ConstantFadFull, F, L, D ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, LocalDeepCopy, F, L, D ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, LocalDeepCopyTeam, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ScalarAssign, F, L, D ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ValueAssign, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Resize, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Unmanaged, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Unmanaged2, F, L, D ) \
@@ -2708,7 +2722,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyMixed, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Rank8, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Roger, F, L, D ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AtomicAdd, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignDifferentStrides, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ScalarValue, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankDimensionScalar, F, L, D ) \
@@ -2723,7 +2736,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Subview2, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopyNonContiguous, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ConstViewAssign, F, L, D )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ConstViewAssign, F, L, D ) \
+  VIEW_FAD_TESTS_FLD_DEVICE_ALLOC( F, L, D )
 
 #define VIEW_FAD_TESTS_SFLD( F, L, D )                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, SFadNoSizeArg, F, L, D )

@@ -89,7 +89,10 @@ def parse_workflow(workflow_file):
             image, tag = withBlock['image'].split(':')
             genconfig_build_id = withBlock['genconfig-string']
             if "extra-pr-driver-args" in withBlock:
-                cmake_extra_args = withBlock["extra-pr-driver-args"].split("=")[-1].replace("${GITHUB_WORKSPACE}", "/workspace/trilinos/source").replace(";", " ")
+                extraArgs = withBlock["extra-pr-driver-args"].split("=")
+                if len(extraArgs) > 0 and extraArgs[0] == "--extra-configure-args":
+                    cmake_extra_args = "=".join(extraArgs[1:])
+                    cmake_extra_args = cmake_extra_args.replace("${GITHUB_WORKSPACE}", "/workspace/trilinos/source").replace(";", " ")
         else:
             logger.debug("Could not parse job")
             continue

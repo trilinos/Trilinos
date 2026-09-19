@@ -197,16 +197,27 @@ public:
     // Check state of problem object before proceeding
     if (! problem->isProblemSet()) {
       const bool success = problem->setProblem();
-      TEUCHOS_TEST_FOR_EXCEPTION(success, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error,
         "Belos::BlockGCRODRSolMgr::setProblem: Calling the input LinearProblem's setProblem() method failed.  This likely means that the "
         "LinearProblem has a missing (null) matrix A, solution vector X, or right-hand side vector B.  Please set these items in the LinearProblem and try again.");
     }
 
     problem_ = problem;
+    // Force the status tests to be rebuilt on the next solve() so that a
+    // status test installed via setDebugStatusTest() is wired into sTest_.
+    isSet_ = false;
   }
 
   //! Set the parameters the solver should use to solve the linear problem.
   void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+
+  //! Set a debug status test, OR-combined into the top-level status test.
+  void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& debugStatusTest ) override {
+    debugStatusTest_ = debugStatusTest;
+    // Force the status-test tree to be rebuilt on the next solve() so the
+    // debug test gets OR-combined into sTest_.
+    isSet_ = false;
+  }
 
   //@}
 
@@ -307,6 +318,7 @@ private:
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
   Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > expConvTest_, impConvTest_;
   Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
 
   //! Factory for creating MatOrthoManager subclass instances.
   ortho_factory_type orthoFactory_;
@@ -1008,6 +1020,16 @@ private:
      // reached, or if the convergence test passes."
      sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR,
                                           maxIterTest_, convTest_));
+
+     // Add a debug status test if one was provided (e.g. a wall-clock time limit).
+     // OR-combining it into the top-level test lets it stop the solve; the
+     // dispatch in solve() treats such a stop as an unconverged (recoverable)
+     // termination.
+     if (Teuchos::nonnull(debugStatusTest_)) {
+       sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR,
+                                            sTest_, debugStatusTest_));
+     }
+
      // Create the status test output class.
      // This class manages and formats the output from the status test.
      StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
@@ -1775,7 +1797,10 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
 
   ReturnType retType = Undetermined;
 
-  // MLP: NEED TO ADD CHECK IF PARAMETERS ARE SET LATER
+  // Set the current parameters if they were not set before.
+  // NOTE:  This may occur if the user generated the solver manager with the default constructor and
+  // then didn't set any parameters using setParameters().
+  if (!isSet_) { setParameters( params_ ); }
 
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -1978,6 +2003,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
       block_gmres_iter->initializeGmres(newstate);
 
       bool primeConverged = false;
+      bool debugTestPassed = false;
 
       try {
         printer_->stream(Debug) << " Preparing to Iterate!!!!" << std::endl << std::endl;
@@ -2001,6 +2027,18 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
         else if( maxIterTest_->getStatus() == Passed ) {
           // we don't have convergence
           primeConverged = false;
+        }
+        // **********************************************
+        // Check for a debug status test requesting termination
+        // **********************************************
+        else if (Teuchos::nonnull(debugStatusTest_) &&
+                 debugStatusTest_->getStatus() == Passed) {
+          // A debug status test stopped the priming iteration. Treat it as an
+          // unconverged termination rather than building an invalid recycle
+          // space from a partially completed priming cycle.
+          retType = Unconverged;
+          isConverged = false;
+          debugTestPassed = true;
         }
         // ****************************************************************
         // We need to recycle and continue, print a message indicating this
@@ -2049,6 +2087,10 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
 
       // Record number of iterations in generating initial recycle spacec
       //prime_iterations = block_gmres_iter->getNumIters();//instantiated here because it is not needed outside of else{} scope;  we'll see if this is true or not
+
+      if (debugTestPassed) {
+        break;
+      }
 
       // Update the linear problem.
       RCP<MV> update = block_gmres_iter->getCurrentUpdate();
@@ -2232,6 +2274,19 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,DM>::solve() {
           block_gcrodr_iter->initialize(restartState);
 
         } //end else if need to restart
+
+        // **********************************************
+        // Check for a debug status test requesting termination
+        // **********************************************
+        else if (Teuchos::nonnull(debugStatusTest_) &&
+                 debugStatusTest_->getStatus() == Passed) {
+          // A debug status test (e.g. a wall-clock time limit) stopped the
+          // iteration. Treat as an unconverged termination rather than an
+          // inconsistent state.
+          retType = Unconverged;
+          isConverged = false;
+          break; // from while(1)
+        } // end elseif debug status test
 
         // ****************************************************************
         // We returned from iterate(), but none of our status tests passed.

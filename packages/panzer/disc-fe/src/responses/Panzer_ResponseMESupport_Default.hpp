@@ -351,6 +351,14 @@ protected:
       return tVector_->domain()->dim();
   }
 
+  /** Has a target vector been set on this response? The model evaluator
+    * evaluates every Tangent response in the library but only sets a vector on
+    * those whose DgDp was actually requested, so the rest have nothing to
+    * scatter into.
+    */
+  bool hasTargetVector() const
+  { return useEpetra_ || useThyra_; }
+
 
 private:
    // hide these methods
