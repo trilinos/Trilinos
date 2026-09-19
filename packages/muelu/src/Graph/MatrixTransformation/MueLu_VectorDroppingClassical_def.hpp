@@ -27,7 +27,7 @@ void VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, SoC>::ru
                                                                                                        const std::string& droppingMethod,
                                                                                                        const magnitudeType threshold,
                                                                                                        const bool aggregationMayCreateDirichlet,
-                                                                                                       const bool symmetrizeDroppedGraph,
+                                                                                                       const std::string& symmetrizeDroppedGraph,
                                                                                                        const bool useBlocking,
                                                                                                        Level& level,
                                                                                                        const Factory& factory) {
@@ -39,7 +39,7 @@ void VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, SoC>::ru
     auto dropping = ClassicalDropping::make_drop_functor<SoC>(A, threshold, results);
 
     if (aggregationMayCreateDirichlet) {
-      if (symmetrizeDroppedGraph) {
+      if (symmetrizeDroppedGraph != "no symmetrization") {
         auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
         VectorDroppingClassical::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
                                                      dropping,
@@ -55,7 +55,7 @@ void VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, SoC>::ru
                                                      mark_singletons_as_boundary);
       }
     } else {
-      if (symmetrizeDroppedGraph) {
+      if (symmetrizeDroppedGraph != "no symmetrization") {
         auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
         VectorDroppingClassical::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
                                                      dropping,
@@ -73,7 +73,7 @@ void VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, SoC>::ru
     auto comparison = CutDrop::make_comparison_functor<SoC>(A, results);
     auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-    if (symmetrizeDroppedGraph) {
+    if (symmetrizeDroppedGraph != "no symmetrization") {
       auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
       VectorDroppingClassical::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
                                                    drop_boundaries,

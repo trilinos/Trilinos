@@ -66,6 +66,7 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   SET_VALID_ENTRY("aggregation: classical algo");
 #endif
   SET_VALID_ENTRY("aggregation: symmetrize graph after dropping");
+  SET_VALID_ENTRY("aggregation: symmetrize color graph");
   SET_VALID_ENTRY("aggregation: coloring: use color graph");
   SET_VALID_ENTRY("aggregation: coloring: localize color graph");
 
@@ -214,7 +215,7 @@ void runBoundaryFunctors(local_matrix_type& lclA, boundary_nodes_view& boundaryN
 }
 
 template <class magnitudeType>
-void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppingMethod, bool& useBlocking, std::string& socUsesMatrix, std::string& socUsesMeasure, bool& symmetrizeDroppedGraph, bool& generateColoringGraph, magnitudeType& threshold, MueLu::MatrixConstruction::lumpingType& lumpingChoice) {
+void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppingMethod, bool& useBlocking, std::string& socUsesMatrix, std::string& socUsesMeasure, std::string& symmetrizeDroppedGraph, bool& generateColoringGraph, magnitudeType& threshold, MueLu::MatrixConstruction::lumpingType& lumpingChoice) {
   std::set<std::string> validDroppingMethods = {"piece-wise", "cut-drop"};
 
   if (!pL.get<bool>("filtered matrix: use lumping")) lumpingChoice = MueLu::MatrixConstruction::no_lumping;
@@ -256,7 +257,7 @@ void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppi
         droppingMethod = "cut-drop";
       } else if (classicalAlgoStr == "scaled cut symmetric") {
         droppingMethod         = "cut-drop";
-        symmetrizeDroppedGraph = true;
+        symmetrizeDroppedGraph = "strong wins";
       }
     } else if ((algo == "distance laplacian") || (algo == "signed classical sa distance laplacian") || (algo == "signed classical distance laplacian")) {
       socUsesMatrix = "distance laplacian";
@@ -278,7 +279,7 @@ void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppi
         droppingMethod = "cut-drop";
       } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
         droppingMethod         = "cut-drop";
-        symmetrizeDroppedGraph = true;
+        symmetrizeDroppedGraph = "strong wins";
       }
     } else if (algo == "") {
       // algo was "block diagonal", but we process and remove the "block diagonal" part
@@ -329,7 +330,8 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
   std::string socUsesMeasure          = pL.get<std::string>("aggregation: strength-of-connection: measure");
   std::string distanceLaplacianMetric = pL.get<std::string>("aggregation: distance laplacian metric");
   std::string MinvScheme              = pL.get<std::string>("aggregation: Minv scheme");
-  bool symmetrizeDroppedGraph         = pL.get<bool>("aggregation: symmetrize graph after dropping");
+  std::string symmetrizeDroppedGraph  = pL.get<std::string>("aggregation: symmetrize graph after dropping");
+  std::string symmetrizeColoringGraph = pL.get<std::string>("aggregation: symmetrize color graph");
   magnitudeType threshold;
   // If we're doing the ML-style halving of the drop tol at each level, we do that here.
   if (pL.get<bool>("aggregation: use ml scaling of drop tol"))
@@ -356,9 +358,8 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
   const magnitudeType filteringDirichletThreshold = as<magnitudeType>(pL.get<double>("filtered matrix: Dirichlet threshold"));
 
   // coloring graph
-  bool generateColoringGraph         = pL.get<bool>("aggregation: coloring: use color graph");
-  const bool localizeColoringGraph   = pL.get<bool>("aggregation: coloring: localize color graph");
-  const bool symmetrizeColoringGraph = true;
+  bool generateColoringGraph       = pL.get<bool>("aggregation: coloring: use color graph");
+  const bool localizeColoringGraph = pL.get<bool>("aggregation: coloring: localize color graph");
 
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
   translateOldAlgoParam(pL, droppingMethod, useBlocking, socUsesMatrix, socUsesMeasure, symmetrizeDroppedGraph, generateColoringGraph, threshold, lumpingChoice);
@@ -573,7 +574,7 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
     } else {
       Kokkos::deep_copy(results, KEEP);
 
-      if (symmetrizeDroppedGraph) {
+      if (symmetrizeDroppedGraph != "no symmetrization") {
         auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(*A, boundaryNodes, results);
         ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_boundaries);
       } else {
@@ -582,8 +583,22 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
       }
     }
 
-    if (symmetrizeDroppedGraph) {
-      auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
+    // 3 symmetrize possibilities:
+    //
+    // - strong wins changes both (i,j) and (j,i) to strong if previously either (i,j) or (j,i) was strong
+    // - weak wins+mayCreateDir  changes both (i,j) and (j,i) to weak previously either of them were weak
+    // - weak wins+!mayCreateDir same as weak wins+mayCreateDir except if the change would create a row with
+    //        no off-diagonals (when previously we had off-diagonals). In this case, we ensure that we
+    //        retain the entry in that row that was previously strong and largest in magnitude.
+
+    if (symmetrizeDroppedGraph == "strong wins") {
+      auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, false, false>(lclA, results);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+    } else if ((symmetrizeDroppedGraph == "weak wins") && (!pL.get<bool>("aggregation: dropping may create Dirichlet"))) {
+      auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, true, false>(lclA, results);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+    } else if (symmetrizeDroppedGraph == "weak wins") {  // pL.get<bool>("aggregation: dropping may create Dirichlet") must be true
+      auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, true, true>(lclA, results);
       ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
     }
   }
@@ -677,9 +692,17 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
       ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_offrank);
     }
-    if (symmetrizeColoringGraph) {
-      auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
+    if (symmetrizeColoringGraph == "strong wins") {
+      auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, false, false>(lclA, results);
       ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+    } else {  // weak wins
+      if (!pL.get<bool>("aggregation: dropping may create Dirichlet")) {
+        auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, true, false>(lclA, results);
+        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+      } else {
+        auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, true, true>(lclA, results);
+        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+      }
     }
     auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
     auto lclGraph          = local_graph_type(colidx, filtered_rowptr);
@@ -811,7 +834,8 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
   std::string socUsesMatrix           = pL.get<std::string>("aggregation: strength-of-connection: matrix");
   std::string socUsesMeasure          = pL.get<std::string>("aggregation: strength-of-connection: measure");
   std::string distanceLaplacianMetric = pL.get<std::string>("aggregation: distance laplacian metric");
-  bool symmetrizeDroppedGraph         = pL.get<bool>("aggregation: symmetrize graph after dropping");
+  std::string symmetrizeDroppedGraph  = pL.get<std::string>("aggregation: symmetrize graph after dropping");
+  std::string symmetrizeColoringGraph = pL.get<std::string>("aggregation: symmetrize color graph");
   magnitudeType threshold;
   // If we're doing the ML-style halving of the drop tol at each level, we do that here.
   if (pL.get<bool>("aggregation: use ml scaling of drop tol"))
@@ -838,9 +862,8 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
   const magnitudeType filteringDirichletThreshold = as<magnitudeType>(pL.get<double>("filtered matrix: Dirichlet threshold"));
 
   // coloring graph
-  bool generateColoringGraph         = pL.get<bool>("aggregation: coloring: use color graph");
-  const bool localizeColoringGraph   = pL.get<bool>("aggregation: coloring: localize color graph");
-  const bool symmetrizeColoringGraph = true;
+  bool generateColoringGraph       = pL.get<bool>("aggregation: coloring: use color graph");
+  const bool localizeColoringGraph = pL.get<bool>("aggregation: coloring: localize color graph");
 
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
   translateOldAlgoParam(pL, droppingMethod, useBlocking, socUsesMatrix, socUsesMeasure, symmetrizeDroppedGraph, generateColoringGraph, threshold, lumpingChoice);
@@ -1011,8 +1034,14 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
       VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, no_op);
     }
 
-    if (symmetrizeDroppedGraph) {
-      auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
+    if (symmetrizeDroppedGraph == "strong wins") {
+      auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, false, false>(lclA, results);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+    } else if ((symmetrizeDroppedGraph == "weak wins") && (!pL.get<bool>("aggregation: dropping may create Dirichlet"))) {
+      auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, true, false>(lclA, results);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+    } else if (symmetrizeDroppedGraph == "weak wins") {  // pL.get<bool>("aggregation: dropping may create Dirichlet") must be true
+      auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, true, true>(lclA, results);
       VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
     }
   }
@@ -1110,9 +1139,17 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
       VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, drop_offrank);
     }
-    if (symmetrizeColoringGraph) {
-      auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
+    if (symmetrizeColoringGraph != "strong wins") {
+      auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, false, false>(lclA, results);
       VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+    } else {  // weak wins
+      if (!pL.get<bool>("aggregation: dropping may create Dirichlet")) {
+        auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, true, false>(lclA, results);
+        VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+      } else {
+        auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, true, true>(lclA, results);
+        VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+      }
     }
     auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
     auto lclGraph          = local_graph_type(colidx, filtered_rowptr);

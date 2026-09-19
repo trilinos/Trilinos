@@ -23,13 +23,14 @@ namespace MueLu {
 
 /*! Possible decision for a single entry.
   Once we are done with dropping, we should have no UNDECIDED entries left.
-  Normally, both DROP and BOUNDARY entries will be dropped, but we distinguish them in case we want to keep boundaries.
+  Normally, both DROP and BOUNDARY_ENTRY entries will be dropped, but we distinguish them in case we want to keep boundaries.
  */
 enum DecisionType : char {
-  UNDECIDED = 0,  // no decision has been taken yet, used for initialization
-  KEEP      = 1,  // keeep the entry
-  DROP      = 2,  // drop it
-  BOUNDARY  = 3   // entry is a boundary
+  UNDECIDED      = 0,  // no decision has been taken yet, used for initialization
+  KEEP           = 1,  // keeep the entry
+  DROP           = 2,  // drop it
+  SYMDROP        = 3,  // drop if doesn't create Dirichlet
+  BOUNDARY_ENTRY = 4   // entry is a boundary
 };
 
 namespace Misc {
@@ -243,7 +244,7 @@ class KeepDiagonalFunctor {
     const size_t offset = A.graph.row_map(rlid);
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto clid = row.colidx(k);
-      if ((rlid == clid) && (results(offset + k) != BOUNDARY)) {
+      if ((rlid == clid) && (results(offset + k) != BOUNDARY_ENTRY)) {
         results(offset + k) = KEEP;
         break;
       }
@@ -323,7 +324,7 @@ class MarkSingletonFunctor {
       if (rlid == clid)
         results(offset + k) = KEEP;
       else
-        results(offset + k) = BOUNDARY;
+        results(offset + k) = BOUNDARY_ENTRY;
     }
   }
 };
@@ -371,7 +372,7 @@ class MarkSingletonVectorFunctor {
       if (rlid == clid)
         results(offset + k) = KEEP;
       else
-        results(offset + k) = BOUNDARY;
+        results(offset + k) = BOUNDARY_ENTRY;
     }
   }
 };
@@ -529,13 +530,17 @@ class DebugFunctor {
 @class SymmetrizeFunctor
 @brief Functor that symmetrizes the dropping decisions.
 */
-template <class local_matrix_type>
+template <class local_matrix_type, bool weakWins = false, bool offdiagNnzsCanBeReducedToZero = false>
 class SymmetrizeFunctor {
  private:
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
   using results_view       = Kokkos::View<DecisionType*, memory_space>;
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+  using impl_SC            = typename ATS::val_type;
+  using impl_ATS           = KokkosKernels::ArithTraits<impl_SC>;
+  using magATS             = KokkosKernels::ArithTraits<typename impl_ATS::magnitudeType>;
 
   local_matrix_type A;
   results_view results;
@@ -549,9 +554,17 @@ class SymmetrizeFunctor {
   void operator()(local_ordinal_type rlid) const {
     auto row            = A.rowConst(rlid);
     const size_t offset = A.graph.row_map(rlid);
+
+    bool hadOffdiagKeep = false;
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       if (results(offset + k) == KEEP) {
         auto clid = row.colidx(k);
+        // record whether or not original row had a nonzero off-diagonal
+        if constexpr (weakWins && !offdiagNnzsCanBeReducedToZero) {
+          if (!hadOffdiagKeep && clid != rlid && results(offset + k) == KEEP) {
+            hadOffdiagKeep = true;
+          }
+        }
         if (clid >= A.numRows())
           continue;
         auto row2            = A.rowConst(clid);
@@ -559,11 +572,55 @@ class SymmetrizeFunctor {
         for (local_ordinal_type k2 = 0; k2 < row2.length; ++k2) {
           auto clid2 = row2.colidx(k2);
           if (clid2 == rlid) {
-            if (results(offset2 + k2) == DROP)
-              results(offset2 + k2) = KEEP;
+            if (results(offset2 + k2) == DROP) {
+              if constexpr (weakWins) {
+                if constexpr (!offdiagNnzsCanBeReducedToZero) {
+                  results(offset + k) = SYMDROP;
+                } else {
+                  results(offset + k) = DROP;
+                }
+              } else {
+                results(offset2 + k2) = KEEP;
+              }
+            }
             break;
           }
         }
+      }
+    }
+    // for weak wins, check that symmetrization did not create a Dirichlet row
+    if constexpr (weakWins && !offdiagNnzsCanBeReducedToZero) {
+      if (hadOffdiagKeep) {
+        bool hasOffdiagKeepNow                     = false;
+        local_ordinal_type rescueK                 = -1;  // index within row
+        typename impl_ATS::magnitudeType rescueVal = magATS::zero();
+
+        for (local_ordinal_type k = 0; k < row.length; ++k) {
+          const auto clid = row.colidx(k);
+          if (clid == rlid) continue;
+
+          const auto d = results(offset + k);
+          if (d == KEEP) {
+            hasOffdiagKeepNow = true;
+            break;
+          }
+
+          if (d == SYMDROP) {
+            auto temp = impl_ATS::magnitude(row.value(k));
+            if (temp >= rescueVal) {
+              rescueK   = k;
+              rescueVal = temp;
+            }
+          }
+        }
+
+        // If none left, flip one SYMDROP back to KEEP
+        if (!hasOffdiagKeepNow && rescueK >= 0) {
+          results(offset + rescueK) = KEEP;
+        }
+      }
+      for (local_ordinal_type k = 0; k < row.length; ++k) {
+        if (results(offset + k) == SYMDROP) results(offset + k) = DROP;
       }
     }
   }
