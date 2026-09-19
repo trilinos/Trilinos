@@ -16,6 +16,7 @@
 */
 
 #include "BelosStatusTestResNorm.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "Teuchos_as.hpp"
@@ -613,8 +614,15 @@ checkStatus (Iteration<ScalarType,MV,OP,DM>* iSolver)
     //
     // Compute the explicit residual norm(s) from the current solution update.
     //
-    RCP<MV> cur_update = iSolver->getCurrentUpdate ();
-    curSoln_ = lp.updateSolution (cur_update);
+    CurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
+      dynamic_cast<CurrentSolutionProvider<ScalarType,MV,OP,DM>*>(iSolver);
+    if (solProvider != NULL && solProvider->hasCurrentSolution()) {
+      curSoln_ = solProvider->getCurrentSolution ();
+    }
+    else {
+      RCP<MV> cur_update = iSolver->getCurrentUpdate ();
+      curSoln_ = lp.updateSolution (cur_update);
+    }
     RCP<MV> cur_res = MVT::Clone (*curSoln_, MVT::GetNumberVecs (*curSoln_));
     lp.computeCurrResVec (&*cur_res, &*curSoln_);
     tmp_resvector.resize (MVT::GetNumberVecs (*cur_res));

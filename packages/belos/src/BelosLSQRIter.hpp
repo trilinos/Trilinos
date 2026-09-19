@@ -16,6 +16,7 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosLSQRIteration.hpp"
 
 #include "BelosLinearProblem.hpp"
@@ -39,7 +40,8 @@
 namespace Belos {
 
 template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
-class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM> {
+class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP,DM>,
+                 public Belos::CurrentSolutionProvider<ScalarType,MV,OP,DM> {
 
   public:
 
