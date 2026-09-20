@@ -20,7 +20,7 @@ Defined in header ``KokkosSparse_spgemm.hpp``
                       typename KernelHandle::const_nnz_lno_t block_dim = 1);
 
   template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
-  void spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode, const BMatrix& B, const bool Bmode,
+  void spgemm_numeric(KernelHandle& handle, const AMatrix& A, const bool Amode, const BMatrix& B, const bool Bmode,
                       CMatrix& C);
 
 Performs the numeric phase of the multiplication of two sparse matrices.
@@ -50,13 +50,13 @@ Parameters
    For all parameters that are shared with ``spgemm_symbolic`` (dimensions, row maps, entries and matrices), the parameters to ``spgemm_numeric`` must match what was previously passed into ``spgemm_symbolic``
    with the same handle. For example, it is not valid to call ``spgemm_symbolic`` with one version of ``entriesA``, and then call ``spgemm_numeric`` with a different ``entriesA`` but the same handle.
 
-:handle: spadd kernels handle obtained from an instance of ``KokkosKernels::KokkosKernelsHandle``. Must be the same handle that was previously passed into ``spgemm_symbolic`` with the same input matrices.
+:handle: KokkosKernelsHandle with an active spgemm subhandle (i.e. `create_spgemm_handle(...)` was previously called on it). Must be the same handle that was previously passed into ``spgemm_symbolic`` with the same input matrices.
 
 :m, n, k: dimensions of the matrices. **m** is the number of rows in ``A`` and ``C``. **n** is the number of columns in ``A`` and the number of rows in ``B``. **k** is the number of columns in ``B`` and ``C``.
 
 :row_mapA, row_mapB: row maps of the input matrices ``A`` and ``B``.
 
-:entriesA, entriesB: column indices of the entries in each row of ``A`` and ``B``. In most cases, these should be in sorted and merged order (see note in :doc:`spgemm_symbolic <spgemm_symbolic>`).
+:entriesA, entriesB: column indices of the entries in each row of ``A`` and ``B``.
 
 :valuesA, valuesB: values of the entries in each row of ``A`` and ``B``.
 
@@ -70,7 +70,7 @@ Parameters
 
 :Amode, Bmode: transposition operation to apply to ``A`` and ``B`` respectively. **Must both be false**; the algorithm is not yet implemented for other cases.
 
-:A, B, C: three instances of :doc:`KokkosSparse::CrsMatrix <crs_matrix>`. ``A`` and ``B`` are inputs parameters only. The output is written into the values of ``C``. In most cases, ``A`` and ``B`` should be in sorted and merged order (see note in :doc:`spgemm_symbolic <spgemm_symbolic>`).
+:A, B, C: three instances of :doc:`KokkosSparse::CrsMatrix <crs_matrix>`. ``A`` and ``B`` are inputs parameters only. The output is written into the values of ``C``.
 
 Type Requirements
 -----------------

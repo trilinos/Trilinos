@@ -90,6 +90,62 @@ inline bool is_spgemm_algorithm_native(SPGEMMAlgorithm a) {
   if (a == SPGEMM_DEFAULT || is_cusparse_spgemm_algorithm(a)) return false;
   return true;
 }
+
+/// \brief Return true if (given the ExecSpace and enabled TPLs),
+/// the spgemm algo may require the input matrices A and B to be sorted.
+///
+/// This is used at runtime to decide whether to fall back to native when
+/// the user has told us the input matrices are unsorted
+/// (native never requires sorted input).
+template <typename ExecSpace>
+bool algorithm_may_require_sorted_input(SPGEMMAlgorithm algo) {
+  if (is_spgemm_algorithm_native(algo)) {
+    // All native algos never require sorted input.
+    return false;
+  }
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  if constexpr (std::is_same_v<ExecSpace, Kokkos::Cuda>) {
+    if (is_cusparse_spgemm_algorithm(algo)) {
+      // algo is a specific cusparse algo
+      switch (algo) {
+        // The SpGEMMreuse-based algorithms require sorted inputs.
+        case SPGEMM_CUSPARSE_DETERMINISTIC:
+        case SPGEMM_CUSPARSE_NONDETERMINISTIC: return true;
+        // The non-reuse SpGEMM algorithms (ALG1/ALG2/ALG3) do not require
+        // sorted inputs.
+        case SPGEMM_CUSPARSE_ALG1:
+        case SPGEMM_CUSPARSE_ALG2:
+        case SPGEMM_CUSPARSE_ALG3: return false;
+        default:;
+      }
+    } else if (algo == SPGEMM_DEFAULT) {
+      // Conservatively assume this spgemm will take the TPL path
+#if (CUSPARSE_VERSION < 12710)
+      // These cuSPARSE versions use the SpGEMMreuse path, which requires sorted
+      // inputs.
+      return true;
+#else
+      // Newer cuSPARSE versions use the non-reuse SpGEMM path, which does not
+      // require sorted inputs.
+      return false;
+#endif
+    }
+  }
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  if constexpr (std::is_same_v<ExecSpace, Kokkos::HIP>) {
+    // rocSPARSE csrgemm (reuse-style interface) requires sorted inputs in the general case
+    return true;
+  }
+#endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+  // mkl_sparse_sp2m never requires sorted inputs.
+  return false;
+#endif
+  // Non-TPL path will call native, which never requires sorted inputs.
+  return false;
+}
+
 }  // namespace Impl
 
 enum SPGEMMAccumulator {
@@ -262,6 +318,11 @@ class SPGEMMHandle {
   SPGEMMAlgorithm algorithm_type;
   SPGEMMAccumulator accumulator_type;
   size_type result_nnz_size;
+
+  // Whether the user has promised input matrices A and B are sorted
+  bool input_sorted;
+  // Whether the user has requested output C is sorted
+  bool result_sorted;
 
   bool called_symbolic;
   bool computed_rowptrs;
@@ -453,11 +514,19 @@ class SPGEMMHandle {
 
   /**
    * \brief Default constructor.
+   *
+   * \param alg the SpGEMM algorithm to use.
+   * \param input_sorted_ whether inputs A and B are sorted.
+   *   Defaults to false for backwards compatibility.
+   * \param result_sorted_ whether the output matrix C is required to be sorted.
+   *   Defaults to true to maintain backwards compatibility.
    */
-  SPGEMMHandle(SPGEMMAlgorithm alg = SPGEMM_DEFAULT)
+  SPGEMMHandle(SPGEMMAlgorithm alg = SPGEMM_DEFAULT, bool input_sorted_ = false, bool result_sorted_ = true)
       : algorithm_type(alg),
         accumulator_type(SPGEMM_ACC_DEFAULT),
         result_nnz_size(0),
+        input_sorted(input_sorted_),
+        result_sorted(result_sorted_),
         called_symbolic(false),
         computed_rowptrs(false),
         computed_rowflops(false),
@@ -670,6 +739,14 @@ class SPGEMMHandle {
 
   // getters
   SPGEMMAlgorithm get_algorithm_type() const { return this->algorithm_type; }
+
+  /// \brief Return whether the user has indicated that the input matrices A and
+  /// B have sorted entries within each row.
+  bool get_input_sorted() const { return this->input_sorted; }
+
+  /// \brief Return whether the user requires the output matrix C to have sorted
+  /// entries within each row.
+  bool get_result_sorted() const { return this->result_sorted; }
 
   bool is_symbolic_called() { return this->called_symbolic; }
   bool are_rowptrs_computed() { return this->computed_rowptrs; }

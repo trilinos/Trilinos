@@ -97,12 +97,14 @@ void syr(const ExecutionSpace& space, const char trans[], const char uplo[],
   // on particular View specializations for its template parameters.
   using XVT = Kokkos::View<typename XViewType::const_value_type*,
                            typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XViewType, ALayout>::array_layout,
-                           typename XViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+                           ExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  using AVT = Kokkos::View<typename AViewType::non_const_value_type**, ALayout, typename AViewType::device_type,
+  using AVT = Kokkos::View<typename AViewType::non_const_value_type**, ALayout, ExecutionSpace,
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  Impl::SYR<ExecutionSpace, XVT, AVT>::syr(space, trans, uplo, alpha, x, A);
+  XVT x_internal = KokkosKernels::Impl::unificationCast<XVT>(x);
+  AVT A_internal = KokkosKernels::Impl::unificationCast<AVT>(A);
+  Impl::SYR<ExecutionSpace, XVT, AVT>::syr(space, trans, uplo, alpha, x_internal, A_internal);
 }
 
 /// \brief Rank-1 update (just lower portion or just upper portion) of a

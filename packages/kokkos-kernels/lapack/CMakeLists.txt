@@ -61,3 +61,9 @@ gen_lapack_eti(Lapack_gemqr gemqr)
 gen_lapack_eti(Lapack_gegqr gegqr)
 gen_lapack_eti(Lapack_potrf potrf)
 gen_lapack_eti(Lapack_potrs potrs)
+
+kokkoskernels_generate_eti(Lapack_getrf getrf
+  COMPONENTS  lapack
+  HEADER_LIST ETI_HEADERS
+  SOURCE_LIST SOURCES
+  TYPE_LISTS  FLOATS ORDINALS LAYOUTS DEVICES)

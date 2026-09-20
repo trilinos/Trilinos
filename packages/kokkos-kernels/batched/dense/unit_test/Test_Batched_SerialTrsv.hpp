@@ -50,7 +50,7 @@ struct Functor_BatchedSerialTrsv {
   inline int run() {
     using value_type = typename AViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialTrsv");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
@@ -87,7 +87,7 @@ struct Functor_BatchedSerialGemv {
   inline void run() {
     using value_type = typename AViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialGemv");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, m_x.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
