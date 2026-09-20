@@ -9,7 +9,7 @@
 
 /*! \file  example_01.cpp
     \brief Shows how to solve the equality constrained NLP
-           from Nocedal/Wright, 2nd edition, page 574, example 18.2.
+           from Nocedal/Wright, 2nd edition, page 562, exercise 18.3.
 */
 
 #include "ROL_SimpleEqConstrained.hpp"
