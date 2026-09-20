@@ -413,7 +413,7 @@ Ptr<Vector<Real>> GreedyAlgorithm(const Ptr<GreedyObjective<Real>>& obj,
     bman->barrier();
     tmp[0] = vi;
     tmp[1] = static_cast<Real>(jind);
-    tmp[2] = static_cast<Real>(myind[jind]);
+    tmp[2] = (myind.empty() ? zero : static_cast<Real>(myind[jind]));
     tmp[3] = static_cast<Real>(rank);
     bman->gather(tmp.data(),4,gvi.data(),4*nbatch,0);
     if (rank==0u) {
