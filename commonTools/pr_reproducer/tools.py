@@ -70,7 +70,7 @@ def get_pr_number(repo, upstream):
         return None
 
 
-def parse_workflow(workflow_file):
+def parse_workflow(workflow_file, pr_number):
     pr_builds = {}
 
     with open(workflow_file, 'r') as f:
@@ -88,6 +88,8 @@ def parse_workflow(workflow_file):
             withBlock = job['with']
             image, tag = withBlock['image'].split(':')
             genconfig_build_id = withBlock['genconfig-string']
+            dashboard_build_name = withBlock['dashboard-build-name']
+            dashboard_build_name = dashboard_build_name.replace("${AT2_IMAGE}", image.split("/")[-1]).replace("${{ github.event.pull_request.number }}", str(pr_number))
             if "extra-pr-driver-args" in withBlock:
                 extraArgs = withBlock["extra-pr-driver-args"].split("=")
                 if len(extraArgs) > 0 and extraArgs[0] == "--extra-configure-args":
@@ -100,20 +102,21 @@ def parse_workflow(workflow_file):
         pr_builds[jobname] = {"image": image,
                               "tag": tag,
                               "genconfig_build_id": genconfig_build_id,
-                              "cmake_extra_args": cmake_extra_args}
+                              "cmake_extra_args": cmake_extra_args,
+                              "dashboard_build_name": dashboard_build_name}
         logger.debug(f"\"{jobname}\" added")
 
     return pr_builds
 
 
-def parse_workflows(source_dir):
+def parse_workflows(source_dir, pr_number):
     AT2_workflow = source_dir/'.github'/'workflows'/'AT2.yml'
     assert AT2_workflow.exists()
-    builds = parse_workflow(AT2_workflow)
+    builds = parse_workflow(AT2_workflow, pr_number)
 
     nightly_workflow = source_dir/'.github'/'workflows'/'nightly.yml'
     assert nightly_workflow.exists()
-    builds.update(parse_workflow(nightly_workflow))
+    builds.update(parse_workflow(nightly_workflow, pr_number))
 
     return builds
 
