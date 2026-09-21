@@ -215,6 +215,8 @@ IF(${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Experimental)
+  APPEND_SET(SOURCES StructuredRAPFactory.cpp)
+
   APPEND_SET(
     SOURCES_REGION
     RegionMatrix.cpp

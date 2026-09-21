@@ -100,6 +100,7 @@
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_StructuredAggregationFactory_fwd.hpp"
 #include "MueLu_StructuredLineDetectionFactory_fwd.hpp"
+#include "MueLu_StructuredRAPFactory_fwd.hpp"
 #include "MueLu_SubBlockAFactory_fwd.hpp"
 #ifdef HAVE_MUELU_TEKO
 #include "MueLu_TekoSmoother_fwd.hpp"
