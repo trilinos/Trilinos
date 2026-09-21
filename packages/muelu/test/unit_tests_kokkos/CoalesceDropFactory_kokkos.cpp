@@ -1283,26 +1283,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, StrongWeakSymmetry
 // Test strong/weak pattern symmetry options.
 #include <MueLu_UseShortNames.hpp>
 
-  typedef Teuchos::ScalarTraits<SC> STS;
-  typedef typename STS::magnitudeType real_type;
-  typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
   using local_ordinal_type = LO;
-  using ATS                = KokkosKernels::ArithTraits<Scalar>;
+  using ATS                = KokkosKernels::ArithTraits<SC>;
   using impl_scalar_type   = typename ATS::val_type;
   using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
   using magATS             = KokkosKernels::ArithTraits<typename implATS::magnitudeType>;
   using magnitudeType      = typename implATS::magnitudeType;
-  using execution_space    = typename Node::execution_space;
-  using range_type         = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
-  using device_type        = typename Node::device_type;
+  using range_type         = Kokkos::RangePolicy<typename NO::execution_space, LocalOrdinal>;
+  using device_type        = typename NO::device_type;
   using memory_space       = typename device_type::memory_space;
   using results_view_type  = Kokkos::View<MueLu::DecisionType *, memory_space>;
-  using MatrixType         = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using GraphType          = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+  using MatrixType         = Xpetra::CrsMatrix<SC, LocalOrdinal, GO, NO>;
+  using GraphType          = Xpetra::CrsGraph<LO, GO, NO>;
   using local_matrix_type  = typename MatrixType::local_matrix_device_type;
 
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  MUELU_TESTING_LIMIT_SCOPE(SC, GO, NO);
   out << "version: " << MueLu::Version() << std::endl;
 
   Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
@@ -1387,12 +1383,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, StrongWeakSymmetry
     A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(stiff_Pl, lib);
   }
   // fill the nonSymResults vector based on whether abs(A(i,j)) is above or below 5.5.
-  auto comm                                 = A->getRowMap()->getComm();
-  auto crsA                                 = toCrsMatrix(A);
-  auto lclA                                 = crsA->getLocalMatrixDevice();
-  auto range                                = range_type(0, lclA.numRows());
-  auto nonSymResults                        = results_view_type("nonSymresults", lclA.nnz());  // initialized to UNDECIDED
-  typename implATS::magnitudeType threshold = magATS::one() * 5.5;
+  auto comm                     = A->getRowMap()->getComm();
+  auto crsA                     = toCrsMatrix(A);
+  auto lclA                     = crsA->getLocalMatrixDevice();
+  auto range                    = range_type(0, lclA.numRows());
+  auto nonSymResults            = results_view_type("nonSymresults", lclA.nnz());  // initialized to UNDECIDED
+  const magnitudeType threshold = static_cast<magnitudeType>(5.5);
   {
     Kokkos::parallel_for(
         "MueLu:SetupSymTest:Fill:nonSymResults", range,
