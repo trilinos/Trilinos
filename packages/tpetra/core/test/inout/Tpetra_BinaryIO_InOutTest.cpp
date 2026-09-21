@@ -242,7 +242,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, MapRoundTrip,
   const std::string filename        = makeFilename("Tpetra_BinaryIO_MapRoundTrip", *comm);
 
   binary_io_type::writeMapFile(filename, *map);
-  auto inMap = binary_io_type::readMapFile(filename, comm);
+  auto inMap = Tpetra::readBinaryMapFile<LO, GO, NODE>(filename, comm);
 
   TEST_ASSERT(map->isSameAs(*inMap));
   cleanupFile(filename, comm);

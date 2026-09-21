@@ -1546,7 +1546,20 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
 
 }  // namespace Tpetra
 
-#define TPETRA_BINARYIO_INSTANT(SCALAR, LO, GO, NODE) \
+#define TPETRA_BINARYIO_READBINARYMAPFILE_EXTERN(LO, GO, NODE) \
+  extern template Teuchos::RCP<const Tpetra::Map<LO, GO, NODE>>  \
+  readBinaryMapFile<LO, GO, NODE>(                               \
+      const std::string&,                                        \
+      const Teuchos::RCP<const Teuchos::Comm<int>>&);
+
+#define TPETRA_BINARYIO_READBINARYMAPFILE_INSTANT(LO, GO, NODE) \
+  template Teuchos::RCP<const Tpetra::Map<LO, GO, NODE>>        \
+  readBinaryMapFile<LO, GO, NODE>(                              \
+      const std::string&,                                       \
+      const Teuchos::RCP<const Teuchos::Comm<int>>&);
+
+#define TPETRA_BINARYIO_INSTANT(SCALAR, LO, GO, NODE)         \
+  TPETRA_BINARYIO_READBINARYMAPFILE_EXTERN(LO, GO, NODE)      \
   template class BinaryIO<SCALAR, LO, GO, NODE>;
 
 #endif  // TPETRA_BINARYIO_DEF_HPP
