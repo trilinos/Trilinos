@@ -56,12 +56,12 @@ void writeLegacyBinaryMissingRowsFile(const std::string& filename,
       out.write(reinterpret_cast<const char*>(&row), sizeof(row));
       out.write(reinterpret_cast<const char*>(&rownnz), sizeof(rownnz));
       if (row == 0) {
-        const int columns[2] = {0, 3};
+        const int columns[2]   = {0, 3};
         const double values[2] = {2.0, 3.0};
         out.write(reinterpret_cast<const char*>(columns), sizeof(columns));
         out.write(reinterpret_cast<const char*>(values), sizeof(values));
       } else if (row == 1) {
-        const int column = 4;
+        const int column   = 4;
         const double value = 4.0;
         out.write(reinterpret_cast<const char*>(&column), sizeof(column));
         out.write(reinterpret_cast<const char*>(&value), sizeof(value));
@@ -76,8 +76,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IO, LegacyBinaryFallbackDistributed, Scalar, L
   using Teuchos::as;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
-  const std::string filename = makeBinaryFilename("xpetra_io_legacy_fallback_distributed", *comm);
+  Xpetra::UnderlyingLib lib                    = Xpetra::UseTpetra;
+  const std::string filename                   = makeBinaryFilename("xpetra_io_legacy_fallback_distributed", *comm);
 
   writeLegacyBinaryMissingRowsFile(filename, comm);
 

@@ -58,12 +58,12 @@ void writeLegacyBinaryMissingRowsFile(const std::string& filename,
       out.write(reinterpret_cast<const char*>(&row), sizeof(row));
       out.write(reinterpret_cast<const char*>(&rownnz), sizeof(rownnz));
       if (row == 0) {
-        const int columns[2] = {0, 3};
+        const int columns[2]   = {0, 3};
         const double values[2] = {2.0, 3.0};
         out.write(reinterpret_cast<const char*>(columns), sizeof(columns));
         out.write(reinterpret_cast<const char*>(values), sizeof(values));
       } else if (row == 1) {
-        const int column = 4;
+        const int column   = 4;
         const double value = 4.0;
         out.write(reinterpret_cast<const char*>(&column), sizeof(column));
         out.write(reinterpret_cast<const char*>(&value), sizeof(value));
@@ -172,8 +172,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryLegacyConversion, M, MA, Scalar, LO,
   TEUCHOS_ASSERT_EQUALITY(comm->getSize(), 1);
 
   M testMap(1, 0, comm);
-  Xpetra::UnderlyingLib lib = testMap.lib();
-  const std::string legacyFilename = makeBinaryFilename("xpetra_io_legacy_missing_rows", *comm);
+  Xpetra::UnderlyingLib lib           = testMap.lib();
+  const std::string legacyFilename    = makeBinaryFilename("xpetra_io_legacy_missing_rows", *comm);
   const std::string convertedFilename = makeBinaryFilename("xpetra_io_legacy_missing_rows_converted", *comm);
 
   writeLegacyBinaryMissingRowsFile(legacyFilename, comm);
@@ -211,7 +211,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryLegacyFallback, M, MA, Scalar, LO, G
   TEUCHOS_ASSERT_EQUALITY(comm->getSize(), 1);
 
   M testMap(1, 0, comm);
-  Xpetra::UnderlyingLib lib = testMap.lib();
+  Xpetra::UnderlyingLib lib        = testMap.lib();
   const std::string legacyFilename = makeBinaryFilename("xpetra_io_legacy_fallback", *comm);
 
   writeLegacyBinaryMissingRowsFile(legacyFilename, comm);
@@ -246,7 +246,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryNonLegacyFallbackRejects, M, MA, Sca
 
   M testMap(1, 0, comm);
   Xpetra::UnderlyingLib lib = testMap.lib();
-  using io_type = Xpetra::IO<Scalar, LO, GO, Node>;
+  using io_type             = Xpetra::IO<Scalar, LO, GO, Node>;
 
   TEST_THROW(io_type::Read("test.mtx", lib, comm, true), std::exception);
 }
@@ -319,11 +319,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryCustomColMap, M, MA, Scalar, LO, GO,
   typedef typename Xpetra::TpetraCrsMatrix<S, LO, GO, N> MA##S##LO##GO##N;
 
 // list of all tests which run both with Epetra and Tpetra
-#define XP_IO_INSTANT(S, LO, GO, N)                                                                             \
-  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, MMMissingRows, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)         \
-  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryMissingRows, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryLegacyConversion, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryLegacyFallback, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)   \
+#define XP_IO_INSTANT(S, LO, GO, N)                                                                                      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, MMMissingRows, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)                  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryMissingRows, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)              \
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryLegacyConversion, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryLegacyFallback, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)           \
   TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryNonLegacyFallbackRejects, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N) \
   TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(IO, BinaryCustomColMap, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)
 

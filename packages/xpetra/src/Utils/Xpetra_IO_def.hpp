@@ -141,8 +141,8 @@ readBinarySparseFile(const std::string&,
 }
 
 inline bool hasTpetraBinaryHeader(const std::string& fileName,
-                                   const RCP<const Teuchos::Comm<int>>& comm) {
-  int openOk = 1;
+                                  const RCP<const Teuchos::Comm<int>>& comm) {
+  int openOk    = 1;
   int hasHeader = 0;
   if (comm->getRank() == 0) {
     std::ifstream in(fileName.c_str(), std::ios::binary);
@@ -151,7 +151,7 @@ inline bool hasTpetraBinaryHeader(const std::string& fileName,
       char magic[8] = {0, 0, 0, 0, 0, 0, 0, 0};
       in.read(magic, sizeof(magic));
       const char expectedMagic[8] = {'T', 'P', 'B', 'I', 'O', '0', '0', '1'};
-      hasHeader = in.good() && std::memcmp(magic, expectedMagic, sizeof(expectedMagic)) == 0 ? 1 : 0;
+      hasHeader                   = in.good() && std::memcmp(magic, expectedMagic, sizeof(expectedMagic)) == 0 ? 1 : 0;
     }
   }
   Teuchos::broadcast(*comm, 0, 1, &openOk);
@@ -198,13 +198,13 @@ inline LegacyBinaryHeader readAndValidateLegacyBinaryHeader(const std::string& f
                              "Xpetra::IO: Legacy binary file '" << fileName << "' has negative dimensions or entry count.");
 
   const unsigned long long fileSize = legacyBinaryFileSize(fileName);
-  const unsigned long long minSize = static_cast<unsigned long long>(3 * sizeof(int)) +
+  const unsigned long long minSize  = static_cast<unsigned long long>(3 * sizeof(int)) +
                                      static_cast<unsigned long long>(header.numRows) * static_cast<unsigned long long>(2 * sizeof(int)) +
                                      static_cast<unsigned long long>(header.numEntries) * static_cast<unsigned long long>(sizeof(int) + sizeof(double));
   TEUCHOS_TEST_FOR_EXCEPTION(fileSize != minSize,
                              Exceptions::RuntimeError,
                              "Xpetra::IO: File '" << fileName << "' is not a valid legacy Xpetra binary matrix file."
-                                 << " Expected " << minSize << " bytes from its header, but file has " << fileSize << " bytes.");
+                                                  << " Expected " << minSize << " bytes from its header, but file has " << fileSize << " bytes.");
   return header;
 }
 
@@ -226,30 +226,30 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
                            const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& rangeMapInput,
                            const RCP<const Teuchos::Comm<int>>& comm,
                            const bool callFillComplete) {
-  using map_type         = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
-  using matrix_type      = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using import_type      = Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
-  using local_graph_type = typename matrix_type::local_graph_device_type;
-  using rowptr_type      = typename local_graph_type::row_map_type::non_const_type;
-  using colidx_type      = typename local_graph_type::entries_type::non_const_type;
-  using values_type      = typename matrix_type::local_matrix_device_type::values_type::non_const_type;
+  using map_type             = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+  using matrix_type          = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using import_type          = Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
+  using local_graph_type     = typename matrix_type::local_graph_device_type;
+  using rowptr_type          = typename local_graph_type::row_map_type::non_const_type;
+  using colidx_type          = typename local_graph_type::entries_type::non_const_type;
+  using values_type          = typename matrix_type::local_matrix_device_type::values_type::non_const_type;
   using impl_scalar_type     = typename matrix_type::impl_scalar_type;
   using device_type          = typename matrix_type::device_type;
   using execution_space      = typename device_type::execution_space;
   using host_execution_space = Kokkos::DefaultHostExecutionSpace;
 
   const LegacyBinaryHeader legacyHeader = readAndValidateLegacyBinaryHeader(oldFileName);
-  const int m   = legacyHeader.numRows;
-  const int n   = legacyHeader.numCols;
-  const int nnz = legacyHeader.numEntries;
-  const int myRank = comm->getRank();
+  const int m                           = legacyHeader.numRows;
+  const int n                           = legacyHeader.numCols;
+  const int nnz                         = legacyHeader.numEntries;
+  const int myRank                      = comm->getRank();
 
   const size_t fileLocalNumRows = (myRank == 0) ? static_cast<size_t>(m) : static_cast<size_t>(0);
   const size_t fileLocalNumCols = (myRank == 0) ? static_cast<size_t>(n) : static_cast<size_t>(0);
-  const auto fileRowMap    = Teuchos::rcp(new map_type(static_cast<Tpetra::global_size_t>(m), fileLocalNumRows, static_cast<GlobalOrdinal>(0), comm));
-  const auto fileColMap    = Teuchos::rcp(new map_type(static_cast<Tpetra::global_size_t>(n), fileLocalNumCols, static_cast<GlobalOrdinal>(0), comm));
-  const auto fileDomainMap = fileColMap;
-  const auto fileRangeMap  = fileRowMap;
+  const auto fileRowMap         = Teuchos::rcp(new map_type(static_cast<Tpetra::global_size_t>(m), fileLocalNumRows, static_cast<GlobalOrdinal>(0), comm));
+  const auto fileColMap         = Teuchos::rcp(new map_type(static_cast<Tpetra::global_size_t>(n), fileLocalNumCols, static_cast<GlobalOrdinal>(0), comm));
+  const auto fileDomainMap      = fileColMap;
+  const auto fileRangeMap       = fileRowMap;
 
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> rowLengths("Xpetra::IO::legacyRowLengths", fileLocalNumRows);
   Kokkos::deep_copy(rowLengths, 0ull);
@@ -267,7 +267,7 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
                                "Xpetra::IO: Failed to seek past the header of legacy binary file '" << oldFileName << "'.");
 
     for (int record = 0; record < m; ++record) {
-      int row = 0;
+      int row    = 0;
       int rownnz = 0;
       readLegacyBinaryValue(in, row, oldFileName, "row index");
       readLegacyBinaryValue(in, rownnz, oldFileName, "row entry count");
@@ -334,7 +334,7 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
                                "Xpetra::IO: Failed to rewind legacy binary file '" << oldFileName << "'.");
 
     for (int record = 0; record < m; ++record) {
-      int row = 0;
+      int row    = 0;
       int rownnz = 0;
       readLegacyBinaryValue(in, row, oldFileName, "row index");
       readLegacyBinaryValue(in, rownnz, oldFileName, "row entry count");
@@ -346,7 +346,7 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
 
       size_t offset = static_cast<size_t>(nextPtr(static_cast<size_t>(row)));
       for (int j = 0; j < rownnz; ++j) {
-        const int col = columns(static_cast<size_t>(j));
+        const int col                                      = columns(static_cast<size_t>(j));
         globalColumnsHost(offset + static_cast<size_t>(j)) = static_cast<GlobalOrdinal>(col);
       }
       for (int j = 0; j < rownnz; ++j) {
@@ -389,8 +389,8 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
   TEUCHOS_TEST_FOR_EXCEPTION(invalidCount != 0,
                              Exceptions::RuntimeError,
                              "Xpetra::IO: Column map construction missed " << invalidCount
-                                                                            << " column GID(s) while reading legacy binary file '"
-                                                                            << oldFileName << "'.");
+                                                                           << " column GID(s) while reading legacy binary file '"
+                                                                           << oldFileName << "'.");
 
   values_type valuesDevice("Xpetra::IO::legacyValuesDevice", localNnz);
   auto valuesDeviceHost = Kokkos::create_mirror_view(valuesDevice);
@@ -453,13 +453,13 @@ convertLegacyBinaryToBinary(const std::string& oldFileName,
                             const std::string& newFileName,
                             const RCP<const Teuchos::Comm<int>>& comm) {
   using binary_io_type = Tpetra::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  auto matrix = readLegacyBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(oldFileName,
-                                                                                     Teuchos::null,
-                                                                                     Teuchos::null,
-                                                                                     Teuchos::null,
-                                                                                     Teuchos::null,
-                                                                                     comm,
-                                                                                     true);
+  auto matrix          = readLegacyBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(oldFileName,
+                                                                                      Teuchos::null,
+                                                                                      Teuchos::null,
+                                                                                      Teuchos::null,
+                                                                                      Teuchos::null,
+                                                                                      comm,
+                                                                                      true);
   binary_io_type::writeSparseFile(newFileName, *matrix);
 }
 
@@ -732,9 +732,9 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::WriteBlockedCrsMatrix(const 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ConvertLegacyBinaryToBinary(const std::string& oldFileName,
-                                                                                 const std::string& newFileName,
-                                                                                 Xpetra::UnderlyingLib lib,
-                                                                                 const RCP<const Teuchos::Comm<int>>& comm) {
+                                                                                const std::string& newFileName,
+                                                                                Xpetra::UnderlyingLib lib,
+                                                                                const RCP<const Teuchos::Comm<int>>& comm) {
   if (lib == Xpetra::UseTpetra) {
     Details::convertLegacyBinaryToBinary<Scalar, LocalOrdinal, GlobalOrdinal, Node>(oldFileName, newFileName, comm);
     return;

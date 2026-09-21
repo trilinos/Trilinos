@@ -225,12 +225,12 @@ void binaryIOReadArrayCollective(const std::string& filename,
     TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
                                "Tpetra::BinaryIO: MPI_File_open failed while reading array data.");
 
-    char* current                     = reinterpret_cast<char*>(data);
-    unsigned long long remaining      = byteCount;
-    unsigned long long currentOffset  = byteOffset;
-    const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<int>::max());
+    char* current                           = reinterpret_cast<char*>(data);
+    unsigned long long remaining            = byteCount;
+    unsigned long long currentOffset        = byteOffset;
+    const unsigned long long maxChunk       = static_cast<unsigned long long>(std::numeric_limits<int>::max());
     const unsigned long long localNumChunks = (byteCount + maxChunk - 1ull) / maxChunk;
-    unsigned long long numChunks = 0;
+    unsigned long long numChunks            = 0;
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &localNumChunks, &numChunks);
     int readErr = MPI_SUCCESS;
     for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && readErr == MPI_SUCCESS; ++chunkIndex) {
@@ -373,9 +373,9 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 binaryIOReadMapSection(const std::string& filename,
                        const unsigned long long mapSectionOffset,
                        const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
-  using map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+  using map_type                               = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   const BinaryIOMapSectionHeader sectionHeader = binaryIOReadMapSectionHeader(filename, mapSectionOffset, comm);
-  const unsigned long long globalCount = sectionHeader.numGlobalElements;
+  const unsigned long long globalCount         = sectionHeader.numGlobalElements;
 
   TEUCHOS_TEST_FOR_EXCEPTION(sectionHeader.numRanks != static_cast<unsigned long long>(comm->getSize()),
                              std::runtime_error,
@@ -384,7 +384,7 @@ binaryIOReadMapSection(const std::string& filename,
                                                                               << comm->getSize() << " ranks.");
 
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> localCounts("Tpetra::BinaryIO::mapLocalCounts",
-                                                                    binaryIOCheckedSize(sectionHeader.numRanks, "map section rank count"));
+                                                                   binaryIOCheckedSize(sectionHeader.numRanks, "map section rank count"));
   binaryIOReadArrayFromRoot(filename,
                             mapSectionOffset + static_cast<unsigned long long>(sizeof(BinaryIOMapSectionHeader)),
                             localCounts.data(),
@@ -419,11 +419,11 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 makeColumnMapFromGlobalColumns(const Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace>& globalColumns,
                                const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap) {
-  using map_type     = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
-  using memory_space = typename Node::memory_space;
+  using map_type        = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+  using memory_space    = typename Node::memory_space;
   const size_t localNnz = globalColumns.extent(0);
 
-  int hasLocalEntries = localNnz == 0 ? 0 : 1;
+  int hasLocalEntries     = localNnz == 0 ? 0 : 1;
   int allHaveLocalEntries = 0;
   Teuchos::reduceAll(*domainMap->getComm(), Teuchos::REDUCE_MIN, 1, &hasLocalEntries, &allHaveLocalEntries);
   if (allHaveLocalEntries != 0) {
@@ -485,15 +485,15 @@ buildSparseMatrixFromLocalCrsViews(const Teuchos::RCP<const Tpetra::Map<LocalOrd
                                    const Kokkos::View<unsigned long long*, Kokkos::HostSpace>& rowPtrHost,
                                    const Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace>& globalColumnsHost,
                                    const Kokkos::View<Scalar*, Kokkos::HostSpace>& valuesHost) {
-  using matrix_type      = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_graph_type = typename matrix_type::local_graph_device_type;
-  using rowptr_type      = typename local_graph_type::row_map_type::non_const_type;
-  using colidx_type      = typename local_graph_type::entries_type::non_const_type;
-  using values_type      = typename matrix_type::local_matrix_device_type::values_type::non_const_type;
-  using impl_scalar_type = typename matrix_type::impl_scalar_type;
-  using device_type           = typename matrix_type::device_type;
-  using execution_space       = typename device_type::execution_space;
-  using host_execution_space  = Kokkos::DefaultHostExecutionSpace;
+  using matrix_type          = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_graph_type     = typename matrix_type::local_graph_device_type;
+  using rowptr_type          = typename local_graph_type::row_map_type::non_const_type;
+  using colidx_type          = typename local_graph_type::entries_type::non_const_type;
+  using values_type          = typename matrix_type::local_matrix_device_type::values_type::non_const_type;
+  using impl_scalar_type     = typename matrix_type::impl_scalar_type;
+  using device_type          = typename matrix_type::device_type;
+  using execution_space      = typename device_type::execution_space;
+  using host_execution_space = Kokkos::DefaultHostExecutionSpace;
 
   const size_t localNumRows = rowMap->getLocalNumElements();
   const size_t localNnz     = globalColumnsHost.extent(0);
@@ -504,8 +504,8 @@ buildSparseMatrixFromLocalCrsViews(const Teuchos::RCP<const Tpetra::Map<LocalOrd
   }
 
   rowptr_type rowPtrDevice("Tpetra::BinaryIO::rowPtr", localNumRows + 1);
-  auto rowPtrDeviceHost = Kokkos::create_mirror_view(rowPtrDevice);
-  using rowptr_value_type = typename rowptr_type::non_const_value_type;
+  auto rowPtrDeviceHost                  = Kokkos::create_mirror_view(rowPtrDevice);
+  using rowptr_value_type                = typename rowptr_type::non_const_value_type;
   unsigned long long rowPtrOverflowCount = 0;
   Kokkos::parallel_reduce(
       "Tpetra::BinaryIO::checkRowPtrRange",
@@ -531,9 +531,9 @@ buildSparseMatrixFromLocalCrsViews(const Teuchos::RCP<const Tpetra::Map<LocalOrd
   Kokkos::deep_copy(globalColumnsDevice, globalColumnsHost);
 
   colidx_type localColumnsDevice("Tpetra::BinaryIO::localColumns", localNnz);
-  const auto localColMap                         = colMap->getLocalMap();
-  const LocalOrdinal invalidLocalOrdinal         = Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid();
-  unsigned long long invalidLocalColumnIdCount   = 0;
+  const auto localColMap                       = colMap->getLocalMap();
+  const LocalOrdinal invalidLocalOrdinal       = Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid();
+  unsigned long long invalidLocalColumnIdCount = 0;
   Kokkos::parallel_reduce(
       "Tpetra::BinaryIO::reindexColumns",
       Kokkos::RangePolicy<execution_space>(0, localNnz),
@@ -548,7 +548,7 @@ buildSparseMatrixFromLocalCrsViews(const Teuchos::RCP<const Tpetra::Map<LocalOrd
   TEUCHOS_TEST_FOR_EXCEPTION(invalidLocalColumnIdCount != 0,
                              std::runtime_error,
                              "Tpetra::BinaryIO: Column map is missing " << invalidLocalColumnIdCount
-                                                                         << " column GID(s) stored in the sparse matrix file.");
+                                                                        << " column GID(s) stored in the sparse matrix file.");
 
   values_type valuesDevice("Tpetra::BinaryIO::values", localNnz);
   auto valuesDeviceHost = Kokkos::create_mirror_view(valuesDevice);
@@ -1007,12 +1007,12 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeArrayCollective(c
     TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
                                "Tpetra::BinaryIO: MPI_File_open failed while writing array data.");
 
-    const char* current               = reinterpret_cast<const char*>(data);
-    unsigned long long remaining      = byteCount;
-    unsigned long long currentOffset  = byteOffset;
-    const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<int>::max());
+    const char* current                     = reinterpret_cast<const char*>(data);
+    unsigned long long remaining            = byteCount;
+    unsigned long long currentOffset        = byteOffset;
+    const unsigned long long maxChunk       = static_cast<unsigned long long>(std::numeric_limits<int>::max());
     const unsigned long long localNumChunks = (byteCount + maxChunk - 1ull) / maxChunk;
-    unsigned long long numChunks = 0;
+    unsigned long long numChunks            = 0;
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &localNumChunks, &numChunks);
     int writeErr = MPI_SUCCESS;
     for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && writeErr == MPI_SUCCESS; ++chunkIndex) {
@@ -1073,12 +1073,12 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readArrayCollective(co
     TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
                                "Tpetra::BinaryIO: MPI_File_open failed while reading array data.");
 
-    char* current                     = reinterpret_cast<char*>(data);
-    unsigned long long remaining      = byteCount;
-    unsigned long long currentOffset  = byteOffset;
-    const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<int>::max());
+    char* current                           = reinterpret_cast<char*>(data);
+    unsigned long long remaining            = byteCount;
+    unsigned long long currentOffset        = byteOffset;
+    const unsigned long long maxChunk       = static_cast<unsigned long long>(std::numeric_limits<int>::max());
     const unsigned long long localNumChunks = (byteCount + maxChunk - 1ull) / maxChunk;
-    unsigned long long numChunks = 0;
+    unsigned long long numChunks            = 0;
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &localNumChunks, &numChunks);
     int readErr = MPI_SUCCESS;
     for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && readErr == MPI_SUCCESS; ++chunkIndex) {
@@ -1165,7 +1165,7 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapSection(const std::s
                                                                               << comm->getSize() << " ranks.");
 
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> localCounts("Tpetra::BinaryIO::mapLocalCounts",
-                                                                    Details::binaryIOCheckedSize(sectionHeader.numRanks, "map section rank count"));
+                                                                   Details::binaryIOCheckedSize(sectionHeader.numRanks, "map section rank count"));
   readArrayFromRoot(filename,
                     mapSectionCountsOffset(mapSectionOffset),
                     localCounts.data(),
@@ -1464,7 +1464,7 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
   } else {
     localRowPtr(0) = 0;
   }
-  const unsigned long long nnzStart = localRowPtr(0);
+  const unsigned long long nnzStart          = localRowPtr(0);
   unsigned long long nonmonotonicRowPtrCount = 0;
   Kokkos::parallel_reduce(
       "Tpetra::BinaryIO::checkReadRowPtr",
@@ -1486,7 +1486,7 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
       });
 
   const unsigned long long localNnz64 = localRowPtr(localNumRows);
-  const size_t localNnz              = Details::binaryIOCheckedSize(localNnz64, "local sparse entry count");
+  const size_t localNnz               = Details::binaryIOCheckedSize(localNnz64, "local sparse entry count");
   Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> globalColumns("Tpetra::BinaryIO::globalColumns", localNnz);
   Kokkos::View<Scalar*, Kokkos::HostSpace> values("Tpetra::BinaryIO::values", localNnz);
   if (localNnz64 > 0) {
@@ -1546,10 +1546,10 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
 
 }  // namespace Tpetra
 
-#define TPETRA_BINARYIO_READBINARYMAPFILE_EXTERN(LO, GO, NODE) \
-  extern template Teuchos::RCP<const Tpetra::Map<LO, GO, NODE>>  \
-  readBinaryMapFile<LO, GO, NODE>(                               \
-      const std::string&,                                        \
+#define TPETRA_BINARYIO_READBINARYMAPFILE_EXTERN(LO, GO, NODE)  \
+  extern template Teuchos::RCP<const Tpetra::Map<LO, GO, NODE>> \
+  readBinaryMapFile<LO, GO, NODE>(                              \
+      const std::string&,                                       \
       const Teuchos::RCP<const Teuchos::Comm<int>>&);
 
 #define TPETRA_BINARYIO_READBINARYMAPFILE_INSTANT(LO, GO, NODE) \
@@ -1558,8 +1558,8 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
       const std::string&,                                       \
       const Teuchos::RCP<const Teuchos::Comm<int>>&);
 
-#define TPETRA_BINARYIO_INSTANT(SCALAR, LO, GO, NODE)         \
-  TPETRA_BINARYIO_READBINARYMAPFILE_EXTERN(LO, GO, NODE)      \
+#define TPETRA_BINARYIO_INSTANT(SCALAR, LO, GO, NODE)    \
+  TPETRA_BINARYIO_READBINARYMAPFILE_EXTERN(LO, GO, NODE) \
   template class BinaryIO<SCALAR, LO, GO, NODE>;
 
 #endif  // TPETRA_BINARYIO_DEF_HPP
