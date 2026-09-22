@@ -18,6 +18,7 @@
 #include "Tpetra_Map_fwd.hpp"
 #include "Tpetra_Export_fwd.hpp"
 #include "Tpetra_Details_DefaultTypes.hpp"
+#include "Tpetra_Geometry.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Kokkos_Core.hpp"
 
@@ -96,12 +97,19 @@ class GraphAssembly {
   /// the graph's execution space.
   using element_to_node_type =
       Kokkos::View<const global_ordinal_type**, device_type>;
+
+  /// \brief Type of the multi-block mesh geometry.
+  ///
+  /// A Geometry bundles one or more element-to-node views (mesh "blocks"),
+  /// possibly with different numbers of nodes per element, into a single
+  /// device-compatible object.  See Tpetra::Geometry.
+  using geometry_type = ::Tpetra::Geometry<GlobalOrdinal, Node>;
   //@}
 
   //! @name Constructors/destructor
   //@{
 
-  /// \brief Constructor.
+  /// \brief Constructor (single mesh block).
   ///
   /// \param rowMap [in] The one-to-one ("owned") map of the mesh nodes.  This
   ///   becomes the row, domain and range map of the assembled graph.
@@ -117,6 +125,21 @@ class GraphAssembly {
   GraphAssembly(const Teuchos::RCP<const map_type>& rowMap,
                 const Teuchos::RCP<const map_type>& ownedPlusSharedMap,
                 const element_to_node_type& ownedElementToNode,
+                const Teuchos::RCP<const map_type>& ownedPlusSharedColMap = Teuchos::null);
+
+  /// \brief Constructor (multiple mesh blocks).
+  ///
+  /// Identical to the single-block constructor, but takes a Geometry describing
+  /// one or more mesh blocks (element types).  All blocks are assembled into a
+  /// single graph.
+  ///
+  /// \param rowMap [in] The one-to-one ("owned") map of the mesh nodes.
+  /// \param ownedPlusSharedMap [in] The overlapping ("owned+shared") map.
+  /// \param geometry [in] The multi-block mesh geometry.  See Tpetra::Geometry.
+  /// \param ownedPlusSharedColMap [in] Optional owned+shared column map.
+  GraphAssembly(const Teuchos::RCP<const map_type>& rowMap,
+                const Teuchos::RCP<const map_type>& ownedPlusSharedMap,
+                const geometry_type& geometry,
                 const Teuchos::RCP<const map_type>& ownedPlusSharedColMap = Teuchos::null);
 
   //! Destructor.
@@ -167,8 +190,8 @@ class GraphAssembly {
   Teuchos::RCP<const map_type> rowMap_;
   //! The owned+shared (overlapping) map.
   Teuchos::RCP<const map_type> ownedPlusSharedMap_;
-  //! Element-to-node connectivity (global node IDs) of the owned elements.
-  element_to_node_type ownedElementToNode_;
+  //! Multi-block mesh geometry (global node IDs) of the owned elements.
+  geometry_type geometry_;
   //! Optional user-provided owned+shared column map (may be null).
   Teuchos::RCP<const map_type> ownedPlusSharedColMap_;
 
