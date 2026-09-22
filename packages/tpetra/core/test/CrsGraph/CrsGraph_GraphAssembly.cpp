@@ -35,6 +35,8 @@
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_GraphAssembly.hpp"
+#include "Tpetra_Geometry.hpp"
+#include "Tpetra_FECrsGraph.hpp"
 #include "Teuchos_CommHelpers.hpp"  // REDUCE_MIN, reduceAll
 #include "Tpetra_TestingUtilities.hpp"
 
@@ -159,6 +161,74 @@ std::vector<std::set<GO>> expectedConnectivity(const GlobalMesh<GO>& mesh) {
     for (const GO a : elem) {
       for (const GO b : elem) {
         adj[a].insert(b);
+      }
+    }
+  }
+  return adj;
+}
+
+// ---------------------------------------------------------------------------
+// A multi-block mesh: several GlobalMesh blocks that share a common global node
+// numbering.  This models a mesh with more than one element type (e.g. some
+// triangles and some quads) assembled into a single graph -- exactly what
+// Tpetra::Geometry supports.
+// ---------------------------------------------------------------------------
+template <class GO>
+struct MultiBlockMesh {
+  size_t numGlobalNodes = 0;
+  // One GlobalMesh per block; all share the same global node numbering.
+  std::vector<GlobalMesh<GO>> blocks;
+};
+
+// Build a mixed mesh over an nx-by-ny grid of cells: the left half of the cells
+// are split into two triangles each (block 0), and the right half are kept as
+// quads (block 1).  All blocks share the standard structured node numbering, so
+// nodes on the interface are shared between the two blocks.
+template <class GO>
+MultiBlockMesh<GO> makeMixedTriQuadMesh(int nx, int ny) {
+  MultiBlockMesh<GO> mesh;
+  mesh.numGlobalNodes = size_t(nx + 1) * size_t(ny + 1);
+  auto nodeGID        = [nx](int i, int j) -> GO { return j * (nx + 1) + i; };
+
+  GlobalMesh<GO> triBlock;
+  triBlock.nodesPerElement = 3;
+  triBlock.numGlobalNodes  = mesh.numGlobalNodes;
+  GlobalMesh<GO> quadBlock;
+  quadBlock.nodesPerElement = 4;
+  quadBlock.numGlobalNodes  = mesh.numGlobalNodes;
+
+  const int split = nx / 2;
+  for (int j = 0; j < ny; ++j) {
+    for (int i = 0; i < nx; ++i) {
+      const GO n00 = nodeGID(i, j);
+      const GO n10 = nodeGID(i + 1, j);
+      const GO n11 = nodeGID(i + 1, j + 1);
+      const GO n01 = nodeGID(i, j + 1);
+      if (i < split) {
+        // Two triangles.
+        triBlock.element_to_node.push_back({n00, n10, n11});
+        triBlock.element_to_node.push_back({n00, n11, n01});
+      } else {
+        // One quad.
+        quadBlock.element_to_node.push_back({n00, n10, n11, n01});
+      }
+    }
+  }
+  mesh.blocks.push_back(triBlock);
+  mesh.blocks.push_back(quadBlock);
+  return mesh;
+}
+
+// Ground-truth connectivity of a multi-block mesh: the union over all blocks.
+template <class GO>
+std::vector<std::set<GO>> expectedConnectivity(const MultiBlockMesh<GO>& mesh) {
+  std::vector<std::set<GO>> adj(mesh.numGlobalNodes);
+  for (const auto& block : mesh.blocks) {
+    for (const auto& elem : block.element_to_node) {
+      for (const GO a : elem) {
+        for (const GO b : elem) {
+          adj[a].insert(b);
+        }
       }
     }
   }
@@ -297,6 +367,161 @@ void testMesh(const GlobalMesh<GO>& mesh, Teuchos::FancyOStream& out,
   TEST_EQUALITY_CONST(gblSuccess, 1);
 }
 
+// The core of the multi-block test: distribute a multi-block global mesh over
+// the communicator, run the assembly (either via GraphAssembly directly with a
+// Geometry, or via the free-standing Tpetra::assembleFECrsGraph overloads), and
+// verify against the ground-truth connectivity.
+//
+// mode selects which assembly entry point is exercised:
+//   0: Tpetra::Details::GraphAssembly(rowMap, ownedPlusSharedMap, geometry)
+//   1: Tpetra::assembleFECrsGraph(geometry, ownedRowMap, ownedPlusSharedMap)
+//   2: Tpetra::assembleFECrsGraph(geometry, ownedPlusSharedMap)  [simplified]
+//   3: Tpetra::assembleFECrsGraph(geometry, ownedPlusSharedGIDs, comm) [simplified]
+template <class LO, class GO, class NT>
+void testMultiBlockMesh(const MultiBlockMesh<GO>& mesh, int mode,
+                        Teuchos::FancyOStream& out, bool& success,
+                        const std::string& label) {
+  using map_type      = Tpetra::Map<LO, GO, NT>;
+  using geometry_type = Tpetra::Geometry<GO, NT>;
+  using e2n_type      = typename geometry_type::element_to_node_type;
+
+  out << "=== Multi-block GraphAssembly test: " << label
+      << " (mode " << mode << ") ===" << endl;
+  Teuchos::OSTab tab1(out);
+
+  auto comm              = getDefaultComm();
+  const int myRank       = comm->getRank();
+  const int numProcs     = comm->getSize();
+  constexpr GO indexBase = 0;
+
+  const size_t numGlobalNodes = mesh.numGlobalNodes;
+
+  // Owned nodes: simple contiguous 1-to-1 map.
+  RCP<const map_type> ownedMap(new map_type(numGlobalNodes, indexBase, comm));
+  const size_t numOwnedNodes = ownedMap->getLocalNumElements();
+
+  // Build, per block, the element-to-node connectivity of this rank's owned
+  // elements (contiguous block split of each block's elements), and collect the
+  // owned+shared node set.
+  std::set<GO> ownedPlusSharedSet;
+  for (size_t i = 0; i < numOwnedNodes; ++i)
+    ownedPlusSharedSet.insert(ownedMap->getGlobalElement(i));
+
+  geometry_type geometry;
+  const int numBlocks = static_cast<int>(mesh.blocks.size());
+  // Keep the device views alive for the duration of the test.
+  std::vector<typename e2n_type::non_const_type> ownedE2N(numBlocks);
+
+  for (int b = 0; b < numBlocks; ++b) {
+    const auto& block                = mesh.blocks[b];
+    const size_t numGlobalBlockElems = block.element_to_node.size();
+    const size_t base                = numGlobalBlockElems / numProcs;
+    const size_t remainder           = numGlobalBlockElems % numProcs;
+    auto elemsOnRank = [&](size_t r) -> size_t { return base + (r < remainder ? 1 : 0); };
+    size_t elemBegin = 0;
+    for (int r = 0; r < myRank; ++r) elemBegin += elemsOnRank(r);
+    const size_t numOwnedElements = elemsOnRank(myRank);
+
+    typename e2n_type::non_const_type e2n(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "ownedE2N"),
+        numOwnedElements, block.nodesPerElement);
+    auto e2nHost = Kokkos::create_mirror_view(e2n);
+    for (size_t e = 0; e < numOwnedElements; ++e) {
+      const auto& elemNodes = block.element_to_node[elemBegin + e];
+      for (int n = 0; n < block.nodesPerElement; ++n) {
+        e2nHost(e, n) = elemNodes[n];
+        ownedPlusSharedSet.insert(elemNodes[n]);
+      }
+    }
+    Kokkos::deep_copy(e2n, e2nHost);
+    ownedE2N[b] = e2n;
+    geometry.addBlock(e2n_type(e2n));
+  }
+
+  TEST_EQUALITY_CONST(geometry.getNumBlocks(), numBlocks);
+
+  // Build the owned+shared GID list so that it is LOCALLY FITTED to the owned
+  // map: the owned GIDs come first (in the owned map's local order), followed by
+  // the remaining (shared) GIDs.  This is required by GraphAssembly /
+  // FECrsGraph (the owned rows must be the leading chunk of the owned+shared
+  // rows), and a mixed-element mesh can have shared nodes with smaller GIDs than
+  // some owned nodes, so we cannot rely on a plain sorted set here.
+  std::vector<GO> ownedPlusSharedGIDs;
+  ownedPlusSharedGIDs.reserve(ownedPlusSharedSet.size());
+  for (size_t i = 0; i < numOwnedNodes; ++i)
+    ownedPlusSharedGIDs.push_back(ownedMap->getGlobalElement(i));
+  for (const GO gid : ownedPlusSharedSet)
+    if (!ownedMap->isNodeGlobalElement(gid))
+      ownedPlusSharedGIDs.push_back(gid);
+
+  const Tpetra::global_size_t INVALID =
+      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  RCP<const map_type> ownedPlusSharedMap(
+      new map_type(INVALID, ownedPlusSharedGIDs.data(),
+                   ownedPlusSharedGIDs.size(), indexBase, comm));
+
+  // Run the requested assembly path and obtain the owned graph.
+  RCP<Tpetra::CrsGraph<LO, GO, NT>> graph;
+  if (mode == 0) {
+    Tpetra::Details::GraphAssembly<LO, GO, NT> assembler(ownedMap, ownedPlusSharedMap, geometry);
+    assembler.build();
+    graph = assembler.getGraph();
+  } else if (mode == 1) {
+    graph = Tpetra::assembleFECrsGraph<LO, GO, NT>(geometry, ownedMap, ownedPlusSharedMap);
+  } else if (mode == 2) {
+    graph = Tpetra::assembleFECrsGraph<LO, GO, NT>(geometry, ownedPlusSharedMap);
+  } else {  // mode == 3
+    Teuchos::ArrayView<const GO> gidView(ownedPlusSharedGIDs.data(),
+                                         ownedPlusSharedGIDs.size());
+    graph = Tpetra::assembleFECrsGraph<LO, GO, NT>(geometry, gidView, comm);
+  }
+
+  TEST_ASSERT(!graph.is_null());
+  if (graph.is_null()) return;
+  TEST_ASSERT(graph->isFillComplete());
+
+  // For modes 0 and 1 the owned row map is the contiguous ownedMap.  For the
+  // simplified modes 2 and 3 the owned map is built internally by
+  // createOneToOne, so we don't assume it equals ownedMap; we instead verify
+  // each owned row against the ground truth using the graph's own row map.
+  const std::vector<std::set<GO>> expected = expectedConnectivity(mesh);
+
+  using nonconst_global_inds_host_view_type =
+      typename Tpetra::CrsGraph<LO, GO, NT>::nonconst_global_inds_host_view_type;
+
+  auto rowMap = graph->getRowMap();
+  for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
+    const GO gblRow                  = rowMap->getGlobalElement(i);
+    const std::set<GO>& expectedCols = expected[gblRow];
+
+    const size_t expectedNumEntries = expectedCols.size();
+    const size_t reportedNumEntries = graph->getNumEntriesInGlobalRow(gblRow);
+    TEST_EQUALITY(reportedNumEntries, expectedNumEntries);
+
+    nonconst_global_inds_host_view_type gblColInds("gblColInds", reportedNumEntries);
+    size_t numColInds = 0;
+    graph->getGlobalRowCopy(gblRow, gblColInds, numColInds);
+    TEST_EQUALITY(numColInds, expectedNumEntries);
+
+    std::set<GO> reportedCols;
+    for (size_t k = 0; k < numColInds; ++k) reportedCols.insert(gblColInds(k));
+    const bool colsMatch = (reportedCols == expectedCols);
+    TEST_ASSERT(colsMatch);
+    if (!colsMatch) {
+      out << "Row " << gblRow << " mismatch.\n  expected: {";
+      for (const GO c : expectedCols) out << c << " ";
+      out << "}\n  got:      {";
+      for (const GO c : reportedCols) out << c << " ";
+      out << "}" << endl;
+    }
+  }
+
+  int lclSuccess = success ? 1 : 0;
+  int gblSuccess = 0;
+  reduceAll<int, int>(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+  TEST_EQUALITY_CONST(gblSuccess, 1);
+}
+
 //
 // UNIT TESTS
 //
@@ -321,6 +546,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_Tet, LO, GO, NT) {
   testMesh<LO, GO, NT>(mesh, out, success, "tetrahedra (3D)");
 }
 
+// Multi-block (mixed triangle + quad) mesh, exercised through each assembly
+// entry point (GraphAssembly with a Geometry, and the various free-standing
+// assembleFECrsGraph overloads including the simplified Feature-2 ones).
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_MultiBlock, LO, GO, NT) {
+  // 4 x 4 grid: left 2 columns of cells are triangles (2 per cell = 16 tris),
+  // right 2 columns are quads (8 quads).  25 nodes total.
+  const auto mesh = makeMixedTriQuadMesh<GO>(4, 4);
+  for (int mode = 0; mode <= 3; ++mode) {
+    testMultiBlockMesh<LO, GO, NT>(mesh, mode, out, success, "mixed tri+quad (2D)");
+  }
+}
+
 //
 // INSTANTIATIONS
 //
@@ -330,7 +567,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_Tet, LO, GO, NT) {
                                        NT)                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tri, LO, GO,  \
                                        NT)                                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tet, LO, GO, NT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tet, LO, GO,  \
+                                       NT)                                   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_MultiBlock,   \
+                                       LO, GO, NT)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 

@@ -11,6 +11,7 @@
 #define TPETRA_FECRSGRAPH_DEF_HPP
 
 #include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_Map.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_GraphAssembly.hpp"
@@ -540,14 +541,15 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertLocalIndicesImpl(
 namespace Details {
 namespace Impl {
 
-// Shared implementation of the four assembleFECrsGraph overloads.  Runs the
+// Shared implementation of the assembleFECrsGraph overloads.  Runs the
 // device assembly (Tpetra::Details::GraphAssembly) and wraps the resulting
 // owned and owned+shared graphs into a fully-assembled FECrsGraph via the
-// expert-mode constructor.
+// expert-mode constructor.  Works for a single mesh block or multiple mesh
+// blocks (the Geometry may hold one or more element-to-node views).
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
 assembleFECrsGraphImpl(
-    const Kokkos::View<const GlobalOrdinal**, typename Node::device_type>& elementToNode,
+    const ::Tpetra::Geometry<GlobalOrdinal, Node>& geometry,
     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRowMap,
     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedRowMap,
     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedColMap,
@@ -561,7 +563,7 @@ assembleFECrsGraphImpl(
 
   // Step 1: run the device assembly.  This builds the fill-complete
   // owned+shared graph and, via a fused Export + fillComplete, the owned graph.
-  assembly_type assembler(ownedRowMap, ownedPlusSharedRowMap, elementToNode,
+  assembly_type assembler(ownedRowMap, ownedPlusSharedRowMap, geometry,
                           ownedPlusSharedColMap);
   assembler.build();
 
@@ -591,8 +593,9 @@ assembleFECrsGraph(
     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap,
     const Teuchos::RCP<Teuchos::ParameterList>& params) {
   // V1, no colMap: domainMap is used for both owned and owned+shared graphs.
+  Geometry<GlobalOrdinal, Node> geometry(elementToNode);
   return Details::Impl::assembleFECrsGraphImpl<LocalOrdinal, GlobalOrdinal, Node>(
-      elementToNode, ownedRowMap, ownedPlusSharedRowMap, Teuchos::null,
+      geometry, ownedRowMap, ownedPlusSharedRowMap, Teuchos::null,
       ownedPlusSharedToOwnedimporter, domainMap, ownedRangeMap, params);
 }
 
@@ -608,8 +611,9 @@ assembleFECrsGraph(
     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap,
     const Teuchos::RCP<Teuchos::ParameterList>& params) {
   // V1, with colMap.
+  Geometry<GlobalOrdinal, Node> geometry(elementToNode);
   return Details::Impl::assembleFECrsGraphImpl<LocalOrdinal, GlobalOrdinal, Node>(
-      elementToNode, ownedRowMap, ownedPlusSharedRowMap, ownedPlusSharedColMap,
+      geometry, ownedRowMap, ownedPlusSharedRowMap, ownedPlusSharedColMap,
       ownedPlusSharedToOwnedimporter, domainMap, ownedRangeMap, params);
 }
 
@@ -627,9 +631,160 @@ assembleFECrsGraph(
     const Teuchos::RCP<Teuchos::ParameterList>& params) {
   // V2, with colMap.
   (void)ownedPlusSharedDomainMap;
+  Geometry<GlobalOrdinal, Node> geometry(elementToNode);
   return Details::Impl::assembleFECrsGraphImpl<LocalOrdinal, GlobalOrdinal, Node>(
-      elementToNode, ownedRowMap, ownedPlusSharedRowMap, ownedPlusSharedColMap,
+      geometry, ownedRowMap, ownedPlusSharedRowMap, ownedPlusSharedColMap,
       ownedPlusSharedToOwnedimporter, ownedDomainMap, ownedRangeMap, params);
+}
+
+// ---------------------------------------------------------------------------
+// Feature 1: multiple-mesh-block overloads (take a Geometry).
+// ---------------------------------------------------------------------------
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+assembleFECrsGraph(
+    const Geometry<GlobalOrdinal, Node>& geometry,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRowMap,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedRowMap,
+    const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedToOwnedimporter,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  // V1, no colMap.
+  return Details::Impl::assembleFECrsGraphImpl<LocalOrdinal, GlobalOrdinal, Node>(
+      geometry, ownedRowMap, ownedPlusSharedRowMap, Teuchos::null,
+      ownedPlusSharedToOwnedimporter, domainMap, ownedRangeMap, params);
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+assembleFECrsGraph(
+    const Geometry<GlobalOrdinal, Node>& geometry,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRowMap,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedRowMap,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedColMap,
+    const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedToOwnedimporter,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  // V1, with colMap.
+  return Details::Impl::assembleFECrsGraphImpl<LocalOrdinal, GlobalOrdinal, Node>(
+      geometry, ownedRowMap, ownedPlusSharedRowMap, ownedPlusSharedColMap,
+      ownedPlusSharedToOwnedimporter, domainMap, ownedRangeMap, params);
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+assembleFECrsGraph(
+    const Geometry<GlobalOrdinal, Node>& geometry,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRowMap,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedRowMap,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedColMap,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedDomainMap,
+    const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedToOwnedimporter,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedDomainMap,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  // V2, with colMap.
+  (void)ownedPlusSharedDomainMap;
+  return Details::Impl::assembleFECrsGraphImpl<LocalOrdinal, GlobalOrdinal, Node>(
+      geometry, ownedRowMap, ownedPlusSharedRowMap, ownedPlusSharedColMap,
+      ownedPlusSharedToOwnedimporter, ownedDomainMap, ownedRangeMap, params);
+}
+
+// ---------------------------------------------------------------------------
+// Feature 2: simplified, minimal-input overloads.
+// ---------------------------------------------------------------------------
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+assembleFECrsGraph(
+    const Geometry<GlobalOrdinal, Node>& geometry,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedMap,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  // Construct the owned (one-to-one) row/domain/range map from the given
+  // owned+shared map, and build an owned+shared map that is guaranteed to be
+  // "locally fitted" to it: its first getLocalNumElements() entries are exactly
+  // the owned GIDs (in the owned map's local order), followed by the remaining
+  // (shared) GIDs.  The device assembly (GraphAssembly) and FECrsGraph both
+  // require this exact fitting -- the owned rows must be the leading chunk of
+  // the owned+shared rows.  Building the fitted map explicitly here (rather than
+  // relying on the input already being fitted) makes this simplified interface
+  // robust to any input ordering.  This realizes the user-suggested simple
+  // interface (createOneToOne + fitted overlapping/column map).
+  using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
+
+  Teuchos::RCP<const map_type> ownedRowMap =
+      ::Tpetra::createOneToOne(ownedPlusSharedMap);
+
+  // Assemble the fitted owned+shared GID list: owned GIDs first, then the
+  // owned+shared GIDs that this process does not own (the shared ones).
+  auto ownedGids = ownedRowMap->getMyGlobalIndices();
+  auto opsGids   = ownedPlusSharedMap->getMyGlobalIndices();
+
+  const size_t numOwned = ownedRowMap->getLocalNumElements();
+  Teuchos::Array<GlobalOrdinal> fittedGids;
+  fittedGids.reserve(ownedPlusSharedMap->getLocalNumElements());
+  for (size_t i = 0; i < numOwned; ++i)
+    fittedGids.push_back(ownedGids[i]);
+  for (size_t i = 0; i < opsGids.size(); ++i) {
+    const GlobalOrdinal gid = opsGids[i];
+    if (!ownedRowMap->isNodeGlobalElement(gid))
+      fittedGids.push_back(gid);
+  }
+
+  const global_size_t INV = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  Teuchos::RCP<const map_type> fittedOwnedPlusShared =
+      Teuchos::rcp(new map_type(INV, fittedGids(), ownedPlusSharedMap->getIndexBase(),
+                                ownedPlusSharedMap->getComm()));
+
+  return Details::Impl::assembleFECrsGraphImpl<LocalOrdinal, GlobalOrdinal, Node>(
+      geometry, ownedRowMap, fittedOwnedPlusShared, fittedOwnedPlusShared,
+      Teuchos::null, Teuchos::null, Teuchos::null, params);
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+assembleFECrsGraph(
+    const Kokkos::View<const GlobalOrdinal**, typename Node::device_type>& elementToNode,
+    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedMap,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  Geometry<GlobalOrdinal, Node> geometry(elementToNode);
+  return assembleFECrsGraph<LocalOrdinal, GlobalOrdinal, Node>(
+      geometry, ownedPlusSharedMap, params);
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+assembleFECrsGraph(
+    const Geometry<GlobalOrdinal, Node>& geometry,
+    const Teuchos::ArrayView<const GlobalOrdinal>& ownedPlusSharedGIDs,
+    const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  // First construct the owned+shared map from the given GIDs and communicator,
+  // then delegate to the ownedPlusSharedMap overload above.  This lets a user
+  // assemble a graph with essentially no knowledge of Tpetra maps.  We use a
+  // global index base of 0 (the standard convention); the GIDs themselves need
+  // not start at 0.
+  using map_type          = Map<LocalOrdinal, GlobalOrdinal, Node>;
+  const global_size_t INV = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  Teuchos::RCP<const map_type> ownedPlusSharedMap =
+      Teuchos::rcp(new map_type(INV, ownedPlusSharedGIDs, GlobalOrdinal(0), comm));
+  return assembleFECrsGraph<LocalOrdinal, GlobalOrdinal, Node>(
+      geometry, ownedPlusSharedMap, params);
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+assembleFECrsGraph(
+    const Kokkos::View<const GlobalOrdinal**, typename Node::device_type>& elementToNode,
+    const Teuchos::ArrayView<const GlobalOrdinal>& ownedPlusSharedGIDs,
+    const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  Geometry<GlobalOrdinal, Node> geometry(elementToNode);
+  return assembleFECrsGraph<LocalOrdinal, GlobalOrdinal, Node>(
+      geometry, ownedPlusSharedGIDs, comm, params);
 }
 
 }  // end namespace Tpetra
@@ -656,7 +811,40 @@ assembleFECrsGraph(
       const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<const Map<LO, GO, NODE>>&,                                \
       const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<const Map<LO, GO, NODE>>&,                                \
       const Teuchos::RCP<const Import<LO, GO, NODE>>&, const Teuchos::RCP<const Map<LO, GO, NODE>>&,                             \
-      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<Teuchos::ParameterList>&);
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<Teuchos::ParameterList>&);                               \
+  /* Feature 1: multi-block (Geometry) overloads */                                                                            \
+  template Teuchos::RCP<FECrsGraph<LO, GO, NODE>> assembleFECrsGraph<LO, GO, NODE>(                                              \
+      const Geometry<GO, NODE>&,                                                                                                \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<const Map<LO, GO, NODE>>&,                                \
+      const Teuchos::RCP<const Import<LO, GO, NODE>>&, const Teuchos::RCP<const Map<LO, GO, NODE>>&,                             \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<Teuchos::ParameterList>&);                                \
+  template Teuchos::RCP<FECrsGraph<LO, GO, NODE>> assembleFECrsGraph<LO, GO, NODE>(                                              \
+      const Geometry<GO, NODE>&,                                                                                                \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<const Map<LO, GO, NODE>>&,                                \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<const Import<LO, GO, NODE>>&,                             \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<const Map<LO, GO, NODE>>&,                                \
+      const Teuchos::RCP<Teuchos::ParameterList>&);                                                                              \
+  template Teuchos::RCP<FECrsGraph<LO, GO, NODE>> assembleFECrsGraph<LO, GO, NODE>(                                              \
+      const Geometry<GO, NODE>&,                                                                                                \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<const Map<LO, GO, NODE>>&,                                \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<const Map<LO, GO, NODE>>&,                                \
+      const Teuchos::RCP<const Import<LO, GO, NODE>>&, const Teuchos::RCP<const Map<LO, GO, NODE>>&,                             \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<Teuchos::ParameterList>&);                               \
+  /* Feature 2: simplified overloads */                                                                                        \
+  template Teuchos::RCP<FECrsGraph<LO, GO, NODE>> assembleFECrsGraph<LO, GO, NODE>(                                              \
+      const Kokkos::View<const GO**, typename NODE::device_type>&,                                                              \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<Teuchos::ParameterList>&);                                \
+  template Teuchos::RCP<FECrsGraph<LO, GO, NODE>> assembleFECrsGraph<LO, GO, NODE>(                                              \
+      const Geometry<GO, NODE>&,                                                                                                \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&, const Teuchos::RCP<Teuchos::ParameterList>&);                                \
+  template Teuchos::RCP<FECrsGraph<LO, GO, NODE>> assembleFECrsGraph<LO, GO, NODE>(                                              \
+      const Kokkos::View<const GO**, typename NODE::device_type>&,                                                              \
+      const Teuchos::ArrayView<const GO>&, const Teuchos::RCP<const Teuchos::Comm<int>>&,                                       \
+      const Teuchos::RCP<Teuchos::ParameterList>&);                                                                             \
+  template Teuchos::RCP<FECrsGraph<LO, GO, NODE>> assembleFECrsGraph<LO, GO, NODE>(                                              \
+      const Geometry<GO, NODE>&,                                                                                                \
+      const Teuchos::ArrayView<const GO>&, const Teuchos::RCP<const Teuchos::Comm<int>>&,                                       \
+      const Teuchos::RCP<Teuchos::ParameterList>&);
 
 #define TPETRA_FECRSGRAPH_INSTANT(LO, GO, NODE) \
   template class FECrsGraph<LO, GO, NODE>;      \
