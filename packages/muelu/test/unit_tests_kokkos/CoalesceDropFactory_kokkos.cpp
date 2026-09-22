@@ -1279,6 +1279,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, MinvADirichletTest
   TEUCHOS_ASSERT_EQUALITY((int)filteredA->getGlobalNumEntries(), interior_with_3nnzs * 3 + bcs_with_1nnzs + bcs_with_2nnzs * 2 + bcs_with_3nnzs * 3 + DirAdj_with_2nnzs * 2);
 }
 
+// structure used to sum up weak and strong counts. Needs to be outside ot
+// TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL() {} macro below.
+struct DropKeepCounts {
+  size_t drop, keep;
+  KOKKOS_FUNCTION
+  DropKeepCounts()
+    : drop(0)
+    , keep(0) {}
+  KOKKOS_FUNCTION
+  void operator+=(const DropKeepCounts &rhs) {
+    drop += rhs.drop;
+    keep += rhs.keep;
+  }
+};
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, StrongWeakSymmetry, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 // Test strong/weak pattern symmetry options.
 #include <MueLu_UseShortNames.hpp>
@@ -1414,18 +1428,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, StrongWeakSymmetry
     Kokkos::parallel_for("MueLu:Symmetrize:StrongWins", range, symmetrize);
   }
   // count up the number of strong and weak connections
-  struct DropKeepCounts {
-    size_t drop, keep;
-    KOKKOS_FUNCTION
-    DropKeepCounts()
-      : drop(0)
-      , keep(0) {}
-    KOKKOS_FUNCTION
-    void operator+=(const DropKeepCounts &rhs) {
-      drop += rhs.drop;
-      keep += rhs.keep;
-    }
-  };
   DropKeepCounts counts;
 
   auto rangeNnz = range_type(0, results.extent(0));
