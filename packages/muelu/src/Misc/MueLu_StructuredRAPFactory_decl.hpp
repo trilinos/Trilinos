@@ -84,6 +84,20 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
     int z;
   };
 
+  struct FineStencilEntry {
+    StencilOffset offset;
+    LocalOrdinal rowDof;
+    LocalOrdinal columnDof;
+    LocalOrdinal entryOrdinal;
+  };
+
+  struct FineStencilSpec {
+    int numDimensions;
+    LocalOrdinal dofsPerNode;
+    std::vector<StencilOffset> stencilOffsets;
+    std::vector<FineStencilEntry> entries;
+  };
+
   struct StructuredGraphSpec {
     int numDimensions;
     LocalOrdinal dofsPerNode;
@@ -94,6 +108,14 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
   void GetStructuredGraph(RCP<Matrix>& Ac, const RCP<Matrix> P,
                           const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
                           const StructuredGraphSpec& graphSpec) const;
+
+  FineStencilSpec DetectFineStencil(
+      const Matrix& A, int numDimensions,
+      const Teuchos::Array<LocalOrdinal>& lFineNodesPerDim) const;
+
+  StructuredGraphSpec DeriveCoarseRAPStencil(
+      const FineStencilSpec& fineStencil,
+      int interpolationOrder) const;
 
  private:
   //@{
@@ -111,9 +133,14 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
 
   //@{
 
-  StructuredGraphSpec GetStructuredGraphSpec(const std::string& matrixType, int interpolationOrder) const;
+  StructuredGraphSpec GetStructuredGraphSpec(
+      const Matrix& A, const Matrix& P, int numDimensions,
+      const Teuchos::Array<LocalOrdinal>& lFineNodesPerDim,
+      int interpolationOrder) const;
 
   void ConfigureRAPFactoryDelegate() const;
+
+  RCP<const FactoryBase> GetStructuredMetadataFactory(const std::string& varName) const;
 
   mutable RCP<MueLu::RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>> rapFactoryDelegate_;
 
