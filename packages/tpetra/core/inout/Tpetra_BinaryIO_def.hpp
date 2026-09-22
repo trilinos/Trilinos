@@ -408,9 +408,12 @@ binaryIOReadMapSection(const std::string& filename,
                                 comm);
   }
 
+  using device_type = typename map_type::device_type;
+  Kokkos::View<GlobalOrdinal*, device_type> gidsDevice("Tpetra::BinaryIO::mapGidsDevice", gids.extent(0));
+  Kokkos::deep_copy(gidsDevice, gids);
+
   return Teuchos::rcp(new map_type(static_cast<Tpetra::global_size_t>(globalCount),
-                                   gids.data(),
-                                   binaryIOCheckedLocalOrdinalCount<LocalOrdinal>(gids.extent(0), "map local element count"),
+                                   gidsDevice,
                                    static_cast<GlobalOrdinal>(sectionHeader.indexBase),
                                    comm));
 }
@@ -470,9 +473,11 @@ makeColumnMapFromGlobalColumns(const Kokkos::View<GlobalOrdinal*, Kokkos::HostSp
       uniqueCount);
 
   const LocalOrdinal localCount = binaryIOCheckedLocalOrdinalCount<LocalOrdinal>(uniqueCount, "column-map local entry count");
+  using device_type = typename map_type::device_type;
+  Kokkos::View<GlobalOrdinal*, device_type> colGidsDevice("Tpetra::BinaryIO::colGidsDevice", static_cast<size_t>(localCount));
+  Kokkos::deep_copy(colGidsDevice, Kokkos::subview(colGids, Kokkos::make_pair(size_t(0), static_cast<size_t>(localCount))));
   return Teuchos::rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
-                                   colGids.data(),
-                                   localCount,
+                                   colGidsDevice,
                                    domainMap->getIndexBase(),
                                    domainMap->getComm()));
 }
@@ -1131,8 +1136,8 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMapSection(const 
   const MapSectionHeader sectionHeader = makeMapSectionHeader(map);
   writeMapSectionHeader(filename, mapSectionOffset, sectionHeader, comm);
 
-  auto gids                           = map.getLocalElementList();
-  const unsigned long long localCount = static_cast<unsigned long long>(gids.size());
+  const auto gidsDevice               = map.getMyGlobalIndicesDevice();
+  const unsigned long long localCount = static_cast<unsigned long long>(gidsDevice.extent(0));
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> localCounts("Tpetra::BinaryIO::mapLocalCounts", comm->getSize());
   Teuchos::gatherAll(*comm, 1, &localCount, comm->getSize(), localCounts.data());
   writeArrayFromRoot(filename,
@@ -1142,9 +1147,10 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMapSection(const 
                      comm);
 
   const unsigned long long globalOffset = exclusiveScanUnsignedLongLong(localCount, comm);
+  const auto gidsHost                   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), gidsDevice);
   writeArrayCollective(filename,
                        mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
-                       gids.getRawPtr(),
+                       gidsHost.data(),
                        localCount,
                        globalOffset,
                        comm);
@@ -1189,9 +1195,12 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapSection(const std::s
                         comm);
   }
 
+  using device_type = typename map_type::device_type;
+  Kokkos::View<GlobalOrdinal*, device_type> gidsDevice("Tpetra::BinaryIO::mapGidsDevice", gids.extent(0));
+  Kokkos::deep_copy(gidsDevice, gids);
+
   return Teuchos::rcp(new map_type(static_cast<Tpetra::global_size_t>(globalCount),
-                                   gids.data(),
-                                   Details::binaryIOCheckedLocalOrdinalCount<LocalOrdinal>(gids.extent(0), "map local element count"),
+                                   gidsDevice,
                                    static_cast<GlobalOrdinal>(sectionHeader.indexBase),
                                    comm));
 }
@@ -1239,10 +1248,19 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDenseFile(const s
   const unsigned long long globalOffset = exclusiveScanUnsignedLongLong(localCount, map->getComm());
   const unsigned long long globalLength = static_cast<unsigned long long>(X.getGlobalLength());
 
+  using host_execution_space = Kokkos::DefaultHostExecutionSpace;
+  auto localXDevice          = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto localXHost            = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), localXDevice);
+  Kokkos::View<Scalar*, Kokkos::HostSpace> localValues("Tpetra::BinaryIO::denseLocalValues", Details::binaryIOCheckedSize(localCount, "dense local row count"));
   for (size_t j = 0; j < X.getNumVectors(); ++j) {
-    const auto data                       = X.getData(j);
     const unsigned long long columnOffset = static_cast<unsigned long long>(j) * globalLength + globalOffset;
-    writeArrayCollective(filename, header.valuesOffset, data.getRawPtr(), localCount, columnOffset, map->getComm());
+    Kokkos::parallel_for(
+        "Tpetra::BinaryIO::copyDenseColumnToHost",
+        Kokkos::RangePolicy<host_execution_space>(0, localValues.extent(0)),
+        KOKKOS_LAMBDA(const size_t i) {
+          localValues(i) = static_cast<Scalar>(localXHost(i, j));
+        });
+    writeArrayCollective(filename, header.valuesOffset, localValues.data(), localCount, columnOffset, map->getComm());
   }
 }
 
@@ -1279,14 +1297,25 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readDenseFile(const std::st
   auto fileX                                = Teuchos::rcp(new multivector_type(fileMap, static_cast<size_t>(header.numVectors)));
   const unsigned long long fileLocalCount   = static_cast<unsigned long long>(fileMap->getLocalNumElements());
   const unsigned long long fileGlobalOffset = exclusiveScanUnsignedLongLong(fileLocalCount, comm);
+  using impl_scalar_type                    = typename multivector_type::impl_scalar_type;
+  using host_execution_space                = Kokkos::DefaultHostExecutionSpace;
+  auto localFileXDevice                     = fileX->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto localFileXHost                       = Kokkos::create_mirror_view(localFileXDevice);
+  Kokkos::View<Scalar*, Kokkos::HostSpace> localValues("Tpetra::BinaryIO::denseLocalValues", Details::binaryIOCheckedSize(fileLocalCount, "dense local row count"));
 
   for (size_t j = 0; j < fileX->getNumVectors(); ++j) {
-    auto data                             = fileX->getDataNonConst(j);
     const unsigned long long columnOffset = static_cast<unsigned long long>(j) * globalLength + fileGlobalOffset;
     if (fileLocalCount > 0) {
-      readArrayCollective(filename, header.valuesOffset, data.getRawPtr(), fileLocalCount, columnOffset, comm);
+      readArrayCollective(filename, header.valuesOffset, localValues.data(), fileLocalCount, columnOffset, comm);
     }
+    Kokkos::parallel_for(
+        "Tpetra::BinaryIO::copyDenseColumnToDeviceHost",
+        Kokkos::RangePolicy<host_execution_space>(0, localValues.extent(0)),
+        KOKKOS_LAMBDA(const size_t i) {
+          localFileXHost(i, j) = static_cast<impl_scalar_type>(localValues(i));
+        });
   }
+  Kokkos::deep_copy(localFileXDevice, localFileXHost);
 
   if (map->isSameAs(*fileMap)) {
     return fileX;

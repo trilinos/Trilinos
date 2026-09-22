@@ -10,9 +10,12 @@
 #include "Tpetra_BinaryIO.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Import_Util2.hpp"
+#include "Tpetra_Details_makeColMap.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Kokkos_Core.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 
 #include <algorithm>
@@ -24,7 +27,6 @@
 
 namespace {
 
-using Teuchos::Array;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Tpetra::global_size_t;
@@ -49,17 +51,23 @@ template <class LO, class GO, class Node>
 RCP<const Tpetra::Map<LO, GO, Node> >
 makeCyclicMap(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
               const global_size_t globalNumElts) {
-  Array<GO> gids;
+  using map_type    = Tpetra::Map<LO, GO, Node>;
+  using device_type = typename map_type::device_type;
+
   const global_size_t stride = static_cast<global_size_t>(comm->getSize());
-  for (global_size_t gid = static_cast<global_size_t>(comm->getRank());
-       gid < globalNumElts;
-       gid += stride) {
-    gids.push_back(static_cast<GO>(gid));
-  }
-  return rcp(new Tpetra::Map<LO, GO, Node>(globalNumElts,
-                                           gids(),
-                                           static_cast<GO>(0),
-                                           comm));
+  const global_size_t rank   = static_cast<global_size_t>(comm->getRank());
+  const size_t localNumElts  = rank < globalNumElts ? static_cast<size_t>((globalNumElts - rank + stride - 1) / stride) : 0;
+  Kokkos::View<GO*, device_type> gids("Tpetra_BinaryIO_InOutTest::cyclicGids", localNumElts);
+  Kokkos::parallel_for(
+      "Tpetra_BinaryIO_InOutTest::fillCyclicGids",
+      Kokkos::RangePolicy<typename device_type::execution_space>(0, localNumElts),
+      KOKKOS_LAMBDA(const size_t i) {
+        gids(i) = static_cast<GO>(rank + static_cast<global_size_t>(i) * stride);
+      });
+  return rcp(new map_type(globalNumElts,
+                          gids,
+                          static_cast<GO>(0),
+                          comm));
 }
 
 template <class LO, class GO, class Node>
@@ -78,15 +86,21 @@ RCP<Tpetra::MultiVector<ST, LO, GO, Node> >
 makeDenseTestMultiVector(const RCP<const Tpetra::Map<LO, GO, Node> >& map,
                          const size_t numVecs) {
   using multivector_type = Tpetra::MultiVector<ST, LO, GO, Node>;
+  using impl_scalar_type = typename multivector_type::impl_scalar_type;
+  using device_type      = typename multivector_type::device_type;
+  using execution_space  = typename device_type::execution_space;
 
-  auto X          = rcp(new multivector_type(map, numVecs));
-  const auto gids = map->getLocalElementList();
-  for (size_t j = 0; j < numVecs; ++j) {
-    auto data = X->getDataNonConst(j);
-    for (size_t i = 0; i < static_cast<size_t>(gids.size()); ++i) {
-      data[i] = static_cast<ST>(1000 + 100 * j + static_cast<size_t>(gids[i]));
-    }
-  }
+  auto X            = rcp(new multivector_type(map, numVecs));
+  auto localX       = X->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto localMap     = map->getLocalMap();
+  const size_t nvec = numVecs;
+  Kokkos::parallel_for(
+      "Tpetra_BinaryIO_InOutTest::fillDense",
+      Kokkos::MDRangePolicy<execution_space, Kokkos::Rank<2>>({0, 0}, {localX.extent(0), nvec}),
+      KOKKOS_LAMBDA(const size_t i, const size_t j) {
+        const auto gid = localMap.getGlobalElement(static_cast<LO>(i));
+        localX(i, j)  = static_cast<impl_scalar_type>(1000 + 100 * j + static_cast<size_t>(gid));
+      });
   return X;
 }
 
@@ -121,36 +135,91 @@ void assertSameMultiVector(const MV& X,
 template <class ST, class LO, class GO, class Node>
 RCP<Tpetra::CrsMatrix<ST, LO, GO, Node> >
 makeTridiagonalMatrix(const RCP<const Tpetra::Map<LO, GO, Node> >& map) {
-  using matrix_type = Tpetra::CrsMatrix<ST, LO, GO, Node>;
+  using matrix_type          = Tpetra::CrsMatrix<ST, LO, GO, Node>;
+  using local_graph_type     = typename matrix_type::local_graph_device_type;
+  using rowptr_type          = typename local_graph_type::row_map_type::non_const_type;
+  using rowptr_value_type    = typename rowptr_type::non_const_value_type;
+  using colidx_type          = typename local_graph_type::entries_type::non_const_type;
+  using values_type          = typename matrix_type::local_matrix_device_type::values_type::non_const_type;
+  using impl_scalar_type     = typename matrix_type::impl_scalar_type;
+  using device_type          = typename matrix_type::device_type;
+  using memory_space         = typename device_type::memory_space;
+  using execution_space      = typename device_type::execution_space;
 
-  const global_size_t numGlobalRows = map->getGlobalNumElements();
-  Teuchos::Array<size_t> rowLengths(map->getLocalNumElements(), static_cast<size_t>(3));
+  const size_t localNumRows    = map->getLocalNumElements();
   const auto minAllGlobalIndex = map->getMinAllGlobalIndex();
   const auto maxAllGlobalIndex = map->getMaxAllGlobalIndex();
-  if (map->getMinGlobalIndex() == minAllGlobalIndex) {
-    rowLengths[0] = static_cast<size_t>(2);
-  }
-  if (map->getMaxGlobalIndex() == maxAllGlobalIndex) {
-    rowLengths[map->getLocalNumElements() - 1] = static_cast<size_t>(2);
-  }
+  const auto localRowMap       = map->getLocalMap();
 
-  auto A = rcp(new matrix_type(map, rowLengths()));
-  for (size_t lclRow = 0; lclRow < map->getLocalNumElements(); ++lclRow) {
-    const GO gblRow = map->getGlobalElement(static_cast<LO>(lclRow));
-    Array<GO> cols;
-    Array<ST> vals;
-    if (gblRow > static_cast<GO>(0)) {
-      cols.push_back(static_cast<GO>(gblRow - 1));
-      vals.push_back(static_cast<ST>(-1));
-    }
-    cols.push_back(gblRow);
-    vals.push_back(static_cast<ST>(2 + (static_cast<size_t>(gblRow) % 7)));
-    if (static_cast<global_size_t>(gblRow + 1) < numGlobalRows) {
-      cols.push_back(static_cast<GO>(gblRow + 1));
-      vals.push_back(static_cast<ST>(-1));
-    }
-    A->insertGlobalValues(gblRow, cols(), vals());
-  }
+  rowptr_type rowPtr("Tpetra_BinaryIO_InOutTest::rowPtr", localNumRows + 1);
+  Kokkos::deep_copy(rowPtr, static_cast<rowptr_value_type>(0));
+  Kokkos::parallel_scan(
+      "Tpetra_BinaryIO_InOutTest::countRows",
+      Kokkos::RangePolicy<execution_space>(0, localNumRows),
+      KOKKOS_LAMBDA(const size_t lclRow, rowptr_value_type& offset, const bool finalPass) {
+        const GO gblRow = localRowMap.getGlobalElement(static_cast<LO>(lclRow));
+        if (finalPass) {
+          rowPtr(lclRow) = offset;
+        }
+        offset += static_cast<rowptr_value_type>(1 + (gblRow > minAllGlobalIndex ? 1 : 0) + (gblRow < maxAllGlobalIndex ? 1 : 0));
+        if (finalPass && lclRow + 1 == localNumRows) {
+          rowPtr(localNumRows) = offset;
+        }
+      });
+  auto rowPtrHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowPtr);
+  const size_t localNnz = rowPtrHost(localNumRows);
+
+  Kokkos::View<GO*, memory_space> globalColumns("Tpetra_BinaryIO_InOutTest::globalColumns", localNnz);
+  Kokkos::parallel_for(
+      "Tpetra_BinaryIO_InOutTest::fillGlobalColumns",
+      Kokkos::RangePolicy<execution_space>(0, localNumRows),
+      KOKKOS_LAMBDA(const size_t lclRow) {
+        const GO gblRow = localRowMap.getGlobalElement(static_cast<LO>(lclRow));
+        size_t offset   = rowPtr(lclRow);
+        if (gblRow > minAllGlobalIndex) {
+          globalColumns(offset++) = static_cast<GO>(gblRow - 1);
+        }
+        globalColumns(offset++) = gblRow;
+        if (gblRow < maxAllGlobalIndex) {
+          globalColumns(offset) = static_cast<GO>(gblRow + 1);
+        }
+      });
+
+  RCP<const Tpetra::Map<LO, GO, Node> > colMap;
+  std::ostringstream errStrm;
+  const int err = Tpetra::Details::makeColMap<LO, GO, Node>(colMap,
+                                                            map,
+                                                            globalColumns,
+                                                            &errStrm);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != 0 || colMap.is_null(),
+                             std::runtime_error,
+                             "Failed to construct test column map. " << errStrm.str());
+  const auto localColMap = colMap->getLocalMap();
+
+  colidx_type colInd("Tpetra_BinaryIO_InOutTest::colInd", localNnz);
+  values_type values("Tpetra_BinaryIO_InOutTest::values", localNnz);
+  Kokkos::parallel_for(
+      "Tpetra_BinaryIO_InOutTest::fillLocalMatrix",
+      Kokkos::RangePolicy<execution_space>(0, localNumRows),
+      KOKKOS_LAMBDA(const size_t lclRow) {
+        const GO gblRow = localRowMap.getGlobalElement(static_cast<LO>(lclRow));
+        size_t offset   = rowPtr(lclRow);
+        if (gblRow > minAllGlobalIndex) {
+          colInd(offset) = localColMap.getLocalElement(static_cast<GO>(gblRow - 1));
+          values(offset) = static_cast<impl_scalar_type>(-1);
+          ++offset;
+        }
+        colInd(offset) = localColMap.getLocalElement(gblRow);
+        values(offset) = static_cast<impl_scalar_type>(2 + (static_cast<size_t>(gblRow) % 7));
+        ++offset;
+        if (gblRow < maxAllGlobalIndex) {
+          colInd(offset) = localColMap.getLocalElement(static_cast<GO>(gblRow + 1));
+          values(offset) = static_cast<impl_scalar_type>(-1);
+        }
+      });
+  Tpetra::Import_Util::sortCrsEntries(rowPtr, colInd, values);
+
+  auto A = rcp(new matrix_type(map, colMap, rowPtr, colInd, values));
   A->fillComplete(map, map);
   return A;
 }
@@ -353,10 +422,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, SparseRoundTripCustomRowMap,
   binary_io_type::writeSparseFile(filename, *A);
   auto B = binary_io_type::readSparseFile(filename, targetMap, targetMap, targetMap, true);
 
-  auto expected = rcp(new matrix_type(targetMap, 3));
   import_type importer(fileMap, targetMap);
-  expected->doImport(*A, importer, Tpetra::INSERT);
-  expected->fillComplete(targetMap, targetMap);
+  auto expected = Tpetra::importAndFillCompleteCrsMatrix<matrix_type>(A, importer, targetMap, targetMap);
 
   assertSameMatrix(*expected, *B);
   cleanupFile(filename, comm);

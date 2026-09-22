@@ -11,6 +11,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_as.hpp>
 #include <Xpetra_UnitTestHelpers.hpp>
+#include <Kokkos_Core.hpp>
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DefaultPlatform.hpp"
 #include <Xpetra_IO.hpp>
@@ -74,6 +75,44 @@ void writeLegacyBinaryMissingRowsFile(const std::string& filename,
   comm->barrier();
 }
 
+template <class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LO, GO, Node> >
+makeBinaryMissingRowsMatrix(const Teuchos::RCP<const Tpetra::Map<LO, GO, Node> >& rowMap,
+                            const Teuchos::RCP<const Tpetra::Map<LO, GO, Node> >& colMap) {
+  using tpetra_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
+  using local_graph_type   = typename tpetra_matrix_type::local_graph_device_type;
+  using rowptr_type        = typename local_graph_type::row_map_type::non_const_type;
+  using colidx_type        = typename local_graph_type::entries_type::non_const_type;
+  using values_type        = typename tpetra_matrix_type::local_matrix_device_type::values_type::non_const_type;
+  using impl_scalar_type   = typename tpetra_matrix_type::impl_scalar_type;
+  using device_type        = typename tpetra_matrix_type::device_type;
+  using execution_space    = typename device_type::execution_space;
+
+  rowptr_type rowPtr("Xpetra_IO_UnitTests::rowPtr", 6);
+  colidx_type colInd("Xpetra_IO_UnitTests::colInd", 3);
+  values_type values("Xpetra_IO_UnitTests::values", 3);
+  const auto localColMap = colMap->getLocalMap();
+
+  Kokkos::parallel_for(
+      "Xpetra_IO_UnitTests::fillRowPtr",
+      Kokkos::RangePolicy<execution_space>(0, 6),
+      KOKKOS_LAMBDA(const size_t i) {
+        rowPtr(i) = i == 0 ? 0 : (i == 1 ? 2 : 3);
+      });
+  Kokkos::parallel_for(
+      "Xpetra_IO_UnitTests::fillLocalMatrix",
+      Kokkos::RangePolicy<execution_space>(0, 3),
+      KOKKOS_LAMBDA(const size_t i) {
+        const GO gblCol = i == 0 ? static_cast<GO>(0) : (i == 1 ? static_cast<GO>(3) : static_cast<GO>(4));
+        colInd(i)      = localColMap.getLocalElement(gblCol);
+        values(i)      = static_cast<impl_scalar_type>(2 + i);
+      });
+
+  auto matrix = Teuchos::rcp(new tpetra_matrix_type(rowMap, colMap, rowPtr, colInd, values));
+  matrix->fillComplete(rowMap, rowMap);
+  return matrix;
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, MMMissingRows, M, MA, Scalar, LO, GO, Node) {
   using Teuchos::as;
 
@@ -120,25 +159,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryMissingRows, M, MA, Scalar, LO, GO, 
   Xpetra::UnderlyingLib lib  = testMap.lib();
   const std::string filename = makeBinaryFilename("xpetra_io_binary_missing_rows", *comm);
 
-  using tpetra_map_type    = Tpetra::Map<LO, GO, Node>;
-  using tpetra_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
-  using binary_io_type     = Tpetra::BinaryIO<Scalar, LO, GO, Node>;
+  using tpetra_map_type = Tpetra::Map<LO, GO, Node>;
+  using binary_io_type  = Tpetra::BinaryIO<Scalar, LO, GO, Node>;
 
   auto tpetraRowMap = Teuchos::rcp(new tpetra_map_type(5, static_cast<GO>(0), comm));
-  auto tpetraAWrite = Teuchos::rcp(new tpetra_matrix_type(tpetraRowMap, 2));
-  Teuchos::Array<GO> cols;
-  Teuchos::Array<Scalar> vals;
-  cols.push_back(static_cast<GO>(0));
-  cols.push_back(static_cast<GO>(3));
-  vals.push_back(as<Scalar>(2.));
-  vals.push_back(as<Scalar>(3.));
-  tpetraAWrite->insertGlobalValues(static_cast<GO>(0), cols(), vals());
-  cols.resize(1);
-  vals.resize(1);
-  cols[0] = static_cast<GO>(4);
-  vals[0] = as<Scalar>(4.);
-  tpetraAWrite->insertGlobalValues(static_cast<GO>(1), cols(), vals());
-  tpetraAWrite->fillComplete(tpetraRowMap, tpetraRowMap);
+  auto tpetraAWrite = makeBinaryMissingRowsMatrix<Scalar, LO, GO, Node>(tpetraRowMap, tpetraRowMap);
   binary_io_type::writeSparseFile(filename, *tpetraAWrite);
 
   auto A = Xpetra::IO<Scalar, LO, GO, Node>::Read(filename, lib, comm, true);
@@ -259,30 +284,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryCustomColMap, M, MA, Scalar, LO, GO,
 
   const std::string filename = makeBinaryFilename("xpetra_io_binary_custom_colmap", *comm);
 
-  using tpetra_map_type    = Tpetra::Map<LO, GO, Node>;
-  using tpetra_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
-  using binary_io_type     = Tpetra::BinaryIO<Scalar, LO, GO, Node>;
+  using tpetra_map_type = Tpetra::Map<LO, GO, Node>;
+  using device_type     = typename tpetra_map_type::device_type;
+  using binary_io_type  = Tpetra::BinaryIO<Scalar, LO, GO, Node>;
 
   auto tpetraRowMap = Teuchos::rcp(new tpetra_map_type(5, static_cast<GO>(0), comm));
-  Teuchos::Array<GO> colGids;
-  colGids.push_back(static_cast<GO>(0));
-  colGids.push_back(static_cast<GO>(3));
-  colGids.push_back(static_cast<GO>(4));
-  auto tpetraColMap = Teuchos::rcp(new tpetra_map_type(5, colGids(), static_cast<GO>(0), comm));
-  auto tpetraAWrite = Teuchos::rcp(new tpetra_matrix_type(tpetraRowMap, tpetraColMap, 2));
-  Teuchos::Array<GO> cols;
-  Teuchos::Array<Scalar> vals;
-  cols.push_back(static_cast<GO>(0));
-  cols.push_back(static_cast<GO>(3));
-  vals.push_back(as<Scalar>(2.));
-  vals.push_back(as<Scalar>(3.));
-  tpetraAWrite->insertGlobalValues(static_cast<GO>(0), cols(), vals());
-  cols.resize(1);
-  vals.resize(1);
-  cols[0] = static_cast<GO>(4);
-  vals[0] = as<Scalar>(4.);
-  tpetraAWrite->insertGlobalValues(static_cast<GO>(1), cols(), vals());
-  tpetraAWrite->fillComplete(tpetraRowMap, tpetraRowMap);
+  Kokkos::View<GO*, device_type> colGids("Xpetra_IO_UnitTests::customColGids", 3);
+  Kokkos::parallel_for(
+      "Xpetra_IO_UnitTests::fillCustomColGids",
+      Kokkos::RangePolicy<typename device_type::execution_space>(0, 3),
+      KOKKOS_LAMBDA(const size_t i) {
+        colGids(i) = i == 0 ? static_cast<GO>(0) : (i == 1 ? static_cast<GO>(3) : static_cast<GO>(4));
+      });
+  auto tpetraColMap = Teuchos::rcp(new tpetra_map_type(5, colGids, static_cast<GO>(0), comm));
+  auto tpetraAWrite = makeBinaryMissingRowsMatrix<Scalar, LO, GO, Node>(tpetraRowMap, tpetraColMap);
   binary_io_type::writeSparseFile(filename, *tpetraAWrite);
 
   Teuchos::RCP<const Xpetra::Map<LO, GO, Node> > rowMap = Teuchos::rcp(new Xpetra::TpetraMap<LO, GO, Node>(tpetraRowMap));
