@@ -12,11 +12,17 @@
 
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <type_traits>
+#include <vector>
 
 #include "Xpetra_Matrix.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 
 #include "MueLu_CoalesceDropFactory_kokkos_decl.hpp"
 
@@ -42,6 +48,279 @@
 
 namespace MueLu {
 
+namespace MaterialDistanceDiagnostics {
+
+template <class Scalar>
+double realValue(const Scalar& value) {
+  using non_const_scalar_type = typename std::remove_const<Scalar>::type;
+  return Teuchos::ScalarTraits<non_const_scalar_type>::real(value);
+}
+
+struct Tensor2DInfo {
+  double a;
+  double b;
+  double d;
+  double lambdaMax;
+  double lambdaMin;
+  double vx;
+  double vy;
+};
+
+template <class material_view_type>
+Tensor2DInfo getTensor2DInfo(const material_view_type& material, const size_t row) {
+  using scalar_type = typename material_view_type::value_type;
+
+  const double a  = realValue<scalar_type>(material(row, 0));
+  const double b0 = realValue<scalar_type>(material(row, 1));
+  const double b1 = realValue<scalar_type>(material(row, 2));
+  const double d  = realValue<scalar_type>(material(row, 3));
+  const double b  = 0.5 * (b0 + b1);
+
+  const double delta     = std::sqrt((a - d) * (a - d) + 4.0 * b * b);
+  const double lambdaMax = 0.5 * (a + d + delta);
+  const double lambdaMin = 0.5 * (a + d - delta);
+
+  double vx = b;
+  double vy = lambdaMax - a;
+  if (std::abs(vx) + std::abs(vy) <= 100.0 * std::numeric_limits<double>::epsilon()) {
+    if (a >= d) {
+      vx = 1.0;
+      vy = 0.0;
+    } else {
+      vx = 0.0;
+      vy = 1.0;
+    }
+  }
+  const double norm = std::sqrt(vx * vx + vy * vy);
+
+  Tensor2DInfo info;
+  info.a         = a;
+  info.b         = b;
+  info.d         = d;
+  info.lambdaMax = lambdaMax;
+  info.lambdaMin = lambdaMin;
+  info.vx        = vx / norm;
+  info.vy        = vy / norm;
+  return info;
+}
+
+inline double tensorContrast(const Tensor2DInfo& rowTensor, const Tensor2DInfo& colTensor) {
+  const double floor    = 100.0 * std::numeric_limits<double>::min();
+  const double maxRatio = std::max(rowTensor.lambdaMax, colTensor.lambdaMax) / std::max(std::min(rowTensor.lambdaMax, colTensor.lambdaMax), floor);
+  const double minRatio = std::max(rowTensor.lambdaMin, colTensor.lambdaMin) / std::max(std::min(rowTensor.lambdaMin, colTensor.lambdaMin), floor);
+  const double da       = rowTensor.a - colTensor.a;
+  const double db       = rowTensor.b - colTensor.b;
+  const double dd       = rowTensor.d - colTensor.d;
+  const double diffNorm = std::sqrt(da * da + 2.0 * db * db + dd * dd);
+  const double rowNorm  = std::sqrt(rowTensor.a * rowTensor.a + 2.0 * rowTensor.b * rowTensor.b + rowTensor.d * rowTensor.d);
+  const double colNorm  = std::sqrt(colTensor.a * colTensor.a + 2.0 * colTensor.b * colTensor.b + colTensor.d * colTensor.d);
+  const double relDiff  = diffNorm / std::max(0.5 * (rowNorm + colNorm), floor);
+  return std::max(std::max(maxRatio, minRatio), 1.0 + relDiff);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PrintMaterialDistanceDiagnostics(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                                      Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>> coords,
+                                      Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> material,
+                                      const Kokkos::View<DecisionType*, typename Node::device_type::memory_space>& results,
+                                      const double coverageThreshold,
+                                      const Factory& factory) {
+  using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  using coords_type    = Xpetra::MultiVector<magnitude_type, LocalOrdinal, GlobalOrdinal, Node>;
+  using material_type  = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+  const size_t spatialDim = coords->getNumVectors();
+  if (spatialDim != 2 || material->getNumVectors() != 4) {
+    if (factory.IsPrint(Statistics1)) {
+      factory.GetOStream(Statistics1) << "Material distance diagnostics skipped: currently implemented for 2D tensor materials only" << std::endl;
+    }
+    return;
+  }
+
+  auto importer = A.getCrsGraph()->getImporter();
+  Teuchos::RCP<coords_type> ghostedCoords;
+  Teuchos::RCP<material_type> ghostedMaterial;
+  if (!importer.is_null()) {
+    ghostedCoords = Xpetra::MultiVectorFactory<magnitude_type, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coords->getNumVectors(), false);
+    ghostedCoords->doImport(*coords, *importer, Xpetra::INSERT);
+    ghostedMaterial = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), material->getNumVectors(), false);
+    ghostedMaterial->doImport(*material, *importer, Xpetra::INSERT);
+  } else {
+    ghostedCoords   = coords;
+    ghostedMaterial = material;
+  }
+
+  auto coordsHost          = coords->getLocalViewHost(Tpetra::Access::ReadOnly);
+  auto ghostedCoordsHost   = ghostedCoords->getLocalViewHost(Tpetra::Access::ReadOnly);
+  auto materialHost        = material->getLocalViewHost(Tpetra::Access::ReadOnly);
+  auto ghostedMaterialHost = ghostedMaterial->getLocalViewHost(Tpetra::Access::ReadOnly);
+  auto resultsHost         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), results);
+
+  const double materialContrastThreshold = factory.GetParameterList().get<double>("aggregation: material distance diagnostics contrast");
+  const double noCoverage                = std::numeric_limits<double>::max();
+
+  GlobalOrdinal localNodes                     = 0;
+  GlobalOrdinal localPoorCoverageNodes         = 0;
+  GlobalOrdinal localInterfaceNodes            = 0;
+  GlobalOrdinal localPoorInterfaceNodes        = 0;
+  GlobalOrdinal localKeptSameMaterial          = 0;
+  GlobalOrdinal localDroppedSameMaterial       = 0;
+  GlobalOrdinal localKeptCrossMaterial         = 0;
+  GlobalOrdinal localDroppedCrossMaterial      = 0;
+  GlobalOrdinal localRowsWithNoKeptOffdiag     = 0;
+  GlobalOrdinal localPoorSameMaterialCoverage  = 0;
+  GlobalOrdinal localPoorInterfaceSameCoverage = 0;
+  double localCoverageSum                      = 0.0;
+  double localSameMaterialCoverageSum          = 0.0;
+  double localInterfaceCoverageSum             = 0.0;
+  double localInterfaceSameMaterialCoverageSum = 0.0;
+  double localCoverageMin                      = noCoverage;
+  double localSameMaterialCoverageMin          = noCoverage;
+  double localInterfaceCoverageMin             = noCoverage;
+  double localInterfaceSameMaterialCoverageMin = noCoverage;
+
+  size_t resultOffset = 0;
+  for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(A.getRowMap()->getLocalNumElements()); ++row) {
+    Teuchos::ArrayView<const LocalOrdinal> indices;
+    Teuchos::ArrayView<const Scalar> vals;
+    A.getLocalRowView(row, indices, vals);
+
+    const auto rowTensor            = getTensor2DInfo(materialHost, row);
+    double bestCoverage             = 0.0;
+    double bestSameMaterialCoverage = 0.0;
+    bool interfaceNode              = false;
+    bool hasKeptOffdiag             = false;
+
+    for (LocalOrdinal k = 0; k < indices.size(); ++k) {
+      const LocalOrdinal col = indices[k];
+      if (row == col)
+        continue;
+
+      const double dx         = realValue<magnitude_type>(ghostedCoordsHost(col, 0)) - realValue<magnitude_type>(coordsHost(row, 0));
+      const double dy         = realValue<magnitude_type>(ghostedCoordsHost(col, 1)) - realValue<magnitude_type>(coordsHost(row, 1));
+      const double h          = std::sqrt(dx * dx + dy * dy);
+      const auto colTensor    = getTensor2DInfo(ghostedMaterialHost, col);
+      const bool sameMaterial = tensorContrast(rowTensor, colTensor) <= materialContrastThreshold;
+      if (h > 0.0) {
+        const double coverage = std::abs(dx * rowTensor.vx + dy * rowTensor.vy) / h;
+        bestCoverage          = std::max(bestCoverage, coverage);
+        if (sameMaterial)
+          bestSameMaterialCoverage = std::max(bestSameMaterialCoverage, coverage);
+      }
+
+      interfaceNode = interfaceNode || !sameMaterial;
+
+      const bool kept = resultsHost(resultOffset + k) == KEEP;
+      hasKeptOffdiag  = hasKeptOffdiag || kept;
+      if (sameMaterial) {
+        if (kept)
+          ++localKeptSameMaterial;
+        else
+          ++localDroppedSameMaterial;
+      } else {
+        if (kept)
+          ++localKeptCrossMaterial;
+        else
+          ++localDroppedCrossMaterial;
+      }
+    }
+
+    ++localNodes;
+    localCoverageSum += bestCoverage;
+    localSameMaterialCoverageSum += bestSameMaterialCoverage;
+    localCoverageMin             = std::min(localCoverageMin, bestCoverage);
+    localSameMaterialCoverageMin = std::min(localSameMaterialCoverageMin, bestSameMaterialCoverage);
+    if (bestCoverage * bestCoverage < coverageThreshold)
+      ++localPoorCoverageNodes;
+    if (bestSameMaterialCoverage * bestSameMaterialCoverage < coverageThreshold)
+      ++localPoorSameMaterialCoverage;
+    if (interfaceNode) {
+      ++localInterfaceNodes;
+      localInterfaceCoverageSum += bestCoverage;
+      localInterfaceSameMaterialCoverageSum += bestSameMaterialCoverage;
+      localInterfaceCoverageMin             = std::min(localInterfaceCoverageMin, bestCoverage);
+      localInterfaceSameMaterialCoverageMin = std::min(localInterfaceSameMaterialCoverageMin, bestSameMaterialCoverage);
+      if (bestCoverage * bestCoverage < coverageThreshold)
+        ++localPoorInterfaceNodes;
+      if (bestSameMaterialCoverage * bestSameMaterialCoverage < coverageThreshold)
+        ++localPoorInterfaceSameCoverage;
+    }
+    if (!hasKeptOffdiag)
+      ++localRowsWithNoKeptOffdiag;
+
+    resultOffset += indices.size();
+  }
+
+  auto comm = A.getRowMap()->getComm();
+  Teuchos::Array<GlobalOrdinal> localCounts(11);
+  localCounts[0]  = localNodes;
+  localCounts[1]  = localPoorCoverageNodes;
+  localCounts[2]  = localInterfaceNodes;
+  localCounts[3]  = localPoorInterfaceNodes;
+  localCounts[4]  = localKeptSameMaterial;
+  localCounts[5]  = localDroppedSameMaterial;
+  localCounts[6]  = localKeptCrossMaterial;
+  localCounts[7]  = localDroppedCrossMaterial;
+  localCounts[8]  = localRowsWithNoKeptOffdiag;
+  localCounts[9]  = localPoorSameMaterialCoverage;
+  localCounts[10] = localPoorInterfaceSameCoverage;
+  Teuchos::Array<GlobalOrdinal> globalCounts(localCounts.size());
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(localCounts.size()), localCounts.getRawPtr(), globalCounts.getRawPtr());
+
+  Teuchos::Array<double> localSums(4);
+  localSums[0] = localCoverageSum;
+  localSums[1] = localInterfaceCoverageSum;
+  localSums[2] = localSameMaterialCoverageSum;
+  localSums[3] = localInterfaceSameMaterialCoverageSum;
+  Teuchos::Array<double> globalSums(localSums.size());
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(localSums.size()), localSums.getRawPtr(), globalSums.getRawPtr());
+
+  double globalCoverageMin                      = noCoverage;
+  double globalInterfaceCoverageMin             = noCoverage;
+  double globalSameMaterialCoverageMin          = noCoverage;
+  double globalInterfaceSameMaterialCoverageMin = noCoverage;
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &localCoverageMin, &globalCoverageMin);
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &localInterfaceCoverageMin, &globalInterfaceCoverageMin);
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &localSameMaterialCoverageMin, &globalSameMaterialCoverageMin);
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &localInterfaceSameMaterialCoverageMin, &globalInterfaceSameMaterialCoverageMin);
+
+  if (factory.IsPrint(Statistics1)) {
+    const double globalCoverageMean                      = globalCounts[0] > 0 ? globalSums[0] / Teuchos::as<double>(globalCounts[0]) : 0.0;
+    const double globalInterfaceCoverageMean             = globalCounts[2] > 0 ? globalSums[1] / Teuchos::as<double>(globalCounts[2]) : 0.0;
+    const double globalSameMaterialCoverageMean          = globalCounts[0] > 0 ? globalSums[2] / Teuchos::as<double>(globalCounts[0]) : 0.0;
+    const double globalInterfaceSameMaterialCoverageMean = globalCounts[2] > 0 ? globalSums[3] / Teuchos::as<double>(globalCounts[2]) : 0.0;
+    if (globalCoverageMin == noCoverage)
+      globalCoverageMin = 0.0;
+    if (globalInterfaceCoverageMin == noCoverage)
+      globalInterfaceCoverageMin = 0.0;
+    if (globalSameMaterialCoverageMin == noCoverage)
+      globalSameMaterialCoverageMin = 0.0;
+    if (globalInterfaceSameMaterialCoverageMin == noCoverage)
+      globalInterfaceSameMaterialCoverageMin = 0.0;
+
+    factory.GetOStream(Statistics1)
+        << "Material distance diagnostics:" << std::endl
+        << "  directional coverage c_i: min=" << globalCoverageMin
+        << ", mean=" << globalCoverageMean
+        << ", poor(c_i^2 < " << coverageThreshold << ")=" << globalCounts[1] << "/" << globalCounts[0] << std::endl
+        << "  same-material directional coverage: min=" << globalSameMaterialCoverageMin
+        << ", mean=" << globalSameMaterialCoverageMean
+        << ", poor(c_i^2 < " << coverageThreshold << ")=" << globalCounts[9] << "/" << globalCounts[0] << std::endl
+        << "  tensor-contrast interface nodes: " << globalCounts[2]
+        << ", poor interface coverage=" << globalCounts[3] << "/" << globalCounts[2]
+        << ", poor same-material interface coverage=" << globalCounts[10] << "/" << globalCounts[2]
+        << ", interface mean=" << globalInterfaceCoverageMean
+        << ", interface same-material mean=" << globalInterfaceSameMaterialCoverageMean
+        << ", interface min=" << globalInterfaceCoverageMin
+        << ", interface same-material min=" << globalInterfaceSameMaterialCoverageMin << std::endl
+        << "  offdiag entries kept same/cross: " << globalCounts[4] << "/" << globalCounts[6]
+        << ", dropped same/cross: " << globalCounts[5] << "/" << globalCounts[7] << std::endl
+        << "  rows with no kept offdiag entry: " << globalCounts[8] << std::endl;
+  }
+}
+
+}  // namespace MaterialDistanceDiagnostics
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
@@ -58,6 +337,13 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   SET_VALID_ENTRY("aggregation: drop scheme");
   SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
   SET_VALID_ENTRY("aggregation: distance laplacian metric");
+  SET_VALID_ENTRY("aggregation: material distance: interface penalty");
+  SET_VALID_ENTRY("aggregation: material distance: interface penalty strength");
+  SET_VALID_ENTRY("aggregation: material distance: interface penalty floor");
+  SET_VALID_ENTRY("aggregation: material distance: interface penalty shape weight");
+  SET_VALID_ENTRY("aggregation: material distance diagnostics");
+  SET_VALID_ENTRY("aggregation: material distance diagnostics threshold");
+  SET_VALID_ENTRY("aggregation: material distance diagnostics contrast");
   SET_VALID_ENTRY("aggregation: Minv scheme");
   SET_VALID_ENTRY("aggregation: distance laplacian directional weights");
   SET_VALID_ENTRY("aggregation: dropping may create Dirichlet");
@@ -93,6 +379,7 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   validParamList->getEntry("aggregation: strength-of-connection: matrix").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("A", "distance laplacian", "MinvA"))));
   validParamList->getEntry("aggregation: strength-of-connection: measure").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben", "unscaled"))));
   validParamList->getEntry("aggregation: distance laplacian metric").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("unweighted", "material"))));
+  validParamList->getEntry("aggregation: material distance: interface penalty").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("none", "log-frobenius"))));
   validParamList->getEntry("aggregation: Minv scheme").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("spai", "fsai"))));
 
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
@@ -590,6 +877,14 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
   GO numDropped = lclA.nnz() - nnz_filtered;
   GO numGlobalDropped;
   Teuchos::reduceAll(*A->getRowMap()->getComm(), Teuchos::REDUCE_SUM, 1, &numDropped, &numGlobalDropped);
+
+  if (pL.get<bool>("aggregation: material distance diagnostics") && distanceLaplacianMetric == "material" && IsPrint(Statistics1)) {
+    auto coords   = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
+    auto material = Get<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>(currentLevel, "Material");
+    MaterialDistanceDiagnostics::PrintMaterialDistanceDiagnostics(*A, coords, material, results,
+                                                                  pL.get<double>("aggregation: material distance diagnostics threshold"),
+                                                                  *this);
+  }
   // We now know the number of entries of filtered A and have the final rowptr.
 
   //////////////////////////////////////////////////////////////////////
