@@ -23,6 +23,22 @@
 
 #include "Sacado_Fad_Kokkos_LayoutContiguous.hpp"
 
+// Hierarchical Fad reads its lane and width from the work item's vector
+// dimension, and that query is defined only when the kernel was launched with
+// an nd_range.  Kokkos launches a RangePolicy that way only when it can ask
+// for an automatic local range; without sycl_ext_oneapi_auto_local_range it
+// falls back to a plain sycl::range, where the query reports whatever happens
+// to be in the hardware.  That is silent -- wrong derivatives, no diagnostic,
+// and nothing detectable at run time -- so refuse the build instead.  Flat
+// parallelism never makes the query and carries no such requirement.
+#if defined(KOKKOS_ENABLE_SYCL) &&                                             \
+    (defined(SACADO_VIEW_CUDA_HIERARCHICAL) ||                                 \
+     defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) ||                            \
+     defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED)) &&                   \
+    !defined(SYCL_EXT_ONEAPI_AUTO_LOCAL_RANGE)
+#error "Hierarchical Fad on SYCL requires the sycl_ext_oneapi_auto_local_range extension, which this compiler does not provide.  Without it Kokkos cannot launch a RangePolicy as an nd_range, and the vector-lane query the partitioned Fad depends on is undefined in a flat kernel.  Build with a compiler that provides the extension, or disable Sacado_ENABLE_HIERARCHICAL and Sacado_ENABLE_HIERARCHICAL_DFAD."
+#endif
+
 // ====================================================================
 // Kokkos customization points for the mdspan based View implementation
 // ====================================================================
