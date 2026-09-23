@@ -565,6 +565,78 @@ Teuchos::RCP<Teuchos::ParameterList> ML2MueLuParameterTranslator::SetParameterLi
   // Add the MueLu parameters to the translated list
   translatedList->setParameters(mueluList);
 
+  if (defaultVals == "Maxwell") {
+    // ML used a flat list for Maxwell1.
+    // MueLu uses sublists for the two hierarchies.
+    // We need to redistribute the parameters.
+
+    Teuchos::RCP<Teuchos::ParameterList> newList = Teuchos::rcp(new Teuchos::ParameterList());
+
+    // interpret ML list
+    newList->sublist("maxwell1: 22list") = *translatedList;
+
+    // copy verbosity setting
+    if (newList->sublist("maxwell1: 22list").isType<std::string>("verbosity")) {
+      newList->set("verbosity", newList->sublist("maxwell1: 22list").get<std::string>("verbosity"));
+      newList->sublist("maxwell1: 11list").set("verbosity", newList->sublist("maxwell1: 22list").get<std::string>("verbosity"));
+    }
+
+    // Hardwiring options to ensure ML compatibility
+    newList->sublist("maxwell1: 22list").set("use kokkos refactor", false);
+    newList->sublist("maxwell1: 22list").set("tentative: constant column sums", false);
+    newList->sublist("maxwell1: 22list").set("tentative: calculate qr", false);
+
+    newList->sublist("maxwell1: 11list").set("use kokkos refactor", false);
+    newList->sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+    newList->sublist("maxwell1: 11list").set("aggregation: type", "uncoupled");
+
+    // We are intentionally setting this to true, contrary to the default value.
+    // This is for backward compatibility with ML.
+    newList->sublist("maxwell1: 11list").set("sa: use edge matrix for smoothing", true);
+
+    // newList->sublist("maxwell1: 11list").set("aggregation: use ml scaling of drop tol", true);
+    newList->sublist("maxwell1: 22list").set("aggregation: use ml scaling of drop tol", true);
+    newList->sublist("maxwell1: 22list").set("aggregation: min agg size", 3);
+
+    // Move damping factor from 22list to 11list
+    if (newList->sublist("maxwell1: 22list").isType<double>("sa: damping factor")) {
+      newList->sublist("maxwell1: 11list").set("sa: damping factor", newList->sublist("maxwell1: 22list").get<double>("sa: damping factor"));
+      newList->sublist("maxwell1: 22list").remove("sa: damping factor");
+    }
+    newList->sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");
+    newList->sublist("maxwell1: 22list").set("aggregation: type", "uncoupled");
+
+    // Move coarse solver and smoother stuff from 22list to 11list
+    std::vector<std::string> convert = {"coarse:", "smoother:", "smoother: pre", "smoother: post"};
+    for (auto it = convert.begin(); it != convert.end(); ++it) {
+      if (newList->sublist("maxwell1: 22list").isType<std::string>(*it + " type")) {
+        newList->sublist("maxwell1: 11list").set(*it + " type", newList->sublist("maxwell1: 22list").get<std::string>(*it + " type"));
+        newList->sublist("maxwell1: 22list").remove(*it + " type");
+      }
+      if (newList->sublist("maxwell1: 22list").isSublist(*it + " params")) {
+        newList->sublist("maxwell1: 11list").set(*it + " params", newList->sublist("maxwell1: 22list").sublist(*it + " params"));
+        newList->sublist("maxwell1: 22list").remove(*it + " params");
+      }
+    }
+    if (newList->sublist("maxwell1: 22list").isType<std::string>("cycle type")) {
+      newList->sublist("maxwell1: 11list").set("cycle type", newList->sublist("maxwell1: 22list").get<std::string>("cycle type"));
+      newList->sublist("maxwell1: 22list").remove("cycle type");
+    }
+    if (newList->sublist("maxwell1: 22list").isType<std::string>("smoother: pre or post")) {
+      newList->sublist("maxwell1: 11list").set("smoother: pre or post", newList->sublist("maxwell1: 22list").get<std::string>("smoother: pre or post"));
+      newList->sublist("maxwell1: 22list").remove("smoother: pre or post");
+    }
+
+    newList->sublist("maxwell1: 22list").set("smoother: type", "none");
+    newList->sublist("maxwell1: 22list").set("coarse: type", "none");
+
+    newList->set("maxwell1: nodal smoother fix zero diagonal threshold", 1e-10);
+    newList->sublist("maxwell1: 22list").set("rap: fix zero diagonals", true);
+    newList->sublist("maxwell1: 22list").set("rap: fix zero diagonals threshold", 1e-10);
+
+    return newList;
+  }
+
   return translatedList;
 }
 
