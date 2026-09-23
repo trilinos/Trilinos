@@ -69,9 +69,7 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate) {
 
   // gold list
   goldList.set("aggregation: type", "uncoupled");
-  goldList.set("aggregation: coloring algorithm", "mis2 aggregation");
-  goldList.set("aggregation: backend", "kokkos");
-  goldList.set("aggregation: symmetrize graph after dropping", true);
+  goldList.set("aggregation: backend", "host");
   goldList.set("aggregation: match ML phase1", true);
   goldList.set("aggregation: match ML phase2a", true);
   goldList.set("aggregation: match ML phase2b", true);
@@ -119,9 +117,7 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate_plus_MueLu) {
 
   // gold list
   goldList.set("aggregation: type", "uncoupled");
-  goldList.set("aggregation: coloring algorithm", "mis2 aggregation");
-  goldList.set("aggregation: backend", "kokkos");
-  goldList.set("aggregation: symmetrize graph after dropping", true);
+  goldList.set("aggregation: backend", "host");
   goldList.set("aggregation: match ML phase1", true);
   goldList.set("aggregation: match ML phase2a", true);
   goldList.set("aggregation: match ML phase2b", true);
@@ -200,9 +196,7 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, Maxwell1_translate) {
   goldList.sublist("maxwell1: 22list").set("tentative: calculate qr", false);
   goldList.sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");
   goldList.sublist("maxwell1: 22list").set("aggregation: type", "uncoupled");
-  goldList.sublist("maxwell1: 22list").set("aggregation: coloring algorithm", "mis2 aggregation");
-  goldList.sublist("maxwell1: 22list").set("aggregation: backend", "kokkos");
-  goldList.sublist("maxwell1: 22list").set("aggregation: symmetrize graph after dropping", true);
+  goldList.sublist("maxwell1: 22list").set("aggregation: backend", "host");
   goldList.sublist("maxwell1: 22list").set("smoother: type", "none");
   goldList.sublist("maxwell1: 22list").set("coarse: type", "none");
   goldList.sublist("maxwell1: 22list").set("rap: fix zero diagonals", true);

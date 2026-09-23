@@ -505,13 +505,9 @@ Teuchos::RCP<Teuchos::ParameterList> ML2MueLuParameterTranslator::SetParameterLi
     }
 
     if (pname == "aggregation: type") {
-      if (valuestr == "Uncoupled")
+      if (valuestr == "Uncoupled" || valuestr == "Uncoupled-MIS") {
         mueluss << "<Parameter name=\"aggregation: type\"      type=\"string\"     value=\"uncoupled\"/>" << std::endl;
-      else if (valuestr == "Uncoupled-MIS") {
-        mueluss << "<Parameter name=\"aggregation: type\"      type=\"string\"     value=\"uncoupled\"/>" << std::endl;
-        mueluss << "<Parameter name=\"aggregation: coloring algorithm\"      type=\"string\"     value=\"mis2 aggregation\"/>" << std::endl;
-        mueluss << "<Parameter name=\"aggregation: backend\"      type=\"string\"     value=\"kokkos\"/>" << std::endl;
-        mueluss << "<Parameter name=\"aggregation: symmetrize graph after dropping\"      type=\"bool\"     value=\"true\"/>" << std::endl;
+        mueluss << "<Parameter name=\"aggregation: backend\"      type=\"string\"     value=\"host\"/>" << std::endl;
       } else
         TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Only \"Uncoupled\" aggregation is supported, not \"" << valuestr << "\"\n");
       hasBeenProcessed = true;
