@@ -40,6 +40,21 @@ jobs:
       num-concurrent-tests: 16
       target-branch: ${{ github.base_ref }}
 
+  clang19-openmpi4-experimental:
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260507']"
+      genconfig-string: "rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.7-openmpi-4.1.6:20260507
+      cdash-track: "Pull Request (Non-blocking)"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared_experimental
+      max-cores-allowed: 29
+      num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
+      # Build, but do not run tests. There is a matching nightly build that also runs the tests.
+      skip-run-tests: true
+      extra-pr-driver-args: --extra-configure-args=-DTpetra_ENABLE_Experimental=ON;-DAmesos2_ENABLE_Experimental=ON;-DBelos_ENABLE_Experimental=ON;-DIfpack2_ENABLE_Experimental=ON;-DXpetra_ENABLE_Experimental=ON;-DMueLu_ENABLE_Experimental=ON;-DStokhos_ENABLE_Experimental=ON;-DZoltan2Core_ENABLE_Experimental=ON
+
   clang19-openmpi4-performance-tests:
     uses: ./.github/workflows/ci.yml
     with:
