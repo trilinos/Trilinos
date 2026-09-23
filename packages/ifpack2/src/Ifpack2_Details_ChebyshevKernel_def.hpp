@@ -3,6 +3,7 @@
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //
 // Copyright 2009 NTESS and the Ifpack2 contributors.
+// Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
@@ -136,6 +137,162 @@ struct ChebyshevKernelVectorFunctor {
   }
 };
 
+#if defined(KOKKOS_ENABLE_CUDA)
+template <class WVector,
+          class DVector,
+          class BVector,
+          class AMatrix,
+          class XVector_colMap,
+          class XVector_domMap,
+          class Scalar,
+          bool use_beta,
+          bool do_X_update>
+struct ChebyshevKernelVectorRangeShuffleFunctor {
+  static constexpr int group_size      = 4;
+  static constexpr int nrows_per_group = 2;
+  static constexpr int unroll_len      = 8;
+  static constexpr int group_shift     = 2;
+  static constexpr int row_shift       = 1;
+
+  using execution_space = typename AMatrix::execution_space;
+  using LO              = typename AMatrix::non_const_ordinal_type;
+  using offset_type     = typename AMatrix::non_const_size_type;
+
+  const Scalar alpha;
+  WVector m_w;
+  DVector m_d;
+  BVector m_b;
+  AMatrix m_A;
+  XVector_colMap m_x_colMap;
+  XVector_domMap m_x_domMap;
+  const Scalar beta;
+
+  ChebyshevKernelVectorRangeShuffleFunctor(const Scalar& alpha_,
+                                           const WVector& m_w_,
+                                           const DVector& m_d_,
+                                           const BVector& m_b_,
+                                           const AMatrix& m_A_,
+                                           const XVector_colMap& m_x_colMap_,
+                                           const XVector_domMap& m_x_domMap_,
+                                           const Scalar& beta_)
+    : alpha(alpha_)
+    , m_w(m_w_)
+    , m_d(m_d_)
+    , m_b(m_b_)
+    , m_A(m_A_)
+    , m_x_colMap(m_x_colMap_)
+    , m_x_domMap(m_x_domMap_)
+    , beta(beta_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const LO id) const {
+    using residual_value_type = typename BVector::non_const_value_type;
+    using KAT                 = KokkosKernels::ArithTraits<residual_value_type>;
+
+    const int lane = static_cast<int>(id & static_cast<LO>(group_size - 1));
+    const LO base_row = static_cast<LO>((id >> group_shift) << row_shift);
+    const LO numRows = static_cast<LO>(m_A.numRows());
+    const auto row_map = m_A.graph.row_map.data();
+    const auto entries = m_A.graph.entries.data();
+    const auto values  = m_A.values.data();
+
+    residual_value_type sum[nrows_per_group];
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+    for (int i = 0; i < nrows_per_group; ++i) {
+      sum[i] = KAT::zero();
+    }
+
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+    for (int i = 0; i < nrows_per_group; ++i) {
+      const LO row = base_row + static_cast<LO>(i);
+      if (row < numRows) {
+        const offset_type beg = static_cast<offset_type>(row_map[row]);
+        const offset_type end = static_cast<offset_type>(row_map[row + 1]);
+        constexpr offset_type step = group_size * unroll_len;
+        for (offset_type nz = beg + static_cast<offset_type>(lane); nz < end; nz += step) {
+          sum[i] += values[nz] * m_x_colMap(entries[nz]);
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+          for (int u = 1; u < unroll_len; ++u) {
+            const offset_type nzu = nz + static_cast<offset_type>(u * group_size);
+            if (nzu < end) {
+              sum[i] += values[nzu] * m_x_colMap(entries[nzu]);
+            }
+          }
+        }
+      }
+    }
+
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+    for (int i = 0; i < nrows_per_group; ++i) {
+      sum[i] += Kokkos::shfl_down(sum[i], 2, 32);
+      sum[i] += Kokkos::shfl_down(sum[i], 1, 32);
+    }
+#endif
+
+    if (lane == 0) {
+#if defined(__CUDA_ARCH__)
+#pragma unroll
+#endif
+      for (int i = 0; i < nrows_per_group; ++i) {
+        const LO row = base_row + static_cast<LO>(i);
+        if (row < numRows) {
+          const auto alpha_D_res = alpha * m_d(row) * (m_b(row) - sum[i]);
+          const auto w_new = use_beta ? beta * m_w(row) + alpha_D_res : alpha_D_res;
+          m_w(row) = w_new;
+          if (do_X_update) {
+            m_x_domMap(row) += w_new;
+          }
+        }
+      }
+    }
+  }
+};
+
+template <class WVector,
+          class DVector,
+          class BVector,
+          class AMatrix,
+          class XVector_colMap,
+          class XVector_domMap,
+          class Scalar,
+          bool use_beta,
+          bool do_X_update>
+static void
+chebyshev_kernel_vector_range_shuffle(const Scalar& alpha,
+                                      const WVector& w,
+                                      const DVector& d,
+                                      const BVector& b,
+                                      const AMatrix& A,
+                                      const XVector_colMap& x_colMap,
+                                      const XVector_domMap& x_domMap,
+                                      const Scalar& beta) {
+  using execution_space = typename AMatrix::execution_space;
+  using LO              = typename AMatrix::non_const_ordinal_type;
+  using functor_type = ChebyshevKernelVectorRangeShuffleFunctor<
+      WVector, DVector, BVector, AMatrix, XVector_colMap, XVector_domMap,
+      Scalar, use_beta, do_X_update>;
+
+  constexpr int nrows_per_group = functor_type::nrows_per_group;
+  constexpr int row_shift       = functor_type::row_shift;
+  constexpr int group_shift     = functor_type::group_shift;
+  const LO numRows = static_cast<LO>(A.numRows());
+  const LO ngroups = static_cast<LO>((numRows + nrows_per_group - 1) >> row_shift);
+  const LO nthreads = static_cast<LO>(ngroups << group_shift);
+
+  functor_type func(alpha, w, d, b, A, x_colMap, x_domMap, beta);
+  Kokkos::parallel_for("chebyshev_kernel_vector_range_shuffle_u8_r2",
+                       Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO> >(0, nthreads),
+                       func);
+}
+#endif
+
 // W := alpha * D * (B - A*X) + beta * W.
 template <class WVector,
           class DVector,
@@ -192,6 +349,46 @@ chebyshev_kernel_vector(const Scalar& alpha,
   using x_colMap_vec_type = typename XVector_colMap::const_type;
   using x_domMap_vec_type = typename XVector_domMap::non_const_type;
   using scalar_type       = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+  using residual_value_type = typename BVector::non_const_value_type;
+
+#if defined(KOKKOS_ENABLE_CUDA)
+  if constexpr (std::is_same<execution_space, Kokkos::Cuda>::value &&
+                std::is_arithmetic<scalar_type>::value &&
+                std::is_arithmetic<residual_value_type>::value) {
+    if (beta == KokkosKernels::ArithTraits<Scalar>::zero()) {
+      constexpr bool use_beta = false;
+      if (do_X_update) {
+        chebyshev_kernel_vector_range_shuffle<w_vec_type, d_vec_type,
+                                              b_vec_type, matrix_type,
+                                              x_colMap_vec_type, x_domMap_vec_type,
+                                              scalar_type, use_beta, true>(
+            alpha, w, d, b, A, x_colMap, x_domMap, beta);
+      } else {
+        chebyshev_kernel_vector_range_shuffle<w_vec_type, d_vec_type,
+                                              b_vec_type, matrix_type,
+                                              x_colMap_vec_type, x_domMap_vec_type,
+                                              scalar_type, use_beta, false>(
+            alpha, w, d, b, A, x_colMap, x_domMap, beta);
+      }
+    } else {
+      constexpr bool use_beta = true;
+      if (do_X_update) {
+        chebyshev_kernel_vector_range_shuffle<w_vec_type, d_vec_type,
+                                              b_vec_type, matrix_type,
+                                              x_colMap_vec_type, x_domMap_vec_type,
+                                              scalar_type, use_beta, true>(
+            alpha, w, d, b, A, x_colMap, x_domMap, beta);
+      } else {
+        chebyshev_kernel_vector_range_shuffle<w_vec_type, d_vec_type,
+                                              b_vec_type, matrix_type,
+                                              x_colMap_vec_type, x_domMap_vec_type,
+                                              scalar_type, use_beta, false>(
+            alpha, w, d, b, A, x_colMap, x_domMap, beta);
+      }
+    }
+    return;
+  }
+#endif
 
   if (beta == KokkosKernels::ArithTraits<Scalar>::zero()) {
     constexpr bool use_beta = false;
