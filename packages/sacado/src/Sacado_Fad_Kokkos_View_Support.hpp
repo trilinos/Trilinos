@@ -71,10 +71,24 @@ public:
   constexpr static size_t partitioned_fad_stride =
       PartitionedFadStride > 0 ? PartitionedFadStride : 1;
   // The partitioned static size -- this will be 0 if PartitionedFadStride
-  // does not evenly divide FadStaticDimension
+  // does not evenly divide FadStaticDimension.  0 means the reference carries
+  // its size at runtime.
+  //
+  // SYCL always takes 0.  Kokkos may deliver a narrower vector width than the
+  // TeamPolicy asked for -- see the discussion in
+  // Sacado_Fad_Kokkos_ThreadLocalScalar.hpp -- so the number of components
+  // this thread owns is not known until the kernel runs.  Baking it in from
+  // the layout stride would be right only when the requested width is the one
+  // that arrives.
   constexpr static size_t PartitionedFadStaticDimension =
-      Sacado::Impl::computeFadPartitionSize(FadStaticDimension,
-                                            partitioned_fad_stride);
+#if defined(KOKKOS_ENABLE_SYCL)
+      std::is_same<typename MemorySpace::execution_space,
+                   Kokkos::SYCL>::value
+          ? 0u
+          :
+#endif
+          Sacado::Impl::computeFadPartitionSize(FadStaticDimension,
+                                                partitioned_fad_stride);
 
 #if defined(KOKKOS_ENABLE_CUDA)
   typedef typename Sacado::LocalScalarType<
