@@ -177,13 +177,14 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, Maxwell1_translate) {
   goldList.sublist("maxwell1: 11list").set("smoother: type", "HIPTMAIR");
   goldList.sublist("maxwell1: 11list").sublist("smoother: params").set("hiptmair: smoother type 1", "CHEBYSHEV");
   goldList.sublist("maxwell1: 11list").sublist("smoother: params").sublist("hiptmair: smoother list 1").set("chebyshev: degree", 4);
+  goldList.sublist("maxwell1: 11list").sublist("smoother: params").sublist("hiptmair: smoother list 1").set("chebyshev: ratio eigenvalue", 20.0);
   goldList.sublist("maxwell1: 11list").sublist("smoother: params").set("hiptmair: smoother type 2", "CHEBYSHEV");
   goldList.sublist("maxwell1: 11list").sublist("smoother: params").sublist("hiptmair: smoother list 2").set("chebyshev: degree", 4);
-
+  goldList.sublist("maxwell1: 11list").sublist("smoother: params").sublist("hiptmair: smoother list 2").set("chebyshev: ratio eigenvalue", 20.0);
   goldList.sublist("maxwell1: 11list").set("sa: damping factor", 1.333);
   goldList.sublist("maxwell1: 11list").set("sa: use edge matrix for smoothing", true);
   goldList.sublist("maxwell1: 11list").set("use kokkos refactor", false);
-  goldList.sublist("maxwell1: 11list").sublist("coarse: params");
+  goldList.sublist("maxwell1: 11list").set("coarse: params", dummy);
 
   goldList.sublist("maxwell1: 22list").set("use kokkos refactor", false);
   goldList.sublist("maxwell1: 22list").set("max levels", 10);

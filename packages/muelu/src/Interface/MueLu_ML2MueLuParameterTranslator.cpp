@@ -217,7 +217,7 @@ std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::Param
     mueluss << "<ParameterList name=\"hiptmair: smoother list 1\">" << std::endl;
     if (subSmootherType == "Chebyshev") {
       std::string edge_sweeps = is_coarse ? "smoother: edge sweeps" : "subsmoother: edge sweeps";
-      std::string cheby_alpha = is_coarse ? "smoother: Chebyshev alpha" : "subsmoother: Chebyshev_alpha";
+      std::string cheby_alpha = is_coarse ? "smoother: Chebyshev alpha" : "subsmoother: Chebyshev alpha";
 
       if (paramList.isParameter(edge_sweeps)) {
         mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>(edge_sweeps) << "\"/>" << std::endl;
@@ -244,7 +244,7 @@ std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::Param
     mueluss << "<ParameterList name=\"hiptmair: smoother list 2\">" << std::endl;
     if (subSmootherType == "Chebyshev") {
       std::string node_sweeps = is_coarse ? "smoother: node sweeps" : "subsmoother: node sweeps";
-      std::string cheby_alpha = is_coarse ? "smoother: Chebyshev alpha" : "subsmoother: Chebyshev_alpha";
+      std::string cheby_alpha = is_coarse ? "smoother: Chebyshev alpha" : "subsmoother: Chebyshev alpha";
       if (paramList.isParameter(node_sweeps)) {
         mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>(node_sweeps) << "\"/>" << std::endl;
         adaptingParamList.remove("subsmoother: node sweeps", false);
