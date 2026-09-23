@@ -42,14 +42,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_HIERARCHICAL
   SACADO_VIEW_CUDA_HIERARCHICAL
-  "Enable hierarchical parallelism (currently only for CUDA)."
+  "Enable hierarchical parallelism, in which a team's vector dimension is used to partition the derivative array (CUDA, HIP and SYCL)."
   FALSE
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_HIERARCHICAL_DFAD
   SACADO_VIEW_CUDA_HIERARCHICAL_DFAD
-  "Enable hierarchical parallelism using an approach specific to DFad (currently only for CUDA)."
+  "Enable hierarchical parallelism using an approach specific to DFad (CUDA, HIP and SYCL).  A DFad whose derivative array belongs to a Kokkos::View is supported everywhere; building a DFad value inside a kernel additionally needs a device heap, which means CUDA with UVM and is unavailable on SYCL."
   FALSE
   )
 

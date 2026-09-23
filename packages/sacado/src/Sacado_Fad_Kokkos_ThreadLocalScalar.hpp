@@ -70,7 +70,8 @@ struct LocalScalarType<Fad::GeneralFad<Fad::StaticFixedStorage<T, N>>,
       Fad::GeneralFad<Fad::StaticStorage<T, Ns>>>::type type;
 };
 
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) ||               \
+    defined(__SYCL_DEVICE_ONLY__)
 
 #ifndef SACADO_VIEW_CUDA_HIERARCHICAL_DFAD
 template <unsigned Stride, typename T, typename U>
@@ -83,8 +84,19 @@ partition_scalar(
       ret_type;
   if (Stride == 1u)
     return x;
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   const int size = (x.size() + blockDim.x - threadIdx.x - 1) / blockDim.x;
   const int offset = threadIdx.x;
+#else
+  // See the note in Sacado_Fad_Kokkos_View_Support.hpp:  this is the SYCL
+  // analogue of the threadIdx.x / blockDim.x pair above, and it reads as lane 0
+  // of a width-1 vector in a flat kernel.
+  const auto item = sycl::ext::oneapi::this_work_item::get_nd_item<2>();
+  const int lane = item.get_local_id(1);
+  const int vec = item.get_local_range(1);
+  const int size = (x.size() + vec - lane - 1) / vec;
+  const int offset = lane;
+#endif
   ret_type xp(size, x.val());
 
   // Note:  we can't use x.dx(offset+i*Stride) if
@@ -107,8 +119,19 @@ partition_scalar(const Fad::GeneralFad<Fad::StaticStorage<T, N>> &x) {
       ret_type;
   if (Stride == 1u)
     return x;
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   const int size = (x.size() + blockDim.x - threadIdx.x - 1) / blockDim.x;
   const int offset = threadIdx.x;
+#else
+  // See the note in Sacado_Fad_Kokkos_View_Support.hpp:  this is the SYCL
+  // analogue of the threadIdx.x / blockDim.x pair above, and it reads as lane 0
+  // of a width-1 vector in a flat kernel.
+  const auto item = sycl::ext::oneapi::this_work_item::get_nd_item<2>();
+  const int lane = item.get_local_id(1);
+  const int vec = item.get_local_range(1);
+  const int size = (x.size() + vec - lane - 1) / vec;
+  const int offset = lane;
+#endif
   ret_type xp(size, x.val());
   for (int i = 0; i < size; ++i)
     xp.fastAccessDx(i) = x.fastAccessDx(offset + i * Stride);
@@ -124,8 +147,19 @@ partition_scalar(
       ret_type;
   if (Stride == 1u)
     return x;
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   const int size = (x.size() + blockDim.x - threadIdx.x - 1) / blockDim.x;
   const int offset = threadIdx.x;
+#else
+  // See the note in Sacado_Fad_Kokkos_View_Support.hpp:  this is the SYCL
+  // analogue of the threadIdx.x / blockDim.x pair above, and it reads as lane 0
+  // of a width-1 vector in a flat kernel.
+  const auto item = sycl::ext::oneapi::this_work_item::get_nd_item<2>();
+  const int lane = item.get_local_id(1);
+  const int vec = item.get_local_range(1);
+  const int size = (x.size() + vec - lane - 1) / vec;
+  const int offset = lane;
+#endif
   ret_type xp(size, x.val());
   for (int i = 0; i < size; ++i)
     xp.fastAccessDx(i) = x.fastAccessDx(offset + i * Stride);
@@ -167,6 +201,12 @@ struct ThreadLocalScalarType<
       fad_type, unsigned(PartitionedFadStride)>::type strided_scalar_type;
   typedef typename std::conditional<
       std::is_same<typename TraitsType::execution_space, Kokkos::HIP>::value,
+      strided_scalar_type, fad_type>::type thread_local_scalar_type;
+#elif defined(KOKKOS_ENABLE_SYCL)
+  typedef typename Sacado::LocalScalarType<
+      fad_type, unsigned(PartitionedFadStride)>::type strided_scalar_type;
+  typedef typename std::conditional<
+      std::is_same<typename TraitsType::execution_space, Kokkos::SYCL>::value,
       strided_scalar_type, fad_type>::type thread_local_scalar_type;
 #else
   typedef fad_type thread_local_scalar_type;

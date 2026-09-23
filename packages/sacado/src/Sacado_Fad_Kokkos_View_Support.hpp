@@ -65,7 +65,8 @@ public:
       Kokkos::Impl::ReferenceCountedDataHandle<fad_value_type, MemorySpace>>;
 
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) &&                                  \
-    (defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__))
+    (defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) ||               \
+     defined(__SYCL_DEVICE_ONLY__))
   // avoid division by zero later
   constexpr static size_t partitioned_fad_stride =
       PartitionedFadStride > 0 ? PartitionedFadStride : 1;
@@ -87,6 +88,13 @@ public:
       fad_type, unsigned(partitioned_fad_stride)>::type strided_scalar_type;
   typedef typename std::conditional_t<
       std::is_same<typename MemorySpace::execution_space, Kokkos::HIP>::value,
+      strided_scalar_type, fad_type>
+      thread_local_scalar_type;
+#elif defined(KOKKOS_ENABLE_SYCL)
+  typedef typename Sacado::LocalScalarType<
+      fad_type, unsigned(partitioned_fad_stride)>::type strided_scalar_type;
+  typedef typename std::conditional_t<
+      std::is_same<typename MemorySpace::execution_space, Kokkos::SYCL>::value,
       strided_scalar_type, fad_type>
       thread_local_scalar_type;
 #else
@@ -178,6 +186,20 @@ public:
                        (m_fad_size.value + blockDim.x - threadIdx.x - 1) /
                            blockDim.x,
                        blockDim.x);
+#elif defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__SYCL_DEVICE_ONLY__)
+      // The SYCL analogue of the threadIdx.x / blockDim.x pair above.  Kokkos
+      // launches every policy with a two-dimensional nd_range, so this query is
+      // defined in a flat kernel too, where it reports lane 0 of a width-1
+      // vector and the expressions below degenerate to the unpartitioned ones
+      // -- just as Cuda gets from dim3 block(1, block_size, 1).
+      const size_t lane =
+          sycl::ext::oneapi::this_work_item::get_nd_item<2>().get_local_id(1);
+      const size_t vec =
+          sycl::ext::oneapi::this_work_item::get_nd_item<2>().get_local_range(1);
+      return reference(get_ptr(p) + base_offset + lane,
+                       get_ptr(p) + base_offset + m_fad_size.value,
+                       (m_fad_size.value + vec - lane - 1) / vec,
+                       vec);
 #else
       return reference(get_ptr(p) + base_offset,
                        get_ptr(p) + base_offset + m_fad_size.value,
