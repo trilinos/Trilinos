@@ -69,17 +69,20 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   )
   LIST(APPEND SOURCES ${BINARYIO_OUTPUT_FILES})
 
-  # Generate ETI .cpp files for Tpetra::readBinaryMapFile.
+  # Generate ETI .cpp files for Tpetra::readBinaryMapFile.  This free function
+  # is templated only on LocalOrdinal, GlobalOrdinal, and Node (the LGN scheme),
+  # so it lives in its own translation unit (Tpetra_ReadBinaryMapFile) with its
+  # own instantiation macro, independent of the Scalar-templated BinaryIO class.
   TPETRA_PROCESS_ALL_LGN_TEMPLATES(
-    BINARYIO_READBINARYMAPFILE_OUTPUT_FILES
+    READBINARYMAPFILE_OUTPUT_FILES
     "TpetraInOut_ETI_LO_GO_NT.tmpl"
-    "Tpetra_BinaryIO"
-    "BINARYIO_READBINARYMAPFILE"
+    "Tpetra_ReadBinaryMapFile"
+    "READBINARYMAPFILE"
     "${TpetraCore_ETI_LORDS}"
     "${TpetraCore_ETI_GORDS}"
     "${TpetraCore_ETI_NODES}"
   )
-  LIST(APPEND SOURCES ${BINARYIO_READBINARYMAPFILE_OUTPUT_FILES})
+  LIST(APPEND SOURCES ${READBINARYMAPFILE_OUTPUT_FILES})
 
 ENDIF()
 

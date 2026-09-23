@@ -17,6 +17,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_ReadBinaryMapFile_decl.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -186,11 +187,6 @@ class BinaryIO {
                                   const unsigned long long globalOffset,
                                   const trcp_tcomm_t& comm);
 };
-
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
-readBinaryMapFile(const std::string& filename,
-                  const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 
 }  // namespace Tpetra
 
