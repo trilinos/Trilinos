@@ -104,8 +104,8 @@ makeBinaryMissingRowsMatrix(const Teuchos::RCP<const Tpetra::Map<LO, GO, Node> >
       Kokkos::RangePolicy<execution_space>(0, 3),
       KOKKOS_LAMBDA(const size_t i) {
         const GO gblCol = i == 0 ? static_cast<GO>(0) : (i == 1 ? static_cast<GO>(3) : static_cast<GO>(4));
-        colInd(i)      = localColMap.getLocalElement(gblCol);
-        values(i)      = static_cast<impl_scalar_type>(2 + i);
+        colInd(i)       = localColMap.getLocalElement(gblCol);
+        values(i)       = static_cast<impl_scalar_type>(2 + i);
       });
 
   auto matrix = Teuchos::rcp(new tpetra_matrix_type(rowMap, colMap, rowPtr, colInd, values));

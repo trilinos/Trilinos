@@ -473,7 +473,7 @@ makeColumnMapFromGlobalColumns(const Kokkos::View<GlobalOrdinal*, Kokkos::HostSp
       uniqueCount);
 
   const LocalOrdinal localCount = binaryIOCheckedLocalOrdinalCount<LocalOrdinal>(uniqueCount, "column-map local entry count");
-  using device_type = typename map_type::device_type;
+  using device_type             = typename map_type::device_type;
   Kokkos::View<GlobalOrdinal*, device_type> colGidsDevice("Tpetra::BinaryIO::colGidsDevice", static_cast<size_t>(localCount));
   Kokkos::deep_copy(colGidsDevice, Kokkos::subview(colGids, Kokkos::make_pair(size_t(0), static_cast<size_t>(localCount))));
   return Teuchos::rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),

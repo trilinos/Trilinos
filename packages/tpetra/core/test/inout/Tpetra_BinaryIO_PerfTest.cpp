@@ -47,7 +47,7 @@ std::string makeFilename(const std::string& stem,
 }
 
 void cleanupFile(const std::string& filename,
-                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                 const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
                  const bool keepFiles) {
   comm->barrier();
   if (!keepFiles && comm->getRank() == 0) {
@@ -57,8 +57,8 @@ void cleanupFile(const std::string& filename,
 }
 
 template <class LO, class GO, class Node>
-RCP<const Tpetra::Map<LO, GO, Node> >
-makeCyclicMap(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+RCP<const Tpetra::Map<LO, GO, Node>>
+makeCyclicMap(const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
               const global_size_t globalNumElts) {
   using map_type    = Tpetra::Map<LO, GO, Node>;
   using device_type = typename map_type::device_type;
@@ -80,8 +80,8 @@ makeCyclicMap(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 }
 
 template <class ST, class LO, class GO, class Node>
-RCP<Tpetra::MultiVector<ST, LO, GO, Node> >
-makeDenseTestMultiVector(const RCP<const Tpetra::Map<LO, GO, Node> >& map,
+RCP<Tpetra::MultiVector<ST, LO, GO, Node>>
+makeDenseTestMultiVector(const RCP<const Tpetra::Map<LO, GO, Node>>& map,
                          const size_t numVecs) {
   using multivector_type = Tpetra::MultiVector<ST, LO, GO, Node>;
   using impl_scalar_type = typename multivector_type::impl_scalar_type;
@@ -97,7 +97,7 @@ makeDenseTestMultiVector(const RCP<const Tpetra::Map<LO, GO, Node> >& map,
       Kokkos::MDRangePolicy<execution_space, Kokkos::Rank<2>>({0, 0}, {localX.extent(0), nvec}),
       KOKKOS_LAMBDA(const size_t i, const size_t j) {
         const auto gid = localMap.getGlobalElement(static_cast<LO>(i));
-        localX(i, j)  = static_cast<impl_scalar_type>(1000 + 100 * j + static_cast<size_t>(gid));
+        localX(i, j)   = static_cast<impl_scalar_type>(1000 + 100 * j + static_cast<size_t>(gid));
       });
   return X;
 }
@@ -131,24 +131,24 @@ void assertSameMultiVector(const MV& X,
 }
 
 template <class ST, class LO, class GO, class Node>
-RCP<Tpetra::CrsMatrix<ST, LO, GO, Node> >
-makeBandedMatrix(const RCP<const Tpetra::Map<LO, GO, Node> >& map,
+RCP<Tpetra::CrsMatrix<ST, LO, GO, Node>>
+makeBandedMatrix(const RCP<const Tpetra::Map<LO, GO, Node>>& map,
                  const int nnzPerRow) {
-  using matrix_type          = Tpetra::CrsMatrix<ST, LO, GO, Node>;
-  using local_graph_type     = typename matrix_type::local_graph_device_type;
-  using rowptr_type          = typename local_graph_type::row_map_type::non_const_type;
-  using rowptr_value_type    = typename rowptr_type::non_const_value_type;
-  using colidx_type          = typename local_graph_type::entries_type::non_const_type;
-  using values_type          = typename matrix_type::local_matrix_device_type::values_type::non_const_type;
-  using impl_scalar_type     = typename matrix_type::impl_scalar_type;
-  using device_type          = typename matrix_type::device_type;
-  using memory_space         = typename device_type::memory_space;
-  using execution_space      = typename device_type::execution_space;
+  using matrix_type       = Tpetra::CrsMatrix<ST, LO, GO, Node>;
+  using local_graph_type  = typename matrix_type::local_graph_device_type;
+  using rowptr_type       = typename local_graph_type::row_map_type::non_const_type;
+  using rowptr_value_type = typename rowptr_type::non_const_value_type;
+  using colidx_type       = typename local_graph_type::entries_type::non_const_type;
+  using values_type       = typename matrix_type::local_matrix_device_type::values_type::non_const_type;
+  using impl_scalar_type  = typename matrix_type::impl_scalar_type;
+  using device_type       = typename matrix_type::device_type;
+  using memory_space      = typename device_type::memory_space;
+  using execution_space   = typename device_type::execution_space;
 
-  const size_t localNumRows    = map->getLocalNumElements();
-  const GO maxColumn           = static_cast<GO>(map->getGlobalNumElements() - 1);
-  const GO halfBandwidth       = static_cast<GO>(nnzPerRow / 2);
-  const auto localRowMap       = map->getLocalMap();
+  const size_t localNumRows = map->getLocalNumElements();
+  const GO maxColumn        = static_cast<GO>(map->getGlobalNumElements() - 1);
+  const GO halfBandwidth    = static_cast<GO>(nnzPerRow / 2);
+  const auto localRowMap    = map->getLocalMap();
 
   rowptr_type rowPtr("Tpetra_BinaryIO_PerfTest::rowPtr", localNumRows + 1);
   Kokkos::deep_copy(rowPtr, static_cast<rowptr_value_type>(0));
@@ -167,7 +167,7 @@ makeBandedMatrix(const RCP<const Tpetra::Map<LO, GO, Node> >& map,
           rowPtr(localNumRows) = offset;
         }
       });
-  auto rowPtrHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowPtr);
+  auto rowPtrHost       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowPtr);
   const size_t localNnz = rowPtrHost(localNumRows);
 
   Kokkos::View<GO*, memory_space> globalColumns("Tpetra_BinaryIO_PerfTest::globalColumns", localNnz);
@@ -184,7 +184,7 @@ makeBandedMatrix(const RCP<const Tpetra::Map<LO, GO, Node> >& map,
         }
       });
 
-  RCP<const Tpetra::Map<LO, GO, Node> > colMap;
+  RCP<const Tpetra::Map<LO, GO, Node>> colMap;
   std::ostringstream errStrm;
   const int err = Tpetra::Details::makeColMap<LO, GO, Node>(colMap,
                                                             map,
@@ -265,8 +265,8 @@ void assertSameMatrix(const MatrixType& A,
                                std::logic_error,
                                "Matrix copied row lengths differ for global row " << gblRow << ".");
 
-    std::vector<std::pair<GO, ST> > aEntries;
-    std::vector<std::pair<GO, ST> > bEntries;
+    std::vector<std::pair<GO, ST>> aEntries;
+    std::vector<std::pair<GO, ST>> bEntries;
     aEntries.reserve(aRead);
     bEntries.reserve(bRead);
     for (size_t k = 0; k < aRead; ++k) {
@@ -302,7 +302,7 @@ struct Config {
 };
 
 void validateConfig(const Config& config,
-                    const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+                    const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   using map_type = Tpetra::Map<>;
   using GO       = map_type::global_ordinal_type;
 
@@ -344,7 +344,7 @@ void validateConfig(const Config& config,
 }
 
 void runDenseCase(const Config& config,
-                  const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+                  const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   using ST               = Tpetra::Details::DefaultTypes::scalar_type;
   using LO               = Tpetra::Map<>::local_ordinal_type;
   using GO               = Tpetra::Map<>::global_ordinal_type;
@@ -399,7 +399,7 @@ void runDenseCase(const Config& config,
 }
 
 void runSparseCase(const Config& config,
-                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+                   const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   using ST             = Tpetra::Details::DefaultTypes::scalar_type;
   using LO             = Tpetra::Map<>::local_ordinal_type;
   using GO             = Tpetra::Map<>::global_ordinal_type;
