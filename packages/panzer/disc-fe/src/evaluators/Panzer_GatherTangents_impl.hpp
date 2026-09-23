@@ -74,7 +74,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   this->utils.setFieldData(pointValues_.jac,fm);
   const shards::CellTopology & parentCell = *basis_->getCellTopology();
   const int edgeDim = 1;
-  edgeParam_ = Intrepid2::RefSubcellParametrization<PHX::Device>::get(edgeDim, parentCell.getKey());
+  edgeParam_ = Intrepid2::RefSubcellParametrization<typename PHX::Device::device_type>::get(edgeDim, parentCell.getKey());
 
   const int numEdges = gatherFieldTangents_.extent(1);
   keys_ = Kokkos::View<unsigned int*>("parentCell.keys",numEdges);

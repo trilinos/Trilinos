@@ -44,10 +44,10 @@ namespace panzer {
 // triangle tests
 TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
 {
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis1, basis2;
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis1, basis2;
 
-   basis1 = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
-   basis2 = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>);
+   basis1 = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::Device::device_type,double,double>);
+   basis2 = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::Device::device_type,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern1 = rcp(new Intrepid2FieldPattern(basis1));
    Teuchos::RCP<FieldPattern> pattern2 = rcp(new Intrepid2FieldPattern(basis2));
@@ -59,10 +59,10 @@ TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
 
 TEUCHOS_UNIT_TEST(tNodalFieldPattern, test3d_HEX_c1)
 {
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis1, basis2;
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis1, basis2;
 
-   basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
-   basis2 = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+   basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::device_type,double,double>);
+   basis2 = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::device_type,double,double>);
 
    Teuchos::RCP<FieldPattern> pattern1 = rcp(new Intrepid2FieldPattern(basis1));
    Teuchos::RCP<FieldPattern> pattern2 = rcp(new Intrepid2FieldPattern(basis2));

@@ -127,7 +127,7 @@ namespace panzer {
 
     Teuchos::RCP<const panzer::IntegrationRule> int_rule;
 
-    Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> intrepid_cubature;
+    Teuchos::RCP<Intrepid2::Cubature<PHX::Device::device_type,double,double>> intrepid_cubature;
 
     // =====================================================================================================
     // Lazy evaluation interface

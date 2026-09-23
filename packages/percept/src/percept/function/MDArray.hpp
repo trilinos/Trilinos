@@ -19,9 +19,9 @@
   namespace percept
   {
 
-    typedef Kokkos::DynRankView<double,Kokkos::HostSpace> MDArray;
-    typedef Kokkos::DynRankView<int,Kokkos::HostSpace> MDArrayInt;
-    typedef Kokkos::DynRankView<unsigned,Kokkos::HostSpace> MDArrayUInt;
+    typedef Kokkos::DynRankView<double,typename Kokkos::HostSpace::device_type> MDArray;
+    typedef Kokkos::DynRankView<int,typename Kokkos::HostSpace::device_type> MDArrayInt;
+    typedef Kokkos::DynRankView<unsigned,typename Kokkos::HostSpace::device_type> MDArrayUInt;
 
     template<class MDA>
     inline std::string

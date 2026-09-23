@@ -65,9 +65,9 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testA)
    out << note << std::endl;
 
    // basis to build patterns from
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::Device::device_type,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::Device::device_type,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::Device::device_type,double,double>);
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
@@ -140,9 +140,9 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
    out << note << std::endl;
 
    // basis to build patterns from
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::Device::device_type,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::Device::device_type,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::Device::device_type,double,double>);
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
@@ -281,7 +281,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
    // basis to build patterns from
 
    {
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>);
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::Device::device_type,double,double>);
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
       std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
       patternM.push_back(std::make_tuple(3,FieldType::CG,pattern));
@@ -298,7 +298,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
    }
 
    {
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::device_type,double,double>);
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
       std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
       patternM.push_back(std::make_tuple(3,FieldType::CG,pattern));
@@ -331,8 +331,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
    }
 
    {
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC2 = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisC1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::device_type,double,double>);
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisC2 = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::device_type,double,double>);
       RCP<const FieldPattern> patternC1 = rcp(new Intrepid2FieldPattern(basisC1));
       RCP<const FieldPattern> patternC2 = rcp(new Intrepid2FieldPattern(basisC2));
       std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
@@ -385,9 +385,9 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
    {
       out << "Crazy HEX basis test" << std::endl;
  
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisDivI1 = rcp(new Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::exec_space,double,double>);
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisCurlI1 = rcp(new Intrepid2::Basis_HCURL_HEX_I1_FEM<PHX::exec_space,double,double>);
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisC1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::device_type,double,double>);
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisDivI1 = rcp(new Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::Device::device_type,double,double>);
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisCurlI1 = rcp(new Intrepid2::Basis_HCURL_HEX_I1_FEM<PHX::Device::device_type,double,double>);
       RCP<const FieldPattern> patternC1 = rcp(new Intrepid2FieldPattern(basisC1));
       RCP<const FieldPattern> patternDivI1 = rcp(new Intrepid2FieldPattern(basisDivI1));
       RCP<const FieldPattern> patternCurlI1 = rcp(new Intrepid2FieldPattern(basisCurlI1));
@@ -427,7 +427,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
       out << "Highorder HEX basis test: FAILS!!!! DISABLED FOR NOW!!!!!" << std::endl;
  
 /*
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::exec_space,double,double>(4,Intrepid2::POINTTYPE_EQUISPACED));
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device::device_type,double,double>(4,Intrepid2::POINTTYPE_EQUISPACED));
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
       std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
       patternM.push_back(std::make_tuple(3,FieldType::CG,pattern));
@@ -452,7 +452,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
 TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
 {
    {
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::device_type,double,double>);
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
       std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
       patternM.push_back(std::make_tuple(3,FieldType::CG,pattern));
@@ -521,8 +521,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
    }
 
    {
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
-      RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC2 = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisC1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::device_type,double,double>);
+      RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisC2 = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::device_type,double,double>);
       RCP<const FieldPattern> patternP = rcp(new Intrepid2FieldPattern(basisC1));
       RCP<const FieldPattern> patternU = rcp(new Intrepid2FieldPattern(basisC2));
       std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
@@ -653,7 +653,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testE)
    out << note << std::endl;
 
    // basis to build patterns from
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisA = rcp(new Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::Device::device_type,double,double>);
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternNode = rcp(new NodalFieldPattern(basisA->getBaseCellTopology()));

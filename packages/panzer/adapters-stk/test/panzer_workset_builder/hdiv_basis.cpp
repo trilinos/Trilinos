@@ -38,7 +38,7 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    typedef Intrepid2::Basis<PHX::Device::execution_space,double,double> IntrepidBasis;
+    typedef Intrepid2::Basis<PHX::Device::device_type,double,double> IntrepidBasis;
 
     std::string element_block = "eblock-0_0_0";
     int basis_order = 4;
@@ -68,10 +68,10 @@ namespace panzer {
     RCP<IntrepidBasis> hdiv_intrepid_basis, hcurl_intrepid_basis;
     {
        hdiv_intrepid_basis
-           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HDiv",basis_order,
+           = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>("HDiv",basis_order,
                                                                                       *mesh->getCellTopology(element_block));
        hcurl_intrepid_basis
-           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HCurl",basis_order,
+           = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>("HCurl",basis_order,
                                                                                       *mesh->getCellTopology(element_block));
       RCP<panzer::Intrepid2FieldPattern> hdiv_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hdiv_intrepid_basis));
       RCP<panzer::Intrepid2FieldPattern> hcurl_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hcurl_intrepid_basis));
@@ -183,7 +183,7 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    typedef Intrepid2::Basis<PHX::Device::execution_space,double,double> IntrepidBasis;
+    typedef Intrepid2::Basis<PHX::Device::device_type,double,double> IntrepidBasis;
 
     std::string element_block = "eblock-0_0_0";
     int basis_order = 1;
@@ -213,10 +213,10 @@ namespace panzer {
     RCP<IntrepidBasis> hdiv_intrepid_basis, hcurl_intrepid_basis;
     {
        hdiv_intrepid_basis
-           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HDiv",basis_order,
+           = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>("HDiv",basis_order,
                                                                                       *mesh->getCellTopology(element_block));
        hcurl_intrepid_basis
-           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HCurl",basis_order,
+           = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>("HCurl",basis_order,
                                                                                       *mesh->getCellTopology(element_block));
       RCP<panzer::Intrepid2FieldPattern> hdiv_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hdiv_intrepid_basis));
       RCP<panzer::Intrepid2FieldPattern> hcurl_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hcurl_intrepid_basis));

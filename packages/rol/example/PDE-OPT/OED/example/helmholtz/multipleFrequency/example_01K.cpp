@@ -104,7 +104,7 @@ void solve(const ROL::Ptr<ROL::OED::Factory<Real>>      &factory,
 }
 
 using RealT = double;
-using DeviceT = Kokkos::HostSpace;
+using DeviceT = typename Kokkos::HostSpace::device_type;
 
 int main(int argc, char *argv[]) {
 //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
