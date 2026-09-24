@@ -484,7 +484,6 @@ void test_Singleton_Reindex_fwd(std::string Matrix_Original_file, std::string LH
   using Map_t                   = Tpetra::Map<LO, GO, Node>;
   using LinearProblem_t         = Tpetra::LinearProblem<Scalar, LO, GO, Node>;
   using CrsSingletonFiltering_t = Tpetra::CrsSingletonFilter_LinearProblem<Scalar, LO, GO, Node>;
-  using Reindex_t               = Tpetra::Reindex_LinearProblem<Scalar, LO, GO, Node>;
 
   RCP<CrsMatrix_t> A_Original     = Reader_t::readSparseFile(Matrix_Original_file, Comm);
   RCP<const Map_t> A_Original_Map = A_Original->getRangeMap();
@@ -562,7 +561,6 @@ void test_Singleton_Reindex_Scale_fwd(std::string Matrix_Original_file, std::str
   using Map_t                   = Tpetra::Map<LO, GO, Node>;
   using LinearProblem_t         = Tpetra::LinearProblem<Scalar, LO, GO, Node>;
   using CrsSingletonFiltering_t = Tpetra::CrsSingletonFilter_LinearProblem<Scalar, LO, GO, Node>;
-  using Reindex_t               = Tpetra::Reindex_LinearProblem<Scalar, LO, GO, Node>;
 
   RCP<CrsMatrix_t> A_Original     = Reader_t::readSparseFile(Matrix_Original_file, Comm);
   RCP<const Map_t> A_Original_Map = A_Original->getRangeMap();
