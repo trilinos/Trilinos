@@ -64,8 +64,13 @@ KOKKOS_INLINE_FUNCTION auto subview(
     const View<D, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>, P...> &src,
     Args... args) {
   using view_t = View<D, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>, P...>;
+#if KOKKOS_VERSION >= 50299
+  auto submapping_result = submdspan_mapping(
+      src.mapping(), Impl::transform_kokkos_slice_to_mdspan_canonical_slice<typename view_t::index_type>(args)...);
+#else
   auto submapping_result = submdspan_mapping(
       src.mapping(), Impl::transform_kokkos_slice_to_mdspan_slice(args)...);
+#endif
   using sub_data_type = typename data_type_construct<
       typename view_t::value_type,
       decltype(submapping_result.mapping)::extents_type::rank()>::type;
