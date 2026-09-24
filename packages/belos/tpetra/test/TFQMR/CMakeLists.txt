@@ -6,6 +6,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_TFQMR_current_solution_provider_test
+  SOURCES test_tfqmr_current_solution_provider.cpp
+  ARGS "--verbose"
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+)
+
 BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
   Tpetra_tfqmr_hb
   SOURCES test_tfqmr_hb.cpp

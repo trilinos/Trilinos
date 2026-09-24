@@ -17,6 +17,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosCGIteration.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 
 #include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
@@ -90,7 +91,8 @@ namespace Belos {
 };
 
 template<class ScalarType, class MV, class OP, class DM>
-class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
+class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM>,
+               public CurrentSolutionProvider<ScalarType,MV,OP,DM> {
 
   public:
 
