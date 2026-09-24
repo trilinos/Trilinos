@@ -51,6 +51,8 @@ using Tempus::SolutionState;
 // ************************************************************
 TEUCHOS_UNIT_TEST(EPI, SinCos)
 {
+  Teuchos::TimeMonitor::zeroOutTimers();
+
   // Run EPI integrator logic with different PhiEvaluator configurations
   std::vector<std::string> xml_cases = {
       "Taylor",
@@ -191,6 +193,7 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
 
 TEUCHOS_UNIT_TEST(EPI, Reaction)
 {
+  Teuchos::TimeMonitor::zeroOutTimers();
   // Run EPI integrator logic with different PhiEvaluator configurations
   std::vector<std::string> xml_cases = {
       "Taylor",
@@ -225,10 +228,19 @@ TEUCHOS_UNIT_TEST(EPI, Reaction)
 
       // Update the PhiEvaluator parameters based on the PhiEvaluator type
       if (xml_case == "Leja") {
-        pl->sublist("Demo Stepper").sublist("PhiEvaluator").set("PhiEvaluator Type", "Leja").set("Expansion Order", 50).set("leja_tol", 1e-12).set("leja_a", -1.0).set("leja_c", 0.001);
+        pl->sublist("Demo Stepper")
+            .sublist("PhiEvaluator")
+            .set("PhiEvaluator Type", "Leja")
+            .set("Expansion Order", 50)
+            .set("leja_tol", 1e-12)
+            .set("leja_a", -1.0)
+            .set("leja_c", 0.001);
       }
       else if (xml_case == "Taylor") {
-        pl->sublist("Demo Stepper").sublist("PhiEvaluator").set("PhiEvaluator Type", "Taylor").set("Expansion Order", 16);
+        pl->sublist("Demo Stepper")
+            .sublist("PhiEvaluator")
+            .set("PhiEvaluator Type", "Taylor")
+            .set("Expansion Order", 16);
       }
 
       integrator = Tempus::createIntegratorBasic<double>(pl, model);
@@ -318,15 +330,15 @@ TEUCHOS_UNIT_TEST(EPI, Reaction)
       // for all time step sizes.
       TEST_COMPARE(xErrorNorm[i], <=, 1.0e-10);
     }
-
-    Teuchos::TimeMonitor::summarize();
   }
+  Teuchos::TimeMonitor::summarize();
 }
 
 // ************************************************************
 // ************************************************************
 TEUCHOS_UNIT_TEST(EPI, VanDerPol)
 {
+  Teuchos::TimeMonitor::zeroOutTimers();
   // Run EPI integrator logic with different PhiEvaluator configurations
   std::vector<std::string> xml_cases = {
       "Taylor",
@@ -429,13 +441,13 @@ TEUCHOS_UNIT_TEST(EPI, VanDerPol)
 
     TEST_FLOATING_EQUALITY(xSlope, order, 0.2);
     TEST_COMPARE(xErrorNorm[0], <=, .1);
-
-    Teuchos::TimeMonitor::summarize();
   }
+  Teuchos::TimeMonitor::summarize();
 }
 
 TEUCHOS_UNIT_TEST(EPI, NonAutoSrc)
 {
+  Teuchos::TimeMonitor::zeroOutTimers();
   // Run EPI integrator:
   // ii = 0 -> without nonautonomous correction (Epsilon for RHS finite difference<=0)
   // ii = 1 -> with nonautonomous correction (Epsilon for RHS finite difference>0)
@@ -624,77 +636,103 @@ TEUCHOS_UNIT_TEST(EPI, LotkaVolterra)
     out << "  RK4 reference computed at dt_ref = " << dt_ref << std::endl;
   }
 
-  // EPI3 convergence study
-  RCP<Tempus::IntegratorBasic<double>> integrator;
-  std::vector<RCP<Thyra::VectorBase<double>>> solutions;
-  std::vector<double> StepSize;
-  std::vector<double> xErrorNorm;
+  Teuchos::TimeMonitor::zeroOutTimers();
 
-  const int nTimeStepSizes = 5;
-  double dt                = 0.2;
+  std::vector<std::string> xml_cases = {
+      "PFD",
+      "PFD_lumped",
+      "Leja"};
 
-  for (int n = 0; n < nTimeStepSizes; n++) {
-    RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_EPI_LotkaVolterra.xml");
+  for (const auto& xml_case : xml_cases) {
+    // EPI3 convergence study
+    RCP<Tempus::IntegratorBasic<double>> integrator;
+    std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+    std::vector<double> StepSize;
+    std::vector<double> xErrorNorm;
 
-    RCP<ParameterList> lvm_pl = sublist(pList, "LotkaVolterraModel", true);
-    auto model                = rcp(new LotkaVolterraModel<double>(lvm_pl));
+    const int nTimeStepSizes = 5;
+    double dt                = 0.2;
 
-    dt /= 2.0;
+    for (int n = 0; n < nTimeStepSizes; n++) {
+      RCP<ParameterList> pList =
+          getParametersFromXmlFile("Tempus_EPI_LotkaVolterra.xml");
 
-    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-    pl->sublist("Demo Integrator")
-        .sublist("Time Step Control")
-        .set("Initial Time Step", dt);
-    pl->sublist("Demo Integrator")
-        .sublist("Time Step Control")
-        .set("Maximum Time Step", dt);
+      RCP<ParameterList> lvm_pl = sublist(pList, "LotkaVolterraModel", true);
+      auto model                = rcp(new LotkaVolterraModel<double>(lvm_pl));
 
-    integrator = Tempus::createIntegratorBasic<double>(pl, model);
+      dt /= 2.0;
 
-    RCP<Thyra::VectorBase<double>> x0 =
-        model->getNominalValues().get_x()->clone_v();
-    integrator->initializeSolutionHistory(0.0, x0);
-    integrator->initialize();
+      RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+      pl->sublist("Demo Integrator")
+          .sublist("Time Step Control")
+          .set("Initial Time Step", dt);
+      pl->sublist("Demo Integrator")
+          .sublist("Time Step Control")
+          .set("Maximum Time Step", dt);
 
-    bool integratorStatus = integrator->advanceTime();
-    TEST_ASSERT(integratorStatus)
+      auto& phiList = pl->sublist("Demo Stepper").sublist("PhiEvaluator");
+      if (xml_case.starts_with("PFD")) {
+        phiList.remove("Leja DD Method", false);
+        phiList.remove("leja_tol", false);
+        phiList.remove("leja_a", false);
+        phiList.remove("leja_b", false);
+        phiList.remove("leja_c", false);
+        phiList.remove("Expansion Order", false);
 
-    double time = integrator->getTime();
-    TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+        phiList.set("PhiEvaluator Type", "PFD");
+        // configure a third order (not A-stable) PFD method, suitable for Lotka Volterra with EPI3
+        phiList.set("PFD Method", "EDIRK3");
+        if (xml_case == "PFD_lumped")
+          phiList.set("Lump Mass Matrix", true);
+      }
+      else {
+        // Leja params list is set up by default
+      }
+      integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
-    // Write trajectory for the coarsest run
-    if (n == 0) {
-      RCP<const SolutionHistory<double>> solutionHistory =
-          integrator->getSolutionHistory();
-      writeSolution("Tempus_EPI_LotkaVolterra.dat", solutionHistory);
+      RCP<Thyra::VectorBase<double>> x0 =
+          model->getNominalValues().get_x()->clone_v();
+      integrator->initializeSolutionHistory(0.0, x0);
+      integrator->initialize();
+
+      bool integratorStatus = integrator->advanceTime();
+      TEST_ASSERT(integratorStatus)
+
+      double time = integrator->getTime();
+      TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+      // Write trajectory for the coarsest run
+      if (n == 0) {
+        RCP<const SolutionHistory<double>> solutionHistory =
+            integrator->getSolutionHistory();
+        writeSolution("Tempus_EPI_LotkaVolterra_" + xml_case + ".dat", solutionHistory);
+      }
+
+      StepSize.push_back(dt);
+      auto solution = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(integrator->getX()), solution.ptr());
+      solutions.push_back(solution);
     }
 
-    StepSize.push_back(dt);
-    auto solution = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getX()), solution.ptr());
-    solutions.push_back(solution);
+    // Append the RK4 reference as the last entry.
+    StepSize.push_back(0.0);
+    solutions.push_back(xRef);
+
+    // ----------------------------------------------------------
+    // at the final state, so only the state convergence slope is checked.
+    // EPI methods do not compute xDot at the final state; only check x slope.
+    double xSlope                        = 0.0;
+    RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
+    double order                         = stepper->getOrder();
+    writeOrderError("Tempus_EPI_LotkaVolterra_" + xml_case + "-Error.dat", stepper, StepSize,
+                    solutions, xErrorNorm, xSlope, out);
+
+    std::cout << "Estimated Order (" + xml_case + "): " << xSlope << std::endl;
+    std::cout << "Expected  Order (" + xml_case + "): " << order << std::endl;
+
+    // ~order is expected, super-convergence OK
+    TEST_COMPARE(xSlope, >=, order * 0.9);
   }
-
-  // Append the RK4 reference as the last entry.
-  StepSize.push_back(0.0);
-  solutions.push_back(xRef);
-
-  // ----------------------------------------------------------
-  // NOTE: EPI methods do not populate xDot
-  // at the final state, so only the state convergence slope is checked.
-  // EPI methods do not compute xDot at the final state; only check x slope.
-  double xSlope                        = 0.0;
-  RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
-  double order                         = stepper->getOrder();
-  writeOrderError("Tempus_EPI_LotkaVolterra-Error.dat", stepper, StepSize,
-                  solutions, xErrorNorm, xSlope, out);
-
-  std::cout << "Estimated Order: " << xSlope << std::endl;
-  std::cout << "Expected  Order: " << order << std::endl;
-
-  // ~order is expected, super-convergence OK
-  TEST_COMPARE(xSlope, >=, order * 0.9);
 
   Teuchos::TimeMonitor::summarize();
 }

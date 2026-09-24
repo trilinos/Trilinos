@@ -290,7 +290,7 @@ PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x
     checkInitialized();
 
     // Invert the mass matrix out of the right hand side and store in x
-    Thyra::assign(x, 0.0);
+    Thyra::assign(x, Scalar(0.0));
     this->phiLinSolv_->solveMass(x, Mrhs_b);
 
     // Build linop with Jacobian and mass matrix
@@ -332,7 +332,7 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
     if (Mrhs_B[ii] != Teuchos::null) {
       auto Mrhs_b                                   = Mrhs_B[ii];
       Teuchos::RCP<Thyra::VectorBase<Scalar>> rhs_b = Mrhs_b->clone_v();
-      Thyra::assign(rhs_b.ptr(), 0.0);
+      Thyra::assign(rhs_b.ptr(), Scalar(0.0));
       this->phiLinSolv_->solveMass(rhs_b.ptr(), Mrhs_b);
       rhs_B[ii] = rhs_b;
     }
@@ -787,27 +787,88 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::assembleAndsolveMpJ(
 }
 
 template <class Scalar>
-Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-                                                             const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
-                                                             Scalar alpha, Scalar beta) const
+Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(
+    const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
+    Scalar alpha,
+    Scalar beta) const
 {
   this->checkInitialized(PhiInitialization::JACOBIAN_AND_MASS);
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  // build an abstract MpJ linOp
-  // TODO: figure out if it makes sense to add the physical matrices together, if both are the same Tpetra format.
-  //       For lumpMass = true, this is probably fine as is.
-  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> aM  = Thyra::scale<Scalar>(alpha, massMatrix_);
-  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bJ  = Thyra::scale<Scalar>(beta, jacobianMatrix_);
-  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> MpJ = Thyra::add(aM, bJ);
+  Thyra::SolveStatus<Scalar> sStatus;
 
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> MpJ;
+  if (auto denseJacobian = Teuchos::rcp_dynamic_cast<const Thyra::MultiVectorBase<Scalar>>(jacobianMatrix_)) {
+    // create a new MV, copied from Jacobian
+    Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> denseMpJ = denseJacobian->clone_mv();
+
+    // add mass matrix
+    if (auto denseMass = Teuchos::rcp_dynamic_cast<const Thyra::MultiVectorBase<Scalar>>(massMatrix_)) {
+      // we know that both MultiVectors are from appModel_->create_W_op, thus have the same size
+      // add scaled multivectors, and recast to LinOp later
+      Thyra::linear_combination<Scalar>(Teuchos::tuple(alpha),
+                                        Teuchos::tuple(denseMass.getConst().ptr()),
+                                        beta, denseMpJ.ptr());
+    }
+    else if (auto diagonalMass = Teuchos::rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<Scalar>>(massMatrix_)) {
+      Teuchos::RCP<const Thyra::VectorBase<Scalar>> massDiag = diagonalMass->getDiag();
+      Thyra::RCP<Thyra::VectorBase<Scalar>> vec              = Thyra::createMember(denseMpJ->range());
+
+      // we know that Jacobian MultiVector is from appModel_->create_W_op, thus has compatible size
+      // to diagonal of mas matrix; add scaled multivector to diagonal, and recast to LinOp later
+      if (auto spmdSpace = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double>>(denseMpJ->range())) {
+        const Thyra::Ordinal localOffset = spmdSpace->localOffset();
+        const Thyra::Ordinal localSubDim = spmdSpace->localSubDim();
+        for (Thyra::Ordinal j = localOffset; j < localSubDim; j++) {
+          Thyra::assign(vec.ptr(), Scalar(0));
+          {
+            Thyra::DetachedVectorView<Scalar> vec_view(*vec);
+            const Thyra::ConstDetachedVectorView<Scalar> diag_view(*massDiag);
+            vec_view[j] = diag_view[j];
+          }
+          Thyra::linear_combination<Scalar>(Teuchos::tuple(alpha),
+                                            Teuchos::tuple(vec.getConst().ptr()),
+                                            beta, denseMpJ->col(j).ptr());
+        }
+      }
+      else {
+        for (Thyra::Ordinal j = 0; j < denseMpJ->range()->dim(); j++) {
+          Thyra::assign(vec.ptr(), Scalar(0));
+          {
+            Thyra::DetachedVectorView<Scalar> vec_view(*vec);
+            const Thyra::ConstDetachedVectorView<Scalar> diag_view(*massDiag);
+            vec_view[j] = diag_view[j];
+          }
+          Thyra::linear_combination<Scalar>(Teuchos::tuple(alpha),
+                                            Teuchos::tuple(vec.getConst().ptr()),
+                                            beta, denseMpJ->col(j).ptr());
+        }
+      }
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error,
+          "Error - PhiEvaluator::solveMpJ() internal error: failed to cast mass matrix.\n");
+    }
+    // convert dense Multivector matrix to LinOp
+    MpJ = denseMpJ;
+  }
+  else {
+    // build an abstract MpJ linOp
+    // TODO: consider if it makes sense to add the physical matrices together, if both are the same Tpetra format.
+    //       For lumpMass = true, this is probably fine as is.
+    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> aM = Thyra::scale<Scalar>(alpha, massMatrix_);
+    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bJ = Thyra::scale<Scalar>(beta, jacobianMatrix_);
+    MpJ                                                      = Thyra::add(aM, bJ);
+  }
   // TODO: const-cast why?
   const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel_->get_W_factory();
   const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =
       Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
 
-  // TODO: figure out how to add preconditioning
+  // TODO: add preconditioning
   const Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = Thyra::linearOpWithSolve(*lowsFactory, MpJ);
 
   assign(x.ptr(), ST::zero());
@@ -819,8 +880,7 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Teuchos::Ptr<
       Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL, Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
 
   // compute the solution to (MpJ)\Mf and write it to x
-  Thyra::SolveStatus<Scalar> sStatus = LOWSB->solve(Thyra::NOTRANS, *Mf, x.ptr(), Teuchos::constPtr(solveCriteria));
-
+  sStatus = LOWSB->solve(Thyra::NOTRANS, *Mf, x.ptr(), Teuchos::constPtr(solveCriteria));
   return sStatus;
 }
 
@@ -837,7 +897,7 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
   MT c_val = Teuchos::ScalarTraits<MT>::zero();
 
   const int denseFallbackDim = eigensolverPL_->get<int>("Dense Fallback Dimension", 64);
-  const int dim       = static_cast<int>(jacobianMatrix_->domain()->dim());
+  const int dim              = static_cast<int>(jacobianMatrix_->domain()->dim());
 
   // MinvJ = M^{-1}*J LinOp
   Teuchos::RCP<const OP> MinvJ =
@@ -867,12 +927,12 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
   typedef Thyra::MultiVectorBase<Scalar> MV;
 
   // Read eigensolver parameters from the stored ParameterList
-  const int inev             = eigensolverPL_->get<int>("Num Eigenvalues", 8);
-  const int blockSize        = eigensolverPL_->get<int>("Block Size", 2);
-  const double eigTol        = eigensolverPL_->get<double>("Convergence Tolerance", 0.08);
-  const int maxRestarts      = eigensolverPL_->get<int>("Maximum Restarts", 50);
-  const bool relConvTol      = eigensolverPL_->get<bool>("Relative Convergence Tolerance", true);
-  const std::string which    = eigensolverPL_->get<std::string>("Which", "LM");
+  const int inev          = eigensolverPL_->get<int>("Num Eigenvalues", 8);
+  const int blockSize     = eigensolverPL_->get<int>("Block Size", 2);
+  const double eigTol     = eigensolverPL_->get<double>("Convergence Tolerance", 0.08);
+  const int maxRestarts   = eigensolverPL_->get<int>("Maximum Restarts", 50);
+  const bool relConvTol   = eigensolverPL_->get<bool>("Relative Convergence Tolerance", true);
+  const std::string which = eigensolverPL_->get<std::string>("Which", "LM");
 
   // Estimate up to the first nev eigenvalues
   const int nev       = std::min(inev, dim - 1);

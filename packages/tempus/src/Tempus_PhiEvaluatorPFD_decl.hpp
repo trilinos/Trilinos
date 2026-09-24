@@ -14,24 +14,47 @@
 
 namespace Tempus {
 
-/** \brief Partial-fraction evaluator with a currently limited CN path.
+/** \brief Partial-fraction evaluator.
  *
- * The implemented path evaluates only \f$\varphi_1\f$ by solving the
- * Crank-Nicolson form
- * \f$(M + (cdt/2)J_{\mathrm{impl}})x = M b\f$ using the prepared mass
- * matrix \f$M\f$ and implicit residual Jacobian \f$J_{\mathrm{impl}}\f$. It
- * does not implement the direct
- * linear-operator interface or other phi orders.  The "PFD Method" entry
- * accepts "CN"; other values currently issue a warning and use CN.
+ * The PFD method evaluates \f$\varphi_s\f$ by solving a partial fraction form
+ * \f$ r(J)f = p(J) f + \sum_{m=1}^{M'} \gamma_m v_m \f$,
+ * where \f$ p \f$ is a small polynomial (usually zero or a constant) and
+ * the updates (partial fractions) are given by
+ * \f$ (\lambda_m M + J_{\mathrm{impl}}) v_m = Mf \f$
+ * for \f$ m = 1,\ldots,M' \f$.
  *
  * @tparam Scalar Scalar type of the Thyra vectors and operators.
  */
 template <class Scalar>
 class PhiEvaluatorPFD
   : virtual public PhiEvaluator<Scalar> {
+  /** \brief Structure to hold the coefficients of the partial fraction decomposition
+   */
+  struct RealPF {
+    /// (real) location of the pole of the partial fraction
+    double pole;
+    /// coefficient of the partial fraction
+    double coeff;
+  };
+  /// list of partial fractions of the expansion
+  using PFList = std::vector<RealPF>;
+  /// polynomial part (monomial coefficients, constant, linear, ....)
+  using PFPolynomial = std::vector<double>;
+
+  /// struct that defines a partial fraction decomposition
+  struct PFDMethod {
+    PFList pfs;
+    PFPolynomial poly;
+  };
+
  public:
-  /** \brief Inherits PhiEvaluator<Scalar> constructors. */
-  using PhiEvaluator<Scalar>::PhiEvaluator;
+  /** \brief Constructs an evaluator with the supplied descriptive name.
+   * @param name std::string stored as the evaluator name.
+   */
+  PhiEvaluatorPFD(std::string name);
+  PhiEvaluatorPFD() : PhiEvaluatorPFD("PhiEvaluatorPFD")
+  {
+  }
 
   /// \name Basic PhiEvaluatorPFD Methods
 
@@ -40,41 +63,36 @@ class PhiEvaluatorPFD
 
   /** \brief Applies base evaluator parameters and the PFD method selection.
    *
-   * Only "CN" is implemented.  "Lump Mass Matrix" is disabled when set.
-   *
    * @param pl Teuchos::RCP to the mutable evaluator ParameterList.
    */
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl);
 
-  /** \brief Computes the supported \f$\varphi_1\f$ action with CN.
+  /** \brief Computes the supported \f$\varphi_s\f$ action.
    *
-   * @pre phi_order is 1 and the evaluator has an initialized mass matrix and
-   * Jacobian.
-   * @param x Nonnull Teuchos::Ptr to the output Thyra::VectorBase<Scalar>.
-   * @param phi_order int phi-function index; only 1 is accepted.
-   * @param cdt Scalar time-scaled coefficient used as \f$cdt/2\f$ in the
-   * Jacobian term.
+   * @pre the evaluator has an initialized mass matrix and Jacobian.
+   * @param phiv Nonnull Teuchos::Ptr to the output Thyra::VectorBase<Scalar>.
+   * @param phi_order int phi-function index.
+   * @param cdt Scalar time-scaled coefficient used in the Jacobian term.
    * @param Mrhs_b Const Teuchos::RCP to the mass-weighted right-hand-side
    * Thyra::VectorBase<Scalar>.
    * @return Thyra::SolveStatus<Scalar> from the mass-plus-Jacobian solve.
    */
   Thyra::SolveStatus<Scalar> computePhi(
-      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> phiv,
       const int phi_order, Scalar cdt,
       const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b) override;
 
-  /** \brief Computes the supported \f$\varphi_1\f$ action from a RHS array.
+  /** \brief Computes the \f$\varphi_k\f$ action from a RHS array.
    *
-   * @pre Mrhs_B has length 2, Mrhs_B[0] is Teuchos::null, and Mrhs_B[1] is
-   * the nonnull mass-weighted \f$\varphi_1\f$ right-hand side.
-   * @param x Nonnull Teuchos::Ptr to the output Thyra::VectorBase<Scalar>.
+   * @pre Mrhs_B has length K, and Mrhs_B[k] is
+   *      the mass-weighted \f$\varphi_k\f$ right-hand side or Teuchos::null.
+   * @param phiv Nonnull Teuchos::Ptr to the output Thyra::VectorBase<Scalar>.
    * @param cdt Scalar time-scaled coefficient used by the CN solve.
-   * @param Mrhs_B Teuchos::ArrayView of exactly two vector RCPs, indexed by
-   * phi order.
-   * @return Thyra::SolveStatus<Scalar> from computePhi().
+   * @param Mrhs_B Teuchos::ArrayView of vector RCPs, indexed by phi order k.
+   * @return Thyra::SolveStatus<Scalar>.
    */
   Thyra::SolveStatus<Scalar> computePhis(
-      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> phiv,
       const Scalar cdt,
       const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B) override;
 
@@ -94,6 +112,19 @@ class PhiEvaluatorPFD
                                "PhiEvaluatorPFD<Scalar>::computeLinOpPhi is not implemented.");
     return Thyra::SolveStatus<Scalar>();
   }
+
+ private:
+  /// string of partial fraction expansion method
+  std::string pfdMethod_ = "CN";
+
+  /// maps from method string to partial fraction expansion
+  std::map<std::string, PFDMethod> pfdMethods_;
+
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
+  Teuchos::RCP<Teuchos::Time> timerPhi_;
+  Teuchos::RCP<Teuchos::Time> timerLinOp_;
+  Teuchos::RCP<Teuchos::Time> timerSolve_;
+#endif
 };
 
 /** \brief Creates a PFD evaluator and applies an optional parameter list.

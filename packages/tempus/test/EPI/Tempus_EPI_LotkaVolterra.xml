@@ -66,6 +66,12 @@
         <Parameter name="leja_b" type="double" value="0.0"/>
         <Parameter name="leja_c" type="double" value="0.001"/>
       </ParameterList>
+      <!--
+      <ParameterList name="PhiEvaluator">
+        <Parameter name="PhiEvaluator Type" type="string" value="PFD"/>
+        <Parameter name="PFD Method"   type="string"    value="EDIRK3"/>
+      </ParameterList>
+      -->
 
       <Parameter name="Solver Name" type="string" value="Demo Solver"/>
       <ParameterList name="Demo Solver">

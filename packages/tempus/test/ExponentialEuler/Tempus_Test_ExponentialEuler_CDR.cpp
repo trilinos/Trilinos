@@ -103,6 +103,12 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     // Update the PhiEvaluator parameters based on the PhiEvaluator type
     auto& phiList = pl->sublist("Demo Stepper").sublist("PhiEvaluator");
+    phiList.remove("Expansion Order", false);
+    phiList.remove("Leja DD Method", false);
+    phiList.remove("leja_tol", false);
+    phiList.remove("leja_a", false);
+    phiList.remove("leja_b", false);
+    phiList.remove("leja_c", false);
     if (caseName == "Leja") {
       phiList.set("PhiEvaluator Type", "Leja")
           .set("Expansion Order", 60)
@@ -114,26 +120,14 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
           .set("Lump Mass Matrix", true);
     }
     else if (caseName == "Taylor") {
-      phiList.remove("Leja DD Method", false);
-      phiList.remove("leja_tol", false);
-      phiList.remove("leja_a", false);
-      phiList.remove("leja_b", false);
-      phiList.remove("leja_c", false);
-
       phiList.set("PhiEvaluator Type", "Taylor")
           .set("Expansion Order", 400)
           .set("Lump Mass Matrix", true);
     }
     else if (caseName == "PFD") {
-      phiList.remove("Expansion Order", false);
-      phiList.remove("Leja DD Method", false);
-      phiList.remove("leja_tol", false);
-      phiList.remove("leja_a", false);
-      phiList.remove("leja_b", false);
-      phiList.remove("leja_c", false);
-
       phiList.set("PhiEvaluator Type", "PFD")
-          .set("Lump Mass Matrix", false);
+          .set("Lump Mass Matrix", false)
+          .set("PFD Method", "CN");
     }
 
     // Show information on setup:
