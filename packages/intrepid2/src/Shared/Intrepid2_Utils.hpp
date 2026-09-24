@@ -905,7 +905,7 @@ namespace Intrepid2 {
   
   // define vector sizes for hierarchical parallelism
   const int VECTOR_SIZE = 1;
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && defined(INTREPID2_ENABLE_DEVICE)
+#if defined(SACADO_GPU_HIERARCHICAL_DFAD) && defined(INTREPID2_ENABLE_DEVICE)
   const int FAD_VECTOR_SIZE = 32;
 #else
   const int FAD_VECTOR_SIZE = 1;

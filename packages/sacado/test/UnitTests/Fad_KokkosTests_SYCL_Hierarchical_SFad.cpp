@@ -15,7 +15,7 @@
 // SFad only.  With a fad size of 128 over a vector width of 32 each work item
 // holds 4 derivative components, exercising the statically sized partitioned
 // path.  Nothing here allocates.
-#define SACADO_VIEW_CUDA_HIERARCHICAL 1
+#define SACADO_GPU_HIERARCHICAL 1
 
 #include "Kokkos_Macros.hpp"
 

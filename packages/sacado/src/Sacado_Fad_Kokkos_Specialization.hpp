@@ -175,8 +175,8 @@ void deep_copy(const ExecT& exec_space, const DstT& dst, const SrcT& src) {
 
   size_t vector_size = 1;
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) ||                                  \
-    defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#if defined(SACADO_GPU_HIERARCHICAL) ||                                  \
+    defined(SACADO_GPU_HIERARCHICAL_DFAD)
   // It looks like SFAD only works with 64 wide vector in HIP
 #ifdef KOKKOS_ENABLE_HIP
   vector_size = 64;
@@ -452,8 +452,8 @@ void deep_copy(
 }
 } // namespace Kokkos
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) ||                                  \
-    defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#if defined(SACADO_GPU_HIERARCHICAL) ||                                  \
+    defined(SACADO_GPU_HIERARCHICAL_DFAD)
 namespace Sacado {
 namespace Impl {
 
@@ -626,7 +626,7 @@ void deep_copy(const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ******,
 }
 
 } // namespace Kokkos
-#endif // SACADO_VIEW_CUDA_HIERARCHICAL
+#endif // SACADO_GPU_HIERARCHICAL
 
 // Overloads of resize are required for all layouts, not just hierarchical
 

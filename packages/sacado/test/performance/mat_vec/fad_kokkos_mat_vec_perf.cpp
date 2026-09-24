@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#define SACADO_VIEW_CUDA_HIERARCHICAL 1
-//#define SACADO_VIEW_CUDA_HIERARCHICAL_DFAD 1
+#define SACADO_GPU_HIERARCHICAL 1
+//#define SACADO_GPU_HIERARCHICAL_DFAD 1
 //#define SACADO_KOKKOS_USE_MEMORY_POOL 1
 #define SACADO_ALIGN_SFAD 1
 
@@ -47,7 +47,7 @@ void run_mat_vec(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c) {
   );
 }
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#if defined(SACADO_GPU_HIERARCHICAL_DFAD)
 
 template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
 void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
@@ -88,7 +88,7 @@ void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
   );
 }
 
-#elif defined(SACADO_VIEW_CUDA_HIERARCHICAL)
+#elif defined(SACADO_GPU_HIERARCHICAL)
 
 template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
 void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
@@ -268,7 +268,7 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
   typedef Kokkos::View<FadType*,  ViewArgs...> ViewTypeC;
   typedef typename ViewTypeA::execution_space execution_space;
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL)
+#if defined(SACADO_GPU_HIERARCHICAL)
 #if defined (KOKKOS_ENABLE_CUDA)
   const bool is_cuda = std::is_same<execution_space, Kokkos::Cuda>::value;
   const int FadStride = is_cuda ? 32 : 1;
@@ -293,7 +293,7 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
   const size_t pa = p;
 #endif
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#if defined(SACADO_GPU_HIERARCHICAL) || defined(SACADO_GPU_HIERARCHICAL_DFAD)
   typedef Sacado::LayoutContiguous<typename ViewTypeA::array_layout,FadStride> ConLayoutA;
   typedef Sacado::LayoutContiguous<typename ViewTypeB::array_layout,FadStride> ConLayoutB;
   typedef Sacado::LayoutContiguous<typename ViewTypeC::array_layout,FadStride> ConLayoutC;

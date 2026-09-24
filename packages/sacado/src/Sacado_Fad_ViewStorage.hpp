@@ -22,9 +22,9 @@ namespace Sacado {
   namespace Fad {
 
 #ifndef SACADO_FAD_DERIV_LOOP
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && ( defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) )
+#if defined(SACADO_GPU_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && ( defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) )
 #define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=threadIdx.x; I<SZ; I+=blockDim.x)
-#elif defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && defined(__SYCL_DEVICE_ONLY__)
+#elif defined(SACADO_GPU_HIERARCHICAL_DFAD) && defined(__SYCL_DEVICE_ONLY__)
 // The SYCL analogue of threadIdx.x and blockDim.x.  Kokkos launches every
 // policy with a two-dimensional nd_range, so this query is defined in a flat
 // kernel too, where it reports lane 0 of a width-1 vector -- the same
