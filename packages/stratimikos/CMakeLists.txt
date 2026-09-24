@@ -15,6 +15,13 @@ TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+# Add Belos solvers directory to include path for monolithic builds
+# This allows Stratimikos adapters to include Belos headers without the solvers/ prefix
+IF(${PACKAGE_NAME}_ENABLE_Belos AND NOT TPL_ENABLE_Belos)
+  # Monolithic build: add the Belos source directory
+  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../belos/tpetra/src/solvers)
+ENDIF()
+
 ADD_SUBDIRECTORY(adapters)
 
 ADD_SUBDIRECTORY(src)

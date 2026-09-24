@@ -1,5 +1,7 @@
 MESSAGE(STATUS "${PACKAGE_NAME}: Processing ETI / test support")
 
+include(TribitsETISupport)
+
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_TPETRA)
   
   # Create the NOX_Tpetra_ETIHelperMacros.hpp file.
