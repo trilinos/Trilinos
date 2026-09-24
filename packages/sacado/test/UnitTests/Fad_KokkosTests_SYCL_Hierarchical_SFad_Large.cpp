@@ -23,7 +23,7 @@
 // while Sacado sizes the partitioned Fad type at compile time from the layout
 // stride.  If the two disagree each thread writes past the end of its local
 // Fad.  See SacadoSyclStrideIssue.txt.
-#define SACADO_VIEW_CUDA_HIERARCHICAL 1
+#define SACADO_GPU_HIERARCHICAL 1
 
 #include "Kokkos_Macros.hpp"
 

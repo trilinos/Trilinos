@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-#define SACADO_VIEW_CUDA_HIERARCHICAL 1
+#define SACADO_GPU_HIERARCHICAL 1
 #define SACADO_ALIGN_SFAD 1
 
 #include "Sacado.hpp"

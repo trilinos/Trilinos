@@ -32,9 +32,9 @@
 // and nothing detectable at run time -- so refuse the build instead.  Flat
 // parallelism never makes the query and carries no such requirement.
 #if defined(KOKKOS_ENABLE_SYCL) &&                                             \
-    (defined(SACADO_VIEW_CUDA_HIERARCHICAL) ||                                 \
-     defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) ||                            \
-     defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED)) &&                   \
+    (defined(SACADO_GPU_HIERARCHICAL) ||                                 \
+     defined(SACADO_GPU_HIERARCHICAL_DFAD) ||                            \
+     defined(SACADO_GPU_HIERARCHICAL_DFAD_STRIDED)) &&                   \
     !defined(SYCL_EXT_ONEAPI_AUTO_LOCAL_RANGE)
 #error "Hierarchical Fad on SYCL requires the sycl_ext_oneapi_auto_local_range extension, which this compiler does not provide.  Without it Kokkos cannot launch a RangePolicy as an nd_range, and the vector-lane query the partitioned Fad depends on is undefined in a flat kernel.  Build with a compiler that provides the extension, or disable Sacado_ENABLE_HIERARCHICAL and Sacado_ENABLE_HIERARCHICAL_DFAD."
 #endif
@@ -80,7 +80,7 @@ public:
       fad_value_type*,
       Kokkos::Impl::ReferenceCountedDataHandle<fad_value_type, MemorySpace>>;
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) &&                                  \
+#if defined(SACADO_GPU_HIERARCHICAL) &&                                  \
     (defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) ||               \
      defined(__SYCL_DEVICE_ONLY__))
   // avoid division by zero later
@@ -209,14 +209,14 @@ public:
           m_fad_size.value, m_fad_stride.value != 0 ? m_fad_stride.value : 1);
     else {
       size_t base_offset = i * (m_fad_size.value + 1);
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) &&                                  \
+#if defined(SACADO_GPU_HIERARCHICAL) &&                                  \
     (defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__))
       return reference(get_ptr(p) + base_offset + threadIdx.x,
                        get_ptr(p) + base_offset + m_fad_size.value,
                        (m_fad_size.value + blockDim.x - threadIdx.x - 1) /
                            blockDim.x,
                        blockDim.x);
-#elif defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__SYCL_DEVICE_ONLY__)
+#elif defined(SACADO_GPU_HIERARCHICAL) && defined(__SYCL_DEVICE_ONLY__)
       // The SYCL analogue of the threadIdx.x / blockDim.x pair above.  Kokkos
       // launches every policy with a two-dimensional nd_range, so this query is
       // defined in a flat kernel too, where it reports lane 0 of a width-1

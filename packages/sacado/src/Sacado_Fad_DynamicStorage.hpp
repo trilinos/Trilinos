@@ -216,7 +216,7 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       const U* dx() const { return dx_;}
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && ( defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) )
+#if defined(SACADO_GPU_HIERARCHICAL_DFAD_STRIDED) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && ( defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) )
 
       //! Returns derivative component \c i with bounds checking
       SACADO_INLINE_FUNCTION
@@ -230,7 +230,7 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       const U& fastAccessDx(int i) const { return dx_[i*blockDim.x];}
 
-#elif defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED) && defined(__SYCL_DEVICE_ONLY__)
+#elif defined(SACADO_GPU_HIERARCHICAL_DFAD_STRIDED) && defined(__SYCL_DEVICE_ONLY__)
 
       //! Stride between derivative components -- the team's vector width, and
       //! the SYCL analogue of blockDim.x above.  Kokkos launches every policy

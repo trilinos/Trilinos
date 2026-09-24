@@ -143,7 +143,7 @@ struct LocalScalarType<Fad::GeneralFad<Fad::StaticFixedStorage<T, N>>,
 #if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) ||               \
     defined(__SYCL_DEVICE_ONLY__)
 
-#ifndef SACADO_VIEW_CUDA_HIERARCHICAL_DFAD
+#ifndef SACADO_GPU_HIERARCHICAL_DFAD
 template <unsigned Stride, typename T, typename U>
 KOKKOS_INLINE_FUNCTION typename LocalScalarType<
     Fad::GeneralFad<Fad::DynamicStorage<T, U>>, Stride>::type
@@ -170,7 +170,7 @@ partition_scalar(
   ret_type xp(size, x.val());
 
   // Note:  we can't use x.dx(offset+i*Stride) if
-  // SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED is defined because it already
+  // SACADO_GPU_HIERARCHICAL_DFAD_STRIDED is defined because it already
   // uses blockDim.x in its index calculation.  This approach should work
   // regardless
   const T *dx = x.dx();

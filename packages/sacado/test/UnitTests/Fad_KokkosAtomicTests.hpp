@@ -200,32 +200,32 @@ struct AtomicKernel {
   static void apply(Tag tag, const ViewType& v, const ScalarViewType& s) {
     const size_type nrow = v.extent(0);
 
-#if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+#if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_GPU_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
       Sacado::is_view_fad_contiguous<ViewType>::value &&
       ( stride > 1 );
-#elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_GPU_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
       Sacado::is_view_fad_contiguous<ViewType>::value &&
       is_dfad<typename ViewType::non_const_value_type>::value;
-#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_GPU_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
       Sacado::is_view_fad_contiguous<ViewType>::value &&
       ( stride > 1 );
-#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_GPU_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
       Sacado::is_view_fad_contiguous<ViewType>::value &&
       is_dfad<typename ViewType::non_const_value_type>::value;
-#elif defined (KOKKOS_ENABLE_SYCL) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+#elif defined (KOKKOS_ENABLE_SYCL) && defined (SACADO_GPU_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::SYCL>::value &&
       Sacado::is_view_fad_contiguous<ViewType>::value &&
       ( stride > 1 );
-#elif defined (KOKKOS_ENABLE_SYCL) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#elif defined (KOKKOS_ENABLE_SYCL) && defined (SACADO_GPU_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::SYCL>::value &&
       Sacado::is_view_fad_contiguous<ViewType>::value &&

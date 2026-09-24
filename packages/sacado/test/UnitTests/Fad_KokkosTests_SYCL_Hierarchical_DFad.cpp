@@ -19,7 +19,7 @@
 // device code are compiled out, since those do allocate and SYCL has no
 // device heap -- the memory pool the Cuda driver creates has no SYCL
 // counterpart.
-#define SACADO_VIEW_CUDA_HIERARCHICAL_DFAD 1
+#define SACADO_GPU_HIERARCHICAL_DFAD 1
 
 #include "Kokkos_Macros.hpp"
 

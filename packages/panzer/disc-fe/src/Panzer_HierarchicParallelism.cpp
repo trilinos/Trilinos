@@ -20,7 +20,7 @@ namespace panzer {
     use_shared_memory_(true),
     fad_use_shared_memory_(false)
   {
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#if defined(SACADO_GPU_HIERARCHICAL_DFAD)
 #if defined(KOKKOS_ENABLE_CUDA)
     fad_vector_size_ = 32;
 #endif

@@ -14,11 +14,11 @@
 // Re-test SYCL with hierarchical parallelism turned on (experimental).  The
 // vector width is 32, which the probe confirms is what Kokkos delivers on
 // Intel GPUs; see SyclIndexProbe.cpp.
-#define SACADO_VIEW_CUDA_HIERARCHICAL 1
+#define SACADO_GPU_HIERARCHICAL 1
 
 #include "Kokkos_Macros.hpp"
 
-// SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED and the memory pool are omitted:
+// SACADO_GPU_HIERARCHICAL_DFAD_STRIDED and the memory pool are omitted:
 // both need device-side allocation, which SYCL does not provide.  DFad is
 // disabled here for the same reason -- partitioning a DFad produces a Fad
 // temporary.

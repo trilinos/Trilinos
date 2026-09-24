@@ -346,7 +346,7 @@ namespace Sacado {
     }
   };
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#if defined(SACADO_GPU_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
 
   namespace Impl {
 
@@ -497,7 +497,7 @@ namespace Sacado {
     }
   };
 
-#elif defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#elif defined(SACADO_GPU_HIERARCHICAL_DFAD_STRIDED) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
 
   namespace Impl {
 
