@@ -248,11 +248,11 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
 }  // initial_step_size
 
 template <class ode_type, class vec_type, class res_type, class mat_type, class scalar_type>
-KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, scalar_type t_end, int& order,
-                             int& num_equal_steps, const int max_newton_iters, const scalar_type atol,
-                             const scalar_type rtol, const scalar_type min_factor, const vec_type& y_old,
-                             const vec_type& y_new, const res_type& rhs, const res_type& update, const mat_type& temp,
-                             const mat_type& temp2) {
+KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, scalar_type t_end,
+                             const scalar_type max_step, int& order, int& num_equal_steps, const int max_newton_iters,
+                             const scalar_type atol, const scalar_type rtol, const scalar_type min_factor,
+                             const vec_type& y_old, const vec_type& y_new, const res_type& rhs, const res_type& update,
+                             const mat_type& temp, const mat_type& temp2) {
   using newton_params = KokkosODE::Experimental::Newton_params;
 
   constexpr int max_order = 5;
@@ -306,7 +306,6 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
       max_newton_iters, atol,
       Kokkos::max(10 * KokkosKernels::ArithTraits<scalar_type>::eps() / rtol, Kokkos::min(0.03, Kokkos::sqrt(rtol))));
 
-  scalar_type max_step = KokkosKernels::ArithTraits<scalar_type>::max();
   scalar_type min_step = KokkosKernels::ArithTraits<scalar_type>::min();
   scalar_type safety = 0.675, error_norm = 0.0;
   if (dt > max_step) {
@@ -366,7 +365,8 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
       update(eqIdx) = y_new(eqIdx) - y_predict(eqIdx);
     }
 
-    if (newton_status == KokkosODE::Experimental::newton_solver_status::MAX_ITER) {
+    // Reject the step on any status that isn't a converged solve
+    if (newton_status != KokkosODE::Experimental::newton_solver_status::NLS_SUCCESS) {
       dt = 0.5 * dt;
       update_D(order, 0.5, coeffs, tempD, D);
       num_equal_steps = 0;

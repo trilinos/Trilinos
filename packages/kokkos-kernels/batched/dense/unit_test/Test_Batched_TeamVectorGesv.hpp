@@ -45,7 +45,7 @@ struct Functor_TestBatchedTeamVectorGesv {
   inline void run() {
     typedef typename VectorType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamVectorGesv");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::TeamPolicy<execution_space> policy(_X.extent(0), Kokkos::AUTO(), Kokkos::AUTO());

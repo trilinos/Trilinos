@@ -37,18 +37,21 @@ void rotg(execution_space const& space, SViewType const& a, SViewType const& b, 
   static_assert(!KokkosKernels::ArithTraits<typename MViewType::value_type>::is_complex,
                 "rotg: MViewType cannot hold complex values.");
 
-  using SView_Internal = Kokkos::View<
-      typename SViewType::value_type, typename KokkosKernels::Impl::GetUnifiedLayout<SViewType>::array_layout,
-      Kokkos::Device<execution_space, typename SViewType::memory_space>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using MView_Internal = Kokkos::View<
-      typename MViewType::value_type, typename KokkosKernels::Impl::GetUnifiedLayout<MViewType>::array_layout,
-      Kokkos::Device<execution_space, typename MViewType::memory_space>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using SView_Internal = Kokkos::View<typename SViewType::value_type,
+                                      typename KokkosKernels::Impl::GetUnifiedLayout<SViewType>::array_layout,
+                                      execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using MView_Internal = Kokkos::View<typename MViewType::value_type,
+                                      typename KokkosKernels::Impl::GetUnifiedLayout<MViewType>::array_layout,
+                                      execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  SView_Internal a_(a), b_(b), s_(s);
-  MView_Internal c_(c);
+  SView_Internal a_internal = KokkosKernels::Impl::unificationCast<SView_Internal>(a);
+  SView_Internal b_internal = KokkosKernels::Impl::unificationCast<SView_Internal>(b);
+  SView_Internal s_internal = KokkosKernels::Impl::unificationCast<SView_Internal>(s);
+  MView_Internal c_internal = KokkosKernels::Impl::unificationCast<MView_Internal>(c);
 
   Kokkos::Profiling::pushRegion("KokkosBlas::rotg");
-  Impl::Rotg<execution_space, SView_Internal, MView_Internal>::rotg(space, a, b, c, s);
+  Impl::Rotg<execution_space, SView_Internal, MView_Internal>::rotg(space, a_internal, b_internal, c_internal,
+                                                                    s_internal);
   Kokkos::Profiling::popRegion();
 }
 

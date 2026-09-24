@@ -9,6 +9,8 @@
 #include "cuda_runtime.h"
 #include "cusparse.h"
 
+#include <KokkosKernels_Cuda_Utils.hpp>
+
 namespace KokkosSparse {
 namespace Impl {
 
@@ -32,47 +34,10 @@ inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus, const c
 #define KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(call) \
   KokkosSparse::Impl::cusparse_internal_safe_call(call, #call, __FILE__, __LINE__)
 
+//  [[deprecated("Please use KokkosKernels::Impl::cuda_data_type_from() in KokkosKernels_Cuda_Utils.hpp")]]
 template <typename T>
 cudaDataType cuda_data_type_from() {
-  // Note:  compile-time failure is disabled to allow for packages such as
-  // Ifpack2 to more easily support scalar types that cuSPARSE may not.
-
-  // compile-time failure with a nice message if called on an unsupported type
-  // static_assert(!std::is_same<T, T>::value,
-  //               "cuSparse TPL does not support scalar type");
-  // static_assert(false, ...) is allowed to error even if the code is not
-  // instantiated. obfuscate the predicate Despite this function being
-  // uncompilable, the compiler may decide that a return statement is missing,
-  // so throw to silence that
-  throw std::logic_error("unreachable throw after static_assert");
-}
-
-/* If half_t is not float, need to define a conversion for both
-   otherwise, conversion for half_t IS conversion for float
-*/
-#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
-template <>
-inline cudaDataType cuda_data_type_from<Kokkos::Experimental::half_t>() {
-  return CUDA_R_16F;  // Kokkos half_t is a half
-}
-#endif
-// half_t is defined to be float, so this works for both half_t and float when
-// half_t is float
-template <>
-inline cudaDataType cuda_data_type_from<float>() {
-  return CUDA_R_32F;  // Kokkos half_t is a float
-}
-template <>
-inline cudaDataType cuda_data_type_from<double>() {
-  return CUDA_R_64F;
-}
-template <>
-inline cudaDataType cuda_data_type_from<Kokkos::complex<float>>() {
-  return CUDA_C_32F;
-}
-template <>
-inline cudaDataType cuda_data_type_from<Kokkos::complex<double>>() {
-  return CUDA_C_64F;
+  return KokkosKernels::Impl::cuda_data_type_from<T>();
 }
 
 template <typename T>

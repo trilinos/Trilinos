@@ -190,46 +190,58 @@ struct DefaultInternalVectorLength<Kokkos::complex<double>, Kokkos::HIPSpace> {
 template <typename T>
 struct MagnitudeScalarType;
 
+#if !KOKKOS_HALF_T_IS_FLOAT
+template <>
+struct MagnitudeScalarType<Kokkos::Experimental::half_t> {
+  using type = Kokkos::Experimental::half_t;
+};
+#endif
 template <>
 struct MagnitudeScalarType<float> {
-  typedef float type;
+  using type = float;
 };
 template <>
 struct MagnitudeScalarType<double> {
-  typedef double type;
+  using type = double;
 };
 template <>
 struct MagnitudeScalarType<long double> {
-  typedef long double type;
+  using type = long double;
 };
 template <>
 struct MagnitudeScalarType<Kokkos::complex<float>> {
-  typedef float type;
+  using type = float;
 };
 template <>
 struct MagnitudeScalarType<Kokkos::complex<double>> {
-  typedef double type;
+  using type = double;
 };
 
+#if !KOKKOS_HALF_T_IS_FLOAT
+template <int l>
+struct MagnitudeScalarType<Vector<SIMD<Kokkos::Experimental::half_t>, l>> {
+  using type = Kokkos::Experimental::half_t;
+};
+#endif
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<float>, l>> {
-  typedef float type;
+  using type = float;
 };
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<double>, l>> {
-  typedef double type;
+  using type = double;
 };
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<long double>, l>> {
-  typedef long double type;
+  using type = long double;
 };
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<float>>, l>> {
-  typedef float type;
+  using type = float;
 };
 template <int l>
 struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<double>>, l>> {
-  typedef double type;
+  using type = double;
 };
 
 }  // namespace KokkosBatched

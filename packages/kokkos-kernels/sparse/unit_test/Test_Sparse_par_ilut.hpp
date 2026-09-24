@@ -41,6 +41,18 @@ struct TolMeta<float> {
 
 }  // namespace ParIlut
 
+template <class ViewA, class ViewB>
+void expect_1d_views_equal(const ViewA& expected, const ViewB& actual, const std::string& label) {
+  ASSERT_EQ(expected.extent(0), actual.extent(0)) << label;
+
+  auto h_expected = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), expected);
+  auto h_actual   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), actual);
+
+  for (size_t i = 0; i < h_expected.extent(0); ++i) {
+    EXPECT_EQ(h_expected(i), h_actual(i)) << label << " differs at index " << i;
+  }
+}
+
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_par_ilut() {
   using RowMapType  = Kokkos::View<size_type*, device>;
@@ -169,6 +181,111 @@ void run_test_par_ilut() {
   // clang-format on
 
   check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
+
+  kh.destroy_par_ilut_handle();
+}
+
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void run_test_par_ilut_reuse_numeric_pattern() {
+  using RowMapType  = Kokkos::View<size_type*, device>;
+  using EntriesType = Kokkos::View<lno_t*, device>;
+  using ValuesType  = Kokkos::View<scalar_t*, device>;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
+                                                       typename device::memory_space, typename device::memory_space>;
+
+  // Matrix used to build and cache the numeric pattern.
+  // clang-format off
+  std::vector<std::vector<scalar_t>> A = {
+      { 1.,   6.,  4., 7.},
+      { 2.,  -5.,  0., 8.},
+      {0.5,  -3.,  6., 0.},
+      {0.2, -0.5, -9., 0.}};
+  // clang-format on
+
+  // Same sparsity pattern as A, but different values. This should hit the
+  // cached numeric pattern because only A_values changed.
+  // clang-format off
+  std::vector<std::vector<scalar_t>> A_same_graph_new_values = {
+      { 4.,  -2.,  7., 1.},
+      {-3.,   9.,  0., 5.},
+      { 2.,  -1.,  8., 0.},
+      { 6.,   3., -4., 0.}};
+  // clang-format on
+
+  RowMapType row_map("row_map", 0);
+  EntriesType entries("entries", 0);
+  ValuesType values("values", 0);
+
+  RowMapType row_map2("row_map2", 0);
+  EntriesType entries2("entries2", 0);
+  ValuesType values2("values2", 0);
+
+  compress_matrix(row_map, entries, values, A);
+  compress_matrix(row_map2, entries2, values2, A_same_graph_new_values);
+
+  // Sanity check the test fixture: the second matrix must have the same graph.
+  expect_1d_views_equal(row_map, row_map2, "A row_map");
+  expect_1d_views_equal(entries, entries2, "A entries");
+
+  const size_type nrows = A.size();
+
+  KernelHandle kh;
+  kh.create_par_ilut_handle();
+
+  auto par_ilut_handle = kh.get_par_ilut_handle();
+  par_ilut_handle->set_async_update(false);
+  par_ilut_handle->set_reuse_numeric_pattern(true);
+
+  RowMapType L_row_map("L_row_map", nrows + 1);
+  RowMapType U_row_map("U_row_map", nrows + 1);
+
+  // First call: symbolic is required, and numeric should build and cache the
+  // final L/U sparsity pattern.
+  par_ilut_symbolic(&kh, row_map, entries, L_row_map, U_row_map);
+
+  const size_type nnzL = par_ilut_handle->get_nnzL();
+  const size_type nnzU = par_ilut_handle->get_nnzU();
+
+  EntriesType L_entries("L_entries", nnzL);
+  ValuesType L_values("L_values", nnzL);
+  EntriesType U_entries("U_entries", nnzU);
+  ValuesType U_values("U_values", nnzU);
+
+  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries, L_values, U_row_map, U_entries, U_values);
+
+  // Save the cached pattern produced by the first numeric call.
+  RowMapType L_row_map_expected("L_row_map_expected", L_row_map.extent(0));
+  RowMapType U_row_map_expected("U_row_map_expected", U_row_map.extent(0));
+  EntriesType L_entries_expected("L_entries_expected", L_entries.extent(0));
+  EntriesType U_entries_expected("U_entries_expected", U_entries.extent(0));
+
+  Kokkos::deep_copy(L_row_map_expected, L_row_map);
+  Kokkos::deep_copy(U_row_map_expected, U_row_map);
+  Kokkos::deep_copy(L_entries_expected, L_entries);
+  Kokkos::deep_copy(U_entries_expected, U_entries);
+
+  // Second call: intentionally do not call par_ilut_symbolic again. The output
+  // entries/value views also start empty. If the cached pattern is not reused,
+  // this call will not have the needed L/U structure available.
+  RowMapType L_reuse_row_map("L_reuse_row_map", nrows + 1);
+  RowMapType U_reuse_row_map("U_reuse_row_map", nrows + 1);
+  EntriesType L_reuse_entries("L_reuse_entries", 0);
+  ValuesType L_reuse_values("L_reuse_values", 0);
+  EntriesType U_reuse_entries("U_reuse_entries", 0);
+  ValuesType U_reuse_values("U_reuse_values", 0);
+
+  par_ilut_numeric(&kh, row_map2, entries2, values2, L_reuse_row_map, L_reuse_entries, L_reuse_values, U_reuse_row_map,
+                   U_reuse_entries, U_reuse_values);
+
+  // The second call should load exactly the pattern cached by the first call.
+  expect_1d_views_equal(L_row_map_expected, L_reuse_row_map, "reused L row_map");
+  expect_1d_views_equal(U_row_map_expected, U_reuse_row_map, "reused U row_map");
+  expect_1d_views_equal(L_entries_expected, L_reuse_entries, "reused L entries");
+  expect_1d_views_equal(U_entries_expected, U_reuse_entries, "reused U entries");
+
+  EXPECT_EQ(L_reuse_values.extent(0), L_reuse_entries.extent(0));
+  EXPECT_EQ(U_reuse_values.extent(0), U_reuse_entries.extent(0));
 
   kh.destroy_par_ilut_handle();
 }
@@ -363,6 +480,11 @@ void test_par_ilut() {
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_par_ilut_reuse_numeric_pattern() {
+  Test::run_test_par_ilut_reuse_numeric_pattern<scalar_t, lno_t, size_type, device>();
+}
+
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_par_ilut_precond() {
   Test::run_test_par_ilut_precond<scalar_t, lno_t, size_type, device>();
 }
@@ -372,15 +494,18 @@ void test_par_ilut_zerorow_A() {
   Test::run_test_par_ilut_zerorow_A<scalar_t, lno_t, size_type, device>();
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                  \
-  TEST_F(TestCategory, sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {           \
-    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                \
-  }                                                                                                  \
-  TEST_F(TestCategory, sparse##_##par_ilut_zerorow_A##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_par_ilut_zerorow_A<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
-  }                                                                                                  \
-  TEST_F(TestCategory, sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
-    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();                                        \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                              \
+  TEST_F(TestCategory, sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                       \
+    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                            \
+  }                                                                                                              \
+  TEST_F(TestCategory, sparse##_##par_ilut_reuse_numeric_pattern##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_par_ilut_reuse_numeric_pattern<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
+  }                                                                                                              \
+  TEST_F(TestCategory, sparse##_##par_ilut_zerorow_A##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {             \
+    test_par_ilut_zerorow_A<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                  \
+  }                                                                                                              \
+  TEST_F(TestCategory, sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {               \
+    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                    \
   }
 
 #define NO_TEST_COMPLEX
