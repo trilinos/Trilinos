@@ -1473,8 +1473,8 @@ namespace Teuchos {
   }
 
   bool
-  TimeMonitor::stackedTimerNameIsDefault() {
-    return stackedTimer_.is_null() || (stackedTimer_->name() == defaultStackedTimerName);
+  TimeMonitor::stackedTimerHasDefaultState() {
+    return stackedTimer_.is_null() || (stackedTimer_->name() == defaultStackedTimerName && stackedTimer_->parent_name() == defaultStackedTimerName);
   }
 
   RCP<const ParameterList>
