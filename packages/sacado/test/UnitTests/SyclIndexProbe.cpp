@@ -117,6 +117,7 @@ enum ResultSlot {
   R_MAX_SG_LOCAL_ID,     // max sub_group.get_local_id()[0]
   R_ND_QUERY_RAN,        // 1 if the nd_item query executed on device
   R_BALLOT_RAN,          // 1 if group_ballot() executed and behaved sanely
+  R_CHECKSUM,            // keeps the register-pressure work alive
   R_COUNT
 };
 
@@ -182,6 +183,92 @@ host_result_view probe_team(int league_size, int team_size, int vector_size) {
   host_result_view h = Kokkos::create_mirror_view(r);
   Kokkos::deep_copy(h, r);
   return h;
+}
+
+// ---------------------------------------------------------------------------
+// Register-pressure probe
+// ---------------------------------------------------------------------------
+//
+// Kokkos does not ask the device for the vector width it will deliver, it asks
+// the *kernel*:
+//
+//   auto max_sg_size = kernel.get_info<
+//       sycl::info::kernel_device_specific::max_sub_group_size>(q.get_device());
+//   auto final_vector_size = std::min<int>(m_vector_size, max_sg_size);
+//                                    -- Kokkos_SYCL_ParallelFor_Team.hpp
+//
+// On Intel GPUs the compiler picks a kernel's SIMD width from its resource
+// usage, so a register-hungry kernel can be compiled narrower than the device
+// maximum and Kokkos then silently reduces the vector dimension to match.  That
+// matters for Sacado because the partitioned Fad type is sized at compile time
+// from the layout stride while the loop bounds come from the runtime width: if
+// they disagree, each thread writes more derivative components than its local
+// Fad has room for.
+//
+// This sweeps the size of a live per-thread array and reports the vector width
+// actually delivered, so the effect can be measured rather than assumed.
+template <int N>
+host_result_view probe_register_pressure(int league_size, int team_size,
+                                         int vector_size) {
+  result_view r("sacado_sycl_probe", R_COUNT);
+  Kokkos::deep_copy(r, 0);
+
+  typedef Kokkos::TeamPolicy<exec_space> policy_type;
+  policy_type policy(league_size, team_size, vector_size);
+
+  Kokkos::parallel_for(
+      "sacado_sycl_probe_registers", policy,
+      KOKKOS_LAMBDA(const policy_type::member_type &team) {
+        Kokkos::atomic_add(&r(R_WORK_ITEMS), 1);
+        Kokkos::atomic_max(&r(R_TEAM_SIZE), static_cast<int>(team.team_size()));
+
+        // A per-thread array, written and read back so it cannot be optimized
+        // away -- the rolling dependency keeps every element live at once,
+        // which is what drives the register pressure.
+        double a[N];
+        for (int i = 0; i < N; ++i)
+          a[i] = 1.0 + i + team.league_rank();
+        for (int k = 0; k < 4; ++k)
+          for (int i = 0; i < N; ++i)
+            a[i] = a[i] * 1.000001 + a[(i + 1) % N];
+        double sum = 0.0;
+        for (int i = 0; i < N; ++i)
+          sum += a[i];
+        Kokkos::atomic_max(&r(R_CHECKSUM), static_cast<int>(sum) & 0xffff);
+
+#if SACADO_PROBE_ND_ITEM
+#if defined(__SYCL_DEVICE_ONLY__)
+        auto item = SACADO_PROBE_ND_ITEM_2();
+        Kokkos::atomic_max(&r(R_ND_RANGE_1),
+                           static_cast<int>(item.get_local_range(1)));
+        auto sg = SACADO_PROBE_SUB_GROUP();
+        Kokkos::atomic_max(&r(R_SUB_GROUP_SIZE),
+                           static_cast<int>(sg.get_local_range()[0]));
+        Kokkos::atomic_max(&r(R_ND_QUERY_RAN), 1);
+#endif
+#endif
+      });
+  Kokkos::fence();
+
+  host_result_view h = Kokkos::create_mirror_view(r);
+  Kokkos::deep_copy(h, r);
+  return h;
+}
+
+// Kokkos throws for a team size the backend cannot launch; fall back to a
+// single-thread team so a small backend still reports something.
+template <int N>
+bool run_register_pressure(int league_size, int team_size, int vector_size,
+                           host_result_view &out) {
+  const int team_sizes[2] = {team_size, 1};
+  for (int t = 0; t < 2; ++t) {
+    try {
+      out = probe_register_pressure<N>(league_size, team_sizes[t], vector_size);
+      return true;
+    } catch (const std::exception &) {
+    }
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -369,6 +456,40 @@ int main(int argc, char *argv[]) {
     }
 
     // ---------------------------------------------------------------------
+    // Register pressure vs delivered vector width
+    // ---------------------------------------------------------------------
+    std::printf("\nTeamPolicy(vector_size=32) with a live per-thread array:\n");
+    std::printf("  doubles/thread | work items/team | local_range(1) | sg size\n");
+
+    int narrowed_at = 0;
+    int measured = 0;
+    {
+      const int ts = 8;              // 8 x 32 = 256 work items per group
+      const int ls = 64;
+      int sizes[6] = {4, 8, 16, 32, 64, 128};
+      host_result_view hs[6];
+      bool ok[6] = {false, false, false, false, false, false};
+      ok[0] = run_register_pressure<4>  (ls, ts, 32, hs[0]);
+      ok[1] = run_register_pressure<8>  (ls, ts, 32, hs[1]);
+      ok[2] = run_register_pressure<16> (ls, ts, 32, hs[2]);
+      ok[3] = run_register_pressure<32> (ls, ts, 32, hs[3]);
+      ok[4] = run_register_pressure<64> (ls, ts, 32, hs[4]);
+      ok[5] = run_register_pressure<128>(ls, ts, 32, hs[5]);
+
+      for (int i = 0; i < 6; ++i) {
+        if (!ok[i]) { std::printf("  %14d | launch rejected\n", sizes[i]); continue; }
+        const int per_team =
+            hs[i](R_WORK_ITEMS) / (ls * (hs[i](R_TEAM_SIZE) ? hs[i](R_TEAM_SIZE) : 1));
+        std::printf("  %14d | %15d | %14d | %7d%s\n", sizes[i], per_team,
+                    hs[i](R_ND_RANGE_1), hs[i](R_SUB_GROUP_SIZE),
+                    (per_team != 32) ? "   <-- NARROWED" : "");
+        ++measured;
+        if (per_team != 32 && narrowed_at == 0)
+          narrowed_at = sizes[i];
+      }
+    }
+
+    // ---------------------------------------------------------------------
     // Flat kernel probes
     // ---------------------------------------------------------------------
     std::printf("\nRangePolicy (flat) kernels:\n");
@@ -403,6 +524,24 @@ int main(int argc, char *argv[]) {
     // Verdict
     // ---------------------------------------------------------------------
     std::printf("\n---- findings ----\n");
+
+    if (measured == 0)
+      std::printf("0. Register pressure sweep did not run -- no team launch was "
+                  "accepted.\n   Nothing measured about vector-width "
+                  "narrowing.\n");
+    else if (narrowed_at == 0)
+      std::printf("0. Vector width stayed 32 at every register load tested.  "
+                  "Kokkos did not narrow\n   the vector dimension for these "
+                  "kernels on this device.\n");
+    else {
+      std::printf("0. Vector width DROPPED below 32 once a thread held %d "
+                  "doubles.\n", narrowed_at);
+      std::printf("   Sacado's partitioned Fad type is sized at compile time "
+                  "from the layout\n   stride, so a kernel narrowed this way "
+                  "writes more derivative components\n   than its local Fad "
+                  "holds.  See SacadoSyclStrideIssue.txt.\n");
+    }
+
 
     std::printf("1. Actual vector width for a requested 32: %d\n",
                 width_for_32);

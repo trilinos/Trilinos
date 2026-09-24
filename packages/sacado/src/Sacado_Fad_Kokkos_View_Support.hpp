@@ -23,6 +23,22 @@
 
 #include "Sacado_Fad_Kokkos_LayoutContiguous.hpp"
 
+// Hierarchical Fad reads its lane and width from the work item's vector
+// dimension, and that query is defined only when the kernel was launched with
+// an nd_range.  Kokkos launches a RangePolicy that way only when it can ask
+// for an automatic local range; without sycl_ext_oneapi_auto_local_range it
+// falls back to a plain sycl::range, where the query reports whatever happens
+// to be in the hardware.  That is silent -- wrong derivatives, no diagnostic,
+// and nothing detectable at run time -- so refuse the build instead.  Flat
+// parallelism never makes the query and carries no such requirement.
+#if defined(KOKKOS_ENABLE_SYCL) &&                                             \
+    (defined(SACADO_VIEW_CUDA_HIERARCHICAL) ||                                 \
+     defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) ||                            \
+     defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED)) &&                   \
+    !defined(SYCL_EXT_ONEAPI_AUTO_LOCAL_RANGE)
+#error "Hierarchical Fad on SYCL requires the sycl_ext_oneapi_auto_local_range extension, which this compiler does not provide.  Without it Kokkos cannot launch a RangePolicy as an nd_range, and the vector-lane query the partitioned Fad depends on is undefined in a flat kernel.  Build with a compiler that provides the extension, or disable Sacado_ENABLE_HIERARCHICAL and Sacado_ENABLE_HIERARCHICAL_DFAD."
+#endif
+
 // ====================================================================
 // Kokkos customization points for the mdspan based View implementation
 // ====================================================================
@@ -65,15 +81,30 @@ public:
       Kokkos::Impl::ReferenceCountedDataHandle<fad_value_type, MemorySpace>>;
 
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) &&                                  \
-    (defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__))
+    (defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) ||               \
+     defined(__SYCL_DEVICE_ONLY__))
   // avoid division by zero later
   constexpr static size_t partitioned_fad_stride =
       PartitionedFadStride > 0 ? PartitionedFadStride : 1;
   // The partitioned static size -- this will be 0 if PartitionedFadStride
-  // does not evenly divide FadStaticDimension
+  // does not evenly divide FadStaticDimension.  0 means the reference carries
+  // its size at runtime.
+  //
+  // SYCL always takes 0.  Kokkos may deliver a narrower vector width than the
+  // TeamPolicy asked for -- see the discussion in
+  // Sacado_Fad_Kokkos_ThreadLocalScalar.hpp -- so the number of components
+  // this thread owns is not known until the kernel runs.  Baking it in from
+  // the layout stride would be right only when the requested width is the one
+  // that arrives.
   constexpr static size_t PartitionedFadStaticDimension =
-      Sacado::Impl::computeFadPartitionSize(FadStaticDimension,
-                                            partitioned_fad_stride);
+#if defined(KOKKOS_ENABLE_SYCL)
+      std::is_same<typename MemorySpace::execution_space,
+                   Kokkos::SYCL>::value
+          ? 0u
+          :
+#endif
+          Sacado::Impl::computeFadPartitionSize(FadStaticDimension,
+                                                partitioned_fad_stride);
 
 #if defined(KOKKOS_ENABLE_CUDA)
   typedef typename Sacado::LocalScalarType<
@@ -87,6 +118,13 @@ public:
       fad_type, unsigned(partitioned_fad_stride)>::type strided_scalar_type;
   typedef typename std::conditional_t<
       std::is_same<typename MemorySpace::execution_space, Kokkos::HIP>::value,
+      strided_scalar_type, fad_type>
+      thread_local_scalar_type;
+#elif defined(KOKKOS_ENABLE_SYCL)
+  typedef typename Sacado::LocalScalarType<
+      fad_type, unsigned(partitioned_fad_stride)>::type strided_scalar_type;
+  typedef typename std::conditional_t<
+      std::is_same<typename MemorySpace::execution_space, Kokkos::SYCL>::value,
       strided_scalar_type, fad_type>
       thread_local_scalar_type;
 #else
@@ -178,6 +216,20 @@ public:
                        (m_fad_size.value + blockDim.x - threadIdx.x - 1) /
                            blockDim.x,
                        blockDim.x);
+#elif defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__SYCL_DEVICE_ONLY__)
+      // The SYCL analogue of the threadIdx.x / blockDim.x pair above.  Kokkos
+      // launches every policy with a two-dimensional nd_range, so this query is
+      // defined in a flat kernel too, where it reports lane 0 of a width-1
+      // vector and the expressions below degenerate to the unpartitioned ones
+      // -- just as Cuda gets from dim3 block(1, block_size, 1).
+      const size_t lane =
+          sycl::ext::oneapi::this_work_item::get_nd_item<2>().get_local_id(1);
+      const size_t vec =
+          sycl::ext::oneapi::this_work_item::get_nd_item<2>().get_local_range(1);
+      return reference(get_ptr(p) + base_offset + lane,
+                       get_ptr(p) + base_offset + m_fad_size.value,
+                       (m_fad_size.value + vec - lane - 1) / vec,
+                       vec);
 #else
       return reference(get_ptr(p) + base_offset,
                        get_ptr(p) + base_offset + m_fad_size.value,

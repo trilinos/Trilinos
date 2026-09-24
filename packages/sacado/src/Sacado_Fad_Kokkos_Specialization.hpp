@@ -472,7 +472,11 @@ template <class Dst, class SrcT, class ExecSpace> struct DeepCopyViewScalar {
     if (ii >= total_extent)
       return;
 
-    auto src_strided = Sacado::partition_scalar<stride>(src);
+    // Bind, do not copy.  The generic partition_scalar() returns its argument
+    // by reference, and for a DFad a copy would allocate the derivative array
+    // -- inside a kernel, where SYCL has no heap.  The partitioning overloads
+    // return by value; a const reference extends that temporary's lifetime.
+    const auto& src_strided = Sacado::partition_scalar<stride>(src);
 
     if constexpr (view_t::rank() == 0)
       dst() = src_strided;
