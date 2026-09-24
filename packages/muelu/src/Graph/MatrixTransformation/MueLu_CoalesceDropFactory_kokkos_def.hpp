@@ -1141,7 +1141,7 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
       VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, drop_offrank);
     }
-    if (symmetrizeColoringGraph != "strong wins") {
+    if (symmetrizeColoringGraph == "strong wins") {
       auto symmetrize = Misc::SymmetrizeFunctor<local_matrix_type, false, false>(lclA, results);
       VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
     } else {  // weak wins
