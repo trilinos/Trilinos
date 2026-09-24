@@ -432,6 +432,7 @@
       <type>string</type>
       <default>"no symmetrization"</default>
       <description>Symmetrize the graph used for aggregation.</description>
+      <description>Symmetrize graph used for aggregation. Possible values: "no symmetrization" or "strong wins" ( (i,j) kept if unsymmetrized (j,i) is kept) or "weak wins" ( (i,j) dropped if unsymmetrized (j,i) dropped),</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -439,7 +440,7 @@
       <name>aggregation: symmetrize color graph</name>
       <type>string</type>
       <default>"strong wins"</default>
-      <description>Symmetrize graph used for coloring when "aggregation: coloring: use color graph" is set.</description>
+      <description>Symmetrize graph used for coloring when "aggregation: coloring: use color graph" is set. Possible values: "strong wins" ( (i,j) kept if unsymmetrized (j,i) is kept) or "weak wins" ( (i,j) dropped if unsymmetrized (j,i) dropped),</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 

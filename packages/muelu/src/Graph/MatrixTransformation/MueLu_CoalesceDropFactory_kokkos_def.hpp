@@ -95,6 +95,8 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   validParamList->getEntry("aggregation: strength-of-connection: measure").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben", "unscaled"))));
   validParamList->getEntry("aggregation: distance laplacian metric").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("unweighted", "material"))));
   validParamList->getEntry("aggregation: Minv scheme").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("spai", "fsai"))));
+  validParamList->getEntry("aggregation: symmetrize graph after dropping").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("no symmetrization", "weak wins", "strong wins"))));
+  validParamList->getEntry("aggregation: symmetrize color graph").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("weak wins", "strong wins"))));
 
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
   validParamList->set<RCP<const FactoryBase>>("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");

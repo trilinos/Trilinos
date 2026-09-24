@@ -62,7 +62,7 @@
           
 \cbb{aggregation: symmetrize graph after dropping}{string}{"no symmetrization"}{Symmetrize the graph used for aggregation.}
           
-\cbb{aggregation: symmetrize color graph}{string}{"strong wins"}{Symmetrize graph used for coloring when "aggregation: coloring: use color graph" is set.}
+\cbb{aggregation: symmetrize color graph}{string}{"strong wins"}{Symmetrize graph used for coloring when "aggregation: coloring: use color graph" is set. Possible values: "strong wins" ( (i,j) kept if unsymmetrized (j,i) is kept) or "weak wins" ( (i,j) dropped if unsymmetrized (j,i) dropped),}
           
 \cbb{aggregation: use blocking}{bool}{false}{Drop connections between different blocks. Blocks are given by a vector "BlockNumber" of scalar type LocalOrdinal that is passed via the "user data" list.}
           
