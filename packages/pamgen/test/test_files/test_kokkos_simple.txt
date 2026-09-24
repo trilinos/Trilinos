@@ -1,0 +1,23 @@
+# Simple test file for Kokkos functionality
+# This creates a small brick mesh to test Kokkos integration
+
+# Define a simple 2D brick mesh
+brick
+  blocks 2 2 1
+  elements 3 3 1
+  xmin 0.0
+  xmax 6.0
+  ymin 0.0
+  ymax 6.0
+  zmin 0.0
+  zmax 1.0
+
+# Define coordinate intervals
+intervals
+  x 3 3
+  y 3 3
+  z 1
+
+# No boundary conditions needed for this simple test
+
+# End of file

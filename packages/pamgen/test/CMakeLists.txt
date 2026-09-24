@@ -17,7 +17,6 @@ TRIBITS_ADD_EXECUTABLE(
     ../example/getopts.C
   )
 
-
 #
 # Set up a simple function that will add the tests
 #
@@ -55,7 +54,7 @@ FUNCTION(PAMGEN_ADD_TEST  FILE_IDX_EXT)
   IF(PARSE_XHOSTTYPE)
     SET(HOST_ARGS ${HOST_ARGS} XHOSTTYPE ${PARSE_XHOSTTYPE})
   ENDIF()
-  
+
   #if LONG_LONG is set then we need to use the pamgen_test_driver_l driver to run tests
   #this generally means just adding "_l" to a few files
   SET(INT_TYPE "")
@@ -175,6 +174,45 @@ PAMGEN_ADD_TEST( 69 ARGS -f 1tri_elem.txt -r 0 -n 1 -d 2)
 #PAMGEN_ADD_TEST( 69 ARGS -f sdbrick.txt -r 0 -n 1 -d 3)
 #PAMGEN_ADD_TEST( 70 ARGS -f ssdbrick.txt -r 0 -n 1 -d 3)
 
+
+# Kokkos-specific tests
+#PAMGEN_ADD_TEST( 71 ARGS -f test_kokkos_simple.txt -r 1 -n 3 -d 2)
+#PAMGEN_ADD_TEST( 72 ARGS -f test_kokkos_simple.txt -r 2 -n 3 -d 2)
+#PAMGEN_ADD_TEST( 73 ARGS -f test_kokkos_simple.txt -r 0 -n 3 -d 2)
+
+
+# Direct Kokkos integration test
+TRIBITS_ADD_EXECUTABLE(
+  pamgen_test_kokkos_integration
+  NOEXEPREFIX
+  SOURCES
+    test_kokkos_integration.C
+  )
+
+TRIBITS_ADD_TEST(
+  pamgen_test_kokkos_integration
+  NAME kokkos_integration
+  COMM serial mpi
+  NOEXEPREFIX
+  ARGS ""
+)
+
+# Mesh specification Kokkos integration test
+TRIBITS_ADD_EXECUTABLE(
+  pamgen_test_mesh_spec_kokkos
+  NOEXEPREFIX
+  SOURCES
+    test_mesh_spec_kokkos.C
+)
+
+TRIBITS_ADD_TEST(
+  pamgen_test_mesh_spec_kokkos
+  NAME mesh_spec_kokkos
+  COMM serial mpi
+  NOEXEPREFIX
+  ARGS ""
+)
+
 # 2009/05/28: rabartl: Above, the test 17 timing out at 600s on gabriel and
 # the test 26 just takes too long (see bug 4428).
 
@@ -192,7 +230,7 @@ mesh.txt lbrick.txt brick.txt tri.txt tri_proc.txt 2dtri.txt 2dtribis.txt
 hbrick.txt 3dbj.txt trisect_multi_theta.txt trisect_multi_theta_2d.txt
 double_ss_ns.txt 360tri.txt dual_tube.txt d2brick2d.txt  d2dtri.txt
 d360tri.txt  dbrick.txt sdbrick.txt ssdbrick.txt  dgeom_warp2d.txt
-1tri_elem.txt ${RES_FILES}
+1tri_elem.txt test_kokkos_simple.txt ${RES_FILES}
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_files
   )
 
