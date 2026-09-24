@@ -444,12 +444,12 @@ void test_Singleton_Scale_fwd(std::string Matrix_Original_file, std::string LHS_
   RHS_Reduced = Reader_t::readDenseFile(RHS_Reduced_file, Comm, reducedRangeMap);
 
   // Now scale the original and reduced system by 2.0, rerun the singleton filter, and compare
-  A_Original->scale( 2.0 );
-  RHS_Original->scale( 2.0 );
-  A_Reduced->scale( 2.0 );
-  RHS_Reduced->scale( 2.0 );
- 
-  SingletonTransform.fwd(); 
+  A_Original->scale(2.0);
+  RHS_Original->scale(2.0);
+  A_Reduced->scale(2.0);
+  RHS_Reduced->scale(2.0);
+
+  SingletonTransform.fwd();
 
   TEUCHOS_ASSERT(compareCrsMatrices(
       Teuchos::rcp_dynamic_cast<const CrsMatrix_t>(A_Reduced, true),
@@ -485,12 +485,12 @@ void test_Singleton_Reindex_fwd(std::string Matrix_Original_file, std::string LH
   using LinearProblem_t         = Tpetra::LinearProblem<Scalar, LO, GO, Node>;
   using CrsSingletonFiltering_t = Tpetra::CrsSingletonFilter_LinearProblem<Scalar, LO, GO, Node>;
   using Reindex_t               = Tpetra::Reindex_LinearProblem<Scalar, LO, GO, Node>;
-                    
-  RCP<CrsMatrix_t> A_Original                        = Reader_t::readSparseFile(Matrix_Original_file, Comm);
+
+  RCP<CrsMatrix_t> A_Original     = Reader_t::readSparseFile(Matrix_Original_file, Comm);
   RCP<const Map_t> A_Original_Map = A_Original->getRangeMap();
-  RCP<MultiVector_t> LHS_Original                    = Reader_t::readDenseFile(LHS_Original_file, Comm, A_Original_Map);
-  RCP<MultiVector_t> RHS_Original                    = Reader_t::readDenseFile(RHS_Original_file, Comm, A_Original_Map);
-  
+  RCP<MultiVector_t> LHS_Original = Reader_t::readDenseFile(LHS_Original_file, Comm, A_Original_Map);
+  RCP<MultiVector_t> RHS_Original = Reader_t::readDenseFile(RHS_Original_file, Comm, A_Original_Map);
+
   // Create the singleton transform
   bool verbose                             = true;
   bool run_on_host                         = false;
@@ -498,19 +498,19 @@ void test_Singleton_Reindex_fwd(std::string Matrix_Original_file, std::string LH
   RCP<LinearProblem_t> preSingletonProblem = rcp(new LinearProblem_t(A_Original, x, RHS_Original));
   CrsSingletonFiltering_t singletonTransform(run_on_host, verbose);
   RCP<LinearProblem_t> postSingletonProblem = singletonTransform(preSingletonProblem);
-    
+
   singletonTransform.fwd();
 
   auto reducedRowMap    = postSingletonProblem->getMatrix()->getRowMap();
   auto reducedColMap    = postSingletonProblem->getMatrix()->getColMap();
   auto reducedDomainMap = postSingletonProblem->getMatrix()->getDomainMap();
   auto reducedRangeMap  = postSingletonProblem->getMatrix()->getRangeMap();
- 
+
   RCP<CrsMatrix_t> A_Reduced          = Reader_t::readSparseFile(Matrix_Reduced_file, reducedRowMap, reducedColMap, reducedDomainMap, reducedRangeMap);
   RCP<MultiVector_t> LHS_Reduced      = Reader_t::readDenseFile(LHS_Reduced_file, Comm, reducedDomainMap);
   RCP<MultiVector_t> RHS_Reduced      = Reader_t::readDenseFile(RHS_Reduced_file, Comm, reducedRangeMap);
   RCP<LinearProblem_t> reducedProblem = rcp(new LinearProblem_t(A_Reduced, LHS_Reduced, RHS_Reduced));
- 
+
   // Create the reindex transform for the reduced system from file
   RCP<Map_t const> reindexRowMap(Teuchos::null);
   Tpetra::Reindex_LinearProblem<Scalar, LO, GO, Node> reindexTransform(reindexRowMap);
@@ -519,8 +519,8 @@ void test_Singleton_Reindex_fwd(std::string Matrix_Original_file, std::string LH
   RCP<LinearProblem_t> reindexLinearProblem = reindexTransform(postSingletonProblem);
 
   reindexTransform.fwd();
- 
-  // Create the reindex transform 
+
+  // Create the reindex transform
   RCP<Map_t const> reindexRowMap2(Teuchos::null);
   Tpetra::Reindex_LinearProblem<Scalar, LO, GO, Node> reindexTransform2(reindexRowMap2);
 
@@ -542,7 +542,7 @@ void test_Singleton_Reindex_fwd(std::string Matrix_Original_file, std::string LH
       Teuchos::rcp_dynamic_cast<const MultiVector_t>(reindexLinearProblem->getRHS(), true),
       Teuchos::rcp_dynamic_cast<const MultiVector_t>(reindexLinearProblem2->getRHS(), true),
       Comm, out));
-} 
+}
 
 template <typename Scalar, typename LO, typename GO, typename Node>
 void test_Singleton_Reindex_Scale_fwd(std::string Matrix_Original_file, std::string LHS_Original_file, std::string RHS_Original_file,
@@ -555,7 +555,7 @@ void test_Singleton_Reindex_Scale_fwd(std::string Matrix_Original_file, std::str
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Tpetra::TestingUtilities::getDefaultComm;
-  
+
   using CrsMatrix_t             = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
   using MultiVector_t           = Tpetra::MultiVector<Scalar, LO, GO, Node>;
   using Reader_t                = Tpetra::MatrixMarket::Reader<CrsMatrix_t>;
@@ -563,69 +563,69 @@ void test_Singleton_Reindex_Scale_fwd(std::string Matrix_Original_file, std::str
   using LinearProblem_t         = Tpetra::LinearProblem<Scalar, LO, GO, Node>;
   using CrsSingletonFiltering_t = Tpetra::CrsSingletonFilter_LinearProblem<Scalar, LO, GO, Node>;
   using Reindex_t               = Tpetra::Reindex_LinearProblem<Scalar, LO, GO, Node>;
-                    
-  RCP<CrsMatrix_t> A_Original                        = Reader_t::readSparseFile(Matrix_Original_file, Comm);
-  RCP<const Map_t> A_Original_Map                    = A_Original->getRangeMap();
-  RCP<MultiVector_t> LHS_Original                    = Reader_t::readDenseFile(LHS_Original_file, Comm, A_Original_Map);
-  RCP<MultiVector_t> RHS_Original                    = Reader_t::readDenseFile(RHS_Original_file, Comm, A_Original_Map);
-  
-  // Create the singleton transform        
+
+  RCP<CrsMatrix_t> A_Original     = Reader_t::readSparseFile(Matrix_Original_file, Comm);
+  RCP<const Map_t> A_Original_Map = A_Original->getRangeMap();
+  RCP<MultiVector_t> LHS_Original = Reader_t::readDenseFile(LHS_Original_file, Comm, A_Original_Map);
+  RCP<MultiVector_t> RHS_Original = Reader_t::readDenseFile(RHS_Original_file, Comm, A_Original_Map);
+
+  // Create the singleton transform
   bool verbose                             = true;
   bool run_on_host                         = false;
   RCP<MultiVector_t> x                     = rcp(new MultiVector_t(A_Original_Map, LHS_Original->getNumVectors()));
   RCP<LinearProblem_t> preSingletonProblem = rcp(new LinearProblem_t(A_Original, x, RHS_Original));
   CrsSingletonFiltering_t singletonTransform(run_on_host, verbose);
   RCP<LinearProblem_t> postSingletonProblem = singletonTransform(preSingletonProblem);
-    
+
   singletonTransform.fwd();
-  
+
   auto reducedRowMap    = postSingletonProblem->getMatrix()->getRowMap();
   auto reducedColMap    = postSingletonProblem->getMatrix()->getColMap();
   auto reducedDomainMap = postSingletonProblem->getMatrix()->getDomainMap();
   auto reducedRangeMap  = postSingletonProblem->getMatrix()->getRangeMap();
-  
+
   RCP<CrsMatrix_t> A_Reduced          = Reader_t::readSparseFile(Matrix_Reduced_file, reducedRowMap, reducedColMap, reducedDomainMap, reducedRangeMap);
   RCP<MultiVector_t> LHS_Reduced      = Reader_t::readDenseFile(LHS_Reduced_file, Comm, reducedDomainMap);
   RCP<MultiVector_t> RHS_Reduced      = Reader_t::readDenseFile(RHS_Reduced_file, Comm, reducedRangeMap);
   RCP<LinearProblem_t> reducedProblem = rcp(new LinearProblem_t(A_Reduced, LHS_Reduced, RHS_Reduced));
 
   // Scale reduced problem BEFORE calling reindex transform
-  A_Reduced->scale( 2.0 );
-  RHS_Reduced->scale( 2.0 ); 
-  
+  A_Reduced->scale(2.0);
+  RHS_Reduced->scale(2.0);
+
   // Create the reindex transform for the reduced system from file
   RCP<Map_t const> reindexRowMap(Teuchos::null);
   Tpetra::Reindex_LinearProblem<Scalar, LO, GO, Node> reindexTransform(reindexRowMap);
-  
+
   // Transform the linear problem of the reduced system
   RCP<LinearProblem_t> reindexLinearProblem = reindexTransform(reducedProblem);
-  
+
   reindexTransform.fwd();
-  
+
   // Create the reindex transform for the singleton system
   RCP<Map_t const> reindexRowMap2(Teuchos::null);
   Tpetra::Reindex_LinearProblem<Scalar, LO, GO, Node> reindexTransform2(reindexRowMap2);
-  
+
   // Transform the linear problem from the singleton filter
   RCP<LinearProblem_t> reindexLinearProblem2 = reindexTransform2(postSingletonProblem);
-  
-  reindexTransform2.fwd();
- 
-  // Scale the original problem, call the singleton/reindex transform again
-  A_Original->scale( 2.0 );
-  RHS_Original->scale( 2.0 );
 
-  // Now call the singleton transform and the reindex transform in sequence 
+  reindexTransform2.fwd();
+
+  // Scale the original problem, call the singleton/reindex transform again
+  A_Original->scale(2.0);
+  RHS_Original->scale(2.0);
+
+  // Now call the singleton transform and the reindex transform in sequence
   singletonTransform.fwd();
   reindexTransform2.fwd();
- 
+
   // Compare to the reduced problem that was scaled before the transform, they should be the same
   TEUCHOS_ASSERT(compareCrsMatrices(
       Teuchos::rcp_dynamic_cast<const CrsMatrix_t>(reindexLinearProblem->getMatrix(), true),
       Teuchos::rcp_dynamic_cast<const CrsMatrix_t>(reindexLinearProblem2->getMatrix(), true),
       Comm, out, 1.0e-05));
-  
-  TEUCHOS_ASSERT(compareMultiVectors( 
+
+  TEUCHOS_ASSERT(compareMultiVectors(
       Teuchos::rcp_dynamic_cast<const MultiVector_t>(reindexLinearProblem->getRHS(), true),
       Teuchos::rcp_dynamic_cast<const MultiVector_t>(reindexLinearProblem2->getRHS(), true),
       Comm, out));
