@@ -1126,13 +1126,13 @@ void kokkos_kernels_mult_A_B_newmatrix(
       typename int_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
       typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
 
-  const bool debug = Tpetra::Details::Behavior::debug();
+  const bool debug               = Tpetra::Details::Behavior::debug();
   const std::string wrapperLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Wrapper";
   RCP<Tpetra::Details::ProfilingRegion> MM =
       rcp(new Tpetra::Details::ProfilingRegion(wrapperLabel));
 
   bool spgemm_options_customized = false;
-  int team_work_size = 16;
+  int team_work_size             = 16;
   std::string myalg("SPGEMM_DEFAULT");
   if (!params.is_null()) {
     const std::string prefixedAlg  = backend_type::parameter_prefix() + ": algorithm";
@@ -1140,7 +1140,7 @@ void kokkos_kernels_mult_A_B_newmatrix(
     if (params->isParameter(prefixedAlg))
       myalg = params->get(prefixedAlg, myalg);
     if (params->isParameter(prefixedTeam)) {
-      team_work_size = params->get(prefixedTeam, team_work_size);
+      team_work_size            = params->get(prefixedTeam, team_work_size);
       spgemm_options_customized = true;
     }
   }
@@ -1188,8 +1188,8 @@ void kokkos_kernels_mult_A_B_newmatrix(
     if (useIntRowptrs) {
       // Run spgemm with int-typed rowptrs (helps TPLs), then copy the resulting
       // rowptrs back to the correct rowptr type.
-      auto Aint = CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->getIntRowptrMatrix(Amat);
-      auto Bint = irph.getIntRowptrMatrix(Bmerged);
+      auto Aint          = CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->getIntRowptrMatrix(Amat);
+      auto Bint          = irph.getIntRowptrMatrix(Bmerged);
       using int_matrix_t = decltype(Bint);
 
       int_matrix_t Cint = KokkosSparse::spgemm<int_matrix_t>(
@@ -1205,8 +1205,7 @@ void kokkos_kernels_mult_A_B_newmatrix(
       Cmat = KokkosSparse::spgemm<KCRS>(
           alg_enum, Amat, false, Bmerged, false, input_sorted, result_sorted);
     }
-  }
-  else
+  } else
 #endif
   {
     backend_type::pre_spgemm(Bmerged);
@@ -1230,11 +1229,11 @@ void kokkos_kernels_mult_A_B_newmatrix(
       scalar_view_t valuesC;
 
       IntKernelHandle kh;
-  #if KOKKOSKERNELS_VERSION >= 50299
+#if KOKKOSKERNELS_VERSION >= 50299
       kh.create_spgemm_handle(alg_enum, input_sorted, result_sorted);
-  #else
+#else
       kh.create_spgemm_handle(alg_enum);
-  #endif
+#endif
       kh.set_team_work_size(team_work_size);
 
       int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
@@ -1264,11 +1263,11 @@ void kokkos_kernels_mult_A_B_newmatrix(
       Cmat = KCRS("C", AnumRows, BnumCols, c_nnz_size, valuesC, row_mapC, entriesC);
     } else {
       KernelHandle kh;
-  #if KOKKOSKERNELS_VERSION >= 50299
+#if KOKKOSKERNELS_VERSION >= 50299
       kh.create_spgemm_handle(alg_enum, input_sorted, result_sorted);
-  #else
+#else
       kh.create_spgemm_handle(alg_enum);
-  #endif
+#endif
       kh.set_team_work_size(team_work_size);
 
       {
@@ -1283,7 +1282,7 @@ void kokkos_kernels_mult_A_B_newmatrix(
   }
 
 #if KOKKOSKERNELS_VERSION < 50299
-  if(debug) {
+  if (debug) {
     // In KokkosKernels < 5.3, we did not have the option to pass result_sorted=true to the spgemm handle,
     // but the spgemm_numeric implementation (native and all TPLs) did explicitly sort the output.
     // In debug mode, ensure that this worked as expected.
@@ -1292,7 +1291,7 @@ void kokkos_kernels_mult_A_B_newmatrix(
                                "KokkosKernels spgemm_numeric did not produce sorted output as expected!");
   }
 #else
-  (void) debug; // avoid -Wunused
+  (void)debug;  // avoid -Wunused
 #endif
 
   C.setAllValues(Cmat);
@@ -1666,7 +1665,7 @@ void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>:
   }
 
 #if KOKKOSKERNELS_VERSION < 50299
-  if(debug) {
+  if (debug) {
     // In KokkosKernels < 5.3, we did not have the option to pass result_sorted=true to the spgemm handle,
     // but the spgemm_jacobi implementation did explicitly sort the output.
     // In debug mode, ensure that this worked as expected.

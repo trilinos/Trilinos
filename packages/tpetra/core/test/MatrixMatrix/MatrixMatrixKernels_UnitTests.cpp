@@ -401,7 +401,7 @@ mult_test_results multiply_test_kernel(
 #if KOKKOSKERNELS_VERSION >= 50299
     // note: other optional argument result_sorted is left as its default value of true.
     KCRS Ccomputed = KokkosSparse::spgemm<KCRS>(alg_enum, Ak, false, Bk, false,
-        /* input_sorted */ Aeff->getCrsGraph()->isSorted() && Beff->getCrsGraph()->isSorted());
+                                                /* input_sorted */ Aeff->getCrsGraph()->isSorted() && Beff->getCrsGraph()->isSorted());
 #else
     // before input_sorted/result_sorted were added as parameters, non-native spgemm algos required
     // inputs to be sorted, and native allowed non-sorted. The results were always sorted.
@@ -410,10 +410,10 @@ mult_test_results multiply_test_kernel(
 #endif
     auto row_mapC = Ccomputed.graph.row_map;
     auto entriesC = Ccomputed.graph.entries;
-    auto valuesC = Ccomputed.values;
+    auto valuesC  = Ccomputed.values;
 
     // Verify that C was already sorted by spgemm.
-    if(!KokkosSparse::isCrsGraphSorted(row_mapC, entriesC))
+    if (!KokkosSparse::isCrsGraphSorted(row_mapC, entriesC))
       throw std::runtime_error("mult_test_results multiply_test_kernel: C should have been sorted by spgemm, but it wasn't");
 
     // Bring the computed matrix's arrays to host for comparison below.
