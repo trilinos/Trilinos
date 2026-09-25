@@ -832,8 +832,13 @@ namespace phalanx_test {
     using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
 #elif defined(KOKKOS_ENABLE_HIP)
     using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,64>;
-#else
+#elif defined(KOKKOS_ENABLE_SYCL)
+    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
+#elif defined(KOKKOS_ENABLE_SERIAL) || defined(KOKKOS_ENABLE_OPENMP) ||        \
+      defined(KOKKOS_ENABLE_THREADS)
     using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,1>;
+#else
+#error "Phalanx: no FAD stride is defined for this backend.  Keep this in step with PHX::DefaultFadLayout in Phalanx_KokkosDeviceTypes.hpp -- the point of restating it here is to catch the two drifting apart."
 #endif
 
 #else

@@ -54,16 +54,25 @@ namespace PHX {
 
 #if defined(SACADO_GPU_HIERARCHICAL_DFAD) || defined(SACADO_GPU_HIERARCHICAL)
 
-  // Contiguous layout with FAD stride of 32 for cuda warp of 64 for
-  // HIP warp.  IMPORTANT: The FadStride must be the same as the
-  // vector_size in the Kokkos::TeamPolicy constructor. This value is
-  // only used for SFad and SLFad, not for DFad.
+  // Contiguous layout whose FAD stride is the width of the vector
+  // dimension: a warp on Cuda, a wavefront on HIP, a sub-group on SYCL.
+  // IMPORTANT: The FadStride must be the same as the vector_size in the
+  // Kokkos::TeamPolicy constructor. This value is only used for SFad and
+  // SLFad, not for DFad.
 #if defined(KOKKOS_ENABLE_CUDA)
   using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
 #elif defined(KOKKOS_ENABLE_HIP)
   using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,64>;
-#else
+#elif defined(KOKKOS_ENABLE_SYCL)
+  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
+#elif defined(KOKKOS_ENABLE_SERIAL) || defined(KOKKOS_ENABLE_OPENMP) ||        \
+      defined(KOKKOS_ENABLE_THREADS)
+  // A host backend has no vector dimension to partition, so hierarchical is a
+  // no-op here.  Carried anyway so the hierarchical code paths still compile
+  // on a CPU-only build.
   using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,1>;
+#else
+#error "Phalanx: hierarchical parallelism is enabled but no FAD stride is defined for this backend.  The stride must equal the vector_size passed to Kokkos::TeamPolicy, so it cannot be guessed -- add a branch above for the new backend, or build without Sacado_ENABLE_HIERARCHICAL / Sacado_ENABLE_HIERARCHICAL_DFAD."
 #endif
 
 #else
