@@ -71,6 +71,17 @@ IF(${PACKAGE_NAME}_ENABLE_DEVICE_DAG)
   ENDIF()
 ENDIF()
 
+# Calling a virtual function from device code is not supported on SYCL
+# without the experimental sycl_ext_oneapi_virtual_functions extension, so the
+# tests that do it are not built on a SYCL build unless this is turned on.
+# Other backends are unaffected.
+OPTION(${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE
+  "Build the tests that call virtual functions from device code on a SYCL build.  Requires the experimental sycl_ext_oneapi_virtual_functions extension; Phalanx adds -fsycl-allow-virtual-functions to those tests (default=OFF)."
+  OFF )
+IF (Kokkos_ENABLE_SYCL)
+  MESSAGE(STATUS "Virtual functions on SYCL device: ${${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE}")
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT
   PHX_ENABLE_KOKKOS_AMT
   "Enable the Kokkos Asynchronous Multi-tasking capability. Default is off."
