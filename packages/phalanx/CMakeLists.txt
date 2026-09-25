@@ -64,9 +64,9 @@ MESSAGE(STATUS "Experimental Device DAG support: ${PHX_ENABLE_DEVICE_DAG}")
 
 # Enforce that if device type is cuda and device dag enabled then relocatable device code must be enabled
 IF(${PACKAGE_NAME}_ENABLE_DEVICE_DAG)
-  IF(PHX_KOKKOS_DEVICE_TYPE_CUDA)
+  IF(Kokkos_ENABLE_CUDA)
     IF(NOT Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE)
-      MESSAGE(FATAL_ERROR, " Enabling ${PACKAGE_NAME}_ENABLE_DEVICE_DAG support with a CUDA device type in Phalanx requires compilation with relocatable device code! Please reconfigure with Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=ON.")
+      MESSAGE(FATAL_ERROR " Enabling ${PACKAGE_NAME}_ENABLE_DEVICE_DAG support with a CUDA device type in Phalanx requires compilation with relocatable device code! Please reconfigure with Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=ON.")
     ENDIF()
   ENDIF()
 ENDIF()
@@ -88,9 +88,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT
   OFF )
 MESSAGE(STATUS "Experimental Kokkos AMT support: ${PHX_ENABLE_KOKKOS_AMT}")
 IF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
-  IF(PHX_KOKKOS_DEVICE_TYPE_THREAD)
-  MESSAGE(FATAL_ERROR "Phalanx configure ERROR: Kokkos AMT support is enabled but is not implemented for Pthreads execution space. Please change your execution space or disable AMT support in Phalanx.")
-ENDIF()
+  # Kokkos picks Threads as the default execution space only when no GPU
+  # backend and no OpenMP is enabled, so mirror that order here.
+  IF(Kokkos_ENABLE_THREADS AND NOT Kokkos_ENABLE_OPENMP AND
+     NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_HIP AND NOT Kokkos_ENABLE_SYCL)
+    MESSAGE(FATAL_ERROR "Phalanx configure ERROR: Kokkos AMT support is enabled but is not implemented for Pthreads execution space. Please change your execution space or disable AMT support in Phalanx.")
+  ENDIF()
 ENDIF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
 
 # For use by Phalanx and Panzer unit tests
