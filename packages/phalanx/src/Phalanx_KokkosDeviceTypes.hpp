@@ -30,6 +30,18 @@
 
 namespace PHX {
 
+  // Phalanx_DEFAULT_EXECUTION_SPACE and Phalanx_DEFAULT_MEMORY_SPACE are
+  // configured as free-form type names, so a plausible-looking mistake -- a
+  // memory space in the execution space slot, say -- otherwise surfaces much
+  // later as an unreadable template error.
+  static_assert(Kokkos::is_execution_space_v<PHX::DefaultExecutionSpace>,
+                "Phalanx: the type configured through "
+                "Phalanx_DEFAULT_EXECUTION_SPACE is not a Kokkos execution "
+                "space.");
+  static_assert(Kokkos::is_memory_space_v<PHX::DefaultMemorySpace>,
+                "Phalanx: the type configured through "
+                "Phalanx_DEFAULT_MEMORY_SPACE is not a Kokkos memory space.");
+
   using exec_space = PHX::Device::execution_space;
   using mem_space  = PHX::Device::memory_space;
 
