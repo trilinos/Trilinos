@@ -185,12 +185,14 @@ Teuchos::StackedTimer:12.5579 [1] (0)
         p_ = PHX::View<Scalar**>("p",num_cells,num_points,1+num_derivatives);
         a_ = PHX::View<Scalar**>("a",num_cells,num_points,1+num_derivatives);
 
-        auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0,0},{num_cells,num_points});
-        Kokkos::parallel_for("init derivatives",policy,KOKKOS_CLASS_LAMBDA(const int c,const int p){
-          rho_(c,p).val() = 8.0;
-          p_(c,p).val() = 5.0;
-          rho_(c,p).fastAccessDx(p) = 1.0;
-          p_(c,p).fastAccessDx(p) = 1.0;
+        // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
+        Kokkos::parallel_for("init derivatives",num_cells,KOKKOS_CLASS_LAMBDA(const int c){
+          for (size_t p=0; p < num_points; ++p) {
+            rho_(c,p).val() = 8.0;
+            p_(c,p).val() = 5.0;
+            rho_(c,p).fastAccessDx(p) = 1.0;
+            p_(c,p).fastAccessDx(p) = 1.0;
+          }
         });
         PHX::Device().fence();
       } else {
@@ -238,26 +240,29 @@ Teuchos::StackedTimer:12.5579 [1] (0)
     {
         int num_failures = 0;
         const auto tol = 100.0 * std::numeric_limits<double>::epsilon();
-        auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0,0},{num_cells,num_points});
+        // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
         PHX::Device().fence();
-        Kokkos::parallel_reduce("check results", policy, KOKKOS_CLASS_LAMBDA(const int c, const int p, int& count) {
-          const double val_exp = 0.625;
-          const double val = Sacado::ScalarValue<Scalar>::eval(a_(c, p));
-          if (std::abs(val - val_exp) > tol * std::abs(val_exp))
-            ++count;
-          if constexpr (Sacado::IsADType<Scalar>::value)
+        Kokkos::parallel_reduce("check results", num_cells, KOKKOS_CLASS_LAMBDA(const int c, int& count) {
+          for (size_t p=0; p < num_points; ++p)
           {
-            const double dx_exp = 0.0234375;
-            for (size_t d = 0; d < num_derivatives; ++d)
+            const double val_exp = 0.625;
+            const double val = Sacado::ScalarValue<Scalar>::eval(a_(c, p));
+            if (std::abs(val - val_exp) > tol * std::abs(val_exp))
+              ++count;
+            if constexpr (Sacado::IsADType<Scalar>::value)
             {
-              const double dx = a_(c, p).fastAccessDx(d);
-              if (static_cast<int>(d) == p)
+              const double dx_exp = 0.0234375;
+              for (size_t d = 0; d < num_derivatives; ++d)
               {
-                if (std::abs(dx - dx_exp) > tol * std::abs(dx_exp))
+                const double dx = a_(c, p).fastAccessDx(d);
+                if (d == p)
+                {
+                  if (std::abs(dx - dx_exp) > tol * std::abs(dx_exp))
+                    ++count;
+                }
+                else if (std::abs(dx) > 0.0)
                   ++count;
               }
-              else if (std::abs(dx) > 0.0)
-                ++count;
             }
           }
         }, num_failures);
