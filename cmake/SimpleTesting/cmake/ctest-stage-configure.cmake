@@ -19,6 +19,10 @@ if(CTEST_BUILD_NAME MATCHES ".*coverage.*")
     set(ENV{CCACHE_NODISABLE})
 endif()
 
+# Remove CMakeFiles/ and CMakeCache.txt before configuring
+file(REMOVE_RECURSE "${CTEST_BINARY_DIRECTORY}/CMakeFiles")
+file(REMOVE "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
+
 ctest_configure(SOURCE ${CTEST_SOURCE_DIRECTORY}
                 BUILD  ${CTEST_BINARY_DIRECTORY}
                 RETURN_VALUE configure_error
