@@ -323,7 +323,11 @@ Teuchos::StackedTimer:12.5579 [1] (0)
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, double, EoS_FUNC)
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS_Baseline)
+#if !defined(KOKKOS_ENABLE_SYCL)
+  // EoS::a returns Sacado::Promote<>::type by value, so this builds a DFad
+  // inside the kernel.  That needs a device heap, which SYCL does not have.
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS)
+#endif
   // TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS_AUTO)
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(ScalarFunction, Evaluate, fad, EoS_FUNC)
 }
