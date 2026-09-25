@@ -55,6 +55,17 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
 # Use only for CUDA builds
 MESSAGE(STATUS "Sacado Hierarchic DFAD support: ${Sacado_ENABLE_HIERARCHICAL_DFAD}")
 
+# Calling a virtual function from device code is not supported on SYCL
+# without the experimental sycl_ext_oneapi_virtual_functions extension, so the
+# tests that do it are not built on a SYCL build unless this is turned on.
+# Other backends are unaffected.
+OPTION(${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE
+  "Build the tests that call virtual functions from device code on a SYCL build.  Requires the experimental sycl_ext_oneapi_virtual_functions extension; Phalanx adds -fsycl-allow-virtual-functions to those tests (default=OFF)."
+  OFF )
+IF (Kokkos_ENABLE_SYCL)
+  MESSAGE(STATUS "Virtual functions on SYCL device: ${${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE}")
+ENDIF()
+
 # Experimental device dag support
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEVICE_DAG
   PHX_ENABLE_DEVICE_DAG
@@ -69,17 +80,16 @@ IF(${PACKAGE_NAME}_ENABLE_DEVICE_DAG)
       MESSAGE(FATAL_ERROR " Enabling ${PACKAGE_NAME}_ENABLE_DEVICE_DAG support with a CUDA device type in Phalanx requires compilation with relocatable device code! Please reconfigure with Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=ON.")
     ENDIF()
   ENDIF()
-ENDIF()
-
-# Calling a virtual function from device code is not supported on SYCL
-# without the experimental sycl_ext_oneapi_virtual_functions extension, so the
-# tests that do it are not built on a SYCL build unless this is turned on.
-# Other backends are unaffected.
-OPTION(${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE
-  "Build the tests that call virtual functions from device code on a SYCL build.  Requires the experimental sycl_ext_oneapi_virtual_functions extension; Phalanx adds -fsycl-allow-virtual-functions to those tests (default=OFF)."
-  OFF )
-IF (Kokkos_ENABLE_SYCL)
-  MESSAGE(STATUS "Virtual functions on SYCL device: ${${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE}")
+  # The device DAG dispatches through PHX::DeviceEvaluator's virtual functions
+  # inside a kernel, which SYCL only supports through the experimental
+  # sycl_ext_oneapi_virtual_functions extension.
+  IF(Kokkos_ENABLE_SYCL)
+    IF(NOT ${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE)
+      MESSAGE(FATAL_ERROR "Phalanx configure ERROR: ${PACKAGE_NAME}_ENABLE_DEVICE_DAG calls virtual functions from device code, which SYCL does not support. Reconfigure with ${PACKAGE_NAME}_ENABLE_DEVICE_DAG=OFF, or set ${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE=ON to try it with the experimental sycl_ext_oneapi_virtual_functions extension.")
+    ELSE()
+      MESSAGE(WARNING "Phalanx: ${PACKAGE_NAME}_ENABLE_DEVICE_DAG on SYCL needs -fsycl-allow-virtual-functions on every translation unit that compiles a DeviceEvaluator, including in downstream packages, so Phalanx cannot add it for you. Put it in CMAKE_CXX_FLAGS yourself.")
+    ENDIF()
+  ENDIF()
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT
