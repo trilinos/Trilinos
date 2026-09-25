@@ -246,7 +246,10 @@ Teuchos::StackedTimer:12.5579 [1] (0)
           for (size_t p=0; p < num_points; ++p)
           {
             const double val_exp = 0.625;
-            const double val = Sacado::ScalarValue<Scalar>::eval(a_(c, p));
+            // scalarValue() deduces its argument type.  Naming Scalar here instead
+            // would convert the ViewFad returned by a_(c,p) into a DFad, which
+            // allocates, and device code cannot allocate on SYCL.
+            const double val = Sacado::scalarValue(a_(c, p));
             if (std::abs(val - val_exp) > tol * std::abs(val_exp))
               ++count;
             if constexpr (Sacado::IsADType<Scalar>::value)
