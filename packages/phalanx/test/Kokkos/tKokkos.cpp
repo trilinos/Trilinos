@@ -829,11 +829,11 @@ namespace phalanx_test {
 #if defined(SACADO_GPU_HIERARCHICAL_DFAD) || defined(SACADO_GPU_HIERARCHICAL)
 
 #if defined(KOKKOS_ENABLE_CUDA)
-    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
 #elif defined(KOKKOS_ENABLE_HIP)
-    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,64>;
+    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,64>;
 #else
-    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
+    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,1>;
 #endif
 
 #else

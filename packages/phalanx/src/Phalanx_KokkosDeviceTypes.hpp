@@ -59,11 +59,11 @@ namespace PHX {
   // vector_size in the Kokkos::TeamPolicy constructor. This value is
   // only used for SFad and SLFad, not for DFad.
 #if defined(KOKKOS_ENABLE_CUDA)
-  using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
 #elif defined(KOKKOS_ENABLE_HIP)
-  using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,64>;
+  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,64>;
 #else
-  using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
+  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,1>;
 #endif
 
 #else

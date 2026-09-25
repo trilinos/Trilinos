@@ -109,7 +109,7 @@ namespace phalanx_test {
 #endif
 
     std::cout << "SACADO_GPU_HIERARCHICAL_DFAD = true" << std::endl;
-    using DevLayout = Kokkos::LayoutContiguous<DefaultLayout,FadStride>; // use Sacado continguous (best for cuda)
+    using DevLayout = Sacado::LayoutContiguous<DefaultLayout,FadStride>; // use Sacado continguous (best for cuda)
 #else
     std::cout << "SACADO_GPU_HIERARCHICAL_DFAD = false" << std::endl;
     using DevLayout = DefaultLayout;
