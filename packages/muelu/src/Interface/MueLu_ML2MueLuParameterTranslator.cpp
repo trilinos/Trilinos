@@ -217,7 +217,7 @@ std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::Param
     mueluss << "<ParameterList name=\"hiptmair: smoother list 1\">" << std::endl;
     if (subSmootherType == "Chebyshev") {
       std::string edge_sweeps = is_coarse ? "smoother: edge sweeps" : "subsmoother: edge sweeps";
-      std::string cheby_alpha = is_coarse ? "smoother: Chebyshev alpha" : "subsmoother: Chebyshev_alpha";
+      std::string cheby_alpha = is_coarse ? "smoother: Chebyshev alpha" : "subsmoother: Chebyshev alpha";
 
       if (paramList.isParameter(edge_sweeps)) {
         mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>(edge_sweeps) << "\"/>" << std::endl;
@@ -244,7 +244,7 @@ std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::Param
     mueluss << "<ParameterList name=\"hiptmair: smoother list 2\">" << std::endl;
     if (subSmootherType == "Chebyshev") {
       std::string node_sweeps = is_coarse ? "smoother: node sweeps" : "subsmoother: node sweeps";
-      std::string cheby_alpha = is_coarse ? "smoother: Chebyshev alpha" : "subsmoother: Chebyshev_alpha";
+      std::string cheby_alpha = is_coarse ? "smoother: Chebyshev alpha" : "subsmoother: Chebyshev alpha";
       if (paramList.isParameter(node_sweeps)) {
         mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>(node_sweeps) << "\"/>" << std::endl;
         adaptingParamList.remove("subsmoother: node sweeps", false);
@@ -313,6 +313,7 @@ Teuchos::RCP<Teuchos::ParameterList> ML2MueLuParameterTranslator::SetParameterLi
   } else {
     paramList.set("repartition: start level", 2);
   }
+  paramList.set("repartition: partitioner", "zoltan");
 
   // ML sets this to 5000
   if (!paramList.isParameter("repartition: put on single proc")) {
@@ -504,31 +505,46 @@ Teuchos::RCP<Teuchos::ParameterList> ML2MueLuParameterTranslator::SetParameterLi
     }
 
     if (pname == "aggregation: type") {
-      if (valuestr == "Uncoupled")
+      if (valuestr == "Uncoupled" || valuestr == "Uncoupled-MIS") {
         mueluss << "<Parameter name=\"aggregation: type\"      type=\"string\"     value=\"uncoupled\"/>" << std::endl;
-      else if (valuestr == "Uncoupled-MIS") {
-        mueluss << "<Parameter name=\"aggregation: type\"      type=\"string\"     value=\"uncoupled\"/>" << std::endl;
-        mueluss << "<Parameter name=\"aggregation: coloring algorithm\"      type=\"string\"     value=\"mis2 aggregation\"/>" << std::endl;
-        mueluss << "<Parameter name=\"aggregation: backend\"      type=\"string\"     value=\"kokkos\"/>" << std::endl;
+        mueluss << "<Parameter name=\"aggregation: backend\"      type=\"string\"     value=\"host\"/>" << std::endl;
       } else
         TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Only \"Uncoupled\" aggregation is supported, not \"" << valuestr << "\"\n");
       hasBeenProcessed = true;
     }
 
-    if (pname == "problem: type" ||
+    if (pname == "default values" ||
+        pname == "problem: type" ||
         pname == "smoother: sweeps" ||
         pname == "smoother: damping factor" ||
         pname == "smoother: pre or post" ||
-        pname == "coarse: max size")
+        pname == "smoother: ifpack type" ||
+        pname == "smoother: Chebyshev alpha" ||
+        pname == "smoother: use l1 Gauss-Seidel" ||
+        pname == "smoother: Gauss-Seidel efficient symmetric" ||
+        pname == "smoother: Hiptmair efficient symmetric" ||
+        pname == "subsmoother: node sweeps" ||
+        pname == "subsmoother: edge sweeps" ||
+        pname == "subsmoother: type" ||
+        pname == "subsmoother: Chebyshev alpha" ||
+        pname == "coarse: max size" ||
+        pname == "x-coordinates" ||
+        pname == "y-coordinates" ||
+        pname == "z-coordinates" ||
+        pname == "node: x-coordinates" ||
+        pname == "node: y-coordinates" ||
+        pname == "node: z-coordinates" ||
+        pname == "repartition: partitioner" ||
+        pname == "eigen-analysis: type" ||
+        pname == "increasing or decreasing"  // ignored
+    )
       hasBeenProcessed = true;
 
     if (paramList.isSublist(pname))
       hasBeenProcessed = true;
 
     if (!hasBeenProcessed) {
-      std::cout << "Could not translate \"" << pname << "\" = \"" << valuestr << "\"\n";
       if (MasterList::List()->isParameter(pname)) {
-        std::cout << "Is valid MueLu parameter \"" << pname << "\"\n";
         mueluList.setEntry(pname, paramList.entry(param));
       }
     }
@@ -537,10 +553,6 @@ Teuchos::RCP<Teuchos::ParameterList> ML2MueLuParameterTranslator::SetParameterLi
 
   auto translatedList = Teuchos::getParametersFromXmlString(mueluss.str());
 
-  std::cout << "\n\ntranslatedList " << *translatedList << std::endl
-            << "muelu list " << mueluList << std::endl
-            << std::endl;
-
   // Check that none of the MueLu parameters that were passed in clash with interpreted ML parameters
   for (auto it = mueluList.begin(); it != mueluList.end(); ++it) {
     auto& pname = mueluList.name(it);
@@ -548,6 +560,78 @@ Teuchos::RCP<Teuchos::ParameterList> ML2MueLuParameterTranslator::SetParameterLi
   }
   // Add the MueLu parameters to the translated list
   translatedList->setParameters(mueluList);
+
+  if (defaultVals == "Maxwell") {
+    // ML used a flat list for Maxwell1.
+    // MueLu uses sublists for the two hierarchies.
+    // We need to redistribute the parameters.
+
+    Teuchos::RCP<Teuchos::ParameterList> newList = Teuchos::rcp(new Teuchos::ParameterList());
+
+    // interpret ML list
+    newList->sublist("maxwell1: 22list") = *translatedList;
+
+    // copy verbosity setting
+    if (newList->sublist("maxwell1: 22list").isType<std::string>("verbosity")) {
+      newList->set("verbosity", newList->sublist("maxwell1: 22list").get<std::string>("verbosity"));
+      newList->sublist("maxwell1: 11list").set("verbosity", newList->sublist("maxwell1: 22list").get<std::string>("verbosity"));
+    }
+
+    // Hardwiring options to ensure ML compatibility
+    newList->sublist("maxwell1: 22list").set("use kokkos refactor", false);
+    newList->sublist("maxwell1: 22list").set("tentative: constant column sums", false);
+    newList->sublist("maxwell1: 22list").set("tentative: calculate qr", false);
+
+    newList->sublist("maxwell1: 11list").set("use kokkos refactor", false);
+    newList->sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+    newList->sublist("maxwell1: 11list").set("aggregation: type", "uncoupled");
+
+    // We are intentionally setting this to true, contrary to the default value.
+    // This is for backward compatibility with ML.
+    newList->sublist("maxwell1: 11list").set("sa: use edge matrix for smoothing", true);
+
+    // newList->sublist("maxwell1: 11list").set("aggregation: use ml scaling of drop tol", true);
+    newList->sublist("maxwell1: 22list").set("aggregation: use ml scaling of drop tol", true);
+    newList->sublist("maxwell1: 22list").set("aggregation: min agg size", 3);
+
+    // Move damping factor from 22list to 11list
+    if (newList->sublist("maxwell1: 22list").isType<double>("sa: damping factor")) {
+      newList->sublist("maxwell1: 11list").set("sa: damping factor", newList->sublist("maxwell1: 22list").get<double>("sa: damping factor"));
+      newList->sublist("maxwell1: 22list").remove("sa: damping factor");
+    }
+    newList->sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");
+    newList->sublist("maxwell1: 22list").set("aggregation: type", "uncoupled");
+
+    // Move coarse solver and smoother stuff from 22list to 11list
+    std::vector<std::string> convert = {"coarse:", "smoother:", "smoother: pre", "smoother: post"};
+    for (auto it = convert.begin(); it != convert.end(); ++it) {
+      if (newList->sublist("maxwell1: 22list").isType<std::string>(*it + " type")) {
+        newList->sublist("maxwell1: 11list").set(*it + " type", newList->sublist("maxwell1: 22list").get<std::string>(*it + " type"));
+        newList->sublist("maxwell1: 22list").remove(*it + " type");
+      }
+      if (newList->sublist("maxwell1: 22list").isSublist(*it + " params")) {
+        newList->sublist("maxwell1: 11list").set(*it + " params", newList->sublist("maxwell1: 22list").sublist(*it + " params"));
+        newList->sublist("maxwell1: 22list").remove(*it + " params");
+      }
+    }
+    if (newList->sublist("maxwell1: 22list").isType<std::string>("cycle type")) {
+      newList->sublist("maxwell1: 11list").set("cycle type", newList->sublist("maxwell1: 22list").get<std::string>("cycle type"));
+      newList->sublist("maxwell1: 22list").remove("cycle type");
+    }
+    if (newList->sublist("maxwell1: 22list").isType<std::string>("smoother: pre or post")) {
+      newList->sublist("maxwell1: 11list").set("smoother: pre or post", newList->sublist("maxwell1: 22list").get<std::string>("smoother: pre or post"));
+      newList->sublist("maxwell1: 22list").remove("smoother: pre or post");
+    }
+
+    newList->sublist("maxwell1: 22list").set("smoother: type", "none");
+    newList->sublist("maxwell1: 22list").set("coarse: type", "none");
+
+    newList->set("maxwell1: nodal smoother fix zero diagonal threshold", 1e-10);
+    newList->sublist("maxwell1: 22list").set("rap: fix zero diagonals", true);
+    newList->sublist("maxwell1: 22list").set("rap: fix zero diagonals threshold", 1e-10);
+
+    return newList;
+  }
 
   return translatedList;
 }

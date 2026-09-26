@@ -60,62 +60,7 @@ const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> Maxwell
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teuchos::ParameterList& list) {
   if (list.isType<std::string>("parameterlist: syntax") && list.get<std::string>("parameterlist: syntax") == "ml") {
-    list.remove("parameterlist: syntax");
-    Teuchos::ParameterList newList;
-
-    // interpret ML list
-    newList.sublist("maxwell1: 22list") = *MueLu::ML2MueLuParameterTranslator::translate(list, "Maxwell");
-
-    // Hardwiring options to ensure ML compatibility
-    newList.sublist("maxwell1: 22list").set("use kokkos refactor", false);
-
-    newList.sublist("maxwell1: 11list").set("use kokkos refactor", false);
-    newList.sublist("maxwell1: 11list").set("tentative: constant column sums", false);
-    newList.sublist("maxwell1: 11list").set("tentative: calculate qr", false);
-
-    newList.sublist("maxwell1: 11list").set("aggregation: use ml scaling of drop tol", true);
-    newList.sublist("maxwell1: 22list").set("aggregation: use ml scaling of drop tol", true);
-
-    newList.sublist("maxwell1: 22list").set("aggregation: min agg size", 3);
-    newList.sublist("maxwell1: 22list").set("aggregation: match ML phase1", true);
-    newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2a", true);
-    newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2b", true);
-
-    if (!list.sublist("maxwell1: 11list").isParameter("multigrid algorithm") || (list.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") != "emin reitzinger")) {
-      if (list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
-        newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
-      else
-        newList.sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
-    }
-    newList.sublist("maxwell1: 11list").set("aggregation: type", "uncoupled");
-
-    newList.sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");
-    newList.sublist("maxwell1: 22list").set("aggregation: type", "uncoupled");
-
-    if (newList.sublist("maxwell1: 22list").isType<std::string>("verbosity"))
-      newList.set("verbosity", newList.sublist("maxwell1: 22list").get<std::string>("verbosity"));
-
-    // Move coarse solver and smoother stuff to 11list
-    std::vector<std::string> convert = {"coarse:", "smoother:", "smoother: pre", "smoother: post"};
-    for (auto it = convert.begin(); it != convert.end(); ++it) {
-      if (newList.sublist("maxwell1: 22list").isType<std::string>(*it + " type")) {
-        newList.sublist("maxwell1: 11list").set(*it + " type", newList.sublist("maxwell1: 22list").get<std::string>(*it + " type"));
-        newList.sublist("maxwell1: 22list").remove(*it + " type");
-      }
-      if (newList.sublist("maxwell1: 22list").isSublist(*it + " params")) {
-        newList.sublist("maxwell1: 11list").set(*it + " params", newList.sublist("maxwell1: 22list").sublist(*it + " params"));
-        newList.sublist("maxwell1: 22list").remove(*it + " params");
-      }
-    }
-
-    newList.sublist("maxwell1: 22list").set("smoother: type", "none");
-    newList.sublist("maxwell1: 22list").set("coarse: type", "none");
-
-    newList.set("maxwell1: nodal smoother fix zero diagonal threshold", 1e-10);
-    newList.sublist("maxwell1: 22list").set("rap: fix zero diagonals", true);
-    newList.sublist("maxwell1: 22list").set("rap: fix zero diagonals threshold", 1e-10);
-
-    list = newList;
+    list = *MueLu::ML2MueLuParameterTranslator::translate(list, "Maxwell");
   }
 
   std::string mode_string = list.get("maxwell1: mode", MasterList::getDefault<std::string>("maxwell1: mode"));
@@ -329,16 +274,25 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   if (algo11 == "smoothed reitzinger") {
     precList11_.set("sa: use filtered matrix", false);
     precList22_.set("sa: use filtered matrix", false);
+    bool useEdgeMatrixForSmoothing = MasterList::getDefault<bool>("sa: use edge matrix for smoothing");
+    if (precList11_.isType<bool>("sa: use edge matrix for smoothing"))
+      useEdgeMatrixForSmoothing = precList11_.get<bool>("sa: use edge matrix for smoothing");
     if (!precList11_.sublist("user data").isParameter("CurlCurl")) {
       if (precList11_.isType<double>("sa: damping factor")) {
         double edgeDamping = precList11_.get<double>("sa: damping factor");
         if (edgeDamping != 0) {
-          GetOStream(Warnings0) << "\"sa: damping factor\" in \"maxwell1: 11list\" is set to " << std::to_string(edgeDamping) << ", but no CurlCurl matrix has been passed in \"user data\". Switching off edge-only damping." << std::endl;
-          precList11_.set("sa: damping factor", 0.);
+          if (!useEdgeMatrixForSmoothing) {
+            GetOStream(Warnings0) << "\"sa: damping factor\" in \"maxwell1: 11list\" is set to " << std::to_string(edgeDamping) << ", but no CurlCurl matrix has been passed in \"user data\". Switching off edge-only damping. Set \"sa: use edge matrix for smoothing\" = true in the \"maxwell1: 11list\" to use the edge matrix." << std::endl;
+            precList11_.set("sa: damping factor", 0.);
+          } else
+            GetOStream(Warnings0) << "\"sa: damping factor\" in \"maxwell1: 11list\" is set to " << std::to_string(edgeDamping) << ". Using the edge matrix for smoothing and violating the commuting relationship." << std::endl;
         }
       } else {
-        GetOStream(Warnings0) << "\"sa: damping factor\" in \"maxwell1: 11list\" is nonzero by default, but no CurlCurl matrix has been passed in \"user data\". Switching off edge-only damping." << std::endl;
-        precList11_.set("sa: damping factor", 0.);
+        if (!useEdgeMatrixForSmoothing) {
+          GetOStream(Warnings0) << "\"sa: damping factor\" in \"maxwell1: 11list\" is nonzero by default, but no CurlCurl matrix has been passed in \"user data\". Switching off edge-only damping." << std::endl;
+          precList11_.set("sa: damping factor", 0.);
+        } else
+          GetOStream(Warnings0) << "\"sa: damping factor\" in \"maxwell1: 11list\" is nonzero by default. Using the edge matrix for smoothing and violating the commuting relationship." << std::endl;
       }
     }
   }
@@ -884,7 +838,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::applyInverseRefMaxwell
 
   // 4) Prolong both updates back into X-vector (Need to do both the P11 null and not null cases
   {
-    RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu Maxwell1: Orolongation");
+    RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu Maxwell1: Prolongation");
     if (!P11_.is_null())
       P11_->apply(*update11c_, X, Teuchos::NO_TRANS, one, one);
     if (!allNodesBoundary_)
@@ -943,8 +897,11 @@ std::pair<std::set<std::string>, std::set<std::string>> Maxwell1<Scalar, LocalOr
   if (params.sublist("maxwell1: 11list").isType<std::string>("multigrid algorithm") &&
       params.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "smoothed reitzinger" &&
       (!params.sublist("maxwell1: 11list").isType<double>("sa: damping factor") ||
-       params.sublist("maxwell1: 11list").get<double>("sa: damping factor") == 0.))
-    requiredUserData.insert("CurlCurl");
+       params.sublist("maxwell1: 11list").get<double>("sa: damping factor") != 0.)) {
+    if (!params.sublist("maxwell1: 11list").isType<bool>("sa: use edge matrix for smoothing") ||
+        !params.sublist("maxwell1: 11list").get<bool>("sa: use edge matrix for smoothing"))
+      requiredUserData.insert("CurlCurl");
+  }
 
   optionalUserData.insert("Nullspace");
   optionalUserData.insert("Kn");
