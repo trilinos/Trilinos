@@ -956,6 +956,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
 
+  ortho_->setMaxNumBlocksHint(numBlocks_);
+  ortho_->setMaxBlockSizeHint(blockSize_);
   if (needsIterRebuild_) {
     if (isFlexible_)
       block_gmres_iter_ = Teuchos::rcp( new BlockFGmresIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist) );
