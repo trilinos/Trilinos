@@ -12,7 +12,9 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <algorithm>
+#include <array>
 #include <sstream>
+#include <tuple>
 #include <vector>
 
 #include "MueLu_config.hpp"
@@ -44,7 +46,6 @@ struct StructuredProblemData {
   Teuchos::RCP<Matrix> A;
   Teuchos::RCP<RealValuedMultiVector> coordinates;
   Teuchos::Array<LocalOrdinal> lNodesPerDim;
-  std::string matrixType;
   int numDimensions;
   int dofsPerNode;
 };
@@ -84,7 +85,6 @@ buildStructuredProblem(const std::string& matrixType,
     galeriList.set("mz", mz);
 
   StructuredProblemData<SC, LO, GO, NO> problem;
-  problem.matrixType   = matrixType;
   problem.lNodesPerDim = Teuchos::Array<LO>(3, Teuchos::as<LO>(1));
   problem.dofsPerNode  = 1;
 
@@ -129,10 +129,94 @@ buildStructuredProblem(const std::string& matrixType,
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void checkDetectedFineStencil(
+    const StructuredProblemData<Scalar, LocalOrdinal, GlobalOrdinal, Node>& problem,
+    const std::string& matrixType) {
+  using LO         = LocalOrdinal;
+  using RAPFactory = MueLu::StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using Offset     = std::array<int, 3>;
+  using Coupling   = std::tuple<int, int, int, LO, LO>;
+
+  RAPFactory rap;
+  const typename RAPFactory::FineStencilSpec detected =
+      rap.DetectFineStencil(*problem.A, problem.numDimensions, problem.lNodesPerDim);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      detected.numDimensions != problem.numDimensions, std::runtime_error,
+      matrixType << ": detected " << detected.numDimensions
+                 << " dimensions, expected " << problem.numDimensions << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      detected.dofsPerNode != problem.dofsPerNode, std::runtime_error,
+      matrixType << ": detected " << detected.dofsPerNode
+                 << " DOFs per node, expected " << problem.dofsPerNode << ".");
+
+  std::vector<Offset> expectedOffsets;
+  if (matrixType == "Laplace1D" || matrixType == "Laplace2D" ||
+      matrixType == "Laplace3D") {
+    expectedOffsets.push_back(Offset{{0, 0, 0}});
+    for (int dim = 0; dim < problem.numDimensions; ++dim) {
+      Offset lower{{0, 0, 0}};
+      Offset upper{{0, 0, 0}};
+      lower[dim] = -1;
+      upper[dim] = 1;
+      expectedOffsets.push_back(lower);
+      expectedOffsets.push_back(upper);
+    }
+  } else if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
+    const int minZ = problem.numDimensions == 3 ? -1 : 0;
+    const int maxZ = problem.numDimensions == 3 ? 1 : 0;
+    for (int z = minZ; z <= maxZ; ++z)
+      for (int y = -1; y <= 1; ++y)
+        for (int x = -1; x <= 1; ++x)
+          expectedOffsets.push_back(Offset{{x, y, z}});
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::runtime_error,
+        "No expected fine stencil is defined for " << matrixType << ".");
+  }
+
+  std::vector<Offset> detectedOffsets;
+  detectedOffsets.reserve(detected.stencilOffsets.size());
+  for (const typename RAPFactory::StencilOffset& offset : detected.stencilOffsets)
+    detectedOffsets.push_back(Offset{{offset.x, offset.y, offset.z}});
+  std::sort(expectedOffsets.begin(), expectedOffsets.end());
+  std::sort(detectedOffsets.begin(), detectedOffsets.end());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      detectedOffsets != expectedOffsets, std::runtime_error,
+      matrixType << ": detected nodal stencil does not match the expected stencil."
+                 << " Detected " << detectedOffsets.size() << " offsets, expected "
+                 << expectedOffsets.size() << ".");
+
+  std::vector<Coupling> expectedCouplings;
+  expectedCouplings.reserve(expectedOffsets.size() * problem.dofsPerNode * problem.dofsPerNode);
+  for (const Offset& offset : expectedOffsets)
+    for (LO rowDof = 0; rowDof < Teuchos::as<LO>(problem.dofsPerNode); ++rowDof)
+      for (LO columnDof = 0; columnDof < Teuchos::as<LO>(problem.dofsPerNode); ++columnDof)
+        expectedCouplings.emplace_back(offset[0], offset[1], offset[2], rowDof, columnDof);
+
+  std::vector<Coupling> detectedCouplings;
+  detectedCouplings.reserve(detected.entries.size());
+  for (const typename RAPFactory::FineStencilEntry& entry : detected.entries)
+    detectedCouplings.emplace_back(entry.offset.x, entry.offset.y, entry.offset.z,
+                                   entry.rowDof, entry.columnDof);
+  std::sort(expectedCouplings.begin(), expectedCouplings.end());
+  std::sort(detectedCouplings.begin(), detectedCouplings.end());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      detectedCouplings != expectedCouplings, std::runtime_error,
+      matrixType << ": detected scalar stencil couplings do not match the expected stencil."
+                 << " Detected " << detectedCouplings.size() << " couplings, expected "
+                 << expectedCouplings.size() << ".");
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 struct StructuredTransferData {
   using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   Teuchos::RCP<Matrix> P;
+  Teuchos::Array<LocalOrdinal> lFineNodesPerDim;
   Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim;
+  int numDimensions;
   int interpolationOrder;
 };
 
@@ -193,11 +277,12 @@ buildStructuredTransferData(const StructuredProblemData<Scalar, LocalOrdinal, Gl
   prolongator->Build(fineLevel, coarseLevel);
 
   StructuredTransferData<SC, LO, GO, NO> transferData;
-  transferData.P = coarseLevel.Get<Teuchos::RCP<Matrix> >("P", prolongator.get());
+  transferData.P                = coarseLevel.Get<Teuchos::RCP<Matrix> >("P", prolongator.get());
+  transferData.lFineNodesPerDim = problem.lNodesPerDim;
   transferData.lCoarseNodesPerDim =
       fineLevel.Get<Teuchos::Array<LO> >("lCoarseNodesPerDim", aggregation.get());
-  transferData.interpolationOrder =
-      fineLevel.Get<int>("structuredInterpolationOrder", aggregation.get());
+  transferData.numDimensions      = problem.numDimensions;
+  transferData.interpolationOrder = interpolationOrder;
   return transferData;
 }
 
@@ -215,6 +300,8 @@ buildCoarseMatrix(const StructuredProblemData<Scalar, LocalOrdinal, GlobalOrdina
   MueLu::Level fineLevel, coarseLevel;
   TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
   fineLevel.Set("A", problem.A);
+  fineLevel.Set("numDimensions", transferData.numDimensions);
+  fineLevel.Set("lNodesPerDim", transferData.lFineNodesPerDim);
   fineLevel.Set("lCoarseNodesPerDim", transferData.lCoarseNodesPerDim);
   fineLevel.Set("structuredInterpolationOrder", transferData.interpolationOrder);
   coarseLevel.Set("P", transferData.P);
@@ -224,10 +311,11 @@ buildCoarseMatrix(const StructuredProblemData<Scalar, LocalOrdinal, GlobalOrdina
   rapParams.set("rap: triple product", true);
   rapParams.set("rap: prebuild coarse graph", prebuildCoarseGraph);
   rapParams.set("transpose: use implicit", true);
-  rapParams.set("rap: matrix type", problem.matrixType);
   rap.SetParameterList(rapParams);
   rap.SetFactory("A", MueLu::NoFactory::getRCP());
   rap.SetFactory("P", MueLu::NoFactory::getRCP());
+  rap.SetFactory("numDimensions", MueLu::NoFactory::getRCP());
+  rap.SetFactory("lNodesPerDim", MueLu::NoFactory::getRCP());
   rap.SetFactory("lCoarseNodesPerDim", MueLu::NoFactory::getRCP());
   rap.SetFactory("structuredInterpolationOrder", MueLu::NoFactory::getRCP());
 
@@ -408,6 +496,8 @@ void runStructuredRAPComparison(const std::string& matrixType,
 
   StructuredProblemData<SC, LO, GO, NO> problem =
       buildStructuredProblem<SC, LO, GO, NO>(matrixType, nx, ny, nz, mx, my, mz);
+
+  checkDetectedFineStencil<SC, LO, GO, NO>(problem, matrixType);
 
   StructuredTransferData<SC, LO, GO, NO> transferData =
       buildStructuredTransferData<SC, LO, GO, NO>(problem, interpolationOrder, coarseningRate);

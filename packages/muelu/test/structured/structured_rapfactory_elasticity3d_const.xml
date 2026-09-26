@@ -70,8 +70,6 @@
     <ParameterList name="myRAPFact">
       <Parameter name="factory"                             type="string" value="StructuredRAPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
-      <Parameter name="lCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
-      <Parameter name="structuredInterpolationOrder"        type="string" value="myAggregationFact"/>
       <Parameter name="rap: triple product"                 type="bool"   value="true"/>
       <Parameter name="rap: prebuild coarse graph"          type="bool"   value="true"/>
       <Parameter name="transpose: use implicit"             type="bool"   value="true"/>
