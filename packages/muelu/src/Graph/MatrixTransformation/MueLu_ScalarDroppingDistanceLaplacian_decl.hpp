@@ -47,7 +47,7 @@ class ScalarDroppingDistanceLaplacian : public ScalarDroppingBase<Scalar, LocalO
                                                 const std::string& droppingMethod,
                                                 const magnitudeType threshold,
                                                 const bool aggregationMayCreateDirichlet,
-                                                const bool symmetrizeDroppedGraph,
+                                                const std::string& symmetrizeDroppedGraph,
                                                 const bool useBlocking,
                                                 DistanceFunctorType& dist2,
                                                 Level& level,
@@ -61,7 +61,7 @@ class ScalarDroppingDistanceLaplacian : public ScalarDroppingBase<Scalar, LocalO
       if (aggregationMayCreateDirichlet) {
         auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
 
-        if (symmetrizeDroppedGraph) {
+        if (symmetrizeDroppedGraph != "no symmetrization") {
           auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);
           ScalarDroppingDistanceLaplacian::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
                                                                dist_laplacian_dropping,
@@ -77,7 +77,7 @@ class ScalarDroppingDistanceLaplacian : public ScalarDroppingBase<Scalar, LocalO
                                                                mark_singletons_as_boundary);
         }
       } else {
-        if (symmetrizeDroppedGraph) {
+        if (symmetrizeDroppedGraph != "no symmetrization") {
           auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);
           ScalarDroppingDistanceLaplacian::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
                                                                dist_laplacian_dropping,
@@ -95,7 +95,7 @@ class ScalarDroppingDistanceLaplacian : public ScalarDroppingBase<Scalar, LocalO
       auto comparison = CutDrop::make_dlap_comparison_functor<SoC>(A, dist2, results);
       auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
-      if (symmetrizeDroppedGraph) {
+      if (symmetrizeDroppedGraph != "no symmetrization") {
         auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);
         ScalarDroppingDistanceLaplacian::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
                                                              drop_boundaries,
@@ -119,7 +119,7 @@ class ScalarDroppingDistanceLaplacian : public ScalarDroppingBase<Scalar, LocalO
                                           const std::string& droppingMethod,
                                           const magnitudeType threshold,
                                           const bool aggregationMayCreateDirichlet,
-                                          const bool symmetrizeDroppedGraph,
+                                          const std::string& symmetrizeDroppedGraph,
                                           const bool useBlocking,
                                           const std::string& distanceLaplacianMetric,
                                           Level& level,

@@ -15,7 +15,7 @@ Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 BuildScalar (MueLu::CoalesceDropFactory_kokkos)
-dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = no symmetrization
 aggregation: drop scheme = distance laplacian
 filtered matrix: use lumping = 1
 project auxiliary matrices -> 
@@ -96,7 +96,7 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 BuildScalar (MueLu::CoalesceDropFactory_kokkos)
-dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = no symmetrization
 aggregation: drop scheme = distance laplacian
 filtered matrix: use lumping = 1
 project auxiliary matrices -> 
@@ -152,7 +152,7 @@ Level 3
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 BuildScalar (MueLu::CoalesceDropFactory_kokkos)
-dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = no symmetrization
 aggregation: drop scheme = distance laplacian
 filtered matrix: use lumping = 1
 project auxiliary matrices -> 
