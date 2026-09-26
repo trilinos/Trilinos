@@ -111,13 +111,6 @@ if remote_url.find("trilinos/Trilinos") < 0:
     exit(1)
 
 ##################################################
-# Available builds
-
-pr_builds = parse_workflows(trilinos_source)
-logger.debug("pr_builds = \n" + pformat(pr_builds))
-assert pr_builds is not None and len(pr_builds) > 0
-
-##################################################
 # Get PR number
 
 if args.pr is not None:
@@ -138,17 +131,25 @@ else:
 logger.debug(f"pr_number = {pr_number}")
 
 ##################################################
+# Available builds
+
+pr_builds = parse_workflows(trilinos_source, pr_number)
+logger.debug("pr_builds = \n" + pformat(pr_builds))
+assert pr_builds is not None and len(pr_builds) > 0
+
+##################################################
 # Choose build
 
 if args.build is not None:
     pr_build = args.build
     assert pr_build in pr_builds, f"Specified build \"{pr_build}\" is not a known build. Known builds: {list(pr_builds.keys())}"
 else:
-    pr_build = questionary.select("Which PR build do you want to reproduce?", choices=pr_builds.keys()).ask()
+    pr_build = questionary.select("Which PR build do you want to reproduce (Github build name / CDash build name)?", choices=[questionary.Choice(key+" / "+pr_builds[key]["dashboard_build_name"], key) for key in pr_builds]).ask()
 logger.debug(f"pr_build = {pr_build}")
 
 image = pr_builds[pr_build]["image"]
 tag = pr_builds[pr_build]["tag"]
+dashboard_build_name = pr_builds[pr_build]["dashboard_build_name"]
 genconfig_build_id = pr_builds[pr_build]["genconfig_build_id"]
 cmake_extra_args = pr_builds[pr_build]["cmake_extra_args"]
 logger.debug(f"image = {image}")
@@ -212,6 +213,7 @@ questionary.print(f"Title:              {pr.title}")
 questionary.print(f"Head ref:           {pr_head_ref}")
 questionary.print(f"Base ref:           {pr_base_ref}")
 questionary.print(f"Build:              {pr_build}")
+questionary.print(f"CDash build name:   {dashboard_build_name}")
 questionary.print(f"Container image:    {image}:{tag}")
 questionary.print(f"Container engine:   {container_engine}")
 questionary.print(f"Genconfig build ID: {genconfig_build_id}")

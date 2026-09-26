@@ -493,8 +493,7 @@ int exi_get_name(int exoid, int varid, size_t index, char *name, int name_size,
     return EX_FATAL;
   }
 
-  int api_name_size   = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
-  name[api_name_size] = '\0';
+  name[name_size] = '\0';
 
   exi_trim(name);
   return EX_NOERR;

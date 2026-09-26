@@ -12,7 +12,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 // Re-test cuda with hierarchical cuda parallelism turned on (experimental)
-#define SACADO_VIEW_CUDA_HIERARCHICAL_DFAD 1
+#define SACADO_GPU_HIERARCHICAL_DFAD 1
 #define SACADO_KOKKOS_USE_MEMORY_POOL 1
 
 #include "Fad_KokkosTests.hpp"

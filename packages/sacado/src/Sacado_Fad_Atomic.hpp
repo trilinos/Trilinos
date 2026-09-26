@@ -105,9 +105,9 @@ namespace Sacado {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       __device__
       inline bool atomics_use_team() {
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
-        // It is not allowed to define SACADO_VIEW_CUDA_HIERARCHICAL or
-        // SACADO_VIEW_CUDA_HIERARCHICAL_DFAD and use Sacado inside a team-based
+#if defined(SACADO_GPU_HIERARCHICAL) || defined(SACADO_GPU_HIERARCHICAL_DFAD)
+        // It is not allowed to define SACADO_GPU_HIERARCHICAL or
+        // SACADO_GPU_HIERARCHICAL_DFAD and use Sacado inside a team-based
         // kernel without Sacado hierarchical parallelism.  So use the
         // team-based version only if blockDim.x > 1 (i.e., a team policy)
         return (blockDim.x > 1);

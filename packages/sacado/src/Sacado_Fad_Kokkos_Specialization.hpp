@@ -64,8 +64,13 @@ KOKKOS_INLINE_FUNCTION auto subview(
     const View<D, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>, P...> &src,
     Args... args) {
   using view_t = View<D, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>, P...>;
+#if KOKKOS_VERSION >= 50299
+  auto submapping_result = submdspan_mapping(
+      src.mapping(), Impl::transform_kokkos_slice_to_mdspan_canonical_slice<typename view_t::index_type>(args)...);
+#else
   auto submapping_result = submdspan_mapping(
       src.mapping(), Impl::transform_kokkos_slice_to_mdspan_slice(args)...);
+#endif
   using sub_data_type = typename data_type_construct<
       typename view_t::value_type,
       decltype(submapping_result.mapping)::extents_type::rank()>::type;
@@ -175,8 +180,8 @@ void deep_copy(const ExecT& exec_space, const DstT& dst, const SrcT& src) {
 
   size_t vector_size = 1;
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) ||                                  \
-    defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#if defined(SACADO_GPU_HIERARCHICAL) ||                                  \
+    defined(SACADO_GPU_HIERARCHICAL_DFAD)
   // It looks like SFAD only works with 64 wide vector in HIP
 #ifdef KOKKOS_ENABLE_HIP
   vector_size = 64;
@@ -452,8 +457,8 @@ void deep_copy(
 }
 } // namespace Kokkos
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) ||                                  \
-    defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#if defined(SACADO_GPU_HIERARCHICAL) ||                                  \
+    defined(SACADO_GPU_HIERARCHICAL_DFAD)
 namespace Sacado {
 namespace Impl {
 
@@ -472,7 +477,11 @@ template <class Dst, class SrcT, class ExecSpace> struct DeepCopyViewScalar {
     if (ii >= total_extent)
       return;
 
-    auto src_strided = Sacado::partition_scalar<stride>(src);
+    // Bind, do not copy.  The generic partition_scalar() returns its argument
+    // by reference, and for a DFad a copy would allocate the derivative array
+    // -- inside a kernel, where SYCL has no heap.  The partitioning overloads
+    // return by value; a const reference extends that temporary's lifetime.
+    const auto& src_strided = Sacado::partition_scalar<stride>(src);
 
     if constexpr (view_t::rank() == 0)
       dst() = src_strided;
@@ -622,7 +631,7 @@ void deep_copy(const Kokkos::View<Sacado::Fad::GeneralFad<DstT> ******,
 }
 
 } // namespace Kokkos
-#endif // SACADO_VIEW_CUDA_HIERARCHICAL
+#endif // SACADO_GPU_HIERARCHICAL
 
 // Overloads of resize are required for all layouts, not just hierarchical
 
