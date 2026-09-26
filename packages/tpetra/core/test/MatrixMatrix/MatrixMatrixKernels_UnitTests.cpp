@@ -25,6 +25,7 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include <cmath>
 #include "KokkosSparse_spgemm.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_Import_Util2.hpp"
 
@@ -321,8 +322,8 @@ mult_test_results multiply_test_kernel(
   // Now let's handle incompatibilities between the cols of Aeff and the rows of Beff, by copying and rearranging Beff if needed
   if (!Aeff->getGraph()->getColMap()->isSameAs(*Beff->getGraph()->getColMap())) {
     auto lclBeff    = Beff->getLocalMatrixHost();
-    auto Be1_rowptr = lclBeff.row_map;
-    auto Be1_colind = lclBeff.entries;
+    auto Be1_rowptr = lclBeff.graph.row_map;
+    auto Be1_colind = lclBeff.graph.entries;
     auto Be1_vals   = lclBeff.values;
 
     RCP<const Map_t> Be1_rowmap = Beff->getGraph()->getRowMap();
@@ -381,7 +382,12 @@ mult_test_results multiply_test_kernel(
   // Setup
   // As a note "SPGEMM_MKL" will *NOT* pass all of these tests
   //  std::vector<std::string> ALGORITHMS={"SPGEMM_MKL","SPGEMM_KK_MEMSPEED","SPGEMM_KK_SPEED","SPGEMM_KK_MEMORY"};
+
+#if KOKKOSKERNELS_VERSION >= 50299
+  std::vector<std::string> ALGORITHMS = {"SPGEMM_DEFAULT", "SPGEMM_KK_MEMORY"};
+#else
   std::vector<std::string> ALGORITHMS = {"SPGEMM_KK_MEMORY"};
+#endif
 
   for (int alg = 0; alg < (int)ALGORITHMS.size(); alg++) {
     std::string myalg = ALGORITHMS[alg];
@@ -391,27 +397,29 @@ mult_test_results multiply_test_kernel(
     typename KernelHandle::nnz_lno_t AnumRows = Ak.numRows();
     typename KernelHandle::nnz_lno_t BnumRows = Bk.numRows();
     typename KernelHandle::nnz_lno_t BnumCols = Bk.numCols();
-    lno_view_t row_mapC("non_const_lnow_row", AnumRows + 1);
-    lno_nnz_view_t entriesC;
-    scalar_view_t valuesC;
-    KernelHandle kh;
-    kh.create_spgemm_handle(alg_enum);
 
-    // Symbolic
-    KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols, Ak.graph.row_map, Ak.graph.entries, false, Bk.graph.row_map, Bk.graph.entries, false, row_mapC);
-    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    //    printf("DEBUG: c_nnz_size = %d\n",c_nnz_size); // This isn't relevant for MKL
-    if (c_nnz_size) {
-      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-    }
+#if KOKKOSKERNELS_VERSION >= 50299
+    // note: other optional argument result_sorted is left as its default value of true.
+    KCRS Ccomputed = KokkosSparse::spgemm<KCRS>(alg_enum, Ak, false, Bk, false,
+                                                /* input_sorted */ Aeff->getCrsGraph()->isSorted() && Beff->getCrsGraph()->isSorted());
+#else
+    // before input_sorted/result_sorted were added as parameters, non-native spgemm algos required
+    // inputs to be sorted, and native allowed non-sorted. The results were always sorted.
+    // Because we only test with SPGEMM_KK_MEMORY here, we don't need to worry whether Ak, Bk are sorted.
+    KCRS Ccomputed = KokkosSparse::spgemm<KCRS>(alg_enum, Ak, false, Bk, false);
+#endif
+    auto row_mapC = Ccomputed.graph.row_map;
+    auto entriesC = Ccomputed.graph.entries;
+    auto valuesC  = Ccomputed.values;
 
-    // Numeric
-    KokkosSparse::spgemm_numeric(&kh, AnumRows, BnumRows, BnumCols, Ak.graph.row_map, Ak.graph.entries, Ak.values, false, Bk.graph.row_map, Bk.graph.entries, Bk.values, false, row_mapC, entriesC, valuesC);
-    kh.destroy_spgemm_handle();
+    // Verify that C was already sorted by spgemm.
+    if (!KokkosSparse::isCrsGraphSorted(row_mapC, entriesC))
+      throw std::runtime_error("mult_test_results multiply_test_kernel: C should have been sorted by spgemm, but it wasn't");
 
-    // Sort
-    Tpetra::Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+    // Bring the computed matrix's arrays to host for comparison below.
+    auto row_mapC_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), row_mapC);
+    auto entriesC_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entriesC);
+    auto valuesC_h  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), valuesC);
 
     // Compare the returned arrays with that of actual C
     auto Real_rowptr = C->getLocalRowPtrsHost();
@@ -419,12 +427,12 @@ mult_test_results multiply_test_kernel(
     auto Real_vals   = C->getLocalValuesHost(Tpetra::Access::ReadOnly);
 
     // Check number of rows
-    if ((size_t)Real_rowptr.size() != (size_t)row_mapC.size()) throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap size mismatch");
+    if ((size_t)Real_rowptr.size() != (size_t)row_mapC_h.size()) throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap size mismatch");
 
     // Check row sizes
     bool has_mismatch = false;
     for (size_t i = 0; i < (size_t)Real_rowptr.size(); i++) {
-      if (Real_rowptr()[i] != row_mapC[i]) {
+      if (Real_rowptr[i] != row_mapC_h[i]) {
         has_mismatch = true;
         break;
       }
@@ -473,14 +481,14 @@ mult_test_results multiply_test_kernel(
     results.compNorm = 0.0;
     results.epsilon  = 0.0;
     for (size_t i = 0; i < (size_t)Real_rowptr.size() - 1; i++) {
-      size_t nnz = Real_rowptr()[i + 1] - Real_rowptr()[i];
+      size_t nnz = Real_rowptr[i + 1] - Real_rowptr[i];
       if (nnz == 0) continue;
       std::vector<std::pair<LO, SC> > R_sorted(nnz), C_sorted(nnz);
       for (size_t j = 0; j < nnz; j++) {
-        R_sorted[j].first  = C->getColMap()->getGlobalElement(Real_colind()[Real_rowptr()[i] + j]);
-        R_sorted[j].second = Real_vals()[Real_rowptr()[i] + j];
-        C_sorted[j].first  = Beff->getColMap()->getGlobalElement(entriesC[Real_rowptr()[i] + j]);
-        C_sorted[j].second = valuesC[Real_rowptr()[i] + j];
+        R_sorted[j].first  = C->getColMap()->getGlobalElement(Real_colind[Real_rowptr[i] + j]);
+        R_sorted[j].second = Real_vals[Real_rowptr[i] + j];
+        C_sorted[j].first  = Beff->getColMap()->getGlobalElement(entriesC_h[Real_rowptr[i] + j]);
+        C_sorted[j].second = valuesC_h[Real_rowptr[i] + j];
       }
       std::sort(R_sorted.begin(), R_sorted.end());
       std::sort(C_sorted.begin(), C_sorted.end());

@@ -131,7 +131,11 @@ void Multiply(
 
   using Teuchos::ParameterList;
   RCP<ParameterList> transposeParams(new ParameterList);
+#if KOKKOSKERNELS_VERSION >= 50299
+  transposeParams->set("sort", false);
+#else
   transposeParams->set("sort", true);  // Kokkos Kernels spgemm requires inputs to be sorted
+#endif
 
   if (!use_optimized_ATB && transposeA) {
     transposer_type transposer(rcpFromRef(A));
@@ -1122,20 +1126,27 @@ void kokkos_kernels_mult_A_B_newmatrix(
       typename int_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
       typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
 
+  const bool debug               = Tpetra::Details::Behavior::debug();
   const std::string wrapperLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Wrapper";
   RCP<Tpetra::Details::ProfilingRegion> MM =
       rcp(new Tpetra::Details::ProfilingRegion(wrapperLabel));
 
-  int team_work_size = 16;
+  bool spgemm_options_customized = false;
+  int team_work_size             = 16;
   std::string myalg("SPGEMM_DEFAULT");
   if (!params.is_null()) {
     const std::string prefixedAlg  = backend_type::parameter_prefix() + ": algorithm";
     const std::string prefixedTeam = backend_type::parameter_prefix() + ": team work size";
     if (params->isParameter(prefixedAlg))
       myalg = params->get(prefixedAlg, myalg);
-    if (params->isParameter(prefixedTeam))
-      team_work_size = params->get(prefixedTeam, team_work_size);
+    if (params->isParameter(prefixedTeam)) {
+      team_work_size            = params->get(prefixedTeam, team_work_size);
+      spgemm_options_customized = true;
+    }
   }
+#if KOKKOSKERNELS_VERSION < 50299
+  (void)spgemm_options_customized;
+#endif
 
   const KCRS Amat = Aview.origMatrix->getLocalMatrixDevice();
 
@@ -1146,85 +1157,144 @@ void kokkos_kernels_mult_A_B_newmatrix(
 
   KCRS Bmerged = Tpetra::MMdetails::merge_matrices(
       Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C.getColMap()->getLocalNumElements());
-  backend_type::pre_spgemm(Bmerged);
 
-  const std::string coreLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Core";
-  MM                          = Teuchos::null;
-  MM                          = rcp(new Tpetra::Details::ProfilingRegion(coreLabel));
+  KCRS Cmat;
 
-  typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
-  typename KernelHandle::nnz_lno_t BnumRows = Bmerged.numRows();
-  typename KernelHandle::nnz_lno_t BnumCols = Bmerged.numCols();
+#if KOKKOSKERNELS_VERSION >= 50299
+  // Determine whether the local spgemm inputs are known to be sorted.
+  // For A, we can directly ask its CrsGraph if it's sorted.
+  // For Bmerged, we don't have a CrsGraph. But if no nontrivial import+merge
+  // took place (!Bview.importMatrix.is_null()), and the unmerged B was sorted, then
+  // Bmerged must also be sorted.
+  const bool input_sorted =
+      Aview.origMatrix->getCrsGraph()->isSorted() &&
+      (Bview.importMatrix.is_null() && Bview.origMatrix->getCrsGraph()->isSorted());
+  // We always want C to be sorted
+  const bool result_sorted = true;
 
-  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lno_row"), AnumRows + 1);
-  lno_nnz_view_t entriesC;
-  scalar_view_t valuesC;
+  // For backward compatibility, fall back to the reuse (handle-based) interface
+  // if the user has customized algorithm parameters (e.g. team work size),
+  // which the non-reuse interface cannot express. This is an unlikely case.
+  if (!spgemm_options_customized) {
+    const std::string coreLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Core";
+    MM                          = Teuchos::null;
+    MM                          = rcp(new Tpetra::Details::ProfilingRegion(coreLabel));
 
-  Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
-  const bool useIntRowptrs =
-      irph.shouldUseIntRowptrs() &&
-      CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->shouldUseIntRowptrs();
+    Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
+    const bool useIntRowptrs =
+        irph.shouldUseIntRowptrs() &&
+        CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->shouldUseIntRowptrs();
 
-  if (useIntRowptrs) {
-    IntKernelHandle kh;
-    kh.create_spgemm_handle(alg_enum);
-    kh.set_team_work_size(team_work_size);
+    if (useIntRowptrs) {
+      // Run spgemm with int-typed rowptrs (helps TPLs), then copy the resulting
+      // rowptrs back to the correct rowptr type.
+      auto Aint          = CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->getIntRowptrMatrix(Amat);
+      auto Bint          = irph.getIntRowptrMatrix(Bmerged);
+      using int_matrix_t = decltype(Bint);
 
-    int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
+      int_matrix_t Cint = KokkosSparse::spgemm<int_matrix_t>(
+          alg_enum, Aint, false, Bint, false, input_sorted, result_sorted);
 
-    auto Aint = CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->getIntRowptrMatrix(Amat);
-    auto Bint = irph.getIntRowptrMatrix(Bmerged);
-
-    {
-      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic int");
-      KokkosSparse::spgemm_symbolic(
-          &kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, false, Bint.graph.row_map, Bint.graph.entries, false, int_row_mapC);
+      auto int_row_mapC = Cint.graph.row_map;
+      lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lno_row"), int_row_mapC.extent(0));
+      Kokkos::parallel_for(
+          Kokkos::RangePolicy<typename device_t::execution_space>(0, int_row_mapC.extent(0)),
+          KOKKOS_LAMBDA(const int i) { row_mapC(i) = int_row_mapC(i); });
+      Cmat = KCRS("C", Cint.numRows(), Cint.numCols(), Cint.nnz(), Cint.values, row_mapC, Cint.graph.entries);
+    } else {
+      Cmat = KokkosSparse::spgemm<KCRS>(
+          alg_enum, Amat, false, Bmerged, false, input_sorted, result_sorted);
     }
+  } else
+#endif
+  {
+    backend_type::pre_spgemm(Bmerged);
 
-    Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric int");
-    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    if (c_nnz_size) {
-      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    const std::string coreLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Core";
+    MM                          = Teuchos::null;
+    MM                          = rcp(new Tpetra::Details::ProfilingRegion(coreLabel));
+
+    Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
+    const bool useIntRowptrs =
+        irph.shouldUseIntRowptrs() &&
+        CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->shouldUseIntRowptrs();
+
+    if (useIntRowptrs) {
+      typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
+      typename KernelHandle::nnz_lno_t BnumRows = Bmerged.numRows();
+      typename KernelHandle::nnz_lno_t BnumCols = Bmerged.numCols();
+
+      lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_lno_row"), AnumRows + 1);
+      lno_nnz_view_t entriesC;
+      scalar_view_t valuesC;
+
+      IntKernelHandle kh;
+#if KOKKOSKERNELS_VERSION >= 50299
+      kh.create_spgemm_handle(alg_enum, input_sorted, result_sorted);
+#else
+      kh.create_spgemm_handle(alg_enum);
+#endif
+      kh.set_team_work_size(team_work_size);
+
+      int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("non_const_int_row"), AnumRows + 1);
+
+      auto Aint = CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->getIntRowptrMatrix(Amat);
+      auto Bint = irph.getIntRowptrMatrix(Bmerged);
+
+      {
+        Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic int");
+        KokkosSparse::spgemm_symbolic(
+            &kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, false, Bint.graph.row_map, Bint.graph.entries, false, int_row_mapC);
+      }
+
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric int");
+      size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+      if (c_nnz_size) {
+        entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+        valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+      }
+      KokkosSparse::spgemm_numeric(
+          &kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, Aint.values, false,
+          Bint.graph.row_map, Bint.graph.entries, Bint.values, false, int_row_mapC, entriesC, valuesC);
+      Kokkos::parallel_for(
+          Kokkos::RangePolicy<typename device_t::execution_space>(0, int_row_mapC.size()),
+          KOKKOS_LAMBDA(const int i) { row_mapC(i) = int_row_mapC(i); });
+      kh.destroy_spgemm_handle();
+      Cmat = KCRS("C", AnumRows, BnumCols, c_nnz_size, valuesC, row_mapC, entriesC);
+    } else {
+      KernelHandle kh;
+#if KOKKOSKERNELS_VERSION >= 50299
+      kh.create_spgemm_handle(alg_enum, input_sorted, result_sorted);
+#else
+      kh.create_spgemm_handle(alg_enum);
+#endif
+      kh.set_team_work_size(team_work_size);
+
+      {
+        Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic non-int");
+        KokkosSparse::spgemm_symbolic(kh, Amat, false, Bmerged, false, Cmat);
+      }
+
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric non-int");
+      KokkosSparse::spgemm_numeric(kh, Amat, false, Bmerged, false, Cmat);
+      kh.destroy_spgemm_handle();
     }
-    KokkosSparse::spgemm_numeric(
-        &kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, Aint.values, false,
-        Bint.graph.row_map, Bint.graph.entries, Bint.values, false, int_row_mapC, entriesC, valuesC);
-    Kokkos::parallel_for(
-        Kokkos::RangePolicy<typename device_t::execution_space>(0, int_row_mapC.size()),
-        KOKKOS_LAMBDA(const int i) { row_mapC(i) = int_row_mapC(i); });
-    kh.destroy_spgemm_handle();
-
-  } else {
-    KernelHandle kh;
-    kh.create_spgemm_handle(alg_enum);
-    kh.set_team_work_size(team_work_size);
-
-    {
-      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic non-int");
-      KokkosSparse::spgemm_symbolic(
-          &kh, AnumRows, BnumRows, BnumCols, Amat.graph.row_map, Amat.graph.entries, false, Bmerged.graph.row_map, Bmerged.graph.entries, false, row_mapC);
-    }
-
-    Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric non-int");
-    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-    if (c_nnz_size) {
-      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
-    }
-    KokkosSparse::spgemm_numeric(
-        &kh, AnumRows, BnumRows, BnumCols, Amat.graph.row_map, Amat.graph.entries, Amat.values, false,
-        Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false, row_mapC, entriesC, valuesC);
-    kh.destroy_spgemm_handle();
   }
 
-  const std::string sortLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Sort";
-  MM                          = Teuchos::null;
-  MM                          = rcp(new Tpetra::Details::ProfilingRegion(sortLabel));
+#if KOKKOSKERNELS_VERSION < 50299
+  if (debug) {
+    // In KokkosKernels < 5.3, we did not have the option to pass result_sorted=true to the spgemm handle,
+    // but the spgemm_numeric implementation (native and all TPLs) did explicitly sort the output.
+    // In debug mode, ensure that this worked as expected.
+    TEUCHOS_TEST_FOR_EXCEPTION(!KokkosSparse::Impl::isCrsGraphSorted(Cmat.graph.row_map, Cmat.graph.entries),
+                               std::runtime_error,
+                               "KokkosKernels spgemm_numeric did not produce sorted output as expected!");
+  }
+#else
+  (void)debug;  // avoid -Wunused
+#endif
 
-  if (params.is_null() || params->get("sort entries", true))
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
-  C.setAllValues(row_mapC, entriesC, valuesC);
+  C.setAllValues(Cmat);
 
   const std::string esfcLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "ESFC";
   MM                          = Teuchos::null;
@@ -1504,9 +1574,26 @@ void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>:
 
   const Scalar jacobiOmega = omega * Teuchos::ScalarTraits<Scalar>::one();
 
+#if KOKKOSKERNELS_VERSION >= 50299
+  // Determine whether the local spgemm inputs are known to be sorted.
+  // For A, we can directly ask its CrsGraph if it's sorted.
+  // For Bmerged, we don't have a CrsGraph. But if no nontrivial import+merge
+  // took place (!Bview.importMatrix.is_null()), and the unmerged B was sorted, then
+  // Bmerged must also be sorted.
+  const bool input_sorted =
+      Aview.origMatrix->getCrsGraph()->isSorted() &&
+      (Bview.importMatrix.is_null() && Bview.origMatrix->getCrsGraph()->isSorted());
+  // We always want C to be sorted.
+  const bool result_sorted = true;
+#endif
+
   if (useIntRowptrs) {
     int_handle_t kh;
+#if KOKKOSKERNELS_VERSION >= 50299
+    kh.create_spgemm_handle(alg_enum, input_sorted, result_sorted);
+#else
     kh.create_spgemm_handle(alg_enum);
+#endif
     kh.set_team_work_size(team_work_size);
 
     int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("int_row_mapC"), AnumRows + 1);
@@ -1545,7 +1632,11 @@ void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>:
     kh.destroy_spgemm_handle();
   } else {
     handle_t kh;
+#if KOKKOSKERNELS_VERSION >= 50299
+    kh.create_spgemm_handle(alg_enum, input_sorted, result_sorted);
+#else
     kh.create_spgemm_handle(alg_enum);
+#endif
     kh.set_team_work_size(team_work_size);
 
     {
@@ -1573,13 +1664,17 @@ void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>:
     kh.destroy_spgemm_handle();
   }
 
-  const std::string sortLabel = "TpetraExt: Jacobi: Newmatrix " + backend_type::algorithm_label() + "Sort";
-  MM                          = Teuchos::null;
-  MM                          = rcp(new Tpetra::Details::ProfilingRegion(sortLabel));
+#if KOKKOSKERNELS_VERSION < 50299
+  if (debug) {
+    // In KokkosKernels < 5.3, we did not have the option to pass result_sorted=true to the spgemm handle,
+    // but the spgemm_jacobi implementation did explicitly sort the output.
+    // In debug mode, ensure that this worked as expected.
+    TEUCHOS_TEST_FOR_EXCEPTION(!KokkosSparse::Impl::isCrsGraphSorted(row_mapC, entriesC),
+                               std::runtime_error,
+                               "KokkosKernels spgemm_jacobi did not produce sorted output!");
+  }
+#endif
 
-  // Sort & set values
-  if (params.is_null() || params->get("sort entries", true))
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC, entriesC, valuesC);
 
   const std::string esfcLabel = "TpetraExt: Jacobi: Newmatrix " + backend_type::algorithm_label() + "ESFC";
