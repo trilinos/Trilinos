@@ -98,7 +98,7 @@ namespace phalanx_test {
     // using DevLayout = DefaultLayout; // use preferred layout for device
     // using DevLayout = Kokkos::LayoutLeft;
     // using DevLayout = Kokkos::LayoutRight;
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#if defined(SACADO_GPU_HIERARCHICAL_DFAD)
 
 #if defined(KOKKOS_ENABLE_CUDA)
     std::cout << "\n\nKOKKOS_ENABLE_CUDA = true" << std::endl;
@@ -108,10 +108,10 @@ namespace phalanx_test {
     const static int FadStride = 1;
 #endif
 
-    std::cout << "SACADO_VIEW_CUDA_HIERARCHICAL_DFAD = true" << std::endl;
+    std::cout << "SACADO_GPU_HIERARCHICAL_DFAD = true" << std::endl;
     using DevLayout = Kokkos::LayoutContiguous<DefaultLayout,FadStride>; // use Sacado continguous (best for cuda)
 #else
-    std::cout << "SACADO_VIEW_CUDA_HIERARCHICAL_DFAD = false" << std::endl;
+    std::cout << "SACADO_GPU_HIERARCHICAL_DFAD = false" << std::endl;
     using DevLayout = DefaultLayout;
 #endif
 

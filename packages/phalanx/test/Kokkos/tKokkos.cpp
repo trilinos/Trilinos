@@ -826,7 +826,7 @@ namespace phalanx_test {
 
     // Expected layout based on architecture.
     using DefaultDevLayout = PHX::DefaultDevLayout;
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) || defined(SACADO_VIEW_CUDA_HIERARCHICAL)
+#if defined(SACADO_GPU_HIERARCHICAL_DFAD) || defined(SACADO_GPU_HIERARCHICAL)
 
 #if defined(KOKKOS_ENABLE_CUDA)
     using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;

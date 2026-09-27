@@ -12,7 +12,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 // Re-test cuda with hierarchical cuda parallelism turned on (experimental)
-#define SACADO_VIEW_CUDA_HIERARCHICAL 1
+#define SACADO_GPU_HIERARCHICAL 1
 
 #define GLOBAL_FAD_SIZE 64
 

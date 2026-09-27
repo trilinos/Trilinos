@@ -89,7 +89,7 @@ namespace PHX {
 
   using DefaultDevLayout = PHX::exec_space::array_layout;
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) || defined(SACADO_VIEW_CUDA_HIERARCHICAL)
+#if defined(SACADO_GPU_HIERARCHICAL_DFAD) || defined(SACADO_GPU_HIERARCHICAL)
 
   // Contiguous layout with FAD stride of 32 for cuda warp of 64 for
   // HIP warp.  IMPORTANT: The FadStride must be the same as the
