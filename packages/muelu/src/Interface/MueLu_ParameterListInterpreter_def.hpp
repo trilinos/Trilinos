@@ -850,8 +850,9 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   if (multigridAlgo == "smoothed reitzinger") {
     // === CurlCurl ===
-    auto saDampingFactor = set_var_2list<double>(paramList, defaultList, "sa: damping factor");
-    if (saDampingFactor != 0.0)
+    auto saDampingFactor           = set_var_2list<double>(paramList, defaultList, "sa: damping factor");
+    auto useEdgeMatrixForSmoothing = set_var_2list<bool>(paramList, defaultList, "sa: use edge matrix for smoothing");
+    if ((saDampingFactor != 0.0) && !useEdgeMatrixForSmoothing)
       UpdateFactoryManager_MatrixTransfer("CurlCurl", paramList, defaultList, manager, levelID, keeps);
   }
 
@@ -2497,7 +2498,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   if ((multigridAlgo == "smoothed reitzinger") && (levelID > 0)) {
     Pparams.set("sa: maxwell1 smoothing", true);
-    if (!Pparams.isType<double>("sa: damping factor") || (Pparams.get<double>("sa: damping factor") != 0.0))
+    auto useEdgeMatrixForSmoothing = set_var_2list<bool>(paramList, defaultList, "sa: use edge matrix for smoothing");
+    if (!useEdgeMatrixForSmoothing && (!Pparams.isType<double>("sa: damping factor") || (Pparams.get<double>("sa: damping factor") != 0.0)))
       P->SetFactory("CurlCurl", this->GetFactoryManager(levelID - 1)->GetFactory("CurlCurl"));
   }
 

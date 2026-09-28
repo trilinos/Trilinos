@@ -181,6 +181,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   LO numRows;
 
   const std::string aggregationBackend = pL.get<std::string>("aggregation: backend");
+  const std::string aggAlgo            = pL.get<std::string>("aggregation: coloring algorithm");
 
   // "Graph" can have type "LWGraph" or "LWGraph_kokkos".
   // The aggregation phases can call either "BuildAggregatesNonKokkos" or "BuildAggregates".
@@ -227,8 +228,10 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
   if (!runOnHost) {
     TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: use interface aggregation"), std::invalid_argument, "Option: 'aggregation: use interface aggregation' is not supported in the Kokkos version of uncoupled aggregation");
-    // Sanity Checking: match ML behavior is not supported in UncoupledAggregation_Kokkos in Phase 1 , but it is in 2a and 2b
-    TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: match ML phase1"), std::invalid_argument, "Option: 'aggregation: match ML phase1' is not supported in the Kokkos version of uncoupled aggregation");
+    if (aggAlgo != "mis2 coarsening" && aggAlgo != "mis2 aggregation") {
+      // Sanity Checking: match ML behavior is not supported in UncoupledAggregation_Kokkos in Phase 1 , but it is in 2a and 2b
+      TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: match ML phase1"), std::invalid_argument, "Option: 'aggregation: match ML phase1' is not supported in the Kokkos version of uncoupled aggregation");
+    }
   }
 
   // Build
@@ -315,7 +318,6 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   }
 
   LO numNonAggregatedNodes = numRows;
-  std::string aggAlgo      = pL.get<std::string>("aggregation: coloring algorithm");
   if (aggAlgo == "mis2 coarsening" || aggAlgo == "mis2 aggregation") {
     TEUCHOS_ASSERT(!runOnHost);
 
