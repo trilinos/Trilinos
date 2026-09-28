@@ -32,14 +32,14 @@ namespace phalanx_test {
     {
       Kokkos::View<double**,PHX::mem_space> a("a",1000,50);
       tracker = a.impl_track();
-      Kokkos::Impl::SharedAllocationRecord<PHX::mem_space,void>* record = tracker.get_record<PHX::mem_space>();
+      Kokkos::Impl::SharedAllocationRecord<PHX::mem_space,void>* record = tracker.get_record<typename PHX::Device::memory_space>();
       TEST_EQUALITY(record->use_count(),2);
       TEST_EQUALITY(a.size(),50000);
 
       out << "\ntracker: size=" << record->size() << " (bytes), count=" << record->use_count() << std::endl;
       out << "view   : size=" << a.size() << " (# of doubles)\n" << std::endl;
     }
-    Kokkos::Impl::SharedAllocationRecord<PHX::mem_space,void>* record = tracker.get_record<PHX::mem_space>();
+    Kokkos::Impl::SharedAllocationRecord<PHX::mem_space,void>* record = tracker.get_record<typename PHX::Device::memory_space>();
     TEST_EQUALITY(record->use_count(),1);
     out << "\ntracker: size=" << record->size() << " (bytes), count=" << record->use_count() << "\n\n";
 
@@ -47,7 +47,7 @@ namespace phalanx_test {
     Kokkos::View<double**,PHX::Device> b;
     {
       Kokkos::View<double**,PHX::Device> tmp("b",6,5);
-      auto b_record = tracker.get_record<PHX::mem_space>();
+      auto b_record = tracker.get_record<typename PHX::Device::memory_space>();
       TEST_ASSERT(record->size() >= b_record->size());
       b = Kokkos::View<double**,PHX::Device>(reinterpret_cast<double*>(record->data()),6,5);
     }
@@ -96,12 +96,12 @@ namespace phalanx_test {
     out << "fad not padded a.size()=" << a.size() << std::endl;
     out << "fad not padded a.span()=" << a.span() << std::endl;   
     out << "fad not padded a.impl_track().get_record<>()->size()=" 
-        << a.impl_track().get_record<PHX::Device>()->size() << " (bytes)" << std::endl;
+        << a.impl_track().get_record<typename PHX::Device::memory_space>()->size() << " (bytes)" << std::endl;
     Kokkos::View<FadType**> b(Kokkos::view_alloc("b",Kokkos::AllowPadding),dim0,dim1,fad_dim);
     out << "fad padded     b.size()=" << b.size() << std::endl;
     out << "fad padded     b.span()=" << b.span() << std::endl;
     out << "fad padded     b.impl_track().get_record<>()->size()=" 
-        << b.impl_track().get_record<PHX::Device>()->size() << " (bytes)" << std::endl;
+        << b.impl_track().get_record<typename PHX::Device::memory_space>()->size() << " (bytes)" << std::endl;
 
     // NOTE: FAD types disable padding!
 
@@ -118,11 +118,11 @@ namespace phalanx_test {
     Kokkos::View<double**> c(Kokkos::view_alloc("c",Kokkos::WithoutInitializing),100,100);
     out << "\ndouble not padded c.span()=" << c.span() << "" << std::endl;
     out << "double not padded c.impl_track().get_record<>()->size()="
-        << c.impl_track().get_record<PHX::Device>()->size() << " (bytes)" << std::endl;
+        << c.impl_track().get_record<typename PHX::Device::memory_space>()->size() << " (bytes)" << std::endl;
     Kokkos::View<double***> d(Kokkos::view_alloc("d",Kokkos::AllowPadding,Kokkos::WithoutInitializing),100,100,fad_dim);
     out << "double     padded d.span()=" << d.span() << "" << std::endl;
     out << "double not padded d.impl_track().get_record<>()->size()="
-        << d.impl_track().get_record<PHX::Device>()->size() << " (bytes)" << std::endl;
+        << d.impl_track().get_record<typename PHX::Device::memory_space>()->size() << " (bytes)" << std::endl;
 
     const auto double_np_required_size_query = 
       Kokkos::View<double**,DefaultLayout,PHX::mem_space>::required_allocation_size(100,100);
