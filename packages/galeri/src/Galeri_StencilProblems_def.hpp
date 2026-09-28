@@ -520,35 +520,36 @@ Teuchos::RCP<Matrix> Scalar3D_27PtProblem<Scalar, LocalOrdinal, GlobalOrdinal, M
   //            |    S113  S213 S313
   //                 ----- x ------>
   //
-  if ((list.isParameter("S111")) && (list.isType<Scalar>("S111"))) S111 = list.get("S111", -1);
-  if ((list.isParameter("S112")) && (list.isType<Scalar>("S112"))) S112 = list.get("S112", -1);
-  if ((list.isParameter("S113")) && (list.isType<Scalar>("S113"))) S113 = list.get("S113", -1);
-  if ((list.isParameter("S121")) && (list.isType<Scalar>("S121"))) S121 = list.get("S121", -1);
-  if ((list.isParameter("S122")) && (list.isType<Scalar>("S122"))) S122 = list.get("S122", -1);
-  if ((list.isParameter("S123")) && (list.isType<Scalar>("S123"))) S123 = list.get("S123", -1);
-  if ((list.isParameter("S131")) && (list.isType<Scalar>("S131"))) S131 = list.get("S131", -1);
-  if ((list.isParameter("S132")) && (list.isType<Scalar>("S132"))) S132 = list.get("S132", -1);
-  if ((list.isParameter("S133")) && (list.isType<Scalar>("S133"))) S133 = list.get("S133", -1);
 
-  if ((list.isParameter("S211")) && (list.isType<Scalar>("S211"))) S211 = list.get("S211", -1);
-  if ((list.isParameter("S212")) && (list.isType<Scalar>("S212"))) S212 = list.get("S212", -1);
-  if ((list.isParameter("S213")) && (list.isType<Scalar>("S213"))) S213 = list.get("S213", -1);
-  if ((list.isParameter("S221")) && (list.isType<Scalar>("S221"))) S221 = list.get("S221", -1);
-  if ((list.isParameter("S222")) && (list.isType<Scalar>("S222"))) S222 = list.get("S222", 26.0);
-  if ((list.isParameter("S223")) && (list.isType<Scalar>("S223"))) S223 = list.get("S223", -1);
-  if ((list.isParameter("S231")) && (list.isType<Scalar>("S231"))) S231 = list.get("S231", -1);
-  if ((list.isParameter("S232")) && (list.isType<Scalar>("S232"))) S232 = list.get("S232", -1);
-  if ((list.isParameter("S233")) && (list.isType<Scalar>("S233"))) S233 = list.get("S233", -1);
+  if (list.isParameter("S111")) S111 = list.get("S111", -1.0);
+  if (list.isParameter("S112")) S112 = list.get("S112", -1.0);
+  if (list.isParameter("S113")) S113 = list.get("S113", -1.0);
+  if (list.isParameter("S121")) S121 = list.get("S121", -1.0);
+  if (list.isParameter("S122")) S122 = list.get("S122", -1.0);
+  if (list.isParameter("S123")) S123 = list.get("S123", -1.0);
+  if (list.isParameter("S131")) S131 = list.get("S131", -1.0);
+  if (list.isParameter("S132")) S132 = list.get("S132", -1.0);
+  if (list.isParameter("S133")) S133 = list.get("S133", -1.0);
 
-  if ((list.isParameter("S311")) && (list.isType<Scalar>("S311"))) S311 = list.get("S311", -1);
-  if ((list.isParameter("S312")) && (list.isType<Scalar>("S312"))) S312 = list.get("S312", -1);
-  if ((list.isParameter("S313")) && (list.isType<Scalar>("S313"))) S313 = list.get("S313", -1);
-  if ((list.isParameter("S321")) && (list.isType<Scalar>("S321"))) S321 = list.get("S321", -1);
-  if ((list.isParameter("S322")) && (list.isType<Scalar>("S322"))) S322 = list.get("S322", -1);
-  if ((list.isParameter("S323")) && (list.isType<Scalar>("S323"))) S323 = list.get("S323", -1);
-  if ((list.isParameter("S331")) && (list.isType<Scalar>("S331"))) S331 = list.get("S331", -1);
-  if ((list.isParameter("S332")) && (list.isType<Scalar>("S332"))) S332 = list.get("S332", -1);
-  if ((list.isParameter("S333")) && (list.isType<Scalar>("S333"))) S333 = list.get("S333", -1);
+  if (list.isParameter("S211")) S211 = list.get("S211", -1.0);
+  if (list.isParameter("S212")) S212 = list.get("S212", -1.0);
+  if (list.isParameter("S213")) S213 = list.get("S213", -1.0);
+  if (list.isParameter("S221")) S221 = list.get("S221", -1.0);
+  if (list.isParameter("S222")) S222 = list.get("S222", 26.0);
+  if (list.isParameter("S223")) S223 = list.get("S223", -1.0);
+  if (list.isParameter("S231")) S231 = list.get("S231", -1.0);
+  if (list.isParameter("S232")) S232 = list.get("S232", -1.0);
+  if (list.isParameter("S233")) S233 = list.get("S233", -1.0);
+
+  if (list.isParameter("S311")) S311 = list.get("S311", -1.0);
+  if (list.isParameter("S312")) S312 = list.get("S312", -1.0);
+  if (list.isParameter("S313")) S313 = list.get("S313", -1.0);
+  if (list.isParameter("S321")) S321 = list.get("S321", -1.0);
+  if (list.isParameter("S322")) S322 = list.get("S322", -1.0);
+  if (list.isParameter("S323")) S323 = list.get("S323", -1.0);
+  if (list.isParameter("S331")) S331 = list.get("S331", -1.0);
+  if (list.isParameter("S332")) S332 = list.get("S332", -1.0);
+  if (list.isParameter("S333")) S333 = list.get("S333", -1.0);
 
   bool keepBCs = this->list_.get("keepBCs", false);
 

@@ -19,6 +19,7 @@
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_DroppingCommon.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "Tpetra_Access.hpp"
@@ -1276,6 +1277,230 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, MinvADirichletTest
 
   out << "Global number of nonzeros in original A vs. filteredA is " << A->getGlobalNumEntries() << " vs. " << filteredA->getGlobalNumEntries() << std::endl;
   TEUCHOS_ASSERT_EQUALITY((int)filteredA->getGlobalNumEntries(), interior_with_3nnzs * 3 + bcs_with_1nnzs + bcs_with_2nnzs * 2 + bcs_with_3nnzs * 3 + DirAdj_with_2nnzs * 2);
+}
+
+// structure used to sum up weak and strong counts. Needs to be outside ot
+// TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL() {} macro below.
+struct DropKeepCounts {
+  size_t drop, keep;
+  KOKKOS_FUNCTION
+  DropKeepCounts()
+    : drop(0)
+    , keep(0) {}
+  KOKKOS_FUNCTION
+  void operator+=(const DropKeepCounts &rhs) {
+    drop += rhs.drop;
+    keep += rhs.keep;
+  }
+};
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, StrongWeakSymmetry, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+// Test strong/weak pattern symmetry options.
+#include <MueLu_UseShortNames.hpp>
+
+  using local_ordinal_type = LO;
+  using ATS                = KokkosKernels::ArithTraits<SC>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+  using magATS             = KokkosKernels::ArithTraits<typename implATS::magnitudeType>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using range_type         = Kokkos::RangePolicy<typename NO::execution_space, LocalOrdinal>;
+  using device_type        = typename NO::device_type;
+  using memory_space       = typename device_type::memory_space;
+  using results_view_type  = Kokkos::View<MueLu::DecisionType *, memory_space>;
+  using MatrixType         = Xpetra::CrsMatrix<SC, LocalOrdinal, GO, NO>;
+  using GraphType          = Xpetra::CrsGraph<LO, GO, NO>;
+  using local_matrix_type  = typename MatrixType::local_matrix_device_type;
+
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(SC, GO, NO);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
+
+  RCP<Matrix> A;
+  const int nx = 4;  // mesh is 4 x 4 x 4
+  {
+    // Make a Scalar3D_27Pt Star2D Matrix with some big and small coefficients
+    // Specifically, with a threshold of 5.5, abs(A) has no vertical coupling
+    // and has 268 strong entries (732 weak entries). Since all horizontal
+    // planes have no strong coupling between them, the weak/strong pattern
+    // within each plane is identical. Thus, #strong (or #weak) is divisible
+    // by 4 and we get identical results on 1 or 4 procs (with linear map).
+    // Later, we'll run symmetrization options on this strong/weak pattern.
+
+    // Note: Currently, symmetrization is only within an MPI rank, so resulting
+    // matrices may not be symmetric in parallel. Even in serial, weak wins
+    // that doesn't allow new Dirichlets to be created will yield non-symmetric
+    // results.
+
+    // For strong wins symmetrization, we have 400 strong connections.
+    // Specifically, if we number unknowns within a single plane as
+    //         1   2   3   4
+    //         5   6   7   8
+    //         9  10  11  12
+    //        13  14  15  16
+    // The 4 corners each have 4 strong per row. The 4 interior each have
+    // 9 strong per row. The remaining have 6 strong per row.
+    //   ==>    4 planes *( 4*4 + 4*9 + 8*6)  = 400
+    //
+    // For weak wins symmetry that allows new Dirichlet to be created. We
+    // have 136 strong entries. For the lower plane, rows 4 and 13 have
+    // only one strong (the diagonal). As the original non-symmetric matrix
+    // had only one strong in row 13. Weak wins creates 1 Dirichlet row in
+    // lower plane. Rows 6, 7, 10, 11 have 3 strong connections. Each along
+    // diagonal in direction from left upper to right lower (e.g., row 6 has
+    // strong enties in 1, 6, 11). The remainning rows have 2 strong
+    // connections in this same diagonal direction (e.g., row 15 has strong
+    // connections to 10 and 25).
+    //
+    // Weak wins symmetry that doesn't allow new Dirichlet to be created is
+    // identical to the above weak wins case except it has 140 strong connections
+    // as it adds 4 additional strong connections (one in row 4 and on the
+    // rows in planes just above row 4).
+
+    Teuchos::ParameterList stiff_Pl;
+    stiff_Pl.set("matrixType", "Scalar3D_27Pt");
+    stiff_Pl.set("nx", (GO)nx);
+    stiff_Pl.set("ny", (GO)nx);
+    stiff_Pl.set("nz", (GO)nx);
+
+    stiff_Pl.set("S131", -3.0);
+    stiff_Pl.set("S231", -3.0);
+    stiff_Pl.set("S331", -3.0);
+    stiff_Pl.set("S121", -3.0);
+    stiff_Pl.set("S221", -3.0);
+    stiff_Pl.set("S321", -3.0);
+    stiff_Pl.set("S111", -3.0);
+    stiff_Pl.set("S211", -3.0);
+    stiff_Pl.set("S311", -3.0);
+
+    stiff_Pl.set("S132", -6.0);
+    stiff_Pl.set("S232", -6.0);
+    stiff_Pl.set("S332", -6.0);
+    stiff_Pl.set("S122", -6.0);
+    stiff_Pl.set("S222", 27.0);
+    stiff_Pl.set("S322", -1.0);
+    stiff_Pl.set("S112", -6.0);
+    stiff_Pl.set("S212", -2.0);
+    stiff_Pl.set("S312", -3.0);
+
+    stiff_Pl.set("S133", -3.0);
+    stiff_Pl.set("S233", -3.0);
+    stiff_Pl.set("S333", -3.0);
+    stiff_Pl.set("S123", -3.0);
+    stiff_Pl.set("S223", -3.0);
+    stiff_Pl.set("S323", -3.0);
+    stiff_Pl.set("S113", -3.0);
+    stiff_Pl.set("S213", -3.0);
+    stiff_Pl.set("S313", -3.0);
+
+    A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(stiff_Pl, lib);
+  }
+  // fill the nonSymResults vector based on whether abs(A(i,j)) is above or below 5.5.
+  auto comm                     = A->getRowMap()->getComm();
+  auto crsA                     = toCrsMatrix(A);
+  auto lclA                     = crsA->getLocalMatrixDevice();
+  auto range                    = range_type(0, lclA.numRows());
+  auto nonSymResults            = results_view_type("nonSymresults", lclA.nnz());  // initialized to UNDECIDED
+  const magnitudeType threshold = static_cast<magnitudeType>(5.5);
+  {
+    Kokkos::parallel_for(
+        "MueLu:SetupSymTest:Fill:nonSymResults", range,
+        KOKKOS_LAMBDA(const LO i) {
+          auto rowView        = lclA.rowConst(i);
+          const size_t offset = lclA.graph.row_map(i);
+          auto length         = rowView.length;
+          for (local_ordinal_type colID = 0; colID < length; colID++) {
+            if (implATS::magnitude(rowView.value(colID)) < threshold)
+              nonSymResults(offset + colID) = MueLu::DROP;
+            else
+              nonSymResults(offset + colID) = MueLu::KEEP;
+          }
+        });
+  }
+  results_view_type results("results", nonSymResults.extent(0));
+
+  // run strong wins symmetrication by setting first boolean param to false.
+
+  Kokkos::deep_copy(results, nonSymResults);
+  {
+    auto symmetrize = MueLu::Misc::SymmetrizeFunctor<local_matrix_type, false, false>(lclA, results);
+    Kokkos::parallel_for("MueLu:Symmetrize:StrongWins", range, symmetrize);
+  }
+  // count up the number of strong and weak connections
+  DropKeepCounts counts;
+
+  auto rangeNnz = range_type(0, results.extent(0));
+  {
+    Kokkos::parallel_reduce(
+        "MueLu:CountKeepDrop", rangeNnz,
+        KOKKOS_LAMBDA(const LO i, DropKeepCounts &lsum) {
+          if (results(i) == MueLu::DROP)
+            ++lsum.drop;
+          else if (results(i) == MueLu::KEEP)
+            ++lsum.keep;
+        },
+        counts);
+  }
+  size_t globalDrop, globalKeep;
+  MueLu_sumAll(comm, counts.drop, globalDrop);
+  MueLu_sumAll(comm, counts.keep, globalKeep);
+  TEST_EQUALITY(globalKeep, 400);
+  TEST_EQUALITY(globalDrop, 600);
+
+  // run weak wins symmetrication by setting first boolean param to true and allowing
+  // new Dirichlet rows to be created by setting the 2nd boolean to true.
+  Kokkos::deep_copy(results, nonSymResults);
+  {
+    auto symmetrize = MueLu::Misc::SymmetrizeFunctor<local_matrix_type, true, true>(lclA, results);
+    Kokkos::parallel_for("MueLu:Symmetrize:WeakWinsNoDirCreate", range, symmetrize);
+  }
+
+  // count up the number of strong and weak connections
+  counts.drop = 0;
+  counts.keep = 0;
+  {
+    Kokkos::parallel_reduce(
+        "MueLu:CountKeepDrop", rangeNnz,
+        KOKKOS_LAMBDA(const LO i, DropKeepCounts &lsum) {
+          if (results(i) == MueLu::DROP)
+            ++lsum.drop;
+          else if (results(i) == MueLu::KEEP)
+            ++lsum.keep;
+        },
+        counts);
+  }
+  MueLu_sumAll(comm, counts.drop, globalDrop);
+  MueLu_sumAll(comm, counts.keep, globalKeep);
+  TEST_EQUALITY(globalKeep, 136);
+  TEST_EQUALITY(globalDrop, 864);
+
+  // run weak wins symmetrication by setting first boolean param to true but don't allow
+  // new Dirichlet rows to be created by setting the 2nd boolean to false.
+
+  Kokkos::deep_copy(results, nonSymResults);
+  {
+    auto symmetrize = MueLu::Misc::SymmetrizeFunctor<local_matrix_type, true, false>(lclA, results);
+    Kokkos::parallel_for("MueLu:Symmetrize:WeakWinsCanDirCreate", range, symmetrize);
+  }
+  // count up the number of strong and weak connections
+  counts.drop = 0;
+  counts.keep = 0;
+  {
+    Kokkos::parallel_reduce(
+        "MueLu:CountKeepDrop", rangeNnz,
+        KOKKOS_LAMBDA(const LO i, DropKeepCounts &lsum) {
+          if (results(i) == MueLu::DROP)
+            ++lsum.drop;
+          else if (results(i) == MueLu::KEEP)
+            ++lsum.keep;
+        },
+        counts);
+  }
+  MueLu_sumAll(comm, counts.drop, globalDrop);
+  MueLu_sumAll(comm, counts.keep, globalKeep);
+  TEST_EQUALITY(globalKeep, 140);
+  TEST_EQUALITY(globalDrop, 860);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicalScaledCut, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -3697,6 +3922,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, CountNegativeDiago
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, SignedClassicalSADistanceLaplacian, SC, LO, GO, NO)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, MinvADropsTwoThirdsNNZ, SC, LO, GO, NO)                      \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, MinvADirichletTest, SC, LO, GO, NO)                          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, StrongWeakSymmetry, SC, LO, GO, NO)                          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, CountNegativeDiagonals, SC, LO, GO, NO)
 
 // TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicBlockWithFiltering,     SC, LO, GO, NO) // not implemented yet

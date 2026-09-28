@@ -53,7 +53,7 @@ class VectorDroppingDistanceLaplacian : public VectorDroppingBase<Scalar, LocalO
                                                 const std::string& droppingMethod,
                                                 const magnitudeType threshold,
                                                 const bool aggregationMayCreateDirichlet,
-                                                const bool symmetrizeDroppedGraph,
+                                                const std::string& symmetrizeDroppedGraph,
                                                 const bool useBlocking,
                                                 DistanceFunctorType& dist2,
                                                 Level& level,
@@ -66,7 +66,7 @@ class VectorDroppingDistanceLaplacian : public VectorDroppingBase<Scalar, LocalO
       auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(A, mergedA, threshold, dist2, results, rowTranslation, colTranslation);
 
       if (aggregationMayCreateDirichlet) {
-        if (symmetrizeDroppedGraph) {
+        if (symmetrizeDroppedGraph != "no symmetrization") {
           auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
           VectorDroppingDistanceLaplacian::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
                                                                dist_laplacian_dropping,
@@ -82,7 +82,7 @@ class VectorDroppingDistanceLaplacian : public VectorDroppingBase<Scalar, LocalO
                                                                mark_singletons_as_boundary);
         }
       } else {
-        if (symmetrizeDroppedGraph) {
+        if (symmetrizeDroppedGraph != "no symmetrization") {
           auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
           VectorDroppingDistanceLaplacian::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
                                                                dist_laplacian_dropping,
@@ -100,7 +100,7 @@ class VectorDroppingDistanceLaplacian : public VectorDroppingBase<Scalar, LocalO
       auto comparison = CutDrop::make_dlap_vector_comparison_functor<SoC>(A, mergedA, dist2, results, rowTranslation, colTranslation);
       auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold, blkPartSize);
 
-      if (symmetrizeDroppedGraph) {
+      if (symmetrizeDroppedGraph != "no symmetrization") {
         auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
         VectorDroppingDistanceLaplacian::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
                                                              drop_boundaries,
@@ -129,7 +129,7 @@ class VectorDroppingDistanceLaplacian : public VectorDroppingBase<Scalar, LocalO
                                           const std::string& droppingMethod,
                                           const magnitudeType threshold,
                                           const bool aggregationMayCreateDirichlet,
-                                          const bool symmetrizeDroppedGraph,
+                                          const std::string& symmetrizeDroppedGraph,
                                           const bool useBlocking,
                                           const std::string& distanceLaplacianMetric,
                                           Teuchos::Array<double>& dlap_weights,

@@ -82,6 +82,7 @@ class UtilitiesBase {
 
     NOTE -- it's assumed that A has been fillComplete'd.
   */
+
   static RCP<Matrix> GetThresholdedMatrix(const RCP<Matrix>& Ain, const Magnitude threshold, const bool keepDiagonal = true);
 
   /*! @brief Threshold a graph
@@ -90,15 +91,15 @@ class UtilitiesBase {
 
     NOTE -- it's assumed that A has been fillComplete'd.
   */
-  static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> GetThresholdedGraph(const RCP<Matrix>& A, const Magnitude threshold);
+  static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> GetThresholdedGraph(const RCP<Matrix>& A, const Magnitude threshold, const bool symScaled = false);
 
-  /*! @brief Threshold a graph
+  /*! @brief Remove strickly upper triangular matrix and remove entries via Threshold
 
     Returns graph associated with lower triangular matrix that is also filtered with a threshold value.
 
     NOTE -- it's assumed that A has been fillComplete'd.
   */
-  static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> GetThresholdedLowerTriangularGraph(const RCP<Matrix>& A, const Magnitude threshold);
+  static RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> GetThresholdedLowerTriangularGraph(const RCP<Matrix>& A, const Magnitude threshold, const bool symScaled = false);
 
   /*! @brief Extract Matrix Diagonal
 
