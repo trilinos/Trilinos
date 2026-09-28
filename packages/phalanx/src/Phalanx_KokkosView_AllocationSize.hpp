@@ -43,25 +43,25 @@ namespace PHX {
     if (dl.rank() == 1)
       s = Kokkos::View<ScalarT*,Layout,Device>(t.identifier(),
                                                dl.dimension(0),
-                                               hDim).impl_track().template get_record<Device>()->size();
+                                               hDim).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 2)
       s = Kokkos::View<ScalarT**,Layout,Device>(t.identifier(),
                                                 dl.dimension(0),
                                                 dl.dimension(1),
-                                                hDim).impl_track().template get_record<Device>()->size();
+                                                hDim).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 3)
       s = Kokkos::View<ScalarT***,Layout,Device>(t.identifier(),
                                                  dl.dimension(0),
                                                  dl.dimension(1),
                                                  dl.dimension(2),
-                                                 hDim).impl_track().template get_record<Device>()->size();
+                                                 hDim).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 4)
       s = Kokkos::View<ScalarT****,Layout,Device>(t.identifier(),
                                                   dl.dimension(0),
                                                   dl.dimension(1),
                                                   dl.dimension(2),
                                                   dl.dimension(3),
-                                                  hDim).impl_track().template get_record<Device>()->size();
+                                                  hDim).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 5)
       s = Kokkos::View<ScalarT*****,Layout,Device>(t.identifier(),
                                                    dl.dimension(0),
@@ -69,7 +69,7 @@ namespace PHX {
                                                    dl.dimension(2),
                                                    dl.dimension(3),
                                                    dl.dimension(4),
-                                                   hDim).impl_track().template get_record<Device>()->size();
+                                                   hDim).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 6)
       s = Kokkos::View<ScalarT******,Layout,Device>(t.identifier(),
                                                     dl.dimension(0),
@@ -78,7 +78,7 @@ namespace PHX {
                                                     dl.dimension(3),
                                                     dl.dimension(4),
                                                     dl.dimension(5),
-                                                    hDim).impl_track().template get_record<Device>()->size();
+                                                    hDim).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 7)
       s = Kokkos::View<ScalarT*******,Layout,Device>(t.identifier(),
                                                      dl.dimension(0),
@@ -88,7 +88,7 @@ namespace PHX {
                                                      dl.dimension(4),
                                                      dl.dimension(5),
                                                      dl.dimension(6),
-                                                     hDim).impl_track().template get_record<Device>()->size();
+                                                     hDim).impl_track().template get_record<typename Device::memory_space>()->size();
     
     return s;
   }
@@ -101,29 +101,29 @@ namespace PHX {
 
     if (dl.rank() == 1)
       s = Kokkos::View<ScalarT*,Layout,Device>(t.identifier(),
-                                               dl.dimension(0)).impl_track().template get_record<Device>()->size();
+                                               dl.dimension(0)).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 2)
       s = Kokkos::View<ScalarT**,Layout,Device>(t.identifier(),
                                                 dl.dimension(0),
-                                                dl.dimension(1)).impl_track().template get_record<Device>()->size();
+                                                dl.dimension(1)).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 3)
       s = Kokkos::View<ScalarT***,Layout,Device>(t.identifier(),
                                                  dl.dimension(0),
                                                  dl.dimension(1),
-                                                 dl.dimension(2)).impl_track().template get_record<Device>()->size();
+                                                 dl.dimension(2)).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 4)
       s = Kokkos::View<ScalarT****,Layout,Device>(t.identifier(),
                                                   dl.dimension(0),
                                                   dl.dimension(1),
                                                   dl.dimension(2),
-                                                  dl.dimension(3)).impl_track().template get_record<Device>()->size();
+                                                  dl.dimension(3)).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 5)
       s = Kokkos::View<ScalarT*****,Layout,Device>(t.identifier(),
                                                    dl.dimension(0),
                                                    dl.dimension(1),
                                                    dl.dimension(2),
                                                    dl.dimension(3),
-                                                   dl.dimension(4)).impl_track().template get_record<Device>()->size();
+                                                   dl.dimension(4)).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 6)
       s = Kokkos::View<ScalarT******,Layout,Device>(t.identifier(),
                                                     dl.dimension(0),
@@ -131,7 +131,7 @@ namespace PHX {
                                                     dl.dimension(2),
                                                     dl.dimension(3),
                                                     dl.dimension(4),
-                                                    dl.dimension(5)).impl_track().template get_record<Device>()->size();
+                                                    dl.dimension(5)).impl_track().template get_record<typename Device::memory_space>()->size();
     else if (dl.rank() == 7)
       s = Kokkos::View<ScalarT*******,Layout,Device>(t.identifier(),
                                                      dl.dimension(0),
@@ -140,7 +140,7 @@ namespace PHX {
                                                      dl.dimension(3),
                                                      dl.dimension(4),
                                                      dl.dimension(5),
-                                                     dl.dimension(6)).impl_track().template get_record<Device>()->size();
+                                                     dl.dimension(6)).impl_track().template get_record<typename Device::memory_space>()->size();
     return s;
   }
 }
