@@ -499,6 +499,39 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     CrsGraph(const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
+             const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>& originalGraph,
+             const Teuchos::RCP<Teuchos::ParameterList>& params)
+  : dist_object_type(rowMap)
+  , rowMap_(rowMap)
+  , colMap_(colMap)
+  , numAllocForAllRows_(originalGraph.numAllocForAllRows_)
+  , storageStatus_(originalGraph.storageStatus_)
+  , indicesAreAllocated_(originalGraph.indicesAreAllocated_)
+  , indicesAreLocal_(originalGraph.indicesAreLocal_)
+  , indicesAreSorted_(originalGraph.indicesAreSorted_) {
+  staticAssertions();
+
+  int numRows        = rowMap->getLocalNumElements();
+  size_t numNonZeros = originalGraph.getRowPtrsPackedHost()(numRows);
+  auto rowsToUse     = Kokkos::pair<size_t, size_t>(0, numRows + 1);
+
+  this->setRowPtrsUnpacked(Kokkos::subview(originalGraph.getRowPtrsUnpackedDevice(), rowsToUse));
+  this->setRowPtrsPacked(Kokkos::subview(originalGraph.getRowPtrsPackedDevice(), rowsToUse));
+
+  if (indicesAreLocal_) {
+    lclIndsUnpacked_wdv = local_inds_wdv_type(originalGraph.lclIndsUnpacked_wdv, 0, numNonZeros);
+    lclIndsPacked_wdv   = local_inds_wdv_type(originalGraph.lclIndsPacked_wdv, 0, numNonZeros);
+  } else {
+    gblInds_wdv = global_inds_wdv_type(originalGraph.gblInds_wdv, 0, numNonZeros);
+  }
+
+  checkInternalState();
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+    CrsGraph(const Teuchos::RCP<const map_type>& rowMap,
+             const Teuchos::RCP<const map_type>& colMap,
              const typename local_graph_device_type::row_map_type& rowPointers,
              const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
              const Teuchos::RCP<Teuchos::ParameterList>& params)
