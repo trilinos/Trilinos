@@ -1,5 +1,5 @@
 
-IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND Stokhos_ENABLE_MueLu)
+IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2 AND Stokhos_ENABLE_MueLu AND Stokhos_ENABLE_Epetra)
 
      TRIBITS_ADD_EXECUTABLE(
        Linear2D_Diffusion_Example
