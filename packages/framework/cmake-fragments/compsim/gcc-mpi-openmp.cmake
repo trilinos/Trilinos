@@ -204,14 +204,14 @@ set(TPL_ENABLE_y12m ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # generator
 set(CMAKE_GENERATOR Ninja CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # cxxflags='-fPIC -fno-semantic-interposition'
-set(CMAKE_CXX_FLAGS -fPIC -fno-semantic-interposition CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
+set(CMAKE_CXX_FLAGS "-fPIC -fno-semantic-interposition" CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # cflags='-fPIC -fno-semantic-interposition'
-set(CMAKE_C_FLAGS -fPIC -fno-semantic-interposition CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
+set(CMAKE_C_FLAGS "-fPIC -fno-semantic-interposition" CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # fflags='-fPIC -fno-semantic-interposition'
-set(CMAKE_FORTRAN_FLAGS -fPIC -fno-semantic-interposition CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
+set(CMAKE_FORTRAN_FLAGS "-fPIC -fno-semantic-interposition" CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # ldlibs='-lgfortran -lm -lz -ldl -lpthread'
 set(CMAKE_C_STANDARD_LIBRARIES -lgfortran -lm -lz -ldl -lpthread CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(CMAKE_CXX_STANDARD_LIBRARIES -lgfortran -lm -lz -ldl -lpthread CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(CMAKE_Fortran_STANDARD_LIBRARIES -lgfortran -lm -lz -ldl -lpthread CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # release_flags
-set(CMAKE_CXX_FLAGS_RELEASE_OVERRIDE -O2 -DNDEBUG CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
+set(CMAKE_CXX_FLAGS_RELEASE_OVERRIDE "-O2 -DNDEBUG" CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
