@@ -50,9 +50,26 @@ jobs:
         echo "PR_NUMBER=$MY_PR_NUMBER" >> $GITHUB_ENV
 
     - name: Post artifact in issue comment
+      id: comment
       uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0.8.3.12.0
       with:
         message-id: format-patch
         issue:  ${{ env.PR_NUMBER }}
         refresh-message-position: true
         message-path: ${{ runner.temp }}/artifacts/format_patch_message.txt
+
+    - name: Process message
+      run: |
+        MY_PR_NUMBER=${{ env.PR_NUMBER }}
+        MY_COMMENT_ID=${{ steps.comment.outputs.comment-id }}
+        cp ${{ runner.temp }}/artifacts/format_patch_message.txt processed_format_patch.txt  
+        sed -i "s/PR_NUMBER/${MY_PR_NUMBER}/" processed_format_patch.txt
+        sed -i "s/COMMENT_ID/${MY_COMMENT_ID}/" processed_format_patch.txt
+
+    - name: Update comment
+      uses: peter-evans/create-or-update-comment@v5
+      with:
+        comment-id: ${{ steps.comment.outputs.comment-id }}
+        issue-number: ${{ env.PR_NUMBER }}
+        body-path: processed_format_patch.txt
+        edit-mode: replace
