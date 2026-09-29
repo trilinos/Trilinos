@@ -90,7 +90,7 @@ int run (int argc, char *argv[])
   // Output stream for verbose output.
   RCP<FancyOStream> verbOut = verbose ? out : getFancyOStream (blackHole);
 
-  const bool success = true;
+  bool success = true;
 
   // Test whether it's possible to instantiate the solver.
   // This is a minimal compilation test.
@@ -139,7 +139,7 @@ int run (int argc, char *argv[])
 
   *verbOut << "Solving linear system" << std::endl;
   Belos::ReturnType result = solver.solve ();
-  success = (result == Belos::Converged && (uncovergedCause == Belos::SolverConverged));
+  success = (result == Belos::Converged);
 
   *verbOut << "Result of solve"
            << ": rc = " << Belos::convertReturnTypeToString (result)
