@@ -1164,12 +1164,12 @@ void kokkos_kernels_mult_A_B_newmatrix(
   // Determine whether the local spgemm inputs are known to be sorted.
   // For A, we can directly ask its CrsGraph if it's sorted.
   // For Bmerged, we don't have a CrsGraph. But if no nontrivial import+merge
-  // took place (!Bview.importMatrix.is_null()), and the unmerged B was sorted, then
+  // took place (Bview.importMatrix.is_null()), and the unmerged B was sorted, then
   // Bmerged must also be sorted.
   const bool input_sorted =
       Aview.origMatrix->getCrsGraph()->isSorted() &&
       (Bview.importMatrix.is_null() && Bview.origMatrix->getCrsGraph()->isSorted());
-  // We always want C to be sorted
+  // We always want C to be sorted.
   const bool result_sorted = true;
 
   // For backward compatibility, fall back to the reuse (handle-based) interface
@@ -1578,7 +1578,7 @@ void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>:
   // Determine whether the local spgemm inputs are known to be sorted.
   // For A, we can directly ask its CrsGraph if it's sorted.
   // For Bmerged, we don't have a CrsGraph. But if no nontrivial import+merge
-  // took place (!Bview.importMatrix.is_null()), and the unmerged B was sorted, then
+  // took place (Bview.importMatrix.is_null()), and the unmerged B was sorted, then
   // Bmerged must also be sorted.
   const bool input_sorted =
       Aview.origMatrix->getCrsGraph()->isSorted() &&
