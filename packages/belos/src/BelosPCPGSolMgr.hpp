@@ -205,7 +205,7 @@ namespace Belos {
     virtual ~PCPGSolMgr() {};
 
     //! clone for Inverted Injection (DII)
-    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const {
+    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
       return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP,DM>);
     }
     //@}
@@ -215,17 +215,17 @@ namespace Belos {
 
     /*! \brief Get current linear problem being solved for in this object.
      */
-    const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const {
+    const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const override {
       return *problem_;
     }
 
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override { return params_; }
 
     /*! \brief Return the timers for this object.
      *
@@ -241,18 +241,18 @@ namespace Belos {
     /// This is the maximum over all right-hand sides' achieved
     /// convergence tolerances, and is set whether or not the solve
     /// actually managed to achieve the desired convergence tolerance.
-    MagnitudeType achievedTol() const {
+    MagnitudeType achievedTol() const override {
       return achievedTol_;
     }
 
     //! Get the iteration count for the most recent call to \c solve().
-    int getNumIters() const {
+    int getNumIters() const override {
       return numIters_;
     }
 
     /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
      */
-    bool isLOADetected() const { return false; }
+    bool isLOADetected() const override { return false; }
 
     //@}
 
@@ -260,10 +260,10 @@ namespace Belos {
     //@{
 
     //! Set the linear problem that needs to be solved.
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) { problem_ = problem; isSet_ = false; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) override { problem_ = problem; isSet_ = false; }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
     //! Set a debug status test, OR-combined into the top-level status test.
     void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override {
@@ -281,7 +281,7 @@ namespace Belos {
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
      *  of the iterative solver strategy.
      */
-    void reset( const ResetType type ) { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
+    void reset( const ResetType type ) override { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
     //@}
 
     //! @name Solver application methods
@@ -304,7 +304,7 @@ namespace Belos {
      *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
      *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
      */
-    ReturnType solve();
+    ReturnType solve() override;
 
     //@}
 
@@ -312,7 +312,7 @@ namespace Belos {
     //@{
 
     /** \brief Method to return description of the PCPG solver manager */
-    std::string description() const;
+    std::string description() const override;
 
     //@}
 
