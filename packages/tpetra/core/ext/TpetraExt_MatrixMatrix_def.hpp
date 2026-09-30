@@ -1306,6 +1306,8 @@ void kokkos_kernels_mult_A_B_newmatrix(
     labelList->set("compute global constants", params->get("compute global constants", true));
   RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>> dummyExport;
   C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport, dummyExport, labelList);
+  TEUCHOS_TEST_FOR_EXCEPTION(!C.getCrsGraph()->isSorted(), std::runtime_error,
+                             "TpetraExt: kokkos_kernels_mult_A_B_newmatrix: result C does not have a sorted CrsGraph.");
 }
 
 template <class Scalar,
@@ -1687,6 +1689,8 @@ void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>:
   if (!params.is_null()) labelList->set("compute global constants", params->get("compute global constants", true));
   Teuchos::RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>> dummyExport;
   C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport, dummyExport, labelList);
+  TEUCHOS_TEST_FOR_EXCEPTION(!C.getCrsGraph()->isSorted(), std::runtime_error,
+                             "TpetraExt: kokkos_kernels_jacobi_A_B_newmatrix: result C does not have a sorted CrsGraph.");
 }
 
 template <class Scalar,
