@@ -19,7 +19,7 @@ namespace PHX {
   using DefaultMemorySpace = @Phalanx_DEFAULT_MEMORY_SPACE@;
   //using Device = Kokkos::Device<PHX::DefaultExecutionSpace,PHX::DefaultMemorySpace>;
   using Device = PHX::DefaultExecutionSpace;
-  using index_size_type = @Phalanx_INDEX_SIZE_TYPE@;
+  using index_size_type = @PHX_INDEX_SIZE_TYPE_CXX@;
   using index_t = index_size_type;
 }
 

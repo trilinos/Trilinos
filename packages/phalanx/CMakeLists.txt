@@ -35,7 +35,20 @@ SET(${PACKAGE_NAME}_INDEX_SIZE_TYPE "int" CACHE STRING "The default index type, 
 MESSAGE(STATUS "Enable Shared Space: ${${PACKAGE_NAME}_ENABLE_SHARED_SPACE}")
 MESSAGE(STATUS "Default Execution Space: ${${PACKAGE_NAME}_DEFAULT_EXECUTION_SPACE}")
 MESSAGE(STATUS "Default Memory Space: ${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}")
-MESSAGE(STATUS "Index Size Type: ${${PACKAGE_NAME}_INDEX_SIZE_TYPE}")
+
+# Map the keywords this option used to take onto the C++ types they selected,
+# so existing configure scripts and caches keep working.
+SET(PHX_LEGACY_INDEX_SIZE_TYPES KOKKOS INT UINT LONGINT ULONGINT)
+SET(PHX_LEGACY_INDEX_SIZE_CXX_TYPES
+  "PHX::Device::size_type" "int" "unsigned int" "long int" "unsigned long int")
+LIST(FIND PHX_LEGACY_INDEX_SIZE_TYPES "${${PACKAGE_NAME}_INDEX_SIZE_TYPE}" PHX_LEGACY_INDEX)
+IF (PHX_LEGACY_INDEX GREATER -1)
+  LIST(GET PHX_LEGACY_INDEX_SIZE_CXX_TYPES ${PHX_LEGACY_INDEX} PHX_INDEX_SIZE_TYPE_CXX)
+  MESSAGE(DEPRECATION "${PACKAGE_NAME}_INDEX_SIZE_TYPE=${${PACKAGE_NAME}_INDEX_SIZE_TYPE} is deprecated; set it to the C++ type instead: \"${PHX_INDEX_SIZE_TYPE_CXX}\"")
+ELSE()
+  SET(PHX_INDEX_SIZE_TYPE_CXX "${${PACKAGE_NAME}_INDEX_SIZE_TYPE}")
+ENDIF()
+MESSAGE(STATUS "Index Size Type: ${PHX_INDEX_SIZE_TYPE_CXX}")
 
 # Shared space is not wired up yet.  The option sets
 # Phalanx_DEFAULT_MEMORY_SPACE, but PHX::Device is still an execution space
