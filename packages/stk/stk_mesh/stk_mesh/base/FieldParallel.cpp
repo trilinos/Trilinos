@@ -481,17 +481,29 @@ void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<cons
   impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::SUM, includeGhosts>(mesh, fields, deterministic);
 }
 
-void parallel_max_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic)
+void parallel_max_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields)
 {
   constexpr bool includeGhosts = true;
-  impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::MAX, includeGhosts>(mesh, fields, deterministic);
+  impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::MAX, includeGhosts>(mesh, fields, false);
 }
 
-void parallel_min_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic)
+void parallel_min_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields)
 {
   constexpr bool includeGhosts = true;
-  impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::MIN, includeGhosts>(mesh, fields, deterministic);
+  impl::ngp_parallel_op<stk::ngp::HostSpace, Operation::MIN, includeGhosts>(mesh, fields, false);
 }
+
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after March 2027
+void parallel_max_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool /*deterministic*/)
+{
+  parallel_max_including_ghosts(mesh, fields);
+}
+
+void parallel_min_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool /*deterministic*/)
+{
+  parallel_min_including_ghosts(mesh, fields);
+}
+#endif
 
 } // namespace stk::mesh
 

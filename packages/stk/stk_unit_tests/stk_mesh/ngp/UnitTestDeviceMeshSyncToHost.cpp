@@ -32,8 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifdef STK_USE_DEVICE_MESH
-
 #include <gtest/gtest.h>
 #include "stk_mesh/base/BucketConnectivity.hpp"
 #include "stk_mesh/base/MeshBuilder.hpp"
@@ -48,9 +46,11 @@
 #include "stk_io/FillMesh.hpp"
 #include "stk_unit_test_utils/BulkDataTester.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
-#include "stk_mesh/base/NgpFieldBLAS.hpp"
+#include "stk_mesh/base/FieldBLAS.hpp"
 #include "stk_unit_test_utils/DeviceBucketTestUtils.hpp"
 #include <stk_ngp_test/ngp_test.hpp>
+
+#ifdef STK_USE_DEVICE_MESH
 
 namespace {
 
@@ -290,7 +290,8 @@ void test_partition_buckets(stk::unit_test_util::BulkDataTester& bulk, stk::mesh
   }
 }
 
-void check_field_on_device(stk::unit_test_util::BulkDataTester& bulk, const stk::mesh::FieldBase* field, bool deviceAvailable)
+void check_field_on_device(stk::unit_test_util::BulkDataTester& /*bulk*/, const stk::mesh::FieldBase* field,
+                           bool deviceAvailable)
 {
   EXPECT_EQ(field->has_device_data(), deviceAvailable);
 }
@@ -419,14 +420,10 @@ TEST_F(DeviceMeshSyncTester, CopyToHostField)
 
   set_field_on_device();
   move_entity_on_device({0});
-  std::cout << "\nfirst test on device" << std::endl;
   test_field_on_device();
 
   deviceMesh.update_bulk_data();
-  //std::cout << "second test on device" << std::endl;
-  //test_field_on_device();
 
-  std::cout << "testing on host" << std::endl;
   test_field();
 }
 

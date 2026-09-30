@@ -26,6 +26,15 @@ namespace math {
 
 enum class MemberInit { NONE }; // Only entry should be MemberInit::NONE
 
+// A field view with the stk::mesh::EntityValues read API (num_scalars()/scalars() +
+// indexed access). Declared as a concept so stk_math can accept such views without
+// #including (and thereby depending on) stk_mesh.
+template<typename T>
+concept EntityValuesLike = requires(const T & v) {
+  v.num_scalars();
+  v.scalars();
+};
+
 template<class REAL, unsigned DIM>
 class Vec {
 
@@ -44,6 +53,32 @@ typedef typename std::array<REAL,DIM>::iterator iterator;
 
   template<typename REALARG>
   Vec(const REALARG * rhs, const unsigned len) { assert(len == 0 || rhs); assert(DIM >= len); for (unsigned i=0; i<len; ++i) vec[i] = rhs[i]; for (unsigned i=len; i<DIM; ++i) vec[i] = 0; }
+
+  // Construct from an stk::mesh::EntityValues-like field view (unified STK field API).
+  // Constrained (rather than #including EntityValues) to keep stk_math independent of stk_mesh.
+  // Iterates via scalars()/operator()(ScalarIdx) so it is correct for all EntityValues layouts.
+  template<EntityValuesLike EntityValuesT>
+  Vec(const EntityValuesT & v)
+  {
+    assert(v.num_scalars() <= static_cast<int>(DIM));
+    unsigned i = 0;
+    for (auto s : v.scalars()) { vec[i] = v(s); ++i; }
+    for (; i < DIM; ++i) vec[i] = 0;
+  }
+
+  template <EntityValuesLike EntityValuesT>
+  Vec(const EntityValuesT& v, const unsigned len)
+  {
+    // The strong scalar-index type (e.g. stk::mesh::ScalarIdx) is what scalars()
+    // iterates over; recover it from the iterator's dereference type so we can
+    // index by position without depending on stk_mesh.
+    using ScalarIdxType = std::decay_t<decltype(*v.scalars().begin())>;
+    assert(static_cast<unsigned>(v.num_scalars()) >= len);
+    assert(DIM >= len);
+
+    for (auto i = 0U; i < len; ++i) vec[i] = v(ScalarIdxType(i));
+    for (auto i = len; i < DIM; ++i) vec[i] = 0;
+  }
 
   Vec(const REAL x, const REAL y, const REAL z) { static_assert(DIM==3, "Invalid dimension"); vec[0] = x; vec[1] = y; vec[2] = z; }
   Vec(const REAL x, const REAL y) { static_assert(DIM==2, "Invalid dimension"); vec[0] = x; vec[1] = y; }
