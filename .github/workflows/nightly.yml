@@ -3,17 +3,12 @@ run-name: Nightly Pipeline (#${{ github.run_number }})
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '40 21 * * *' # 9:40 PM
       timezone: "America/Denver"
   workflow_dispatch:
 
 permissions:
   contents: read
-
-
-# TODO:
-# - Cancel any job runs with previous successful runs (working tree hash)
-
 
 jobs:
   cuda-kokkos-bounds-check:
