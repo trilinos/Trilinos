@@ -67,6 +67,7 @@ unsigned get_default_initial_bucket_capacity();
 unsigned get_default_maximum_bucket_capacity();
 
 constexpr
+KOKKOS_FUNCTION
 inline
 bool does_rank_have_valid_permutations(stk::mesh::EntityRank rank)
 {

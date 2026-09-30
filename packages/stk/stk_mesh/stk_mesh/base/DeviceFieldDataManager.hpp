@@ -65,8 +65,10 @@ class DeviceFieldDataManager : public DeviceFieldDataManagerBase
   using exec_space = typename Space::exec_space;
   using mem_space = typename Space::mem_space;
 
-  using DeviceFieldMetaDataCollectionType = Kokkos::View<DeviceFieldMetaDataArrayType<mem_space>*, stk::ngp::HostExecSpace>;
-  using HostFieldMetaDataCollectionType = Kokkos::View<HostFieldMetaDataArrayType<mem_space>*, stk::ngp::HostExecSpace>;
+  using DeviceFieldMetaDataCollectionTypeOnHost = Kokkos::View<DeviceFieldMetaDataArrayType<mem_space>*,
+                                                               stk::ngp::HostMemSpace>;
+  using DeviceFieldMetaDataOnHostCollectionTypeOnHost = Kokkos::View<DeviceFieldMetaDataArrayTypeOnHost<mem_space>*,
+                                                                     stk::ngp::HostMemSpace>;
 
   using DeviceBucketsModifiedCollectionType = Kokkos::View<int**, Kokkos::LayoutRight, mem_space>;
   using HostBucketsModifiedCollectionType = typename DeviceBucketsModifiedCollectionType::host_mirror_type;
@@ -106,6 +108,8 @@ public:
 
   virtual void set_device_field_meta_data(FieldDataBase& fieldDataBase) override;
 
+  virtual void grow_bucket(EntityRank rank, unsigned bucketId, unsigned newBucketCapacity) override;
+
   virtual void add_new_bucket(EntityRank rank,
                               unsigned bucketSize,
                               unsigned bucketCapacity,
@@ -128,8 +132,9 @@ private:
                                    const std::vector<BucketShift>& bucketShiftList);
   void update_field_meta_data(const FieldVector& fields, int bucketId, int bucketSize);
   void fill_field_meta_data_pointers_from_offsets(int bucketId, const FieldVector& fields,
+                                                  const std::vector<unsigned>& fieldSizeInBucket,
                                                   const AllocationType& bucketRawData,
-                                                  HostFieldMetaDataCollectionType& hostFieldMetaData);
+                                                  DeviceFieldMetaDataOnHostCollectionTypeOnHost& hostFieldMetaData);
   std::byte* get_host_bucket_pointer_for_device(const stk::mesh::FieldBase& field, int bucketId) const;
 
   FieldDataAllocator<std::byte> m_fieldDataAllocator;
@@ -137,11 +142,11 @@ private:
   int m_synchronizedCount;
   int m_totalNumFields;
   BucketRawDataArrayType m_bucketRawData[stk::topology::NUM_RANKS];
-  DeviceFieldMetaDataCollectionType m_deviceFieldMetaData;
-  HostFieldMetaDataCollectionType m_hostFieldMetaData;
+  DeviceFieldMetaDataCollectionTypeOnHost m_deviceFieldMetaDataCollectionOnHost;             // master copy
+  DeviceFieldMetaDataOnHostCollectionTypeOnHost m_deviceFieldMetaDataOnHostCollectionOnHost; // working copy on host
   BucketCapacityType m_bucketCapacity[stk::topology::NUM_RANKS];
   DeviceBucketsModifiedCollectionType m_deviceBucketIsModified[stk::topology::NUM_RANKS];
-  HostBucketsModifiedCollectionType m_hostBucketIsModified[stk::topology::NUM_RANKS];
+  HostBucketsModifiedCollectionType m_deviceBucketIsModifiedOnHost[stk::topology::NUM_RANKS];
 };
 
 
@@ -230,18 +235,18 @@ bool DeviceFieldDataManager<Space>::update_all_bucket_allocations()
         update_field_meta_data(allFieldsOfRank, newBucketId, bucket->size());
       }
 
-      auto& hostBucketIsModified = m_hostBucketIsModified[rank];
+      auto& hostBucketIsModified = m_deviceBucketIsModifiedOnHost[rank];
       for (unsigned fieldIndex = 0; fieldIndex < allFieldsOfRank.size(); ++fieldIndex) {
         hostBucketIsModified(fieldIndex, newBucketId) += bucketIsModified;
       }
       bucket->set_ngp_field_bucket_id(newBucketId);
     }
 
-    Kokkos::deep_copy(m_deviceBucketIsModified[rank], m_hostBucketIsModified[rank]);
+    Kokkos::deep_copy(m_deviceBucketIsModified[rank], m_deviceBucketIsModifiedOnHost[rank]);
   }
 
   for (int i = 0; i < newNumAllFields; ++i) {
-    Kokkos::deep_copy(m_deviceFieldMetaData[i], m_hostFieldMetaData[i]);
+    Kokkos::deep_copy(m_deviceFieldMetaDataCollectionOnHost[i], m_deviceFieldMetaDataOnHostCollectionOnHost[i]);
   }
 
   m_synchronizedCount = m_bulk.synchronized_count();
@@ -257,17 +262,18 @@ void DeviceFieldDataManager<Space>::update_host_bucket_pointers(Ordinal fieldOrd
 
   const BucketVector& bucketsOfRank = m_bulk.buckets(rank);
 
-  HostFieldMetaDataArrayType<mem_space>& hostFieldMetaDataArray = m_hostFieldMetaData[fieldOrdinal];
+  DeviceFieldMetaDataArrayTypeOnHost<mem_space>& deviceFieldMetaDataArrayOnHost =
+      m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal];
   for (int bucketId = 0; bucketId < static_cast<int>(bucketsOfRank.size()); ++bucketId) {
     if (fieldBase.has_unified_device_storage()) {
-      hostFieldMetaDataArray[bucketId].m_data = get_host_bucket_pointer_for_device(fieldBase, bucketId);
-      hostFieldMetaDataArray[bucketId].m_hostData = hostFieldMetaDataArray[bucketId].m_data;
+      deviceFieldMetaDataArrayOnHost[bucketId].m_data = get_host_bucket_pointer_for_device(fieldBase, bucketId);
+      deviceFieldMetaDataArrayOnHost[bucketId].m_hostData = deviceFieldMetaDataArrayOnHost[bucketId].m_data;
     }
     else {
-      hostFieldMetaDataArray[bucketId].m_hostData = get_host_bucket_pointer_for_device(fieldBase, bucketId);
+      deviceFieldMetaDataArrayOnHost[bucketId].m_hostData = get_host_bucket_pointer_for_device(fieldBase, bucketId);
     }
   }
-  Kokkos::deep_copy(m_deviceFieldMetaData[fieldOrdinal], hostFieldMetaDataArray);
+  Kokkos::deep_copy(m_deviceFieldMetaDataCollectionOnHost[fieldOrdinal], deviceFieldMetaDataArrayOnHost);
 }
 
 template <typename Space>
@@ -279,8 +285,10 @@ void DeviceFieldDataManager<Space>::swap_host_cache_all_meta_data_pointers(Ordin
   const EntityRank rank = fieldBaseA.entity_rank();
   const BucketVector& bucketsOfRank = m_bulk.buckets(rank);
 
-  HostFieldMetaDataArrayType<mem_space>& hostFieldMetaDataArrayA = m_hostFieldMetaData[fieldOrdinalA];
-  HostFieldMetaDataArrayType<mem_space>& hostFieldMetaDataArrayB = m_hostFieldMetaData[fieldOrdinalB];
+  DeviceFieldMetaDataArrayTypeOnHost<mem_space>& hostFieldMetaDataArrayA =
+      m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinalA];
+  DeviceFieldMetaDataArrayTypeOnHost<mem_space>& hostFieldMetaDataArrayB =
+      m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinalB];
 
   for (int bucketId = 0; bucketId < static_cast<int>(bucketsOfRank.size()); ++bucketId) {
     std::swap(hostFieldMetaDataArrayA[bucketId].m_data, hostFieldMetaDataArrayB[bucketId].m_data);
@@ -297,8 +305,10 @@ void DeviceFieldDataManager<Space>::swap_host_cache_device_meta_data_pointers(Or
   const EntityRank rank = fieldBaseA.entity_rank();
   const BucketVector& bucketsOfRank = m_bulk.buckets(rank);
 
-  HostFieldMetaDataArrayType<mem_space>& hostFieldMetaDataArrayA = m_hostFieldMetaData[fieldOrdinalA];
-  HostFieldMetaDataArrayType<mem_space>& hostFieldMetaDataArrayB = m_hostFieldMetaData[fieldOrdinalB];
+  DeviceFieldMetaDataArrayTypeOnHost<mem_space>& hostFieldMetaDataArrayA =
+      m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinalA];
+  DeviceFieldMetaDataArrayTypeOnHost<mem_space>& hostFieldMetaDataArrayB =
+      m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinalB];
 
   for (int bucketId = 0; bucketId < static_cast<int>(bucketsOfRank.size()); ++bucketId) {
     if (fieldBaseA.has_unified_device_storage()) {
@@ -319,7 +329,7 @@ void DeviceFieldDataManager<Space>::clear_bucket_is_modified(Ordinal fieldOrdina
   const unsigned fieldRankedOrdinal = fieldBase.field_ranked_ordinal();
   const EntityRank rank = fieldBase.entity_rank();
 
-  auto& hostBucketIsModified = m_hostBucketIsModified[rank];
+  auto& hostBucketIsModified = m_deviceBucketIsModifiedOnHost[rank];
   for (int bucketId = 0; bucketId < static_cast<int>(hostBucketIsModified.extent(1)); ++bucketId) {
     hostBucketIsModified(fieldRankedOrdinal, bucketId) = 0;
   }
@@ -333,10 +343,11 @@ size_t DeviceFieldDataManager<Space>::get_num_bytes_allocated_on_field(const Fie
   }
   else {
     const int fieldOrdinal = field.mesh_meta_data_ordinal();
-    const HostFieldMetaDataArrayType<mem_space>& hostFieldMetaDataArray = m_hostFieldMetaData[fieldOrdinal];
+    const DeviceFieldMetaDataArrayTypeOnHost<mem_space>& deviceFieldMetaDataArrayOnHost =
+        m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal];
     size_t numBytes = 0;
-    for (int bucketId = 0; bucketId < static_cast<int>(hostFieldMetaDataArray.extent(0)); ++bucketId) {
-      const DeviceFieldMetaData& deviceFieldMetaData = hostFieldMetaDataArray[bucketId];
+    for (int bucketId = 0; bucketId < static_cast<int>(deviceFieldMetaDataArrayOnHost.extent(0)); ++bucketId) {
+      const DeviceFieldMetaData& deviceFieldMetaData = deviceFieldMetaDataArrayOnHost[bucketId];
       if (deviceFieldMetaData.m_data != nullptr) {
         const size_t bytesPerScalar = field.data_traits().alignment_of;
         const size_t bytesPerEntity = bytesPerScalar * deviceFieldMetaData.m_numComponentsPerEntity *
@@ -369,8 +380,134 @@ DeviceFieldDataManager<Space>::set_device_field_meta_data(FieldDataBase& fieldDa
 
   const Ordinal fieldOrdinal = fieldDataBytes->field_ordinal();
 
-  fieldDataBytes->m_deviceFieldMetaData = m_deviceFieldMetaData[fieldOrdinal].data();
-  fieldDataBytes->m_numBuckets = m_deviceFieldMetaData[fieldOrdinal].extent(0);
+  fieldDataBytes->m_deviceFieldMetaData = m_deviceFieldMetaDataCollectionOnHost[fieldOrdinal].data();
+  fieldDataBytes->m_numBuckets = m_deviceFieldMetaDataCollectionOnHost[fieldOrdinal].extent(0);
+}
+
+template <typename Space>
+void DeviceFieldDataManager<Space>::grow_bucket(EntityRank rank, unsigned bucketId, unsigned newBucketCapacity)
+{
+  const MetaData& meta = m_bulk.mesh_meta_data();
+  const FieldVector& allFieldsOfRank = meta.get_fields(rank);
+  FieldVector separateFields;  // Fields whose storage is not unified
+  separateFields.reserve(allFieldsOfRank.size());
+
+  std::vector<unsigned> oldFieldSizeInBucket;
+  oldFieldSizeInBucket.reserve(allFieldsOfRank.size());
+  unsigned oldTotalFieldBytesThisBucket = 0;
+
+  std::vector<unsigned> newFieldSizeInBucket;
+  newFieldSizeInBucket.reserve(allFieldsOfRank.size());
+  unsigned newTotalFieldBytesThisBucket = 0;
+
+  UnsignedViewType<stk::ngp::HostMemSpace> oldFieldPointerOffset("oldFieldPointerOffset", allFieldsOfRank.size());
+  UnsignedViewType<stk::ngp::HostMemSpace> newFieldPointerOffset("newFieldPointerOffset", allFieldsOfRank.size());
+
+  // Figure out everything we need on host to allocate the bigger replacement Bucket on device
+  unsigned idx = 0;
+  for (FieldBase* field : allFieldsOfRank) {
+    separateFields.push_back(field);
+    const int fieldOrdinal = field->mesh_meta_data_ordinal();
+    DeviceFieldMetaData& fieldMetaData = m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal][bucketId];
+
+    const unsigned bytesPerScalar = field->data_traits().alignment_of;
+    const unsigned numComponentsPerEntity = fieldMetaData.m_numComponentsPerEntity;
+    const unsigned numCopiesPerEntity = fieldMetaData.m_numCopiesPerEntity;
+
+    const unsigned numBytesPerEntity = bytesPerScalar * numComponentsPerEntity * numCopiesPerEntity;
+
+    const unsigned oldFieldBytesThisBucket = stk::adjust_up_to_alignment_boundary(numBytesPerEntity *
+                                                                                  fieldMetaData.m_bucketCapacity,
+                                                                                  DeviceFieldAlignmentSize);
+    oldFieldSizeInBucket.push_back(oldFieldBytesThisBucket);
+    oldFieldPointerOffset[idx] = oldTotalFieldBytesThisBucket;
+    oldTotalFieldBytesThisBucket += oldFieldBytesThisBucket;
+
+    const unsigned newFieldBytesThisBucket = stk::adjust_up_to_alignment_boundary(numBytesPerEntity * newBucketCapacity,
+                                                                                  DeviceFieldAlignmentSize);
+    newFieldSizeInBucket.push_back(newFieldBytesThisBucket);
+    newFieldPointerOffset[idx] = newTotalFieldBytesThisBucket;
+    newTotalFieldBytesThisBucket += newFieldBytesThisBucket;
+
+    ++idx;
+    fieldMetaData.m_bucketCapacity = newBucketCapacity;
+  }
+
+  // Allocate the storage and update our host-side copy of the DeviceFieldMetaData arrays
+  auto bucketRawData = m_fieldDataAllocator.device_allocate(newTotalFieldBytesThisBucket);
+  fill_field_meta_data_pointers_from_offsets(bucketId, separateFields, newFieldSizeInBucket, bucketRawData,
+                                             m_deviceFieldMetaDataOnHostCollectionOnHost);
+  for (FieldBase* field : allFieldsOfRank) {
+    const unsigned fieldOrdinal = field->mesh_meta_data_ordinal();
+    m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal][bucketId].m_hostData =
+        get_host_bucket_pointer_for_device(*field, bucketId);
+  }
+
+  // Before altering the device copy of the DeviceFieldMetaData array, copy the data from the old storage
+  // to the new storage on device.  Manually create BucketBytes objects since DeviceFieldMetaData can't hold
+  // both the old structure and the new structure at the same time.
+  using SrcDeviceBucketBytesType = Kokkos::View<BucketBytes<const std::byte, stk::ngp::DeviceSpace, Layout::Left>*,
+                                                stk::ngp::MemSpace>;
+  SrcDeviceBucketBytesType srcDeviceBucketBytes("srcDeviceBucketBytes", allFieldsOfRank.size());
+  SrcDeviceBucketBytesType::host_mirror_type srcDeviceBucketBytesOnHost = Kokkos::create_mirror_view(srcDeviceBucketBytes);
+
+  idx = 0;
+  for (FieldBase* field : allFieldsOfRank) {
+    auto srcDataBytes = field->data_bytes<const std::byte, stk::ngp::HostSpace>();
+    auto srcBucketBytes = srcDataBytes.bucket_bytes(bucketId);
+    srcDeviceBucketBytesOnHost[idx] = BucketBytes<const std::byte, stk::ngp::DeviceSpace, Layout::Left>(
+                                          m_bucketRawData[rank][bucketId].data() + oldFieldPointerOffset[idx],
+                                          srcBucketBytes.num_bytes(),
+                                          srcBucketBytes.bytes_per_scalar(),
+                                          srcBucketBytes.num_entities(),
+                                          m_bucketCapacity[rank][bucketId]);
+    ++idx;
+  }
+  Kokkos::deep_copy(srcDeviceBucketBytes, srcDeviceBucketBytesOnHost);
+
+  using DstDeviceBucketBytesType = Kokkos::View<BucketBytes<std::byte, stk::ngp::DeviceSpace, Layout::Left>*,
+                                                stk::ngp::MemSpace>;
+  DstDeviceBucketBytesType dstDeviceBucketBytes("dstDeviceBucketBytes", allFieldsOfRank.size());
+  DstDeviceBucketBytesType::host_mirror_type dstDeviceBucketBytesOnHost = Kokkos::create_mirror_view(dstDeviceBucketBytes);
+
+  idx = 0;
+  for (FieldBase* field : allFieldsOfRank) {
+    auto srcDataBytes = field->data_bytes<const std::byte, stk::ngp::HostSpace>();
+    auto srcBucketBytes = srcDataBytes.bucket_bytes(bucketId);
+    dstDeviceBucketBytesOnHost[idx] = BucketBytes<std::byte, stk::ngp::DeviceSpace, Layout::Left>(
+                                          bucketRawData.data() + newFieldPointerOffset[idx],
+                                          srcBucketBytes.num_bytes(),
+                                          srcBucketBytes.bytes_per_scalar(),
+                                          srcBucketBytes.num_entities(),
+                                          newBucketCapacity);
+    ++idx;
+  }
+  Kokkos::deep_copy(dstDeviceBucketBytes, dstDeviceBucketBytesOnHost);
+
+  Kokkos::parallel_for(allFieldsOfRank.size(),
+                       KOKKOS_LAMBDA(unsigned fieldIdx) {
+                         auto srcBucketBytes = srcDeviceBucketBytes(fieldIdx);
+                         auto dstBucketBytes = dstDeviceBucketBytes(fieldIdx);
+
+                         if (srcBucketBytes.is_field_defined()) {
+                           for (EntityIdx entityIdx : srcBucketBytes.entities()) {
+                             for (ByteIdx byte : srcBucketBytes.bytes()) {
+                               dstBucketBytes(entityIdx, byte) = srcBucketBytes(entityIdx, byte);
+                             }
+                           }
+                         }
+                       }
+  );
+
+  for (FieldBase* field : allFieldsOfRank) {
+    const unsigned fieldOrdinal = field->mesh_meta_data_ordinal();
+    m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal][bucketId].m_bucketCapacity = newBucketCapacity;
+    Kokkos::deep_copy(m_deviceFieldMetaDataCollectionOnHost[fieldOrdinal],
+                      m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal]);
+  }
+
+  m_bucketRawData[rank][bucketId] = bucketRawData;
+  m_bucketCapacity[rank][bucketId] = newBucketCapacity;
 }
 
 template <typename Space>
@@ -392,11 +529,13 @@ void DeviceFieldDataManager<Space>::add_new_bucket(EntityRank rank,
 
   allocate_bucket(rank, allFieldsOfRank, parts, newBucketId, bucketSize, bucketCapacity, deviceMeshMod);
 
-  Kokkos::deep_copy(m_deviceBucketIsModified[rank], m_hostBucketIsModified[rank]);
+  Kokkos::deep_copy(m_deviceBucketIsModified[rank], m_deviceBucketIsModifiedOnHost[rank]);
 
+  // Reset the device information to point to the new storage
   for (const FieldBase* field : allFieldsOfRank) {
     unsigned fieldOrdinal = field->mesh_meta_data_ordinal();
-    Kokkos::deep_copy(m_deviceFieldMetaData[fieldOrdinal], m_hostFieldMetaData[fieldOrdinal]);
+    Kokkos::deep_copy(m_deviceFieldMetaDataCollectionOnHost[fieldOrdinal],
+                      m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal]);
   }
 }
 
@@ -429,19 +568,21 @@ void DeviceFieldDataManager<Space>::reorder_and_resize_buckets(EntityRank rank,
       impl::modify_field_meta_data(*field);
     }
 
-    HostFieldMetaDataArrayType<mem_space>& hostFieldMetaDataArray = m_hostFieldMetaData[field->mesh_meta_data_ordinal()];
-    STK_ThrowAssertMsg(hostFieldMetaDataArray.size() == newBucketSizes.size(), "number of buckets is incorrect");
+    DeviceFieldMetaDataArrayTypeOnHost<mem_space>& deviceFieldMetaDataArrayOnHost =
+        m_deviceFieldMetaDataOnHostCollectionOnHost[field->mesh_meta_data_ordinal()];
+    STK_ThrowAssertMsg(deviceFieldMetaDataArrayOnHost.size() == newBucketSizes.size(), "number of buckets is incorrect");
     for (unsigned bucketId = 0; bucketId < newBucketSizes.size(); ++bucketId)
     {
-      DeviceFieldMetaData& bucketMeta = hostFieldMetaDataArray[bucketId];
+      DeviceFieldMetaData& bucketMeta = deviceFieldMetaDataArrayOnHost[bucketId];
       if (bucketMeta.m_numComponentsPerEntity > 0)
       {
-        hostFieldMetaDataArray[bucketId].m_bucketSize     = newBucketSizes[bucketId].size;
-        hostFieldMetaDataArray[bucketId].m_bucketCapacity = newBucketSizes[bucketId].capacity;
+        deviceFieldMetaDataArrayOnHost[bucketId].m_bucketSize     = newBucketSizes[bucketId].size;
+        deviceFieldMetaDataArrayOnHost[bucketId].m_bucketCapacity = newBucketSizes[bucketId].capacity;
       }
     }
 
-    Kokkos::deep_copy(m_deviceFieldMetaData[field->mesh_meta_data_ordinal()], hostFieldMetaDataArray);
+    Kokkos::deep_copy(m_deviceFieldMetaDataCollectionOnHost[field->mesh_meta_data_ordinal()],
+                      deviceFieldMetaDataArrayOnHost);
 
     if (field->has_device_data()) {
       auto& fieldBytes = field->data_bytes<const std::byte, stk::ngp::DeviceSpace>();
@@ -498,18 +639,25 @@ void DeviceFieldDataManager<Space>::allocate_bucket(EntityRank rank, const Field
 {
   int totalFieldBytesThisBucket = 0;
 
-  FieldVector separateFields;
+  FieldVector separateFields;  // Fields whose storage is not unified
   separateFields.reserve(fields.size());
+  std::vector<unsigned> fieldSizeInBucket;
+  fieldSizeInBucket.reserve(fields.size());
 
   for (FieldBase* field : fields) {
     const int fieldOrdinal = field->mesh_meta_data_ordinal();
-    DeviceFieldMetaData& fieldMetaData = m_hostFieldMetaData[fieldOrdinal][bucketId];
+    DeviceFieldMetaData& fieldMetaData = m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal][bucketId];
     const DeviceFieldLayoutData layout = get_device_field_layout_data(*field, rank, parts);
     if (layout.numComponents > 0) {
       if (field->has_unified_device_storage()) {
         // Aim this Field at the pre-existing host allocation
-        fieldMetaData.m_data = deviceMeshMod ? nullptr : get_host_bucket_pointer_for_device(*field, bucketId);
-        fieldMetaData.m_hostData = fieldMetaData.m_data;
+        fieldMetaData = DeviceFieldMetaData{.m_data = get_host_bucket_pointer_for_device(*field, bucketId),
+                                            .m_hostData = get_host_bucket_pointer_for_device(*field, bucketId),
+                                            .m_numComponentsPerEntity = layout.numComponents,
+                                            .m_numCopiesPerEntity = layout.numCopies,
+                                            .m_bucketSize = size,
+                                            .m_bucketCapacity = capacity};
+
       }
       else {
         separateFields.push_back(field);
@@ -518,15 +666,16 @@ void DeviceFieldDataManager<Space>::allocate_bucket(EntityRank rank, const Field
                                                                               capacity, DeviceFieldAlignmentSize);
         totalFieldBytesThisBucket += fieldBytesThisBucket;
 
-        // Temporarily store chunk size in pointer variable; use it to set all pointers later
-        fieldMetaData.m_data = reinterpret_cast<std::byte*>(fieldBytesThisBucket);
-        fieldMetaData.m_hostData = deviceMeshMod ? nullptr : get_host_bucket_pointer_for_device(*field, bucketId);
-      }
+        fieldSizeInBucket.push_back(fieldBytesThisBucket);
 
-      fieldMetaData.m_numComponentsPerEntity = layout.numComponents;
-      fieldMetaData.m_numCopiesPerEntity = layout.numCopies;
-      fieldMetaData.m_bucketSize = size;
-      fieldMetaData.m_bucketCapacity = capacity;
+        fieldMetaData = DeviceFieldMetaData{.m_data = nullptr,
+                                            .m_hostData = (deviceMeshMod) ? nullptr
+                                                                          : get_host_bucket_pointer_for_device(*field, bucketId),
+                                            .m_numComponentsPerEntity = layout.numComponents,
+                                            .m_numCopiesPerEntity = layout.numCopies,
+                                            .m_bucketSize = size,
+                                            .m_bucketCapacity = capacity};
+      }
     }
     else {
       fieldMetaData = DeviceFieldMetaData{};  // Field not on this bucket
@@ -534,9 +683,11 @@ void DeviceFieldDataManager<Space>::allocate_bucket(EntityRank rank, const Field
       fieldMetaData.m_bucketCapacity = capacity;
     }
   }
+
   if (not separateFields.empty()) {
     auto bucketRawData = m_fieldDataAllocator.device_allocate(totalFieldBytesThisBucket);
-    fill_field_meta_data_pointers_from_offsets(bucketId, separateFields, bucketRawData, m_hostFieldMetaData);
+    fill_field_meta_data_pointers_from_offsets(bucketId, separateFields, fieldSizeInBucket, bucketRawData,
+                                               m_deviceFieldMetaDataOnHostCollectionOnHost);
     m_bucketRawData[rank][bucketId] = bucketRawData;
   }
   else {
@@ -549,16 +700,20 @@ template <typename Space>
 void DeviceFieldDataManager<Space>::resize_field_arrays(int oldNumAllFields, int newNumAllFields)
 {
   if (oldNumAllFields == 0) {
-    m_deviceFieldMetaData = DeviceFieldMetaDataCollectionType(Kokkos::view_alloc("deviceFieldMetaData_collection",
-                                                                                 Kokkos::SequentialHostInit),
-                                                              newNumAllFields);
-    m_hostFieldMetaData = HostFieldMetaDataCollectionType(Kokkos::view_alloc("hostFieldMetaData_collection",
-                                                                             Kokkos::SequentialHostInit),
-                                                          newNumAllFields);
+    m_deviceFieldMetaDataCollectionOnHost =
+        DeviceFieldMetaDataCollectionTypeOnHost(Kokkos::view_alloc("deviceFieldMetaData_collection",
+                                                                   Kokkos::SequentialHostInit),
+                                                newNumAllFields);
+    m_deviceFieldMetaDataOnHostCollectionOnHost =
+        DeviceFieldMetaDataOnHostCollectionTypeOnHost(Kokkos::view_alloc("hostFieldMetaData_collection",
+                                                                         Kokkos::SequentialHostInit),
+                                                      newNumAllFields);
   }
   else {
-    Kokkos::resize(Kokkos::view_alloc(Kokkos::SequentialHostInit), m_deviceFieldMetaData, newNumAllFields);
-    Kokkos::resize(Kokkos::view_alloc(Kokkos::SequentialHostInit), m_hostFieldMetaData, newNumAllFields);
+    Kokkos::resize(Kokkos::view_alloc(Kokkos::SequentialHostInit), m_deviceFieldMetaDataCollectionOnHost,
+                   newNumAllFields);
+    Kokkos::resize(Kokkos::view_alloc(Kokkos::SequentialHostInit), m_deviceFieldMetaDataOnHostCollectionOnHost,
+                   newNumAllFields);
   }
 
   m_totalNumFields = newNumAllFields;
@@ -571,13 +726,14 @@ void DeviceFieldDataManager<Space>::resize_field_meta_data_arrays(const FieldVec
   for (const FieldBase* field : fields) {
     const int fieldOrdinal = field->mesh_meta_data_ordinal();
     if (oldNumBuckets == 0) {
-      m_deviceFieldMetaData[fieldOrdinal] = DeviceFieldMetaDataArrayType<mem_space>("deviceFieldMetaDataArray_" +
-                                                                                    field->name(), newNumBuckets);
-      m_hostFieldMetaData[fieldOrdinal] = Kokkos::create_mirror(m_deviceFieldMetaData[fieldOrdinal]);
+      m_deviceFieldMetaDataCollectionOnHost[fieldOrdinal] =
+          DeviceFieldMetaDataArrayType<mem_space>("deviceFieldMetaDataArray_" + field->name(), newNumBuckets);
+      m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal] =
+          Kokkos::create_mirror(m_deviceFieldMetaDataCollectionOnHost[fieldOrdinal]);
     }
     else {
-      Kokkos::resize(m_deviceFieldMetaData[fieldOrdinal], newNumBuckets);
-      Kokkos::resize(m_hostFieldMetaData[fieldOrdinal], newNumBuckets);
+      Kokkos::resize(m_deviceFieldMetaDataCollectionOnHost[fieldOrdinal], newNumBuckets);
+      Kokkos::resize(m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal], newNumBuckets);
     }
   }
 }
@@ -598,13 +754,13 @@ void DeviceFieldDataManager<Space>::resize_bucket_arrays(EntityRank rank, int ol
 template <typename Space>
 void DeviceFieldDataManager<Space>::resize_bucket_modified_array(EntityRank rank, int newNumFields, int newNumBuckets)
 {
-  const int oldNumFields = m_hostBucketIsModified[rank].extent(0);
-  const int oldNumBuckets = m_hostBucketIsModified[rank].extent(1);
+  const int oldNumFields = m_deviceBucketIsModifiedOnHost[rank].extent(0);
+  const int oldNumBuckets = m_deviceBucketIsModifiedOnHost[rank].extent(1);
 
   if (oldNumFields == 0) {
     m_deviceBucketIsModified[rank] = DeviceBucketsModifiedCollectionType("deviceBucketModified_" + std::to_string(rank),
                                                                          newNumFields, newNumBuckets);
-    m_hostBucketIsModified[rank] = Kokkos::create_mirror(m_deviceBucketIsModified[rank]);
+    m_deviceBucketIsModifiedOnHost[rank] = Kokkos::create_mirror(m_deviceBucketIsModified[rank]);
   }
   else {
     auto newDeviceBucketIsModified = DeviceBucketsModifiedCollectionType("deviceBucketModified_" + std::to_string(rank),
@@ -612,7 +768,7 @@ void DeviceFieldDataManager<Space>::resize_bucket_modified_array(EntityRank rank
     auto newHostBucketIsModified = Kokkos::create_mirror(newDeviceBucketIsModified);
 
     const int minNumBuckets = std::min(oldNumBuckets, newNumBuckets);
-    auto& oldHostBucketIsModified = m_hostBucketIsModified[rank];
+    auto& oldHostBucketIsModified = m_deviceBucketIsModifiedOnHost[rank];
     for (int fieldIdx = 0; fieldIdx < oldNumFields; ++fieldIdx) {
       for (int bucketIdx = 0; bucketIdx < minNumBuckets; ++bucketIdx) {
         newHostBucketIsModified(fieldIdx, bucketIdx) = oldHostBucketIsModified(fieldIdx, bucketIdx);
@@ -620,7 +776,7 @@ void DeviceFieldDataManager<Space>::resize_bucket_modified_array(EntityRank rank
     }
 
     m_deviceBucketIsModified[rank] = newDeviceBucketIsModified;
-    m_hostBucketIsModified[rank] = newHostBucketIsModified;
+    m_deviceBucketIsModifiedOnHost[rank] = newHostBucketIsModified;
   }
 }
 
@@ -677,7 +833,7 @@ template <typename Space>
 void DeviceFieldDataManager<Space>::shift_field_and_bucket_data(EntityRank rank, const FieldVector& fieldsOfRank,
                                                                 const std::vector<BucketShift>& bucketShiftList)
 {
-  const HostBucketsModifiedCollectionType& oldBucketsModified = m_hostBucketIsModified[rank];
+  const HostBucketsModifiedCollectionType& oldBucketsModified = m_deviceBucketIsModifiedOnHost[rank];
   HostBucketsModifiedCollectionType newBucketsModified("hostBucketModified_" + std::to_string(rank),
                                                        oldBucketsModified.extent(0), oldBucketsModified.extent(1));
 
@@ -685,19 +841,20 @@ void DeviceFieldDataManager<Space>::shift_field_and_bucket_data(EntityRank rank,
     const int fieldOrdinal = field->mesh_meta_data_ordinal();
     const int fieldRankedOrdinal = field->field_ranked_ordinal();
 
-    const HostFieldMetaDataArrayType<mem_space>& oldHostFieldMetaData = m_hostFieldMetaData[fieldOrdinal];
-    HostFieldMetaDataArrayType<mem_space> newHostFieldMetaData("hostFieldMetaData" + std::to_string(fieldOrdinal),
-                                                               oldHostFieldMetaData.extent(0));
+    const DeviceFieldMetaDataArrayTypeOnHost<mem_space>& oldHostFieldMetaData =
+        m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal];
+    DeviceFieldMetaDataArrayTypeOnHost<mem_space> newHostFieldMetaData("hostFieldMetaData" + std::to_string(fieldOrdinal),
+                                                                       oldHostFieldMetaData.extent(0));
 
     for (const BucketShift& shift : bucketShiftList) {
       newHostFieldMetaData[shift.newIndex] = oldHostFieldMetaData[shift.oldIndex];
       newBucketsModified(fieldRankedOrdinal, shift.newIndex) = oldBucketsModified(fieldRankedOrdinal, shift.oldIndex);
     }
 
-    m_hostFieldMetaData[fieldOrdinal] = newHostFieldMetaData;
+    m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal] = newHostFieldMetaData;
   }
 
-  m_hostBucketIsModified[rank] = newBucketsModified;
+  m_deviceBucketIsModifiedOnHost[rank] = newBucketsModified;
 }
 
 template <typename Space>
@@ -705,15 +862,18 @@ void DeviceFieldDataManager<Space>::update_field_meta_data(const FieldVector& fi
 {
   for (const FieldBase* field : fields) {
     const int fieldOrdinal = field->mesh_meta_data_ordinal();
-    m_hostFieldMetaData[fieldOrdinal][bucketId].m_bucketSize = bucketSize;
+    m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal][bucketId].m_bucketSize = bucketSize;
 
-    if (m_hostFieldMetaData[fieldOrdinal][bucketId].m_data != nullptr) {
+    if (m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal][bucketId].m_data != nullptr) {
       if (field->has_unified_device_storage()) {
-        m_hostFieldMetaData[fieldOrdinal][bucketId].m_data = get_host_bucket_pointer_for_device(*field, bucketId);
-        m_hostFieldMetaData[fieldOrdinal][bucketId].m_hostData = m_hostFieldMetaData[fieldOrdinal][bucketId].m_data;
+        m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal][bucketId].m_data =
+            get_host_bucket_pointer_for_device(*field, bucketId);
+        m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal][bucketId].m_hostData =
+            m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal][bucketId].m_data;
       }
       else {
-        m_hostFieldMetaData[fieldOrdinal][bucketId].m_hostData = get_host_bucket_pointer_for_device(*field, bucketId);
+        m_deviceFieldMetaDataOnHostCollectionOnHost[fieldOrdinal][bucketId].m_hostData =
+            get_host_bucket_pointer_for_device(*field, bucketId);
       }
     }
   }
@@ -721,15 +881,18 @@ void DeviceFieldDataManager<Space>::update_field_meta_data(const FieldVector& fi
 
 template <typename Space>
 void DeviceFieldDataManager<Space>::fill_field_meta_data_pointers_from_offsets(
-    int bucketId, const FieldVector& fields, const AllocationType& bucketRawData,
-    HostFieldMetaDataCollectionType& hostFieldMetaData)
+    int bucketId, const FieldVector& fields, const std::vector<unsigned>& fieldSizeInBucket,
+    const AllocationType& bucketRawData, DeviceFieldMetaDataOnHostCollectionTypeOnHost &hostFieldMetaData)
 {
+  STK_ThrowAssert(fields.size() == fieldSizeInBucket.size());
+
   std::byte* bucketPointer = bucketRawData.data();
   uintptr_t pointerOffset = 0;
-  for (const FieldBase* field : fields) {
-    const int fieldOrdinal = field->mesh_meta_data_ordinal();
+  for (unsigned i = 0; i < fields.size(); ++i) {
+    const FieldBase& field = *fields[i];
+    const unsigned fieldOrdinal = field.mesh_meta_data_ordinal();
 
-    const uintptr_t chunkSize = reinterpret_cast<uintptr_t>(hostFieldMetaData[fieldOrdinal][bucketId].m_data);
+    const unsigned chunkSize = fieldSizeInBucket[i];
     hostFieldMetaData[fieldOrdinal][bucketId].m_data = (chunkSize > 0) ? bucketPointer + pointerOffset : nullptr;
     pointerOffset += chunkSize;
   }

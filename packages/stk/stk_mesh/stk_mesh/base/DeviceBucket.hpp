@@ -116,7 +116,10 @@ struct DeviceBucketT {
       m_entityRank(stk::topology::INVALID_RANK),
       m_entityEndRank(stk::topology::INVALID_RANK),
       m_isModified(false),
-      m_hasPermutations(false)
+      m_hasPermutations(false),
+      m_isOwned(false),
+      m_isShared(false),
+      m_isInAura(false)
   {}
 
   KOKKOS_INLINE_FUNCTION
@@ -159,6 +162,15 @@ struct DeviceBucketT {
 
   KOKKOS_INLINE_FUNCTION
   bool has_permutations() const { return m_hasPermutations; }
+
+  KOKKOS_INLINE_FUNCTION
+  bool is_owned() const { return m_isOwned; }
+
+  KOKKOS_INLINE_FUNCTION
+  bool is_shared() const { return m_isShared; }
+
+  KOKKOS_INLINE_FUNCTION
+  bool is_in_aura() const { return m_isInAura; }
 
   KOKKOS_INLINE_FUNCTION
   unsigned get_active_entity_span() const { return m_activeEntitySpan; }
@@ -233,6 +245,9 @@ struct DeviceBucketT {
   void initialize_bucket_attributes(const stk::mesh::Bucket &bucket);
   void initialize_part_ordinals_from_host(const stk::mesh::Bucket &bucket);
   void update_entity_data_from_host(const stk::mesh::Bucket &bucket);
+  void copy_host_bucket_ownership(const Bucket &bucket);
+  void initialize_ownership();
+  void set_part_ordinals(PartOrdinalViewType<BucketNgpMemSpace> partOrdinals);
 
   void sync_to_host(stk::mesh::Bucket& bucket);
 
@@ -302,6 +317,8 @@ struct DeviceBucketT {
     m_meshConn = meshConn;
   }
 
+  void grow_capacity(unsigned newCapacity);
+
   const DeviceMeshT<BucketNgpMemSpace>* m_owningMesh;
   impl::MeshConnectivity<stk::ngp::UVMDeviceSpace> m_meshConn;
   EntityViewType<BucketNgpMemSpace> m_entities;
@@ -317,6 +334,9 @@ struct DeviceBucketT {
   EntityRank m_entityEndRank;
   bool m_isModified;
   bool m_hasPermutations;
+  bool m_isOwned;
+  bool m_isShared;
+  bool m_isInAura;
 
   void permute_field_data(const Kokkos::View<const impl::EntityAndIndex*, BucketNgpMemSpace>& sortedEntities);
 
@@ -531,6 +551,45 @@ void DeviceBucketT<BucketNgpMemSpace>::initialize_part_ordinals_from_host(const 
                                                           parts.size());
   auto hostPartOrdinals = HostPartOrdinalViewType(bucket.superset_part_ordinals().first, parts.size());
   Kokkos::deep_copy(m_partOrdinals, hostPartOrdinals);
+
+  copy_host_bucket_ownership(bucket);
+}
+
+template <typename BucketNgpMemSpace>
+void DeviceBucketT<BucketNgpMemSpace>::copy_host_bucket_ownership(const Bucket &bucket)
+{
+  m_isOwned = bucket.owned();
+  m_isShared = bucket.shared();
+  m_isInAura = bucket.in_aura();
+}
+
+template <typename BucketNgpMemSpace>
+void DeviceBucketT<BucketNgpMemSpace>::set_part_ordinals(PartOrdinalViewType<BucketNgpMemSpace> partOrdinals)
+{
+  m_partOrdinals = partOrdinals;
+  initialize_ownership();
+}
+
+
+template <typename BucketNgpMemSpace>
+void DeviceBucketT<BucketNgpMemSpace>::initialize_ownership()
+{
+  Kokkos::View<int[3]> devView(Kokkos::view_alloc(Kokkos::WithoutInitializing, ""));
+  auto hostView = Kokkos::create_mirror_view(devView);
+  auto devicePartRepo = m_owningMesh->get_device_bucket_repository().get_device_part_repository();
+
+  Kokkos::parallel_for(1,
+    KOKKOS_CLASS_LAMBDA(const int) {
+      devView(0) = member(devicePartRepo.get_locally_owned_part_ordinal());
+      devView(1) = member(devicePartRepo.get_globally_shared_part_ordinal());
+      devView(2) = member(devicePartRepo.get_aura_part_ordinal());
+    }
+  );
+  Kokkos::deep_copy(hostView, devView);
+
+  m_isOwned = hostView(0);
+  m_isShared = hostView(1);
+  m_isInAura = hostView(2);
 }
 
 template <typename BucketNgpMemSpace>
@@ -613,6 +672,17 @@ void DeviceBucketT<BucketNgpMemSpace>::update_sparse_connectivity_from_device(st
       bucket.replace_relations(i, rank, connEntities.size(), connEntities.data(), connOrdinals.data(), connPerms.data());
     }
   }
+}
+
+template<typename BucketNgpMemSpace>
+void DeviceBucketT<BucketNgpMemSpace>::grow_capacity(unsigned newCapacity)
+{
+  STK_ThrowAssertMsg(newCapacity > m_bucketCapacity, "Trying to grow a DeviceBucket from capacity " << m_bucketCapacity
+                     << " to capacity " << newCapacity << ".  They can only grow and must never shrink.");
+
+  Kokkos::resize(m_entities, newCapacity);
+  m_bucketCapacity = newCapacity;
+
 }
 
 }

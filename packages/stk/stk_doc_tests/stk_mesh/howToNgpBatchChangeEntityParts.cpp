@@ -91,7 +91,7 @@ void check_entity_parts(const stk::mesh::NgpMesh& ngpMesh, const DeviceEntityVie
   );
 }
 
-void populate_device_entity_view(DeviceEntityViewType& deviceEntityView, stk::mesh::EntityVector& entities)
+void populate_device_entity_view(DeviceEntityViewType& deviceEntityView, const stk::mesh::EntityVector& entities)
 {
   if (deviceEntityView.extent(0) != entities.size()) {
     Kokkos::resize(deviceEntityView, entities.size());
@@ -109,7 +109,12 @@ void populate_device_entity_view(DeviceEntityViewType& deviceEntityView, stk::me
 NGP_TEST(StkMeshHowTo, NgpMeshBatchChangeEntityParts)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
-  if(stk::parallel_machine_size(communicator) > 1) { GTEST_SKIP(); }
+  const int numProcs = stk::parallel_machine_size(communicator);
+  const int myProc = stk::parallel_machine_rank(communicator);
+
+//The function ngpMesh.update_bulk_data() (called below) doesn't support
+//MPI-parallel yet (as of 9/28/2026). We plan to implement soon.
+  if(numProcs > 1) { GTEST_SKIP(); }
 
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
@@ -119,17 +124,24 @@ NGP_TEST(StkMeshHowTo, NgpMeshBatchChangeEntityParts)
 
   stk::mesh::Part* block1Part = meta.get_part("block_1");
   stk::mesh::Part* block2Part = &meta.declare_part("block_2", stk::topology::ELEM_RANK);
-  stk::mesh::Selector block1Selector(*block1Part);
-  stk::mesh::EntityVector entities;
+  stk::mesh::Selector block1Selector(*block1Part & meta.locally_owned_part());
+  stk::mesh::EntityVector elements, nodes;
 
-  stk::mesh::get_entities(*bulkPtr, stk::topology::ELEM_RANK,  block1Selector, entities);
-  EXPECT_EQ(elementCount, entities.size());
-  check_entity_parts(*bulkPtr, entities, stk::mesh::PartVector{block1Part}, stk::mesh::PartVector{});
+  stk::mesh::get_entities(*bulkPtr, stk::topology::ELEM_RANK,  block1Selector, elements);
+  stk::mesh::get_entities(*bulkPtr, stk::topology::NODE_RANK,  block1Selector, nodes);
+
+  unsigned expectedElemCount = elementCount/stk::parallel_machine_size(communicator);
+  unsigned expectedNodeCount = myProc==0 ? (elements.size()+1)*4 : elements.size()*4; //shared nodes owned by proc 0
+  EXPECT_EQ(expectedElemCount, elements.size());
+  EXPECT_EQ(expectedNodeCount, nodes.size());
+
+  check_entity_parts(*bulkPtr, elements, stk::mesh::PartVector{block1Part}, stk::mesh::PartVector{});
+  check_entity_parts(*bulkPtr, nodes, stk::mesh::PartVector{block1Part}, stk::mesh::PartVector{});
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
 
-  DeviceEntityViewType deviceEntityView("entityView", entities.size());
-  populate_device_entity_view(deviceEntityView, entities);
+  DeviceEntityViewType deviceEntityView("entityView", elements.size());
+  populate_device_entity_view(deviceEntityView, elements);
 
   HostPartOrdinalViewType addParts("", 1);
   addParts(0) = block2Part->mesh_meta_data_ordinal();
@@ -145,7 +157,8 @@ NGP_TEST(StkMeshHowTo, NgpMeshBatchChangeEntityParts)
 
   ngpMesh.update_bulk_data();
 
-  check_entity_parts(*bulkPtr, entities, stk::mesh::PartVector{block2Part}, stk::mesh::PartVector{block1Part});
+  check_entity_parts(*bulkPtr, elements, stk::mesh::PartVector{block2Part}, stk::mesh::PartVector{block1Part});
+  check_entity_parts(*bulkPtr, nodes, stk::mesh::PartVector{block2Part}, stk::mesh::PartVector{block1Part});
 }
 //END
 

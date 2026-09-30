@@ -403,12 +403,6 @@ void create_mesh_with_1_tri_per_proc(stk::mesh::BulkData& bulk)
 void delete_node_2_and_connect_node_5_to_elem_1(stk::mesh::BulkData& bulk)
 {
   bulk.modification_begin();
-{
-std::ostringstream os;
-os<<"P"<<bulk.parallel_rank()<<"  **** doing test mod ****" << std::endl;
-std::cerr<<os.str();
-stk::parallel_machine_barrier(bulk.parallel());
-}
   if (bulk.parallel_rank() == 0) {
     stk::mesh::Entity node5 = bulk.declare_node(5);
     stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);

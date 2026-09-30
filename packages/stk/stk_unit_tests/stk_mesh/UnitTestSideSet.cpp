@@ -2380,7 +2380,6 @@ TEST(DeclareElementSide, hex8_no_elem_graph)
   };
   stk::mesh::ConnectivityOrdinal expectedSideOrdinal = sideOrdinal;
   stk::mesh::Permutation expectedPerm = static_cast<stk::mesh::Permutation>(0);
-  std::cout<<"checking elem1/sideNodes"<<std::endl;
   check_ordinal_and_permutation(*bulk, elem1, stk::topology::FACE_RANK, sideNodes, expectedSideOrdinal, expectedPerm);
 
   stk::mesh::Entity elem2 = bulk->get_entity(stk::topology::ELEM_RANK, 2);
@@ -2392,11 +2391,9 @@ TEST(DeclareElementSide, hex8_no_elem_graph)
       bulk->get_entity(stk::topology::NODE_RANK, 6)
   };
   expectedPerm = static_cast<stk::mesh::Permutation>(0);
-  std::cout<<"checking elem2/reversedSideNodes"<<std::endl;
   check_ordinal_and_permutation(*bulk, elem2, stk::topology::FACE_RANK, reversedSideNodes, expectedSideOrdinal, expectedPerm);
 
   expectedPerm = static_cast<stk::mesh::Permutation>(4);
-  std::cout<<"checking elem2/sideNodes"<<std::endl;
   check_ordinal_and_permutation(*bulk, elem2, stk::topology::FACE_RANK, sideNodes, expectedSideOrdinal, expectedPerm);
 
 

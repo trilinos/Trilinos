@@ -1,5 +1,20 @@
 # CHANGELOG
 
+5.31.4    (STK_VERSION 5310400) 10/1/2026
+  stk_mesh: various developments in DeviceMesh (GPU support) including
+            fixing compile-warnings for AMD/HIP/ROCm
+            new public method DeviceMesh::batch_change_entity_parts is
+            ready for public testing, but note that the companion
+            method DeviceMesh::update_bulk_data() (for updating the host
+            mesh after device mesh-mod) doesn't support MPI-parallel yet.
+  stk_mesh: fix user-reported seg-fault in get_updated_ngp_mesh when reading
+            a mesh decomposition that leaves at least 1 mpi rank empty.
+  stk_mesh: fixed array-bounds-read in host/cpu path through parallel_sum
+  stk_util: fix 32-bit limit in parallel_vector_concat
+  stk_search: fix hang for certain scenarios with high-aspect elements
+  stk_transfer: fix issue with selecting model coords vs current coords
+  stk_block_extractor: fix to work with assemblies
+
 5.31.3    (STK_VERSION 5310300)
   stk_util: Deprecate 'double_complex_sum_op()' in MPI.hpp and rename
             internal supporting function in MPI.cc (to avoid duplicate

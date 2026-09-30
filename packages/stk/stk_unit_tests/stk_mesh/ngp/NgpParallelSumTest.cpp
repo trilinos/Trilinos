@@ -457,6 +457,57 @@ NGP_TEST_F(NgpParallelSum, heterogeneousMesh_elemTypesAllOnOneProc)
   test_parallel_sum<double>(build_heterogeneous_mesh_elem_types_all_on_one_proc);
 }
 
+// Reproducer for a heap-buffer-overflow (ASAN) in the host overload of
+// stk::mesh::impl::fill_device_send_data when parallel_sum is called with fields of
+// mixed entity ranks.  With NO_AUTO_AURA the boundary nodes are shared but the elements
+// are never shared, so the ELEM_RANK field (the last rank in the sorted rank list) has a
+// zero-size comm-map for the neighbor proc.  The host overload used to read the offsets
+// view once per rank before checking that size, reading one element past the end of the
+// offsets view for that empty last rank.
+NGP_TEST_F(NgpParallelSum, mixedRankFields_emptyElemRank)
+{
+  if (get_parallel_size() != 2) return;
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  const int numStates = 1;
+  stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
+  stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
+  stk::mesh::Field<double> & elemField  = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "elemField", numStates);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(elemField, get_meta().universal_part(), nullptr);
+
+  build_homogeneous_mesh_hex_both_procs(get_bulk());
+
+  initialize_shared_values<double>(userField, goldValues);
+
+  const double elemInitValue = 3.0;
+  {
+    auto elemFieldData = elemField.data<stk::mesh::ReadWrite>();
+    for (stk::mesh::Bucket * bucket : get_bulk().get_buckets(stk::topology::ELEM_RANK, get_meta().locally_owned_part())) {
+      for (const stk::mesh::Entity & elem : *bucket) {
+        elemFieldData.entity_values(elem)(0_comp) = elemInitValue;
+      }
+    }
+  }
+
+  // Passing a NODE-rank field and an ELEM-rank field makes the rank list mixed
+  // ({NODE_RANK, ELEM_RANK}); the elem rank has no shared entities, which is the case
+  // that triggered the overflow.
+  stk::mesh::parallel_sum<stk::ngp::HostSpace>(get_bulk(),
+      std::vector<const stk::mesh::FieldBase*>{&userField, &elemField});
+
+  check_field_on_device<double>(get_bulk(), userField, goldValues);
+
+  // The elem field is not shared, so parallel_sum must leave it unchanged.
+  auto elemFieldData = elemField.data<stk::mesh::ReadOnly>();
+  for (const stk::mesh::Bucket * bucket : get_bulk().get_buckets(stk::topology::ELEM_RANK, get_meta().locally_owned_part())) {
+    for (const stk::mesh::Entity & elem : *bucket) {
+      EXPECT_NEAR(elemInitValue, elemFieldData.entity_values(elem)(0_comp), 1.e-12);
+    }
+  }
+}
+
 NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);

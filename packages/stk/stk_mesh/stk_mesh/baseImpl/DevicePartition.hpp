@@ -238,15 +238,16 @@ class DevicePartition
   }
 
   KOKKOS_INLINE_FUNCTION
-  unsigned get_last_avail_bucket_index() const
+  unsigned get_last_avail_bucket_index(unsigned maxBucketCapacity) const
   {
     if (num_buckets() == 0) {
       return INVALID_INDEX;
     }
 
     unsigned lastBucketIdx = m_buckets.size() - 1;
-    return (!m_buckets[lastBucketIdx]->is_active() || m_buckets[lastBucketIdx]->is_full()) ? INVALID_INDEX
-                                                                                           : lastBucketIdx;
+    return (!m_buckets[lastBucketIdx]->is_active() ||
+            (m_buckets[lastBucketIdx]->size() == maxBucketCapacity)) ? INVALID_INDEX
+                                                                     : lastBucketIdx;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -317,6 +318,16 @@ class DevicePartition
   void scatter_entities_to_buckets(TeamMember const& teamMember, EntityView& allEntities)
   {
     auto bucketCapacity = get_bucket(0)->capacity();
+
+#ifndef NDEBUG
+    // A zero capacity divides by zero below (SIGFPE).  It means bucket 0 is not a usable bucket,
+    // which has previously shown up as a stale/freed DeviceBucketPtrWrapper.
+    Kokkos::single(Kokkos::PerTeam(teamMember), [&]() {
+      STK_NGP_ThrowRequireMsg(bucketCapacity > 0,
+                              "Capacity of bucket 0 is zero; cannot scatter entities to buckets.");
+    });
+    teamMember.team_barrier();
+#endif
 
     // scatter to buckets and update bucket info
     auto numBucketsNeeded = (num_entities() + bucketCapacity - 1) / bucketCapacity;

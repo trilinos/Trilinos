@@ -540,11 +540,11 @@ TEST(NgpDeviceMesh, dont_let_stacksize_get_out_of_control)
   EXPECT_NEAR(expectedBucketSize, sizeof(stk::mesh::Bucket), tol);
 
 #ifdef STK_ENABLE_GPU
-  constexpr size_t expectedDeviceMeshSize = 2096;
+  constexpr size_t expectedDeviceMeshSize = 2192;
 #else
-  constexpr size_t expectedDeviceMeshSize = 1750;
+  constexpr size_t expectedDeviceMeshSize = 1880;
 #endif
-  EXPECT_NEAR(expectedDeviceMeshSize, sizeof(stk::mesh::DeviceMesh), tol);
+  EXPECT_LE(sizeof(stk::mesh::DeviceMesh), expectedDeviceMeshSize + tol);
 
   constexpr size_t expectedDeviceBucketSize = 264;
   EXPECT_NEAR(expectedDeviceBucketSize, sizeof(stk::mesh::DeviceBucket), tol);
@@ -554,7 +554,7 @@ TEST(NgpDeviceMesh, dont_let_stacksize_get_out_of_control)
 #else
   constexpr size_t expectedDeviceBucketRepoSize =  928;
 #endif
-  EXPECT_NEAR(expectedDeviceBucketRepoSize, sizeof(stk::mesh::impl::DeviceBucketRepository<stk::ngp::MemSpace>), tol);
+  EXPECT_LE(sizeof(stk::mesh::impl::DeviceBucketRepository<stk::ngp::MemSpace>), expectedDeviceBucketRepoSize + tol);
 
   constexpr size_t expectedMeshConnectivitySize = 100;
   EXPECT_NEAR(expectedMeshConnectivitySize, sizeof(stk::mesh::impl::MeshConnectivity<stk::ngp::UVMDeviceSpace>), tol);

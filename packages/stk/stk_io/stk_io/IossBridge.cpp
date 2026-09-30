@@ -1229,6 +1229,23 @@ std::vector<std::string> get_assembly_names(const stk::mesh::MetaData& meta)
   return assemblyNames;
 }
 
+std::vector<const stk::mesh::Part*> get_surface_assemblies(const stk::mesh::MetaData& meta)
+{
+  std::vector<const stk::mesh::Part*> surfaceAssemblies;
+  for (const stk::mesh::Part* part : meta.get_parts()) {
+    if (!is_part_assembly_io_part(*part)) {
+      continue;
+    }
+    if (std::any_of(part->subsets().begin(), part->subsets().end(),
+                 [](const auto* subset) {
+          return subset->primary_entity_rank() == stk::topology::FACE_RANK;
+        })) {
+      surfaceAssemblies.push_back(part);
+    }
+  }
+  return surfaceAssemblies;
+}
+
 bool is_in_subsets_of_parts(const stk::mesh::Part& part,
                             const stk::mesh::PartVector& parts)
 {
@@ -3194,7 +3211,7 @@ void define_output_db_within_state_define(stk::io::OutputParams &params,
   }
 
   for (const stk::mesh::Part* part : *parts) {
-    if (is_part_assembly_io_part(*part)) {
+    if (is_part_io_part(*part) && is_part_assembly_io_part(*part)) {
       define_assembly_hierarchy(params, *part);
     }
   }
@@ -4203,7 +4220,8 @@ void write_node_sharing_info(Ioss::DatabaseIO *dbo, const EntitySharingInfo &nod
 Ioss::DatabaseIO *create_database_for_subdomain(const std::string &baseFilename,
                                                 int indexSubdomain,
                                                 int numSubdomains,
-                                                bool use64Bit)
+                                                bool use64Bit,
+                                                Ioss::DatabaseUsage databaseUsage)
 {
   std::string parallelFilename{construct_filename_for_serial_or_parallel(baseFilename, numSubdomains, indexSubdomain)};
   Ioss::PropertyManager properties;
@@ -4214,7 +4232,7 @@ Ioss::DatabaseIO *create_database_for_subdomain(const std::string &baseFilename,
   }
 
   std::string dbtype("exodusII");
-  Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(dbtype, parallelFilename, Ioss::WRITE_RESULTS, MPI_COMM_SELF, properties);
+  Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(dbtype, parallelFilename, databaseUsage, MPI_COMM_SELF, properties);
 
   return dbo;
 }

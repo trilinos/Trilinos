@@ -302,8 +302,21 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
 
     stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_id);
 
-    int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
-    int owning_proc = std::min(other_proc, bulkData.parallel_rank());
+    // A created exposed side may be shared by more than two procs (e.g. an
+    // exposed edge where several shell blocks meet). Record the COMPLETE set of
+    // remote co-sharer procs for this element side, not just the single pairwise
+    // neighbor from parallel_edge_info, so that shared_modified is globally
+    // symmetric and comm-list consistency holds. The owner is the global minimum
+    // proc across this proc and all co-sharers.
+    std::vector<int> sharingProcs;
+    get_remote_procs_sharing_side(bulkData, local_element, side_id, sharingProcs);
+    if(sharingProcs.empty()) {
+      sharingProcs.push_back(parallel_edge_info.get_proc_rank_of_neighbor());
+    }
+    int owning_proc = bulkData.parallel_rank();
+    for(int sp : sharingProcs) {
+      owning_proc = std::min(owning_proc, sp);
+    }
 
     stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, local_element, side_id);
 
@@ -311,7 +324,9 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
     {
         stk::mesh::PartVector side_parts = get_parts_for_creating_side(bulkData, parts_for_creating_side, local_element, side_id);
         side = bulkData.declare_element_side(local_element, side_ord, side_parts);
-        shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
+        for(int sp : sharingProcs) {
+          shared_modified.push_back(stk::mesh::sharing_info(side, sp, owning_proc));
+        }
     }
     else
     {
@@ -325,7 +340,9 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
               // Owner has not been resolved yet
               owner = owning_proc;
             }
-            shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owner));
+            for(int sp : sharingProcs) {
+              shared_modified.push_back(stk::mesh::sharing_info(side, sp, owner));
+            }
         }
     }
 }
@@ -386,6 +403,30 @@ int get_number_of_connected_active_elements(const stk::mesh::BulkData& bulkData,
   }
 
   return numConnectedActiveElements;
+}
+
+void get_remote_procs_sharing_side(const stk::mesh::BulkData& bulkData,
+                                   stk::mesh::Entity localElement,
+                                   int localOrdinal,
+                                   std::vector<int>& sharingProcs)
+{
+  sharingProcs.clear();
+
+  const ElemElemGraph& elementGraph = bulkData.get_face_adjacent_element_graph();
+  stk::mesh::impl::LocalId elemLocalId = elementGraph.get_local_element_id(localElement);
+  stk::mesh::GraphEdgesForElement graphEdges = elementGraph.get_edges_for_element(elemLocalId);
+
+  for(size_t i = 0; i < graphEdges.size(); ++i)
+  {
+    const GraphEdge& graphEdge = elementGraph.get_graph().get_edge_for_element(elemLocalId, i);
+    if(graphEdge.side1() == localOrdinal && !stk::mesh::impl::is_local_element(graphEdge.elem2()))
+    {
+      const stk::mesh::impl::ParallelInfo& pInfo = elementGraph.get_parallel_info_for_graph_edge(graphEdge);
+      sharingProcs.push_back(pInfo.get_proc_rank_of_neighbor());
+    }
+  }
+
+  stk::util::sort_and_unique(sharingProcs);
 }
 
 bool can_remove_side_from_element_death_boundary(stk::mesh::BulkData& bulkData,

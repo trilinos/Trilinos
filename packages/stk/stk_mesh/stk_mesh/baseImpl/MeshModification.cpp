@@ -98,9 +98,11 @@ bool MeshModification::modification_end(modification_optimization opt)
       return false;
   }
 
-  STK_ThrowAssertMsg(impl::check_for_connected_nodes(m_bulkData)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
+  if(m_bulkData.is_mesh_consistency_check_on()) {
+    STK_ThrowRequireMsg(impl::check_for_connected_nodes(m_bulkData)==0, "P"<<m_bulkData.parallel_rank()<<" BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
-  STK_ThrowAssertMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+    STK_ThrowRequireMsg(m_bulkData.add_fmwk_data() || impl::check_no_shared_elements_or_higher(m_bulkData)==0, "P"<<m_bulkData.parallel_rank()<<" BulkData::modification_end ERROR, Sharing of entities with rank ELEMENT_RANK or higher is not allowed.");
+  }
 
   m_bulkData.m_entityKeyMapping->clear_all_cache();
 

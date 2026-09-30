@@ -309,7 +309,9 @@ TEST( ElementGraph, HexAddShellAddShellSerial )
   EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 //  EXPECT_EQ(12u, elemElemGraph.num_coincident_edges());
 
+#ifndef NDEBUG
   elemElemGraph.write_graph(std::cout);
+#endif
 }
 
 TEST( ElementGraph, HexAddShellAddShellHexSerial )

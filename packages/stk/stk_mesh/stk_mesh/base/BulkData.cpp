@@ -1862,10 +1862,10 @@ void BulkData::add_entity_callback(EntityRank rank, unsigned bucketId, unsigned 
   }
 
 #ifdef STK_ASAN_FIELD_ACCESS
-  bool mustInitializeRigorously = true;
-#else
-  bool mustInitializeRigorously = initializeFieldData;
+  initializeFieldData = true;
 #endif
+
+  bool mustInitializeRigorously = initializeFieldData;
 
   if (mustInitializeRigorously) {
     m_field_data_manager->initialize_entity_field_data(fieldsOfRank, rank, bucketId, indexInBucket, newBucketSize);
@@ -1996,16 +1996,16 @@ BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selec
 
   STK_ThrowAssertMsg(static_cast<size_t>(rank) < m_selector_to_buckets_maps.size(), "BulkData::get_buckets, EntityRank ("<<rank<<") out of range.");
 
-  auto& selectorBucketMap = m_selector_to_buckets_maps[rank];
+  // Always sync buckets from partitions (honors m_need_sync_from_partitions), even on the
+  // cached fast-path, so a later FieldBase::data() guard-rail sync during a modification
+  // cycle cannot reorganize the returned list out from under an iterating caller.
+  auto const& allBuckets = buckets(rank);
 
+  auto& selectorBucketMap = m_selector_to_buckets_maps[rank];
   auto [it, inserted] = selectorBucketMap.try_emplace(selector, BucketVector{});
   auto& mapBuckets = it->second;
 
   if (inserted) {
-    // Only on the first time we see this selector do the work:
-    // 1) gather the full bucket list (this may have side-effects, so do it first)
-    auto const& allBuckets = buckets(rank);
-
     for (Bucket* b : allBuckets) {
       if (selector(*b)) {
         mapBuckets.push_back(b);
@@ -4121,11 +4121,16 @@ struct PartStorage
 
 
 void BulkData::remove_unneeded_induced_parts(stk::mesh::Entity entity, PairIterEntityComm entity_comm_info,
-        PartStorage& part_storage, stk::CommSparse& comm)
+        PartStorage& part_storage, stk::CommSparse& comm, bool useKeyBasedUnpack)
 {
     part_storage.induced_part_ordinals.clear();
     induced_part_membership(*this, entity, part_storage.induced_part_ordinals);
-    impl::unpack_induced_parts_from_sharers(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
+    if (useKeyBasedUnpack) {
+        impl::unpack_induced_parts_from_sharers_by_key(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
+    }
+    else {
+        impl::unpack_induced_parts_from_sharers(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
+    }
     impl::filter_out_unneeded_induced_parts(*this, entity, part_storage.induced_part_ordinals, part_storage.removeParts);
 
     internal_change_entity_parts(entity, part_storage.induced_part_ordinals, part_storage.removeParts, part_storage.scratch, part_storage.scratch2);
@@ -4294,7 +4299,7 @@ void BulkData::internal_resolve_shared_part_membership_for_element_death()
         bool i_own_this_entity_in_comm_list = parallel_owner_rank(entity) == p_rank;
         if( i_own_this_entity_in_comm_list )
         {
-          remove_unneeded_induced_parts(entity, commDB.comm(info.entity_comm), part_storage, comm);
+          remove_unneeded_induced_parts(entity, commDB.comm(info.entity_comm), part_storage, comm, /*useKeyBasedUnpack=*/true);
         }
       }
     }
@@ -4542,7 +4547,7 @@ void BulkData::change_entity_parts(const Selector& selector,
                                    const PartVector& add_parts,
                                    const PartVector& remove_parts)
 {
-    if(m_runConsistencyCheck) {
+    if(is_mesh_consistency_check_on()) {
       impl::check_matching_selectors_and_parts_across_procs(selector, add_parts, remove_parts, parallel());
     }
 

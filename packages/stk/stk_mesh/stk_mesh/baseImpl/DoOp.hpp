@@ -56,6 +56,20 @@ struct DoOp<T, Operation::SUM>
   { return T(0); }
 };
 
+#ifdef KOKKOS_ENABLE_CUDA
+template <>
+struct DoOp<long double, Operation::SUM>
+{
+  KOKKOS_INLINE_FUNCTION
+  double operator()(double lhs, double rhs) const
+  { return lhs + rhs; }
+
+  KOKKOS_INLINE_FUNCTION
+  double initial_value() const
+  { return double(0); }
+};
+#endif
+
 template<>
 struct DoOp<double,Operation::SUM>
 {
@@ -82,6 +96,20 @@ struct DoOp<T, Operation::MIN>
   T initial_value() const
   { return std::numeric_limits<T>::max(); }
 };
+
+#ifdef KOKKOS_ENABLE_CUDA
+template <>
+struct DoOp<long double, Operation::MIN>
+{
+  KOKKOS_INLINE_FUNCTION
+  double operator()(double lhs, double rhs) const
+  { return lhs < rhs ? lhs : rhs; }
+
+  KOKKOS_INLINE_FUNCTION
+  double initial_value() const
+  { return std::numeric_limits<double>::max(); }
+};
+#endif
 
 template <>
 struct DoOp<std::complex<double>, Operation::MIN>
@@ -155,6 +183,20 @@ struct DoOp<T, Operation::MAX>
   T initial_value() const
   { return std::numeric_limits<T>::lowest(); }
 };
+
+#ifdef KOKKOS_ENABLE_CUDA
+template <>
+struct DoOp<long double, Operation::MAX>
+{
+  KOKKOS_INLINE_FUNCTION
+  double operator()(double lhs, double rhs) const
+  { return lhs > rhs ? lhs : rhs; }
+
+  KOKKOS_INLINE_FUNCTION
+  double initial_value() const
+  { return std::numeric_limits<double>::lowest(); }
+};
+#endif
 
 template <>
 struct DoOp<std::complex<double>, Operation::MAX>

@@ -64,6 +64,7 @@ public:
     static_assert(DataLayout == Layout::Left);
   }
 
+  KOKKOS_DEFAULTED_FUNCTION EntityBytes() = default;
   KOKKOS_DEFAULTED_FUNCTION ~EntityBytes() = default;
 
   KOKKOS_INLINE_FUNCTION int num_bytes() const { return m_numBytesPerEntity; }
@@ -119,6 +120,7 @@ public:
       m_isLayoutRight(true)
   {}
 
+  EntityBytes() = default;
   ~EntityBytes() = default;
 
   inline int num_bytes() const { return m_numBytesPerEntity; }
@@ -171,6 +173,7 @@ public:
       m_scalarByteStride(scalarStride*numBytesPerScalar)
   {}
 
+  EntityBytes() = default;
   ~EntityBytes() = default;
 
   inline int num_bytes() const { return m_numBytesPerEntity; }
@@ -216,6 +219,7 @@ public:
       m_numBytesPerScalar(numBytesPerScalar)
   {}
 
+  EntityBytes() = default;
   ~EntityBytes() = default;
 
   inline int num_bytes() const { return m_numBytesPerEntity; }

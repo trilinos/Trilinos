@@ -67,6 +67,14 @@ inline double linear_function(double coeff_c,
   return coeff_c + coeff_x * x + coeff_y * y + coeff_z * z;
 }
 
+inline double shifted_linear_function(double coeff_c,
+                                      double coeff_x, double coeff_y, double coeff_z,
+                                      double      x0, double      y0, double      z0,
+                                      double       x, double       y, double       z)
+{
+  return coeff_c + coeff_x * (x-x0) + coeff_y * (y-y0) + coeff_z * (z-z0);
+}
+
 struct FieldEvaluator {
   static constexpr unsigned InvalidIndex = std::numeric_limits<unsigned>::max();
   virtual double operator()(stk::mesh::Entity entity, const double x, const double y, const double z,
@@ -182,6 +190,46 @@ struct LinearFieldEvaluator : public FieldEvaluator {
   double m_coeffX = 1.0;
   double m_coeffY = 1.0;
   double m_coeffZ = 1.0;
+};
+
+struct ShiftedLinearFieldEvaluator : public FieldEvaluator {
+  virtual double operator()(stk::mesh::Entity /*entity*/, const double x, const double y, const double z,
+                            [[maybe_unused]] const unsigned index = InvalidIndex) const
+  {
+    return 2 == m_spatialDimension ? shifted_linear_function(m_coeffC, m_coeffX, m_coeffY, m_coeffZ, m_x0, m_y0, m_z0, x, y, 0)
+                                   : shifted_linear_function(m_coeffC, m_coeffX, m_coeffY, m_coeffZ, m_x0, m_y0, m_z0, x, y, z);
+  }
+  ShiftedLinearFieldEvaluator(const unsigned spatialDimension,
+                              double x0, double y0, double z0,
+                              double coeffC = 1.0, double coeffX = 1.0, double coeffY = 1.0, double coeffZ = 1.0)
+    : m_spatialDimension(spatialDimension)
+    , m_coeffC(coeffC)
+    , m_coeffX(coeffX)
+    , m_coeffY(coeffY)
+    , m_coeffZ(coeffZ)
+    , m_x0(x0)
+    , m_y0(y0)
+    , m_z0(z0)
+  {
+    STK_ThrowRequireMsg((2 == m_spatialDimension) || (3 == m_spatialDimension),
+                    "Invalid spatial dimension" << m_spatialDimension);
+  }
+
+  ~ShiftedLinearFieldEvaluator() {}
+
+ protected:
+  ShiftedLinearFieldEvaluator(const ShiftedLinearFieldEvaluator&);
+  const ShiftedLinearFieldEvaluator& operator()(const ShiftedLinearFieldEvaluator&);
+  ShiftedLinearFieldEvaluator() {}
+
+  unsigned m_spatialDimension = 3;
+  double m_coeffC = 1.0;
+  double m_coeffX = 1.0;
+  double m_coeffY = 1.0;
+  double m_coeffZ = 1.0;
+  double m_x0{0.0};
+  double m_y0{0.0};
+  double m_z0{0.0};
 };
 
 struct BoundedLinearFieldEvaluator : public LinearFieldEvaluator {
@@ -381,7 +429,8 @@ struct ExponentialFieldEvaluator : public FieldEvaluator {
 
 inline void set_entity_field(const stk::mesh::BulkData& bulk,
                              const stk::mesh::FieldBase& stkField,
-                             const FieldEvaluator& eval)
+                             const FieldEvaluator& eval,
+                             stk::mesh::FieldBase const* inputCoordField = nullptr)
 {
   stk::mesh::EntityRank rank = stkField.entity_rank();
   STK_ThrowRequireMsg(stk::topology::NODE_RANK != rank, "Input entity rank cannot be NODE_RANK");
@@ -390,14 +439,20 @@ inline void set_entity_field(const stk::mesh::BulkData& bulk,
   stk::mesh::Selector selector(stkField);
   stk::mesh::get_selected_entities(selector, bulk.buckets(rank), entities);
 
-  const unsigned spatialDimension = bulk.mesh_meta_data().spatial_dimension();
-  stk::mesh::FieldBase const* coord = bulk.mesh_meta_data().coordinate_field();
+  const auto& meta = bulk.mesh_meta_data();
+  const unsigned spatialDimension = meta.spatial_dimension();
+  stk::mesh::FieldBase const* coordField = meta.coordinate_field();
+
+  if(inputCoordField != nullptr) {
+    STK_ThrowRequireMsg(&inputCoordField->mesh_meta_data() == &meta, "BulkData and input coordinate field have different MetaData");
+    coordField = inputCoordField;
+  }
 
   std::vector<double> centroid;
   stk::mesh::field_data_execute<double, stk::mesh::ReadWrite>(stkField,
     [&](auto& stkFieldData) {
       for(stk::mesh::Entity entity : entities) {
-        search::determine_centroid(spatialDimension, entity, *coord, centroid);
+        search::determine_centroid(spatialDimension, entity, *coordField, centroid);
 
         double x = centroid[0];
         double y = centroid[1];
@@ -417,7 +472,8 @@ inline void set_entity_field(const stk::mesh::BulkData& bulk,
 inline void set_entity_field_gauss_point(const stk::mesh::BulkData& bulk,
                              const stk::mesh::FieldBase& stkField,
                              const FieldEvaluator& eval,
-                             std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider)
+                             std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                             stk::mesh::FieldBase const* inputCoordField = nullptr)
 {
   stk::mesh::EntityRank rank = stkField.entity_rank();
   STK_ThrowRequireMsg(stk::topology::NODE_RANK != rank, "Input entity rank cannot be NODE_RANK");
@@ -426,14 +482,20 @@ inline void set_entity_field_gauss_point(const stk::mesh::BulkData& bulk,
   stk::mesh::Selector selector(stkField);
   stk::mesh::get_selected_entities(selector, bulk.buckets(rank), entities);
 
-  const unsigned spatialDimension = bulk.mesh_meta_data().spatial_dimension();
-  stk::mesh::FieldBase const* coord = bulk.mesh_meta_data().coordinate_field();
+  const auto& meta = bulk.mesh_meta_data();
+  const unsigned spatialDimension = meta.spatial_dimension();
+  stk::mesh::FieldBase const* coordField = meta.coordinate_field();
+
+  if(inputCoordField != nullptr) {
+    STK_ThrowRequireMsg(&inputCoordField->mesh_meta_data() == &meta, "BulkData and input coordinate field have different MetaData");
+    coordField = inputCoordField;
+  }
 
   stk::mesh::field_data_execute<double, stk::mesh::ReadWrite>(stkField,
     [&](auto& stkFieldData) {
       for(stk::mesh::Entity entity : entities) {
         std::vector<double> gpCoordinates;
-        stk::search::determine_gauss_points(bulk, entity, *masterElemProvider, *coord, gpCoordinates);
+        stk::search::determine_gauss_points(bulk, entity, *masterElemProvider, *coordField, gpCoordinates);
 
         unsigned locCompStride = 1;
         unsigned locCopyStride = 3;
@@ -457,7 +519,8 @@ inline void set_entity_field_gauss_point(const stk::mesh::BulkData& bulk,
 
 inline void set_node_field(const stk::mesh::BulkData& bulk,
                            const stk::mesh::FieldBase& stkField,
-                           const FieldEvaluator& eval)
+                           const FieldEvaluator& eval,
+                           stk::mesh::FieldBase const* inputCoordField = nullptr)
 {
   stk::mesh::EntityRank rank = stkField.entity_rank();
   STK_ThrowRequireMsg(stk::topology::NODE_RANK == rank, "Input entity rank must be NODE_RANK");
@@ -466,10 +529,16 @@ inline void set_node_field(const stk::mesh::BulkData& bulk,
   stk::mesh::Selector selector(stkField);
   stk::mesh::get_selected_entities(selector, bulk.buckets(rank), entities);
 
-  const unsigned spatialDimension = bulk.mesh_meta_data().spatial_dimension();
-  const auto& coordField = *bulk.mesh_meta_data().coordinate_field();
+  const auto& meta = bulk.mesh_meta_data();
+  const unsigned spatialDimension = meta.spatial_dimension();
+  stk::mesh::FieldBase const* coordField = meta.coordinate_field();
 
-  stk::mesh::field_data_execute<double, double, stk::mesh::ReadOnly, stk::mesh::ReadWrite>(coordField, stkField,
+  if(inputCoordField != nullptr) {
+    STK_ThrowRequireMsg(&inputCoordField->mesh_meta_data() == &meta, "BulkData and input coordinate field have different MetaData");
+    coordField = inputCoordField;
+  }
+
+  stk::mesh::field_data_execute<double, double, stk::mesh::ReadOnly, stk::mesh::ReadWrite>(*coordField, stkField,
     [&](auto& coordFieldData, auto& stkFieldData) {
       for(stk::mesh::Entity entity : entities) {
         auto coordData = coordFieldData.entity_values(entity);
@@ -491,7 +560,8 @@ inline void set_node_field(const stk::mesh::BulkData& bulk,
 inline void set_error_field(const stk::mesh::BulkData& bulk,
                             const stk::mesh::FieldBase& stkField,
                             const stk::mesh::FieldBase& errField,
-                            const FieldEvaluator& eval)
+                            const FieldEvaluator& eval,
+                            stk::mesh::FieldBase const* inputCoordField = nullptr)
 {
   stk::mesh::EntityRank rank = stkField.entity_rank();
   STK_ThrowRequireMsg(stk::topology::NODE_RANK == rank, "Input entity rank must be NODE_RANK");
@@ -500,12 +570,18 @@ inline void set_error_field(const stk::mesh::BulkData& bulk,
   stk::mesh::Selector selector(stkField);
   stk::mesh::get_selected_entities(selector, bulk.buckets(rank), entities);
 
-  const unsigned spatialDimension = bulk.mesh_meta_data().spatial_dimension();
-  const auto& coordField = *bulk.mesh_meta_data().coordinate_field();
+  const auto& meta = bulk.mesh_meta_data();
+  const unsigned spatialDimension = meta.spatial_dimension();
+  stk::mesh::FieldBase const* coordField = meta.coordinate_field();
+
+  if(inputCoordField != nullptr) {
+    STK_ThrowRequireMsg(&inputCoordField->mesh_meta_data() == &meta, "BulkData and input coordinate field have different MetaData");
+    coordField = inputCoordField;
+  }
 
   stk::mesh::field_data_execute<double, double, double,
                   stk::mesh::ReadOnly, stk::mesh::ReadOnly, stk::mesh::ReadWrite>
-    (coordField, stkField, errField,
+    (*coordField, stkField, errField,
     [&](auto& coordFieldData, auto& stkFieldData, auto& errFieldData) {
       for(stk::mesh::Entity entity : entities) {
         auto coordData = coordFieldData.entity_values(entity);

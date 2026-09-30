@@ -55,7 +55,7 @@ test -r $STK_HEADER_FILE &&
 NEW_VERSION=$(git describe --long --abbrev=8 --match=[0-9]*.[0-9]*.[0-9]* HEAD 2>/dev/null)
 if [ -n "${SPACK_SIERRA_VERSION:-}" ]
 then
-    NEW_VERSION=${SPACK_SIERRA_VERSION}-${NEW_VERSION##*-}
+    NEW_VERSION=${SPACK_SIERRA_VERSION}
 fi
 
 # If we do not have access to the REMOTE_REPO assume this is an external customer build.

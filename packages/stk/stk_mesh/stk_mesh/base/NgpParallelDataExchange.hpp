@@ -218,6 +218,7 @@ void fill_device_send_data(const SendDataType& deviceSendData,
 
     auto hostSharedCommMap = mesh.template volatile_fast_shared_comm_map<typename stk::ngp::DeviceSpace::mem_space>(fieldRank, iproc, includeGhosts);
     unsigned hostSharedCommMapSize = hostSharedCommMap.extent(0);
+    if (hostSharedCommMapSize == 0) { continue; }   // nothing to pack for this rank; avoids reading past the end of the offsets view
 
     const int sendBufferStartIdx = deviceMeshIndicesOffsets(baseProcOffset + meshIndicesCounter);
     typename SendDataType::value_type* deviceSendDataPtr = deviceSendData.data()+dataBegin+sendBufferStartIdx;
