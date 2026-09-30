@@ -23,80 +23,53 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
   "Build with explicit template instation enabled in the examples."
   OFF )
 
-# If not explicitly defined by the user, pick a default node type that
-# is enabled in kokkos.  This is complicated by ETI node type
-# instantiation in Tpetra.  We need to use a node instantiated by
-# Tpetra for panzer to build correctly.  Below we copy the logic from
-# Tpetra for choosing the default node type to be in line with tpetra.
-# This is somewhat fragile until we get new ETI system in place.
-IF(NOT DEFINED ${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE)
-  IF (Kokkos_ENABLE_SYCL)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "SYCL")
-  ELSEIF (Kokkos_ENABLE_HIP)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "HIP")
-  ELSEIF (Kokkos_ENABLE_CUDA)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "CUDA")
-  ELSEIF (Kokkos_ENABLE_OPENMP)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "OPENMP")
-  ELSEIF (Kokkos_ENABLE_SERIAL)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "SERIAL")
-  ELSEIF (Kokkos_ENABLE_THREADS)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "THREAD")
-  ELSE()
-    MESSAGE(FATAL_ERROR "No Kokkos execution space is enabled.")
-  ENDIF()
-ENDIF()
-
-IF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "SYCL")
-  SET(PHX_KOKKOS_DEVICE_TYPE_SYCL ON)
-  MESSAGE(STATUS "Execution Space: HIP")
-ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "HIP")
-  SET(PHX_KOKKOS_DEVICE_TYPE_HIP ON)
-  MESSAGE(STATUS "Execution Space: HIP")
-ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "CUDA")
-  SET(PHX_KOKKOS_DEVICE_TYPE_CUDA ON)
-  MESSAGE(STATUS "Execution Space: CUDA")
-ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "OPENMP")
-  SET(PHX_KOKKOS_DEVICE_TYPE_OPENMP ON)
-  MESSAGE(STATUS "Execution Space: OPENMP")
-ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "THREAD")
-  SET(PHX_KOKKOS_DEVICE_TYPE_THREAD ON)
-  MESSAGE(STATUS "Execution Space: THREAD")
-ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "SERIAL")
-  SET(PHX_KOKKOS_DEVICE_TYPE_SERIAL ON)
-  MESSAGE(STATUS "Execution Space: SERIAL")
+OPTION(${PACKAGE_NAME}_ENABLE_SHARED_SPACE "If set to ON, the default memory space for phalanx will be Kokkos::SharedSpace (default=OFF)" OFF)
+SET(${PACKAGE_NAME}_DEFAULT_EXECUTION_SPACE "Kokkos::DefaultExecutionSpace" CACHE STRING "The default execution space")
+IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE)
+  SET(${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE "Kokkos::SharedSpace" CACHE STRING "The default memory space")
 ELSE()
-  MESSAGE(FATAL_ERROR, " The specified device type ${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE = ${${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE} is not valid!  Please set this to one of the valid device types: SERIAL,OPENMP,CUDA,THREAD.")
+  SET(${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE "Kokkos::DefaultExecutionSpace::memory_space" CACHE STRING "The default memory space")
 ENDIF()
+SET(${PACKAGE_NAME}_INDEX_SIZE_TYPE "int" CACHE STRING "The default index type, choose a C++ integer type or PHX::DefaultExecutionSpace::size_type (default=int)")
 
-# Index size type
-IF(NOT DEFINED ${PACKAGE_NAME}_INDEX_SIZE_TYPE)
-  SET(${PACKAGE_NAME}_INDEX_SIZE_TYPE "INT")
-ENDIF()
+MESSAGE(STATUS "Enable Shared Space: ${${PACKAGE_NAME}_ENABLE_SHARED_SPACE}")
+MESSAGE(STATUS "Default Execution Space: ${${PACKAGE_NAME}_DEFAULT_EXECUTION_SPACE}")
+MESSAGE(STATUS "Default Memory Space: ${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}")
 
-IF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "KOKKOS")
-  SET(PHX_INDEX_SIZE_TYPE_KOKKOS ON)
-  MESSAGE(STATUS "Index Size Type: KOKKOS")
-ELSEIF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "INT")
-  SET(PHX_INDEX_SIZE_TYPE_INT ON)
-  MESSAGE(STATUS "Index Size Type: INT")
-ELSEIF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "UINT")
-  SET(PHX_INDEX_SIZE_TYPE_UINT ON)
-  MESSAGE(STATUS "Index Size Type: UINT")
-ELSEIF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "LONGINT")
-  SET(PHX_INDEX_SIZE_TYPE_LONGINT ON)
-  MESSAGE(STATUS "Index Size Type: LONGINT")
-ELSEIF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "ULONGINT")
-  SET(PHX_INDEX_SIZE_TYPE_ULONGINT ON)
-  MESSAGE(STATUS "Index Size Type: ULONGINT")
+# Map the keywords this option used to take onto the C++ types they selected,
+# so existing configure scripts and caches keep working.
+SET(PHX_LEGACY_INDEX_SIZE_TYPES KOKKOS INT UINT LONGINT ULONGINT)
+SET(PHX_LEGACY_INDEX_SIZE_CXX_TYPES
+  "PHX::Device::size_type" "int" "unsigned int" "long int" "unsigned long int")
+LIST(FIND PHX_LEGACY_INDEX_SIZE_TYPES "${${PACKAGE_NAME}_INDEX_SIZE_TYPE}" PHX_LEGACY_INDEX)
+IF (PHX_LEGACY_INDEX GREATER -1)
+  LIST(GET PHX_LEGACY_INDEX_SIZE_CXX_TYPES ${PHX_LEGACY_INDEX} PHX_INDEX_SIZE_TYPE_CXX)
+  MESSAGE(DEPRECATION "${PACKAGE_NAME}_INDEX_SIZE_TYPE=${${PACKAGE_NAME}_INDEX_SIZE_TYPE} is deprecated; set it to the C++ type instead: \"${PHX_INDEX_SIZE_TYPE_CXX}\"")
 ELSE()
-  MESSAGE(FATAL_ERROR, " The specified index size type ${PACKAGE_NAME}_INDEX_SIZE_TYPE = ${${PACKAGE_NAME}_INDEX_SIZE_TYPE} is not valid!  Please set this to one of the valid types: KOKKOS,INT,UINT,LONGINT,ULONGINT.")
+  SET(PHX_INDEX_SIZE_TYPE_CXX "${${PACKAGE_NAME}_INDEX_SIZE_TYPE}")
+ENDIF()
+MESSAGE(STATUS "Index Size Type: ${PHX_INDEX_SIZE_TYPE_CXX}")
+
+# Shared space is not wired up yet.  The option sets
+# Phalanx_DEFAULT_MEMORY_SPACE, but PHX::Device is still an execution space
+# rather than a Kokkos::Device, so PHX::mem_space comes from
+# PHX::Device::memory_space and the configured memory space is never consulted
+# -- with Cuda you would get CudaSpace, not CudaUVMSpace.  Refuse the option
+# rather than silently ignore it.  Remove this once the Kokkos::Device form of
+# PHX::Device in Phalanx_config.hpp.in is switched on.
+IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE)
+  MESSAGE(FATAL_ERROR "ERROR (Phalanx): ${PACKAGE_NAME}_ENABLE_SHARED_SPACE is not implemented yet. PHX::Device is still an execution space, so PHX::mem_space is taken from PHX::Device::memory_space and the shared memory space would have no effect. Reconfigure with ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=OFF.")
+ENDIF()
+
+IF (${${PACKAGE_NAME}_ENABLE_SHARED_SPACE} AND NOT "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}" STREQUAL "Kokkos::SharedSpace")
+  MESSAGE(FATAL_ERROR "ERROR (Phalanx): You cannot enable SharedSpace and set the default memory space. Do one or the other.")
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   PHX_DEBUG
   "Build with debug code enabled. Typically, this enables array bounds checking and runtime checking of rank accessors in multidimensional arrays."
   OFF )
+MESSAGE(STATUS "Enable DEBUG: ${${PACKAGE_NAME}_ENABLE_DEBUG}")
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   PHX_TEUCHOS_TIME_MONITOR
@@ -105,6 +78,17 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
 
 # Use only for CUDA builds
 MESSAGE(STATUS "Sacado Hierarchic DFAD support: ${Sacado_ENABLE_HIERARCHICAL_DFAD}")
+
+# Calling a virtual function from device code is not supported on SYCL
+# without the experimental sycl_ext_oneapi_virtual_functions extension, so the
+# tests that do it are not built on a SYCL build unless this is turned on.
+# Other backends are unaffected.
+OPTION(${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE
+  "Build the tests that call virtual functions from device code on a SYCL build.  Requires the experimental sycl_ext_oneapi_virtual_functions extension; Phalanx adds -fsycl-allow-virtual-functions to those tests (default=OFF)."
+  OFF )
+IF (Kokkos_ENABLE_SYCL)
+  MESSAGE(STATUS "Virtual functions on SYCL device: ${${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE}")
+ENDIF()
 
 # Experimental device dag support
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEVICE_DAG
@@ -115,9 +99,19 @@ MESSAGE(STATUS "Experimental Device DAG support: ${PHX_ENABLE_DEVICE_DAG}")
 
 # Enforce that if device type is cuda and device dag enabled then relocatable device code must be enabled
 IF(${PACKAGE_NAME}_ENABLE_DEVICE_DAG)
-  IF(PHX_KOKKOS_DEVICE_TYPE_CUDA)
+  IF(Kokkos_ENABLE_CUDA)
     IF(NOT Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE)
-      MESSAGE(FATAL_ERROR, " Enabling ${PACKAGE_NAME}_ENABLE_DEVICE_DAG support with a CUDA device type in Phalanx requires compilation with relocatable device code! Please reconfigure with Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=ON.")
+      MESSAGE(FATAL_ERROR " Enabling ${PACKAGE_NAME}_ENABLE_DEVICE_DAG support with a CUDA device type in Phalanx requires compilation with relocatable device code! Please reconfigure with Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=ON.")
+    ENDIF()
+  ENDIF()
+  # The device DAG dispatches through PHX::DeviceEvaluator's virtual functions
+  # inside a kernel, which SYCL only supports through the experimental
+  # sycl_ext_oneapi_virtual_functions extension.
+  IF(Kokkos_ENABLE_SYCL)
+    IF(NOT ${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE)
+      MESSAGE(FATAL_ERROR "Phalanx configure ERROR: ${PACKAGE_NAME}_ENABLE_DEVICE_DAG calls virtual functions from device code, which SYCL does not support. Reconfigure with ${PACKAGE_NAME}_ENABLE_DEVICE_DAG=OFF, or set ${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE=ON to try it with the experimental sycl_ext_oneapi_virtual_functions extension.")
+    ELSE()
+      MESSAGE(WARNING "Phalanx: ${PACKAGE_NAME}_ENABLE_DEVICE_DAG on SYCL needs -fsycl-allow-virtual-functions on every translation unit that compiles a DeviceEvaluator, including in downstream packages, so Phalanx cannot add it for you. Put it in CMAKE_CXX_FLAGS yourself.")
     ENDIF()
   ENDIF()
 ENDIF()
@@ -128,9 +122,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT
   OFF )
 MESSAGE(STATUS "Experimental Kokkos AMT support: ${PHX_ENABLE_KOKKOS_AMT}")
 IF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
-  IF(PHX_KOKKOS_DEVICE_TYPE_THREAD)
-  MESSAGE(FATAL_ERROR "Phalanx configure ERROR: Kokkos AMT support is enabled but is not implemented for Pthreads execution space. Please change your execution space or disable AMT support in Phalanx.")
-ENDIF()
+  # Kokkos picks Threads as the default execution space only when no GPU
+  # backend and no OpenMP is enabled, so mirror that order here.
+  IF(Kokkos_ENABLE_THREADS AND NOT Kokkos_ENABLE_OPENMP AND
+     NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_HIP AND NOT Kokkos_ENABLE_SYCL)
+    MESSAGE(FATAL_ERROR "Phalanx configure ERROR: Kokkos AMT support is enabled but is not implemented for Pthreads execution space. Please change your execution space or disable AMT support in Phalanx.")
+  ENDIF()
 ENDIF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
 
 # For use by Phalanx and Panzer unit tests

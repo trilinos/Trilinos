@@ -30,48 +30,23 @@
 
 namespace PHX {
 
-#if defined(PHX_KOKKOS_DEVICE_TYPE_CUDA)
-  using Device = Kokkos::Cuda;
-#elif defined(PHX_KOKKOS_DEVICE_TYPE_HIP)
-  using Device = Kokkos::HIP;
-#elif defined(PHX_KOKKOS_DEVICE_TYPE_SYCL)
-  using Device = Kokkos::SYCL;
-#elif defined(PHX_KOKKOS_DEVICE_TYPE_OPENMP)
-  using Device = Kokkos::OpenMP;
-#elif defined(PHX_KOKKOS_DEVICE_TYPE_THREAD)
-  #include <Kokkos_hwloc.hpp>
-  using Device = Kokkos::Threads;
-#elif defined(PHX_KOKKOS_DEVICE_TYPE_SERIAL)
-  using Device = Kokkos::Serial;
-#endif
+  // Phalanx_DEFAULT_EXECUTION_SPACE and Phalanx_DEFAULT_MEMORY_SPACE are
+  // configured as free-form type names, so a plausible-looking mistake -- a
+  // memory space in the execution space slot, say -- otherwise surfaces much
+  // later as an unreadable template error.
+  static_assert(Kokkos::is_execution_space_v<PHX::DefaultExecutionSpace>,
+                "Phalanx: the type configured through "
+                "Phalanx_DEFAULT_EXECUTION_SPACE is not a Kokkos execution "
+                "space.");
+  static_assert(Kokkos::is_memory_space_v<PHX::DefaultMemorySpace>,
+                "Phalanx: the type configured through "
+                "Phalanx_DEFAULT_MEMORY_SPACE is not a Kokkos memory space.");
 
   using exec_space = PHX::Device::execution_space;
   using mem_space  = PHX::Device::memory_space;
 
   using ExecSpace  = PHX::Device::execution_space;
   using MemSpace   = PHX::Device::memory_space;
-
-}
-
-// ***************************************
-// * INDEX SIZE TYPE
-// ***************************************
-
-namespace PHX {
-
-#if defined(PHX_INDEX_SIZE_TYPE_KOKKOS)
-  typedef PHX::Device::size_type index_size_type;
-#elif defined(PHX_INDEX_SIZE_TYPE_INT)
-  typedef int index_size_type;
-#elif defined(PHX_INDEX_SIZE_TYPE_UINT)
-  typedef unsigned int index_size_type;
-#elif defined(PHX_INDEX_SIZE_TYPE_LONGINT)
-  typedef long int index_size_type;
-#elif defined(PHX_INDEX_SIZE_TYPE_ULONGINT)
-  typedef unsigned long int index_size_type;
-#endif
-
-  using index_t = index_size_type;
 
 }
 
@@ -91,16 +66,25 @@ namespace PHX {
 
 #if defined(SACADO_GPU_HIERARCHICAL_DFAD) || defined(SACADO_GPU_HIERARCHICAL)
 
-  // Contiguous layout with FAD stride of 32 for cuda warp of 64 for
-  // HIP warp.  IMPORTANT: The FadStride must be the same as the
-  // vector_size in the Kokkos::TeamPolicy constructor. This value is
-  // only used for SFad and SLFad, not for DFad.
+  // Contiguous layout whose FAD stride is the width of the vector
+  // dimension: a warp on Cuda, a wavefront on HIP, a sub-group on SYCL.
+  // IMPORTANT: The FadStride must be the same as the vector_size in the
+  // Kokkos::TeamPolicy constructor. This value is only used for SFad and
+  // SLFad, not for DFad.
 #if defined(KOKKOS_ENABLE_CUDA)
-  using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
 #elif defined(KOKKOS_ENABLE_HIP)
-  using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,64>;
+  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,64>;
+#elif defined(KOKKOS_ENABLE_SYCL)
+  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
+#elif defined(KOKKOS_ENABLE_SERIAL) || defined(KOKKOS_ENABLE_OPENMP) ||        \
+      defined(KOKKOS_ENABLE_THREADS)
+  // A host backend has no vector dimension to partition, so hierarchical is a
+  // no-op here.  Carried anyway so the hierarchical code paths still compile
+  // on a CPU-only build.
+  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,1>;
 #else
-  using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
+#error "Phalanx: hierarchical parallelism is enabled but no FAD stride is defined for this backend.  The stride must equal the vector_size passed to Kokkos::TeamPolicy, so it cannot be guessed -- add a branch above for the new backend, or build without Sacado_ENABLE_HIERARCHICAL / Sacado_ENABLE_HIERARCHICAL_DFAD."
 #endif
 
 #else

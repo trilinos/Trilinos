@@ -554,12 +554,14 @@ void deep_copy_view(const Kokkos::View<DstArgs...> &dst, const SrcT &src) {
       total_extent *= dst.extent(r);
   }
 
-  // It looks like SFAD only works with 64 wide vector in HIP
-#ifdef KOKKOS_ENABLE_HIP
-  size_t vector_size = 64;
-#else
-  size_t vector_size = 32;
-#endif
+  // The vector width has to be the layout's scalar stride.  The functor
+  // partitions the source with that compile-time stride but the destination
+  // handle is partitioned by the width this launch actually delivers, so a
+  // hardcoded width copies component 0 into every component whenever the two
+  // disagree -- as they do for LayoutContiguous<Layout,1>.  ViewScalarStride
+  // is 1 for a plain layout and N for LayoutContiguous<Layout,N>, which is
+  // where the 64 HIP wants comes from.
+  constexpr size_t vector_size = Sacado::ViewScalarStride<view_t>::stride;
 
   // Just arbitraryly using team_size = 1 for low concurrency backends (i.e.
   // CPUs)

@@ -233,14 +233,37 @@ namespace panzer {
 
 }
 
-template Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double, double> > panzer::createIntrepid2Basis<PHX::Device::execution_space,double, double>(const std::string, int, const shards::CellTopology &);
+// Instantiate for every execution space Kokkos has enabled.  Each backend macro
+// names a distinct concrete type, so no two of these can be the same
+// specialization, and whatever PHX::Device::execution_space and
+// Kokkos::DefaultHostExecutionSpace happen to be is necessarily among them.
+// Naming those two directly instead would require knowing whether they are the
+// same type, which the preprocessor cannot work out.
+#define PANZER_INSTANTIATE_INTREPID2_BASIS(SPACE)                             \
+  template Teuchos::RCP<Intrepid2::Basis<SPACE,double,double> >               \
+  panzer::createIntrepid2Basis<SPACE,double,double>(                          \
+      const std::string, int, const shards::CellTopology &);                  \
+  template Teuchos::RCP<Intrepid2::Basis<SPACE,double,double> >               \
+  panzer::createIntrepid2Basis<SPACE,double,double>(                          \
+      const std::string, int, const Teuchos::RCP<const shards::CellTopology> &);
 
-template Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double, double> > panzer::createIntrepid2Basis<PHX::Device::execution_space,double, double>(const std::string, int, const Teuchos::RCP<const shards::CellTopology> &);
-
-#if defined(PHX_KOKKOS_DEVICE_TYPE_CUDA) || defined(PHX_KOKKOS_DEVICE_TYPE_HIP) || defined(PHX_KOKKOS_DEVICE_TYPE_SYCL)
-
-template Teuchos::RCP<Intrepid2::Basis<Kokkos::DefaultHostExecutionSpace, double, double >> panzer::createIntrepid2Basis<Kokkos::DefaultHostExecutionSpace, double, double>(const std::string, int, const shards::CellTopology &);
-
-template Teuchos::RCP<Intrepid2::Basis<Kokkos::DefaultHostExecutionSpace,double, double> > panzer::createIntrepid2Basis<Kokkos::DefaultHostExecutionSpace,double, double>(const std::string, int, const Teuchos::RCP<const shards::CellTopology> &);
-
+#if defined(KOKKOS_ENABLE_SERIAL)
+PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::Serial)
 #endif
+#if defined(KOKKOS_ENABLE_OPENMP)
+PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::OpenMP)
+#endif
+#if defined(KOKKOS_ENABLE_THREADS)
+PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::Threads)
+#endif
+#if defined(KOKKOS_ENABLE_CUDA)
+PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::Cuda)
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::HIP)
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::SYCL)
+#endif
+
+#undef PANZER_INSTANTIATE_INTREPID2_BASIS

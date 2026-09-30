@@ -47,9 +47,11 @@ namespace {
     // Demonstrate getting a nonconst view from a const view
     auto tmp_c = PHX::getNonConstDynRankViewFromConstMDField<Scalar>(c);
 
-    Kokkos::MDRangePolicy<exec_t,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_pts,num_equations});
-    Kokkos::parallel_for("use non-const DynRankView from const View",policy,KOKKOS_LAMBDA (const int cell,const int pt,const int eq) {
-      tmp_c(cell,pt,eq) = tmp_a(cell,pt,eq) + tmp_b(cell,pt,eq);
+    // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
+    Kokkos::parallel_for("use non-const DynRankView from const View",num_cells,KOKKOS_LAMBDA (const int cell) {
+      for (int pt=0; pt < num_pts; ++pt)
+        for (int eq=0; eq < num_equations; ++eq)
+          tmp_c(cell,pt,eq) = tmp_a(cell,pt,eq) + tmp_b(cell,pt,eq);
     });
     exec_t().fence();
   }
@@ -83,10 +85,14 @@ TEUCHOS_UNIT_TEST(NonConstDynRankViewFromView,FAD) {
   non_const_mdfield<ScalarType> c("c","layout",num_cells,num_pts,num_equations,num_derivatives);
   auto tmp_a = a.get_static_view();
   auto tmp_b = b.get_static_view();
-  Kokkos::MDRangePolicy<exec_t,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_pts,num_equations});
-  Kokkos::parallel_for("initialize fads",policy,KOKKOS_LAMBDA (const int cell,const int pt,const int eq) {
-    tmp_a(cell,pt,eq).val() = 2.0;
-    tmp_b(cell,pt,eq).val() = 3.0;
+  // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
+  Kokkos::parallel_for("initialize fads",num_cells,KOKKOS_LAMBDA (const int cell) {
+    for (int pt=0; pt < num_pts; ++pt) {
+      for (int eq=0; eq < num_equations; ++eq) {
+        tmp_a(cell,pt,eq).val() = 2.0;
+        tmp_b(cell,pt,eq).val() = 3.0;
+      }
+    }
   });
   exec_t().fence();
 
