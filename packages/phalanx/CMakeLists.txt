@@ -37,6 +37,17 @@ MESSAGE(STATUS "Default Execution Space: ${${PACKAGE_NAME}_DEFAULT_EXECUTION_SPA
 MESSAGE(STATUS "Default Memory Space: ${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}")
 MESSAGE(STATUS "Index Size Type: ${${PACKAGE_NAME}_INDEX_SIZE_TYPE}")
 
+# Shared space is not wired up yet.  The option sets
+# Phalanx_DEFAULT_MEMORY_SPACE, but PHX::Device is still an execution space
+# rather than a Kokkos::Device, so PHX::mem_space comes from
+# PHX::Device::memory_space and the configured memory space is never consulted
+# -- with Cuda you would get CudaSpace, not CudaUVMSpace.  Refuse the option
+# rather than silently ignore it.  Remove this once the Kokkos::Device form of
+# PHX::Device in Phalanx_config.hpp.in is switched on.
+IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE)
+  MESSAGE(FATAL_ERROR "ERROR (Phalanx): ${PACKAGE_NAME}_ENABLE_SHARED_SPACE is not implemented yet. PHX::Device is still an execution space, so PHX::mem_space is taken from PHX::Device::memory_space and the shared memory space would have no effect. Reconfigure with ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=OFF.")
+ENDIF()
+
 IF (${${PACKAGE_NAME}_ENABLE_SHARED_SPACE} AND NOT "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}" STREQUAL "Kokkos::SharedSpace")
   MESSAGE(FATAL_ERROR "ERROR (Phalanx): You cannot enable SharedSpace and set the default memory space. Do one or the other.")
 ENDIF()
