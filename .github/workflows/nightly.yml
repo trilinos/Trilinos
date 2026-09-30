@@ -11,10 +11,6 @@ permissions:
   contents: read
 
 
-# TODO:
-# - Cancel any job runs with previous successful runs (working tree hash)
-
-
 jobs:
   cuda-kokkos-bounds-check:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
@@ -42,6 +38,7 @@ jobs:
       dashboard-build-name: ${AT2_IMAGE}_debug_shared_address-sanitizer
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      extra-pr-driver-args: --extra-configure-args=-D;CTEST_TEST_TIMEOUT=1200
 
   coverage-check:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
@@ -55,6 +52,7 @@ jobs:
       dashboard-build-name: ${AT2_IMAGE}_debug_shared_coverage
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      extra-pr-driver-args: --extra-configure-args=-D;CTEST_TEST_TIMEOUT=1200
 
   cxx23:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
