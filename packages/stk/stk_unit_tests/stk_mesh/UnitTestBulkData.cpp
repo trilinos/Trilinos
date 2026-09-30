@@ -75,6 +75,7 @@
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
 #include "stk_unit_test_utils/stk_mesh_fixtures/RingFixture.hpp"  // for RingFixture
+#include <stk_unit_test_utils/TextMesh.hpp>
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include <gtest/gtest.h>
 #include <stk_mesh/base/Comm.hpp>
@@ -2390,9 +2391,8 @@ TEST(BulkData, testCommList)
     {
       bulk.modification_end();
     }
-    catch(const std::exception & X)
+    catch(const std::exception &)
     {
-      std::cout<<X.what()<<std::endl;
       failed = true;
     }
     EXPECT_FALSE(failed);
@@ -3083,13 +3083,6 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     EXPECT_TRUE( sharedNodeB == bulk.begin_nodes(element0)[1]);
   }
 
-{
-stk::parallel_machine_barrier(bulk.parallel());
-std::ostringstream os;
-os<<"P"<<bulk.parallel_rank()<<" about to call mod-end"<<std::endl;
-std::cerr<<os.str();
-stk::parallel_machine_barrier(bulk.parallel());
-}
   bulk.modification_end();
 
   {
@@ -5269,11 +5262,11 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
 
 void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk::ParallelMachine pm = stk::parallel_machine_world();
   const int parallel_size = stk::parallel_machine_size(pm);
   const int parallel_rank = stk::parallel_machine_rank(pm);
 
-  if (parallel_size != 2) return;
+  if (parallel_size != 2) { GTEST_SKIP(); }
 
   // This test will create a two-element mesh (quad4 elements)
   // in 2 blocks in parallel.  Both elements will start out in block_1
@@ -5284,78 +5277,28 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   stk::mesh::MetaData& meta= bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& mesh = *bulkPtr;
 
-  //declare 'block_1' which will hold element 1
-  stk::mesh::Part& block_1 = meta.declare_part("block_1", stk::topology::ELEMENT_RANK);
-  stk::mesh::set_topology(block_1, stk::topology::QUAD_4_2D);
-  stk::mesh::Part& block_2 = meta.declare_part("block_2", stk::topology::ELEMENT_RANK);
-  stk::mesh::set_topology(block_2, stk::topology::QUAD_4_2D);
+  stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
+  stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_2", stk::topology::QUAD_4_2D);
 
-  stk::mesh::Selector all_nodes = meta.universal_part();
-
-  //declare a field for coordinates
-  typedef stk::mesh::Field<double> CoordFieldType;
-  CoordFieldType& coordField = meta.declare_field<double>(stk::topology::NODE_RANK, "model_coordinates");
-  stk::mesh::put_field_on_mesh(coordField, all_nodes, 2, nullptr);
   stk::mesh::Field<double>& oneField = meta.declare_field<double>(stk::topology::NODE_RANK, "field_of_one");
-  stk::mesh::put_field_on_mesh(oneField, block_1, nullptr);
+  double initValZero = 0.0;
+  stk::mesh::put_field_on_mesh(oneField, block_1, &initValZero);
 
-  meta.commit();
-  mesh.modification_begin();
+  std::string meshDesc =
+    "0,1,QUAD_4_2D,1,2,5,6,block_1\n"
+    "1,2,QUAD_4_2D,2,3,4,5,block_1\n"
+    "|dimension:2";
 
-  const size_t nodesPerElem = 4;
-  const size_t numNodes = 6;
+  std::vector<double> coords = {-1,0, 0,0, 1,0, 1,1, 0,1, -1,1};
+  stk::unit_test_util::setup_text_mesh(mesh, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
 
-  double xCoords[numNodes] = { -1.,  0.,  1.,  1.,  0., -1. };
-  double yCoords[numNodes] = {  0.,  0.,  0.,  1.,  1.,  1. };
-  int elem_nodes0[] = {0, 1, 4, 5};
-  int elem_nodes1[] = {1, 2, 3, 4};
-  int * elem_nodes[] = { elem_nodes0, elem_nodes1 };
-
-  //Next create nodes and set up connectivity to use later for creating the element.
-  stk::mesh::EntityIdVector connected_nodes(nodesPerElem);
-  for(size_t n=0; n<nodesPerElem; ++n) {
-    size_t e = parallel_rank;
-    stk::mesh::EntityId nodeGlobalId = elem_nodes[e][n]+1;
-
-    stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeGlobalId);
-    if (!mesh.is_valid(node))
-    {
-      node = mesh.declare_node(nodeGlobalId);
-    }
-
-    connected_nodes[n] = nodeGlobalId;
-  }
+  //'oneField' was initialized with zeros, but we now put 1.0 in it everywhere:
+  stk::mesh::field_fill(1.0, oneField);
 
   stk::mesh::Entity node2 = mesh.get_entity(stk::topology::NODE_RANK, 2);
   stk::mesh::Entity node5 = mesh.get_entity(stk::topology::NODE_RANK, 5);
-
-  int otherProc = 1 - parallel_rank;
-  mesh.add_node_sharing(node2, otherProc);
-  mesh.add_node_sharing(node5, otherProc);
-
-  std::vector<stk::mesh::Entity> nodes;
-  stk::mesh::get_entities(mesh, stk::topology::NODE_RANK, nodes);
-  auto coordData = coordField.data<stk::mesh::ReadWrite>();
-  for (size_t n=0; n<nodes.size(); ++n)
-  {
-    stk::mesh::Entity node = nodes[n];
-    int node_id = mesh.identifier(node);
-
-    auto coords = coordData.entity_values(node);
-    coords(0_comp) = xCoords[node_id-1];
-    coords(1_comp) = yCoords[node_id-1];
-  }
-
-  //create 1 element per processor
-  stk::mesh::EntityId elemId = parallel_rank + 1;
-  stk::mesh::Entity element = stk::mesh::declare_element(mesh, block_1, elemId, connected_nodes );
-
-  mesh.modification_end();
-
-  stk::mesh::field_fill(1.0, oneField);
-
-  EXPECT_TRUE(mesh.is_valid(node2));
-  EXPECT_TRUE(mesh.is_valid(node5));
+  EXPECT_TRUE(mesh.bucket(node2).shared());
+  EXPECT_TRUE(mesh.bucket(node5).shared());
 
   // check that shared nodes are members of block_1
   EXPECT_TRUE(mesh.bucket(node2).member(block_1));
@@ -5363,7 +5306,7 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
 
   // check that all nodes of block_1 have the correct value
   std::vector<stk::mesh::Entity> block_1_nodes;
-  stk::mesh::get_selected_entities(stk::mesh::Selector(block_1), mesh.buckets( stk::topology::NODE_RANK ), block_1_nodes);
+  stk::mesh::get_entities(mesh, stk::topology::NODE_RANK, block_1, block_1_nodes);
   auto oneFieldData = oneField.data();
   for(size_t n=0; n<block_1_nodes.size(); ++n)
   {
@@ -5375,18 +5318,18 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   //
   // now switch the element on proc0 to block_2
   //
-  mesh.modification_begin();
+  stk::mesh::PartVector addParts, remParts;
+  stk::mesh::EntityVector elements;
 
   if (0 == parallel_rank)
   {
-    stk::mesh::PartVector add_parts(1, &block_2);
-    stk::mesh::PartVector remove_parts(1, &block_1);
+    addParts = { &block_2 };
+    remParts = { &block_1 };
 
-    element = mesh.get_entity(stk::topology::ELEMENT_RANK, elemId);
-    mesh.change_entity_parts(element, add_parts, remove_parts);
+    elements = { mesh.get_entity(stk::topology::ELEM_RANK, 1) };
   }
 
-  mesh.modification_end();
+  mesh.batch_change_entity_parts(elements, addParts, remParts);
 
   // check that shared nodes are now members of both blocks
   EXPECT_TRUE(mesh.bucket(node2).member(block_1));
@@ -5394,8 +5337,8 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   EXPECT_TRUE(mesh.bucket(node2).member(block_2));
   EXPECT_TRUE(mesh.bucket(node5).member(block_2));
 
-  // check that all nodes of block_1 have the correct value
-  stk::mesh::get_selected_entities(stk::mesh::Selector(block_1), mesh.buckets( stk::topology::NODE_RANK ), block_1_nodes);
+  // check that all nodes of block_1 still have the correct value
+  stk::mesh::get_entities(mesh, stk::topology::NODE_RANK, block_1, block_1_nodes);
   oneFieldData = oneField.data();
   for(size_t n=0; n<block_1_nodes.size(); ++n)
   {

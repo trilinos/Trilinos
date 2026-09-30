@@ -154,15 +154,12 @@ TEST(UnitTestingOfBulkData, node_sharing)
   mesh.declare_relation( createdElem, createdNodes[3], 3 );
 
   // Declare all processors that share any of our nodes
-  std::ostringstream oss;
   for (unsigned i = 0; i < numSharings; ++i)
   {
     Entity node = mesh.get_entity(stk::topology::NODE_RANK, sharingInfo[p_rank][i*2]);
-    oss << "P" << p_rank << ": entity " << node << " = " <<  mesh.entity_key(node) << std::endl;
     int sharingProc = sharingInfo[p_rank][i*2+1];
     mesh.add_node_sharing(node, sharingProc);
   }
-  std::cout << oss.str() << std::flush;
 
   mesh.modification_end();
 
@@ -418,7 +415,6 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
   if (doNew)
   {
     mesh.declare_node(sharingInfo1[p_rank][0], stk::mesh::ConstPartVector{&node_part}) ;
-    std::cout << "P[" << p_rank << "] declared node= " << sharingInfo1[p_rank][0] << std::endl;
   }
 
   // Add relations to nodes
@@ -441,7 +437,6 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
     {
       int sharingProc = sharingInfo1[p_rank][i*2+1];
       Entity node = mesh.get_entity(stk::topology::NODE_RANK, sharingInfo1[p_rank][i*2]);
-      std::cout << "P[" << p_rank << "] add_node_sharing node= " << sharingInfo1[p_rank][i*2] << " sharingProc= " << sharingProc <<  " is_valid= " << mesh.is_valid(node) << std::endl;
       mesh.add_node_sharing(node, sharingProc);
     }
   }

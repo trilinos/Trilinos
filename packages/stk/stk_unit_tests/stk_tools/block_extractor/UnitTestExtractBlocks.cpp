@@ -38,6 +38,8 @@
 #include <stk_unit_test_utils/BuildMesh.hpp>
 #include <stk_tools/block_extractor/ExtractBlocks.hpp>
 #include "stk_mesh/base/Entity.hpp"
+#include <stk_io/WriteMesh.hpp>
+#include <unistd.h>                     // for unlink
 
 namespace
 {
@@ -170,6 +172,27 @@ TEST_F(MeshWithTwoBlocks, getOneBlockAndOneNodeset)
   EXPECT_EQ(expectedNumNode, counts[stk::topology::NODE_RANK]);
 
 }
+
+TEST_F(MeshWithTwoBlocks, extractBlockInAssembly)
+{
+  if (get_parallel_size() != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                         "0,2,HEX_8,5,6,7,8,9,10,11,12,block_2"
+                         "|assembly:type=block; member=block_1";
+
+  stk::io::fill_mesh("textmesh:"+meshDesc, get_bulk());
+
+  std::shared_ptr<stk::mesh::BulkData> outBulkPtr = build_mesh(get_comm());
+  stk::tools::extract_blocks(get_bulk(), *outBulkPtr, {"block_1"});
+  stk::tools::impl::remove_io_attribute_from_empty_parts(*outBulkPtr);
+
+  const std::string outputFilename("two_block_with_assembly.g");
+  EXPECT_NO_THROW(stk::io::write_mesh(outputFilename, *outBulkPtr));
+  unlink(outputFilename.c_str());
+}
+
 
 class MeshWithOneBlock : public stk::unit_test_util::MeshFixture
 {

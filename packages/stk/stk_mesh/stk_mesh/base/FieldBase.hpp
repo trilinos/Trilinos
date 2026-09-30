@@ -1416,12 +1416,14 @@ void field_datatype_execute(const FieldBase& fieldBase, F&& f, Args&&... args)
   else if (fieldBase.type_is<signed char>()) {
     std::forward<F>(f).template operator()<signed char>(fieldBase, std::forward<Args>(args)...);
   }
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after July 2026
   else if (fieldBase.type_is<std::complex<double>>()) {
     std::forward<F>(f).template operator()<std::complex<double>>(fieldBase, std::forward<Args>(args)...);
   }
   else if (fieldBase.type_is<std::complex<float>>()) {
     std::forward<F>(f).template operator()<std::complex<float>>(fieldBase, std::forward<Args>(args)...);
   }
+#endif
   else if (fieldBase.type_is<Kokkos::complex<double>>()) {
     std::forward<F>(f).template operator()<Kokkos::complex<double>>(fieldBase, std::forward<Args>(args)...);
   }
