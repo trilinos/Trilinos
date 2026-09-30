@@ -551,7 +551,7 @@ class TrilinosPRConfigurationBase(object):
 
         Nightly, Continuous, Experimental
         """
-        if self.arg_pullrequest_cdash_track in ["Pull Request", "Experimental"]:
+        if self.arg_pullrequest_cdash_track in ["Pull Request", "Pull Request (Non-blocking)", "Experimental"]:
             return "Experimental"
         return "Nightly"
 
