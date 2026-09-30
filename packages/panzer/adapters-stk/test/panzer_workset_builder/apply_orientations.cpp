@@ -85,7 +85,7 @@ testApplyOrientations(const bool by_container,
     // Build an intrepid basis and a related field pattern for seeding the DOFManager
     {
       const auto & cell_topology = *mesh->getCellTopology(element_block);
-      auto intrepid_basis = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>(basis.getType(),basis.getOrder(), cell_topology);
+      auto intrepid_basis = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(basis.getType(),basis.getOrder(), cell_topology);
       auto field_pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(intrepid_basis));
 
       // Add arbitrary field to dof manager to lock in the field pattern

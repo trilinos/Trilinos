@@ -859,11 +859,11 @@
       if (useIntrepid)
       { 
         const unsigned ndim = cell_topo.getDimension();
-        Kokkos::DynRankView<double,Kokkos::HostSpace> param_coord("param_coord", ndim);
+        Kokkos::DynRankView<double,typename Kokkos::HostSpace::device_type> param_coord("param_coord", ndim);
 
         for (unsigned iNode = 0; iNode < cell_topo.getNodeCount(); iNode++)
           {              
-            Intrepid2::CellTools<Kokkos::HostSpace>::getReferenceNode(param_coord, cell_topo, iNode);
+            Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::getReferenceNode(param_coord, cell_topo, iNode);
             for(unsigned j = 0; j < ndim; ++j) {
               ref_topo_x[iNode].parametric_coordinates[j] = param_coord(j);
             }

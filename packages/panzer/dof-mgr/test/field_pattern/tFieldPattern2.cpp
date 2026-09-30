@@ -42,11 +42,11 @@ namespace panzer {
   // 2D tests
   /////////////////////////////////////////////
 
-  bool intrepid_equals(const RCP<Intrepid2::Basis<PHX::Device,double,double> > & basisA,
-                       const RCP<Intrepid2::Basis<PHX::Device,double,double> > & basisB,
+  bool intrepid_equals(const RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > & basisA,
+                       const RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > & basisB,
                        const std::string & file,int lineNo);
-  bool intrepid_same_geom(const RCP<Intrepid2::Basis<PHX::Device,double,double> > & basisA,
-                          const RCP<Intrepid2::Basis<PHX::Device,double,double> > & basisB,
+  bool intrepid_same_geom(const RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > & basisA,
+                          const RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > & basisB,
                           const std::string & file,int lineNo);
 
   // triangle tests
@@ -54,19 +54,19 @@ namespace panzer {
   {
     out << note << std::endl;
 
-    RCP<Intrepid2::Basis<PHX::Device,double,double> > basisA;
-    RCP<Intrepid2::Basis<PHX::Device,double,double> > basisB;
+    RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisA;
+    RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basisB;
 
     // test for same order
-    basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(4));
-    basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(4));
+    basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type,double,double>(4));
+    basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type,double,double>(4));
 
     TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
     TEST_ASSERT(intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
     // test for different  order
-    basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(4));
-    basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(3));
+    basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type,double,double>(4));
+    basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type,double,double>(3));
 
     TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
     TEST_ASSERT(not intrepid_equals(basisA,basisB,__FILE__,__LINE__));
@@ -81,8 +81,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(tFieldPattern, CloneAndEqualsOP)
   {
     // Build nodal Q1 and Q2
-    auto basis1 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(1));
-    auto basis2 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(2));
+    auto basis1 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type,double,double>(1));
+    auto basis2 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device::device_type,double,double>(2));
     RCP<const FieldPattern> fp1 = rcp(new Intrepid2FieldPattern(basis1));
     RCP<const FieldPattern> fp2 = rcp(new Intrepid2FieldPattern(basis2));
 
@@ -157,8 +157,8 @@ namespace panzer {
     TEST_ASSERT(*elem_fp == *elem_fp_clone);
   }
 
-  bool intrepid_equals(const RCP<Intrepid2::Basis<PHX::Device,double,double> > & basisA,
-                       const RCP<Intrepid2::Basis<PHX::Device,double,double> > & basisB,
+  bool intrepid_equals(const RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > & basisA,
+                       const RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > & basisB,
                        const std::string & file,int lineNo)
   {
     // notice if Intrepid2FieldPattern implements "equals" then this functionality
@@ -184,8 +184,8 @@ namespace panzer {
     return forward; // they are equal so that it shouldn't matter at this point
   }
 
-  bool intrepid_same_geom(const RCP<Intrepid2::Basis<PHX::Device,double,double> > & basisA,
-                          const RCP<Intrepid2::Basis<PHX::Device,double,double> > & basisB,
+  bool intrepid_same_geom(const RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > & basisA,
+                          const RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > & basisB,
                           const std::string & file,int lineNo)
   {
     // notice if Intrepid2FieldPattern implements "sameGeometry" then this functionality

@@ -78,13 +78,13 @@ namespace panzer {
     
     std::string fieldNameD2() const;
 
-    Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
+    Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> >
     getIntrepid2Basis() const;
 
-    template <typename ExecutionSpace,typename OutputValueType, typename PointValueType>
-    Teuchos::RCP< Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType> > 
+    template <typename DeviceType,typename OutputValueType, typename PointValueType>
+    Teuchos::RCP< Intrepid2::Basis<DeviceType,OutputValueType,PointValueType> >
     getIntrepid2Basis() const
-    { return panzer::createIntrepid2Basis<ExecutionSpace,OutputValueType,PointValueType>(type(), order(), *(getCellTopology())); }
+    { return panzer::createIntrepid2Basis<DeviceType,OutputValueType,PointValueType>(type(), order(), *(getCellTopology())); }
 
     EElementSpace getElementSpace() const
     { return element_space_; }
@@ -139,7 +139,7 @@ namespace panzer {
   private:
 
     Teuchos::RCP<const shards::CellTopology> topology_;
-    Teuchos::RCP< Intrepid2::Basis<PHX::Device::execution_space,double,double> > intrepid_basis_;
+    Teuchos::RCP< Intrepid2::Basis<PHX::Device::device_type,double,double> > intrepid_basis_;
 
     std::string basis_type_;
     std::string basis_name_;

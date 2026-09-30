@@ -31,7 +31,7 @@
 #include "energy_objectiveK.hpp"
 
 using RealT = double;
-using DeviceT = Kokkos::HostSpace;
+using DeviceT = typename Kokkos::HostSpace::device_type;
 
 template <class Real>
 Real evaluateUpperBound(const std::vector<Real> & coord) {

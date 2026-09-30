@@ -365,9 +365,9 @@
 
         // get parent cell integration points
         // Map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
-        CellTools<Kokkos::HostSpace>::mapToReferenceSubcell(xi,
-                                                 xi_c,
-                                                 2, i_face, cell_topo);  // FIXME magic
+        CellTools<typename Kokkos::HostSpace::device_type>::mapToReferenceSubcell(xi,
+                                                                                  xi_c,
+                                                                                  2, i_face, cell_topo);  // FIXME magic
 
         // get jacobian
         J(xi, cn, cell_topo);
@@ -379,7 +379,7 @@
         //fn(J, i_face, cell_topo);
         auto J_mda = J.copy("J_mda");
         MDArray fn_mda("fn_mda", im.m_Elements_Tag.num, numCubPoints_child, spaceDim);
-        CellTools<Kokkos::HostSpace>::getPhysicalFaceNormals(fn_mda, J_mda, i_face, cell_topo);
+        CellTools<typename Kokkos::HostSpace::device_type>::getPhysicalFaceNormals(fn_mda, J_mda, i_face, cell_topo);
 
         /// get norm of fn
         for (int icell = 0; icell < im.m_Elements_Tag.num; icell++)
