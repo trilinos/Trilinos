@@ -9,7 +9,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/bcstrategy)
 SET(UNIT_TEST_DRIVER
   ${PANZER_UNIT_TEST_MAIN})
 
-IF(NOT Phalanx_KOKKOS_DEVICE_TYPE STREQUAL "CUDA")
+IF(NOT Kokkos_ENABLE_CUDA)
   # the structure of this problem combined with repeated reinitialization
   # is causing real problems on CUDA... prevent it!
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
