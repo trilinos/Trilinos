@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,13 +30,14 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef STK_UTIL_UTIL_INDENTSTREAMBUF_HPP
 #define STK_UTIL_UTIL_INDENTSTREAMBUF_HPP
 
 #include <streambuf>
 #include <utility>
+#include <algorithm>
 
 namespace stk {
 
@@ -85,7 +86,7 @@ public:
    * Creates a new <b>basic_indent_streambuf</b> instance.
    *
    * @param indent_size		a <b>size_t</b> value of the number of spaces for each indentation
-   *                            level. 
+   *                            level.
    *
    * @param flags		an <b>unsigned int</b> value of Flags to enable or disable
    *                            BLANK_LINES and BRACES.
@@ -122,7 +123,7 @@ public:
 
   /**
    * @brief Member function <b>get_stream_buffer</b> returns the current destination output stream
-   * buffer. 
+   * buffer.
    *
    * @return			a <b>std::streambuf</b> pointer to the current destination output
    *                            stream buffer.
@@ -130,13 +131,13 @@ public:
   std::streambuf *get_stream_buffer() {
     return m_streamBuffer;
   }
-  
+
   /**
    * @brief Member function <b>set_indent_size</b> set the number of spaces to write for each
    * indentation level.
    *
    * @param indent_size		a <b>size_t</b> value of the number of spaces for each indentation
-   *                            level. 
+   *                            level.
    *
    */
   void set_indent_size(size_t indent_size) {
@@ -189,7 +190,7 @@ private:
    */
   void next_line() {
     if (m_nextIndentLevel > m_indentLevel) {
-      if (m_flags & BRACES) 
+      if (m_flags & BRACES)
 	m_streamBuffer->sputn(" {", 2);
       m_streamBuffer->sputc(Tr::to_int_type('\n'));
     }
@@ -253,7 +254,7 @@ public:
    * @param p			a <b>Ch</b> const pointer to the character string to write.
    *
    * @param n			a <b>std::streamsize</b> value of the number of characters in the
-   *                            string. 
+   *                            string.
    *
    * @return			a <b>std::streamsize</b> value of the number of characters os the
    *                            string which were interpreted or written.
@@ -328,7 +329,7 @@ public:
   }
 
   /**
-   * @brief Member function <b>sync</b> syncs the destination output stream buffer. 
+   * @brief Member function <b>sync</b> syncs the destination output stream buffer.
    *
    * @return			an <b>int</b> value result of the pub sync operation.
    */
@@ -339,7 +340,7 @@ public:
 private:
   basic_indent_streambuf(const basic_indent_streambuf &);
   basic_indent_streambuf &operator=(const basic_indent_streambuf &);
-  
+
 private:
   std::streambuf *	m_streamBuffer;         ///< Pointer to destination output stream buffer
   bool			m_atLineBegin;          ///< Flag indicating at beginning of line
@@ -401,7 +402,7 @@ operator<<(std::basic_ostream<Ch, Tr> &os, IndentFlags indent_flags) {
   basic_indent_streambuf<Ch, Tr> *osb = dynamic_cast<basic_indent_streambuf<Ch, Tr> *>(os.rdbuf());
   if (osb)
     osb->set_flags(indent_flags.m_flags);
-      
+
   return os;
 }
 
