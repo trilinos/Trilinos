@@ -729,12 +729,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       "  Please report this bug to the Tpetra developers.";
 
   Teuchos::RCP<crs_graph_type> graph = Teuchos::rcp(new crs_graph_type(rowMap, colMap, *source.getCrsGraph(), params));
-  graph->fillComplete();
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!graph->isFillComplete(), std::logic_error,
-                                        "CrsGraph constructor (RCP"
-                                        "<const Map>, RCP<const Map>, local_graph_device_type[, RCP<ParameterList>]) "
-                                        "did not produce a fill-complete graph.  Please report this bug to the "
-                                        "Tpetra developers.");
+  if (!graph->isFillComplete()) {
+    graph->fillComplete();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!graph->isFillComplete(), std::logic_error,
+                                          "CrsGraph constructor (RCP"
+                                          "<const Map>, RCP<const Map>, local_graph_device_type[, RCP<ParameterList>]) "
+                                          "did not produce a fill-complete graph.  Please report this bug to the "
+                                          "Tpetra developers.");
+  }
   // myGraph_ not null means that the matrix owns the graph.  This
   // is true because the column indices come in as nonconst through
   // the matrix, implying shared ownership.

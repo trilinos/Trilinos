@@ -511,6 +511,13 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   , indicesAreSorted_(originalGraph.indicesAreSorted_) {
   staticAssertions();
 
+  const char tfecfFuncName[] = "CrsGraph(Map,Map,CrsGraph)";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      originalGraph.getRowMap()->getLocalNumElements() != rowMap->getLocalNumElements(),
+      std::runtime_error,
+      ": The input row Map and the original graph need to have the same "
+      "number of rows.");
+
   int numRows        = rowMap->getLocalNumElements();
   size_t numNonZeros = originalGraph.getRowPtrsPackedHost()(numRows);
   auto rowsToUse     = Kokkos::pair<size_t, size_t>(0, numRows + 1);

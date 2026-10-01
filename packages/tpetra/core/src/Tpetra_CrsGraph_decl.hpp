@@ -405,7 +405,7 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   /// \brief Constructor specifying row and column Map and an existing graph to view.
   ///
   /// \param rowMap [in] Distribution of rows of the graph.
-  /// \param colMap [in] Distribution of rows of the graph.
+  /// \param colMap [in] Distribution of columns of the graph.
   /// \param originalGraph [in] The existing graph to view.
   ///
   /// \param params [in/out] Optional list of parameters.  If not
