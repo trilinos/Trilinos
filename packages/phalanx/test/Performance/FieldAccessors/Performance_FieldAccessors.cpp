@@ -39,7 +39,7 @@
 
 PHX_EXTENT(P)
 
-using size_type = PHX::exec_space::size_type;
+using size_type = PHX::ExecutionSpace::size_type;
 
 template <typename Scalar,typename Device,typename Array>
 class ComputeA {
@@ -47,7 +47,7 @@ class ComputeA {
   Array b_;
   Array c_;
 public:
-  typedef PHX::Device execution_space;
+  typedef PHX::ExecutionSpace execution_space;
 
   ComputeA(Array& a,Array& b,Array& c)
   : a_(a), b_(b), c_(c)
@@ -78,8 +78,8 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
   RCP<Time> k_time_pf_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(device="+PHX::print<PHX::Device>()+")");
 
   std::cout << std::endl << std::endl
-            << "PHX::Device::size_type = "
-            << PHX::print<PHX::exec_space::size_type>()
+            << "PHX::ExecutionSpace::size_type = "
+            << PHX::print<PHX::ExecutionSpace::size_type>()
             << std::endl;
 
   std::cout << "PHX::index_size_type = "
@@ -92,10 +92,10 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
   // slower.
   // const size_type num_loops = 1;
   // const size_type num_cells = 10000000;
-  // using kokkos_field_static = Kokkos::View<double[10000000][25][4],PHX::MemSpace>;
+  // using kokkos_field_static = Kokkos::View<double[10000000][25][4],PHX::MemorySpace>;
   const size_type num_loops = 1;
   const size_type num_cells = 100;
-  using kokkos_field_static = Kokkos::View<double[100][25][4],PHX::MemSpace>;
+  using kokkos_field_static = Kokkos::View<double[100][25][4],PHX::MemorySpace>;
   const size_type num_ip = 25;
   const size_type num_dim = 4;
 
@@ -112,8 +112,8 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     cout << "MDField Compiletime Rank" << endl;
     TimeMonitor tm(*phx_ct_time_pf);
     for (size_type l=0; l < num_loops; ++l) {
-      Kokkos::parallel_for("MDField (Compiletime Rank)",num_cells,ComputeA<double,PHX::ExecSpace,phx_ct_field> (a,b,c));
-      typename PHX::Device().fence();
+      Kokkos::parallel_for("MDField (Compiletime Rank)",num_cells,ComputeA<double,PHX::ExecutionSpace,phx_ct_field> (a,b,c));
+      typename PHX::ExecutionSpace().fence();
     }
   }
 
@@ -129,8 +129,8 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     cout << "MDField Runtime Rank" << endl;
     TimeMonitor tm(*phx_rt_time_pf);
     for (size_type l=0; l < num_loops; ++l) {
-      Kokkos::parallel_for("MDField (Runtime Rank)",num_cells,ComputeA<double,PHX::ExecSpace,phx_rt_field> (a,b,c));
-      typename PHX::Device().fence();
+      Kokkos::parallel_for("MDField (Runtime Rank)",num_cells,ComputeA<double,PHX::ExecutionSpace,phx_rt_field> (a,b,c));
+      typename PHX::ExecutionSpace().fence();
     }
   }
 
@@ -147,7 +147,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     TimeMonitor tm(*k_time_pf);
     for (size_type l=0; l < num_loops; ++l)
       Kokkos::parallel_for("Kokkos View",num_cells,ComputeA<double,PHX::Device,kokkos_field>(a,b,c));
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
   }
 
   // Static Kokkos View
@@ -164,7 +164,7 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     TimeMonitor tm(*k_time_pf_static);
     for (size_type l=0; l < num_loops; ++l)
       Kokkos::parallel_for("Kokkos Static View",num_cells,ComputeA<double,PHX::Device,kokkos_field_static>(a,b,c));
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
   }
 
   TimeMonitor::summarize();

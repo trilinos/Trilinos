@@ -183,20 +183,20 @@ Mesh::Mesh(const int num_elements_x,
   Kokkos::deep_copy(weights_, 1.0);
 
   // jac
-  Kokkos::TeamPolicy<PHX::exec_space> tp(nel_,Kokkos::AUTO());
+  Kokkos::TeamPolicy<PHX::ExecutionSpace> tp(nel_,Kokkos::AUTO());
   Kokkos::deep_copy(jac_,0.0);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeJac_Tag,PHX::exec_space>(nel_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeJac_Tag,PHX::ExecutionSpace>(nel_,Kokkos::AUTO()),*this);
 
   // inv_jac, det_jac
-  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeInvJac_Tag,PHX::exec_space>(nel_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeInvJac_Tag,PHX::ExecutionSpace>(nel_,Kokkos::AUTO()),*this);
 
   // qp coords
   Kokkos::deep_copy(qp_coords_,0.0);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeCoords_Tag,PHX::exec_space>(nel_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeCoords_Tag,PHX::ExecutionSpace>(nel_,Kokkos::AUTO()),*this);
 
   // transform basis gradients to real space
   Kokkos::deep_copy(grad_basis_real_,0.0);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeGradBasisReal_Tag,PHX::exec_space>(nel_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<ComputeGradBasisReal_Tag,PHX::ExecutionSpace>(nel_,Kokkos::AUTO()),*this);
 }
 
 //**********************************************************************

@@ -50,7 +50,7 @@ namespace PHX {
       : device_evaluator_(de), data_(data) {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    void operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
     {
       device_evaluator_.prepareForRecompute(team, data_);
       device_evaluator_.evaluate(team, data_);

@@ -33,14 +33,14 @@ void IntegrateSourceTerm<EvalT,Traits>::evaluateFields(typename Traits::EvalData
 #ifdef PHX_ENABLE_KOKKOS_AMT
   residual_atomic = residual.get_static_view();
 #endif
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void IntegrateSourceTerm<EvalT,Traits>::
-operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
 {
   const int cell = team.league_rank();
 
