@@ -39,7 +39,8 @@
 #include "stk_util/parallel/Parallel.hpp" 
 #include "stk_util/parallel/MPIDatatypeGenerator.hpp"
 #include <limits>
-#include <vector> 
+#include <vector>
+#include <type_traits>
 #include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
@@ -72,6 +73,11 @@ namespace stk {
   //
   template <typename T> inline int parallel_vector_concat(ParallelMachine comm, const std::vector<T>& localVec, std::vector<T>& globalVec )
   {
+    static_assert(std::is_trivially_destructible_v<T>,
+      "parallel_vector_concat's generic template byte-copies T across MPI; a type that "
+      "owns heap memory (e.g. std::string, sierra::String, std::vector) is not trivially "
+      "destructible and needs an explicit specialization whose declaring header is included "
+      "at the call site.");
     const unsigned p_size = parallel_machine_size( comm );
 
     //  Check for serial simplified early out condition
@@ -84,12 +90,13 @@ namespace stk {
 
     STK_ThrowRequireMsg(localVec.size() <= std::numeric_limits<int>::max(), "input vector length must fit in an int");
     int localSize = localVec.size();
+    const int my_rank = parallel_machine_rank( comm );
 
     //
     //  Determine the total number of bytes being sent by each other processor.
     //
     std::vector<int> messageSizes(p_size);
-    int mpiResult = MPI_SUCCESS ;  
+    int mpiResult = MPI_SUCCESS ;
     mpiResult = MPI_Allgather(&localSize, 1, MPI_INT, messageSizes.data(), 1, MPI_INT, comm);
     if(mpiResult != MPI_SUCCESS) {
       // Unknown failure, pass error code up the chain
@@ -102,28 +109,75 @@ namespace stk {
       totalSize += size;
     }
 
-    STK_ThrowRequireMsg(totalSize <= size_t(std::numeric_limits<int>::max()), "input vector length must fit in an int");
     globalVec.resize(totalSize);
 
     //
-    //  Compute the offsets into the resultant array
+    //  Compute the offsets into the resultant array.  Use size_t here since the total
+    //  concatenated size may exceed the range of an int (the per-processor size is
+    //  guaranteed to fit in an int by the check above).
     //
-    std::vector<int> offsets(p_size);
-    offsets[0] = 0;
+    std::vector<size_t> globalOffsets(p_size);
+    globalOffsets[0] = 0;
     for(unsigned iproc=1; iproc<p_size; ++iproc) {
-      offsets[iproc] = offsets[iproc-1] + messageSizes[iproc-1];
+      globalOffsets[iproc] = globalOffsets[iproc-1] + messageSizes[iproc-1];
     }
 
     //
     //  Do the all gather to copy the actual array data and propogate to all processors
-    //  Note, localVec should not be modified by the MPI call, but MPI does not guarntee the const in the 
+    //  Note, localVec should not be modified by the MPI call, but MPI does not guarntee the const in the
     //  interface argument.
     //
     T* ptrNonConst = const_cast<T*>(localVec.data());
     MPI_Datatype datatype = stk::generate_mpi_datatype<T>();
 
-    mpiResult = MPI_Allgatherv(ptrNonConst, localSize, datatype, globalVec.data(), messageSizes.data(), offsets.data(), datatype, comm);
-    return mpiResult;
+    //
+    //  MPI_Allgatherv expresses its receive counts and displacements as ints, so the
+    //  cumulative displacement into the receive buffer must fit in an int.  When the total
+    //  concatenated size exceeds the 32-bit int limit, split the transfer into multiple
+    //  MPI_Allgatherv calls over contiguous groups of processors, where each group's
+    //  combined size fits in an int.  For a given call, processors outside the current
+    //  group send and receive nothing.  Since messageSizes is identical on every processor,
+    //  the group decomposition (and thus the sequence of collective calls) is identical on
+    //  all processors.
+    //
+    const size_t maxCountPerCall = size_t(std::numeric_limits<int>::max());
+    std::vector<int> groupCounts(p_size);
+    std::vector<int> groupDispls(p_size);
+
+    unsigned groupStart = 0;
+    while(groupStart < p_size) {
+      //  Grow the group while its combined size stays within the int limit.  Each single
+      //  processor's size is <= int max (checked above), so every group holds at least one
+      //  processor and the loop always makes progress.
+      unsigned groupEnd = groupStart;
+      size_t groupSize = 0;
+      while(groupEnd < p_size && groupSize + size_t(messageSizes[groupEnd]) <= maxCountPerCall) {
+        groupSize += size_t(messageSizes[groupEnd]);
+        ++groupEnd;
+      }
+
+      const size_t groupBaseOffset = globalOffsets[groupStart];
+      for(unsigned iproc=0; iproc<p_size; ++iproc) {
+        const bool inGroup = (iproc >= groupStart && iproc < groupEnd);
+        groupCounts[iproc] = inGroup ? messageSizes[iproc] : 0;
+        groupDispls[iproc] = inGroup ? int(globalOffsets[iproc] - groupBaseOffset) : 0;
+      }
+
+      const bool selfInGroup = (my_rank >= int(groupStart) && my_rank < int(groupEnd));
+      const int sendCount = selfInGroup ? localSize : 0;
+
+      mpiResult = MPI_Allgatherv(ptrNonConst, sendCount, datatype,
+                                 globalVec.data() + groupBaseOffset,
+                                 groupCounts.data(), groupDispls.data(), datatype, comm);
+      if(mpiResult != MPI_SUCCESS) {
+        // Unknown failure, pass error code up the chain
+        return mpiResult;
+      }
+
+      groupStart = groupEnd;
+    }
+
+    return MPI_SUCCESS;
   }
 
 
@@ -205,6 +259,11 @@ namespace stk {
 
 #else
   template <typename T> inline int parallel_vector_concat(ParallelMachine comm, const std::vector<T>& localVec, std::vector<T>& globalVec ) {
+    static_assert(std::is_trivially_destructible_v<T>,
+      "parallel_vector_concat's generic template byte-copies T across MPI; a type that "
+      "owns heap memory (e.g. std::string, sierra::String, std::vector) is not trivially "
+      "destructible and needs an explicit specialization whose declaring header is included "
+      "at the call site.");
     globalVec = localVec;
     return 0;
 }
