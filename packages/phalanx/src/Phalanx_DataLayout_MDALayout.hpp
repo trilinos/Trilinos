@@ -53,21 +53,21 @@ namespace PHX {
 
     virtual bool operator==(const DataLayout& right) const override;
 
-    virtual PHX::Device::size_type rank() const override;
+    virtual PHX::ExecutionSpace::size_type rank() const override;
 
-    virtual PHX::Device::size_type dimension(size_type ordinal) const override;
+    virtual PHX::ExecutionSpace::size_type dimension(size_type ordinal) const override;
 
-    virtual PHX::Device::size_type extent(size_type ordinal) const override;
+    virtual PHX::ExecutionSpace::size_type extent(size_type ordinal) const override;
 
     virtual int extent_int(size_type ordinal) const override;
 
-    virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const override;
+    virtual void dimensions(std::vector<PHX::ExecutionSpace::size_type>& dim) const override;
 
     virtual std::string name(size_type ordinal) const override;
 
     virtual void names(std::vector<std::string>& names) const override;
 
-    virtual PHX::Device::size_type size() const override;
+    virtual PHX::ExecutionSpace::size_type size() const override;
 
     virtual PHX::DataLayout::KokkosLayoutType kokkosLayout() const override;
 
@@ -93,15 +93,15 @@ namespace PHX {
   protected:
 
     virtual void
-    setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents) override;
+    setExtentsOnDerivedClass(const std::vector<PHX::ExecutionSpace::size_type>& extents) override;
 
   private:
 
     std::vector<std::string> m_dim_name;
 
-    std::vector<PHX::Device::size_type> m_dim_size;
+    std::vector<PHX::ExecutionSpace::size_type> m_dim_size;
 
-    PHX::Device::size_type m_size;
+    PHX::ExecutionSpace::size_type m_size;
 
     std::string m_identifier;
 

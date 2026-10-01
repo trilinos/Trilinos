@@ -42,11 +42,27 @@ namespace PHX {
                 "Phalanx: the type configured through "
                 "Phalanx_DEFAULT_MEMORY_SPACE is not a Kokkos memory space.");
 
-  using exec_space = PHX::Device::execution_space;
-  using mem_space  = PHX::Device::memory_space;
+  //! The execution space Phalanx runs in.
+  using ExecutionSpace = PHX::Device::execution_space;
 
-  using ExecSpace  = PHX::Device::execution_space;
-  using MemSpace   = PHX::Device::memory_space;
+  //! The memory space Phalanx allocates in.
+  using MemorySpace = PHX::Device::memory_space;
+
+  // Earlier names for the two types above.  Phalanx accumulated several
+  // spellings of each; they all mean what ExecutionSpace and MemorySpace mean.
+  // Deprecated -- see packages/phalanx/scripts/migrate_phx_device.py.
+  // Configure with Phalanx_HIDE_DEPRECATED_CODE=ON to build as though they
+  // were already gone, which is how to check that code no longer needs them.
+#ifndef PHALANX_HIDE_DEPRECATED_CODE
+  using exec_space PHALANX_DEPRECATED_MSG("Use PHX::ExecutionSpace") =
+      PHX::ExecutionSpace;
+  using mem_space PHALANX_DEPRECATED_MSG("Use PHX::MemorySpace") =
+      PHX::MemorySpace;
+  using ExecSpace PHALANX_DEPRECATED_MSG("Use PHX::ExecutionSpace") =
+      PHX::ExecutionSpace;
+  using MemSpace PHALANX_DEPRECATED_MSG("Use PHX::MemorySpace") =
+      PHX::MemorySpace;
+#endif
 
 }
 
@@ -62,7 +78,7 @@ namespace PHX {
   template <typename T> 
   struct remove_all_pointers<T*>{using type = typename PHX::remove_all_pointers<T>::type;};
 
-  using DefaultDevLayout = PHX::exec_space::array_layout;
+  using DefaultDevLayout = PHX::ExecutionSpace::array_layout;
 
 #if defined(SACADO_GPU_HIERARCHICAL_DFAD) || defined(SACADO_GPU_HIERARCHICAL)
 

@@ -40,7 +40,7 @@ MESSAGE(STATUS "Default Memory Space: ${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}")
 # so existing configure scripts and caches keep working.
 SET(PHX_LEGACY_INDEX_SIZE_TYPES KOKKOS INT UINT LONGINT ULONGINT)
 SET(PHX_LEGACY_INDEX_SIZE_CXX_TYPES
-  "PHX::Device::size_type" "int" "unsigned int" "long int" "unsigned long int")
+  "PHX::ExecutionSpace::size_type" "int" "unsigned int" "long int" "unsigned long int")
 LIST(FIND PHX_LEGACY_INDEX_SIZE_TYPES "${${PACKAGE_NAME}_INDEX_SIZE_TYPE}" PHX_LEGACY_INDEX)
 IF (PHX_LEGACY_INDEX GREATER -1)
   LIST(GET PHX_LEGACY_INDEX_SIZE_CXX_TYPES ${PHX_LEGACY_INDEX} PHX_INDEX_SIZE_TYPE_CXX)
@@ -52,13 +52,13 @@ MESSAGE(STATUS "Index Size Type: ${PHX_INDEX_SIZE_TYPE_CXX}")
 
 # Shared space is not wired up yet.  The option sets
 # Phalanx_DEFAULT_MEMORY_SPACE, but PHX::Device is still an execution space
-# rather than a Kokkos::Device, so PHX::mem_space comes from
+# rather than a Kokkos::Device, so PHX::MemorySpace comes from
 # PHX::Device::memory_space and the configured memory space is never consulted
 # -- with Cuda you would get CudaSpace, not CudaUVMSpace.  Refuse the option
 # rather than silently ignore it.  Remove this once the Kokkos::Device form of
 # PHX::Device in Phalanx_config.hpp.in is switched on.
 IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE)
-  MESSAGE(FATAL_ERROR "ERROR (Phalanx): ${PACKAGE_NAME}_ENABLE_SHARED_SPACE is not implemented yet. PHX::Device is still an execution space, so PHX::mem_space is taken from PHX::Device::memory_space and the shared memory space would have no effect. Reconfigure with ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=OFF.")
+  MESSAGE(FATAL_ERROR "ERROR (Phalanx): ${PACKAGE_NAME}_ENABLE_SHARED_SPACE is not implemented yet. PHX::Device is still an execution space, so PHX::MemorySpace is taken from PHX::Device::memory_space and the shared memory space would have no effect. Reconfigure with ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=OFF.")
 ENDIF()
 
 IF (${${PACKAGE_NAME}_ENABLE_SHARED_SPACE} AND NOT "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}" STREQUAL "Kokkos::SharedSpace")

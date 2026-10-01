@@ -56,7 +56,7 @@ namespace {
 void PHX::set_enforce_no_default_stream_use()
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-  phalanx_default_stream_device_id = Kokkos::Tools::Experimental::device_id(PHX::Device());
+  phalanx_default_stream_device_id = Kokkos::Tools::Experimental::device_id(PHX::ExecutionSpace());
 
   Kokkos::Tools::Experimental::set_begin_parallel_for_callback(phalanx_kt_parallel_x_callback);
   Kokkos::Tools::Experimental::set_begin_parallel_reduce_callback(phalanx_kt_parallel_x_callback);

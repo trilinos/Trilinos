@@ -28,7 +28,7 @@ PHX::DeviceEvaluator<Traits>*
 ZeroContributedField<EvalT,Traits>::createDeviceEvaluator() const
 {
   using MyDevEval = typename std::conditional<std::is_same<EvalT,PHX::MyTraits::Residual>::value,MyDevEvalResidual,MyDevEvalJacobian>::type;
-  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(field.get_view());
+  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::ExecutionSpace,PHX::MemorySpace>(field.get_view());
 }
 
 //**********************************************************************

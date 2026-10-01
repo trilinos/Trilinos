@@ -171,7 +171,7 @@ Teuchos::StackedTimer:12.5579 [1] (0)
     PHX::View<Scalar**> a_;
 
   public:
-    using team_t =  Kokkos::TeamPolicy<PHX::exec_space>::member_type;
+    using team_t =  Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type;
 
     A_Evaluator() :
       num_cells(10000),
@@ -194,7 +194,7 @@ Teuchos::StackedTimer:12.5579 [1] (0)
             p_(c,p).fastAccessDx(p) = 1.0;
           }
         });
-        PHX::Device().fence();
+        PHX::ExecutionSpace().fence();
       } else {
         rho_ = PHX::View<Scalar**>("rho",num_cells,num_points);
         p_ = PHX::View<Scalar**>("p",num_cells,num_points);
@@ -208,8 +208,8 @@ Teuchos::StackedTimer:12.5579 [1] (0)
     void evaluate()
     {
       EquationOfState eos_tmp;
-      Kokkos::TeamPolicy<PHX::exec_space> policy(num_cells,Kokkos::AUTO(),1);
-      PHX::Device().fence();
+      Kokkos::TeamPolicy<PHX::ExecutionSpace> policy(num_cells,Kokkos::AUTO(),1);
+      PHX::ExecutionSpace().fence();
       Kokkos::parallel_for("compute a with return type",policy, KOKKOS_CLASS_LAMBDA (const team_t& team) {
         const int c = team.league_rank();
 	// implicit lambda capture outside of constexpr if (cuda restriction)
@@ -233,7 +233,7 @@ Teuchos::StackedTimer:12.5579 [1] (0)
           }
         });
       });
-      PHX::Device().fence();
+      PHX::ExecutionSpace().fence();
     }
 
     int check()
@@ -241,7 +241,7 @@ Teuchos::StackedTimer:12.5579 [1] (0)
         int num_failures = 0;
         const auto tol = 100.0 * std::numeric_limits<double>::epsilon();
         // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
-        PHX::Device().fence();
+        PHX::ExecutionSpace().fence();
         Kokkos::parallel_reduce("check results", num_cells, KOKKOS_CLASS_LAMBDA(const int c, int& count) {
           for (size_t p=0; p < num_points; ++p)
           {
@@ -269,7 +269,7 @@ Teuchos::StackedTimer:12.5579 [1] (0)
             }
           }
         }, num_failures);
-        PHX::Device().fence();
+        PHX::ExecutionSpace().fence();
 
         return num_failures;
     }

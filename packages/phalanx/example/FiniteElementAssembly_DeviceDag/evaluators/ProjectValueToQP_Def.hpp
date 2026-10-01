@@ -30,7 +30,7 @@ PHX::DeviceEvaluator<Traits>*
 ProjectValueToQP<EvalT,Traits>::createDeviceEvaluator() const
 {
   using MyDevEval = typename std::conditional<std::is_same<EvalT,PHX::MyTraits::Residual>::value,MyDevEvalResidual,MyDevEvalJacobian>::type;
-  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(field_at_basis.get_static_view(),
+  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::ExecutionSpace,PHX::MemorySpace>(field_at_basis.get_static_view(),
                                                                                      field_at_qp.get_static_view());
 }
 
@@ -40,7 +40,7 @@ void ProjectValueToQP<EvalT,Traits>::evaluateFields(typename Traits::EvalData wo
 {
   using MyDevEval = typename std::conditional<std::is_same<EvalT,PHX::MyTraits::Residual>::value,MyDevEvalResidual,MyDevEvalJacobian>::type;
   auto e = PHX::make_dev_eval(MyDevEval(field_at_basis.get_static_view(),field_at_qp.get_static_view()),workset);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
 
 //**********************************************************************

@@ -36,7 +36,7 @@ namespace phalanx_test {
     Kokkos::View<Scalar*,Layout,Device,Props...> k_;
 
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
 
     ComputeRhoFlat(Kokkos::View<Scalar**,Layout,Device,Props...> &rho,
 		   Kokkos::View<Scalar**,Layout,Device,Props...> &P,
@@ -64,7 +64,7 @@ namespace phalanx_test {
     Kokkos::View<Scalar*,Layout,Device,Props...> k_;
 
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
 
     ComputeRhoHierarchic(Kokkos::View<Scalar**,Layout,Device,Props...> &rho,
 			 Kokkos::View<Scalar**,Layout,Device,Props...> &P,
@@ -94,7 +94,7 @@ namespace phalanx_test {
     const int deriv_dim = 128;
 
     using FadType = Sacado::Fad::DFad<double>;
-    using DefaultLayout = typename PHX::Device::array_layout;
+    using DefaultLayout = typename PHX::ExecutionSpace::array_layout;
     // using DevLayout = DefaultLayout; // use preferred layout for device
     // using DevLayout = Kokkos::LayoutLeft;
     // using DevLayout = Kokkos::LayoutRight;
@@ -141,34 +141,34 @@ namespace phalanx_test {
     Kokkos::deep_copy(P, host_P);
     Kokkos::deep_copy(T, host_T);
     Kokkos::deep_copy(k, host_k);
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     const int num_samples = 10;
 
     Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("Jacobian Flat");
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
     for (int i=0; i < num_samples; ++i) {
       Teuchos::TimeMonitor tm(*timer);
       Kokkos::parallel_for(num_cells, ComputeRhoFlat<FadType,DevLayout,PHX::Device>(rho, P, T, k));
-      typename PHX::Device().fence();
+      typename PHX::ExecutionSpace().fence();
     }
 
     timer = Teuchos::TimeMonitor::getNewTimer("Jacobian Hierarchic (AUTO())");
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
     for (int i=0; i < num_samples; ++i) {
       Teuchos::TimeMonitor tm(*timer);
-      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(num_cells,Kokkos::AUTO()),
+      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(num_cells,Kokkos::AUTO()),
 			   ComputeRhoHierarchic<FadType,DevLayout,PHX::Device>(rho, P, T, k));
-      typename PHX::Device().fence();
+      typename PHX::ExecutionSpace().fence();
     }
 
     timer = Teuchos::TimeMonitor::getNewTimer("Jacobian Hierarchic (team=AUTO(),warp=32)");
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
     for (int i=0; i < num_samples; ++i) {
       Teuchos::TimeMonitor tm(*timer);
-      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(num_cells,Kokkos::AUTO(),32),
+      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(num_cells,Kokkos::AUTO(),32),
 			   ComputeRhoHierarchic<FadType,DevLayout,PHX::Device>(rho, P, T, k));
-      typename PHX::Device().fence();
+      typename PHX::ExecutionSpace().fence();
     }
 
     // ****************************
@@ -199,14 +199,14 @@ namespace phalanx_test {
       Kokkos::deep_copy(phx_P, phx_host_P);
       Kokkos::deep_copy(phx_T, phx_host_T);
       Kokkos::deep_copy(phx_k, phx_host_k);
-      typename PHX::Device().fence();
+      typename PHX::ExecutionSpace().fence();
       timer = Teuchos::TimeMonitor::getNewTimer("Jacobian Hierarchic <PHX::View> (team=AUTO(),warp=32)");
-      typename PHX::Device().fence();
+      typename PHX::ExecutionSpace().fence();
       for (int i=0; i < num_samples; ++i) {
 	Teuchos::TimeMonitor tm(*timer);
-	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(num_cells,Kokkos::AUTO(),32),
+	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(num_cells,Kokkos::AUTO(),32),
 			     ComputeRhoHierarchic<FadType,typename PHX::DevLayout<FadType>::type,PHX::Device>(phx_rho, phx_P, phx_T, phx_k));
-	typename PHX::Device().fence();
+	typename PHX::ExecutionSpace().fence();
       }
     }
 
