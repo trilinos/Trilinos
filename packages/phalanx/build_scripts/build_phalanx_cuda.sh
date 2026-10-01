@@ -14,7 +14,7 @@ cmake \
 -D Trilinos_ENABLE_Intrepid2:BOOL=ON \
 -D Trilinos_ENABLE_Phalanx:BOOL=ON \
 -D Phalanx_KOKKOS_DEVICE_TYPE:STRING="CUDA" \
--D Phalanx_INDEX_SIZE_TYPE:STRING="INT" \
+-D Phalanx_INDEX_SIZE_TYPE:STRING="int" \
 -D Phalanx_ENABLE_DEBUG:BOOL=OFF \
 -D Phalanx_ENABLE_TESTS:BOOL=ON \
 -D Phalanx_ENABLE_EXAMPLES:BOOL=ON \

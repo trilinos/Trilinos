@@ -207,7 +207,7 @@ class ElementSendMesh : public ElementSendMeshSearchBaseClass,
 
   virtual std::string name() const override { return m_name; }
 
-  virtual void set_name(const std::string& meshName) override { m_name = meshName; }
+  virtual void set_name(const std::string& meshName) override { m_name = meshName; m_searchMesh.set_name("SEARCH:"+meshName);}
 
   stk::search::ObjectOutsideDomainPolicy get_extrapolate_option() const override;
 

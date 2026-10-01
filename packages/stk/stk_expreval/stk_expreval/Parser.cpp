@@ -587,6 +587,18 @@ parseFunction(Eval & eval,
 }
 
 
+void  check_array_indexing(Eval & eval, Node* arrayIndex) {
+  if (eval.getArrayOffsetType() == Variable::ArrayOffset::ZERO_BASED_INDEX) {
+    STK_ThrowRequireMsg(arrayIndex->m_data.constant.value >= 0, 
+                        "Provided index for variable array in expression " + eval.getExpression() + " is less than 0.");
+  }
+
+  if (eval.getArrayOffsetType() == Variable::ArrayOffset::ONE_BASED_INDEX) {
+    STK_ThrowRequireMsg(arrayIndex->m_data.constant.value >= 1, 
+                        "Provided index for variable array in expression " + eval.getExpression() + " is less than 1.");
+  }
+}
+
 Node *
 parseIndex(Eval & eval,
            LexemVector::const_iterator from,
@@ -601,6 +613,10 @@ parseIndex(Eval & eval,
   Node *index = eval.newNode(OPCODE_RVALUE);
   index->m_data.variable.variable = eval.getVariableMap()[(*from).getString()];
   index->m_left = parseExpression(eval, lbrack + 1, rbrack);
+
+  if ((index->m_left)->m_opcode == OPCODE_CONSTANT) {
+    check_array_indexing(eval, index->m_left);
+  }
 
   return index;
 }

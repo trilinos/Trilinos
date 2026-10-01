@@ -301,19 +301,6 @@ TEST_F(TestHexMeta, superset_of_shared_part)
 
         if (expect_supersets_to_work_with_shared_part) {
 
-            std::cout << "p[" << mesh.parallel_rank() <<"] num nodes stk shared part=" <<
-                    stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, meta.globally_shared_part())
-                                                       << std::endl;
-            std::cout << "p[" << mesh.parallel_rank() << "] num nodes in superset of stk shared part=" <<
-                    stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, mySuperPart)
-                                                       << std::endl;
-            std::cout << "p[" << mesh.parallel_rank() <<"] num nodes stk local part=" <<
-                    stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, meta.locally_owned_part())
-                                                        << std::endl;
-            std::cout << "p[" << mesh.parallel_rank() << "] num nodes in superset of stk local part=" <<
-                    stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, mySuperPartLocal)
-                                                        << std::endl;
-
             EXPECT_EQ(
                     stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, meta.globally_shared_part())
                     ,

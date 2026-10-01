@@ -39,6 +39,8 @@
 #include "stk_mesh/base/NgpMeshBase.hpp"
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/baseImpl/BucketRepository.hpp"
+#include "stk_mesh/base/DestroyRelations.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/NgpTypes.hpp"
@@ -150,6 +152,14 @@ public:
   {
     KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     KOKKOS_IF_ON_HOST(return (*(bulk->buckets(rank)[meshIndex.bucket_id]))[meshIndex.bucket_ord];);
+  }
+
+  KOKKOS_FUNCTION
+  stk::mesh::Entity linear_get_entity([[maybe_unused]] stk::mesh::EntityRank rank,
+                                      [[maybe_unused]] stk::mesh::EntityId entityId) const
+  {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
+    KOKKOS_IF_ON_HOST(return bulk->get_entity(rank, entityId););
   }
 
   KOKKOS_FUNCTION
@@ -321,12 +331,14 @@ public:
                                 [[maybe_unused]] unsigned i) const
   {
     KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
-#ifndef NDEBUG
+#if !defined(STK_ENABLE_GPU) && !defined(NDEBUG)
     stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
     STK_NGP_ThrowAssert(rank < numRanks);
     STK_NGP_ThrowAssert(i < bulk->buckets(rank).size());
 #endif
-    KOKKOS_IF_ON_HOST((return *bulk->buckets(rank)[i];));
+    KOKKOS_IF_ON_HOST((
+    return *bulk->buckets(rank)[i];
+    ));
   }
 
   NgpCommMapIndicesHostMirror<stk::ngp::MemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc,
@@ -378,12 +390,105 @@ public:
     using EntitiesMemorySpace = typename std::remove_reference<decltype(entities)>::type::memory_space;
     static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, EntitiesMemorySpace>::accessible,
                   "The memory space of the 'entities' View is inaccessible from the HostMesh execution space");
-    
+
+    Kokkos::View<bool*, NgpMemSpace> wasDestroyed(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "wasDestroyed"), entities.extent(0));
+    batch_destroy_entities(entities, wasDestroyed);
+  }
+
+  template <typename... EntitiesParams, typename... ResultParams>
+  void batch_destroy_entities(const Kokkos::View<stk::mesh::Entity*, EntitiesParams...>& entities,
+                              const Kokkos::View<bool*, ResultParams...>& wasDestroyed)
+  {
+    using EntitiesMemorySpace = typename std::remove_reference<decltype(entities)>::type::memory_space;
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, EntitiesMemorySpace>::accessible,
+                  "The memory space of the 'entities' View is inaccessible from the HostMesh execution space");
+    using ResultsMemorySpace = typename std::remove_reference<decltype(wasDestroyed)>::type::memory_space;
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, ResultsMemorySpace>::accessible,
+                  "The memory space of the 'wasDestroyed' View is inaccessible from the HostMesh execution space");
+    STK_ThrowRequireMsg(wasDestroyed.extent(0) == entities.extent(0),
+                        "batch_destroy_entities: 'wasDestroyed' View must be the same length as 'entities'");
+
+    const unsigned numEntities = entities.extent(0);
+    for (unsigned i = 0; i < numEntities; ++i) {
+      wasDestroyed(i) = impl::can_destroy_entity(*bulk, entities(i));
+    }
+
     bulk->modification_begin();
-    for (unsigned i = 0; i < entities.extent(0); ++i) {
-      bulk->destroy_entity(entities(i));
+    for (unsigned i = 0; i < numEntities; ++i) {
+      if (wasDestroyed(i)) {
+        bulk->destroy_entity(entities(i));
+      }
     }
     bulk->modification_end();
+  }
+
+  template <typename... EntitiesParams>
+  void batch_destroy_relations(const Kokkos::View<stk::mesh::Entity*, EntitiesParams...>& entities,
+                               stk::mesh::EntityRank connectedRank)
+  {
+    bulk->modification_begin();
+    for (size_t i = 0; i < entities.extent(0); ++i) {
+      stk::mesh::destroy_relations(*bulk, entities(i), connectedRank);
+    }
+    bulk->modification_end();
+  }
+
+  template <typename... FromParams, typename... OffsetParams, typename... ToParams,
+            typename... OrdinalParams, typename... PermParams>
+  void batch_declare_relations(const Kokkos::View<stk::mesh::Entity*, FromParams...>& fromEntities,
+                               const Kokkos::View<unsigned*, OffsetParams...>& offsets,
+                               const Kokkos::View<stk::mesh::Entity*, ToParams...>& toEntities,
+                               const Kokkos::View<stk::mesh::RelationIdentifier*, OrdinalParams...>& ordinals,
+                               const Kokkos::View<stk::mesh::Permutation*, PermParams...>& permutations)
+  {
+    impl_batch_declare_relations(fromEntities, offsets, toEntities, ordinals, permutations);
+  }
+
+  template <typename... FromParams, typename... OffsetParams, typename... ToParams,
+            typename... OrdinalParams>
+  void batch_declare_relations(const Kokkos::View<stk::mesh::Entity*, FromParams...>& fromEntities,
+                               const Kokkos::View<unsigned*, OffsetParams...>& offsets,
+                               const Kokkos::View<stk::mesh::Entity*, ToParams...>& toEntities,
+                               const Kokkos::View<stk::mesh::RelationIdentifier*, OrdinalParams...>& ordinals)
+  {
+    Kokkos::View<stk::mesh::Permutation*, NgpMemSpace> permutations("invalid_permutations", toEntities.extent(0));
+    for (size_t i = 0; i < permutations.extent(0); ++i) {
+      permutations(i) = stk::mesh::Permutation::INVALID_PERMUTATION;
+    }
+
+    impl_batch_declare_relations(fromEntities, offsets, toEntities, ordinals, permutations);
+  }
+
+  template <typename... FromParams, typename... ToParams, typename... PermParams>
+  void batch_declare_relations(const Kokkos::View<stk::mesh::Entity*, FromParams...>& fromEntities,
+                               const Kokkos::View<stk::mesh::Entity**, ToParams...>& toEntities,
+                               const Kokkos::View<stk::mesh::Permutation**, PermParams...>& permutations,
+                               stk::mesh::EntityRank connectedRank)
+  {
+    Kokkos::View<unsigned*, NgpMemSpace> offsets;
+    Kokkos::View<stk::mesh::Entity*, NgpMemSpace> flatToEntities;
+    Kokkos::View<stk::mesh::RelationIdentifier*, NgpMemSpace> flatOrdinals;
+    Kokkos::View<stk::mesh::Permutation*, NgpMemSpace> flatPermutations;
+    impl_flatten_uniform_relations(fromEntities, toEntities, permutations, connectedRank,
+                                   offsets, flatToEntities, flatOrdinals, flatPermutations);
+
+    batch_declare_relations(fromEntities, offsets, flatToEntities, flatOrdinals, flatPermutations);
+  }
+
+  template <typename... FromParams, typename... ToParams>
+  void batch_declare_relations(const Kokkos::View<stk::mesh::Entity*, FromParams...>& fromEntities,
+                               const Kokkos::View<stk::mesh::Entity**, ToParams...>& toEntities,
+                               stk::mesh::EntityRank connectedRank)
+  {
+    Kokkos::View<unsigned*, NgpMemSpace> offsets;
+    Kokkos::View<stk::mesh::Entity*, NgpMemSpace> flatToEntities;
+    Kokkos::View<stk::mesh::RelationIdentifier*, NgpMemSpace> flatOrdinals;
+    Kokkos::View<stk::mesh::Permutation*, NgpMemSpace> flatPermutations;  // stays empty: no permutations supplied
+    impl_flatten_uniform_relations(fromEntities, toEntities, Kokkos::View<stk::mesh::Permutation**, NgpMemSpace>(),
+                                   connectedRank, offsets, flatToEntities, flatOrdinals, flatPermutations);
+
+    batch_declare_relations(fromEntities, offsets, flatToEntities, flatOrdinals);
   }
 
   stk::mesh::BulkData &get_bulk_on_host()
@@ -479,6 +584,125 @@ public:
   }
 
 private:
+  template <typename... FromParams, typename... OffsetParams, typename... ToParams,
+            typename... OrdinalParams, typename... PermParams>
+  void impl_batch_declare_relations(const Kokkos::View<stk::mesh::Entity*, FromParams...>& fromEntities,
+                                    const Kokkos::View<unsigned*, OffsetParams...>& offsets,
+                                    const Kokkos::View<stk::mesh::Entity*, ToParams...>& toEntities,
+                                    const Kokkos::View<stk::mesh::RelationIdentifier*, OrdinalParams...>& ordinals,
+                                    const Kokkos::View<stk::mesh::Permutation*, PermParams...>& permutations)
+  {
+    using FromMemorySpace = typename std::remove_reference<decltype(fromEntities)>::type::memory_space;
+    using OffsetMemorySpace = typename std::remove_reference<decltype(offsets)>::type::memory_space;
+    using ToMemorySpace = typename std::remove_reference<decltype(toEntities)>::type::memory_space;
+    using OrdinalMemorySpace = typename std::remove_reference<decltype(ordinals)>::type::memory_space;
+    using PermutationsMemorySpace = typename std::remove_reference<decltype(permutations)>::type::memory_space;
+
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, FromMemorySpace>::accessible,
+                  "The memory space of the 'fromEntities' View is inaccessible from the HostMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, OffsetMemorySpace>::accessible,
+                  "The memory space of the 'offsets' View is inaccessible from the HostMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, ToMemorySpace>::accessible,
+                  "The memory space of the 'toEntities' View is inaccessible from the HostMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, OrdinalMemorySpace>::accessible,
+                  "The memory space of the 'ordinals' View is inaccessible from the HostMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, PermutationsMemorySpace>::accessible,
+                  "The memory space of the 'permutations' View is inaccessible from the HostMesh execution space");
+
+    const size_t numFrom = fromEntities.extent(0);
+
+#ifndef NDEBUG
+    // Validate the CRS layout.
+    STK_ThrowRequire(permutations.extent(0) == toEntities.extent(0));
+    STK_ThrowRequire(ordinals.extent(0) == toEntities.extent(0));
+    if (numFrom > 0) {
+      STK_ThrowRequire(offsets.extent(0) == numFrom + 1);
+      STK_ThrowRequire(offsets(0) == 0u);
+      for (size_t i = 0; i < numFrom; ++i) {
+        STK_ThrowRequire(offsets(i) <= offsets(i + 1));
+      }
+      STK_ThrowRequire(offsets(numFrom) == toEntities.extent(0));
+    }
+#endif
+
+    stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
+    bulk->modification_begin();
+    for (size_t i = 0; i < numFrom; ++i) {
+      for (unsigned j = offsets(i); j < offsets(i + 1); ++j) {
+        bulk->declare_relation(fromEntities(i), toEntities(j), ordinals(j),
+                               permutations(j), scratch1, scratch2, scratch3);
+      }
+    }
+    bulk->modification_end();
+  }
+
+  template <typename... FromParams, typename... ToParams, typename... PermParams>
+  void impl_flatten_uniform_relations(const Kokkos::View<stk::mesh::Entity*, FromParams...>& fromEntities,
+                                      const Kokkos::View<stk::mesh::Entity**, ToParams...>& toEntities,
+                                      const Kokkos::View<stk::mesh::Permutation**, PermParams...>& permutations,
+                                      [[maybe_unused]] stk::mesh::EntityRank connectedRank,
+                                      Kokkos::View<unsigned*, NgpMemSpace>& offsets,
+                                      Kokkos::View<stk::mesh::Entity*, NgpMemSpace>& flatToEntities,
+                                      Kokkos::View<stk::mesh::RelationIdentifier*, NgpMemSpace>& flatOrdinals,
+                                      Kokkos::View<stk::mesh::Permutation*, NgpMemSpace>& flatPermutations)
+  {
+    using FromMemorySpace = typename std::remove_reference<decltype(fromEntities)>::type::memory_space;
+    using ToMemorySpace = typename std::remove_reference<decltype(toEntities)>::type::memory_space;
+    using PermMemorySpace = typename std::remove_reference<decltype(permutations)>::type::memory_space;
+
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, FromMemorySpace>::accessible,
+                  "The memory space of the 'fromEntities' View is inaccessible from the HostMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, ToMemorySpace>::accessible,
+                  "The memory space of the 'toEntities' View is inaccessible from the HostMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, PermMemorySpace>::accessible,
+                  "The memory space of the 'permutations' View is inaccessible from the HostMesh execution space");
+
+    const size_t numFrom = fromEntities.extent(0);
+    const size_t numCols = toEntities.extent(1);
+    const bool hasPermutations = permutations.extent(0) > 0;
+
+#ifndef NDEBUG
+    if (numFrom > 0) {
+      STK_ThrowRequire(toEntities.extent(0) == numFrom);   // one row of connectivity per from-entity
+      STK_ThrowRequire(bulk->is_valid(fromEntities(0)));
+      const stk::topology topo = bulk->bucket(fromEntities(0)).topology();
+      const unsigned expectedCols = topo.num_sub_topology(connectedRank);
+      STK_ThrowRequire(expectedCols > 0);          // connectedRank must be a valid downward sub-rank
+      STK_ThrowRequire(numCols == expectedCols);   // full complement required
+      for (size_t i = 0; i < numFrom; ++i) {
+        STK_ThrowRequire(bulk->is_valid(fromEntities(i)));
+        STK_ThrowRequire(bulk->bucket(fromEntities(i)).topology() == topo);  // single uniform topology
+      }
+      if (hasPermutations) {   // permutations grid must mirror the toEntities grid
+        STK_ThrowRequire(permutations.extent(0) == numFrom);
+        STK_ThrowRequire(permutations.extent(1) == numCols);
+      }
+    }
+#endif
+
+    const size_t numRelations = numFrom * numCols;
+    Kokkos::resize(offsets, numFrom > 0 ? numFrom + 1 : 0);
+    Kokkos::resize(flatToEntities, numRelations);
+    Kokkos::resize(flatOrdinals, numRelations);
+    if (hasPermutations) {
+      Kokkos::resize(flatPermutations, numRelations);
+    }
+    for (size_t i = 0; i < numFrom; ++i) {
+      const size_t base = i * numCols;
+      offsets(i) = static_cast<unsigned>(base);
+      for (size_t j = 0; j < numCols; ++j) {
+        flatToEntities(base + j) = toEntities(i, j);
+        flatOrdinals(base + j) = static_cast<stk::mesh::RelationIdentifier>(j);
+        if (hasPermutations) {
+          flatPermutations(base + j) = permutations(i, j);
+        }
+      }
+    }
+    if (numFrom > 0) {
+      offsets(numFrom) = static_cast<unsigned>(numRelations);
+    }
+  }
+
   stk::mesh::BulkData *bulk;
   size_t m_syncCountWhenUpdated;
   mutable stk::mesh::EntityRank cachedRank = stk::topology::INVALID_RANK;

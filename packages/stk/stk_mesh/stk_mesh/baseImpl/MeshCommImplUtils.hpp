@@ -78,6 +78,11 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
                                        stk::CommSparse& comm,
                                        EntityKey expected_key);
 
+void unpack_induced_parts_from_sharers_by_key(OrdinalVector& induced_parts,
+                                              PairIterEntityComm entity_comm_info,
+                                              stk::CommSparse& comm,
+                                              EntityKey expected_key);
+
 void pack_and_send_induced_parts_from_sharers_to_owners(const BulkData& bulkData, stk::CommSparse& comm, const EntityCommListInfoVector& entity_comm_list);
 
 bool pack_and_send_modified_shared_entity_states(stk::CommSparse& comm,

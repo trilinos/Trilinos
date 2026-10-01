@@ -1136,7 +1136,10 @@ NGP_TEST_F(NgpPartitionTest, check_valid_bucket_view_after_sync_from_partitions_
 
   deviceBucketRepo.sync_from_partitions();
 
-  EXPECT_EQ(0u, partition->num_buckets());
+  // sync_from_partitions() emptied this partition and then destroyed it, so 'partition' is dangling
+  // here and must not be dereferenced.  Re-look-up by part ordinals instead: the partition is gone.
+  EXPECT_EQ(nullptr, deviceBucketRepo.get_partition(testRank, devicePartOrdinals));
+  EXPECT_EQ(0u, deviceBucketRepo.num_partitions(testRank));
 
   using BucketUView = typename stk::mesh::impl::DeviceBucketRepository<stk::ngp::MemSpace>::DeviceBucketUView;
   BucketUView compactBuckets(deviceBucketRepo.m_buckets[testRank].data(), deviceBucketRepo.num_buckets(testRank));
@@ -1167,12 +1170,14 @@ NGP_TEST_F(NgpPartitionTest, check_valid_bucket_view_after_sync_from_partitions_
 
   deviceBucketRepo.sync_from_partitions();
 
+  // Both partitions were emptied and then destroyed by sync_from_partitions(), so the pointers
+  // obtained above are dangling.  Re-look-up by part ordinals: neither partition remains.
+  EXPECT_EQ(0u, deviceBucketRepo.num_partitions(testRank));
+
   for (unsigned i = 0; i < 2; ++i) {
     auto devicePartOrdinals = get_device_part_ordinals(1, i);
-    auto partition = deviceBucketRepo.get_or_create_partition(testRank, devicePartOrdinals);
 
-    EXPECT_EQ(0u, partition->num_buckets());
-    EXPECT_EQ(0u, partition->m_buckets.size());
+    EXPECT_EQ(nullptr, deviceBucketRepo.get_partition(testRank, devicePartOrdinals));
 
     using BucketUView = typename stk::mesh::impl::DeviceBucketRepository<stk::ngp::MemSpace>::DeviceBucketUView;
     BucketUView compactBuckets(deviceBucketRepo.m_buckets[testRank].data(), deviceBucketRepo.num_buckets(testRank));
@@ -1245,6 +1250,7 @@ class NgpBucketRepoBatchOpTest : public NgpBucketRepositoryTest
 public:
   using PartOrdinalsProxyViewType = Kokkos::View<stk::mesh::impl::PartOrdinalsProxyIndices*>;
   using NewBucketsToAddViewType = Kokkos::View<stk::mesh::impl::NumNewBucketsToAddPerPartition*, stk::ngp::MemSpace>;
+  using GrowLastBucketViewType = Kokkos::View<stk::mesh::impl::GrowLastBucketInPartition*, stk::ngp::MemSpace>;
 
   NgpBucketRepoBatchOpTest() = default;
 
@@ -1540,7 +1546,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_two_entit
   auto srcDestView = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostSrcDestView);
 
   NewBucketsToAddViewType numNewBucketsToAdd("NumNewBucketsToAddInPartitions", numEntities);
-  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd);
+  GrowLastBucketViewType growLastBucketInPartition("growLastBucketInPartition", numEntities);
+  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd,
+                                                     growLastBucketInPartition);
 
   HostEntitySrcDestView hostExpectedOrdinals(Kokkos::view_alloc("", Kokkos::WithoutInitializing), numEntities);
   hostExpectedOrdinals(0) = set_src_dest_ids(stk::topology::NODE_RANK, {0, 0, 0, 1, 0, 0});
@@ -1586,7 +1594,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_two_entit
   auto srcDestView = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostSrcDestView);
 
   NewBucketsToAddViewType numNewBucketsToAdd("NumNewBucketsToAddInPartitions", numEntities);
-  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd);
+  GrowLastBucketViewType growLastBucketInPartition("growLastBucketInPartition", numEntities);
+  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd,
+                                                     growLastBucketInPartition);
 
   HostEntitySrcDestView hostExpectedOrdinals(Kokkos::view_alloc("", Kokkos::WithoutInitializing), numEntities);
   hostExpectedOrdinals(0) = set_src_dest_ids(stk::topology::NODE_RANK, {0, 0, 0, 1, 0, 0});
@@ -1629,7 +1639,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_two_entit
   auto srcDestView = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostSrcDestView);
 
   NewBucketsToAddViewType numNewBucketsToAdd("NumNewBucketsToAddInPartitions", numEntities);
-  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd);
+  GrowLastBucketViewType growLastBucketInPartition("growLastBucketInPartition", numEntities);
+  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd,
+                                                     growLastBucketInPartition);
 
   HostEntitySrcDestView hostExpectedOrdinals(Kokkos::view_alloc("", Kokkos::WithoutInitializing), numEntities);
   hostExpectedOrdinals(0) = set_src_dest_ids(stk::topology::NODE_RANK, {0, 0, 0, 1, 0, 1});
@@ -1674,7 +1686,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_two_entit
   auto srcDestView = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostSrcDestView);
 
   NewBucketsToAddViewType numNewBucketsToAdd("NumNewBucketsToAddInPartitions", numEntities);
-  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd);
+  GrowLastBucketViewType growLastBucketInPartition("growLastBucketInPartition", numEntities);
+  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd,
+                                                     growLastBucketInPartition);
 
   HostEntitySrcDestView hostExpectedOrdinals(Kokkos::view_alloc("", Kokkos::WithoutInitializing), numEntities);
   hostExpectedOrdinals(0) = set_src_dest_ids(stk::topology::NODE_RANK, {0, 0, 0, 1, 0, 0});
@@ -1718,7 +1732,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_two_entit
   auto srcDestView = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostSrcDestView);
 
   NewBucketsToAddViewType numNewBucketsToAdd("NumNewBucketsToAddInPartitions", numEntities);
-  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd);
+  GrowLastBucketViewType growLastBucketInPartition("growLastBucketInPartition", numEntities);
+  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd,
+                                                     growLastBucketInPartition);
 
   HostEntitySrcDestView hostExpectedOrdinals(Kokkos::view_alloc("", Kokkos::WithoutInitializing), numEntities);
   hostExpectedOrdinals(0) = set_src_dest_ids(stk::topology::NODE_RANK, {0, 0, 0, 1, 0, 0});
@@ -1766,7 +1782,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_two_entit
   auto srcDestView = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostSrcDestView);
 
   NewBucketsToAddViewType numNewBucketsToAdd("NumNewBucketsToAddInPartitions", numEntities);
-  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd);
+  GrowLastBucketViewType growLastBucketInPartition("growLastBucketInPartition", numEntities);
+  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd,
+                                                     growLastBucketInPartition);
 
   HostEntitySrcDestView hostExpectedOrdinals(Kokkos::view_alloc("", Kokkos::WithoutInitializing), numEntities);
   hostExpectedOrdinals(0) = set_src_dest_ids(stk::topology::NODE_RANK, {0, 0, 0, 2, 0, 0});
@@ -1813,7 +1831,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_two_entit
   auto srcDestView = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostSrcDestView);
 
   NewBucketsToAddViewType numNewBucketsToAdd("NumNewBucketsToAddInPartitions", numEntities);
-  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd);
+  GrowLastBucketViewType growLastBucketInPartition("growLastBucketInPartition", numEntities);
+  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd,
+                                                     growLastBucketInPartition);
 
   HostEntitySrcDestView hostExpectedOrdinals(Kokkos::view_alloc("", Kokkos::WithoutInitializing), numEntities);
   hostExpectedOrdinals(0) = set_src_dest_ids(stk::topology::NODE_RANK, {0, 0, 0, 2, 0, 0});
@@ -1859,7 +1879,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_three_ent
   auto srcDestView = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostSrcDestView);
 
   NewBucketsToAddViewType numNewBucketsToAdd("NumNewBucketsToAddInPartitions", numEntities);
-  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd);
+  GrowLastBucketViewType growLastBucketInPartition("growLastBucketInPartition", numEntities);
+  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd,
+                                                     growLastBucketInPartition);
 
   HostEntitySrcDestView hostExpectedOrdinals(Kokkos::view_alloc("", Kokkos::WithoutInitializing), numEntities);
   hostExpectedOrdinals(0) = set_src_dest_ids(stk::topology::NODE_RANK, {0, 0, 0, 1, 0, 0});
@@ -1911,7 +1933,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, assign_dest_bucket_id_and_ordinal_six_entit
   auto srcDestView = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostSrcDestView);
 
   NewBucketsToAddViewType numNewBucketsToAdd("NumNewBucketsToAddInPartitions", 4);
-  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd);
+  GrowLastBucketViewType growLastBucketInPartition("growLastBucketInPartition", 4);
+  stk::mesh::impl::assign_dest_bucket_id_and_ordinal(ngpMesh, srcDestView, numNewBucketsToAdd,
+                                                     growLastBucketInPartition);
 
   HostEntitySrcDestView hostExpectedOrdinals("", 4);
   hostExpectedOrdinals(0) = set_src_dest_ids(stk::topology::NODE_RANK, {2, 4, 0, 1, 2, 0});

@@ -660,17 +660,19 @@ void initializeVoV(VoVType& vov)
   auto c = Mat_h(1,0);
 
   // Initialize a, b and c
-  Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
-  Kokkos::parallel_for("FadAndAssignment init",policy,KOKKOS_LAMBDA(const int cell, const int pt) {
-    a(cell,pt).val() = double(cell) + double(pt);
-    a(cell,pt).fastAccessDx(0) = 0.0;
-    a(cell,pt).fastAccessDx(1) = 2.0 * double(cell) + double(pt);
-    b(cell,pt).val() = double(cell);
-    b(cell,pt).fastAccessDx(0) = 0.0;
-    b(cell,pt).fastAccessDx(1) = 0.0;
-    c(cell,pt).val() = 0.0;
-    c(cell,pt).fastAccessDx(0) = 0.0;
-    c(cell,pt).fastAccessDx(1) = 0.0;
+  // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
+  Kokkos::parallel_for("FadAndAssignment init",a.extent(0),KOKKOS_LAMBDA(const int cell) {
+    for (size_t pt=0; pt < a.extent(1); ++pt) {
+      a(cell,pt).val() = double(cell) + double(pt);
+      a(cell,pt).fastAccessDx(0) = 0.0;
+      a(cell,pt).fastAccessDx(1) = 2.0 * double(cell) + double(pt);
+      b(cell,pt).val() = double(cell);
+      b(cell,pt).fastAccessDx(0) = 0.0;
+      b(cell,pt).fastAccessDx(1) = 0.0;
+      c(cell,pt).val() = 0.0;
+      c(cell,pt).fastAccessDx(0) = 0.0;
+      c(cell,pt).fastAccessDx(1) = 0.0;
+    }
   });
   PHX::Device::execution_space().fence();
 }
@@ -777,10 +779,12 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
   VT b("b",num_cell,num_pt,num_deriv);
 
   {
-    Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
-    Kokkos::parallel_for("FadRawPtr init",policy,KOKKOS_LAMBDA(const int cell, const int pt) {
-      a(cell,pt).val() = double(cell) + double(pt);
-      a(cell,pt).fastAccessDx(1) = 2.0 + double(cell) + double(pt);
+    // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
+    Kokkos::parallel_for("FadRawPtr init",a.extent(0),KOKKOS_LAMBDA(const int cell) {
+      for (size_t pt=0; pt < a.extent(1); ++pt) {
+        a(cell,pt).val() = double(cell) + double(pt);
+        a(cell,pt).fastAccessDx(1) = 2.0 + double(cell) + double(pt);
+      }
     });
     PHX::exec_space().fence(); // don't need this but being safe for debugging
   }

@@ -31,12 +31,26 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tKokkosVirtualFunctionOnDevice
-  SOURCES tKokkosVirtualFunctionOnDevice.cpp
-  TESTONLYLIBS phalanx_unit_test_main phalanx_test_utilities
-  NUM_MPI_PROCS 1
-  )
+# Calls virtual functions from device code, which SYCL only supports through
+# the experimental sycl_ext_oneapi_virtual_functions extension.  Off by default
+# there; see Phalanx_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE.
+IF (NOT Kokkos_ENABLE_SYCL OR ${PACKAGE_NAME}_ENABLE_VIRTUAL_FUNCTIONS_ON_SYCL_DEVICE)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tKokkosVirtualFunctionOnDevice
+    SOURCES tKokkosVirtualFunctionOnDevice.cpp
+    TESTONLYLIBS phalanx_unit_test_main phalanx_test_utilities
+    NUM_MPI_PROCS 1
+    )
+
+  IF (Kokkos_ENABLE_SYCL AND TARGET ${PACKAGE_NAME}_tKokkosVirtualFunctionOnDevice)
+    TARGET_COMPILE_OPTIONS(${PACKAGE_NAME}_tKokkosVirtualFunctionOnDevice
+      PRIVATE -fsycl-allow-virtual-functions)
+    TARGET_LINK_OPTIONS(${PACKAGE_NAME}_tKokkosVirtualFunctionOnDevice
+      PRIVATE -fsycl-allow-virtual-functions)
+  ENDIF()
+
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tKokkosViewOfViews
