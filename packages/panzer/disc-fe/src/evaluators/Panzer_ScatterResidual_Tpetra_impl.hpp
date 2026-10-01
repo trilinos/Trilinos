@@ -325,7 +325,7 @@ namespace {
 template <typename ScalarT,typename LO,typename GO,typename NodeT,typename LocalMatrixT>
 class ScatterResidual_Jacobian_Functor {
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
   typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
 
   bool fillResidual;
@@ -366,7 +366,7 @@ public:
 template <typename ScalarT,typename LO,typename GO,typename NodeT>
 class ScatterResidual_Residual_Functor {
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
   typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
 
   Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
@@ -392,7 +392,7 @@ public:
 template <typename ScalarT,typename LO,typename GO,typename NodeT>
 class ScatterResidual_Tangent_Functor {
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
   typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
 
   bool fillResidual;

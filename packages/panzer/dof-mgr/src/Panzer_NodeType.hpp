@@ -32,7 +32,7 @@ namespace panzer {
    * this typedef wherever a Tpetra node type template argument is
    * needed, e.g. `Tpetra::Map<LocalOrdinal,GlobalOrdinal,TpetraNodeType>`.
    */
-  typedef typename Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::Device> TpetraNodeType;
+  typedef typename Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::ExecutionSpace> TpetraNodeType;
 
 }
 

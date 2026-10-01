@@ -23,8 +23,8 @@ namespace {
 
   template <typename ScalarT,typename ArrayT>
   struct evaluateGrad_withSens {
-    using scratch_view = Kokkos::View<ScalarT*,typename PHX::DevLayout<ScalarT>::type,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
-    using team_policy = Kokkos::TeamPolicy<PHX::exec_space>::member_type;
+    using scratch_view = Kokkos::View<ScalarT*,typename PHX::DevLayout<ScalarT>::type,typename PHX::ExecutionSpace::scratch_memory_space,Kokkos::MemoryUnmanaged>;
+    using team_policy = Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type;
 
     PHX::MDField<ScalarT>  dof_grad_;
     PHX::MDField<const ScalarT,Cell,Point>  dof_value_;
@@ -193,7 +193,7 @@ evaluateFields(typename Traits::EvalData workset)
 
   bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
   evaluateGrad_withSens<ScalarT, Array> eval(dof_gradient,dof_value,grad_basis,use_shared_memory);
-  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::Device>(workset.num_cells);
+  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
   Kokkos::parallel_for("panzer::DOFGradient::evaluateFields", policy, eval);
 }
 

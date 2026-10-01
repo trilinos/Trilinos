@@ -100,7 +100,7 @@ evaluateFields(
   if (workset.num_cells == 0)
     return;
 
-  Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(volumes.get_view(),
+  Intrepid2::FunctionSpaceTools<PHX::ExecutionSpace>::integrate(volumes.get_view(),
                                                                          ones.get_view(), 
                                                                          (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
   auto volumes_h = Kokkos::create_mirror_view(as_view(volumes));
@@ -113,7 +113,7 @@ evaluateFields(
   for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_values.begin();
        field != field_values.end(); ++field,++field_index) {
     
-    Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(tmp.get_view(),
+    Intrepid2::FunctionSpaceTools<PHX::ExecutionSpace>::integrate(tmp.get_view(),
                                                                            field->get_view(), 
                                                                            (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
     auto tmp_h = Kokkos::create_mirror_view(tmp.get_static_view());

@@ -235,7 +235,7 @@ namespace panzer {
 
 // Instantiate for every execution space Kokkos has enabled.  Each backend macro
 // names a distinct concrete type, so no two of these can be the same
-// specialization, and whatever PHX::Device::execution_space and
+// specialization, and whatever PHX::ExecutionSpace and
 // Kokkos::DefaultHostExecutionSpace happen to be is necessarily among them.
 // Naming those two directly instead would require knowing whether they are the
 // same type, which the preprocessor cannot work out.

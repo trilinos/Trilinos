@@ -78,7 +78,7 @@ namespace panzer {
   {
 
     // build a geometric pattern from a single basis
-    RCP<Intrepid2::Basis<PHX::exec_space, double, double> > basis = panzer::createIntrepid2Basis<PHX::exec_space, double, double>(basis_type, basis_order, cell_topology);
+    RCP<Intrepid2::Basis<PHX::ExecutionSpace, double, double> > basis = panzer::createIntrepid2Basis<PHX::ExecutionSpace, double, double>(basis_type, basis_order, cell_topology);
     RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
     return pattern;
   }

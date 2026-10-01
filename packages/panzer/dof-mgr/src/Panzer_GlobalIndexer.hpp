@@ -276,7 +276,7 @@ public:
    template <typename ArrayT>
    class CopyCellLIDsFunctor {
    public:
-     typedef typename PHX::Device execution_space;
+     typedef typename PHX::ExecutionSpace execution_space;
 
      PHX::View<const int*> cellIds;
      Kokkos::View<const panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> global_lids;

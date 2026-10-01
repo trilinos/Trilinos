@@ -94,8 +94,8 @@ evaluateFields(typename Traits::EvalData workset)
   auto num_faces = num_faces_;
   auto num_dim = num_dim_;
     
-  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
-  Kokkos::parallel_for("panzer::ProjectToFaces",policy,KOKKOS_LAMBDA(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) {
+  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
+  Kokkos::parallel_for("panzer::ProjectToFaces",policy,KOKKOS_LAMBDA(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) {
     const auto cell = team.league_rank();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_faces),[&] (const int p) {
       result(cell,p) = ScalarT(0.0);

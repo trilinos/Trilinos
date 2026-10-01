@@ -174,7 +174,7 @@ namespace panzer
   Integrator_GradBasisDotTensorTimesVector<EvalT, Traits>::
   operator()(
     const FieldMultTag& /* tag */,
-    const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
   {
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
@@ -217,7 +217,7 @@ namespace panzer
   Integrator_GradBasisDotTensorTimesVector<EvalT, Traits>::
   operator()(
     const SharedFieldMultTag& /* tag */,
-    const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
   {
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
@@ -301,11 +301,11 @@ namespace panzer
       else
 	bytes = scratch_view::shmem_size(1) + scratch_view::shmem_size(basis_.extent(1));
 
-      auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag,PHX::ExecutionSpace>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
       parallel_for(this->getName(), policy, *this);
     }
     else {
-      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag,PHX::Device>(workset.num_cells);
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag,PHX::ExecutionSpace>(workset.num_cells);
       parallel_for(this->getName(), policy, *this);
     }
   } // end of evaluateFields()

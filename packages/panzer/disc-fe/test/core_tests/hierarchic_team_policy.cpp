@@ -31,9 +31,9 @@ namespace panzer_test {
     Kokkos::deep_copy(c,2.0);
 
     if (use_stream_instance) {
-      PHX::ExecSpace exec_space;
+      PHX::ExecutionSpace exec_space;
       auto policy = panzer::HP::inst().teamPolicy<Scalar>(exec_space,M);
-      Kokkos::parallel_for("test 0",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecSpace>::member_type team){
+      Kokkos::parallel_for("test 0",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type team){
         const int i = team.league_rank();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,N), [&] (const int j) {
           a(i,j) += b(i,j) + c(i,j);
@@ -42,7 +42,7 @@ namespace panzer_test {
     }
     else {
       auto policy = panzer::HP::inst().teamPolicy<Scalar>(M);
-      Kokkos::parallel_for("test 0",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecSpace>::member_type team){
+      Kokkos::parallel_for("test 0",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type team){
         const int i = team.league_rank();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,N), [&] (const int j) {
           a(i,j) += b(i,j) + c(i,j);

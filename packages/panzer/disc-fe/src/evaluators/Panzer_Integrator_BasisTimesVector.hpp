@@ -249,7 +249,7 @@ namespace panzer
       void
       operator()(
         const FieldMultTag<NUM_FIELD_MULT>& tag,
-        const typename Kokkos::TeamPolicy<FieldMultTag<NUM_FIELD_MULT>,PHX::exec_space>::member_type& team) const;
+        const typename Kokkos::TeamPolicy<FieldMultTag<NUM_FIELD_MULT>,PHX::ExecutionSpace>::member_type& team) const;
 
     private:
 

@@ -580,7 +580,7 @@ namespace panzer {
         const int numCols = tmpNumCols;
         const int numQP = tmpNumQP;
 
-        Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.numOwnedCells()),KOKKOS_LAMBDA (const int& cell) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.numOwnedCells()),KOKKOS_LAMBDA (const int& cell) {
           panzer::LocalOrdinal cLIDs[256];
           double vals[256];
           for (int row = 0; row < numRows; ++row) {

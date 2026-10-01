@@ -161,7 +161,7 @@ namespace {
 template <typename ScalarT,typename LO,typename GO,typename NodeT>
 class ScatterDirichletResidual_Residual_Functor {
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
   typedef PHX::MDField<const ScalarT,Cell,NODE> ScalarFieldType;
   typedef PHX::MDField<const bool,Cell,NODE> BoolFieldType;
 
@@ -203,7 +203,7 @@ public:
 template <typename ScalarT,typename LO,typename GO,typename NodeT>
 class ScatterDirichletResidualIC_Residual_Functor {
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
   typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
 
   Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
@@ -438,7 +438,7 @@ namespace {
 template <typename ScalarT,typename LO,typename GO,typename NodeT>
 class ScatterDirichletResidual_Tangent_Functor {
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
   typedef PHX::MDField<const ScalarT,Cell,NODE> ScalarFieldType;
   typedef PHX::MDField<const bool,Cell,NODE> BoolFieldType;
 
@@ -487,7 +487,7 @@ public:
 template <typename ScalarT,typename LO,typename GO,typename NodeT>
 class ScatterDirichletResidualIC_Tangent_Functor {
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
   typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
 
   Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;

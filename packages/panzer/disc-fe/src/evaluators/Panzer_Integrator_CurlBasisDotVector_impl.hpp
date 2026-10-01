@@ -364,7 +364,7 @@ namespace panzer
          *  \brief This tells Kokkos to only execute this functor in the
          *         `PHX::Device` execution space.
          */
-        using execution_space = PHX::Device;
+        using execution_space = PHX::ExecutionSpace;
 
         /**
          *  \brief A field that will be used to build up the result of the
@@ -468,7 +468,7 @@ namespace panzer
          *  \brief This tells Kokkos to only execute this functor in the
          *         `PHX::Device` execution space.
          */
-        using execution_space = PHX::Device;
+        using execution_space = PHX::ExecutionSpace;
 
         /**
          *  \brief A field that will be used to build up the result of the
@@ -545,7 +545,7 @@ namespace panzer
          *  \brief This tells Kokkos to only execute this functor in the
          *         `PHX::Device` execution space.
          */
-        using execution_space = PHX::Device;
+        using execution_space = PHX::ExecutionSpace;
 
         /**
          *  \brief A field representing the result of this integration.
@@ -618,7 +618,7 @@ namespace panzer
          *  \brief This tells Kokkos to only execute this functor in the
          *         `PHX::Device` execution space.
          */
-        using execution_space = PHX::Device;
+        using execution_space = PHX::ExecutionSpace;
 
         /**
          *  \brief A field representing the result of this integration.

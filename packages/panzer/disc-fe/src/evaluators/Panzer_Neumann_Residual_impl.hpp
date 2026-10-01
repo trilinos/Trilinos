@@ -109,7 +109,7 @@ evaluateFields(
   // temporaries outside of views use new/delete on host, which is not
   // supported by HIP. Need to roll our own integrate call for now.
   // if(workset.num_cells>0)
-  //   Intrepid2::FunctionSpaceTools<PHX::exec_space>::
+  //   Intrepid2::FunctionSpaceTools<PHX::ExecutionSpace>::
   //     integrate<ScalarT>(residual.get_view(),
   //                        normal_dot_flux.get_view(), 
   //                        (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());

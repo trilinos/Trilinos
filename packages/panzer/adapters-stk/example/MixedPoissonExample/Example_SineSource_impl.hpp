@@ -57,7 +57,7 @@ public:
     : source(in_source), ip_coords(in_ip_coords) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+  void operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
   {
     const int cell = team.league_rank();
     const int num_points = static_cast<int>(source.extent(1));

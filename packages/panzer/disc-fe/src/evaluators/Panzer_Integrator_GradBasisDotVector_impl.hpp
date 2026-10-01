@@ -191,7 +191,7 @@ namespace panzer
   Integrator_GradBasisDotVector<EvalT, Traits>::
   operator()(
     const FieldMultTag<NUM_FIELD_MULT>& /* tag */,
-    const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
   {
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
@@ -248,7 +248,7 @@ namespace panzer
   Integrator_GradBasisDotVector<EvalT, Traits>::
   operator()(
     const SharedFieldMultTag<NUM_FIELD_MULT>& /* tag */,
-    const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
   {
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
@@ -348,16 +348,16 @@ namespace panzer
       // number of field multipliers.  The parallel_fors will loop over the cells
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::ExecutionSpace>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
         parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 1) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::ExecutionSpace>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
         parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 2) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<2>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<2>,PHX::ExecutionSpace>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
         parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 3) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<3>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<3>,PHX::ExecutionSpace>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
         parallel_for(this->getName(), policy, *this);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(fieldMults_.size() > 3,std::runtime_error,
@@ -370,16 +370,16 @@ namespace panzer
       // number of field multipliers.  The parallel_fors will loop over the cells
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::ExecutionSpace>(workset.num_cells);
         parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 1) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::ExecutionSpace>(workset.num_cells);
         parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 2) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<2>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<2>,PHX::ExecutionSpace>(workset.num_cells);
         parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 3) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<3>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<3>,PHX::ExecutionSpace>(workset.num_cells);
         parallel_for(this->getName(), policy, *this);
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION(fieldMults_.size() > 3,std::runtime_error,

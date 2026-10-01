@@ -254,7 +254,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
      if (!scatterIC_) {
 
-       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
          for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
            const int lid = worksetLIDs(cell,fieldOffsets(basis));
            if (lid < 0) // not on this processor!
@@ -273,7 +273,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
      } else {
 
-       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
          for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
            const int lid = worksetLIDs(cell,fieldOffsets(basis));
            if (lid < 0) // not on this processor!
@@ -597,7 +597,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
 
     const int blockRowIndex = productVectorBlockIndex_[fieldIndex];
-    typename Tpetra::Vector<double,LO,GO,PHX::Device>::dual_view_type::t_dev kokkosResidual;
+    typename Tpetra::Vector<double,LO,GO,PHX::ExecutionSpace>::dual_view_type::t_dev kokkosResidual;
     if (haveResidual) {
       auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
       kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::ReadWrite);
@@ -618,7 +618,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto& applyBC = applyBC_[fieldIndex].get_static_view();
     const bool checkApplyBC = checkApplyBC_;
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
       LO cLIDs[maxDerivativeArraySize_];
       typename Sacado::ScalarType<ScalarT>::type vals[maxDerivativeArraySize_];
 
@@ -902,7 +902,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
      if (!scatterIC_) {
 
-       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
          for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
            const int lid = worksetLIDs(cell,fieldOffsets(basis));
            if (lid < 0) // not on this processor!
@@ -924,7 +924,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
      } else {
 
-       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
          for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
            const int lid = worksetLIDs(cell,fieldOffsets(basis));
            if (lid < 0) // not on this processor!

@@ -40,8 +40,8 @@ evaluateFields(typename Traits::EvalData workset)
   const double k = k_;
   const auto t = t_;
   const auto k_t_squared = k_t_squared_;
-  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecSpace>(num_cells);
-  Kokkos::parallel_for("TSquared evaluator",policy,KOKKOS_LAMBDA(const Kokkos::TeamPolicy<PHX::ExecSpace>::member_type& team){
+  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(num_cells);
+  Kokkos::parallel_for("TSquared evaluator",policy,KOKKOS_LAMBDA(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team){
     const int cell = team.league_rank();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_ip), [&] (const int pt) {
       k_t_squared(cell,pt) = k * t(cell,pt)*t(cell,pt);
