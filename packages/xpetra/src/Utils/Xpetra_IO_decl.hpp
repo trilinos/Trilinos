@@ -119,6 +119,12 @@ class IO {
   //! @brief Read matrix from file in Matrix Market or binary format.
   static Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int>>& comm, bool binary = false);
 
+  //! @brief Convert a legacy Xpetra binary matrix file to the current Tpetra binary format.
+  static void ConvertLegacyBinaryToBinary(const std::string& oldFileName,
+                                          const std::string& newFileName,
+                                          Xpetra::UnderlyingLib lib,
+                                          const RCP<const Teuchos::Comm<int>>& comm);
+
   /*! @brief Read matrix from file in Matrix Market or binary format.
 
     If only rowMap is specified, then it is used for the domainMap and rangeMap, as well.
