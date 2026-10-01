@@ -117,16 +117,16 @@ void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellDa
   Teuchos::RCP<shards::CellTopology> sideTopo = getSideTopology(cell_data);
 
   Intrepid2::DefaultCubatureFactory cubature_factory;
-  Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> intrepid_cubature;
+  Teuchos::RCP<Intrepid2::Cubature<PHX::ExecutionSpace,double,double>> intrepid_cubature;
 
   // get side topology
   if (Teuchos::is_null(sideTopo)) {
     ss << ",volume)";
-    intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(topo, cubature_degree);
+    intrepid_cubature = cubature_factory.create<PHX::ExecutionSpace,double,double>(topo, cubature_degree);
   }
   else {
     ss << ",side)";
-    intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*sideTopo, cubature_degree);
+    intrepid_cubature = cubature_factory.create<PHX::ExecutionSpace,double,double>(*sideTopo, cubature_degree);
   }
 
   PointRule::setup(ss.str(),intrepid_cubature->getNumPoints(),cell_data);
@@ -166,7 +166,7 @@ void panzer::IntegrationRule::setup_surface(const Teuchos::RCP<const shards::Cel
   int test_face_size = -1;
   for(int subcell_index=0; subcell_index<num_faces_per_cell; ++subcell_index){
     Teuchos::RCP<shards::CellTopology> face_topology = Teuchos::rcp(new shards::CellTopology(cell_topology->getCellTopologyData(subcell_dim,subcell_index)));
-    const auto & intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*face_topology, getOrder());
+    const auto & intrepid_cubature = cubature_factory.create<PHX::ExecutionSpace,double,double>(*face_topology, getOrder());
     const int num_face_points = intrepid_cubature->getNumPoints();
     _point_offsets[subcell_index+1] = _point_offsets[subcell_index] + num_face_points;
 
@@ -207,22 +207,22 @@ void panzer::IntegrationRule::setup_cv(const panzer::CellData& cell_data, std::s
 
   const shards::CellTopology & topo = *cell_data.getCellTopology();
 
-  Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double> > intrepid_cubature;
+  Teuchos::RCP<Intrepid2::Cubature<PHX::ExecutionSpace,double,double> > intrepid_cubature;
 
   int tmp_num_points = 0;
   if (cv_type == "volume") {
     ss << ",volume)";
-    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolume<PHX::Device::execution_space,double,double>(topo));
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolume<PHX::ExecutionSpace,double,double>(topo));
     tmp_num_points = intrepid_cubature->getNumPoints();
   }
   else if (cv_type == "side") {
     ss << ",side)";
-    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<PHX::Device::execution_space,double,double>(topo));
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<PHX::ExecutionSpace,double,double>(topo));
     tmp_num_points = intrepid_cubature->getNumPoints();
   }
   else if (cv_type == "boundary") {
     ss << ",boundary)";
-    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<PHX::Device::execution_space,double,double>(topo,cell_data.side()));
+    intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<PHX::ExecutionSpace,double,double>(topo,cell_data.side()));
     tmp_num_points = intrepid_cubature->getNumPoints();
   }
 
@@ -256,13 +256,13 @@ void panzer::IntegrationRule::print(std::ostream & os)
 void panzer::IntegrationRule::referenceCoordinates(Kokkos::DynRankView<double,PHX::Device> & cub_points)
 {
     // build an interpid cubature rule
-  Teuchos::RCP< Intrepid2::Cubature<PHX::Device::execution_space,double,double> > intrepid_cubature;
+  Teuchos::RCP< Intrepid2::Cubature<PHX::ExecutionSpace,double,double> > intrepid_cubature;
     Intrepid2::DefaultCubatureFactory cubature_factory;
     
     if (!isSide())
-      intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*(topology),cubature_degree);
+      intrepid_cubature = cubature_factory.create<PHX::ExecutionSpace,double,double>(*(topology),cubature_degree);
     else
-      intrepid_cubature = cubature_factory.create<PHX::Device::execution_space,double,double>(*(side_topology),cubature_degree);
+      intrepid_cubature = cubature_factory.create<PHX::ExecutionSpace,double,double>(*(side_topology),cubature_degree);
 
     int num_ip = intrepid_cubature->getNumPoints();
     Kokkos::DynRankView<double,PHX::Device> cub_weights("cub_weights",num_ip);

@@ -247,7 +247,7 @@ buildGhostedFieldVector(const GlobalIndexer & ugi,
    Importer importer(sourceMap,destMap);
 
    dest->doImport(*source,importer,Tpetra::INSERT);
-   PHX::Device::execution_space().fence();
+   PHX::ExecutionSpace().fence();
 
    return dest;
 }

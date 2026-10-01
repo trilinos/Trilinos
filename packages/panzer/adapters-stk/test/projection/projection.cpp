@@ -288,7 +288,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   const int xDir = 0;
   const int yDir = 1;
   const int zDir = 2;
-  using NodeType = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::Device>;
+  using NodeType = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::ExecutionSpace>;
   auto rhsMatrix_PHI = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD);          // Project value from scalar basis
   auto rhsMatrix_DPHI_DX = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,xDir); // Project gradient from scalar basis
   auto rhsMatrix_DPHI_DY = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,yDir); // Project gradient from scalar basis
@@ -570,7 +570,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
     const auto source = rhs[col]->getLocalViewDevice(Tpetra::Access::ReadOnly);
     const int numEntries = source.extent(0);
     Kokkos::parallel_for(numEntries, KOKKOS_LAMBDA (const int& i) { mvView(i,col) = source(i,0); });
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
   }
   timer->stop("Copy RHS Values into MV");
 
@@ -608,7 +608,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   timer->start("Check CONSISTENT Projected Values on Host");
   {
     const auto hostValues = solutionMV->getLocalViewHost(Tpetra::Access::ReadOnly);
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     const int phiIndex = 0;
     const int dphiDxIndex = 1;
@@ -708,7 +708,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         for (int field=0; field < numVectors; ++field)
           x(i,field) = ilmm(i,0) * rhsMV_k(i,field);
       });
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
   }
   timer->stop("apply lumped mass matrix");
 
@@ -716,7 +716,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   timer->start("Check LUMPED Projected Values on Host");
   {
     const auto hostValues = solutionMV->getLocalViewHost(Tpetra::Access::ReadOnly);
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     const int phiIndex = 0;
     const int dphiDxIndex = 1;
@@ -929,7 +929,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   connMassMatrix->setAllToScalar(0.0);
   ghostedMatrix->resumeFill();
   ghostedMatrix->setAllToScalar(0.0);
-  typename PHX::Device().fence();
+  typename PHX::ExecutionSpace().fence();
 
   // fill in the mass matrix
   // the integral of the edge basis squared over one cell is 4/3
@@ -946,7 +946,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
         localMass.sumIntoValues(lids(i,r),cols,2,row_values,false,true);
       }
     });
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
   }
 
   ghostedMatrix->fillComplete();
@@ -960,7 +960,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   connMassMatrix->getColMap()->describe(out,Teuchos::EVerbosityLevel::VERB_EXTREME);
 
   // compute difference between the two versions of the mass matrix
-  using NodeType = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::Device>;
+  using NodeType = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::ExecutionSpace>;
   auto difference = Tpetra::MatrixMatrix::add<double,LO,GO,NodeType>(1.0,false,*curlMassMatrix,-1.0,false,*connMassMatrix);
   double error = difference->getFrobeniusNorm();
   double norm = connMassMatrix->getFrobeniusNorm();
@@ -1075,7 +1075,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   timer->start("projectionFactory.buildRHSMatrix()");
   const int xDir = 0;
   const int yDir = 1;
-  using NodeType = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::Device>;
+  using NodeType = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::ExecutionSpace>;
   auto rhsMatrix_PHI = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD);          // Project value from scalar basis
   auto rhsMatrix_DPHI_DX = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,xDir); // Project gradient from scalar basis
   auto rhsMatrix_DPHI_DY = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,yDir); // Project gradient from scalar basis
@@ -1187,7 +1187,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
     const auto source = rhs[col]->getLocalViewDevice(Tpetra::Access::ReadOnly);
     const int numEntries = source.extent(0);
     Kokkos::parallel_for(numEntries, KOKKOS_LAMBDA (const int& i) { mvView(i,col) = source(i,0); });
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
   }
   timer->stop("Copy RHS Values into MV");
 
@@ -1226,7 +1226,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   timer->start("Check CONSISTENT Projected Values on Host");
   {
     const auto hostValues = solutionMV->getLocalViewHost(Tpetra::Access::ReadOnly);
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     const int phiIndex = 0;
     const int dphiDxIndex = 1;
@@ -1308,7 +1308,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
         for (int field=0; field < numVectors; ++field)
           x(i,field) = ilmm(i,0) * rhsMV_k(i,field);
       });
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
   }
   timer->stop("apply lumped mass matrix");
 
@@ -1317,7 +1317,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   timer->start("Check LUMPED Projected Values on Host");
   {
     const auto hostValues = solutionMV->getLocalViewHost(Tpetra::Access::ReadOnly);
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     const int phiIndex = 0;
     const int dphiDxIndex = 1;
