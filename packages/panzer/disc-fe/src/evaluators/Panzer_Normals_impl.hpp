@@ -71,7 +71,7 @@ evaluateFields(
   // ECC Fix: Get Physical Side Normals
 
   if(workset.num_cells>0) {
-    Intrepid2::CellTools<PHX::ExecutionSpace>::getPhysicalSideNormals(normals.get_view(),
+    Intrepid2::CellTools<PHX::Device>::getPhysicalSideNormals(normals.get_view(),
                                                                   this->wda(workset).int_rules[quad_index]->jac.get_view(),
                                                                   side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
       

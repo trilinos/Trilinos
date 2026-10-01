@@ -257,7 +257,9 @@ namespace PHX {
     using device_type = typename traits::device;
     using data_type = typename traits::data_type;
     using array_type = typename traits::array_type;
-    using size_type = typename device_type::size_type;
+    // Both from array_type: device_type may be a Kokkos::Device, which has no
+    // size_type of its own, and the View is the authority on how it indexes.
+    using size_type = typename array_type::size_type;
     using execution_space = typename array_type::execution_space;
 #ifdef PHX_DEBUG
     enum { rank_value = traits::rank }; // for printing in debug mode

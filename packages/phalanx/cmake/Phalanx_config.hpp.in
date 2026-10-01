@@ -13,12 +13,21 @@
 
 #cmakedefine PHX_ENABLE_KOKKOS_AMT
 
+#cmakedefine PHX_DEPRECATED_DEVICE_AS_EXECUTION_SPACE
+
 #include <Kokkos_Core.hpp>
 namespace PHX {
   using DefaultExecutionSpace = @Phalanx_DEFAULT_EXECUTION_SPACE@;
   using DefaultMemorySpace = @Phalanx_DEFAULT_MEMORY_SPACE@;
-  //using Device = Kokkos::Device<PHX::DefaultExecutionSpace,PHX::DefaultMemorySpace>;
+  // The device type Phalanx' Kokkos::Views are allocated with.  Use
+  // PHX::ExecutionSpace or PHX::MemorySpace when you want one of the two
+  // spaces on its own; a Kokkos::Device provides only execution_space,
+  // memory_space and device_type.
+#if defined(PHX_DEPRECATED_DEVICE_AS_EXECUTION_SPACE)
   using Device = PHX::DefaultExecutionSpace;
+#else
+  using Device = Kokkos::Device<PHX::DefaultExecutionSpace,PHX::DefaultMemorySpace>;
+#endif
   using index_size_type = @PHX_INDEX_SIZE_TYPE_CXX@;
   using index_t = index_size_type;
 }

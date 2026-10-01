@@ -141,7 +141,7 @@ std::string panzer::BasisIRLayout::fieldNameD2() const
   return basis_data_->fieldNameD2();
 }    
 
-Teuchos::RCP< Intrepid2::Basis<PHX::ExecutionSpace,double,double> > 
+Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > 
 panzer::BasisIRLayout::getIntrepid2Basis() const
 {
    return basis_data_->getIntrepid2Basis();

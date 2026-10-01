@@ -99,7 +99,7 @@ evaluateFields(
   }
 
   if(workset.num_cells>0)
-    Intrepid2::FunctionSpaceTools<PHX::ExecutionSpace>::
+    Intrepid2::FunctionSpaceTools<PHX::Device>::
       integrate(residual.get_view(),
                 normal_dot_flux_plus_pen.get_view(), 
                 (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());

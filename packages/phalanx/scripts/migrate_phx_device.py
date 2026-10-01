@@ -103,6 +103,43 @@ DEVICE_POSITION_PREFIXES = [
     "Kokkos::Random_XorShift1024_Pool",
 ]
 
+# The subset of DEVICE_POSITION_PREFIXES whose first template argument really
+# is a device, and so should be handed PHX::Device rather than a bare
+# execution space.  Deliberately excludes PHX::print and is_device, which take
+# an arbitrary type -- PHX::print<PHX::ExecutionSpace::size_type>() and
+# is_device<PHX::ExecutionSpace> both say exactly what they mean.
+DEVICE_SLOT_PREFIXES = [
+    "Intrepid2::",
+    "panzer::createIntrepid2Basis",
+    "createIntrepid2Basis",
+    "PHX::KokkosViewFactory",
+    "Kokkos::Random_XorShift64_Pool",
+    "Kokkos::Random_XorShift1024_Pool",
+    # panzer wrappers that forward their first parameter into Intrepid2::Basis
+    "getIntrepid2Basis",
+    "Intrepid2::DefaultCubatureFactory",
+]
+
+# Device slots reached through a member call rather than a type name, so there
+# is no prefix to anchor on: Intrepid2::DefaultCubatureFactory::create takes a
+# DeviceType, and it is almost always called on a local factory object.
+DEVICE_SLOT_PATTERNS = [
+    (r"cubature factory create<PHX::ExecutionSpace> (device slot)",
+     r"(\b\w*[Cc]ubature\w*\s*(?:\.|->)\s*create\s*<\s*)PHX::ExecutionSpace\b(?!\s*::)"),
+]
+
+# A Kokkos policy names its execution space in ANY argument position, not just
+# the first -- RangePolicy<LocalOrdinal, PHX::Device> is an index type followed
+# by an execution space.  A Kokkos::Device there is not rejected: it fails the
+# is_execution_space test, falls through to the work tag (which only requires
+# an empty type), and the policy silently runs on the DEFAULT execution space
+# while handing the functor an extra argument.
+EXEC_SLOT_PATTERNS = [
+    ("Kokkos policy <..., PHX::Device> (execution space in a later position)",
+     r"(\bKokkos::(?:Range|MDRange|Team)Policy\s*<(?:[^;<>]|<[^;<>]*>)*,\s*)"
+     r"PHX::Device(\s*>)"),
+]
+
 # Templates that take an execution space but where the right answer is a
 # judgement call, not a rename: replacing PHX::Device with PHX::exec_space
 # compiles, but silently keeps the execution space's default memory space, so
@@ -137,7 +174,10 @@ DEFINING_FILES = {
 
 # A file is worth opening if it mentions any name this script can act on.
 TRIGGER_TOKENS = ("PHX::Device", "PHX::exec_space", "PHX::ExecSpace",
-                  "PHX::mem_space", "PHX::MemSpace")
+                  "PHX::mem_space", "PHX::MemSpace",
+                  # already-unified code can still have an execution space
+                  # sitting in a device slot, so these files must be opened too
+                  "PHX::ExecutionSpace", "PHX::MemorySpace")
 
 ALIAS_RE = re.compile(
     r"\busing\s+\w+\s*=\s*(?:typename\s+)?PHX::Device\s*;"
@@ -219,6 +259,33 @@ class Rewriter:
                 re.compile(r"(\b" + esc + r"\s*<\s*)PHX::Device\b"),
                 r"\1PHX::ExecutionSpace",
             ))
+
+        # The reverse direction, and the reason it is needed.  A device slot
+        # given a bare execution space still compiles -- Intrepid2 and friends
+        # just read execution_space and memory_space off it -- but it pins the
+        # data to that execution space's own memory space, so a configured
+        # shared space never reaches it.  While PHX::Device WAS an execution
+        # space both spellings named one type and the mistake was invisible;
+        # now they are different types, and mixing them in one program gives
+        # you Basis<Kokkos::Serial> and Basis<Kokkos::Device<Serial,HostSpace>>,
+        # which are unrelated types that cannot be assigned to each other.
+        # These rules run last, after PHX::exec_space and
+        # PHX::Device::execution_space have already collapsed onto
+        # PHX::ExecutionSpace, so matching that one name is enough.
+        # The (?!\s*::) guard matters: PHX::ExecutionSpace::size_type must not
+        # become PHX::Device::size_type, which is the very member a
+        # Kokkos::Device does not have.
+        for prefix in DEVICE_SLOT_PREFIXES:
+            esc = re.escape(prefix)
+            self.rules.append((
+                f"{prefix}<PHX::ExecutionSpace -> PHX::Device (device slot)",
+                re.compile(r"(\b" + esc + r"[\w:]*\s*<\s*)PHX::ExecutionSpace\b(?!\s*::)"),
+                r"\1PHX::Device",
+            ))
+        for name, pat in DEVICE_SLOT_PATTERNS:
+            self.rules.append((name, re.compile(pat), r"\1PHX::Device"))
+        for name, pat in EXEC_SLOT_PATTERNS:
+            self.rules.append((name, re.compile(pat), r"\1PHX::ExecutionSpace\2"))
 
     def apply(self, text):
         counts = {}

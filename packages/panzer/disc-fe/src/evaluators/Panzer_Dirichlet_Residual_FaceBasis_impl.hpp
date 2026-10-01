@@ -106,7 +106,7 @@ evaluateFields(
   if(workset.num_cells<=0)
     return;
   else {
-    Intrepid2::CellTools<PHX::ExecutionSpace>::getPhysicalFaceNormals(faceNormal,
+    Intrepid2::CellTools<PHX::Device>::getPhysicalFaceNormals(faceNormal,
                                                                   pointValues.jac.get_view(),
                                                                   subcellOrd,
                                                                   parentCell);

@@ -75,11 +75,11 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
     intrepidBasis->getValues(basisRef, intrpCoords, Intrepid2::OPERATOR_VALUE);
 
     // transfer reference basis values to physical frame values
-    Intrepid2::FunctionSpaceTools<PHX::ExecutionSpace>::
+    Intrepid2::FunctionSpaceTools<PHX::Device>::
       HGRADtransformVALUE(basis,basisRef);
 
     // evaluate function at specified points
-    Intrepid2::FunctionSpaceTools<PHX::ExecutionSpace>::
+    Intrepid2::FunctionSpaceTools<PHX::Device>::
       evaluate(dof_field.get_view(),dof_coeff.get_view(),basis);
   }
   Kokkos::fence();

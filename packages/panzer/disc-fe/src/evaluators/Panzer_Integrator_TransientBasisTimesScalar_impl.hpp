@@ -110,7 +110,7 @@ evaluateFields(
     }
 
     if(workset.num_cells>0)
-      Intrepid2::FunctionSpaceTools<PHX::ExecutionSpace>::
+      Intrepid2::FunctionSpaceTools<PHX::Device>::
         integrate<ScalarT>(residual.get_view(),
                            tmp, 
 			   (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());

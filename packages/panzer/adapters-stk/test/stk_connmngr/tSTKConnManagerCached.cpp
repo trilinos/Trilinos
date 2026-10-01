@@ -58,7 +58,7 @@ namespace panzer_stk {
   template <typename Intrepid2Type>
   RCP<const panzer::FieldPattern> buildFieldPattern()
   {
-    RCP<Intrepid2::Basis<PHX::ExecutionSpace,double,double> > basis = rcp(new Intrepid2Type);
+    RCP<Intrepid2::Basis<PHX::Device,double,double> > basis = rcp(new Intrepid2Type);
     RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
     return pattern;
   }
@@ -76,7 +76,7 @@ namespace panzer_stk {
     TEST_ASSERT(mesh!=Teuchos::null);
 
     RCP<const panzer::FieldPattern> fp
-      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::ExecutionSpace,double,double> >();
+      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device,double,double> >();
 
     STKConnManager::cacheConnectivity();
     STKConnManager connMngr(mesh);
