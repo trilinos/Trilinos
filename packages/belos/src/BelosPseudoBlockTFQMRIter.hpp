@@ -26,8 +26,9 @@
 */
 
 #include "BelosConfigDefs.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosIteration.hpp"
-#include "BelosTypes.hpp"	
+#include "BelosTypes.hpp"
 
 #include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
@@ -79,7 +80,8 @@ namespace Belos {
   };
 
   template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
-  class PseudoBlockTFQMRIter : public Iteration<ScalarType,MV,OP,DM> { 
+  class PseudoBlockTFQMRIter : virtual public Iteration<ScalarType,MV,OP,DM>,
+                               public CurrentSolutionProvider<ScalarType,MV,OP,DM> {
   public:
     //
     // Convenience typedefs
@@ -200,6 +202,15 @@ namespace Belos {
      */
     Teuchos::RCP<MV> getCurrentUpdate() const { return solnUpdate_; }
 
+    //! Whether this iteration can currently provide a solution estimate.
+    bool hasCurrentSolution() const override;
+
+    //! Get the current update in solution space.
+    Teuchos::RCP<const MV> getCurrentSolutionUpdate() const override;
+
+    //! Get the current solution estimate for the linear system.
+    Teuchos::RCP<MV> getCurrentSolution() const override;
+
     //@}
 
 
@@ -287,6 +298,45 @@ namespace Belos {
     initialized_(false),
     iter_(0)
   { 
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Whether this iteration can provide a current solution estimate.
+  template <class ScalarType, class MV, class OP, class DM>
+  bool PseudoBlockTFQMRIter<ScalarType,MV,OP,DM>::hasCurrentSolution() const
+  {
+    return initialized_ && solnUpdate_ != Teuchos::null && lp_->getCurrLHSVec() != Teuchos::null;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Get the current update in solution space.
+  template <class ScalarType, class MV, class OP, class DM>
+  Teuchos::RCP<const MV> PseudoBlockTFQMRIter<ScalarType,MV,OP,DM>::getCurrentSolutionUpdate() const
+  {
+    if (!hasCurrentSolution()) {
+      return Teuchos::null;
+    }
+    if (lp_->getRightPrec() == Teuchos::null) {
+      return solnUpdate_;
+    }
+    Teuchos::RCP<MV> rightPrecUpdate = MVT::Clone(*solnUpdate_, MVT::GetNumberVecs(*solnUpdate_));
+    lp_->applyRightPrec(*solnUpdate_, *rightPrecUpdate);
+    return rightPrecUpdate;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Get the current solution estimate.
+  template <class ScalarType, class MV, class OP, class DM>
+  Teuchos::RCP<MV> PseudoBlockTFQMRIter<ScalarType,MV,OP,DM>::getCurrentSolution() const
+  {
+    if (!hasCurrentSolution()) {
+      return Teuchos::null;
+    }
+    Teuchos::RCP<const MV> update = getCurrentSolutionUpdate();
+    Teuchos::RCP<MV> curX = lp_->getCurrLHSVec();
+    Teuchos::RCP<MV> currentSolution = MVT::Clone(*curX, MVT::GetNumberVecs(*curX));
+    MVT::MvAddMv(SCT::one(), *curX, SCT::one(), *update, *currentSolution);
+    return currentSolution;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
