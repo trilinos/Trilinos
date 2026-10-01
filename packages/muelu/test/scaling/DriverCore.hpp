@@ -62,16 +62,6 @@ extern void register_GmresSingleReduce(const bool verbose);
 //*************************************************************************************
 //*************************************************************************************
 //*************************************************************************************
-// A handy macro to switch time monitors in a StackedTimer-compatible way
-#define MUELU_SWITCH_TIME_MONITOR(tm, timername)                     \
-  {                                                                  \
-    tm = Teuchos::null;                                              \
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(timername))); \
-  }
-
-//*************************************************************************************
-//*************************************************************************************
-//*************************************************************************************
 // This is a standard setup routine
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,

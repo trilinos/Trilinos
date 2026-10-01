@@ -50,7 +50,7 @@ WHILE(COUNTER LESS MAX_COUNT)
     Driver
     NAME SetupSolve_Performance
     COMM mpi
-    ARGS "--stacked-timer --nx=${NX} --ny=${NX} --nz=${NX} --matrixType=Laplace3D"
+    ARGS "--nx=${NX} --ny=${NX} --nz=${NX} --matrixType=Laplace3D"
     NUM_MPI_PROCS ${NP}
     PASS_REGULAR_EXPRESSION "Belos converged"
     RUN_SERIAL
@@ -64,7 +64,7 @@ TRIBITS_ADD_TEST(
   Driver
   NAME SetupSolve_Performance
   COMM mpi
-  ARGS "--stacked-timer --nx=240 --ny=240 --nz=120 --matrixType=Laplace3D"
+  ARGS "--nx=240 --ny=240 --nz=120 --matrixType=Laplace3D"
   NUM_MPI_PROCS 4
   PASS_REGULAR_EXPRESSION "Belos converged"
   RUN_SERIAL
@@ -429,7 +429,7 @@ TRIBITS_ADD_TEST(
   Driver
   NAME "DriverTpetra_Rerun"
   POSTFIX_AND_ARGS_0 "InputDeck" --linAlgebra=Tpetra --xml=scaling-with-rerun.xml
-  POSTFIX_AND_ARGS_1 "Repeat" --linAlgebra=Tpetra --reruns=3 --stacked-timer
+  POSTFIX_AND_ARGS_1 "Repeat" --linAlgebra=Tpetra --reruns=3
   NUM_MPI_PROCS 4
   COMM mpi # HAVE_MPI required
 )
@@ -835,7 +835,7 @@ IF(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_Serial
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=serial"
+        ARGS "--matrixType=Laplace2D --nx=${n} --ny=${n} --node=serial"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
@@ -859,7 +859,7 @@ IF(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_CUDA
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=cuda"
+        ARGS "--matrixType=Laplace2D --nx=${n} --ny=${n} --node=cuda"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
@@ -883,7 +883,7 @@ IF(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_HIP
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=hip"
+        ARGS "--matrixType=Laplace2D --nx=${n} --ny=${n} --node=hip"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
@@ -907,7 +907,7 @@ IF(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_SYCL
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=sycl"
+        ARGS "--matrixType=Laplace2D --nx=${n} --ny=${n} --node=sycl"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
