@@ -107,7 +107,7 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
   using Teuchos::rcp;
 
   // build a geometric pattern from a single basis
-  RCP<Intrepid2::Basis<PHX::ExecutionSpace,double,double> > basis = rcp(new Intrepid2Type);
+  RCP<Intrepid2::Basis<PHX::Device,double,double> > basis = rcp(new Intrepid2Type);
   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
   return pattern;
 }
@@ -117,7 +117,7 @@ Teuchos::RCP<const panzer::BlockedDOFManager> buildBlockedIndexer64(int myRank,i
   std::string names[] = {"U","V","W","X"};
 
   Teuchos::RCP<const FieldPattern> patternC1
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::ExecutionSpace,double,double> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device,double,double> >();
   Teuchos::RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
   Teuchos::RCP<panzer::BlockedDOFManager> indexer = rcp(new panzer::BlockedDOFManager());
 

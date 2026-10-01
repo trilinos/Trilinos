@@ -32,6 +32,18 @@ ELSE()
 ENDIF()
 SET(${PACKAGE_NAME}_INDEX_SIZE_TYPE "int" CACHE STRING "The default index type, choose a C++ integer type or PHX::DefaultExecutionSpace::size_type (default=int)")
 
+# PHX::Device is a Kokkos::Device, which carries an execution space and a
+# memory space independently.  It used to be a bare execution space, so code
+# that still writes e.g. Kokkos::RangePolicy<PHX::Device> needs this option
+# until it migrates.
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE
+  PHX_DEPRECATED_DEVICE_AS_EXECUTION_SPACE
+  "DEPRECATED. Keep PHX::Device as an execution space rather than a Kokkos::Device, for applications that have not migrated yet. Shared space support requires this to be OFF."
+  OFF )
+IF (${PACKAGE_NAME}_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE)
+  MESSAGE(DEPRECATION "Phalanx: PHX::Device as an execution space is deprecated. Migrate uses of PHX::Device in execution space positions to PHX::ExecutionSpace -- packages/phalanx/scripts/migrate_phx_device.py does most of it -- then reconfigure with ${PACKAGE_NAME}_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE=OFF.")
+ENDIF()
+
 MESSAGE(STATUS "Enable Shared Space: ${${PACKAGE_NAME}_ENABLE_SHARED_SPACE}")
 MESSAGE(STATUS "Default Execution Space: ${${PACKAGE_NAME}_DEFAULT_EXECUTION_SPACE}")
 MESSAGE(STATUS "Default Memory Space: ${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}")
@@ -50,15 +62,18 @@ ELSE()
 ENDIF()
 MESSAGE(STATUS "Index Size Type: ${PHX_INDEX_SIZE_TYPE_CXX}")
 
-# Shared space is not wired up yet.  The option sets
-# Phalanx_DEFAULT_MEMORY_SPACE, but PHX::Device is still an execution space
-# rather than a Kokkos::Device, so PHX::MemorySpace comes from
-# PHX::Device::memory_space and the configured memory space is never consulted
-# -- with Cuda you would get CudaSpace, not CudaUVMSpace.  Refuse the option
-# rather than silently ignore it.  Remove this once the Kokkos::Device form of
-# PHX::Device in Phalanx_config.hpp.in is switched on.
+# Shared space is plumbed through now that PHX::Device is a Kokkos::Device:
+# PHX::MemorySpace follows Phalanx_DEFAULT_MEMORY_SPACE rather than being
+# forced to the execution space's own memory space.  Still refused because it
+# has not been run on a UVM-capable build yet, so turning it on would be
+# untested rather than unimplemented.
 IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE)
-  MESSAGE(FATAL_ERROR "ERROR (Phalanx): ${PACKAGE_NAME}_ENABLE_SHARED_SPACE is not implemented yet. PHX::Device is still an execution space, so PHX::MemorySpace is taken from PHX::Device::memory_space and the shared memory space would have no effect. Reconfigure with ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=OFF.")
+  MESSAGE(FATAL_ERROR "ERROR (Phalanx): ${PACKAGE_NAME}_ENABLE_SHARED_SPACE is not supported yet. The configured memory space now reaches PHX::MemorySpace, but Phalanx has not been tested against Kokkos::SharedSpace. Reconfigure with ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=OFF.")
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE AND
+    ${PACKAGE_NAME}_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE)
+  MESSAGE(FATAL_ERROR "ERROR (Phalanx): ${PACKAGE_NAME}_ENABLE_SHARED_SPACE needs PHX::Device to be a Kokkos::Device so that the configured memory space is honored. It cannot be used with ${PACKAGE_NAME}_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON, which makes PHX::Device an execution space again and so forces the memory space to that execution space's own.")
 ENDIF()
 
 IF (${${PACKAGE_NAME}_ENABLE_SHARED_SPACE} AND NOT "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}" STREQUAL "Kokkos::SharedSpace")

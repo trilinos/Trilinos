@@ -60,7 +60,7 @@ namespace panzer
   Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
   {
     // build a geometric pattern from a single basis
-    Teuchos::RCP<Intrepid2::Basis<PHX::ExecutionSpace, double, double>> basis = rcp(new Intrepid2Type);
+    Teuchos::RCP<Intrepid2::Basis<PHX::Device, double, double>> basis = rcp(new Intrepid2Type);
     Teuchos::RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
     return pattern;
   }
@@ -88,7 +88,7 @@ namespace panzer
     RCP<DOFManager> dofManager = rcp(new DOFManager);
     dofManager->setConnManager(connManager, MPI_COMM_WORLD);
 
-    RCP<const panzer::FieldPattern> patternC1 = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::ExecutionSpace, double, double>>();
+    RCP<const panzer::FieldPattern> patternC1 = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device, double, double>>();
 
     dofManager->addField("T", patternC1); // add it to all three blocks
     dofManager->addField("block_0", "Ux", patternC1);
