@@ -48,35 +48,20 @@ SubMonitor::~SubMonitor() = default;
 
 FactoryMonitor::FactoryMonitor(const BaseClass& object, const std::string& msg, int levelID, MsgType msgLevel, MsgType timerLevel)
   : Monitor(object, msg, msgLevel, timerLevel) {
-  if (object.IsPrint(TimingsByLevel)) {
-    if (Teuchos::TimeMonitor::stackedTimerNameIsDefault())
-      levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg + " (total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
-  }
 }
 
 FactoryMonitor::FactoryMonitor(const BaseClass& object, const std::string& msg, const Level& level, MsgType msgLevel, MsgType timerLevel)
   : Monitor(object, msg, FormattingHelper::getColonLabel(level.getObjectLabel()), msgLevel, timerLevel) {
-  if (object.IsPrint(TimingsByLevel)) {
-    std::string label = FormattingHelper::getColonLabel(level.getObjectLabel());
-    if (Teuchos::TimeMonitor::stackedTimerNameIsDefault())
-      levelTimeMonitor_ = rcp(new TimeMonitor(object, label + object.ShortClassName() + ": " + msg + " (total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
-  }
 }
 
 FactoryMonitor::~FactoryMonitor() = default;
 
 SubFactoryMonitor::SubFactoryMonitor(const BaseClass& object, const std::string& msg, int levelID, MsgType msgLevel, MsgType timerLevel)
   : SubMonitor(object, msg, msgLevel, timerLevel) {
-  if (object.IsPrint(TimingsByLevel) && Teuchos::TimeMonitor::stackedTimerNameIsDefault())
-    levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg + " (sub, total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
 }
 
 SubFactoryMonitor::SubFactoryMonitor(const BaseClass& object, const std::string& msg, const Level& level, MsgType msgLevel, MsgType timerLevel)
   : SubMonitor(object, msg, FormattingHelper::getColonLabel(level.getObjectLabel()), msgLevel, timerLevel) {
-  if (object.IsPrint(TimingsByLevel) && Teuchos::TimeMonitor::stackedTimerNameIsDefault()) {
-    std::string label = FormattingHelper::getColonLabel(level.getObjectLabel());
-    levelTimeMonitor_ = rcp(new TimeMonitor(object, label + object.ShortClassName() + ": " + msg + " (sub, total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
-  }
 }
 
 SubFactoryMonitor::~SubFactoryMonitor() = default;
