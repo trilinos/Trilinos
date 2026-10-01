@@ -18,8 +18,10 @@
 
 #include "Xpetra_TpetraMap_decl.hpp"
 #include "Xpetra_Utils.hpp"
+#include "Xpetra_BlockedVector_decl.hpp"
 
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_BlockedVector_decl.hpp"
 
 namespace Xpetra {
 
@@ -149,8 +151,13 @@ toTpetra(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 toXpetra(RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
-  if (!vec.is_null())
+  if (!vec.is_null()) {
+    typedef Tpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraBlockedVectorClass;
+    Teuchos::RCP<TpetraBlockedVectorClass> bvec = Teuchos::rcp_dynamic_cast<TpetraBlockedVectorClass>(vec);
+    if (!bvec.is_null())
+      return rcp(new Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bvec->getBlockedMultiVector()));
     return rcp(new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+  }
 
   return Teuchos::null;
 }
@@ -165,12 +172,20 @@ toXpetra(RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> ve
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 toTpetra(const Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& X) {
+  typedef Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> XpetraBlockedVectorClass;
+  Teuchos::RCP<XpetraBlockedVectorClass> bX = Teuchos::rcp_dynamic_cast<XpetraBlockedVectorClass>(X);
+  if (!bX.is_null())
+    return bX->getTpetra_BlockedMultiVector()->getVectorNonConst(0);
   return Teuchos::rcp_dynamic_cast<Xpetra::TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(X, true)->getTpetra_Vector();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 toTpetra(const Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& X) {
+  typedef Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> XpetraBlockedVectorClass;
+  Teuchos::RCP<const XpetraBlockedVectorClass> bX = Teuchos::rcp_dynamic_cast<const XpetraBlockedVectorClass>(X);
+  if (!bX.is_null())
+    return bX->getTpetra_BlockedMultiVector()->getVector(0);
   return Teuchos::rcp_dynamic_cast<const Xpetra::TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(X, true)->getTpetra_Vector();
 }
 
