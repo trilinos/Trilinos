@@ -4581,6 +4581,7 @@ struct SolveTridiags {
     const impl_scalar_type df;
     const local_ordinal_type vector_loop_size;
 
+    template <typename WWViewType>
     KOKKOS_INLINE_FUNCTION void
     solveSingleVector(const member_type &member,
                       const local_ordinal_type &blocksize,
@@ -4588,7 +4589,7 @@ struct SolveTridiags {
                       const local_ordinal_type &r0,
                       const local_ordinal_type &nrows,
                       const local_ordinal_type &v,
-                      const internal_vector_scratch_type_3d_view& WW) const {
+                      const WWViewType& WW) const {
       typedef SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space> default_mode_and_algo_type;
 
       typedef typename default_mode_and_algo_type::mode_type default_mode_type;
@@ -4680,7 +4681,7 @@ struct SolveTridiags {
         // X += xs1;
       } else {
         const local_ordinal_type ws0 = WW.stride(0);
-        auto W                       = WW.data() + v;
+        auto W                       = WW.data_handle() + v;
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, blocksize), [&](int i) { W[i * ws0] = X[i * xs0]; });
         member.team_barrier();
         KOKKOSBATCHED_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(default_mode_type, default_algo_type,
@@ -4773,8 +4774,30 @@ struct SolveTridiags {
       const local_ordinal_type r0          = pri0;
       const local_ordinal_type nrows       = partptr[partidx + 1] - partptr[partidx];
       const local_ordinal_type blocksize   = (B == 0 ? D_internal_vector_values.extent(1) : B);
-      internal_vector_scratch_type_3d_view
-          WW(member.team_scratch(ScratchLevel), blocksize, 1, vector_loop_size);
+      // Raw scratch allocation wrapped in a 32-bit-indexed mdspan (layout_right,
+      // extents blocksize x vector_loop_size) instead of a Kokkos scratch View,
+      // to keep indices/strides 32-bit for the single-vector solve. The middle
+      // dimension (num_vectors == 1 here) is elided since we specialize for the
+      // single-vector case.
+      using WW_u32_mdspan_type =
+          Kokkos::mdspan<internal_vector_type,
+                         Kokkos::extents<uint32_t, Kokkos::dynamic_extent,
+                                         Kokkos::dynamic_extent>,
+                         Kokkos::layout_right>;
+      constexpr size_t WW_alignment =
+          Kokkos::max({sizeof(internal_vector_type), alignof(internal_vector_type),
+                       static_cast<size_t>(execution_space::scratch_memory_space::ALIGN)});
+      internal_vector_type *WW_ptr = reinterpret_cast<internal_vector_type *>(
+          member.team_scratch(ScratchLevel)
+              .get_shmem_aligned(sizeof(internal_vector_type) *
+                                     static_cast<size_t>(blocksize) *
+                                     static_cast<size_t>(vector_loop_size),
+                                 WW_alignment));
+      WW_u32_mdspan_type WW(WW_ptr,
+                            typename WW_u32_mdspan_type::mapping_type(
+                                typename WW_u32_mdspan_type::extents_type(
+                                    static_cast<uint32_t>(blocksize),
+                                    static_cast<uint32_t>(vector_loop_size))));
       Kokkos::single(Kokkos::PerTeam(member), [&]() {
         Z_scalar_vector[member.league_rank()] = impl_scalar_type(0);
       });
