@@ -320,20 +320,23 @@ namespace Belos {
     ///
     /// https://github.com/trilinos/Trilinos/pull/2677#issuecomment-395453521
     ///
-    /// Initialization of values moved to BelosTypes.cpp to fix ODR-used issues
-    static const double convTol;
+    /// Initialization of values moved to BelosTypes.cpp to fix ODR-used issues.
+    /// BELOS_LIB_DLL_EXPORT: dllexport when building belos.dll, dllimport for
+    /// consumers (e.g. belostpetra) - without it, Windows shared builds fail
+    /// with LNK2001/LNK2019 on these static DATA symbols.
+    static BELOS_LIB_DLL_EXPORT const double convTol;
 
     //! Relative residual tolerance for matrix polynomial construction
-    static const double polyTol;
+    static BELOS_LIB_DLL_EXPORT const double polyTol;
 
     //! DGKS orthogonalization constant
-    static const double orthoKappa;
+    static BELOS_LIB_DLL_EXPORT const double orthoKappa;
 
     //! User-defined residual scaling factor
-    static const double resScaleFactor;
+    static BELOS_LIB_DLL_EXPORT const double resScaleFactor;
 
     //! "Implicit Tolerance Scale Factor"
-    static const double impTolScale;
+    static BELOS_LIB_DLL_EXPORT const double impTolScale;
   };
 
   enum DenseMatrixType {
