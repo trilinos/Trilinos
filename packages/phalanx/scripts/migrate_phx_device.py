@@ -5,11 +5,20 @@ PHX::Device is becoming Kokkos::Device<ExecutionSpace, MemorySpace> so that
 Phalanx can honour a configured memory space (Kokkos::SharedSpace in
 particular).  A Kokkos::Device provides only execution_space, memory_space and
 device_type, so every use of PHX::Device that wanted an *execution space* has
-to be respelled PHX::exec_space.
+to be respelled PHX::ExecutionSpace.
 
 PHX::ExecutionSpace is defined as PHX::Device::execution_space, so the
 replacements this script makes are correct both before and after that change.
 Run it now, against current Phalanx, and the result keeps working either way.
+
+The script also goes the other way, because the same change splits a mistake
+that used to be invisible.  A device slot handed a bare execution space --
+Intrepid2's first template parameter is a device, and much of panzer passed it
+an execution space -- named the right type while PHX::Device WAS an execution
+space.  Now the two are unrelated types, and mixing them in one program gives
+you Basis<Kokkos::Serial> and Basis<Kokkos::Device<Serial,HostSpace>>, which
+cannot be assigned to each other.  So PHX::ExecutionSpace in a curated device
+slot becomes PHX::Device; see DEVICE_SLOT_PREFIXES.
 
 The script also unifies the older names for those two types.  Phalanx has
 carried six names for them -- exec_space, ExecSpace, mem_space, MemSpace and the
@@ -141,7 +150,7 @@ EXEC_SLOT_PATTERNS = [
 ]
 
 # Templates that take an execution space but where the right answer is a
-# judgement call, not a rename: replacing PHX::Device with PHX::exec_space
+# judgement call, not a rename: replacing PHX::Device with PHX::ExecutionSpace
 # compiles, but silently keeps the execution space's default memory space, so
 # the data does not follow a configured shared space.  Reported, never rewritten.
 REVIEW_TEMPLATES = {
@@ -195,7 +204,7 @@ class Rewriter:
                 re.compile(r"\bPHX::Device::" + member + r"\b"),
                 f"PHX::ExecutionSpace::{member}",
             ))
-        # instance construction: PHX::Device() -> PHX::exec_space()
+        # instance construction: PHX::Device() -> PHX::ExecutionSpace()
         self.rules.append((
             "PHX::Device() instance",
             re.compile(r"\bPHX::Device\s*\(\s*\)"),
@@ -327,7 +336,7 @@ def iter_files(root, extensions, excludes):
 
 def main():
     p = argparse.ArgumentParser(
-        description="Respell PHX::Device as PHX::exec_space where it means an execution space.",
+        description="Respell PHX::Device as PHX::ExecutionSpace where it means an execution space, and as PHX::Device where a device slot was given an execution space.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__)
     p.add_argument("path", nargs="?", default=".", help="directory to scan (default: .)")
