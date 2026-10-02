@@ -28,21 +28,21 @@ PrintMonitor::~PrintMonitor() {
 
 Monitor::Monitor(const BaseClass& object, const std::string& msg, MsgType msgLevel, MsgType timerLevel)
   : printMonitor_(object, msg + " (" + object.description() + ")", msgLevel)
-  , timerMonitor_(object, object.ShortClassName() + ": " + msg + " (total)", timerLevel) {}
+  , timerMonitor_(object, object.ShortClassName() + ": " + msg, timerLevel) {}
 
 Monitor::Monitor(const BaseClass& object, const std::string& msg, const std::string& label, MsgType msgLevel, MsgType timerLevel)
   : printMonitor_(object, label + msg + " (" + object.description() + ")", msgLevel)
-  , timerMonitor_(object, label + object.ShortClassName() + ": " + msg + " (total)", timerLevel) {}
+  , timerMonitor_(object, label + object.ShortClassName() + ": " + msg, timerLevel) {}
 
 Monitor::~Monitor() = default;
 
 SubMonitor::SubMonitor(const BaseClass& object, const std::string& msg, MsgType msgLevel, MsgType timerLevel)
   : printMonitor_(object, msg, msgLevel)
-  , timerMonitor_(object, object.ShortClassName() + ": " + msg + " (sub, total)", timerLevel) {}
+  , timerMonitor_(object, object.ShortClassName() + ": " + msg, timerLevel) {}
 
 SubMonitor::SubMonitor(const BaseClass& object, const std::string& msg, const std::string& label, MsgType msgLevel, MsgType timerLevel)
   : printMonitor_(object, label + msg, msgLevel)
-  , timerMonitor_(object, label + object.ShortClassName() + ": " + msg + " (sub, total)", timerLevel) {}
+  , timerMonitor_(object, label + object.ShortClassName() + ": " + msg, timerLevel) {}
 
 SubMonitor::~SubMonitor() = default;
 
