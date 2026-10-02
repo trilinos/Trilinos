@@ -10,6 +10,7 @@
 
 #include "Panzer_STKConnManager.hpp"
 
+#include <algorithm>
 #include <vector>
 
 // Teuchos includes
@@ -33,6 +34,17 @@ using Teuchos::rcp;
 bool STKConnManager::cache_connectivity_{false};
 std::vector<STKConnManager::CachedEntry> STKConnManager::cached_conn_managers_{};
 int STKConnManager::cached_reuse_count_{0};
+
+void STKConnManager::clearCachedConnectivityData(const Teuchos::RCP<const STK_Interface>& mesh)
+{
+  PANZER_FUNC_TIME_MONITOR("panzer::ConnectivityManager::clearCachedConnectivityData()");
+  const STK_Interface* mesh_ptr = mesh.get();
+  cached_conn_managers_.erase(std::remove_if(cached_conn_managers_.begin(),
+                                             cached_conn_managers_.end(),
+                                             [mesh_ptr](const CachedEntry& entry)
+                                             { return entry.second->stkMeshDB_.get() == mesh_ptr; }),
+                              cached_conn_managers_.end());
+}
 
 // Object describing how to sort a vector of elements using
 // local ID as the key
@@ -247,14 +259,14 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
    PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::STKConnManager::buildConnectivity", build_connectivity);
 
    if (cache_connectivity_) {
-    auto fp_rcp = fp.clone();
     auto search = std::find_if(cached_conn_managers_.begin(),
                                cached_conn_managers_.end(),
-                               FieldPatternCompare(fp_rcp));
+                               CacheKeyCompare(fp,stkMeshDB_.get(),sidesetsToAssociate_));
     if (search != cached_conn_managers_.end()) {
       PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::STKConnManager::copyingCachedConnectivity", copy_cached_connectivity);
       {
         STKConnManager& cm = *(search->second);
+        TEUCHOS_ASSERT(cm.stkMeshDB_.get() == stkMeshDB_.get());
         elements_ = cm.elements_;
         elementBlocks_ = cm.elementBlocks_;
         neighborElementBlocks_ = cm.neighborElementBlocks_;

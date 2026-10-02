@@ -30,6 +30,24 @@ namespace panzer_stk {
 /** \brief A panzer::ConnManager implementation backed by an STK mesh,
   * mapping local element IDs to global mesh-entity (node/edge/face/cell)
   * IDs according to a given field pattern.
+  *
+  * <b>Connectivity caching</b>
+  *
+  * When caching is enabled with cacheConnectivity(), the connectivity built
+  * by buildConnectivity() is saved and reused by later calls on any
+  * STKConnManager. A cached result is reused only when all of the following
+  * match: the STK_Interface object (compared by address), the field pattern,
+  * and the list of sidesets passed to associateElementsInSideset() (in the
+  * same order).
+  *
+  * - The cache holds a reference to every mesh it has seen, so those meshes
+  *   are not freed until their cache entries are removed with
+  *   clearCachedConnectivityData(const Teuchos::RCP<const STK_Interface>&)
+  *   or clearCachedConnectivityData().
+  * - The cache cannot detect changes made to a mesh after its connectivity
+  *   was cached (e.g. rebalancing or refinement). Reusing a cached entry for
+  *   a modified mesh returns stale connectivity, so clear the cached data for
+  *   a mesh whenever that mesh changes.
   */
 class STKConnManager : public panzer::ConnManager {
 public:
@@ -198,7 +216,12 @@ public:
       */
     virtual bool hasAssociatedNeighbors() const;
 
-  /// Enables the caching of connectivity data. Be sure to call clearCachedConnectivityData() before exiting your program.
+  /** \brief Enables the caching of connectivity data.
+    *
+    * Cached data keeps its meshes alive until it is cleared. Be sure to call
+    * clearCachedConnectivityData() before exiting your program, and see the
+    * class documentation for when cached data must be cleared.
+    */
   static void cacheConnectivity()
   { cache_connectivity_ = true; }
 
@@ -208,6 +231,13 @@ public:
     PANZER_FUNC_TIME_MONITOR("panzer::ConnectivityManager::clearCachedConnectivityData()");
     cached_conn_managers_.clear();
   }
+
+  /** \brief Removes all cached connectivity data built on the given mesh.
+    *
+    * This releases the cache's references to that mesh. Call it whenever the
+    * mesh is modified or is no longer needed.
+    */
+  static void clearCachedConnectivityData(const Teuchos::RCP<const STK_Interface>& mesh);
 
   /// This is purely for unit testing. Returns the number of times that buildConnectivity() was called, but a cached version was found to use instead.
   static int getCachedReuseCount()
@@ -270,11 +300,22 @@ protected:
    std::vector<std::vector<LocalOrdinal> > elmtToAssociatedElmts_;
 
   using CachedEntry = std::pair<Teuchos::RCP<const panzer::FieldPattern>,Teuchos::RCP<panzer_stk::STKConnManager>>;
-  struct FieldPatternCompare {
-    Teuchos::RCP<const panzer::FieldPattern> fp_;
-    FieldPatternCompare(const Teuchos::RCP<const panzer::FieldPattern>& fp):fp_(fp){}
-    bool inline operator()(CachedEntry& entry_to_compare) const
-    { return fp_->equals(*entry_to_compare.first); }
+  /// Matches a cache entry on mesh, field pattern and sideset association list.
+  struct CacheKeyCompare {
+    const panzer::FieldPattern& fp_;
+    const STK_Interface* mesh_;
+    const std::vector<std::string>& sidesets_;
+    CacheKeyCompare(const panzer::FieldPattern& fp,
+                    const STK_Interface* mesh,
+                    const std::vector<std::string>& sidesets)
+      : fp_(fp), mesh_(mesh), sidesets_(sidesets) {}
+    bool inline operator()(const CachedEntry& entry_to_compare) const
+    {
+      const STKConnManager& cm = *entry_to_compare.second;
+      return (cm.stkMeshDB_.get() == mesh_) &&
+             (cm.sidesetsToAssociate_ == sidesets_) &&
+             fp_.equals(*entry_to_compare.first);
+    }
   };
 
   static bool cache_connectivity_;

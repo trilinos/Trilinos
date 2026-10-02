@@ -177,4 +177,92 @@ namespace panzer_stk {
     STKConnManager::clearCachedConnectivityData();
     TEST_EQUALITY(STKConnManager::getCachedReuseCount(),3);
   }
+
+  TEUCHOS_UNIT_TEST(tSTKConnManager, cache_key_mesh_and_sidesets)
+  {
+    using Teuchos::RCP;
+
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    TEUCHOS_ASSERT(numProcs<=2);
+
+    RCP<STK_Interface> meshA = build2DMesh(2,1,2,1);
+    RCP<STK_Interface> meshB = build2DMesh(4,1,2,1);
+
+    RCP<const panzer::FieldPattern> fp
+      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
+
+    STKConnManager::cacheConnectivity();
+    const int startCount = STKConnManager::getCachedReuseCount();
+
+    // A different mesh with the same field pattern must not reuse cached data
+    STKConnManager cmA(meshA);
+    cmA.buildConnectivity(*fp);
+    STKConnManager cmB(meshB);
+    cmB.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount);
+
+    // Same mesh and field pattern reuses cached data
+    STKConnManager cmB2(meshB);
+    cmB2.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+1);
+    {
+      std::vector<stk::mesh::Entity> myElementsA, myElementsB;
+      meshA->getMyElements(myElementsA);
+      meshB->getMyElements(myElementsB);
+      TEST_EQUALITY(cmA.getOwnedElementCount(),myElementsA.size());
+      TEST_EQUALITY(cmB.getOwnedElementCount(),myElementsB.size());
+      TEST_EQUALITY(cmB2.getOwnedElementCount(),myElementsB.size());
+    }
+
+    // A different sideset association list must not reuse cached data
+    STKConnManager cmC(meshA);
+    cmC.associateElementsInSideset("left");
+    cmC.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+1);
+
+    // Same mesh, field pattern and sideset list reuses cached data
+    STKConnManager cmD(meshA);
+    cmD.associateElementsInSideset("left");
+    cmD.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+2);
+
+    // Clearing meshA releases its two cache entries and leaves meshB cached
+    const int strongCountABefore = meshA.strong_count();
+    const int strongCountBBefore = meshB.strong_count();
+    STKConnManager::clearCachedConnectivityData(meshA);
+    TEST_EQUALITY(meshA.strong_count(),strongCountABefore-2);
+    TEST_EQUALITY(meshB.strong_count(),strongCountBBefore);
+
+    STKConnManager cmE(meshA);
+    cmE.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+2);
+
+    STKConnManager cmF(meshB);
+    cmF.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+3);
+
+    // Clearing meshB releases its one cache entry and leaves meshA's rebuilt entry cached
+    {
+      const int countA = meshA.strong_count();
+      const int countB = meshB.strong_count();
+      STKConnManager::clearCachedConnectivityData(meshB);
+      TEST_EQUALITY(meshA.strong_count(),countA);
+      TEST_EQUALITY(meshB.strong_count(),countB-1);
+
+      // Clearing a mesh with no cache entries is a no-op
+      STKConnManager::clearCachedConnectivityData(meshB);
+      TEST_EQUALITY(meshA.strong_count(),countA);
+      TEST_EQUALITY(meshB.strong_count(),countB-1);
+    }
+
+    STKConnManager cmG(meshB);
+    cmG.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+3);
+
+    STKConnManager cmH(meshA);
+    cmH.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+4);
+
+    STKConnManager::clearCachedConnectivityData();
+  }
 }
