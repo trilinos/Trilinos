@@ -224,6 +224,42 @@ class ResidualClassification(unittest.TestCase):
         why = mig.classify_residual("SomethingUnknown<PHX::Device> x;")
         self.assertIn("unrecognized", why)
 
+    def test_curated_device_slots_are_not_residuals(self):
+        # REGRESSION: the rewriter learned these device slots but the
+        # classifier did not, so a fully migrated tree still reported 44
+        # "unrecognized" lines -- all of them correct as written.  The residual
+        # list is only useful if a human can read it.
+        for line in ("b_->getIntrepid2Basis<PHX::Device,double,double>();",
+                     "ic = cubature_factory.create<PHX::Device,double,double>(t,o);",
+                     "using S = Kokkos::UnorderedMap<Kokkos::pair<int,int>,void,PHX::Device>;",
+                     "using ft = FieldTraits<double,C,P,PHX::Device>;",
+                     "static_assert(RankCount<C,PHX::Device,P,D>::value == 3,\"x\");"):
+            with self.subTest(line=line):
+                self.assertIsNone(mig.classify_residual(line))
+
+    def test_device_trait_comparisons_are_not_residuals(self):
+        # Phalanx' own MDField plumbing compares against, and defaults into,
+        # something already named a device.
+        for line in ("static_assert(std::is_same<typename ft::device,PHX::Device>::value,\"x\");",
+                     "using device = typename std::conditional<"
+                     "!std::is_same<typename prop::device, void>::value,"
+                     "typename prop::device, PHX::Device>::type;"):
+            with self.subTest(line=line):
+                self.assertIsNone(mig.classify_residual(line))
+
+    def test_string_literals_are_not_code(self):
+        # A diagnostic message that names the type, seen on its own line.
+        self.assertIsNone(
+            mig.classify_residual('              "panzer: PHX::Device would repeat "'))
+
+    def test_continuation_lines_are_reported_distinctly(self):
+        # The scan is line by line, so a Kokkos::View split across lines shows
+        # up as a bare "PHX::Device," with no template in sight.  Saying so
+        # beats calling it unrecognized.
+        why = mig.classify_residual("               PHX::Device,")
+        self.assertIsNotNone(why)
+        self.assertIn("split across lines", why)
+
 
 class FileSelection(unittest.TestCase):
     def setUp(self):

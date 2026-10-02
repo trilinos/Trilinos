@@ -110,6 +110,11 @@ DEVICE_POSITION_PREFIXES = [
     # Kokkos random pools take a DeviceType
     "Kokkos::Random_XorShift64_Pool",
     "Kokkos::Random_XorShift1024_Pool",
+    # Kokkos::UnorderedMap<Key, Value, Device, ...>
+    "Kokkos::UnorderedMap",
+    # Phalanx' own device-slot machinery, behind PHX::MDField
+    "FieldTraits",
+    "RankCount",
 ]
 
 # The subset of DEVICE_POSITION_PREFIXES whose first template argument really
@@ -153,6 +158,25 @@ EXEC_SLOT_PATTERNS = [
 # judgement call, not a rename: replacing PHX::Device with PHX::ExecutionSpace
 # compiles, but silently keeps the execution space's default memory space, so
 # the data does not follow a configured shared space.  Reported, never rewritten.
+DEVICE_POSITION_PATTERNS = [
+    # Intrepid2::DefaultCubatureFactory::create takes a DeviceType and is
+    # called on a local factory object.
+    r"\b\w*[Cc]ubature\w*\s*(?:\.|->)\s*create\s*<[^;]*PHX::Device",
+    # Compared against, or defaulted into, something already named a device --
+    # Phalanx' own MDField trait plumbing does both.
+    r"\b(?:is_same|conditional)\s*<[^;]*\bdevice\b[^;]*PHX::Device",
+]
+
+# PHX::Device inside a string literal, which on a continuation line is all
+# there is to go on.  Diagnostic messages name the type and are not code.
+STRING_LINE_RE = re.compile(r'^\s*"')
+
+# A line that is nothing but PHX::Device followed by a comma or a closing
+# bracket is the middle of a declaration split across lines -- a
+# Kokkos::View<double*,\n PHX::Device,\n MemoryTraits<...>>, say.  The scan is
+# line by line, so the template it belongs to is not visible here.
+CONTINUATION_RE = re.compile(r"^\s*PHX::Device\s*[,>]\s*$")
+
 REVIEW_TEMPLATES = {
     "Tpetra::KokkosCompat::KokkosDeviceWrapperNode":
         "takes <ExecutionSpace, MemorySpace = ExecutionSpace::memory_space>; "
@@ -313,11 +337,19 @@ def classify_residual(line):
             return f"{tmpl}: {why}"
     if re.search(r"(?:View|DynRankView)\s*<[^;]*PHX::Device", line):
         return None  # device position in a View: correct as is
-    for prefix in DEVICE_POSITION_PREFIXES:
+    for prefix in DEVICE_POSITION_PREFIXES + DEVICE_SLOT_PREFIXES:
         if re.search(r"\b" + re.escape(prefix) + r"[\w:]*\s*<[^;]*PHX::Device", line):
+            return None  # device position: correct as is
+    for pattern in DEVICE_POSITION_PATTERNS:
+        if re.search(pattern, line):
             return None  # device position: correct as is
     if re.match(r"\s*(?:\*|//|/\*)", line):
         return None  # comment
+    if STRING_LINE_RE.match(line):
+        return None  # continuation of a string literal, not code
+    if CONTINUATION_RE.match(line):
+        return ("part of a declaration split across lines -- read the template "
+                "it belongs to, a line or two up")
     if re.search(r"(?:vector|array|list)\s*<\s*PHX::Device\s*>", line):
         return ("a container of PHX::Device -- if these are execution space "
                 "instances (Kokkos::Experimental::partition_space returns "
