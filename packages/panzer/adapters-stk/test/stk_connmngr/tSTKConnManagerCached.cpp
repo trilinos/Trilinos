@@ -27,6 +27,9 @@
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 
+#include <numeric>
+#include <type_traits>
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 
@@ -262,6 +265,88 @@ namespace panzer_stk {
     STKConnManager cmH(meshA);
     cmH.buildConnectivity(*fp);
     TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+4);
+
+    STKConnManager::clearCachedConnectivityData();
+  }
+
+  // The flat connectivity array must hold exactly the IDs of the current build
+  bool connectivityViewIsConsistent(const STKConnManager& cm)
+  {
+    const auto sizes = cm.getConnectivitySizeView();
+    const auto offsets = cm.getElementLidToConnView();
+    const auto conn = cm.getConnectivityView();
+    STKConnManager::LocalOrdinal total = 0;
+    for (std::size_t e=0; e<sizes.extent(0); ++e) {
+      if (offsets(e) != total) return false;
+      total += sizes(e);
+    }
+    return static_cast<std::size_t>(total) == conn.extent(0);
+  }
+
+  TEUCHOS_UNIT_TEST(tSTKConnManager, cache_shares_data)
+  {
+    using Teuchos::RCP;
+    using GO = STKConnManager::GlobalOrdinal;
+
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    TEUCHOS_ASSERT(numProcs<=2);
+
+    // Shared data must only be exposed read-only
+    static_assert(std::is_const<std::remove_pointer_t<decltype(std::declval<STKConnManager>().getConnectivityView().data())>>::value,
+                  "getConnectivityView() must return a const view");
+    static_assert(std::is_const<std::remove_pointer_t<decltype(std::declval<STKConnManager>().getConnectivitySizeView().data())>>::value,
+                  "getConnectivitySizeView() must return a const view");
+    static_assert(std::is_const<std::remove_pointer_t<decltype(std::declval<STKConnManager>().getElementLidToConnView().data())>>::value,
+                  "getElementLidToConnView() must return a const view");
+
+    RCP<STK_Interface> mesh = build2DMesh(2,1,2,1);
+    RCP<const panzer::FieldPattern> fp
+      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
+    auto fp_dummy = Teuchos::make_rcp<panzer::ElemFieldPattern>(fp->getCellTopology());
+
+    STKConnManager::cacheConnectivity();
+    const int startCount = STKConnManager::getCachedReuseCount();
+
+    STKConnManager cm1(mesh);
+    cm1.buildConnectivity(*fp);
+    TEST_ASSERT(connectivityViewIsConsistent(cm1));
+    const auto view1 = cm1.getConnectivityView();
+    const std::vector<GO> reference(view1.data(),view1.data()+view1.extent(0));
+
+    // A cache hit shares storage instead of copying it
+    STKConnManager cm2(mesh);
+    cm2.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+1);
+    TEST_EQUALITY(cm2.getConnectivity(0),cm1.getConnectivity(0));
+    TEST_EQUALITY(cm2.getConnectivityView().data(),cm1.getConnectivityView().data());
+    TEST_EQUALITY(cm2.getConnectivitySizeView().data(),cm1.getConnectivitySizeView().data());
+    TEST_EQUALITY(cm2.getElementLidToConnView().data(),cm1.getElementLidToConnView().data());
+
+    // Rebuilding after a hit allocates new storage and leaves shared data untouched
+    cm2.buildConnectivity(*fp_dummy);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+1);
+    TEST_ASSERT(cm2.getConnectivityView().data() != cm1.getConnectivityView().data());
+    TEST_ASSERT(connectivityViewIsConsistent(cm2));
+    {
+      const auto view = cm1.getConnectivityView();
+      TEST_ASSERT(std::vector<GO>(view.data(),view.data()+view.extent(0)) == reference);
+    }
+
+    STKConnManager cm3(mesh);
+    cm3.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+2);
+    {
+      const auto view = cm3.getConnectivityView();
+      TEST_ASSERT(std::vector<GO>(view.data(),view.data()+view.extent(0)) == reference);
+    }
+
+    // Repeated builds on one manager must not accumulate stale IDs
+    RCP<STK_Interface> mesh2 = build2DMesh(2,1,2,1);
+    STKConnManager cm4(mesh2);
+    cm4.buildConnectivity(*fp);
+    cm4.buildConnectivity(*fp_dummy);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+2);
+    TEST_ASSERT(connectivityViewIsConsistent(cm4));
 
     STKConnManager::clearCachedConnectivityData();
   }

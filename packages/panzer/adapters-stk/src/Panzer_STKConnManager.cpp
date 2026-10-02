@@ -61,7 +61,12 @@ private:
 };
 
 STKConnManager::STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB)
-  : stkMeshDB_(stkMeshDB), ownedElementCount_(0)
+  : stkMeshDB_(stkMeshDB),
+    elmtLidToConnPtr_(Teuchos::rcp(new std::vector<LocalOrdinal>)),
+    connSizePtr_(Teuchos::rcp(new std::vector<LocalOrdinal>)),
+    connectivityPtr_(Teuchos::rcp(new std::vector<GlobalOrdinal>)),
+    ownedElementCount_(0),
+    elmtToAssociatedElmtsPtr_(Teuchos::rcp(new std::vector<std::vector<LocalOrdinal> >))
 {
 }
 
@@ -70,17 +75,14 @@ STKConnManager::STKConnManager(const panzer_stk::STKConnManager & cm)
     elements_(cm.elements_),
     elementBlocks_(cm.elementBlocks_),
     neighborElementBlocks_(cm.neighborElementBlocks_),
-    blockIdToIndex_(cm.blockIdToIndex_),
-    elmtLidToConn_(cm.elmtLidToConn_),
-    connSize_(cm.connSize_),
-    connectivity_(cm.connectivity_),
+    elmtLidToConnPtr_(cm.elmtLidToConnPtr_),
+    connSizePtr_(cm.connSizePtr_),
+    connectivityPtr_(cm.connectivityPtr_),
     ownedElementCount_(cm.ownedElementCount_),
     sidesetsToAssociate_(cm.sidesetsToAssociate_),
-    sidesetYieldedAssociations_(cm.sidesetYieldedAssociations_)
+    sidesetYieldedAssociations_(cm.sidesetYieldedAssociations_),
+    elmtToAssociatedElmtsPtr_(cm.elmtToAssociatedElmtsPtr_)
 {
-  elmtToAssociatedElmts_.resize(cm.elmtToAssociatedElmts_.size());
-  for (size_t i=0; i < elmtToAssociatedElmts_.size(); ++i)
-    elmtToAssociatedElmts_[i] = cm.elmtToAssociatedElmts_[i];
 }
 
 Teuchos::RCP<panzer::ConnManager>
@@ -94,9 +96,13 @@ void STKConnManager::clearLocalElementMapping()
    elements_ = Teuchos::null;
 
    elementBlocks_.clear();
-   elmtLidToConn_.clear();
-   connSize_.clear();
-   elmtToAssociatedElmts_.clear();
+
+   // Allocate new arrays rather than clearing in place: the old arrays may be
+   // shared with the connectivity cache or with other STKConnManagers.
+   elmtLidToConnPtr_ = Teuchos::rcp(new std::vector<LocalOrdinal>);
+   connSizePtr_ = Teuchos::rcp(new std::vector<LocalOrdinal>);
+   connectivityPtr_ = Teuchos::rcp(new std::vector<GlobalOrdinal>);
+   elmtToAssociatedElmtsPtr_ = Teuchos::rcp(new std::vector<std::vector<LocalOrdinal> >);
 }
 
 void STKConnManager::buildLocalElementMapping()
@@ -154,11 +160,8 @@ void STKConnManager::buildLocalElementMapping()
 
    // allocate space for element LID to Connectivty map
    // connectivity size
-   elmtLidToConn_.clear();
-   elmtLidToConn_.resize(elements_->size(),0);
-
-   connSize_.clear();
-   connSize_.resize(elements_->size(),0);
+   elmtLidToConnPtr_->resize(elements_->size(),0);
+   connSizePtr_->resize(elements_->size(),0);
 }
 
 void
@@ -215,6 +218,7 @@ STKConnManager::addSubcellConnectivities(stk::mesh::Entity element,
 
    // loop over all relations of specified type, unless requested
    LocalOrdinal numIds = 0;
+   std::vector<GlobalOrdinal>& connectivity = *connectivityPtr_;
    stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
    const stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>(subcellRank);
 
@@ -231,7 +235,7 @@ STKConnManager::addSubcellConnectivities(stk::mesh::Entity element,
 
      // add connectivities: adjust for STK indexing craziness
      for(LocalOrdinal i=0;i<idCnt;i++) {
-       connectivity_.push_back(offset+idCnt*(bulkData.identifier(subcell)-1)+i);
+       connectivity.push_back(offset+idCnt*(bulkData.identifier(subcell)-1)+i);
      }
 
      numIds += idCnt;
@@ -245,7 +249,7 @@ STKConnManager::modifySubcellConnectivities(const panzer::FieldPattern & fp, stk
                                             GlobalOrdinal offset)
 {
    LocalOrdinal elmtLID = stkMeshDB_->elementLocalId(element);
-   auto * conn = this->getConnectivity(elmtLID);
+   GlobalOrdinal * conn = &(*connectivityPtr_)[(*elmtLidToConnPtr_)[elmtLID]];
    const std::vector<int> & subCellIndices = fp.getSubcellIndices(subcellRank,subcellId);
 
    // add connectivities: adjust for STK indexing craziness
@@ -270,18 +274,13 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
         elements_ = cm.elements_;
         elementBlocks_ = cm.elementBlocks_;
         neighborElementBlocks_ = cm.neighborElementBlocks_;
-        blockIdToIndex_ = cm.blockIdToIndex_;
-        elmtLidToConn_ = cm.elmtLidToConn_;
-        connSize_ = cm.connSize_;
-        connectivity_ = cm.connectivity_;
+        elmtLidToConnPtr_ = cm.elmtLidToConnPtr_;
+        connSizePtr_ = cm.connSizePtr_;
+        connectivityPtr_ = cm.connectivityPtr_;
         ownedElementCount_ = cm.ownedElementCount_;
         sidesetsToAssociate_ = cm.sidesetsToAssociate_;
         sidesetYieldedAssociations_ = cm.sidesetYieldedAssociations_;
-        {
-          elmtToAssociatedElmts_.resize(cm.elmtToAssociatedElmts_.size());
-          for (size_t i=0; i < elmtToAssociatedElmts_.size(); ++i)
-            elmtToAssociatedElmts_[i] = cm.elmtToAssociatedElmts_[i];
-        }
+        elmtToAssociatedElmtsPtr_ = cm.elmtToAssociatedElmtsPtr_;
         ++cached_reuse_count_;
       }
       return;
@@ -293,6 +292,11 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
    // get element info from STK_Interface
    // object and build a local element mapping.
    buildLocalElementMapping();
+
+   // Bind after buildLocalElementMapping(), which allocates new arrays
+   std::vector<LocalOrdinal>& elmtLidToConn = *elmtLidToConnPtr_;
+   std::vector<LocalOrdinal>& connSize = *connSizePtr_;
+   std::vector<GlobalOrdinal>& connectivity = *connectivityPtr_;
 
    // Build sub cell ID counts and offsets
    //    ID counts = How many IDs belong on each subcell (number of mesh DOF used)
@@ -319,7 +323,7 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
       stk::mesh::Entity element = (*elements_)[elmtLid];
 
       // get index into connectivity array
-      elmtLidToConn_[elmtLid] = connectivity_.size();
+      elmtLidToConn[elmtLid] = connectivity.size();
 
       // add connectivities for sub cells
       // Second order or higher mesh nodes are only needed downstream by the FE bases
@@ -333,19 +337,19 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
       if(cellIdCnt>0) {
          // add connectivities: adjust for STK indexing craziness
          for(LocalOrdinal i=0;i<cellIdCnt;i++)
-            connectivity_.push_back(cellOffset+cellIdCnt*(bulkData.identifier(element)-1));
+            connectivity.push_back(cellOffset+cellIdCnt*(bulkData.identifier(element)-1));
 
          numIds += cellIdCnt;
       }
 
-      connSize_[elmtLid] = numIds;
+      connSize[elmtLid] = numIds;
    }
 
    applyPeriodicBCs( fp, nodeOffset, edgeOffset, faceOffset, cellOffset);
 
-   // This method does not modify connectivity_. But it should be called here
-   // because the data it initializes should be available at the same time as
-   // connectivity_.
+   // This method does not modify the connectivity array. But it should be
+   // called here because the data it initializes should be available at the
+   // same time as the connectivity array.
    if (hasAssociatedNeighbors())
      applyInterfaceConditions();
 
@@ -454,7 +458,8 @@ getElementIdx(const std::vector<stk::mesh::Entity>& elements,
 void STKConnManager::applyInterfaceConditions()
 {
   stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
-  elmtToAssociatedElmts_.resize(elements_->size());
+  std::vector<std::vector<LocalOrdinal> >& elmtToAssociatedElmts = *elmtToAssociatedElmtsPtr_;
+  elmtToAssociatedElmts.resize(elements_->size());
   for (std::size_t i = 0; i < sidesetsToAssociate_.size(); ++i) {
     std::vector<stk::mesh::Entity> sides;
     stkMeshDB_->getAllSides(sidesetsToAssociate_[i], sides);
@@ -473,8 +478,8 @@ void STKConnManager::applyInterfaceConditions()
       }
       const std::size_t ea_id = getElementIdx(*elements_, elements[0]),
         eb_id = getElementIdx(*elements_, elements[1]);
-      elmtToAssociatedElmts_[ea_id].push_back(eb_id);
-      elmtToAssociatedElmts_[eb_id].push_back(ea_id);
+      elmtToAssociatedElmts[ea_id].push_back(eb_id);
+      elmtToAssociatedElmts[eb_id].push_back(ea_id);
     }
   }
 }
@@ -495,7 +500,7 @@ checkAssociateElementsInSidesets(const Teuchos::Comm<int>& comm) const
 const std::vector<STKConnManager::LocalOrdinal>&
 STKConnManager::getAssociatedNeighbors(const LocalOrdinal& el) const
 {
-  return elmtToAssociatedElmts_[el];
+  return (*elmtToAssociatedElmtsPtr_)[el];
 }
 
 }
