@@ -82,7 +82,6 @@ APPEND_SET(
   StructuredLineDetection.cpp
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
-  TimeMonitor.cpp
   TransPFactory.cpp
   UncoupledAggregationFactory.cpp
   UnsmooshFactory.cpp
