@@ -48,6 +48,18 @@ namespace PHX {
   //! The memory space Phalanx allocates in.
   using MemorySpace = PHX::Device::memory_space;
 
+  // The two spaces are configured independently, so nothing but this stops a
+  // pairing that cannot work -- a device memory space with a host execution
+  // space, say.  Kokkos would otherwise report it from somewhere deep inside
+  // the first kernel launch.
+  static_assert(Kokkos::SpaceAccessibility<PHX::ExecutionSpace,
+                                           PHX::MemorySpace>::accessible,
+                "Phalanx: the configured execution space cannot access the "
+                "configured memory space.  Check "
+                "Phalanx_DEFAULT_EXECUTION_SPACE against "
+                "Phalanx_DEFAULT_MEMORY_SPACE (or Phalanx_ENABLE_SHARED_SPACE, "
+                "which sets the memory space to Kokkos::SharedSpace).");
+
   // Earlier names for the two types above.  Phalanx accumulated several
   // spellings of each; they all mean what ExecutionSpace and MemorySpace mean.
   // Deprecated -- see packages/phalanx/scripts/migrate_phx_device.py.
