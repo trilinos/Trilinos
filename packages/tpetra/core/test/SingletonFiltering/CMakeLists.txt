@@ -37,7 +37,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     SF1_LHS_Reduced.mm
     SF1_Matrix_Original.mm
     SF1_Matrix_Reduced.mm
-    SF1_Matrix_Reduced_Map.mm
     SF1_RHS_Original.mm
     SF1_RHS_Reduced.mm
     SF1_Solution.mm
@@ -48,4 +47,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     SF2_Matrix_Reduced.mm
     SF2_RHS_Original.mm
     SF2_RHS_Reduced.mm
+    SF3_LHS_Original.mm
+    SF3_LHS_Reduced.mm
+    SF3_Matrix_Original.mm
+    SF3_Matrix_Reduced.mm
+    SF3_RHS_Original.mm
+    SF3_RHS_Reduced.mm
 )
