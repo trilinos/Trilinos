@@ -51,34 +51,42 @@ void AlltoAllCount(
 
     // Post receives
     RCP<CommRequest<int> > *requests = new RCP<CommRequest<int> > [nprocs];
-    for (int cnt = 0, i = 0; i < nprocs; i++) {
-      if (i != rank) {
-        try {
+    bool requestsAllocated = false;
+    try {
+      for (int cnt = 0, i = 0; i < nprocs; i++) {
+        if (i != rank) {
           requests[cnt++] = Teuchos::ireceive<int,int>(comm,
                                                      rcp(&(recvCount[i]),false),
                                                      i);
         }
-        Z2_THROW_OUTSIDE_ERROR(env);
       }
-    }
+      requestsAllocated = true;
 
-    Teuchos::barrier<int>(comm);
+      Teuchos::barrier<int>(comm);
 
-    // Send data; can use readySend since receives are posted.
-    for (int i = 0; i < nprocs; i++) {
-      if (i != rank) {
-        try {
+      // Send data; can use readySend since receives are posted.
+      for (int i = 0; i < nprocs; i++) {
+        if (i != rank) {
           Teuchos::readySend<int,int>(comm, sendCount[i], i);
         }
-        Z2_THROW_OUTSIDE_ERROR(env);
       }
-    }
 
-    // Wait for messages to return.
-    try {
+      // Wait for messages to return.
       Teuchos::waitAll<int>(comm, arrayView(requests, nprocs-1));
+
     }
-    Z2_THROW_OUTSIDE_ERROR(env);
+    catch (...) {
+      if (requestsAllocated) {
+        // Clean up any requests that were created before rethrowing
+        for (int i = 0; i < nprocs-1; i++) {
+          if (requests[i].is_null() == false) {
+            requests[i]->wait();
+          }
+        }
+      }
+      delete [] requests;
+      throw;
+    }
 
     delete [] requests;
   }

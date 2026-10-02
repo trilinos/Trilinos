@@ -211,7 +211,12 @@ class MueLuGraphBaseAdapter : public Zoltan2::GraphAdapter<User, UserCoord> {
     vertexWeights_[idx].getStridedList(length, weights, stride);
   }
 
-  bool useDegreeAsVertexWeight(int idx) const { return vertexDegreeWeight_[idx]; }
+  bool useDegreeAsVertexWeight(int idx) const {
+    if (idx < 0 || idx >= nWeightsPerVertex_) {
+      return false;
+    }
+    return vertexDegreeWeight_[idx];
+  }
 
   int getNumWeightsPerEdge() const { return nWeightsPerEdge_; }
 

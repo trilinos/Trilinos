@@ -667,6 +667,9 @@ void TpetraRowGraphAdapter<User, UserCoord>::getVertexWeightsHostView(
 template <typename User, typename UserCoord>
 bool TpetraRowGraphAdapter<User, UserCoord>::useDegreeAsVertexWeight(
     int idx) const {
+  if (idx < 0 || idx >= nWeightsPerVertex_) {
+    return false;
+  }
   return vertexDegreeWeightsHost_(idx);
 }
 

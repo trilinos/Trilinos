@@ -71,6 +71,13 @@ int main(int narg, char**arg)
            my_proc, procs_from[i], vals_from[i], 
            (vals_from[i] < 0 ? "FAIL FAIL FAIL" : " "));
 
+  /* Free allocated memory to prevent leaks */
+  free(vals_from);
+  free(vals_to);
+  free(procs_from);
+  free(procs_to);
+  free(req);
+
   MPI_Comm_free(&comm);
   MPI_Finalize();
   return 0;
