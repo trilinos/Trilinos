@@ -47,6 +47,7 @@
 #include <KokkosBlas1_nrm2.hpp>
 
 #include <memory>
+#include <cstdint>
 
 #include "Ifpack2_BlockHelper.hpp"
 #include "Ifpack2_BlockComputeResidualVector.hpp"
@@ -4469,35 +4470,114 @@ struct SolveTridiags {
   template <int B>
   struct CopyVectorToFlatTag {};
 
+  // Portable, device-safe multidimensional element access for Kokkos::mdspan.
+  // In C++23 (multidimensional subscript) mode mdspan exposes operator[](i,j,...);
+  // otherwise it exposes operator()(i,j,...). Both forward to the layout mapping
+  // and are callable from device code, unlike the std::array subscript overload.
+  // Fall back to a sensible default if the mdspan config macros are unavailable.
+#if !defined(IFPACK2_BTDC_MDSPAN_USE_BRACKET)
+#  if defined(MDSPAN_USE_BRACKET_OPERATOR)
+#    define IFPACK2_BTDC_MDSPAN_USE_BRACKET MDSPAN_USE_BRACKET_OPERATOR
+#  elif defined(__cpp_multidimensional_subscript)
+#    define IFPACK2_BTDC_MDSPAN_USE_BRACKET 1
+#  else
+#    define IFPACK2_BTDC_MDSPAN_USE_BRACKET 0
+#  endif
+#endif
+
+#if IFPACK2_BTDC_MDSPAN_USE_BRACKET
+#  define IFPACK2_BTDC_MDSPAN_ACCESS(mds, ...) (mds[__VA_ARGS__])
+#else
+#  define IFPACK2_BTDC_MDSPAN_ACCESS(mds, ...) (mds(__VA_ARGS__))
+#endif
+
+  // Helper to convert a Kokkos::View to a 32-bit mdspan with matching layout
+  template <class View>
+  static auto view_to_mdspan_u32(const View& v)
+  {
+    using T = typename View::value_type;
+    using u32 = uint32_t;
+    constexpr int R = View::rank();
+    if constexpr (R==1) {
+      using Ext = Kokkos::extents<u32, Kokkos::dynamic_extent>;
+      using MDLayout = std::conditional_t<std::is_same_v<typename View::array_layout, Kokkos::LayoutLeft>, Kokkos::layout_left,
+        std::conditional_t<std::is_same_v<typename View::array_layout, Kokkos::LayoutRight>, Kokkos::layout_right, Kokkos::layout_stride>>;
+      using Span = Kokkos::mdspan<T, Ext, MDLayout>;
+      Ext e{ static_cast<u32>(v.extent(0)) };
+      if constexpr (std::is_same_v<MDLayout, Kokkos::layout_stride>) {
+        using Map = MDLayout::template mapping<Ext>;
+        Map m{e, { static_cast<u32>(v.stride(0)) }};
+        return Span{v.data(), m};
+      } else {
+        using Map = MDLayout::template mapping<Ext>;
+        Map m{e};
+        return Span{v.data(), m};
+      }
+    } else if constexpr (R==2) {
+      using Ext = Kokkos::extents<u32, Kokkos::dynamic_extent, Kokkos::dynamic_extent>;
+      using MDLayout = std::conditional_t<std::is_same_v<typename View::array_layout, Kokkos::LayoutLeft>, Kokkos::layout_left,
+        std::conditional_t<std::is_same_v<typename View::array_layout, Kokkos::LayoutRight>, Kokkos::layout_right, Kokkos::layout_stride>>;
+      using Span = Kokkos::mdspan<T, Ext, MDLayout>;
+      Ext e{ static_cast<u32>(v.extent(0)), static_cast<u32>(v.extent(1)) };
+      if constexpr (std::is_same_v<MDLayout, Kokkos::layout_stride>) {
+        using Map = MDLayout::template mapping<Ext>;
+        Map m{e, { static_cast<u32>(v.stride(0)), static_cast<u32>(v.stride(1)) }};
+        return Span{v.data(), m};
+      } else {
+        using Map = MDLayout::template mapping<Ext>;
+        Map m{e};
+        return Span{v.data(), m};
+      }
+    } else if constexpr (R==4) {
+      using Ext = Kokkos::extents<u32, Kokkos::dynamic_extent, Kokkos::dynamic_extent, Kokkos::dynamic_extent, Kokkos::dynamic_extent>;
+      using MDLayout = std::conditional_t<std::is_same_v<typename View::array_layout, Kokkos::LayoutLeft>, Kokkos::layout_left,
+        std::conditional_t<std::is_same_v<typename View::array_layout, Kokkos::LayoutRight>, Kokkos::layout_right, Kokkos::layout_stride>>;
+      using Span = Kokkos::mdspan<T, Ext, MDLayout>;
+      Ext e{ static_cast<u32>(v.extent(0)), static_cast<u32>(v.extent(1)), static_cast<u32>(v.extent(2)), static_cast<u32>(v.extent(3)) };
+      if constexpr (std::is_same_v<MDLayout, Kokkos::layout_stride>) {
+        using Map = MDLayout::template mapping<Ext>;
+        Map m{e, { static_cast<u32>(v.stride(0)), static_cast<u32>(v.stride(1)), static_cast<u32>(v.stride(2)), static_cast<u32>(v.stride(3)) }};
+        return Span{v.data(), m};
+      } else {
+        using Map = MDLayout::template mapping<Ext>;
+        Map m{e};
+        return Span{v.data(), m};
+      }
+    } else {
+      static_assert(R==1 || R==2 || R==4, "Unsupported rank for view_to_mdspan_u32");
+    }
+  }
+
   template <int B, int ScratchLevel>
   struct SingleVectorFunctor
   {
     SingleVectorFunctor(const SolveTridiags<MatrixType>& solve) :
-      packptr(solve.packptr),
-      part2packrowidx0(solve.part2packrowidx0),
-      pack_td_ptr(solve.pack_td_ptr),
-      partptr(solve.partptr),
-      D_internal_vector_values(solve.D_internal_vector_values),
-      X_internal_vector_values(solve.X_internal_vector_values),
-      Y_scalar_multivector(solve.Y_scalar_multivector),
-      Z_scalar_vector(solve.Z_scalar_vector),
-      lclrow(solve.lclrow),
+      packptr(view_to_mdspan_u32(solve.packptr)),
+      part2packrowidx0(view_to_mdspan_u32(solve.part2packrowidx0)),
+      pack_td_ptr(view_to_mdspan_u32(solve.pack_td_ptr)),
+      partptr(view_to_mdspan_u32(solve.partptr)),
+      D_internal_vector_values(view_to_mdspan_u32(solve.D_internal_vector_values)),
+      X_internal_vector_values(view_to_mdspan_u32(solve.X_internal_vector_values)),
+      Y_scalar_multivector(view_to_mdspan_u32(solve.Y_scalar_multivector)),
+      Z_scalar_vector(view_to_mdspan_u32(solve.Z_scalar_vector)),
+      lclrow(view_to_mdspan_u32(solve.lclrow)),
       df(solve.df),
       vector_loop_size(solve.vector_loop_size) {}
 
-    ConstUnmanaged<local_ordinal_type_1d_view> packptr;
-    ConstUnmanaged<local_ordinal_type_1d_view> part2packrowidx0;
-    ConstUnmanaged<size_type_2d_view> pack_td_ptr;
-    ConstUnmanaged<local_ordinal_type_1d_view> partptr;
-    ConstUnmanaged<internal_vector_type_4d_view> D_internal_vector_values;
-    Unmanaged<internal_vector_type_4d_view> X_internal_vector_values;
-    Unmanaged<impl_scalar_type_2d_view_tpetra> Y_scalar_multivector;
-    ConstUnmanaged<local_ordinal_type_1d_view> lclrow;
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__)
-    AtomicUnmanaged<impl_scalar_type_1d_view> Z_scalar_vector;
-#else
-    /* */ Unmanaged<impl_scalar_type_1d_view> Z_scalar_vector;
-#endif
+    // mdspan members use 32-bit indices/strides to avoid the performance
+    // regression caused by the 64-bit mdspan-based Kokkos::View (Kokkos 5.0.0).
+    decltype(view_to_mdspan_u32(std::declval<ConstUnmanaged<local_ordinal_type_1d_view>>())) packptr;
+    decltype(view_to_mdspan_u32(std::declval<ConstUnmanaged<local_ordinal_type_1d_view>>())) part2packrowidx0;
+    decltype(view_to_mdspan_u32(std::declval<ConstUnmanaged<size_type_2d_view>>())) pack_td_ptr;
+    decltype(view_to_mdspan_u32(std::declval<ConstUnmanaged<local_ordinal_type_1d_view>>())) partptr;
+    decltype(view_to_mdspan_u32(std::declval<ConstUnmanaged<internal_vector_type_4d_view>>())) D_internal_vector_values;
+    decltype(view_to_mdspan_u32(std::declval<Unmanaged<internal_vector_type_4d_view>>())) X_internal_vector_values;
+    decltype(view_to_mdspan_u32(std::declval<Unmanaged<impl_scalar_type_2d_view_tpetra>>())) Y_scalar_multivector;
+    decltype(view_to_mdspan_u32(std::declval<ConstUnmanaged<local_ordinal_type_1d_view>>())) lclrow;
+    // Z_scalar_vector has the Atomic memory trait, which has no mdspan
+    // equivalent, so it is stored as a plain 32-bit mdspan and updated via
+    // explicit Kokkos atomics instead of the Atomic trait.
+    decltype(view_to_mdspan_u32(std::declval<Unmanaged<impl_scalar_type_1d_view>>())) Z_scalar_vector;
     const impl_scalar_type df;
     const local_ordinal_type vector_loop_size;
 
@@ -4515,8 +4595,8 @@ struct SolveTridiags {
       typedef typename default_mode_and_algo_type::single_vector_algo_type default_algo_type;
 
       // base pointers
-      auto A = D_internal_vector_values.data();
-      auto X = X_internal_vector_values.data();
+      auto A = D_internal_vector_values.data_handle();
+      auto X = X_internal_vector_values.data_handle();
 
       // constant
       const auto one  = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
@@ -4628,8 +4708,8 @@ struct SolveTridiags {
         local_ordinal_type nrows_vals[internal_vector_length] = {};
         for (local_ordinal_type vv = vbeg, vi = 0; vv < npacks && vi < internal_vector_length; ++vv, ++vi) {
           const local_ordinal_type partidx = partidxbeg + vv;
-          ri0_vals[vi]                     = partptr(partidx);
-          nrows_vals[vi]                   = partptr(partidx + 1) - ri0_vals[vi];
+          ri0_vals[vi]                     = partptr[partidx];
+          nrows_vals[vi]                   = partptr[partidx + 1] - ri0_vals[vi];
         }
 
         impl_scalar_type z_partial_sum(0);
@@ -4642,9 +4722,9 @@ struct SolveTridiags {
               if (j < nrows) {
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(member, blocksize),
                                      [&](const local_ordinal_type &i) {
-                                       const local_ordinal_type row = blocksize * lclrow(ri0 + j) + i;
-                                       impl_scalar_type &y       = Y_scalar_multivector(row, 0);
-                                       const impl_scalar_type yd = X_internal_vector_values(pri, i, 0, v)[vi] - y;
+                                       const local_ordinal_type row = blocksize * lclrow[ri0 + j] + i;
+                                       impl_scalar_type &y       = IFPACK2_BTDC_MDSPAN_ACCESS(Y_scalar_multivector, row, 0);
+                                       const impl_scalar_type yd = IFPACK2_BTDC_MDSPAN_ACCESS(X_internal_vector_values, pri, i, 0, v)[vi] - y;
                                        y += df * yd;
 
                                        {  // if (compute_diff) {
@@ -4664,9 +4744,9 @@ struct SolveTridiags {
                                    const local_ordinal_type nrows = nrows_vals[vi];
                                    if (j < nrows) {
                                      for (local_ordinal_type i = 0; i < blocksize; ++i) {
-                                       const local_ordinal_type row = blocksize * lclrow(ri0 + j) + i;
-                                       impl_scalar_type &y          = Y_scalar_multivector(row, 0);
-                                       const impl_scalar_type yd    = X_internal_vector_values(pri, i, 0, v)[vi] - y;
+                                       const local_ordinal_type row = blocksize * lclrow[ri0 + j] + i;
+                                       impl_scalar_type &y          = IFPACK2_BTDC_MDSPAN_ACCESS(Y_scalar_multivector, row, 0);
+                                       const impl_scalar_type yd    = IFPACK2_BTDC_MDSPAN_ACCESS(X_internal_vector_values, pri, i, 0, v)[vi] - y;
                                        y += df * yd;
 
                                        {  // if (compute_diff) {
@@ -4679,24 +4759,24 @@ struct SolveTridiags {
                                });
         }
         // if (compute_diff)
-        Z_scalar_vector(member.league_rank()) += z_partial_sum;
+        Kokkos::atomic_add(&Z_scalar_vector[member.league_rank()], z_partial_sum);
       }
     }
 
     KOKKOS_INLINE_FUNCTION void
     operator()(const member_type &member) const {
       const local_ordinal_type packidx     = member.league_rank();
-      const local_ordinal_type partidx     = packptr(packidx);
-      const local_ordinal_type npacks      = packptr(packidx + 1) - partidx;
-      const local_ordinal_type pri0        = part2packrowidx0(partidx);
-      const local_ordinal_type i0          = pack_td_ptr(partidx, 0);
+      const local_ordinal_type partidx     = packptr[packidx];
+      const local_ordinal_type npacks      = packptr[packidx + 1] - partidx;
+      const local_ordinal_type pri0        = part2packrowidx0[partidx];
+      const local_ordinal_type i0          = IFPACK2_BTDC_MDSPAN_ACCESS(pack_td_ptr, partidx, 0);
       const local_ordinal_type r0          = pri0;
-      const local_ordinal_type nrows       = partptr(partidx + 1) - partptr(partidx);
+      const local_ordinal_type nrows       = partptr[partidx + 1] - partptr[partidx];
       const local_ordinal_type blocksize   = (B == 0 ? D_internal_vector_values.extent(1) : B);
       internal_vector_scratch_type_3d_view
           WW(member.team_scratch(ScratchLevel), blocksize, 1, vector_loop_size);
       Kokkos::single(Kokkos::PerTeam(member), [&]() {
-        Z_scalar_vector(member.league_rank()) = impl_scalar_type(0);
+        Z_scalar_vector[member.league_rank()] = impl_scalar_type(0);
       });
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const int &v) {
         solveSingleVector(member, blocksize, i0, r0, nrows, v, WW);
