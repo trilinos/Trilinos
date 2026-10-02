@@ -696,6 +696,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   /// corresponding to values in \c indices, then the redundant
   /// indices will be eliminated.  This may happen either at
   /// insertion or during the next call to fillComplete().
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host if device data is more recent
   void
   insertGlobalIndices(const global_ordinal_type globalRow,
                       const Teuchos::ArrayView<const global_ordinal_type>& indices);
@@ -706,6 +709,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// Arguments are the same and in the same order as
   /// Epetra_CrsGraph::InsertGlobalIndices.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host if device data is more recent
   void
   insertGlobalIndices(const global_ordinal_type globalRow,
                       const local_ordinal_type numEnt,
@@ -721,11 +727,13 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
      \post <tt>indicesAreAllocated() == true</tt>
      \post <tt>isLocallyIndexed() == true</tt>
 
-     \note If the graph row already contains entries at the indices
-       corresponding to values in \c indices, then the redundant
-       indices will be eliminated; this may happen at insertion or
-       during the next call to fillComplete().
-  */
+      \note If the graph row already contains entries at the indices
+        corresponding to values in \c indices, then the redundant
+        indices will be eliminated; this may happen at insertion or
+        during the next call to fillComplete().
+   */
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host if device data is more recent
   void
   insertLocalIndices(const local_ordinal_type localRow,
                      const Teuchos::ArrayView<const local_ordinal_type>& indices);
@@ -736,6 +744,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// Arguments are the same and in the same order as
   /// Epetra_CrsGraph::InsertMyIndices.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host if device data is more recent
   void
   insertLocalIndices(const local_ordinal_type localRow,
                      const local_ordinal_type numEnt,
@@ -747,10 +758,12 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
      \pre <tt>isGloballyIndexed() == false</tt>
      \pre <tt>isStorageOptimized() == false</tt>
 
-     \post <tt>getNumEntriesInLocalRow(localRow) == 0</tt>
-     \post <tt>indicesAreAllocated() == true</tt>
-     \post <tt>isLocallyIndexed() == true</tt>
-  */
+      \post <tt>getNumEntriesInLocalRow(localRow) == 0</tt>
+      \post <tt>indicesAreAllocated() == true</tt>
+      \post <tt>isLocallyIndexed() == true</tt>
+   */
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host if device data is more recent
   void removeLocalIndices(local_ordinal_type localRow);
 
   //@}
@@ -764,6 +777,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// This method must be called collectively (that is, like any MPI
   /// collective) over all processes in the graph's communicator.
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for communication buffers
   void globalAssemble();
 
   /// \brief Resume fill operations.
@@ -784,6 +800,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// This method must be called collectively (that is, like any MPI
   /// collective) over all processes in the graph's communicator.
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: never
   void
   resumeFill(const Teuchos::RCP<Teuchos::ParameterList>& params =
                  Teuchos::null);
@@ -800,6 +819,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// This method must be called collectively (that is, like any MPI
   /// collective) over all processes in the graph's communicator.
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for communication and sorting operations
   ///
   /// \warning The domain Map and row Map arguments to this method
   ///   MUST be one to one!  If you have Maps that are not one to
@@ -844,6 +866,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   /// This method must be called collectively (that is, like any MPI
   /// collective) over all processes in the graph's communicator.
   ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for communication and sorting operations
+  ///
   /// \warning It is only valid to call this overload of
   ///   fillComplete if the row Map is one to one!  If the row Map
   ///   is NOT one to one, you must call the above three-argument
@@ -870,6 +895,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// This method must be called collectively (that is, like any MPI
   /// collective) over all processes in the graph's communicator.
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for communication operations
   ///
   /// \warning This method is intended for expert developer use
   ///   only, and should never be called by user code.
@@ -1098,6 +1126,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   /// \param gblRow [in] Global index of the row.
   /// \param gblColInds [out] On output: Global column indices.
   /// \param numColInds [out] Number of indices returned.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access row data
   void
   getGlobalRowCopy(global_ordinal_type gblRow,
                    nonconst_global_inds_host_view_type& gblColInds,
@@ -1110,6 +1141,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   /// \param numColInds [out] Number of indices returned.
   ///
   /// \pre <tt>hasColMap()</tt>
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access row data
   void
   getLocalRowCopy(local_ordinal_type lclRow,
                   nonconst_local_inds_host_view_type& lclColInds,
@@ -1125,6 +1159,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \pre <tt>! isLocallyIndexed()</tt>
   /// \post <tt>gblColInds.size() == getNumEntriesInGlobalRow(gblRow)</tt>
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access row data
   void
   getGlobalRowView(
       const global_ordinal_type gblRow,
@@ -1144,6 +1181,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \pre <tt>! isGloballyIndexed()</tt>
   /// \post <tt>lclColInds.size() == getNumEntriesInLocalRow(lclRow)</tt>
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access row data
   void
   getLocalRowView(
       const LocalOrdinal lclRow,
@@ -1190,6 +1230,8 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
                  const Kokkos::DualView<const local_ordinal_type*,
                                         buffer_device_type>& permuteFromLIDs,
                  const CombineMode CM) override;
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for permutation operations
 
   void copyAndPermuteNew(
       const row_graph_type& source,
@@ -1198,6 +1240,8 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
       const CombineMode CM);
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for permutation operations
 
   void insertGlobalIndicesDevice(
       const CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& srcCrsGraph,
@@ -1205,6 +1249,8 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
       LocalOrdinal loopEnd);
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host for insertion operations
 
   using padding_type = Details::CrsPadding<
       local_ordinal_type, global_ordinal_type>;
@@ -1265,6 +1311,8 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
       Kokkos::DualView<packet_type*, buffer_device_type>& exports,
       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
       size_t& constantNumPackets) override;
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host for packing operations
 
   using dist_object_type::packAndPrepare;  ///< DistObject overloads
                                            ///< packAndPrepare. Explicitly use
@@ -1276,12 +1324,16 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
        Teuchos::Array<global_ordinal_type>& exports,
        const Teuchos::ArrayView<size_t>& numPacketsPerLID,
        size_t& constantNumPackets) const override;
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host for packing operations
 
   void
   packFillActive(const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
                  Teuchos::Array<global_ordinal_type>& exports,
                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                  size_t& constantNumPackets) const;
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host for packing operations
 
   void
   packFillActiveNew(const Kokkos::DualView<const local_ordinal_type*,
@@ -1292,6 +1344,8 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
                                      buffer_device_type>
                         numPacketsPerLID,
                     size_t& constantNumPackets) const;
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host for packing operations
 
   using dist_object_type::unpackAndCombine;  ///< DistObject has overloaded
                                              ///< unpackAndCombine, use the
@@ -1309,6 +1363,8 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
                        numPacketsPerLID,
                    const size_t constantNumPackets,
                    const CombineMode combineMode) override;
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host for unpacking and combining operations
 
   //@}
   //! \name Advanced methods, at increased risk of deprecation.
@@ -1356,10 +1412,16 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///   does NOT allocate the array; the caller must allocate.  Must
   ///   have getLocalNumRows() entries on the calling process.  (This
   ///   may be different on different processes.)
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for offset computation
   void
   getLocalDiagOffsets(const Kokkos::View<size_t*, device_type, Kokkos::MemoryUnmanaged>& offsets) const;
 
   /// \brief Get offsets of the off-rank entries in the graph.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host for offset computation
   void
   getLocalOffRankOffsets(offset_device_view_type& offsets) const;
 
@@ -1372,6 +1434,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   /// \param offsets [out] Output array of offsets.  This method
   ///   reallocates the array if it is not long enough.  This is why
   ///   the method takes the array by reference.
+  ///
+  /// MPI synchronization: always - must be called collectively on all processes in the communicator
+  /// Kokkos synchronization: sometimes - may synchronize device to host for offset computation
   void
   getLocalDiagOffsets(Teuchos::ArrayRCP<size_t>& offsets) const;
 
@@ -1384,6 +1449,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \warning This method is intended for expert developer use
   ///   only, and should never be called by user code.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host if setting data from host
   void
   setAllIndices(const typename local_graph_device_type::row_map_type& rowPointers,
                 const typename local_graph_device_type::entries_type::non_const_type& columnIndices);
@@ -1397,22 +1465,35 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \warning This method is intended for expert developer use
   ///   only, and should never be called by user code.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host if setting data from host
   void
   setAllIndices(const Teuchos::ArrayRCP<size_t>& rowPointers,
                 const Teuchos::ArrayRCP<local_ordinal_type>& columnIndices);
 
   /// \brief Get a host view of the packed row offsets.
   ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access row pointers
   row_ptrs_host_view_type getLocalRowPtrsHost() const;
 
   /// \brief Get a device view of the packed row offsets.
   ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: never - returns device view directly
   row_ptrs_device_view_type getLocalRowPtrsDevice() const;
 
   /// \brief Get a host view of the packed column indicies
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host to access column indices
   local_inds_host_view_type getLocalIndicesHost() const;
 
   /// \brief Get a device view of the packed column indicies
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: never - returns device view directly
   local_inds_device_view_type getLocalIndicesDevice() const;
 
   /// \brief Replace the graph's current column Map with the given Map.
@@ -1433,6 +1514,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   ///   It is strongly recommended to use \c Tpetra::Details::makeColMap()
   ///   to create the column map. makeColMap() follows Aztec ordering by default.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: never
   void replaceColMap(const Teuchos::RCP<const map_type>& newColMap);
 
   /// \brief Reindex the column indices in place, and replace the
@@ -1454,6 +1538,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \param sortIndicesInEachRow [in] If true, sort the indices in
   ///   each row after reindexing.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: sometimes - may synchronize device to host for reindexing operations
   void
   reindexColumns(const Teuchos::RCP<const map_type>& newColMap,
                  const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
@@ -1465,6 +1552,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \pre <tt>isFillComplete() == true</tt>
   /// \pre <tt>isFillActive() == false</tt>
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: never
   void
   replaceDomainMap(const Teuchos::RCP<const map_type>& newDomainMap);
 
@@ -1481,6 +1571,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///   of the given Import is the same as this graph's column Map.
   /// \pre Either the given Import object is null, or the source Map
   ///    of the given Import is the same as this graph's domain Map.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: never
   void
   replaceDomainMapAndImporter(const Teuchos::RCP<const map_type>& newDomainMap,
                               const Teuchos::RCP<const import_type>& newImporter);
@@ -1491,6 +1584,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \pre <tt>isFillComplete() == true</tt>
   /// \pre <tt>isFillActive() == false</tt>
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: never
   void
   replaceRangeMap(const Teuchos::RCP<const map_type>& newRangeMap);
 
@@ -1507,6 +1603,9 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///   of the given Export is the same as this graph's Range Map.
   /// \pre Either the given Export object is null, or the source Map
   ///    of the given Export is the same as this graph's Row Map.
+  ///
+  /// MPI synchronization: never
+  /// Kokkos synchronization: never
   void
   replaceRangeMapAndExporter(const Teuchos::RCP<const map_type>& newRangeMap,
                              const Teuchos::RCP<const export_type>& newExporter);
