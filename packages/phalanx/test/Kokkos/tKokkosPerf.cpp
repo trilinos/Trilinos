@@ -76,7 +76,8 @@ namespace phalanx_test {
       , k_(k) {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator () (const typename Kokkos::TeamPolicy<Device>::member_type& thread) const
+    void operator () (const typename Kokkos::TeamPolicy<
+                        typename Device::execution_space>::member_type& thread) const
     {
       const int i = thread.league_rank();
       const int num_qp = rho_.extent(1);

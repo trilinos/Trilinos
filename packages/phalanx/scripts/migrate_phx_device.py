@@ -405,7 +405,10 @@ def main():
     if not args.apply and totals:
         print("nothing was modified; re-run with --apply to write these changes")
 
-    return 1 if (residuals and args.check) else 0
+    # --check is a CI gate, so pending mechanical rewrites have to fail it too,
+    # not just the residuals a human has to look at.
+    pending = bool(totals) and not args.apply
+    return 1 if (args.check and (residuals or pending)) else 0
 
 
 if __name__ == "__main__":

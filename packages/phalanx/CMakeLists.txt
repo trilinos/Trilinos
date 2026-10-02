@@ -29,24 +29,35 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SHARED_SPACE
   OFF )
 SET(${PACKAGE_NAME}_DEFAULT_EXECUTION_SPACE "Kokkos::DefaultExecutionSpace" CACHE STRING "The default execution space")
 
-# Left empty, the memory space is derived rather than chosen.  It cannot carry
-# the derived value itself: a cache entry is only written on the first
-# configure, so a cached "Kokkos::DefaultExecutionSpace::memory_space" would
-# then outlive turning ENABLE_SHARED_SPACE on and look like a deliberate
-# setting that conflicts with it.
-SET(${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE "" CACHE STRING
-  "The default memory space.  Leave empty to derive it: the execution space's own, or Kokkos::SharedSpace when ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=ON.")
-
+# The memory space is derived, never chosen: either the execution space's own,
+# or Kokkos::SharedSpace.
 IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE)
-  IF (NOT "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}" STREQUAL "")
-    MESSAGE(FATAL_ERROR "ERROR (Phalanx): You cannot enable SharedSpace and set the default memory space. Do one or the other: either ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=ON, or ${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE=\"${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}\". If you did not set it yourself, it is a stale cache entry from an earlier configure -- clear it with -U${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE.")
-  ENDIF()
   SET(PHX_DEFAULT_MEMORY_SPACE_CXX "Kokkos::SharedSpace")
-ELSEIF (NOT "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}" STREQUAL "")
-  SET(PHX_DEFAULT_MEMORY_SPACE_CXX "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}")
 ELSE()
-  SET(PHX_DEFAULT_MEMORY_SPACE_CXX "Kokkos::DefaultExecutionSpace::memory_space")
+  SET(PHX_DEFAULT_MEMORY_SPACE_CXX "${${PACKAGE_NAME}_DEFAULT_EXECUTION_SPACE}::memory_space")
 ENDIF()
+
+# Whether PHX::Device's memory space is a DIFFERENT TYPE from its execution
+# space's own.  This decides whether PHX::Device is already among the
+# per-backend Intrepid2 instantiations in Panzer_IntrepidBasisFactory.cpp, so
+# it has to be exact in both directions: wrong one way gives undefined
+# references at every call site, wrong the other gives a duplicate explicit
+# instantiation.  Both cases below are decided by Kokkos' own rules rather than
+# by comparing type names, which could not tell one type spelled two ways from
+# two types.
+#
+#   shared space off   The memory space IS the execution space's own.
+#   shared space on    Kokkos::SharedSpace is a distinct space only when a GPU
+#                      backend provides it; with host backends alone Kokkos
+#                      defines it AS Kokkos::HostSpace, which is the host
+#                      execution space's own.
+IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE AND
+    (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL))
+  SET(PHX_MEMORY_SPACE_IS_NOT_EXECUTION_SPACE_MEMORY_SPACE ON)
+ELSE()
+  SET(PHX_MEMORY_SPACE_IS_NOT_EXECUTION_SPACE_MEMORY_SPACE OFF)
+ENDIF()
+
 SET(${PACKAGE_NAME}_INDEX_SIZE_TYPE "int" CACHE STRING "The default index type, choose a C++ integer type or PHX::DefaultExecutionSpace::size_type (default=int)")
 
 # PHX::Device is a Kokkos::Device, which carries an execution space and a
@@ -68,8 +79,11 @@ MESSAGE(STATUS "Default Memory Space: ${PHX_DEFAULT_MEMORY_SPACE_CXX}")
 # Map the keywords this option used to take onto the C++ types they selected,
 # so existing configure scripts and caches keep working.
 SET(PHX_LEGACY_INDEX_SIZE_TYPES KOKKOS INT UINT LONGINT ULONGINT)
+# PHX::DefaultExecutionSpace, not PHX::ExecutionSpace: this type is
+# substituted into Phalanx_config.hpp, which declares DefaultExecutionSpace
+# itself but is included BY the header that declares ExecutionSpace.
 SET(PHX_LEGACY_INDEX_SIZE_CXX_TYPES
-  "PHX::ExecutionSpace::size_type" "int" "unsigned int" "long int" "unsigned long int")
+  "PHX::DefaultExecutionSpace::size_type" "int" "unsigned int" "long int" "unsigned long int")
 LIST(FIND PHX_LEGACY_INDEX_SIZE_TYPES "${${PACKAGE_NAME}_INDEX_SIZE_TYPE}" PHX_LEGACY_INDEX)
 IF (PHX_LEGACY_INDEX GREATER -1)
   LIST(GET PHX_LEGACY_INDEX_SIZE_CXX_TYPES ${PHX_LEGACY_INDEX} PHX_INDEX_SIZE_TYPE_CXX)
