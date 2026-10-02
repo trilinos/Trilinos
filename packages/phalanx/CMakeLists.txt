@@ -23,12 +23,29 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
   "Build with explicit template instation enabled in the examples."
   OFF )
 
-OPTION(${PACKAGE_NAME}_ENABLE_SHARED_SPACE "If set to ON, the default memory space for phalanx will be Kokkos::SharedSpace (default=OFF)" OFF)
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SHARED_SPACE
+  PHX_ENABLE_SHARED_SPACE
+  "If set to ON, the default memory space for phalanx will be Kokkos::SharedSpace (default=OFF)"
+  OFF )
 SET(${PACKAGE_NAME}_DEFAULT_EXECUTION_SPACE "Kokkos::DefaultExecutionSpace" CACHE STRING "The default execution space")
+
+# Left empty, the memory space is derived rather than chosen.  It cannot carry
+# the derived value itself: a cache entry is only written on the first
+# configure, so a cached "Kokkos::DefaultExecutionSpace::memory_space" would
+# then outlive turning ENABLE_SHARED_SPACE on and look like a deliberate
+# setting that conflicts with it.
+SET(${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE "" CACHE STRING
+  "The default memory space.  Leave empty to derive it: the execution space's own, or Kokkos::SharedSpace when ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=ON.")
+
 IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE)
-  SET(${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE "Kokkos::SharedSpace" CACHE STRING "The default memory space")
+  IF (NOT "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}" STREQUAL "")
+    MESSAGE(FATAL_ERROR "ERROR (Phalanx): You cannot enable SharedSpace and set the default memory space. Do one or the other: either ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=ON, or ${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE=\"${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}\". If you did not set it yourself, it is a stale cache entry from an earlier configure -- clear it with -U${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE.")
+  ENDIF()
+  SET(PHX_DEFAULT_MEMORY_SPACE_CXX "Kokkos::SharedSpace")
+ELSEIF (NOT "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}" STREQUAL "")
+  SET(PHX_DEFAULT_MEMORY_SPACE_CXX "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}")
 ELSE()
-  SET(${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE "Kokkos::DefaultExecutionSpace::memory_space" CACHE STRING "The default memory space")
+  SET(PHX_DEFAULT_MEMORY_SPACE_CXX "Kokkos::DefaultExecutionSpace::memory_space")
 ENDIF()
 SET(${PACKAGE_NAME}_INDEX_SIZE_TYPE "int" CACHE STRING "The default index type, choose a C++ integer type or PHX::DefaultExecutionSpace::size_type (default=int)")
 
@@ -46,7 +63,7 @@ ENDIF()
 
 MESSAGE(STATUS "Enable Shared Space: ${${PACKAGE_NAME}_ENABLE_SHARED_SPACE}")
 MESSAGE(STATUS "Default Execution Space: ${${PACKAGE_NAME}_DEFAULT_EXECUTION_SPACE}")
-MESSAGE(STATUS "Default Memory Space: ${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}")
+MESSAGE(STATUS "Default Memory Space: ${PHX_DEFAULT_MEMORY_SPACE_CXX}")
 
 # Map the keywords this option used to take onto the C++ types they selected,
 # so existing configure scripts and caches keep working.
@@ -62,22 +79,9 @@ ELSE()
 ENDIF()
 MESSAGE(STATUS "Index Size Type: ${PHX_INDEX_SIZE_TYPE_CXX}")
 
-# Shared space is plumbed through now that PHX::Device is a Kokkos::Device:
-# PHX::MemorySpace follows Phalanx_DEFAULT_MEMORY_SPACE rather than being
-# forced to the execution space's own memory space.  Still refused because it
-# has not been run on a UVM-capable build yet, so turning it on would be
-# untested rather than unimplemented.
-IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE)
-  MESSAGE(FATAL_ERROR "ERROR (Phalanx): ${PACKAGE_NAME}_ENABLE_SHARED_SPACE is not supported yet. The configured memory space now reaches PHX::MemorySpace, but Phalanx has not been tested against Kokkos::SharedSpace. Reconfigure with ${PACKAGE_NAME}_ENABLE_SHARED_SPACE=OFF.")
-ENDIF()
-
 IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE AND
     ${PACKAGE_NAME}_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE)
   MESSAGE(FATAL_ERROR "ERROR (Phalanx): ${PACKAGE_NAME}_ENABLE_SHARED_SPACE needs PHX::Device to be a Kokkos::Device so that the configured memory space is honored. It cannot be used with ${PACKAGE_NAME}_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON, which makes PHX::Device an execution space again and so forces the memory space to that execution space's own.")
-ENDIF()
-
-IF (${${PACKAGE_NAME}_ENABLE_SHARED_SPACE} AND NOT "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}" STREQUAL "Kokkos::SharedSpace")
-  MESSAGE(FATAL_ERROR "ERROR (Phalanx): You cannot enable SharedSpace and set the default memory space. Do one or the other.")
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG

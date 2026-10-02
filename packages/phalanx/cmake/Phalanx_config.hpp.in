@@ -15,10 +15,12 @@
 
 #cmakedefine PHX_DEPRECATED_DEVICE_AS_EXECUTION_SPACE
 
+#cmakedefine PHX_ENABLE_SHARED_SPACE
+
 #include <Kokkos_Core.hpp>
 namespace PHX {
   using DefaultExecutionSpace = @Phalanx_DEFAULT_EXECUTION_SPACE@;
-  using DefaultMemorySpace = @Phalanx_DEFAULT_MEMORY_SPACE@;
+  using DefaultMemorySpace = @PHX_DEFAULT_MEMORY_SPACE_CXX@;
   // The device type Phalanx' Kokkos::Views are allocated with.  Use
   // PHX::ExecutionSpace or PHX::MemorySpace when you want one of the two
   // spaces on its own; a Kokkos::Device provides only execution_space,

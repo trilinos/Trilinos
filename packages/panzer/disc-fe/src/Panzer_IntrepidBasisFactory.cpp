@@ -292,5 +292,28 @@ PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::HIP)
 PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::SYCL)
 #endif
 
+// The list above covers PHX::Device only while its memory space is its
+// execution space's own, which is what SPACE::device_type means.  A shared
+// memory space breaks that: Kokkos::Device<Cuda,CudaUVMSpace> is not
+// Kokkos::Device<Cuda,CudaSpace>, so PHX::Device needs its own instantiation.
+//
+// Only a GPU backend gives Kokkos::SharedSpace a memory space distinct from
+// the execution space's; on a host-only build SharedSpace IS HostSpace and
+// PHX::Device is still in the list, so emitting it here would be a duplicate.
+// The static_assert holds the preprocessor condition above to that reasoning:
+// PHX::Device can only collide with a device of its own execution space, so it
+// is a duplicate exactly when the two memory spaces agree.
+#if defined(PHX_ENABLE_SHARED_SPACE) &&                                       \
+    (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) ||             \
+     defined(KOKKOS_ENABLE_SYCL))
+static_assert(!std::is_same<PHX::MemorySpace,
+                            PHX::ExecutionSpace::memory_space>::value,
+              "panzer: PHX::Device would repeat one of the instantiations "
+              "above.  Narrow the condition on this block -- the configured "
+              "memory space is the execution space's own, so PHX::Device is "
+              "already covered by its backend's SPACE::device_type.");
+PANZER_INSTANTIATE_INTREPID2_BASIS_FOR(PHX::Device)
+#endif
+
 #undef PANZER_INSTANTIATE_INTREPID2_BASIS
 #undef PANZER_INSTANTIATE_INTREPID2_BASIS_FOR
