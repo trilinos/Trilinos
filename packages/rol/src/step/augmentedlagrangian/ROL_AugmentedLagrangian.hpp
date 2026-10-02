@@ -15,6 +15,7 @@
 #include "ROL_QuadraticPenalty.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Ptr.hpp"
 #include <iostream>
 
