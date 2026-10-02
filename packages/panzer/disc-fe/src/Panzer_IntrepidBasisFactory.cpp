@@ -297,15 +297,14 @@ PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::SYCL)
 // memory space breaks that: Kokkos::Device<Cuda,CudaUVMSpace> is not
 // Kokkos::Device<Cuda,CudaSpace>, so PHX::Device needs its own instantiation.
 //
-// Only a GPU backend gives Kokkos::SharedSpace a memory space distinct from
-// the execution space's; on a host-only build SharedSpace IS HostSpace and
-// PHX::Device is still in the list, so emitting it here would be a duplicate.
-// The static_assert holds the preprocessor condition above to that reasoning:
-// PHX::Device can only collide with a device of its own execution space, so it
-// is a duplicate exactly when the two memory spaces agree.
-#if defined(PHX_ENABLE_SHARED_SPACE) &&                                       \
-    (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) ||             \
-     defined(KOKKOS_ENABLE_SYCL))
+// Phalanx computes PHX_MEMORY_SPACE_IS_NOT_EXECUTION_SPACE_MEMORY_SPACE for
+// exactly this question, and because the memory space is always either the
+// execution space's own or Kokkos::SharedSpace, it is exact.  Not needed in
+// the deprecated mode, where PHX::Device is an execution space and so already
+// instantiated above.  The static_assert is a backstop: nothing should be able
+// to reach it.
+#if defined(PHX_MEMORY_SPACE_IS_NOT_EXECUTION_SPACE_MEMORY_SPACE) &&          \
+    !defined(PHX_DEPRECATED_DEVICE_AS_EXECUTION_SPACE)
 static_assert(!std::is_same<PHX::MemorySpace,
                             PHX::ExecutionSpace::memory_space>::value,
               "panzer: PHX::Device would repeat one of the instantiations "

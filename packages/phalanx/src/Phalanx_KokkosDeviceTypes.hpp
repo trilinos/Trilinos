@@ -30,17 +30,14 @@
 
 namespace PHX {
 
-  // Phalanx_DEFAULT_EXECUTION_SPACE and Phalanx_DEFAULT_MEMORY_SPACE are
-  // configured as free-form type names, so a plausible-looking mistake -- a
-  // memory space in the execution space slot, say -- otherwise surfaces much
-  // later as an unreadable template error.
   static_assert(Kokkos::is_execution_space_v<PHX::DefaultExecutionSpace>,
                 "Phalanx: the type configured through "
                 "Phalanx_DEFAULT_EXECUTION_SPACE is not a Kokkos execution "
                 "space.");
   static_assert(Kokkos::is_memory_space_v<PHX::DefaultMemorySpace>,
-                "Phalanx: the type configured through "
-                "Phalanx_DEFAULT_MEMORY_SPACE is not a Kokkos memory space.");
+                "Phalanx: the memory space derived from "
+                "Phalanx_DEFAULT_EXECUTION_SPACE is not a Kokkos memory "
+                "space.");
 
   //! The execution space Phalanx runs in.
   using ExecutionSpace = PHX::Device::execution_space;
@@ -48,17 +45,17 @@ namespace PHX {
   //! The memory space Phalanx allocates in.
   using MemorySpace = PHX::Device::memory_space;
 
-  // The two spaces are configured independently, so nothing but this stops a
-  // pairing that cannot work -- a device memory space with a host execution
-  // space, say.  Kokkos would otherwise report it from somewhere deep inside
-  // the first kernel launch.
+  // Shared space pairs a configured execution space with a memory space it
+  // did not choose, so nothing but this stops a pairing that cannot work.
+  // Kokkos would otherwise report it from somewhere deep inside the first
+  // kernel launch.
   static_assert(Kokkos::SpaceAccessibility<PHX::ExecutionSpace,
                                            PHX::MemorySpace>::accessible,
                 "Phalanx: the configured execution space cannot access the "
-                "configured memory space.  Check "
+                "memory space it was paired with.  Check "
                 "Phalanx_DEFAULT_EXECUTION_SPACE against "
-                "Phalanx_DEFAULT_MEMORY_SPACE (or Phalanx_ENABLE_SHARED_SPACE, "
-                "which sets the memory space to Kokkos::SharedSpace).");
+                "Phalanx_ENABLE_SHARED_SPACE, which replaces the memory space "
+                "with Kokkos::SharedSpace.");
 
   // Earlier names for the two types above.  Phalanx accumulated several
   // spellings of each; they all mean what ExecutionSpace and MemorySpace mean.

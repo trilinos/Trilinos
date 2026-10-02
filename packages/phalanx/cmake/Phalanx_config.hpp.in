@@ -17,6 +17,8 @@
 
 #cmakedefine PHX_ENABLE_SHARED_SPACE
 
+#cmakedefine PHX_MEMORY_SPACE_IS_NOT_EXECUTION_SPACE_MEMORY_SPACE
+
 #include <Kokkos_Core.hpp>
 namespace PHX {
   using DefaultExecutionSpace = @Phalanx_DEFAULT_EXECUTION_SPACE@;
