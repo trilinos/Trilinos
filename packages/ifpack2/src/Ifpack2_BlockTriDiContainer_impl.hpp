@@ -5168,7 +5168,8 @@ struct SolveTridiags {
             policy(packptr.extent(0) - 1, team_size, vector_loop_size);                                                                               \
         policy.set_scratch_size(0, Kokkos::PerTeam(per_team_scratch));                                                                                \
         Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,0>",                                                                          \
-                             policy, SingleVectorFunctor<B, 0>(*this));                                                                                                          \
+        Kokkos::Experimental::require(policy, Kokkos::Experimental::WorkItemProperty::HintHeavyWeight), \
+                             SingleVectorFunctor<B, 0>(*this));                                                                                       \
       } else {                                                                                                                                        \
         Kokkos::TeamPolicy<execution_space>                                                                                    \
             policy(packptr.extent(0) - 1, team_size, vector_loop_size);                                                                               \
