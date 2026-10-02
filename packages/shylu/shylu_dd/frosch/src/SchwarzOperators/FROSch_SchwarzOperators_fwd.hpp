@@ -34,6 +34,12 @@ namespace FROSch {
               class LO,
               class GO,
               class NO>
+    class GeometricOverlappingOperator;
+
+    template <class SC,
+              class LO,
+              class GO,
+              class NO>
     class HarmonicCoarseOperator;
 
     template <class SC,
