@@ -1,0 +1,855 @@
+================================================================================
+Plan: complete shared space support in Phalanx
+================================================================================
+Written 2026-09-30, kept current through the work.  Supersedes the approach on
+branch rppawlo/phalanx-uvm-removal (single commit 2e16e68fee0, 2020-10-07).
+
+Section 8 is the decisions register: every choice, what was rejected, and why.
+Start there if you want the conclusions rather than the argument.
+
+Commits of this branch are cited by subject line, not by hash, because they
+were amended during review and will be rebased or squashed on the way into
+develop.  Hashes of commits already in develop are stable and are used.
+
+Goal: make Phalanx_ENABLE_SHARED_SPACE actually work, so that PHX views can be
+allocated in Kokkos::SharedSpace while the execution space stays whatever
+Phalanx_DEFAULT_EXECUTION_SPACE names.  Today that option is refused at
+configure time (Phalanx/CMakeLists.txt) because it has no effect.
+
+
+--------------------------------------------------------------------------------
+1. THE CORE DECISION: Kokkos::Device, not a bare memory space
+--------------------------------------------------------------------------------
+
+The 2020 branch switched Kokkos::View template arguments from a device to a
+memory space.  Recommend inverting that decision.  Two independent reasons.
+
+REASON 1 -- a bare memory space cannot express the configuration.
+
+Kokkos::ViewTraits accepts exactly one space argument and derives the rest from
+it (packages/kokkos/core/src/View/Kokkos_ViewTraits.hpp:380-396):
+
+    template <class Space, class... Prop>
+    struct ViewTraits<std::enable_if_t<Kokkos::is_space<Space>::value>,
+                      Space, Prop...> {
+      static_assert(..., "Only one View Execution or Memory Space template argument");
+      using execution_space = typename Space::execution_space;
+      using memory_space    = typename Space::memory_space;
+
+is_space covers execution spaces, memory spaces and Device alike, so all three
+spellings take the same path.  The consequence: a memory space DICTATES the
+execution space through its own execution_space typedef, and for the shared
+spaces that pairing is fixed to the GPU --
+
+    Kokkos_CudaSpace.hpp:50   CudaUVMSpace::execution_space = Kokkos::Cuda
+    Kokkos_HostSpace.hpp:49   HostSpace::execution_space    = DefaultHostExecutionSpace
+
+So View<T, Kokkos::SharedSpace> silently forces the execution space to Cuda,
+overriding Phalanx_DEFAULT_EXECUTION_SPACE.  The configuration we deliberately
+enabled -- a host execution space while a GPU backend is on -- becomes
+inexpressible.  Only Kokkos::Device<ExecSpace, MemSpace> carries both halves
+independently.
+
+REASON 2 -- Device is Kokkos' own internal representation, and is not
+deprecated.
+
+Kokkos::Device (Kokkos_Concepts.hpp:213-222) is current, and every View has one
+regardless of how it was spelled: ViewTraits always defines
+    device_type = Kokkos::Device<ExecutionSpace, MemorySpace>   (line 540)
+and the internal ViewArguments type list static_asserts is_device_v<DeviceType>.
+Passing a Device is the direct spelling; passing a memory space is a shorthand
+that fills in the other half from a default.
+
+COST COMPARISON.  The 2020 memory-space branch touched 73 files, ~700 lines each
+way, overwhelmingly tests (tKokkos.cpp alone is 219 lines), and that churn would
+propagate to every downstream user.  The Device approach leaves the 780-odd
+`PHX::Device` View arguments untouched.
+
+
+--------------------------------------------------------------------------------
+2. INVENTORY: what actually breaks
+--------------------------------------------------------------------------------
+
+Kokkos::Device provides exactly three members: execution_space, memory_space,
+device_type.  Everything else an execution space offers is gone.
+
+1390 references to PHX::Device across Trilinos, ALL of them in phalanx and
+panzer -- no other package references PHX:: at all.  Exact, mutually exclusive
+counts:
+
+    PHX::Device                    1053   (bare; mixed, see below)
+    PHX::Device::execution_space    174   SAFE
+    PHX::Device()                    92   BREAKS   instance: fence, deep_copy
+    PHX::Device::size_type           54   BREAKS
+    PHX::Device::memory_space        14   SAFE
+    PHX::Device::array_layout         3   BREAKS
+
+Breaking down the 1053 bare uses by the template they sit in.  This is the part
+that needs care: the position is only safe when PHX::Device lands in a View-like
+DEVICE slot.  Several non-Kokkos templates take an EXECUTION SPACE there.
+
+    SAFE -- device position in a View and friends
+      Kokkos::View<T, Layout, PHX::Device>, PHX::View, AtomicView,
+      UnmanagedView, DynRankView, and the many View<T*, PHX::Device> spellings.
+      This is the large majority.
+
+    BREAKS -- execution space position
+      Kokkos::RangePolicy<PHX::Device>            ~72
+      Kokkos::MDRangePolicy<PHX::Device, ...>     ~25
+      Kokkos::TeamPolicy<PHX::Device>               5
+      panzer::HP::inst().teamPolicy<ScalarT[,Tag],PHX::Device>   17
+        -- note the execution space is the LAST template argument here, not the
+        first, so a first-parameter rule does not see it
+
+    CORRECT AS WRITTEN -- device position, do NOT rewrite
+      Every Intrepid2 class template takes a DEVICE, not an execution space.
+      Checked 2026-09-30 against the sources:
+
+          template<typename Device, typename outputValueType,
+                   typename pointValueType>
+          class Basis {
+            using DeviceType = Device;
+            using ExecutionSpace = typename DeviceType::execution_space;
+
+      and identically for FunctionSpaceTools, CellTools, OrientationTools,
+      ProjectionTools, RealSpaceTools, ArrayTools and Cubature.  That is ~150
+      sites in panzer alone.  panzer::createIntrepid2Basis is the same case
+      despite naming its template parameter ExecutionSpace -- it forwards
+      straight into Intrepid2::Basis, so the parameter is misnamed.
+
+      Rewriting these would COMPILE -- an execution space satisfies Intrepid2's
+      requirements, since it has ::execution_space and ::memory_space -- and
+      would then hand Intrepid2 the execution space's default memory space,
+      silently dropping a configured shared space.  Exactly the failure this
+      work exists to prevent.  An earlier draft of this plan had it backwards.
+
+    NEEDS A JUDGEMENT CALL -- reported, never rewritten
+      Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>   ~10
+      Tpetra::Vector / MultiVector / CrsMatrix / Map <..., PHX::Device>
+        Both are the Node question: the parameter decides where Tpetra
+        allocates.  PHX::ExecutionSpace alone compiles but pins Tpetra to the
+        execution space's default memory space, so Tpetra data would not
+        follow Phalanx into a shared space.  Decide per use between
+        <PHX::ExecutionSpace> and <PHX::ExecutionSpace, PHX::MemorySpace>.
+
+    NEEDS HUMAN REVIEW
+      ~27 aliases of the form `using X = PHX::Device;` / `typedef PHX::Device X;`
+      An alias hides whether the use is a device or an execution space, and no
+      textual tool can follow it.
+
+(The ~ figures come from a heuristic classifier.  The script in section 4
+re-derives them exactly; use its output, not these.)
+
+THE KEY PROPERTY THAT MAKES THIS CHEAP: every breaking site has a replacement
+that is correct BOTH before and after the switch.  PHX::exec_space is already
+defined as PHX::Device::execution_space (Phalanx_KokkosDeviceTypes.hpp:45) and
+resolves to the same execution space in either world:
+
+    PHX::Device()                ->  PHX::ExecutionSpace()
+    RangePolicy<PHX::Device>     ->  RangePolicy<PHX::ExecutionSpace>
+    PHX::Device::size_type       ->  PHX::ExecutionSpace::size_type
+    PHX::Device::array_layout    ->  PHX::ExecutionSpace::array_layout
+    Intrepid2::Basis<PHX::Device,...> -> Intrepid2::Basis<PHX::ExecutionSpace,...>
+
+That is already the established spelling in Phalanx: line 65 of that same header
+reads `using DefaultDevLayout = PHX::exec_space::array_layout;`.
+
+
+--------------------------------------------------------------------------------
+2b. NAMING: unify on PHX::ExecutionSpace and PHX::MemorySpace
+--------------------------------------------------------------------------------
+
+Decided 2026-09-30.  Phalanx currently carries SIX names for two types:
+
+    PHX::exec_space              512 uses in Trilinos,  99 in Drekar
+    PHX::mem_space                20                     0
+    PHX::ExecSpace                19                     0
+    PHX::MemSpace                 10                     0
+    PHX::DefaultExecutionSpace     4                     0
+    PHX::DefaultMemorySpace        2                     0
+
+Unify on PHX::ExecutionSpace and PHX::MemorySpace, and deprecate the rest.
+
+WHY CamelCase rather than execution_space / memory_space.  Kokkos' convention is
+not "snake_case", it is scope-dependent.  Namespace-scope type names in Kokkos
+are CamelCase without exception -- DefaultExecutionSpace, DefaultHostExecutionSpace,
+HostSpace, Device, View, LayoutLeft.  snake_case is reserved for nested member
+typedefs (execution_space, memory_space, size_type, array_layout), the
+trait-query convention from the standard library, where T::execution_space means
+"ask this type about itself".  A namespace-scope PHX::execution_space would wear
+member-typedef clothing and read as a query it is not:
+
+    typename T::execution_space     // asks T
+    PHX::execution_space            // ...not a query, despite appearances
+
+PHX::ExecutionSpace also sits correctly beside the existing PHX::Device and
+PHX::DefaultExecutionSpace.
+
+COST.  PHX::exec_space is the de facto name today (611 uses across Trilinos and
+Drekar alone), so this is the larger rename of the two changes.  It is worth
+doing IN THE SAME PASS as the PHX::Device migration rather than after it: both
+are mechanical, both touch the same files, and applications should be asked to
+absorb one disruption rather than two.  The migration script in section 4 does
+both.
+
+DEPRECATION.  Keep the old names as deprecated aliases for a release, using the
+macro Phalanx already generates (PHALANX_DEPRECATED_MSG, via
+@PHALANX_DEPRECATED_DECLARATIONS@ in Phalanx_config.hpp.in:26).  Sacado has the
+in-tree precedent for the exact spelling, e.g.
+
+    using ViewScalarStride SACADO_DEPRECATED_WITH_COMMENT(
+        "Use Sacado::ViewScalarStride instead of Kokkos::ViewScalarStride")
+        = Sacado::ViewScalarStride<ViewType>;
+
+DefaultExecutionSpace / DefaultMemorySpace stay, but as the config header's
+building blocks for forming PHX::Device rather than as names user code reaches
+for.  They name the same types, which is precisely the redundancy being removed.
+
+
+--------------------------------------------------------------------------------
+3. SEQUENCING
+--------------------------------------------------------------------------------
+
+Because the replacements are valid in both worlds, the risky part can land
+first, separately, with NO behaviour change at all.
+
+PHASE 1 -- DONE.  Mechanical cleanup, no behaviour change.  Own PR.
+  Replace every execution-space use of PHX::Device with PHX::ExecutionSpace,
+  and collapse exec_space / ExecSpace / mem_space / MemSpace onto
+  PHX::ExecutionSpace and PHX::MemorySpace, in phalanx and panzer.  Nothing
+  else in Trilinos needs touching.  Fully testable against today's code on
+  every backend; a reviewer can verify most of it by grep.  Also fix the legacy
+  keyword mapping in Phalanx/CMakeLists.txt, which mapped
+  Phalanx_INDEX_SIZE_TYPE=KOKKOS to "PHX::Device::size_type" -- a member
+  Kokkos::Device does not have.  It now reads PHX::ExecutionSpace::size_type.
+  After this phase PHX::Device means only "the View's device type", and there is
+  one name for each space instead of three.
+
+  Landed as two commits on branch phalanx-unify-space-names, off origin/develop:
+    "Phalanx: unify the execution and memory space names"
+    "Panzer: use the unified Phalanx space names"
+  Phalanx 385 script rewrites / 84 files + 15 hand fixes; Panzer 618 rewrites /
+  126 files + 12 hand-written Tpetra node-slot fixes.  Phalanx 39/39 and Panzer
+  227/227 tests pass; Phalanx was additionally built with
+  Phalanx_HIDE_DEPRECATED_CODE=ON.  Grep confirms PHX::Device appears nowhere in
+  Trilinos outside phalanx and panzer, so no other package was affected.
+
+PHASE 2 -- DONE.  Write and publish the migration script.  See section 4.
+  packages/phalanx/scripts/migrate_phx_device.py went in with the phase 1
+  Phalanx commit, so it is in the tree ahead of the phase 3 switch.
+
+PHASE 3 -- DONE.  Flip the typedef.  NOT small -- see below.
+  In Phalanx_config.hpp.in, switch on the line that was sitting there commented
+  out:
+      using Device = Kokkos::Device<PHX::DefaultExecutionSpace,
+                                    PHX::DefaultMemorySpace>;
+  Add the deprecated-compatibility option (section 5).
+
+  THE "SMALL" ESTIMATE WAS WRONG, and the reason is worth keeping.  Phase 1
+  unified the two SPELLINGS of the execution space.  It did not, and could not,
+  fix code that had an execution space sitting in a DEVICE slot, because while
+  PHX::Device was an execution space those slots held the right type under a
+  different name.  Flipping the typedef split them into unrelated types and
+  every such slot became a hard error.  The work was:
+
+    - 388 rewrites in 72 files: PHX::ExecutionSpace -> PHX::Device in Intrepid2
+      device slots (134 Intrepid2::Basis, 35 FunctionSpaceTools, 12 CellTools,
+      6 Cubature, the concrete Basis_* types, and 25 createIntrepid2Basis).
+      Pre-existing inconsistency, not introduced by phase 1: the tree already
+      had Intrepid2::Basis<PHX::Device::execution_space> in some files and
+      Intrepid2::Basis<PHX::Device> in others, and they named one type.
+    - 9 Intrepid2::DefaultCubatureFactory::create<...> calls, same problem
+      reached through a member call.
+    - 6 panzer::PureBasis::getIntrepid2Basis<...> calls, plus renaming that
+      method's and createIntrepid2Basis's template parameter from
+      ExecutionSpace to DeviceType, which is what they always meant.
+    - Panzer_IntrepidBasisFactory.cpp now instantiates over SPACE::device_type.
+      In the deprecated mode it instantiates BOTH that and the bare SPACE,
+      because callers of each exist and the two are always distinct types.
+    - Phalanx_MDField.hpp: size_type came from device_type::size_type, which a
+      Kokkos::Device does not have.  Now from array_type::size_type, matching
+      the execution_space alias beside it and correct whatever the device slot
+      holds.
+    - Four dual-role local aliases that the script could only report, not fix:
+      Panzer_Interpolation.cpp (DeviceSpace in 3 RangePolicy slots),
+      Panzer_Integrator_CurlBasisDotVector_impl.hpp (an unqualified
+      `using PHX::Device;` feeding 4 RangePolicy<Device, Tag> slots),
+      and the two dof-mgr/test/fe_assembly drivers (a RangePolicy slot and two
+      DeviceSpaceType() execution-space instances for print_configuration).
+
+  ANSWER TO THE PHASE 1 CLAIM: the claim held for the spelling of the two
+  spaces -- no #if was needed anywhere for that -- but it was the wrong thing
+  to have claimed.  The one #if in the tree is the typedef itself in
+  Phalanx_config.hpp.in.  What phase 1 could not deliver was slot correctness,
+  and that is where all of the phase 3 work went.
+
+  RESULT: host build (Serial + OpenMP) clean in BOTH configurations, and
+  Phalanx 39/39 plus Panzer 227/227 pass in each:
+    Phalanx_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE=OFF (PHX::Device is a
+      Kokkos::Device) -- the new default
+    Phalanx_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON  (PHX::Device is an
+      execution space) -- the compatibility path, which also emits the
+      MESSAGE(DEPRECATION)
+  Still untested: every GPU backend, and shared space itself, which phase 4
+  and the phase 5 matrix cover.
+
+PHASE 4 -- DONE on host; the divergent-space path is untested.  Make the
+  option real.
+  Removed the FATAL_ERROR that refused Phalanx_ENABLE_SHARED_SPACE and added
+  the accessibility check, which only becomes meaningful once the pair is
+  genuinely configurable:
+      static_assert(Kokkos::SpaceAccessibility<PHX::ExecutionSpace,
+                                               PHX::MemorySpace>::accessible, ...);
+
+  WHAT WAS DONE
+    - Phalanx_ENABLE_SHARED_SPACE is now TRIBITS_ADD_OPTION_AND_DEFINE, so it
+      also reaches C++ as PHX_ENABLE_SHARED_SPACE.  A hand-rolled
+      GLOBAL_SET was tried first and was wrong: GLOBAL_SET writes the cache, so
+      with no ELSE branch the macro stayed defined after the option went back
+      to OFF.  The option now toggles cleanly in both directions, which was
+      verified.
+    - Phalanx_DEFAULT_MEMORY_SPACE was first reworked to default to EMPTY,
+      meaning "derive it", because a cache entry is only written on the first
+      configure and the old cached value outlived turning the option on --
+      THE OPTION COULD NOT BE TURNED ON IN AN EXISTING BUILD TREE AT ALL.
+      SUPERSEDED: section 7 removes the variable outright, which is a better
+      answer to the same bug.  The derived value still goes into a non-cache
+      PHX_DEFAULT_MEMORY_SPACE_CXX that Phalanx_config.hpp.in substitutes.
+    - Panzer_IntrepidBasisFactory.cpp instantiates PHX::Device itself under
+      "shared space AND a GPU backend", since that is exactly when PHX::Device
+      stops being one of the SPACE::device_type entries.  A static_assert holds
+      the preprocessor condition to that reasoning: PHX::Device can only
+      collide with a device of its own execution space, so it is a duplicate
+      exactly when PHX::MemorySpace == PHX::ExecutionSpace::memory_space.
+
+  VERIFIED, host build (Serial + OpenMP):
+    shared space OFF -> clean, Phalanx 39/39, Panzer 227/227
+    shared space ON  -> clean, Phalanx 39/39, Panzer 227/227
+    ENABLE_SHARED_SPACE + ENABLE_DEPRECATED... -> FATAL_ERROR, as intended
+
+  WHAT THIS DOES NOT SHOW, and it is the important part.  On a host-only build
+  Kokkos::SharedSpace IS Kokkos::HostSpace, which is also the execution space's
+  own memory space.  Measured directly on this build with the option ON:
+      PHX::Device                      == Kokkos::Device<Serial, HostSpace>
+      PHX::MemorySpace                 == Kokkos::HostSpace
+      PHX::ExecutionSpace::memory_space == Kokkos::HostSpace
+  So PHX::Device is byte-for-byte the same type as with the option OFF.  The
+  host run exercises the CMake plumbing, the config header, the static_assert
+  and the guards, and proves no regression -- but it does NOT exercise a memory
+  space that differs from the execution space's own.  Everything specific to
+  that case is unexercised, including the new PHX::Device instantiation in the
+  basis factory, whose guard is inactive on a host build.  First CUDA or SYCL
+  run with the option on is where that gets tested.  See phase 5.
+
+PHASE 5 -- test matrix.  Each of these with shared space ON and OFF:
+    host (Serial, and Serial+OpenMP)
+    CUDA, with and without UVM
+    SYCL x3 (no hierarchical, HIERARCHICAL, HIERARCHICAL_DFAD)
+  Plus two configurations the review showed the matrix was blind to (section 7):
+    Phalanx_DEFAULT_EXECUTION_SPACE set to something other than
+      Kokkos::DefaultExecutionSpace -- several bugs hid behind those being the
+      same type
+    Phalanx_INDEX_SIZE_TYPE=KOKKOS -- the default "int" never takes that path
+  Note the SYCL machine still needs the unmerged Kokkos PR 9585 patch re-applied
+  after any reset; see the sacado-sycl-port memory note.
+
+
+--------------------------------------------------------------------------------
+4. THE MIGRATION SCRIPT FOR APPLICATION CODES
+--------------------------------------------------------------------------------
+
+Verdict: PARTIALLY automatable, and worth doing -- but it must not be a blind
+sed, and its most valuable output is the report of what it could not decide.
+
+STATUS: written, at packages/phalanx/scripts/migrate_phx_device.py (Python 3,
+standard library only).  Validated against Drekar; results below.
+
+WHAT IT REWRITES SAFELY (unambiguous, no context needed):
+    PHX::Device()                  ->  PHX::ExecutionSpace()
+    PHX::Device::size_type         ->  PHX::ExecutionSpace::size_type
+    PHX::Device::array_layout      ->  PHX::ExecutionSpace::array_layout
+    PHX::Device::scratch_memory_space, ::memory_traits   likewise
+    Kokkos::RangePolicy<PHX::Device    ->  ...<PHX::ExecutionSpace
+    Kokkos::MDRangePolicy<PHX::Device  ->  ...<PHX::ExecutionSpace
+    Kokkos::TeamPolicy<PHX::Device     ->  ...<PHX::ExecutionSpace
+    (also the unqualified RangePolicy<...> spellings)
+  and the naming unification from section 2b:
+    PHX::exec_space, PHX::ExecSpace  ->  PHX::ExecutionSpace
+    PHX::mem_space,  PHX::MemSpace   ->  PHX::MemorySpace
+
+  It deliberately does NOT touch PHX::Device::execution_space or ::memory_space:
+  Kokkos::Device has both, so those uses are already correct.
+
+WHAT IT CAN REWRITE FROM A CURATED LIST (first template parameter is an
+execution space).  Keep this list in the script, visible and editable, because
+it is a judgement call per template, not a rule:
+    Intrepid2::Basis, Intrepid2::Orientation, Intrepid2::FunctionSpaceTools,
+    Intrepid2::Basis_HGRAD_*, Intrepid2::Basis_HDIV_*, Intrepid2::Basis_HCURL_*,
+    Intrepid2::Basis_HVOL_*, panzer::createIntrepid2Basis
+Applications will have their own; the list must be extensible from the command
+line or a config file.
+
+WHAT IT MUST ONLY REPORT, NEVER REWRITE:
+    - `using X = PHX::Device;` / `typedef PHX::Device X;` and every later use of
+      X.  Textual tools cannot follow an alias.
+    - PHX::Device passed to any template not on the curated list.
+    - PHX::Device in a macro body or a comment.
+
+SCRIPT REQUIREMENTS:
+    - Dry run by DEFAULT; require an explicit --apply to write anything.
+    - Portable sed behaviour (GNU vs BSD -i differ); prefer perl -pi or write to
+      a temp file and move.
+    - Operate on a caller-supplied path, default the working directory, honour a
+      file-extension filter (.hpp .cpp .cc .h .cxx by default).
+    - Print, per file: count rewritten by rule, and every residual PHX::Device
+      occurrence it did not touch, with file:line and the source line, so the
+      user can eyeball them.  Exit non-zero if residuals remain, so it can be
+      used in a loop until clean.
+    - A --check mode that only reports, for use in CI.
+    - No dependency beyond a POSIX shell, grep, and perl.
+
+Reference it from the deprecation message emitted by the CMake option below.
+
+MEASURED RESULTS (dry run, after the corrections in section 4b):
+
+    Drekar   463 rewrites in 368 files,  19 reported  (2082 files scanned)
+    phalanx  374 rewrites in  84 files,  38 reported
+    panzer   597 rewrites in 121 files,  48 reported
+
+What is left for a human is almost entirely the two semantic categories:
+aliases of PHX::Device (8 in Drekar, 12 phalanx, 32 panzer) and the Tpetra Node
+question (11 Drekar, 10 panzer), plus a few application functors that take a
+device.  None of it is a gap in the rules.
+
+Note also what the numbers say about priorities: PHX::Device::size_type alone is
+351 of Drekar's 459 device references.  Check whether those uses actually want
+PHX::index_size_type -- they may be reaching for the configured index type the
+long way round, in which case the right fix is different from a rename.
+
+HONEST LIMITS TO STATE IN THE SCRIPT'S OWN --help: it handles the common
+spellings; anything it reports as residual needs a human; and it cannot see
+through aliases or macros.  Applications should build with the deprecated
+option OFF and fix what the compiler rejects -- the script shrinks that list, it
+does not eliminate it.
+
+
+--------------------------------------------------------------------------------
+4b. CORRECTIONS MADE WHILE VALIDATING THE SCRIPT
+--------------------------------------------------------------------------------
+
+Recorded because each was wrong in a way that compiled.
+
+1. INTREPID2 WAS IN THE REWRITE LIST.  See section 2.  Would have rewritten
+   ~150 panzer sites and several in Drekar, compiled cleanly, and silently
+   dropped the shared memory space.  Intrepid2 is now in a
+   DEVICE_POSITION_PREFIXES list, matched by prefix so the concrete bases
+   (Basis_HGRAD_*, Basis_HDIV_*, ...) are covered, and the script carries the
+   Intrepid2 declaration in a comment so nobody re-adds it.
+
+2. THE FILE GATE SKIPPED FILES WITHOUT PHX::Device.  Once the space renames
+   were added, a file using only PHX::exec_space was never opened.  Reported 28
+   of Drekar's 99 exec_space uses and looked successful.  Now gated on any
+   actionable token.
+
+3. THE teamPolicy REGEX FORBADE NESTED ANGLE BRACKETS, so it matched 3 of 17
+   panzer sites -- the real calls are
+   teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::Device>.  Now allows one level
+   of nesting.
+
+4. PHX::Device::execution_space / ::memory_space were being left alone as
+   "safe".  True, but they are two more names for the two types being unified
+   (162 sites in panzer), so they are now rewritten to PHX::ExecutionSpace and
+   PHX::MemorySpace.
+
+5. Device positions and comments were reported as "unrecognized", burying the
+   real cases.  Panzer's reported count fell from 357 to 48 once they were
+   classified properly.
+
+The general lesson for anyone extending the curated lists: whether a template
+parameter is a device or an execution space is a fact about that template that
+has to be read from its declaration.  It cannot be inferred from the name --
+panzer::createIntrepid2Basis calls its parameter ExecutionSpace and means a
+device.
+
+
+--------------------------------------------------------------------------------
+5. BACKWARDS COMPATIBILITY: THE DEPRECATED OPTION
+--------------------------------------------------------------------------------
+
+Name: ${PACKAGE_NAME}_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE
+(DEPRECATED in the name so nobody mistakes it for a supported mode.)
+
+Cost: roughly 20 lines.  In Phalanx/CMakeLists.txt -- as implemented this is
+TRIBITS_ADD_OPTION_AND_DEFINE rather than a bare OPTION plus a separate
+#cmakedefine, since that pairs the cache variable with the macro in one place:
+
+    TRIBITS_ADD_OPTION_AND_DEFINE(
+      ${PACKAGE_NAME}_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE
+      PHX_DEPRECATED_DEVICE_AS_EXECUTION_SPACE
+      "DEPRECATED.  Keep PHX::Device as an execution space rather than a
+       Kokkos::Device, for applications that have not migrated yet.  Shared
+       space support requires this to be OFF."
+      OFF )
+    IF (${PACKAGE_NAME}_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE)
+      MESSAGE(DEPRECATION "Phalanx: PHX::Device as an execution space is
+        deprecated.  Migrate uses of PHX::Device in execution space positions to
+        PHX::ExecutionSpace -- packages/phalanx/scripts/migrate_phx_device.py
+        does most of it -- and reconfigure with this option OFF.")
+    ENDIF()
+
+and six lines in Phalanx_config.hpp.in:
+
+    #if defined(PHX_DEPRECATED_DEVICE_AS_EXECUTION_SPACE)
+      using Device = PHX::DefaultExecutionSpace;
+    #else
+      using Device = Kokkos::Device<PHX::DefaultExecutionSpace,
+                                    PHX::DefaultMemorySpace>;
+    #endif
+
+Crucially, after phase 1 NEITHER phalanx NOR panzer needs a single #if: their
+own code is spelled mode-agnostically.  The #if in Phalanx_config.hpp.in is the
+only one in either package.  The option exists purely for downstream
+code that still writes RangePolicy<PHX::Device>.
+
+Also add, so the deprecated mode cannot quietly pretend to work:
+    IF (Phalanx_ENABLE_SHARED_SPACE AND
+        Phalanx_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE)
+      MESSAGE(FATAL_ERROR "...shared space requires PHX::Device to be a
+        Kokkos::Device...")
+    ENDIF()
+
+THE REAL COST IS NOT THE LINE COUNT.  It is that both modes need CI coverage,
+and that nothing prevents a future contributor from writing mode-specific code
+that only compiles one way.  Recommend naming the removal release in the option
+help text up front, so the flag does not become permanent by default.
+
+
+5b. THE THREE FLAGS, AND WHAT TO TELL AN APPLICATION TEAM
+--------------------------------------------------------------------------------
+
+The names are close together and the three do very different things.
+
+  Phalanx_SHOW_DEPRECATED_WARNINGS=OFF
+      The old space names keep working and stop warning.  This is what to hand
+      an application that needs time to migrate.  It comes from
+      TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION() in Phalanx/CMakeLists.txt
+      and defaults to Trilinos_SHOW_DEPRECATED_WARNINGS, so
+      -DTrilinos_SHOW_DEPRECATED_WARNINGS=OFF covers every package at once.
+      Verified: with it OFF the generated Phalanx_config.hpp reduces the
+      attribute macros to no-ops --
+          #define PHALANX_DEPRECATED
+          #define PHALANX_DEPRECATED_MSG(MSG)
+      -- so PHX::exec_space, PHX::mem_space, PHX::ExecSpace and PHX::MemSpace
+      still compile, silently.
+
+  Phalanx_HIDE_DEPRECATED_CODE=ON
+      The opposite.  The old names are removed outright and a build that still
+      uses one fails.  This is the way to PROVE an application has finished
+      migrating, not a compatibility setting.  Phalanx itself was built this
+      way in phase 1.
+
+  Phalanx_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON
+      Nothing to do with warnings.  It makes PHX::Device an execution space
+      again (section 5 above).
+
+THE DISTINCTION THAT MATTERS TO AN APPLICATION.  Silencing the warnings covers
+the NAME deprecations only.  It does nothing for PHX::Device becoming a device,
+because that is a type change rather than a deprecated declaration: an
+application with an execution space in a device slot gets hard compile errors
+either way, and the migration script's device-slot rules or
+ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON are the answers to that.  The
+two axes are independent -- an application can take the new PHX::Device while
+still using the old space names, or the reverse.
+
+
+--------------------------------------------------------------------------------
+6. RISKS AND OPEN QUESTIONS
+--------------------------------------------------------------------------------
+
+- Silent breakage is the main hazard.  A Kokkos::Device is accepted in many
+  template positions that want an execution space, so some misuses will compile
+  and behave differently rather than fail.  Phase 1 is the mitigation: it
+  removes those uses before the meaning changes.
+
+  CONFIRMED, WITH A MECHANISM, during phase 3.  A Kokkos execution policy
+  decides what each template argument is by testing it: the execution space
+  slot requires Kokkos::is_execution_space, which a Kokkos::Device FAILS.  The
+  argument then falls through to the WORK TAG slot, whose only requirement is
+  that the type be empty -- and Kokkos::Device is empty.  So
+
+      Kokkos::TeamPolicy<Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>>
+
+  compiles, binds the device as a work tag, and silently runs on the DEFAULT
+  execution space.  Verified directly against this Kokkos:
+
+      TeamPolicy<Dev>::execution_space  ==  Kokkos::Serial   (the default,
+                                                              NOT the Device's)
+      TeamPolicy<Dev>::work_tag         ==  Kokkos::Device<Serial, HostSpace>
+
+  In practice it was caught every time, because the functor then gets an extra
+  argument ("no matching function for call to object of type (lambda ...)") or
+  the policy already had a real tag ("Kokkos Error: More than one work tag
+  given").  It is loud when a functor is involved and silent otherwise, so the
+  danger is a policy whose functor happens to accept the tag.
+
+  NOTE FOR INTREPID2 (not ours to fix, and unreachable from panzer, which does
+  not use IntegrationTools): Intrepid2_IntegrationToolsDef.hpp has three
+  Kokkos::TeamPolicy<DeviceType> uses, and DeviceType there IS a device -- that
+  is Intrepid2's own documented and tested parameter, since its unit tests use
+  DefaultTestDeviceType = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>.
+  Those policies therefore run on the default execution space rather than the
+  device's.  Worth reporting upstream.
+- KokkosDeviceWrapperNode: SETTLED for phase 1.  Its declaration is
+  KokkosDeviceWrapperNode<ExecutionSpace, MemorySpace = ExecutionSpace::memory_space>,
+  so the first slot is an execution space.  The 12 panzer sites (7 files) were
+  hand-written to the one-argument PHX::ExecutionSpace form, which preserves
+  today's memory space exactly.  Whether they should instead name a memory
+  space explicitly once shared space is on is a phase 4 question, and it is the
+  same question as the Intrepid2 one below.
+- Downstream exposure is unmeasured.  Inside Trilinos only phalanx and panzer
+  use PHX::Device, but Albany, Drekar and Empire were not checked.  Worth asking
+  them to run the script in --check mode early, since that number decides how
+  long the deprecated option has to live.
+- RESOLVED IN PHASE 3, formerly "already merged and worth revisiting":
+  commit 78e346bf898 instantiates
+  panzer::createIntrepid2Basis for each enabled Kokkos backend, passing
+  execution spaces (Kokkos::Serial, Kokkos::Cuda, ...).  Those feed
+  Intrepid2::Basis, whose parameter is a DEVICE.  It compiles and is correct
+  today, but once PHX::Device carries a shared memory space those bases would
+  still be pinned to the execution space's default memory space.  Decide during
+  phase 4 whether the instantiations should be over devices rather than
+  execution spaces -- and note that doing so reopens the duplicate-instantiation
+  question that commit solved, because Kokkos::Device<Serial,HostSpace> and
+  Kokkos::Device<Serial,SharedSpace> are different types.
+  DECIDED: devices, via SPACE::device_type.  Phase 3 forced it -- the mixed
+  spellings became unrelated types that were being assigned to each other.  The
+  duplicate-instantiation question does NOT reopen for the default build, since
+  SPACE::device_type is distinct per backend exactly as SPACE was.  It DOES
+  reopen for a shared-space build, where PHX::Device is distinct from every
+  SPACE::device_type and needs its own instantiation; the comment in
+  Panzer_IntrepidBasisFactory.cpp says so, and it is a phase 4 task.
+- PHX::Device is currently used as both a device and an execution space in the
+  same codebase, which is why this is confusing at all.  After phase 1 the two
+  roles are spelled differently, which is a readability win independent of
+  shared space.
+
+
+--------------------------------------------------------------------------------
+7. THE INDEPENDENT REVIEW, AND WHAT IT CHANGED
+--------------------------------------------------------------------------------
+
+An independent review of the branch against develop (merge-base 28987c7d3af)
+raised five findings plus one unverified note.  ALL FIVE WERE CORRECT.  Two
+would have shipped.  Reproduced and fixed, in one commit.
+
+1. HIGH -- Phalanx_INDEX_SIZE_TYPE=KOKKOS did not compile.  Reproduced:
+       Phalanx_config.hpp:33:32: error: no member named 'ExecutionSpace' in
+       namespace 'PHX'
+   Phase 1 pointed the legacy keyword at PHX::ExecutionSpace::size_type, but
+   that type is substituted INTO Phalanx_config.hpp, which is included BY the
+   header that declares ExecutionSpace.  Fixed to
+   PHX::DefaultExecutionSpace::size_type, which the config header declares
+   itself.  Our builds never saw it because the default is "int".  Note the old
+   PHX::Device::size_type would not have survived phase 3 either, so this
+   needed changing regardless -- phase 1 just changed it to the wrong thing.
+
+2. HIGH -- the derived memory space came from Kokkos::DefaultExecutionSpace
+   rather than from the configured Phalanx_DEFAULT_EXECUTION_SPACE.  So a CUDA
+   build with the execution space forced to the host got CudaSpace, i.e.
+   Device<OpenMP, CudaSpace>, which the new accessibility static_assert
+   correctly rejects.  The string was wrong before this work too, but harmless,
+   because PHX::mem_space came from PHX::Device::memory_space and never
+   consulted the configured value; phase 3 is what made it load-bearing.
+
+3. MEDIUM -- the extra Intrepid2 instantiation was keyed on shared space, so
+   naming a memory space outright (Phalanx_DEFAULT_MEMORY_SPACE=CudaUVMSpace
+   with shared space off) left PHX::Device matching no instantiated device type
+   and every call site failing to link.  Correct.  The suggested fix -- test
+   whether PHX::MemorySpace differs from PHX::ExecutionSpace::memory_space --
+   cannot be written as stated, because explicit instantiation needs a
+   PREPROCESSOR condition and that is a C++ type comparison.  Comparing the
+   configured type names instead was tried and BROKE THE HOST SHARED-SPACE
+   BUILD: Kokkos::SharedSpace on host IS HostSpace, so the strings differ while
+   the types match.  Resolved by removing the variable instead; see below.
+
+4. LOW -- tKokkosPerf.cpp took TeamPolicy<Device>::member_type with
+   Device = PHX::Device, while the launches use TeamPolicy<PHX::ExecutionSpace>.
+   Those agree only because PHX::ExecutionSpace is Kokkos::DefaultExecutionSpace
+   in the default configuration, which is exactly why the tests passed.  Now
+   TeamPolicy<typename Device::execution_space>, correct in both modes.
+
+5. LOW -- the migration script's --check exited 0 when mechanical rewrites were
+   still pending, so a CI gate would have passed unmigrated code, and the help
+   text promised otherwise.  Now fails on pending rewrites as well as on
+   residuals; all three cases verified.
+
+NOT A BRANCH ISSUE -- the unverified note about evaluateFieldsTaskParallel
+passing PHX::MemorySpace() to Kokkos::TaskScheduler.  Two reasons.  The rename
+was type-identical, since PHX::MemorySpace is DEFINED as
+PHX::Device::memory_space, which is literally what the line said before.  And
+Phalanx_ENABLE_KOKKOS_AMT=ON cannot build at all, on this branch or on the
+merge-base: Kokkos tasking is gone from the tree and no Kokkos_TaskScheduler
+header exists, so the guarded include cannot resolve.  SEPARATE FINDING WORTH
+ACTING ON: Phalanx_ENABLE_KOKKOS_AMT is dead code and a candidate for removal.
+
+THE DESIGN CHANGE THAT CAME OUT OF IT.  Phalanx_DEFAULT_MEMORY_SPACE is
+removed.  The memory space is now derived and never chosen -- the execution
+space's own, or Kokkos::SharedSpace -- and anyone still passing the variable
+gets CMake's unused-variable warning.
+
+Why this is the right answer rather than a lost capability: the variable was
+a CACHE STRING before this work, but NOTHING READ IT.  The merge-base
+Phalanx_config.hpp.in declared DefaultMemorySpace and then used
+"using Device = PHX::DefaultExecutionSpace;", with the Kokkos::Device line
+commented out, so setting it had no observable effect.  Phase 3 uncommenting
+that line is what made it load-bearing.  Host execution over shared memory is
+still reachable: set Phalanx_DEFAULT_EXECUTION_SPACE with shared space ON.
+
+What it bought:
+  - Finding 3 becomes impossible to CONFIGURE rather than merely handled.
+  - The condition behind the extra instantiation collapses to one exact test,
+        Phalanx_ENABLE_SHARED_SPACE AND (CUDA OR HIP OR SYCL)
+    decided entirely by Kokkos' own rule for when SharedSpace is a distinct
+    space.  No string comparison, no guess, no case where two spellings of one
+    type could be mistaken for two types.
+  - Gone: the cache variable, the empty-default/derived-variable arrangement,
+    two ELSEIF branches, and the "cannot enable SharedSpace and set the default
+    memory space" FATAL_ERROR.
+  - The static_assert in Panzer_IntrepidBasisFactory.cpp becomes a backstop
+    nothing can reach, rather than something a user could hit by naming the
+    execution space's own memory space under another spelling.
+  - The exact alternatives considered and no longer needed: a configure-time
+    try_compile type probe, or extern template plus header-only definitions.
+
+THE LESSON FROM FINDINGS 1 AND 4.  Both passed the full test suite, because the
+default configuration makes the wrong type and the right type coincide:
+PHX::ExecutionSpace IS Kokkos::DefaultExecutionSpace, and the index size type
+defaults to "int" so the broken keyword path is never taken.  A green test run
+on one configuration says much less here than it looks like it does.  ADD TO
+PHASE 5: a build with Phalanx_DEFAULT_EXECUTION_SPACE set to something other
+than Kokkos::DefaultExecutionSpace, and one with
+Phalanx_INDEX_SIZE_TYPE=KOKKOS.
+
+
+--------------------------------------------------------------------------------
+8. DECISIONS REGISTER
+--------------------------------------------------------------------------------
+
+Every choice this branch made, what was rejected, and where the full reasoning
+lives.  The sections above are the argument; this is the index.
+
+D1  View template arguments carry Kokkos::Device, not a bare memory space.
+    REJECTED: the bare memory space of the 2020 rppawlo/phalanx-uvm-removal
+    branch.  WHY: a memory space dictates the execution space through its own
+    execution_space typedef, which makes "host execution space with a GPU
+    backend enabled" inexpressible; and it would have churned ~780 PHX::Device
+    View arguments.  Full reasoning: section 1.
+
+D2  Two names: PHX::ExecutionSpace and PHX::MemorySpace, CamelCase.
+    REJECTED: PHX::execution_space / PHX::memory_space.  WHY: namespace-scope
+    type names in Kokkos are CamelCase without exception; snake_case is
+    reserved for nested member typedefs, where T::execution_space reads as a
+    query about T.  Full reasoning: section 2b.
+
+D3  The rename and the PHX::Device change ship in ONE pass, not two.
+    WHY: both are mechanical, both touch the same files, and applications
+    should absorb one disruption rather than two.  Section 2b.
+
+D4  The old names stay as deprecated aliases for a release.
+    Mechanism: PHALANX_DEPRECATED_MSG via @PHALANX_DEPRECATED_DECLARATIONS@.
+    Sacado has the in-tree precedent.  Section 2b.
+
+D5  The migration script is Python 3, standard library only.
+    REJECTED: a shell script.  WHY: the rules need curated per-template lists
+    and ordered rewrites with lookahead guards, which sed cannot express
+    safely; stdlib-only keeps it runnable anywhere without setup.
+
+D6  The compatibility option is named
+    Phalanx_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE.
+    WHY: DEPRECATED is in the name so nobody mistakes it for a supported mode.
+    Section 5.
+
+D7  PHX::index_size_type is left alone.
+    WHY: deliberately out of scope.  It exists to measure index-size effects on
+    GPU kernel performance and is orthogonal to the space work.  Only its
+    legacy KOKKOS keyword mapping was touched, and only because it broke --
+    see section 7, finding 1.
+
+D8  Panzer's Intrepid2 instantiations are over DEVICES, via SPACE::device_type.
+    REJECTED: instantiating over execution spaces, as commit 78e346bf898 did.
+    WHY: Intrepid2's first template parameter is a device, and once PHX::Device
+    stopped being an execution space the two spellings became unrelated types
+    that were being assigned to each other.  Section 6.
+
+D9  In the deprecated mode that factory instantiates BOTH forms.
+    WHY: callers of each exist -- code that names a host device explicitly
+    needs the device form in either mode -- and SPACE and SPACE::device_type
+    are always distinct types, so the two can never collide.  Section 3,
+    phase 3.
+
+D10 Phalanx_DEFAULT_MEMORY_SPACE is REMOVED, not reworked.
+    The memory space is derived, never chosen: the execution space's own, or
+    Kokkos::SharedSpace.  REJECTED: keeping it as a cache variable with an
+    empty "derive it" default, which was implemented first and then undone.
+    WHY: an arbitrary memory space means CMake cannot decide, exactly, whether
+    PHX::Device is already among Panzer's per-backend Intrepid2
+    instantiations -- two spellings can be one type.  Removing the knob makes
+    every case decidable.  Nothing read the variable before PHX::Device became
+    a Kokkos::Device, so no working capability was lost.  Section 7.
+
+D11 Passing the removed Phalanx_DEFAULT_MEMORY_SPACE is IGNORED, with CMake's
+    own unused-variable warning.
+    REJECTED: detecting a non-empty value and failing with a FATAL_ERROR that
+    points at Phalanx_ENABLE_SHARED_SPACE.  WHY: the variable never did
+    anything, so a hard failure would punish scripts for a setting that was
+    always inert; and build trees configured before this branch carry a
+    non-empty stale value, which would have made the error fire on upgrade.
+
+D12 The macro is named PHX_MEMORY_SPACE_IS_NOT_EXECUTION_SPACE_MEMORY_SPACE.
+    REJECTED: PHX_MEMORY_SPACE_DIFFERS_FROM_EXECUTION_SPACE, which was
+    implemented first.  WHY: that name reads as a comparison between a memory
+    space and an execution space, which is a category error -- they are never
+    the same kind of thing, so "differs" is vacuous.  The chosen name mirrors
+    the actual test, MemorySpace != ExecutionSpace::memory_space, so both
+    operands are memory spaces.  Also REJECTED:
+    PHX_DEVICE_IS_NOT_EXECUTION_SPACE_DEVICE_TYPE, which names the consequence
+    one consumer cares about rather than the fact.
+
+D13 That macro's condition is decided case by case from Kokkos' own rules, not
+    by comparing configured type names.
+    WHY: comparing the strings broke the host shared-space build -- on a host
+    build Kokkos::SharedSpace IS HostSpace, so the names differ while the
+    types are identical.  Section 7, finding 3.
+
+D14 No OpenACC guard.
+    REJECTED: refusing Phalanx_ENABLE_SHARED_SPACE on an OpenACC build with no
+    GPU, where Kokkos does not define Kokkos::SharedSpace at all.  WHY:
+    Trilinos does not support OpenACC and is not expected to, so a guard for it
+    would read as a support claim.
+
+D15 The static_assert in Panzer_IntrepidBasisFactory.cpp stays the authority
+    for whether PHX::Device needs its own instantiation.
+    REJECTED: a configure-time try_compile type probe, and extern template with
+    header-only definitions.  WHY: try_compile is fragile under GPU
+    cross-compiles and costs every Trilinos user configure time; extern
+    template is semantically the cleanest but would make ~33 call-site
+    translation units parse the 40 Intrepid2 basis headers currently confined
+    to one .cpp.  D10 made both unnecessary.
+
+D16 PHX::MDField::size_type comes from array_type, not device_type.
+    WHY: a Kokkos::Device has no size_type.  array_type is the View, which is
+    the authority on how it indexes, and it matches the execution_space alias
+    beside it.  Correct whatever the device slot holds.  Section 3, phase 3.
+
+D17 The migration script's test suite is NOT registered with ctest.
+    WHY: it would need a Python interpreter at configure time for a script that
+    is a migration aid rather than part of the library.  Run it by hand:
+        python3 packages/phalanx/scripts/test_migrate_phx_device.py
+
+D18 --check exits non-zero on a fully migrated tree, and that is intended.
+    WHY: the residuals it reports are positions no textual tool can classify,
+    and there is no way to mark one reviewed, so the exit code cannot go green.
+    CONSEQUENCE, accepted: --check is not suitable as a CI gate as it stands.
+    Read the "would rewrite" section rather than the exit status.  Making it
+    gateable would need either a --strict split or a suppression mechanism;
+    neither was built.
