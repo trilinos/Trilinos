@@ -829,11 +829,16 @@ namespace phalanx_test {
 #if defined(SACADO_GPU_HIERARCHICAL_DFAD) || defined(SACADO_GPU_HIERARCHICAL)
 
 #if defined(KOKKOS_ENABLE_CUDA)
-    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
 #elif defined(KOKKOS_ENABLE_HIP)
-    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,64>;
+    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,64>;
+#elif defined(KOKKOS_ENABLE_SYCL)
+    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
+#elif defined(KOKKOS_ENABLE_SERIAL) || defined(KOKKOS_ENABLE_OPENMP) ||        \
+      defined(KOKKOS_ENABLE_THREADS)
+    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,1>;
 #else
-    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
+#error "Phalanx: no FAD stride is defined for this backend.  Keep this in step with PHX::DefaultFadLayout in Phalanx_KokkosDeviceTypes.hpp -- the point of restating it here is to catch the two drifting apart."
 #endif
 
 #else

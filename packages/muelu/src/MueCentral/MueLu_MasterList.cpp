@@ -102,6 +102,7 @@ namespace MueLu {
     if (name == "sa: rowsumabs diagonal replacement value") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: rowsumabs replace single entry row with zero") { ss << "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: keep tentative prolongator") { ss << "<Parameter name=\"sa: keep tentative prolongator\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: use edge matrix for smoothing") { ss << "<Parameter name=\"sa: use edge matrix for smoothing\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "replicate: npdes") { ss << "<Parameter name=\"replicate: npdes\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "combine: numBlks") { ss << "<Parameter name=\"combine: numBlks\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "combine: useMaxLevels") { ss << "<Parameter name=\"combine: useMaxLevels\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
@@ -175,7 +176,8 @@ namespace MueLu {
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: phase 1 algorithm\" type=\"string\" value=\"Distance2\"/>"
-  "<Parameter name=\"aggregation: symmetrize graph after dropping\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: symmetrize graph after dropping\" type=\"string\" value=\"no symmetrization\"/>"
+  "<Parameter name=\"aggregation: symmetrize color graph\" type=\"string\" value=\"strong wins\"/>"
   "<Parameter name=\"aggregation: use blocking\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
   "<Parameter name=\"aggregation: strength-of-connection: matrix\" type=\"string\" value=\"A\"/>"
@@ -289,6 +291,7 @@ namespace MueLu {
   "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: keep tentative prolongator\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"sa: use edge matrix for smoothing\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"replicate: npdes\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"combine: numBlks\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"combine: useMaxLevels\" type=\"bool\" value=\"false\"/>"
@@ -635,6 +638,8 @@ namespace MueLu {
       
          ("aggregation: symmetrize graph after dropping","aggregation: symmetrize graph after dropping")
       
+         ("aggregation: symmetrize color graph","aggregation: symmetrize color graph")
+      
          ("aggregation: use blocking","aggregation: use blocking")
       
          ("aggregation: drop scheme","aggregation: drop scheme")
@@ -860,6 +865,8 @@ namespace MueLu {
          ("not supported by ML","sa: rowsumabs replace single entry row with zero")
       
          ("not supported by ML","sa: keep tentative prolongator")
+      
+         ("not supported by ML","sa: use edge matrix for smoothing")
       
          ("not supported by ML","replicate: npdes")
       

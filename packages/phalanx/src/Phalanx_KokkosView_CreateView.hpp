@@ -70,7 +70,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT*,Layout,Device>(ptr,
                                                  dl.dimension(0),
                                                  hDim);
@@ -86,7 +86,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT**,Layout,Device>(ptr,
                                                   dl.dimension(0),
                                                   dl.dimension(1),
@@ -104,7 +104,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT***,Layout,Device>(ptr,
                                                    dl.dimension(0),
                                                    dl.dimension(1),
@@ -124,7 +124,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT****,Layout,Device>(ptr,
                                                     dl.dimension(0),
                                                     dl.dimension(1),
@@ -146,7 +146,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT*****,Layout,Device>(ptr,
                                                      dl.dimension(0),
                                                      dl.dimension(1),
@@ -170,7 +170,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT******,Layout,Device>(ptr,
                                                       dl.dimension(0),
                                                       dl.dimension(1),
@@ -196,7 +196,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT*******,Layout,Device>(ptr,
                                                        dl.dimension(0),
                                                        dl.dimension(1),
@@ -252,7 +252,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT*,Layout,Device>(ptr,
                                                  dl.dimension(0));
       }
@@ -266,7 +266,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT**,Layout,Device>(ptr,
                                                   dl.dimension(0),
                                                   dl.dimension(1));
@@ -282,7 +282,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT***,Layout,Device>(ptr,
                                                    dl.dimension(0),
                                                    dl.dimension(1),
@@ -300,7 +300,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT****,Layout,Device>(ptr,
                                                     dl.dimension(0),
                                                     dl.dimension(1),
@@ -320,7 +320,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT*****,Layout,Device>(ptr,
                                                      dl.dimension(0),
                                                      dl.dimension(1),
@@ -342,7 +342,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT******,Layout,Device>(ptr,
                                                       dl.dimension(0),
                                                       dl.dimension(1),
@@ -366,7 +366,7 @@ namespace PHX {
         a = v;
       }
       else {
-        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<Device>()->data());
+        MemoryType* ptr = reinterpret_cast<MemoryType*>(tracker.template get_record<typename Device::memory_space>()->data());
         a = Kokkos::View<ScalarT*******,Layout,Device>(ptr,
                                                        dl.dimension(0),
                                                        dl.dimension(1),

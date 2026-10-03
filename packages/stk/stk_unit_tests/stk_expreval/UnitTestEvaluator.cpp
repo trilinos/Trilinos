@@ -630,6 +630,27 @@ TEST( UnitTestEvaluator, FunctionNameNullTerminated)
   }
 }
 
+TEST(UnitTestEvaluator, CheckArrayIndexingAtParse)
+{
+  stk::expreval::Eval eval("a[0]", stk::expreval::Variable::ZERO_BASED_INDEX);
+  EXPECT_NO_THROW(eval.parse());
+
+  stk::expreval::Eval eval2("b[0]", stk::expreval::Variable::ONE_BASED_INDEX);
+  EXPECT_ANY_THROW(eval2.parse());
+  
+  stk::expreval::Eval eval3("c[1]", stk::expreval::Variable::ZERO_BASED_INDEX);
+  EXPECT_NO_THROW(eval3.parse());
+ 
+  stk::expreval::Eval eval4("d[1]", stk::expreval::Variable::ONE_BASED_INDEX);
+  EXPECT_NO_THROW(eval4.parse());
+ 
+  stk::expreval::Eval eval5("f[-1]", stk::expreval::Variable::ZERO_BASED_INDEX);
+  EXPECT_ANY_THROW(eval5.parse());
+ 
+  stk::expreval::Eval eval6("g[i]", stk::expreval::Variable::ZERO_BASED_INDEX);
+  EXPECT_NO_THROW(eval6.parse());
+}
+
 #ifndef STK_ENABLE_GPU
 
 TEST(UnitTestEvaluator, CheckNGPNodeFPError_Ignore)

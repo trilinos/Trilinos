@@ -48,7 +48,7 @@ RCP<const ParameterList> InverseApproximationFactory<Scalar, LocalOrdinal, Globa
 
   validParamList->set<std::string>("inverse: approximation type", "diagonal", "Method used to approximate the inverse.");
   validParamList->set<Magnitude>("inverse: drop tolerance", 0.0, "Values below this threshold  are dropped from the matrix (or fixed if diagonal fixing is active).");
-  validParamList->set<bool>("inverse: fixing", false, "Keep diagonal and fix small entries with 1.0");
+  validParamList->set<bool>("inverse: fixing", false, "Keep diagonal and fix small entries with 1.0.  Only used when sparse inverse method is either diagonal or lumping.");
 
   return validParamList;
 }
@@ -95,25 +95,32 @@ void InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     const RCP<const Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, tol, one));
     Ainv                      = MatrixFactory::Build(D);
   } else if (method == "sparseapproxinverse") {
-    RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedGraph(A, tol);
+    RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedGraph(A, tol, true);
     if (IsPrint(Statistics1)) {
       sparsityPattern->computeGlobalConstants();
       GetOStream(Statistics1) << "NNZ Graph(A): " << A->getCrsGraph()->getGlobalNumEntries() << " , NNZ Tresholded Graph(A): " << sparsityPattern->getGlobalNumEntries() << std::endl;
     }
     RCP<Matrix> pAinv = GetSparseInverse(A, sparsityPattern);
-    Ainv              = Utilities::GetThresholdedMatrix(pAinv, tol, fixing);
+    if (tol != STS::magnitude(STS::zero()))
+      Ainv = Utilities::GetThresholdedMatrix(pAinv, tol, true);
+    else
+      Ainv = pAinv;
     if (IsPrint(Statistics1)) {
       rcp_const_cast<CrsGraph>(Ainv->getCrsGraph())->computeGlobalConstants();
       GetOStream(Statistics1) << "NNZ Ainv: " << pAinv->getGlobalNumEntries() << ", NNZ Tresholded Ainv (parameter: " << tol << "): " << Ainv->getGlobalNumEntries() << std::endl;
     }
   } else if (method == "factoredsparseapproxinverse") {
-    RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedLowerTriangularGraph(A, tol);
+    RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedLowerTriangularGraph(A, tol, true);
     if (IsPrint(Statistics1)) {
       sparsityPattern->computeGlobalConstants();
       GetOStream(Statistics1) << "NNZ Graph(A): " << A->getCrsGraph()->getGlobalNumEntries() << " , NNZ Tresholded Graph(triLower(A)): " << sparsityPattern->getGlobalNumEntries() << std::endl;
     }
     RCP<Matrix> pLinvFactor = GetFactoredSparseInverse(A, sparsityPattern);
-    RCP<Matrix> LinvFactor  = Utilities::GetThresholdedMatrix(pLinvFactor, tol, fixing);
+    RCP<Matrix> LinvFactor;
+    if (tol != STS::magnitude(STS::zero()))
+      LinvFactor = Utilities::GetThresholdedMatrix(pLinvFactor, tol, true);
+    else
+      LinvFactor = pLinvFactor;
     // To create the inverse from the inverse factor, we need to multiply Linv' * LinvFactor. Of course, we could
     // save a fair amount of storage by delaying this to when we actually need it as Linv' * LinvFactor has
     // many more nonzeros than just Linv. One other thing, I'm explicitly using the Transpose computation as opposed to

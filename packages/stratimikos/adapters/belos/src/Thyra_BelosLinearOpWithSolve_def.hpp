@@ -753,6 +753,9 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   solveStatus.extraParameters->set ("Belos/Achieved Tolerance",
                                     solveStatus.achievedTol);
 
+  solveStatus.extraParameters->template set<Belos::ReturnType> ("Belos/ReturnType",
+                                                                belosSolveStatus);
+
 //  This information is in the previous line, which is printed anytime the verbosity
 //  is not set to Teuchos::VERB_NONE, so I'm commenting this out for now.
 //  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))

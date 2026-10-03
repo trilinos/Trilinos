@@ -82,8 +82,11 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& 
   coarseLevel.DeclareInput("P", initialPFact.get(), this);
 
   const ParameterList& pL = GetParameterList();
-  if (pL.get<bool>("sa: maxwell1 smoothing") && pL.get<double>("sa: damping factor") != 0.0)
-    fineLevel.DeclareInput("CurlCurl", GetFactory("CurlCurl").get(), this);
+  if (pL.get<bool>("sa: maxwell1 smoothing") && pL.get<double>("sa: damping factor") != 0.0) {
+    auto curlCurlFact = GetFactory("CurlCurl");
+    if (!curlCurlFact.is_null())
+      fineLevel.DeclareInput("CurlCurl", GetFactory("CurlCurl").get(), this);
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -281,7 +284,13 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
     }
 
     if (edgeSmoothing) {
-      auto CurlCurl = fineLevel.Get<RCP<Matrix>>("CurlCurl", GetFactory("CurlCurl").get());
+      RCP<Matrix> CurlCurl;
+      if (!GetFactory("CurlCurl").is_null())
+        CurlCurl = fineLevel.Get<RCP<Matrix>>("CurlCurl", GetFactory("CurlCurl").get());
+      else {
+        GetOStream(Warnings0) << "Using edge matrix for edge-only prolongator smoothing. This generally violates the commuting relationship." << std::endl;
+        CurlCurl = A;
+      }
 
       Scalar lambdaMax;
       Teuchos::RCP<Vector> invDiag;

@@ -537,6 +537,15 @@ int get_number_of_connected_active_elements(const stk::mesh::BulkData& bulkData,
                                             const stk::mesh::Part& activePart,
                                             const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector);
 
+// Collect every remote proc connected to (localElement, localOrdinal) through a
+// parallel element-graph edge on that side ordinal. Used during element death
+// to record the COMPLETE co-sharer set of an exposed side (which may be shared
+// by three or more procs), rather than a single pairwise neighbor.
+void get_remote_procs_sharing_side(const stk::mesh::BulkData& bulkData,
+                                   stk::mesh::Entity localElement,
+                                   int localOrdinal,
+                                   std::vector<int>& sharingProcs);
+
 bool is_exposed_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, int side_id,
                      const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
                      const stk::mesh::Part& activePart);

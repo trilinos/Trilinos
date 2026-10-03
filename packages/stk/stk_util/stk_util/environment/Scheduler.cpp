@@ -59,6 +59,13 @@
 namespace stk {
 namespace util {
 
+namespace {
+//  Schedulers that have installed a signal handler through set_signal().  Only that handler
+//  calls set_force_schedule(), so while this is zero forceSchedule_ is false on every rank.
+//  set_signal() comes from the input deck, so the count agrees across ranks.
+int s_schedulersWithSignal = 0;
+}
+
 Scheduler::Scheduler() :
       tolerance_(1.0e-6),
       lastTime_(-TIME_MAX),
@@ -359,8 +366,12 @@ bool Scheduler::force_schedule()
 {
   // It is possible that the forceSchedule_flag has been set on only one
   // processor so we need to see if it is true on any processor...
+  //
+  //  Ask the other ranks only when a handler exists that could have set the flag.  The call
+  //  below is MPI, and is_it_time() is used as a plain yes/no test, so a caller that skips it
+  //  on some ranks hangs the job here.
   bool result = forceSchedule_;
-  if (EnvData::parallel_size() > 1) {
+  if (s_schedulersWithSignal > 0 && EnvData::parallel_size() > 1) {
     result = stk::is_true_on_any_proc(EnvData::parallel_comm(), forceSchedule_);
   }
   forceSchedule_ = false;
@@ -720,6 +731,7 @@ bool Scheduler::set_signal(const std::string& signal)
   if (sierra::SignalHandler::instance().check_signal_name(signal.c_str())) {
     sierra::SignalHandler::instance().add_handler(signal.c_str(),
         *sierra::create_callback(*this, &Scheduler::set_force_schedule));
+    ++s_schedulersWithSignal;
     success = true;
   } else {
   }

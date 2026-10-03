@@ -90,7 +90,7 @@ if cmake_cmd is None:
 if args.source is not None:
     trilinos_source = args.source
 else:
-    # relies on this file being in commonTools/or_reproducer/
+    # relies on this file being in commonTools/pr_reproducer/
     trilinos_default_source = Path(os.path.abspath(__file__)).parent.parent.parent
     logger.debug(f"trilinos_default_source = {trilinos_default_source}")
     trilinos_source = questionary.path("Where is the Trilinos source code checked out?",

@@ -23,7 +23,7 @@
   <Parameter        name="aggregation: strength-of-connection: measure" type="string" value="signed ruge-stueben"/>
   <Parameter        name="aggregation: drop scheme" type="string"                     value="point-wise"          />
   <Parameter        name="filtered matrix: lumping choice"  type="string"             value="distributed lumping" />
-  <Parameter        name="aggregation: symmetrize graph after dropping" type="bool"   value="false"               />
+  <Parameter        name="aggregation: symmetrize graph after dropping" type="string"   value="no symmetrization"/>
   <Parameter        name="aggregation: drop tol" type="double"                        value=".1"                />
 
   <!-- ===========  SMOOTHING  =========== -->

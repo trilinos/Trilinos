@@ -461,7 +461,7 @@ namespace PHX {
     typename PHX::MDFieldReturnType<array_type>::return_type
     operator()(const index_pack&... indices) const
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
 #endif
       return m_view(indices...);
@@ -472,7 +472,7 @@ namespace PHX {
     typename PHX::MDFieldReturnType<array_type>::return_type
     access(const index_pack&... indices) const
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
 #endif
       return m_view.access(indices...);

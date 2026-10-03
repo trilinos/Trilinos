@@ -582,6 +582,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, GetThresholdedGraph, Scalar, LocalO
   rcp_const_cast<CrsGraph>(graph)->computeGlobalConstants();
 
   TEST_EQUALITY(graph->getGlobalNumEntries(), Teuchos::as<size_t>(13));
+
+  // had to pick some large thresholds to get differences between symmetric and non-symmetric options
+  // symmetric options correspond to last argument being true. Default is false.
+  RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> graph2 =
+      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedGraph(A, .6, false);
+  rcp_const_cast<CrsGraph>(graph2)->computeGlobalConstants();
+  TEST_EQUALITY(graph2->getGlobalNumEntries(), Teuchos::as<size_t>(12));
+
+  RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> graph3 =
+      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedGraph(A, .6, true);
+  rcp_const_cast<CrsGraph>(graph3)->computeGlobalConstants();
+  TEST_EQUALITY(graph3->getGlobalNumEntries(), Teuchos::as<size_t>(13));
+
+  RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> graph4 =
+      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedLowerTriangularGraph(A, .8, false);
+  rcp_const_cast<CrsGraph>(graph4)->computeGlobalConstants();
+  TEST_EQUALITY(graph4->getGlobalNumEntries(), Teuchos::as<size_t>(9));
+
+  RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> graph5 =
+      MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedLowerTriangularGraph(A, .8, true);
+  rcp_const_cast<CrsGraph>(graph5)->computeGlobalConstants();
+  TEST_EQUALITY(graph5->getGlobalNumEntries(), Teuchos::as<size_t>(8));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, TransposeNonsymmetricConstMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node) {

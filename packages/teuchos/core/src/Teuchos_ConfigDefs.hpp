@@ -32,7 +32,7 @@
 #  define TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
 #endif
 
-#if defined(_MSC_VER) || defined(__APPLE__)
+#if defined(_MSC_VER) || defined(__APPLE__) || defined(__FreeBSD__)
 #  define TEUCHOS_NO_ZERO_ITERATOR_CONVERSION
 #endif
 

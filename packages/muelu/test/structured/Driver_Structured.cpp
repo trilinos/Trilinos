@@ -196,15 +196,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   // If you don't want Galeri to do this, specify mx or my on the galeriList.
   std::string matrixType = galeriParameters.GetMatrixType();
 
-  Teuchos::ParameterList& rapList =
-      paramList.sublist("Factories").sublist("myRAPFact");
-
-  const std::string rapFactory = rapList.get<std::string>("factory", "");
-  const bool isStructuredRAPFactory =
-      rapFactory == "StructuredRAPFactory";
-  if (isStructuredRAPFactory)
-    rapList.set("rap: matrix type", matrixType);
-
   int numDimensions = 0;
   Teuchos::Array<LO> lNodesPerDim(3);
 

@@ -1075,7 +1075,7 @@ protected: //functions
   void internal_resolve_shared_part_membership_for_element_death(); // Mod Mark
 
   void remove_unneeded_induced_parts(stk::mesh::Entity entity, PairIterEntityComm entity_comm_info,
-          PartStorage& part_storage, stk::CommSparse& comm);
+          PartStorage& part_storage, stk::CommSparse& comm, bool useKeyBasedUnpack = false);
 
   void internal_resolve_shared_membership(const stk::mesh::EntityVector & entitiesNoLongerShared); // Mod Mark
   virtual void internal_resolve_parallel_create();

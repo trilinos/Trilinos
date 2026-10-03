@@ -74,13 +74,6 @@ public:
   void testRestrictions4parts_1union_1intersection();
   void testRestrictions4parts_2unions();
 
-  void print_restrictions(const FieldRestrictionVector& restrs)
-  {
-    for(const FieldRestriction& restr : restrs) {
-      std::cout << restr.selector() << " : " << restr.num_scalars_per_entity() << std::endl;
-    }
-  }
-
 private:
   std::vector<std::string> dummy_names;
   MetaData meta_data;
@@ -228,7 +221,6 @@ void UnitTestFieldImpl::testRestrictions3parts()
 
   const unsigned expectedNumRestrictions = 1;
   EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
-  print_restrictions(nodeField->restrictions());
 }
 
 void UnitTestFieldImpl::testRestrictions3parts_union()
@@ -243,7 +235,6 @@ void UnitTestFieldImpl::testRestrictions3parts_union()
 
   const unsigned expectedNumRestrictions = 1;
   EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
-  print_restrictions(nodeField->restrictions());
 }
 
 void UnitTestFieldImpl::testRestrictions3parts_differentNumScalars()
@@ -260,7 +251,6 @@ void UnitTestFieldImpl::testRestrictions3parts_differentNumScalars()
 
   const unsigned expectedNumRestrictions = 2;
   EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
-  print_restrictions(nodeField->restrictions());
 }
 
 void UnitTestFieldImpl::testRestrictions3parts_supersetSubset()
@@ -277,7 +267,6 @@ void UnitTestFieldImpl::testRestrictions3parts_supersetSubset()
 
   const unsigned expectedNumRestrictions = 1;
   EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
-  print_restrictions(nodeField->restrictions());
 }
 
 void UnitTestFieldImpl::testRestrictions4parts_1union_1intersection()
@@ -294,7 +283,6 @@ void UnitTestFieldImpl::testRestrictions4parts_1union_1intersection()
 
   const unsigned expectedNumRestrictions = 1;
   EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
-  print_restrictions(nodeField->restrictions());
 }
 
 void UnitTestFieldImpl::testRestrictions4parts_2unions()
@@ -311,7 +299,6 @@ void UnitTestFieldImpl::testRestrictions4parts_2unions()
 
   const unsigned expectedNumRestrictions = 1;
   EXPECT_EQ(expectedNumRestrictions, nodeField->restrictions().size());
-  print_restrictions(nodeField->restrictions());
 }
 
 TEST_F(UnitTestFieldImpl, testRestriction)

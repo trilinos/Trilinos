@@ -50,7 +50,7 @@ class ML2MueLuParameterTranslator {
   ///
   /// @param [in] paramList_in: ML parameter list
   /// @return std::string with MueLu XML parameters
-  static Teuchos::RCP<Teuchos::ParameterList> translate(Teuchos::ParameterList& paramList, const std::string& defaultVals = "") {
+  static Teuchos::RCP<Teuchos::ParameterList> translate(const Teuchos::ParameterList& paramList, const std::string& defaultVals = "") {
     return SetParameterList(paramList, defaultVals);
   }
 
