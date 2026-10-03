@@ -6408,6 +6408,257 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
   }
 }
 
+
+template <class view_type1, class view_type2>
+void deep_copy_to_host_with_temp(view_type1 view1, view_type2 view2) {
+
+  using value_type1 = view_type1::non_const_value_type;
+  using value_type2 = view_type2::non_const_value_type;
+
+  static_assert(sizeof(value_type1) >= sizeof(value_type2));
+  static_assert(sizeof(value_type1) % sizeof(value_type2) == 0);
+
+  // View data of view1 using the value_type of view2 and appropriate striding.
+  Kokkos::LayoutStride layout;
+  if constexpr (view1.rank() == 1)
+    layout = Kokkos::LayoutStride{view1.extent(0), (sizeof(value_type1) / sizeof(value_type2))*view1.stride(0)};
+  else
+   layout = Kokkos::LayoutStride{view1.extent(0), (sizeof(value_type1) / sizeof(value_type2))*view1.stride(0),
+                                 view1.extent(1), (sizeof(value_type1) / sizeof(value_type2))*view1.stride(1)};
+  using temp_view_type = Kokkos::View<typename view_type2::non_const_data_type, Kokkos::LayoutStride, Kokkos::HostSpace>;
+
+  temp_view_type view1temp(reinterpret_cast<value_type2*>(view1.data()), layout);
+
+  // Check if we can directly deepcopy from view2 into view1temp.
+  using dst_execution_space = typename temp_view_type::execution_space;
+  using src_execution_space = typename view_type2::execution_space;
+  using dst_memory_space    = typename temp_view_type::memory_space;
+  using src_memory_space    = typename view_type2::memory_space;
+
+  constexpr bool DstExecCanAccessSrc =
+      Kokkos::SpaceAccessibility<dst_execution_space,
+                                 src_memory_space>::accessible;
+
+  constexpr bool SrcExecCanAccessDst =
+      Kokkos::SpaceAccessibility<src_execution_space,
+                                 dst_memory_space>::accessible;
+  if constexpr (DstExecCanAccessSrc || SrcExecCanAccessDst) {
+    Kokkos::deep_copy(view1temp, view2);
+  } else {
+    auto temp = Kokkos::create_mirror_view(view2);
+    Kokkos::deep_copy(temp, view2);
+    Kokkos::deep_copy(view1temp, temp);
+  }
+}
+
+template <class view_type1, class view_type2>
+void deep_copy_from_host_with_temp(view_type1 view1, view_type2 view2) {
+
+  using value_type1 = view_type1::non_const_value_type;
+  using value_type2 = view_type2::non_const_value_type;
+
+  static_assert(sizeof(value_type2) >= sizeof(value_type1));
+  static_assert(sizeof(value_type2) % sizeof(value_type1) == 0);
+
+  // View data of view2 using the value_type of view1 and appropriate striding.
+  Kokkos::LayoutStride layout;
+  if constexpr (view2.rank() == 1)
+    layout = Kokkos::LayoutStride{view2.extent(0), (sizeof(value_type2) / sizeof(value_type1))*view2.stride(0)};
+  else
+   layout = Kokkos::LayoutStride{view2.extent(0), (sizeof(value_type2) / sizeof(value_type1))*view2.stride(0),
+                                 view2.extent(1), (sizeof(value_type2) / sizeof(value_type1))*view2.stride(1)};
+  using temp_view_type = Kokkos::View<typename view_type1::non_const_data_type, Kokkos::LayoutStride, Kokkos::HostSpace>;
+
+  temp_view_type view2temp(reinterpret_cast<value_type1*>(view2.data()), layout);
+
+  // Check if we can directly deepcopy from view2temp into view1.
+  using dst_execution_space = typename view_type1::execution_space;
+  using src_execution_space = typename temp_view_type::execution_space;
+  using dst_memory_space    = typename view_type1::memory_space;
+  using src_memory_space    = typename temp_view_type::memory_space;
+
+  constexpr bool DstExecCanAccessSrc =
+      Kokkos::SpaceAccessibility<dst_execution_space,
+                                 src_memory_space>::accessible;
+
+  constexpr bool SrcExecCanAccessDst =
+      Kokkos::SpaceAccessibility<src_execution_space,
+                                 dst_memory_space>::accessible;
+  if constexpr (DstExecCanAccessSrc || SrcExecCanAccessDst) {
+    Kokkos::deep_copy(view1, view2temp);
+  } else {
+    auto temp = Kokkos::create_mirror_view(view2temp);
+    Kokkos::deep_copy(temp, view2temp);
+    Kokkos::deep_copy(view1, temp);
+  }
+}
+
+
+/*! \brief Use the distributor to redistribute the data views.
+ * All input views have the same first dimension. All output views will have a first dimension of size num_incoming_gnos.
+ * Although the input views have different value types (mj_gno_t for gnos, mj_scalar_t for coords and weights, int for owners)
+ * we pack all of them into a single communication buffer of type mj_scalar_t.
+ * The memory spaces of the inputs are also different. coords and weights are device views, gnos and owners are host views.
+ * To copy the data into a single communication buffer on host, we potentially need temporary buffers as the data layout might not match.
+ * \param distributor distributor used for to redistribute the data
+ * \param num_incoming_gnos number of items that will be received
+ * \param gnos input view of global ids
+ * \param result_gnos output view of global ids
+ * \param coords input view of coordinates
+ * \param result_coords output view of coordinates
+ * \param weights input view of weights
+ * \param result_weights output view of weights
+ * \param owners input view of process ids
+ * \param result_owners output view of process ids
+ */
+template <class device_t,
+          class local_ordinal_type,
+          class gnos_view_type,
+          class result_gnos_view_type,
+          class coords_view_type,
+          class result_coords_view_type,
+          class weights_view_type,
+          class result_weights_view_type,
+          class owners_view_type,
+          class result_owners_view_type>
+void migrateData(Tpetra::Distributor& distributor,
+                 local_ordinal_type num_incoming_gnos,
+                 gnos_view_type gnos,
+                 result_gnos_view_type& result_gnos,
+                 coords_view_type coords,
+                 result_coords_view_type& result_coords,
+                 weights_view_type weights,
+                 result_weights_view_type& result_weights,
+                 owners_view_type owners,
+                 result_owners_view_type& result_owners) {
+  using mj_gno_t = typename gnos_view_type::value_type;
+  using mj_scalar_t = typename coords_view_type::value_type;
+  using pid_t = typename owners_view_type::value_type;
+  using data_t = long long;
+
+  // Make sure the value type for the comm buffers is large enough to hold the data
+  static_assert(sizeof(data_t) >= sizeof(mj_gno_t));
+  static_assert(sizeof(data_t) >= sizeof(mj_scalar_t));
+  static_assert(sizeof(data_t) >= sizeof(pid_t));
+
+  // Make sure we can use strided access to write the data
+  static_assert(sizeof(data_t) % sizeof(mj_gno_t) == 0);
+  static_assert(sizeof(data_t) % sizeof(mj_scalar_t) == 0);
+  static_assert(sizeof(data_t) % sizeof(pid_t) == 0);
+
+  auto numCoords = coords.extent(0);
+  auto dim = coords.extent(1);
+  auto numWeights = weights.extent(1);
+
+  // migrate gnos
+  // migrate owners
+  // migrate coordinates
+  // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+  // migrate weights
+  // weights are LayoutRight
+  {
+    // Pack coordinates and weights into a single 1D host view
+
+    // comm send buffer
+    Kokkos::View<data_t*, Kokkos::HostSpace> host_src_flat(Kokkos::ViewAllocateWithoutInitializing("host_src_flat"), numCoords*(2+dim+numWeights));
+    Kokkos::View<data_t**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged >> host_src(host_src_flat.data(), numCoords, 2+dim+numWeights);
+
+    deep_copy_to_host_with_temp(Kokkos::subview(host_src, Kokkos::ALL, 0), gnos);
+    deep_copy_to_host_with_temp(Kokkos::subview(host_src, Kokkos::ALL, 1), owners);
+    deep_copy_to_host_with_temp(Kokkos::subview(host_src, Kokkos::ALL, Kokkos::make_pair((decltype(dim))2, 2+dim)), coords);
+
+    if (numWeights > 0) {
+      deep_copy_to_host_with_temp(Kokkos::subview(host_src, Kokkos::ALL, Kokkos::make_pair(2+dim, 2+dim+numWeights)), weights);
+    }
+
+    // comm recv buffer
+    Kokkos::View<data_t*, Kokkos::HostSpace> host_dst_flat(Kokkos::ViewAllocateWithoutInitializing("host_dst_flat"), num_incoming_gnos*(2+dim+numWeights));
+
+    distributor.doPostsAndWaits(host_src_flat, 2 + dim + numWeights, host_dst_flat);
+
+    Kokkos::View<data_t**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged >> host_dst(host_dst_flat.data(), num_incoming_gnos, 2+dim+numWeights);
+
+    result_gnos = result_gnos_view_type(Kokkos::ViewAllocateWithoutInitializing("result_initial_mj_gnos_"), num_incoming_gnos);
+    deep_copy_from_host_with_temp(result_gnos, Kokkos::subview(host_dst, Kokkos::ALL, 0));
+
+    result_owners = result_owners_view_type(Kokkos::ViewAllocateWithoutInitializing("owners"), num_incoming_gnos);
+    deep_copy_from_host_with_temp(result_owners, Kokkos::subview(host_dst, Kokkos::ALL, 1));
+
+    result_coords_view_type dst_coordinates(Kokkos::ViewAllocateWithoutInitializing("mj_coordinates"), num_incoming_gnos, dim);
+    deep_copy_from_host_with_temp(dst_coordinates, Kokkos::subview(host_dst, Kokkos::ALL, Kokkos::make_pair((decltype(dim))2, 2+dim)));
+
+    result_weights_view_type dst_weights(Kokkos::ViewAllocateWithoutInitializing("mj_weights"), num_incoming_gnos, numWeights);
+    if (numWeights > 0) {
+      deep_copy_from_host_with_temp(dst_weights, Kokkos::subview(host_dst, Kokkos::ALL, Kokkos::make_pair(2+dim, 2+dim+numWeights)));
+    }
+
+    result_coords = dst_coordinates;
+    result_weights = dst_weights;
+  }
+}
+
+/*! \brief Use the distributor to redistribute the data views.
+ * See migrateData.
+ * \param distributor distributor used for to redistribute the data
+ * \param num_incoming_gnos number of items that will be received
+ * \param gnos input view of global ids
+ * \param result_gnos output view of global ids
+ * \param partIds input view of partition numbers
+ * \param result_coords output view of partition numbers
+ */
+template <class device_t,
+          class local_ordinal_type,
+          class gnos_view_type,
+          class result_gnos_view_type,
+          class partid_view_type,
+          class result_partid_view_type>
+void migrateDataBack(Tpetra::Distributor& distributor,
+                     local_ordinal_type num_incoming_gnos,
+                     gnos_view_type gnos,
+                     result_gnos_view_type& result_gnos,
+                     partid_view_type partIds,
+                     result_partid_view_type& result_partIds) {
+  using mj_gno_t = typename gnos_view_type::value_type;
+  using partid_t = typename partid_view_type::value_type;
+  using data_t = long long;
+
+  // Make sure the value type for the comm buffers is large enough to hold the data
+  static_assert(sizeof(data_t) >= sizeof(mj_gno_t));
+  static_assert(sizeof(data_t) >= sizeof(partid_t));
+
+  // Make sure we can use strided access to write the data
+  static_assert(sizeof(data_t) % sizeof(mj_gno_t) == 0);
+  static_assert(sizeof(data_t) % sizeof(partid_t) == 0);
+
+  auto numIds = gnos.extent(0);
+
+  // migrate gnos
+  // migrate partIds
+  {
+    // Pack coordinates and weights into a single 1D host view
+
+    // comm send buffer
+    Kokkos::View<data_t*, Kokkos::HostSpace> host_src_flat(Kokkos::ViewAllocateWithoutInitializing("host_src_flat"), numIds*2);
+    Kokkos::View<data_t**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged >> host_src(host_src_flat.data(), numIds, 2);
+
+    deep_copy_to_host_with_temp(Kokkos::subview(host_src, Kokkos::ALL, 0), gnos);
+    deep_copy_to_host_with_temp(Kokkos::subview(host_src, Kokkos::ALL, 1), partIds);
+
+    // comm recv buffer
+    Kokkos::View<data_t*, Kokkos::HostSpace> host_dst_flat(Kokkos::ViewAllocateWithoutInitializing("host_dst_flat"), num_incoming_gnos*2);
+
+    distributor.doPostsAndWaits(host_src_flat, 2, host_dst_flat);
+
+    Kokkos::View<data_t**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged >> host_dst(host_dst_flat.data(), num_incoming_gnos, 2);
+
+    result_gnos = result_gnos_view_type(Kokkos::ViewAllocateWithoutInitializing("result_initial_mj_gnos_"), num_incoming_gnos);
+    deep_copy_from_host_with_temp(result_gnos, Kokkos::subview(host_dst, Kokkos::ALL, 0));
+
+    result_partIds = result_partid_view_type(Kokkos::ViewAllocateWithoutInitializing("partIds"), num_incoming_gnos);
+    deep_copy_from_host_with_temp(result_partIds, Kokkos::subview(host_dst, Kokkos::ALL, 1));
+  }
+}
+
 /*! \brief Function fills up coordinate_destinations is the output array
  * that holds which part each coordinate should be sent. In addition it
  * calculates the shift amount (output_part_numbering_begin_index) to be done
@@ -6618,117 +6869,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     this->mj_env->timerStart(MACRO_TIMERS, mj_timer_base_string +
       "Migration DistributorMigration-" + iteration);
 
-    // note MPI buffers should all be on Kokkos::HostSpace and not
-    // Kokkos::CudaUVMSpace.
-    // Note, with UVM space, create_mirror_view does NOT create a non-UVM
-    // view; need the explicit Host creation and deep_copy.
-    // migrate gnos.
-    {
-      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> received_gnos(
-        Kokkos::ViewAllocateWithoutInitializing("received_gnos"),
-        num_incoming_gnos);
-
-      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> sent_gnos(
-        Kokkos::ViewAllocateWithoutInitializing("sent_gnos"),
-        this->current_mj_gnos.extent(0));
-      Kokkos::deep_copy(sent_gnos, this->current_mj_gnos);
-
-      distributor.doPostsAndWaits(sent_gnos, 1, received_gnos);
-
-      this->current_mj_gnos = Kokkos::View<mj_gno_t*, device_t>(
-        Kokkos::ViewAllocateWithoutInitializing("gids"), num_incoming_gnos);
-
-      Kokkos::deep_copy(this->current_mj_gnos, received_gnos);
-    }
-
-    // migrate coordinates
-    // coordinates in MJ are LayoutLeft since Tpetra Multivector is LayoutLeft
-    Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, device_t>
-      dst_coordinates("mj_coordinates", num_incoming_gnos, this->coord_dim);
-
-    Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace>
-      host_src_coordinates(
-        Kokkos::ViewAllocateWithoutInitializing("host_coords"),
-        this->mj_coordinates.extent(0), this->mj_coordinates.extent(1));
-    Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
-
-    Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_coord(
-      Kokkos::ViewAllocateWithoutInitializing("received_coord"),
-      num_incoming_gnos);
-
-    for(int i = 0; i < this->coord_dim; ++i) {
-
-      // Note Layout Left means we can do these in contiguous blocks
-
-      Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sent_coord
-        = Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
-
-      distributor.doPostsAndWaits(sent_coord, 1, received_coord);
-
-      Kokkos::deep_copy(Kokkos::subview(dst_coordinates, Kokkos::ALL, i),
-                        received_coord);
-
-      // Kokkos::deep_copy will fence, I think, so it should be safe
-      // to reuse received_coord in the next lop iteration
-    }
-    this->mj_coordinates = dst_coordinates;
-
-    // migrate weights.
-    Kokkos::View<mj_scalar_t**, device_t> dst_weights(
-     "mj_weights", num_incoming_gnos, this->num_weights_per_coord);
-    auto host_dst_weights = Kokkos::create_mirror_view(Kokkos::HostSpace(),
-                                                       dst_weights);
-
-    auto host_src_weights = Kokkos::create_mirror_view_and_copy(
-                                    Kokkos::HostSpace(), this->mj_weights);
-
-    // contiguous buffers to gather potentially strided data
-    Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sent_weight(
-      Kokkos::ViewAllocateWithoutInitializing("send_weight_buffer"),
-      this->num_local_coords);
-
-    Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_weight(
-      Kokkos::ViewAllocateWithoutInitializing("received_weight_buffer"),
-      num_incoming_gnos);
-
-    for(int i = 0; i < this->num_weights_per_coord; ++i) {
-
-      auto sub_host_src_weights
-        = Kokkos::subview(host_src_weights, Kokkos::ALL, i);
-
-      auto sub_host_dst_weights
-        = Kokkos::subview(host_dst_weights, Kokkos::ALL, i);
-
-
-      // Layout Right means the weights are not contiguous
-      // However we don't have any systems setup with more than 1 weight so
-      // really I have not tested any of this code with num weights > 1.
-      // I think this is the right thing to do.
-      for(mj_lno_t n = 0; n < this->num_local_coords; ++n) {
-        sent_weight[n] = sub_host_src_weights(n);
-      }
-
-      distributor.doPostsAndWaits(sent_weight, 1, received_weight);
-
-      // Again we copy by index due to layout
-      for(mj_lno_t n = 0; n < num_incoming_gnos; ++n) {
-        sub_host_dst_weights(n) = received_weight[n];
-      }
-    }
-    Kokkos::deep_copy(dst_weights, host_dst_weights);
-    this->mj_weights = dst_weights;
-
-    // migrate owners
-    {
-      // Note owners we kept on Serial
-      Kokkos::View<int *, Kokkos::HostSpace> received_owners(
-              Kokkos::ViewAllocateWithoutInitializing("owner_of_coordinate"),
-              num_incoming_gnos);
-
-      distributor.doPostsAndWaits(owner_of_coordinate, 1, received_owners);
-
-      this->owner_of_coordinate = received_owners;
-    }
+    migrateData<device_t>(distributor, num_incoming_gnos,
+                          this->current_mj_gnos, this->current_mj_gnos,
+                          this->mj_coordinates, this->mj_coordinates,
+                          this->mj_weights, this->mj_weights,
+                          this->owner_of_coordinate, this->owner_of_coordinate);
 
     // if num procs is less than num parts,
     // we need the part assigment arrays as well, since
@@ -7576,44 +7721,11 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       this->mj_env->timerStart(MACRO_TIMERS,
         mj_timer_base_string + "Final DistributorPlanComm");
 
-      // migrate gnos to actual owners.
-      // MPI buffers should be Kokkos::HostSpace, not Kokkos::CudaUVMSpace
-      // Note, with UVM space, create_mirror_view does NOT create a non-UVM
-      // view; need the explicit Host creation and deep_copy.
-      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> sent_gnos(
-        Kokkos::ViewAllocateWithoutInitializing("sent_gnos"),
-        this->current_mj_gnos.extent(0));
-      Kokkos::deep_copy(sent_gnos, this->current_mj_gnos);
+      migrateDataBack<device_t>(distributor,
+                                incoming,
+                                this->current_mj_gnos, this->current_mj_gnos,
+                                this->assigned_part_ids, this->assigned_part_ids);
 
-      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> received_gnos(
-        Kokkos::ViewAllocateWithoutInitializing("received_gnos"),
-        incoming);
-
-      distributor.doPostsAndWaits(sent_gnos, 1, received_gnos);
-
-      this->current_mj_gnos = Kokkos::View<mj_gno_t*, device_t>(
-        Kokkos::ViewAllocateWithoutInitializing("current_mj_gnos"), incoming);
-
-      Kokkos::deep_copy(this->current_mj_gnos, received_gnos);
-
-      // migrate part ids to actual owners.
-      Kokkos::View<mj_part_t *, Kokkos::HostSpace> sent_partids(
-        Kokkos::ViewAllocateWithoutInitializing("sent_partids"),
-        this->assigned_part_ids.extent(0));
-      Kokkos::deep_copy(sent_partids, this->assigned_part_ids);
-
-      Kokkos::View<mj_part_t *, Kokkos::HostSpace> received_partids(
-        Kokkos::ViewAllocateWithoutInitializing("received_partids"),
-        incoming);
-
-      distributor.doPostsAndWaits(sent_partids, 1, received_partids);
-
-      this->assigned_part_ids =
-        Kokkos::View<mj_part_t*, device_t>(
-          Kokkos::ViewAllocateWithoutInitializing("assigned_part_ids"),
-          incoming);
-
-      Kokkos::deep_copy(this->assigned_part_ids, received_partids);
       this->num_local_coords = incoming;
 
       this->mj_env->timerStop(MACRO_TIMERS,
@@ -8722,6 +8834,7 @@ std::pair<bool, RCP<Tpetra::Distributor>> Zoltan2_AlgMJ<Adapter>::mj_premigrate_
   RCP<Tpetra::Distributor> distributor = rcp(new Tpetra::Distributor(mj_problemComm_));
   mj_lno_t num_incoming_gnos = 0;
   bool am_i_a_receiver = false;
+  std::vector<int> coordinate_sources;
   {
     mj_part_t i_am_sending_to = 0;
     int my_group_size = 0;
@@ -8740,7 +8853,6 @@ std::pair<bool, RCP<Tpetra::Distributor>> Zoltan2_AlgMJ<Adapter>::mj_premigrate_
     }
 
     const int mpiTag = 666;
-    std::vector<int> coordinate_sources;
     if (am_i_a_receiver) {
       ArrayRCP<int> num_local_entries_group(my_group_size);
       Array<RCP<Teuchos::CommRequest<int>>> requests(my_group_size-1);
@@ -8789,122 +8901,20 @@ std::pair<bool, RCP<Tpetra::Distributor>> Zoltan2_AlgMJ<Adapter>::mj_premigrate_
   mj_env_->timerStart(MACRO_TIMERS,
     timer_base_string + "PreMigration DistributorMigration");
 
+  Kokkos::View<int*, Kokkos::HostSpace> owners_of_coords(Kokkos::ViewAllocateWithoutInitializing("owners_of_coords"), this->num_local_coords);
+  Kokkos::deep_copy(owners_of_coords, myRank);
+  Kokkos::View<int*, Kokkos::HostSpace> result_owners_of_coords;
+  migrateData<device_t>(*distributor, num_incoming_gnos,
+                        initial_mj_gnos_, result_initial_mj_gnos_,
+                        this->mj_coordinates, result_mj_coordinates_,
+                        this->mj_weights, result_mj_weights_,
+                        owners_of_coords, result_owners_of_coords);
 
-  // migrate gnos.
-  // MPI buffers should be on Kokkos::HostSpace not Kokkos::CudaUVMSpace
-  // Note, with UVM space, create_mirror_view does NOT create a non-UVM
-  // view; need the explicit Host creation and deep_copy.
   {
-    Kokkos::View<mj_gno_t*, Kokkos::HostSpace> sent_gnos(
-      Kokkos::ViewAllocateWithoutInitializing("sent_gnos"),
-      initial_mj_gnos_.size()); // initial_mj_gnos_ is const mj_gno_t *
-    Kokkos::deep_copy(sent_gnos, initial_mj_gnos_);
-
-    Kokkos::View<mj_gno_t*, Kokkos::HostSpace> received_gnos (
-      Kokkos::ViewAllocateWithoutInitializing("received_gnos"),
-      num_incoming_gnos);
-
-    distributor->doPostsAndWaits(sent_gnos, 1, received_gnos);
-
-    result_initial_mj_gnos_ = Kokkos::View<mj_gno_t*, device_t>(
-      Kokkos::ViewAllocateWithoutInitializing("result_initial_mj_gnos_"),
-      num_incoming_gnos);
-    Kokkos::deep_copy(result_initial_mj_gnos_, received_gnos);
-  }
-
-  // migrate coordinates
-  // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-
-  Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace>
-    host_src_coordinates(
-      Kokkos::ViewAllocateWithoutInitializing("mj_coordinates"),
-      this->mj_coordinates.extent(0), this->mj_coordinates.extent(1));
-
-  Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
-
-  Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, device_t> dst_coordinates(
-    Kokkos::ViewAllocateWithoutInitializing("mj_coordinates"),
-    num_incoming_gnos, this->coord_dim);
-
-  Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_coord(
-    Kokkos::ViewAllocateWithoutInitializing("received_coord"),
-    num_incoming_gnos);
-
-  for(int i = 0; i < this->coord_dim; ++i) {
-
-    auto sent_coord = Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
-
-    distributor->doPostsAndWaits(sent_coord, 1, received_coord);
-
-    Kokkos::deep_copy(Kokkos::subview(dst_coordinates, Kokkos::ALL, i),
-                      received_coord);
-    Kokkos::fence();
-  }
-  result_mj_coordinates_ = dst_coordinates;
-
-  // migrate weights.
-
-  Kokkos::View<mj_scalar_t**, device_t> dst_weights(
-    Kokkos::ViewAllocateWithoutInitializing("mj_weights"),
-    num_incoming_gnos, this->num_weights_per_coord);
-  auto host_dst_weights = Kokkos::create_mirror_view(dst_weights);
-
-  auto host_src_weights = Kokkos::create_mirror_view_and_copy(
-                                  Kokkos::HostSpace(), this->mj_weights);
-
-  // contiguous buffers to gather potentially strided data
-  Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sent_weight(
-    Kokkos::ViewAllocateWithoutInitializing("send_weight_buffer"),
-    this->num_local_coords);
-
-  Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_weight(
-    Kokkos::ViewAllocateWithoutInitializing("received_weight_buffer"),
-    num_incoming_gnos);
-
-  for(int i = 0; i < this->num_weights_per_coord; ++i) {
-
-    auto sub_host_src_weights
-      = Kokkos::subview(host_src_weights, Kokkos::ALL, i);
-    auto sub_host_dst_weights
-      = Kokkos::subview(host_dst_weights, Kokkos::ALL, i);
-
-    // Layout Right means these weights are not contiguous
-    // However we don't have any systems setup with more than 1 weight so
-    // really I have not tested any of this code with num weights > 1.
-    // I think this is the right thing to do. Note that there are other
-    // places in the code which don't handle the possibility of more weights.
-    // So evaluating all that and adding tests would be another project.
-    for(mj_lno_t n = 0; n < this->num_local_coords; ++n) {
-      sent_weight[n] = sub_host_src_weights(n);
-    }
-
-    distributor->doPostsAndWaits(sent_weight, 1, received_weight);
-
-    // Again we copy by index due to layout
-    for(mj_lno_t n = 0; n < num_incoming_gnos; ++n) {
-      sub_host_dst_weights(n) = received_weight[n];
-    }
-  }
-  Kokkos::deep_copy(dst_weights, host_dst_weights);
-  result_mj_weights_ = dst_weights;
-
-  // migrate the owners of the coordinates
-  {
-    Kokkos::View<int*, Kokkos::HostSpace> sent_owners(
-                 Kokkos::ViewAllocateWithoutInitializing("sent_owners"),
-                 num_local_coords_);
-    Kokkos::deep_copy(sent_owners, myRank);
-
-    Kokkos::View<int*, Kokkos::HostSpace> received_owners(
-                 Kokkos::ViewAllocateWithoutInitializing("received_owners"),
-                 num_incoming_gnos);
-
-    distributor->doPostsAndWaits(sent_owners, 1, received_owners);
-
     result_actual_owner_rank_ = new int[num_incoming_gnos];
     memcpy(
 	    result_actual_owner_rank_,
-	    received_owners.data(),
+	    result_owners_of_coords.data(),
 	    num_incoming_gnos * sizeof(int));
   }
 
@@ -9114,23 +9124,16 @@ void Zoltan2_AlgMJ<Adapter>::partition(
       mj_env->timerStart(MACRO_TIMERS, timer_base_string +
         "PostMigration DistributorMigration");
 
-      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> received_gnos(
-        Kokkos::ViewAllocateWithoutInitializing("received_gnos"),
-        num_incoming_gnos);
-      Kokkos::View<mj_part_t*, Kokkos::HostSpace> received_partids(
-        Kokkos::ViewAllocateWithoutInitializing("received_partids"),
-        num_incoming_gnos);
-
-      reverse_premigration_distributor.doPostsAndWaits(host_result_initial_mj_gnos, 1,
-                                  received_gnos);
-      {
-        Kokkos::View<mj_part_t*, Kokkos::HostSpace> sent_partnos;
-        if (partId.size() > 0) {
-          sent_partnos = Kokkos::View<mj_part_t*, Kokkos::HostSpace>(
-                                 partId.getRawPtr(), partId.size()); //unmanaged
-        }
-        reverse_premigration_distributor.doPostsAndWaits(sent_partnos, 1, received_partids);
+      Kokkos::View<mj_part_t*, Kokkos::HostSpace> sent_partnos;
+      if (partId.size() > 0) {
+        sent_partnos = Kokkos::View<mj_part_t*, Kokkos::HostSpace>(partId.getRawPtr(), partId.size());
       }
+      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> received_gnos;
+      Kokkos::View<mj_part_t*, Kokkos::HostSpace> received_partids;
+      migrateDataBack<device_t>(reverse_premigration_distributor,
+                                num_incoming_gnos,
+                                host_result_initial_mj_gnos, received_gnos,
+                                sent_partnos, received_partids);
 
       partId = arcp(new mj_part_t[this->num_local_coords],
         0, this->num_local_coords, true);
