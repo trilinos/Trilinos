@@ -153,12 +153,18 @@ void block_spgemm_numeric(KernelHandle& kh, const AMatrix& A, const bool Amode, 
 /// @param Amode Whether to transpose A (only Amode == false is currently supported)
 /// @param B Right input matrix.
 /// @param Bmode Whether to transpose B (only Bmode == false is currently supported)
-/// @param algo Algorithm option to use.
+/// @param input_sorted Whether A and B are both known to be sorted.
+///   If false and the selected algorithm requires sorted input,
+///   a native (KokkosKernels) implementation is used instead.
+///   Defaults to false (assume unsorted) for backwards compatibility.
+/// @param result_sorted When true, the output matrix C is always sorted,
+///   which may incur a runtime cost. When false, indicates that an unsorted output
+///   is acceptable. Defaults to true for backwards compatibility.
 /// @return CMatrix Product A*B.
 ///
 template <class CMatrix, class AMatrix, class BMatrix>
 CMatrix spgemm(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, const bool Amode, const BMatrix& B,
-               const bool Bmode) {
+               const bool Bmode, bool input_sorted = false, bool result_sorted = true) {
   // Canonicalize the matrix types:
   //  - Make A,B have const values and entries.
   //  - Make all views in A,B unmanaged, but otherwise default memory traits
@@ -175,6 +181,8 @@ CMatrix spgemm(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, const bool 
   using CMatrix_Internal =
       KokkosSparse::CrsMatrix<typename CMatrix::non_const_value_type, typename CMatrix::non_const_ordinal_type,
                               typename CMatrix::device_type, void, typename CMatrix::non_const_size_type>;
+  // Non-reuse always executes on C's exec space
+  using ExecSpace = typename CMatrix::execution_space;
   // Check now that A, B dimensions are compatible to multiply
   auto opACols = Amode ? A.numRows() : A.numCols();
   auto opBRows = Bmode ? B.numCols() : B.numRows();
@@ -202,14 +210,27 @@ CMatrix spgemm(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, const bool 
     typename CMatrix::values_type valuesC;
     return CMatrix("C", Crows, Ccols, 0, valuesC, row_mapC, entriesC);
   }
-  if (Impl::is_spgemm_algorithm_native(algo)) {
+  // Decide at runtime whether to fallback to native. In general, we fall back if the TPL for
+  // this algo/exec space requires sorted inputs, and the user has not told us that the inputs are sorted.
+  bool useNativeFallback =
+      !input_sorted && Impl::algorithm_may_require_sorted_input<ExecSpace, /* NonReuse */ true>(algo);
+  // rocSPARSE can handle unsorted inputs when certain nnz/row and intermediate product
+  // limits are satisfied.  Check the actual matrices to avoid an unnecessary fallback.
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  if (useNativeFallback &&
+      Impl::spgemm_noreuse_tpl_spec_avail<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal>::value) {
+    if (Impl::rocsparse_can_handle_unsorted_inputs(ExecSpace(), A.graph.row_map, B.graph.row_map))
+      useNativeFallback = false;
+  }
+#endif
+  if (Impl::is_spgemm_algorithm_native(algo) || useNativeFallback) {
     return CMatrix(
         KokkosSparse::Impl::SPGEMM_NOREUSE<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal, false>::spgemm_noreuse(
-            algo, A_internal, Amode, B_internal, Bmode));
+            algo, A_internal, Amode, B_internal, Bmode, input_sorted, result_sorted));
   } else {
     return CMatrix(
         KokkosSparse::Impl::SPGEMM_NOREUSE<CMatrix_Internal, AMatrix_Internal, BMatrix_Internal>::spgemm_noreuse(
-            algo, A_internal, Amode, B_internal, Bmode));
+            algo, A_internal, Amode, B_internal, Bmode, input_sorted, result_sorted));
   }
 }
 
@@ -223,12 +244,20 @@ CMatrix spgemm(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, const bool 
 /// @param Amode Whether to transpose A (only Amode == false is currently supported)
 /// @param B Right input matrix.
 /// @param Bmode Whether to transpose B (only Bmode == false is currently supported)
-/// @param algo Algorithm option to use.
+/// @param input_sorted Whether A and B are both known to be sorted.
+///   If false and the selected algorithm requires sorted input,
+///   a native (KokkosKernels) implementation is used instead.
+///   Defaults to false (assume unsorted) for backwards compatibility.
+/// @param result_sorted When true, the output matrix C is always sorted,
+///   which may incur a runtime cost. When false, indicates that an unsorted output
+///   is acceptable. Defaults to true for backwards compatibility.
 /// @return CMatrix Product A*B.
 ///
 template <class CMatrix, class AMatrix, class BMatrix>
-CMatrix spgemm(const AMatrix& A, const bool Amode, const BMatrix& B, const bool Bmode) {
-  return spgemm<CMatrix, AMatrix, BMatrix>(KokkosSparse::SPGEMM_DEFAULT, A, Amode, B, Bmode);
+CMatrix spgemm(const AMatrix& A, const bool Amode, const BMatrix& B, const bool Bmode, bool input_sorted = false,
+               bool result_sorted = true) {
+  return spgemm<CMatrix, AMatrix, BMatrix>(KokkosSparse::SPGEMM_DEFAULT, A, Amode, B, Bmode, input_sorted,
+                                           result_sorted);
 }
 
 }  // namespace KokkosSparse

@@ -66,7 +66,7 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
 
   // Allocate IPIV view on host
   using ViewTypeP = typename std::conditional<MAGMA, Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace>,
-                                              Kokkos::View<int*, Kokkos::LayoutLeft, execution_space>>::type;
+                                              Kokkos::View<int*, Kokkos::LayoutLeft, Device>>::type;
   ViewTypeP ipiv;
   int Nt = 0;
   if (mode[0] == 'Y') {
@@ -86,10 +86,10 @@ void impl_test_gesv(const char* mode, const char* padding, int N) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
 #if defined(KOKKOS_ENABLE_CUDA)
-    nopivot_runtime_err = (!std::is_same<typename Device::memory_space, Kokkos::CudaSpace>::value) &&
+    nopivot_runtime_err = (!std::is_same<typename Device::execution_space, Kokkos::Cuda>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
 #elif defined(KOKKOS_ENABLE_HIP)
-    nopivot_runtime_err = (!std::is_same<typename Device::memory_space, Kokkos::HIPSpace>::value) &&
+    nopivot_runtime_err = (!std::is_same<typename Device::execution_space, Kokkos::HIP>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
 #endif
     notpl_runtime_err = false;
@@ -174,7 +174,7 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
 
   // Allocate IPIV view on host
   using ViewTypeP = typename std::conditional<MAGMA, Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace>,
-                                              Kokkos::View<int*, Kokkos::LayoutLeft, execution_space>>::type;
+                                              Kokkos::View<int*, Kokkos::LayoutLeft, Device>>::type;
   ViewTypeP ipiv;
   int Nt = 0;
   if (mode[0] == 'Y') {
@@ -194,10 +194,10 @@ void impl_test_gesv_mrhs(const char* mode, const char* padding, int N, int nrhs)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA   // have MAGMA TPL
 #ifdef KOKKOSKERNELS_ENABLE_TPL_LAPACK  // and have LAPACK TPL
 #if defined(KOKKOS_ENABLE_CUDA)
-    nopivot_runtime_err = (!std::is_same<typename Device::memory_space, Kokkos::CudaSpace>::value) &&
+    nopivot_runtime_err = (!std::is_same<typename Device::execution_space, Kokkos::Cuda>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
 #elif defined(KOKKOS_ENABLE_HIP)
-    nopivot_runtime_err = (!std::is_same<typename Device::memory_space, Kokkos::HIPSpace>::value) &&
+    nopivot_runtime_err = (!std::is_same<typename Device::execution_space, Kokkos::HIP>::value) &&
                           (ipiv.extent(0) == 0) && (ipiv.data() == nullptr);
 #endif
     notpl_runtime_err = false;

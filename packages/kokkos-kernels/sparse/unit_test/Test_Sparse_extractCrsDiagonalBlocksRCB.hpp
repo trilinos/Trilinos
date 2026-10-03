@@ -45,6 +45,62 @@ typename coors_view_t::value_type generate_3d_coordinates_for_sparse_rows(int n_
   return dx;
 }
 
+template <typename HostRowMapViewType, typename HostEntriesViewType, typename ValuesViewType, typename PermViewType,
+          typename CrsMatType, typename scalar_t, typename lno_t, typename size_type>
+void check_diagonal_blocks(const HostRowMapViewType &h_row_map, const HostEntriesViewType &h_entries,
+                           const ValuesViewType &h_values, const PermViewType &perm_rcb,
+                           const PermViewType &reverse_perm_rcb, const std::vector<lno_t> &partition_sizes,
+                           const std::vector<CrsMatType> &DiagBlks, const lno_t &nblocks, const lno_t &nrows) {
+  lno_t numRows = 0;
+  lno_t numCols = 0;
+  for (lno_t i = 0; i < nblocks; i++) {
+    numRows += DiagBlks[i].numRows();
+    numCols += DiagBlks[i].numCols();
+  }
+
+  ASSERT_EQ(numRows, nrows);
+  ASSERT_EQ(numCols, nrows);
+
+  auto h_perm_rcb         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm_rcb);
+  auto h_reverse_perm_rcb = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), reverse_perm_rcb);
+
+  std::map<lno_t, scalar_t> colIdx_Value_rcb;
+
+  lno_t blk_size;
+  lno_t blk_start = 0;
+  for (lno_t i = 0; i < nblocks; i++) {  // block loop
+    auto h_row_map_diagblk = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), DiagBlks[i].graph.row_map);
+    auto h_entries_diagblk = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), DiagBlks[i].graph.entries);
+    auto h_values_diagblk  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), DiagBlks[i].values);
+
+    ASSERT_EQ(static_cast<lno_t>(DiagBlks[i].numRows()), partition_sizes[i]);
+
+    blk_size          = partition_sizes[i];
+    size_type blk_nnz = 0;
+    for (lno_t ii = 0; ii < blk_size; ii++) {  // row loop in each block
+      ASSERT_EQ(h_row_map_diagblk(ii), blk_nnz);
+      colIdx_Value_rcb.clear();
+      lno_t origRow = h_reverse_perm_rcb(blk_start + ii);  // get the original row idx of the reordered row idx, ii
+      for (size_type j = h_row_map(origRow); j < h_row_map(origRow + 1); j++) {
+        lno_t origEi   = h_entries(j);
+        scalar_t origV = h_values(j);
+        lno_t Ei       = h_perm_rcb(origEi);  // get the reordered col idx of the
+                                              // original col idx, origEi
+        colIdx_Value_rcb[Ei] = origV;
+      }
+      for (typename std::map<lno_t, scalar_t>::iterator it = colIdx_Value_rcb.begin(); it != colIdx_Value_rcb.end();
+           ++it) {
+        if ((it->first >= blk_start) && (it->first < (blk_start + blk_size))) {
+          ASSERT_EQ(h_entries_diagblk(blk_nnz) + blk_start, it->first);
+          ASSERT_EQ(h_values_diagblk(blk_nnz), it->second);
+          blk_nnz++;
+        }
+      }
+    }  // row loop in each block
+    blk_start += DiagBlks[i].numCols();
+  }  // block loop
+}
+
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_extract_diagonal_blocks_rcb_deprecated(lno_t n_pts_per_dim, lno_t nblocks) {
@@ -125,12 +181,14 @@ void run_test_extract_diagonal_blocks_rcb_deprecated(lno_t n_pts_per_dim, lno_t 
   ASSERT_EQ(numRows, nrows);
   ASSERT_EQ(numCols, nrows);
 
-  lno_t n_levels = static_cast<lno_t>(std::log2(static_cast<double>(nblocks)) + 1);
   PermViewType_hm perm_rcb_ref(Kokkos::view_alloc(Kokkos::WithoutInitializing, "perm_rcb_ref"), n_coordinates);
   PermViewType_hm reverse_perm_rcb_ref(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_rcb_ref"),
                                        n_coordinates);
-  std::vector<lno_t> partition_sizes = KokkosGraph::Experimental::recursive_coordinate_bisection(
-      h_coordinates, perm_rcb_ref, reverse_perm_rcb_ref, n_levels);
+  Kokkos::deep_copy(perm_rcb_ref, perm_rcb);
+  for (lno_t i = 0; i < n_coordinates; i++) {
+    lno_t new_idx                 = perm_rcb_ref(i);
+    reverse_perm_rcb_ref(new_idx) = i;
+  }
 
   std::map<lno_t, scalar_t> colIdx_Value_rcb;
 
@@ -141,9 +199,7 @@ void run_test_extract_diagonal_blocks_rcb_deprecated(lno_t n_pts_per_dim, lno_t 
     auto h_entries_diagblk = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), DiagBlks[i].graph.entries);
     auto h_values_diagblk  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), DiagBlks[i].values);
 
-    ASSERT_EQ(static_cast<lno_t>(DiagBlks[i].numRows()), partition_sizes[i]);
-
-    blk_size          = partition_sizes[i];
+    blk_size          = static_cast<lno_t>(DiagBlks[i].numRows());
     size_type blk_nnz = 0;
     for (lno_t ii = 0; ii < blk_size; ii++) {  // row loop in each block
       ASSERT_EQ(h_row_map_diagblk(ii), blk_nnz);
@@ -181,7 +237,8 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
   using crsMat_t      = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
 
   crsMat_t A;
-  std::vector<crsMat_t> DiagBlks(nblocks);
+  std::vector<crsMat_t> DiagBlks1(nblocks);
+  std::vector<crsMat_t> DiagBlks2(nblocks);
 
   // Generate coordinates
   lno_t n_coordinates = n_pts_per_dim * n_pts_per_dim * n_pts_per_dim;
@@ -239,57 +296,19 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
       KokkosGraph::Experimental::recursive_coordinate_bisection(coordinates, perm_rcb, reverse_perm_rcb, n_levels);
 
   KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(A, perm_rcb, reverse_perm_rcb,
-                                                                                       partition_sizes, DiagBlks);
+                                                                                       partition_sizes, DiagBlks1);
+
+  KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_with_rcb(A, perm_rcb, reverse_perm_rcb,
+                                                                            partition_sizes, DiagBlks2);
 
   // Checking results
-  lno_t numRows = 0;
-  lno_t numCols = 0;
-  for (lno_t i = 0; i < nblocks; i++) {
-    numRows += DiagBlks[i].numRows();
-    numCols += DiagBlks[i].numCols();
-  }
+  check_diagonal_blocks<decltype(h_row_map), decltype(h_entries), decltype(h_values), PermViewType, crsMat_t, scalar_t,
+                        lno_t, size_type>(h_row_map, h_entries, h_values, perm_rcb, reverse_perm_rcb, partition_sizes,
+                                          DiagBlks1, nblocks, nrows);
 
-  ASSERT_EQ(numRows, nrows);
-  ASSERT_EQ(numCols, nrows);
-
-  auto h_perm_rcb         = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm_rcb);
-  auto h_reverse_perm_rcb = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), reverse_perm_rcb);
-
-  std::map<lno_t, scalar_t> colIdx_Value_rcb;
-
-  lno_t blk_size;
-  lno_t blk_start = 0;
-  for (lno_t i = 0; i < nblocks; i++) {  // block loop
-    auto h_row_map_diagblk = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), DiagBlks[i].graph.row_map);
-    auto h_entries_diagblk = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), DiagBlks[i].graph.entries);
-    auto h_values_diagblk  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), DiagBlks[i].values);
-
-    ASSERT_EQ(static_cast<lno_t>(DiagBlks[i].numRows()), partition_sizes[i]);
-
-    blk_size          = partition_sizes[i];
-    size_type blk_nnz = 0;
-    for (lno_t ii = 0; ii < blk_size; ii++) {  // row loop in each block
-      ASSERT_EQ(h_row_map_diagblk(ii), blk_nnz);
-      colIdx_Value_rcb.clear();
-      lno_t origRow = h_reverse_perm_rcb(blk_start + ii);  // get the original row idx of the reordered row idx, ii
-      for (size_type j = h_row_map(origRow); j < h_row_map(origRow + 1); j++) {
-        lno_t origEi   = h_entries(j);
-        scalar_t origV = h_values(j);
-        lno_t Ei       = h_perm_rcb(origEi);  // get the reordered col idx of the
-                                              // original col idx, origEi
-        colIdx_Value_rcb[Ei] = origV;
-      }
-      for (typename std::map<lno_t, scalar_t>::iterator it = colIdx_Value_rcb.begin(); it != colIdx_Value_rcb.end();
-           ++it) {
-        if ((it->first >= blk_start) && (it->first < (blk_start + blk_size))) {
-          ASSERT_EQ(h_entries_diagblk(blk_nnz) + blk_start, it->first);
-          ASSERT_EQ(h_values_diagblk(blk_nnz), it->second);
-          blk_nnz++;
-        }
-      }
-    }  // row loop in each block
-    blk_start += DiagBlks[i].numCols();
-  }  // block loop
+  check_diagonal_blocks<decltype(h_row_map), decltype(h_entries), decltype(h_values), PermViewType, crsMat_t, scalar_t,
+                        lno_t, size_type>(h_row_map, h_entries, h_values, perm_rcb, reverse_perm_rcb, partition_sizes,
+                                          DiagBlks2, nblocks, nrows);
 }
 }  // namespace Test
 

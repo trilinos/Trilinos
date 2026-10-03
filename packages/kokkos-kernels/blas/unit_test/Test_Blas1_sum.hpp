@@ -11,12 +11,12 @@ template <class ViewTypeA, class Device>
 void impl_test_sum(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
 
-  view_stride_adapter<ViewTypeA> a("A", N);
+  TestUtils::view_stride_adapter<ViewTypeA> a("A", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  Test::getRandomBounds(10.0, randStart, randEnd);
+  TestUtils::getRandomBounds(10.0, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
   Kokkos::deep_copy(a.h_base, a.d_base);
@@ -37,12 +37,12 @@ template <class ViewTypeA, class Device>
 void impl_test_sum_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
 
-  view_stride_adapter<ViewTypeA> a("A", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> a("A", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  Test::getRandomBounds(10.0, randStart, randEnd);
+  TestUtils::getRandomBounds(10.0, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
   Kokkos::deep_copy(a.h_base, a.d_base);

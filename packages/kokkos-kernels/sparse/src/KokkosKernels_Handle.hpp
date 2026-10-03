@@ -452,12 +452,21 @@ class KokkosKernelsHandle {
     }
   }
 
-  // SPGEM
   SPGEMMHandleType *get_spgemm_handle() { return this->spgemmHandle; }
-  void create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm spgemm_algo = KokkosSparse::SPGEMM_DEFAULT) {
+
+  /// \brief Create an SpGEMM handle.
+  ///
+  /// \param spgemm_algo the algorithm to use.
+  /// \param input_sorted whether the entries within each row of the input
+  ///   matrices A and B are sorted. Defaults to false (assume unsorted).
+  /// \param result_sorted whether the entries within each row of the output
+  ///   matrix C are required to be sorted. Defaults to true (always produce
+  ///   sorted output).
+  void create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm spgemm_algo = KokkosSparse::SPGEMM_DEFAULT,
+                            bool input_sorted = false, bool result_sorted = true) {
     this->destroy_spgemm_handle();
     this->is_owner_of_the_spgemm_handle = true;
-    this->spgemmHandle                  = new SPGEMMHandleType(spgemm_algo);
+    this->spgemmHandle                  = new SPGEMMHandleType(spgemm_algo, input_sorted, result_sorted);
   }
   void destroy_spgemm_handle() {
     if (is_owner_of_the_spgemm_handle && this->spgemmHandle != NULL) {

@@ -13,12 +13,18 @@ namespace KokkosBatched {
 /// If NrmType == Norm::L2, compute L2 norm of each vector in the batch
 /// If NrmType == Norm::LInf, compute Linf norm of each vector in the batch
 /// If NrmType == Norm::ScaledL2, compute ScaledL2 norm of each vector in the batch
+/// If NrmType == Norm::GenuineL1, compute GenuineL1 norm of each vector in the batch
+/// If NrmType == Norm::GenuineLInf, compute GenuineLInf norm of each vector in the batch
 /// No nested parallel_for is used inside of the function.
-/// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2
+/// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2, Norm::GenuineL1, Norm::GenuineLInf
+/// \note With L1 and GenuineL1, we compute the norm by sum (|Re(x_i)| + |Im(x_i)|) and sum (|x_i|), respectively.
+/// Though L2 is more efficient, it may overflow for large vectors. For large vectors, use ScaledL2, which computes the
+/// norm by scaling the vector to avoid overflow.
 template <typename NrmType>
 struct SerialNrm {
   static_assert(is_norm_v<NrmType>,
-                "KokkosBatched::SerialNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2");
+                "KokkosBatched::SerialNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2, "
+                "Norm::GenuineL1, Norm::GenuineLInf");
   /// \tparam XViewType: Type for input X, needs to be a 1D view
   /// \tparam NormViewType: Type for output norm, needs to be a 0D view
   ///
@@ -33,13 +39,19 @@ struct SerialNrm {
 /// If NrmType == Norm::L2, compute L2 norm of each vector in the batch
 /// If NrmType == Norm::LInf, compute Linf norm of each vector in the batch
 /// If NrmType == Norm::ScaledL2, compute ScaledL2 norm of each vector in the batch
+/// If NrmType == Norm::GenuineL1, compute GenuineL1 norm of each vector in the batch
+/// If NrmType == Norm::GenuineLInf, compute GenuineLInf norm of each vector in the batch
 /// A nested parallel_for with TeamThreadRange is used.
 /// \tparam MemberType: Kokkos TeamPolicy member type
-/// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf
+/// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2, Norm::GenuineL1, Norm::GenuineLInf
+/// \note With L1 and GenuineL1, we compute the norm by sum (|Re(x_i)| + |Im(x_i)|) and sum (|x_i|), respectively.
+/// Though L2 is more efficient, it may overflow for large vectors. For large vectors, use ScaledL2, which computes the
+/// norm by scaling the vector to avoid overflow.
 template <typename MemberType, typename NrmType>
 struct TeamNrm {
   static_assert(is_norm_v<NrmType>,
-                "KokkosBatched::TeamNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2");
+                "KokkosBatched::TeamNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2, "
+                "Norm::GenuineL1, Norm::GenuineLInf");
   /// \tparam XViewType: Type for input X, needs to be a 1D view
   /// \tparam NormViewType: Type for output norm, needs to be a 0D view
   ///
@@ -55,13 +67,19 @@ struct TeamNrm {
 /// If NrmType == Norm::L2, compute L2 norm of each vector in the batch
 /// If NrmType == Norm::LInf, compute Linf norm of each vector in the batch
 /// If NrmType == Norm::ScaledL2, compute ScaledL2 norm of each vector in the batch
+/// If NrmType == Norm::GenuineL1, compute GenuineL1 norm of each vector in the batch
+/// If NrmType == Norm::GenuineLInf, compute GenuineLInf norm of each vector in the batch
 /// A nested parallel_for with TeamVectorRange is used.
 /// \tparam MemberType: Kokkos TeamPolicy member type
-/// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2
+/// \tparam NrmType: one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2, Norm::GenuineL1, Norm::GenuineLInf
+/// \note With L1 and GenuineL1, we compute the norm by sum (|Re(x_i)| + |Im(x_i)|) and sum (|x_i|), respectively.
+/// Though L2 is more efficient, it may overflow for large vectors. For large vectors, use ScaledL2, which computes the
+/// norm by scaling the vector to avoid overflow.
 template <typename MemberType, typename NrmType>
 struct TeamVectorNrm {
   static_assert(is_norm_v<NrmType>,
-                "KokkosBatched::TeamVectorNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2");
+                "KokkosBatched::TeamVectorNrm: NrmType must be one of Norm::L1, Norm::L2, Norm::LInf, Norm::ScaledL2, "
+                "Norm::GenuineL1, Norm::GenuineLInf");
   /// \tparam XViewType: Type for input X, needs to be a 1D view
   /// \tparam NormViewType: Type for output norm, needs to be a 0D view
   ///

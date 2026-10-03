@@ -142,7 +142,7 @@ inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
 }
 
 #define KOKKOSSPARSE_SPMV_MKL(SCALAR, EXECSPACE)                                                                         \
-  template <>                                                                                                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                         \
   struct SPMV_BSRMATRIX<EXECSPACE,                                                                                       \
                         KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, MKL_INT, MKL_INT>,      \
                         ::KokkosSparse::Experimental::BsrMatrix<                                                         \
@@ -152,7 +152,7 @@ inline void spmv_mv_bsr_mkl(Handle* handle, sparse_operation_t op, Scalar alpha,
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                    \
                         Kokkos::View<SCALAR*, Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,          \
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                           \
-                        true> {                                                                                          \
+                        true, ETI_SPEC_AVAIL> {                                                                          \
     using device_type = Kokkos::Device<EXECSPACE, Kokkos::HostSpace>;                                                    \
     using Handle      = KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, MKL_INT, MKL_INT>;      \
     using AMatrix     = ::KokkosSparse::Experimental::BsrMatrix<SCALAR const, MKL_INT const, device_type,                \
@@ -189,7 +189,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
 #undef KOKKOSSPARSE_SPMV_MKL
 
 #define KOKKOSSPARSE_SPMV_MV_MKL(SCALAR, EXECSPACE)                                                                      \
-  template <>                                                                                                            \
+  template <bool ETI_SPEC_AVAIL>                                                                                         \
   struct SPMV_MV_BSRMATRIX<                                                                                              \
       EXECSPACE, KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, MKL_INT, MKL_INT>,             \
       ::KokkosSparse::Experimental::BsrMatrix<SCALAR const, MKL_INT const,                                               \
@@ -199,7 +199,7 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
                    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                                      \
       Kokkos::View<SCALAR**, Kokkos::LayoutLeft, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                           \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                             \
-      true, true> {                                                                                                      \
+      true, ETI_SPEC_AVAIL> {                                                                                            \
     using device_type = Kokkos::Device<EXECSPACE, Kokkos::HostSpace>;                                                    \
     using Handle      = KokkosSparse::Impl::SPMVHandleImpl<EXECSPACE, Kokkos::HostSpace, SCALAR, MKL_INT, MKL_INT>;      \
     using AMatrix     = ::KokkosSparse::Experimental::BsrMatrix<SCALAR const, MKL_INT const, device_type,                \
@@ -552,7 +552,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char m
 }
 
 #define KOKKOSSPARSE_SPMV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE)                                         \
-  template <>                                                                                                      \
+  template <bool ETI_SPEC_AVAIL>                                                                                   \
   struct SPMV_BSRMATRIX<                                                                                           \
       Kokkos::Cuda, KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR, OFFSET, ORDINAL>,              \
       ::KokkosSparse::Experimental::BsrMatrix<SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Cuda, SPACE>,    \
@@ -560,7 +560,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char m
       Kokkos::View<SCALAR const*, LAYOUT, Kokkos::Device<Kokkos::Cuda, SPACE>,                                     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                                \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::Cuda, SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      true> {                                                                                                      \
+      true, ETI_SPEC_AVAIL> {                                                                                      \
     using device_type       = Kokkos::Device<Kokkos::Cuda, SPACE>;                                                 \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;                                             \
     using Handle            = KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR, OFFSET, ORDINAL>;    \
@@ -604,8 +604,8 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutRight
 
 // cuSparse TPL does not support LayoutRight for this operation
 // only specialize for LayoutLeft
-#define KOKKOSSPARSE_SPMV_MV_CUSPARSE(SCALAR, ORDINAL, OFFSET, SPACE, ETI_AVAIL)                                \
-  template <>                                                                                                   \
+#define KOKKOSSPARSE_SPMV_MV_CUSPARSE(SCALAR, ORDINAL, OFFSET, SPACE)                                           \
+  template <bool ETI_SPEC_AVAIL>                                                                                \
   struct SPMV_MV_BSRMATRIX<                                                                                     \
       Kokkos::Cuda, KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR, OFFSET, ORDINAL>,           \
       ::KokkosSparse::Experimental::BsrMatrix<SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::Cuda, SPACE>, \
@@ -614,7 +614,7 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutRight
                    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                             \
       Kokkos::View<SCALAR**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, SPACE>,                           \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                    \
-      false, true, ETI_AVAIL> {                                                                                 \
+      false, true, ETI_SPEC_AVAIL> {                                                                            \
     using device_type       = Kokkos::Device<Kokkos::Cuda, SPACE>;                                              \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;                                          \
     using Handle            = KokkosSparse::Impl::SPMVHandleImpl<Kokkos::Cuda, SPACE, SCALAR, OFFSET, ORDINAL>; \
@@ -637,22 +637,14 @@ KOKKOSSPARSE_SPMV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::LayoutRight
     }                                                                                                           \
   };
 
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaSpace, true)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaSpace, false)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaSpace, true)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaSpace, false)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::CudaSpace, true)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::CudaSpace, false)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::CudaSpace, true)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::CudaSpace, false)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaUVMSpace, true)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaUVMSpace, false)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaUVMSpace, true)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaUVMSpace, false)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::CudaUVMSpace, true)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::CudaUVMSpace, false)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::CudaUVMSpace, true)
-KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::CudaUVMSpace, false)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaSpace)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaSpace)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::CudaSpace)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::CudaSpace)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(double, int, int, Kokkos::CudaUVMSpace)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(float, int, int, Kokkos::CudaUVMSpace)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<double>, int, int, Kokkos::CudaUVMSpace)
+KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::CudaUVMSpace)
 
 #undef KOKKOSSPARSE_SPMV_MV_CUSPARSE
 
@@ -877,7 +869,7 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode
 }  // spmv_bsr_rocsparse
 
 #define KOKKOSSPARSE_SPMV_ROCSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE)                                       \
-  template <>                                                                                                     \
+  template <bool ETI_SPEC_AVAIL>                                                                                  \
   struct SPMV_BSRMATRIX<                                                                                          \
       Kokkos::HIP, KokkosSparse::Impl::SPMVHandleImpl<Kokkos::HIP, SPACE, SCALAR, OFFSET, ORDINAL>,               \
       ::KokkosSparse::Experimental::BsrMatrix<SCALAR const, ORDINAL const, Kokkos::Device<Kokkos::HIP, SPACE>,    \
@@ -885,7 +877,7 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode
       Kokkos::View<SCALAR const*, LAYOUT, Kokkos::Device<Kokkos::HIP, SPACE>,                                     \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>,                               \
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<Kokkos::HIP, SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      true> {                                                                                                     \
+      true, ETI_SPEC_AVAIL> {                                                                                     \
     using device_type       = Kokkos::Device<Kokkos::HIP, SPACE>;                                                 \
     using memory_trait_type = Kokkos::MemoryTraits<Kokkos::Unmanaged>;                                            \
     using Handle            = KokkosSparse::Impl::SPMVHandleImpl<Kokkos::HIP, SPACE, SCALAR, OFFSET, ORDINAL>;    \

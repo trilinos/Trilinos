@@ -213,7 +213,7 @@ struct ExplicitGraphCoarsening {
     clusterOffsets = ordinal_view_t("Cluster offsets", numCoarseVerts + 1);
     clusterVerts   = ordinal_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Cluster verts"), numFineVerts);
     Kokkos::parallel_for(range_pol(0, numFineVerts), ClusterSizeFunctor(clusterOffsets, labels));
-    KokkosKernels::Impl::exclusive_parallel_prefix_sum<ordinal_view_t, exec_space>(numCoarseVerts + 1, clusterOffsets);
+    KokkosKernels::exclusive_parallel_prefix_sum(exec_space(), clusterOffsets);
     {
       ordinal_view_t tempInsertCounts("Temporary cluster insert counts", numCoarseVerts);
       Kokkos::parallel_for(range_pol(0, numFineVerts),

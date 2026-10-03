@@ -4,14 +4,18 @@
 #ifndef KOKKOSKERNELS_TEST_UTILS_HPP
 #define KOKKOSKERNELS_TEST_UTILS_HPP
 
-#include <random>
-
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosBatched_Vector.hpp"
 // Make this include-able from all subdirectories
 #include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
+
+#include <concepts>
+#include <random>
+#include <algorithm>
+#include <type_traits>
+#include <vector>
 
 // Simplify ETI macros
 #if !defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS)
@@ -42,35 +46,155 @@
 #define KOKKOSKERNELS_TEST_COMPLEX_DOUBLE
 #endif
 
-namespace Test {
+namespace TestUtils {
 
 namespace Impl {
 
+// Base case: scalar absolute comparison
 template <class Scalar1, class Scalar2, class Scalar3>
-::testing::AssertionResult kk_expect_near_pred_format(const char* expr1, const char* expr2, const char* expr3,
-                                                      const Scalar1& val1, const Scalar2& val2, const Scalar3& tol) {
-  using scalar1_type = typename std::remove_cv<typename std::remove_reference<Scalar1>::type>::type;
-  using scalar3_type = typename std::remove_cv<typename std::remove_reference<Scalar3>::type>::type;
-  using AT1          = KokkosKernels::ArithTraits<scalar1_type>;
-  using AT3          = KokkosKernels::ArithTraits<scalar3_type>;
+  requires(!Kokkos::is_view_v<Scalar1> && !Kokkos::is_view_v<Scalar2> && !KokkosBatched::is_vector<Scalar1>::value &&
+           !KokkosBatched::is_vector<Scalar2>::value)
+testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol,
+                                                        Scalar1 val1, Scalar2 val2, Scalar3 tol) {
+  using AT1 = KokkosKernels::ArithTraits<Scalar1>;
+  using AT3 = KokkosKernels::ArithTraits<Scalar3>;
 
-  const double abs_diff = static_cast<double>(AT1::abs(val1 - val2));
-  const double abs_tol  = static_cast<double>(AT3::abs(tol));
+  double abs_diff = (double)AT1::abs(val1 - val2);
+  double abs_tol  = (double)AT3::abs(tol);
 
-  if (abs_diff <= abs_tol) {
-    return ::testing::AssertionSuccess();
+  if (abs_diff <= abs_tol) return testing::AssertionSuccess();
+
+  return testing::AssertionFailure() << "Expected: " << expr1 << " is near " << expr2 << " (within " << expr_tol
+                                     << ")\n"
+                                     << "  " << expr1 << " evaluates to " << testing::PrintToString(val1) << "\n"
+                                     << "  " << expr2 << " evaluates to " << testing::PrintToString(val2) << "\n"
+                                     << "  Difference: " << abs_diff << "\n"
+                                     << "  Tolerance: " << abs_tol << "\n";
+}
+
+// SIMD Vector specialization: element-wise absolute comparison across all lanes
+template <class T, int l, class Scalar3>
+testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol,
+                                                        const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val1,
+                                                        const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val2,
+                                                        Scalar3 tol) {
+  testing::AssertionResult overall = testing::AssertionSuccess();
+  for (int i = 0; i < l; ++i) {
+    auto r = expect_near_pred_format_scalar(expr1, expr2, expr_tol, val1[i], val2[i], tol);
+    if (!r) {
+      if (overall) overall = testing::AssertionFailure();
+      overall << "[lane " << i << "] " << r.message();
+    }
   }
+  return overall;
+}
 
-  return ::testing::AssertionFailure() << "The difference between " << expr1 << " and " << expr2 << " is " << abs_diff
-                                       << ", which exceeds " << expr3 << ", where\n"
-                                       << expr1 << " evaluates to " << ::testing::PrintToString(val1) << ",\n"
-                                       << expr2 << " evaluates to " << ::testing::PrintToString(val2) << ", and\n"
-                                       << expr3 << " evaluates to " << ::testing::PrintToString(tol) << ".";
+static constexpr size_t ExpectNearMaxFailures = 10;
+
+// Helper: mirrors two rank-1 Views to host, then applies elem_cmp(h_v1(i), h_v2(i)) for each index,
+// collecting per-element failures into a single AssertionResult (capped at ExpectNearMaxFailures).
+template <class View1, class View2, class ElemCmp>
+  requires(Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>)
+testing::AssertionResult expect_near_1dview_impl(const char* expr1, const char* expr2, const View1& v1, const View2& v2,
+                                                 ElemCmp elem_cmp) {
+  static_assert(View1::rank == 1, "expect_near_1dview_impl: View1 must have rank 1.");
+  static_assert(View2::rank == 1, "expect_near_1dview_impl: View2 must have rank 1.");
+  const size_t v1_size = v1.extent(0);
+  if (v1_size != v2.extent(0)) {
+    return testing::AssertionFailure() << expr1 << ".extent(0) (" << v1_size << ") != " << expr2 << ".extent(0) ("
+                                       << v2.extent(0) << ")";
+  }
+  auto h_v1 = Kokkos::create_mirror_view(v1);
+  auto h_v2 = Kokkos::create_mirror_view(v2);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v1, h_v1);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1_size, v2, h_v2);
+  testing::AssertionResult overall = testing::AssertionSuccess();
+  size_t num_failures              = 0;
+  for (size_t i = 0; i < v1_size; ++i) {
+    auto r = elem_cmp(h_v1(i), h_v2(i));
+    if (!r) {
+      if (overall) overall = testing::AssertionFailure();
+      if (num_failures < ExpectNearMaxFailures) {
+        overall << "[" << i << "] " << r.message();
+      } else if (num_failures == ExpectNearMaxFailures) {
+        overall << "(further failures suppressed)\n";
+      }
+      ++num_failures;
+    }
+  }
+  if (num_failures > 0) {
+    overall << num_failures << " of " << v1_size << " element(s) failed.\n";
+  }
+  return overall;
+}
+
+// Kokkos View specialization: element-wise absolute comparison (rank-1 only)
+template <class View1, class View2, class Scalar3>
+  requires(Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>)
+testing::AssertionResult expect_near_pred_format_scalar(const char* expr1, const char* expr2, const char* expr_tol,
+                                                        const View1& v1, const View2& v2, Scalar3 tol) {
+  return expect_near_1dview_impl(expr1, expr2, v1, v2, [&](auto e1, auto e2) {
+    return expect_near_pred_format_scalar(expr1, expr2, expr_tol, e1, e2, tol);
+  });
+}
+
+// Base case: scalar relative comparison — delegates to absolute with per-element tolerance
+template <class Scalar1, class Scalar2, class Scalar3>
+  requires(!Kokkos::is_view_v<Scalar1> && !Kokkos::is_view_v<Scalar2> && !KokkosBatched::is_vector<Scalar1>::value &&
+           !KokkosBatched::is_vector<Scalar2>::value)
+testing::AssertionResult expect_near_pred_format_scalar_rel(const char* expr1, const char* expr2, const char* expr_tol,
+                                                            Scalar1 val1, Scalar2 val2, Scalar3 tol) {
+  using AT1 = KokkosKernels::ArithTraits<Scalar1>;
+  using AT2 = KokkosKernels::ArithTraits<Scalar2>;
+  return expect_near_pred_format_scalar(expr1, expr2, expr_tol, val1, val2,
+                                        tol * Kokkos::max(AT1::abs(val1), AT2::abs(val2)));
+}
+
+// SIMD Vector specialization: element-wise relative comparison across all lanes
+template <class T, int l, class Scalar3>
+testing::AssertionResult expect_near_pred_format_scalar_rel(
+    const char* expr1, const char* expr2, const char* expr_tol,
+    const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val1,
+    const KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>& val2, Scalar3 tol) {
+  testing::AssertionResult overall = testing::AssertionSuccess();
+  for (int i = 0; i < l; ++i) {
+    auto r = expect_near_pred_format_scalar_rel(expr1, expr2, expr_tol, val1[i], val2[i], tol);
+    if (!r) {
+      if (overall) overall = testing::AssertionFailure();
+      overall << "[lane " << i << "] " << r.message();
+    }
+  }
+  return overall;
+}
+
+// Kokkos View specialization: element-wise relative comparison (rank-1 only)
+template <class View1, class View2, class Scalar3>
+  requires(Kokkos::is_view_v<View1> && Kokkos::is_view_v<View2>)
+testing::AssertionResult expect_near_pred_format_scalar_rel(const char* expr1, const char* expr2, const char* expr_tol,
+                                                            const View1& v1, const View2& v2, Scalar3 tol) {
+  return expect_near_1dview_impl(expr1, expr2, v1, v2, [&](auto e1, auto e2) {
+    return expect_near_pred_format_scalar_rel(expr1, expr2, expr_tol, e1, e2, tol);
+  });
 }
 
 }  // namespace Impl
 
-#define KK_EXPECT_NEAR(val1, val2, tol) EXPECT_PRED_FORMAT3(::Test::Impl::kk_expect_near_pred_format, val1, val2, tol)
+// Checks |val1 - val2| <= |tol|. Works for scalars, rank-1 Kokkos Views, and SIMD vectors.
+// Expands to a GTest expression so callers can append a failure message.
+#define EXPECT_NEAR_KK(val1, val2, tol) \
+  EXPECT_PRED_FORMAT3(TestUtils::Impl::expect_near_pred_format_scalar, val1, val2, tol)
+
+// Checks |val1 - val2| <= tol * max(|val1|, |val2|) per element.
+// Works for scalars, rank-1 Kokkos Views, and SIMD vectors.
+// Expands to a GTest expression; supports << for failure messages.
+#define EXPECT_NEAR_KK_REL(val1, val2, tol) \
+  EXPECT_PRED_FORMAT3(TestUtils::Impl::expect_near_pred_format_scalar_rel, val1, val2, tol)
+
+// Element-wise absolute comparison for rank-1 Kokkos Views.
+#define EXPECT_NEAR_KK_1DVIEW(v1, v2, tol) EXPECT_NEAR_KK(v1, v2, tol)
+
+// Element-wise relative comparison for rank-1 Kokkos Views.
+#define EXPECT_NEAR_KK_REL_1DVIEW(v1, v2, tol) EXPECT_NEAR_KK_REL(v1, v2, tol)
 
 // Utility class for testing kernels with rank-1 and rank-2 views that may be
 // LayoutStride. Simplifies making a LayoutStride view of a given size that is
@@ -147,66 +271,6 @@ struct view_stride_adapter {
   DViewBase d_base;
   HViewBase h_base;
 };
-
-template <class Scalar1, class Scalar2, class Scalar3>
-void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol, std::string msg = "") {
-  typedef KokkosKernels::ArithTraits<Scalar1> AT1;
-  typedef KokkosKernels::ArithTraits<Scalar3> AT3;
-  EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
-}
-
-template <class Scalar1, class Scalar2, class Scalar3>
-void EXPECT_NEAR_KK_REL(Scalar1 val1, Scalar2 val2, Scalar3 tol, std::string msg = "") {
-  typedef typename std::remove_reference<decltype(val1)>::type hv1_type;
-  typedef typename std::remove_reference<decltype(val2)>::type hv2_type;
-  const auto ahv1 = KokkosKernels::ArithTraits<hv1_type>::abs(val1);
-  const auto ahv2 = KokkosKernels::ArithTraits<hv2_type>::abs(val2);
-  EXPECT_NEAR_KK(val1, val2, tol * Kokkos::max(ahv1, ahv2), msg);
-}
-
-// Special overload for accurate value by value SIMD vectors comparison
-template <class Scalar, int VecLen, class Tolerance>
-void EXPECT_NEAR_KK_REL(const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val1,
-                        const KokkosBatched::Vector<KokkosBatched::SIMD<Scalar>, VecLen>& val2, Tolerance tol,
-                        std::string msg = "") {
-  for (int i = 0; i < VecLen; ++i) {
-    EXPECT_NEAR_KK_REL(val1[i], val2[i], tol, msg);
-  }
-}
-
-template <class ViewType1, class ViewType2, class Scalar>
-void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
-  size_t v1_size = v1.extent(0);
-  size_t v2_size = v2.extent(0);
-  EXPECT_EQ(v1_size, v2_size);
-
-  typename ViewType1::host_mirror_type h_v1 = Kokkos::create_mirror_view(v1);
-  typename ViewType2::host_mirror_type h_v2 = Kokkos::create_mirror_view(v2);
-
-  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1.extent(0), v1, h_v1);
-  KokkosKernels::Impl::safe_device_to_host_deep_copy(v2.extent(0), v2, h_v2);
-
-  for (size_t i = 0; i < v1_size; ++i) {
-    EXPECT_NEAR_KK(h_v1(i), h_v2(i), tol);
-  }
-}
-
-template <class ViewType1, class ViewType2, class Scalar>
-void EXPECT_NEAR_KK_REL_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
-  size_t v1_size = v1.extent(0);
-  size_t v2_size = v2.extent(0);
-  EXPECT_EQ(v1_size, v2_size);
-
-  typename ViewType1::host_mirror_type h_v1 = Kokkos::create_mirror_view(v1);
-  typename ViewType2::host_mirror_type h_v2 = Kokkos::create_mirror_view(v2);
-
-  KokkosKernels::Impl::safe_device_to_host_deep_copy(v1.extent(0), v1, h_v1);
-  KokkosKernels::Impl::safe_device_to_host_deep_copy(v2.extent(0), v2, h_v2);
-
-  for (size_t i = 0; i < v1_size; ++i) {
-    EXPECT_NEAR_KK_REL(h_v1(i), h_v2(i), tol);
-  }
-}
 
 /// This function returns a descriptive user defined failure string for
 /// insertion into gtest macros such as FAIL() and EXPECT_LE(). \param file The
@@ -468,11 +532,10 @@ class RandCsMatrix {
     Kokkos::Random_XorShift64_Pool<Kokkos::HostSpace> random(ticks);
     populate_random_cs_mat(ticks);
 
-    vals_d_ = ValViewTypeD("RandCsMatrix.ValViewType", nnz_ + 1);
+    vals_d_ = ValViewTypeD("RandCsMatrix.ValViewType", nnz_);
     vals_   = Kokkos::create_mirror_view(vals_d_);
     Kokkos::fill_random(vals_, random, min_val, max_val);  // random scalars
     Kokkos::fence();
-    vals_(nnz_) = ScalarType(0);
 
     // Copy to device
     Kokkos::deep_copy(vals_d_, vals_);
@@ -517,5 +580,66 @@ void shuffleMatrixEntries(Rowptrs rowptrs, Entries entries, Values values, const
   Kokkos::deep_copy(values, valuesHost);
 }
 
-}  // namespace Test
+// Create a random nrows by ncols matrix for testing mat-mat addition kernels.
+// minNNZ, maxNNZ: min and max number of nonzeros in any row.
+// maxNNZ > ncols will result in duplicated entries in a row, otherwise entries
+// in a row are unique.
+// sortRows: whether to sort columns in a row
+template <typename crsMat_t, typename ordinal_type>
+crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols, ordinal_type minNNZ, ordinal_type maxNNZ, bool sortRows) {
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type size_type_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_view_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename size_type_view_t::non_const_value_type size_type;  // rowptr type
+  typedef typename lno_view_t::non_const_value_type lno_t;            // colind type
+  typedef typename scalar_view_t::non_const_value_type scalar_t;
+  typedef KokkosKernels::ArithTraits<scalar_t> KAT;
+  static_assert(std::is_same<ordinal_type, lno_t>::value, "ordinal_type should be same as lno_t from crsMat_t");
+  // first, populate rowmap
+  size_type_view_t rowmap("rowmap", nrows + 1);
+  typename size_type_view_t::host_mirror_type h_rowmap = Kokkos::create_mirror_view(rowmap);
+  size_type nnz                                        = 0;
+  size_type maxRowEntries                              = 0;
+  for (lno_t i = 0; i < nrows; i++) {
+    size_type rowEntries = rand() % (maxNNZ - minNNZ + 1) + minNNZ;
+    h_rowmap(i)          = nnz;
+    nnz += rowEntries;
+    maxRowEntries = std::max(rowEntries, maxRowEntries);
+  }
+  h_rowmap(nrows) = nnz;
+  Kokkos::deep_copy(rowmap, h_rowmap);
+  // allocate values and entries
+  scalar_view_t values("values", nnz);
+  // populate values
+  typename scalar_view_t::host_mirror_type h_values = Kokkos::create_mirror_view(values);
+  for (size_type i = 0; i < nnz; i++) {
+    h_values(i) = KAT::one() * (((typename KAT::mag_type)rand()) / static_cast<typename KAT::mag_type>(RAND_MAX));
+  }
+  Kokkos::deep_copy(values, h_values);
+  // populate entries (make sure no entry is repeated within a row)
+  lno_view_t entries("entries", nnz);
+  typename lno_view_t::host_mirror_type h_entries = Kokkos::create_mirror_view(entries);
+  std::vector<lno_t> indices(std::max((size_type)ncols, maxRowEntries));
+  auto re = std::mt19937(rand());
+  for (lno_t i = 0; i < nrows; i++) {
+    // this formula guarantees no duplicates if maxNNZ <= ncols, and duplicates
+    // if minNNZ > ncols
+    for (size_t j = 0; j < indices.size(); j++) indices[j] = j % ncols;
+    std::shuffle(indices.begin(), indices.end(), re);
+    size_type rowStart = h_rowmap(i);
+    size_type rowCount = h_rowmap(i + 1) - rowStart;
+    if (sortRows) {
+      std::sort(indices.begin(), indices.begin() + rowCount);
+    }
+    for (size_type j = 0; j < rowCount; j++) {
+      h_entries(rowStart + j) = indices[j];
+    }
+  }
+  Kokkos::deep_copy(entries, h_entries);
+  return crsMat_t("test matrix", nrows, ncols, nnz, values, rowmap, entries);
+}
+
+}  // namespace TestUtils
+
 #endif
