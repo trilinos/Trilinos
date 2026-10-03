@@ -11,6 +11,7 @@
 // Panzer STK
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
+#include "Panzer_NodeType.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SquareTriMeshFactory.hpp"
@@ -288,7 +289,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   const int xDir = 0;
   const int yDir = 1;
   const int zDir = 2;
-  using NodeType = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::ExecutionSpace>;
+  using NodeType = panzer::TpetraNodeType;
   auto rhsMatrix_PHI = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD);          // Project value from scalar basis
   auto rhsMatrix_DPHI_DX = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,xDir); // Project gradient from scalar basis
   auto rhsMatrix_DPHI_DY = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,yDir); // Project gradient from scalar basis
@@ -960,7 +961,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   connMassMatrix->getColMap()->describe(out,Teuchos::EVerbosityLevel::VERB_EXTREME);
 
   // compute difference between the two versions of the mass matrix
-  using NodeType = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::ExecutionSpace>;
+  using NodeType = panzer::TpetraNodeType;
   auto difference = Tpetra::MatrixMatrix::add<double,LO,GO,NodeType>(1.0,false,*curlMassMatrix,-1.0,false,*connMassMatrix);
   double error = difference->getFrobeniusNorm();
   double norm = connMassMatrix->getFrobeniusNorm();
@@ -1075,7 +1076,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   timer->start("projectionFactory.buildRHSMatrix()");
   const int xDir = 0;
   const int yDir = 1;
-  using NodeType = Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::ExecutionSpace>;
+  using NodeType = panzer::TpetraNodeType;
   auto rhsMatrix_PHI = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD);          // Project value from scalar basis
   auto rhsMatrix_DPHI_DX = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,xDir); // Project gradient from scalar basis
   auto rhsMatrix_DPHI_DY = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,yDir); // Project gradient from scalar basis
