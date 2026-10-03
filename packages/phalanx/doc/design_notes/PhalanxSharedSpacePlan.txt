@@ -461,7 +461,16 @@ Recorded because each was wrong in a way that compiled.
    (162 sites in panzer), so they are now rewritten to PHX::ExecutionSpace and
    PHX::MemorySpace.
 
-5. Device positions and comments were reported as "unrecognized", burying the
+5. READING WITH errors="replace" CORRUPTED FILES IT REWROTE.  Any byte that is
+   not valid UTF-8 -- a Latin-1 name in a comment, which older headers do carry
+   -- was replaced with U+FFFD and written back, and CRLF line endings were
+   rewritten as LF.  Now errors="surrogateescape" and newline="" on both the
+   read and the write, so bytes the script did not come to change round-trip
+   untouched.  Nothing in Trilinos or Drekar was affected -- both are clean
+   UTF-8 with LF endings -- but the script is handed to application teams whose
+   codebases nobody here has inspected.  Found by review, not by use.
+
+6. Device positions and comments were reported as "unrecognized", burying the
    real cases.  Panzer's reported count fell from 357 to 48 once they were
    classified properly.
 
@@ -846,7 +855,15 @@ D17 The migration script's test suite is NOT registered with ctest.
     is a migration aid rather than part of the library.  Run it by hand:
         python3 packages/phalanx/scripts/test_migrate_phx_device.py
 
-D18 --check exits non-zero on a fully migrated tree, and that is intended.
+D18 The script round-trips bytes it did not come to change.
+    Reads and writes use errors="surrogateescape" and newline="".
+    REJECTED: errors="replace", which silently rewrote invalid UTF-8 as U+FFFD;
+    and relying on the default newline handling, which collapsed CRLF to LF.
+    Also REJECTED: skipping files that do not decode cleanly, which would have
+    left them unmigrated and silently under-reported.  Two tests pin this, and
+    both were checked to fail when the fix is reverted.
+
+D19 --check exits non-zero on a fully migrated tree, and that is intended.
     WHY: the residuals it reports are positions no textual tool can classify,
     and there is no way to mark one reviewed, so the exit code cannot go green.
     CONSEQUENCE, accepted: --check is not suitable as a CI gate as it stands.

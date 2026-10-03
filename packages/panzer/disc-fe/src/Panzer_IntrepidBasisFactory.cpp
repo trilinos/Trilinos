@@ -234,28 +234,28 @@ namespace panzer {
 }
 
 // Instantiate for the device of every execution space Kokkos has enabled.
-// Intrepid2's first parameter is a DEVICE, so these must be devices too --
-// Basis<Kokkos::Serial> and Basis<Kokkos::Device<Serial,HostSpace>> are
-// unrelated types, and callers pass PHX::Device.
+// What callers ask for has to be what is instantiated here, and that depends
+// on what PHX::Device is.
+//
+// The DEVICE form is always needed.  Intrepid2's first parameter is a device,
+// so Basis<Kokkos::Serial> and Basis<Kokkos::Device<Serial,HostSpace>> are
+// unrelated types; callers pass PHX::Device, and code that spells a device
+// explicitly -- a host device for a host-only path, say -- asks for one in
+// either configuration.  SPACE::device_type is
+// Kokkos::Device<SPACE, SPACE::memory_space>, spelled that way because it
+// carries no comma and so survives macro argument splitting.
+//
+// The bare EXECUTION SPACE form is needed only while PHX::Device is still an
+// execution space, so it is added just for that build.  SPACE and
+// SPACE::device_type are always distinct types, so the two can never collide.
 //
 // Each backend macro names a distinct execution space, hence a distinct
-// device, so no two of these can be the same specialization, and PHX::Device
-// is necessarily among them.  Naming PHX::Device directly instead would
-// require knowing which backend it is, which the preprocessor cannot work out.
-// NOTE: that last guarantee holds only while the memory space is the execution
-// space's own.  A build configured with a shared memory space makes PHX::Device
-// distinct from all of these, and it will then need its own instantiation.
-// What callers ask for has to be what is instantiated here, and that depends
-// on what PHX::Device is.  The device form is always needed: Intrepid2's first
-// parameter is a device, and code that spells one explicitly (a host device for
-// a host-only path, say) asks for it in either configuration.  The bare
-// execution space form is needed only while PHX::Device is still an execution
-// space, so it is added just for that build.
-//
-// SPACE::device_type is Kokkos::Device<SPACE, SPACE::memory_space>, spelled
-// this way because it carries no comma and so survives macro argument
-// splitting.  SPACE and SPACE::device_type are always distinct types, so the
-// two instantiations below can never collide.
+// device, so no two of these can be the same specialization.  Naming
+// PHX::Device directly instead would require knowing which backend it is,
+// which the preprocessor cannot work out.  PHX::Device is among this list only
+// while its memory space is the execution space's own; a shared memory space
+// makes it distinct from all of them, which is what the guarded instantiation
+// at the end of this file is for.
 #define PANZER_INSTANTIATE_INTREPID2_BASIS_FOR(DEV)                           \
   template Teuchos::RCP<Intrepid2::Basis<DEV,double,double> >                 \
   panzer::createIntrepid2Basis<DEV,double,double>(                            \
