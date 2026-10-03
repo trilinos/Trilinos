@@ -85,17 +85,18 @@ void gemv(const ExecutionSpace& space, const char trans[], typename AViewType::c
   // Minimize the number of Impl::GEMV instantiations, by
   // standardizing on particular View specializations for its template
   // parameters.
-  typedef Kokkos::View<typename AViewType::const_value_type**, ALayout, typename AViewType::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      AVT;
-  typedef Kokkos::View<typename XViewType::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XViewType, ALayout>::array_layout,
-                       typename XViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XVT;
-  typedef Kokkos::View<typename YViewType::non_const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YViewType, ALayout>::array_layout,
-                       typename YViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      YVT;
+  using AVT = Kokkos::View<typename AViewType::const_value_type**, ALayout, ExecutionSpace,
+                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using XVT = Kokkos::View<typename XViewType::const_value_type*,
+                           typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XViewType, ALayout>::array_layout,
+                           ExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using YVT = Kokkos::View<typename YViewType::non_const_value_type*,
+                           typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YViewType, ALayout>::array_layout,
+                           ExecutionSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+  AVT A_internal = KokkosKernels::Impl::unificationCast<AVT>(A);
+  XVT x_internal = KokkosKernels::Impl::unificationCast<XVT>(x);
+  YVT y_internal = KokkosKernels::Impl::unificationCast<YVT>(y);
 
   // Degenerate case is essentially same as scal - use fallback impl
   // to avoid potential (unlikely?) circular dependence issues by including
@@ -128,11 +129,11 @@ void gemv(const ExecutionSpace& space, const char trans[], typename AViewType::c
 
   if (useFallback) {
     const bool eti_spec_avail = KokkosBlas::Impl::gemv_eti_spec_avail<ExecutionSpace, AVT, XVT, YVT>::value;
-    typedef Impl::GEMV<ExecutionSpace, AVT, XVT, YVT, false, eti_spec_avail> fallback_impl_type;
-    fallback_impl_type::gemv(space, trans, alpha, A, x, beta, y);
+    using fallback_impl_type  = Impl::GEMV<ExecutionSpace, AVT, XVT, YVT, false, eti_spec_avail>;
+    fallback_impl_type::gemv(space, trans, alpha, A_internal, x_internal, beta, y_internal);
   } else {
-    typedef Impl::GEMV<ExecutionSpace, AVT, XVT, YVT> impl_type;
-    impl_type::gemv(space, trans, alpha, A, x, beta, y);
+    using impl_type = Impl::GEMV<ExecutionSpace, AVT, XVT, YVT>;
+    impl_type::gemv(space, trans, alpha, A_internal, x_internal, beta, y_internal);
   }
 }
 

@@ -1618,13 +1618,9 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   this->triangle_count_ai(is_symbolic_or_numeric, a_row_cnt, p_rowmapA, p_entriesA, bnnz, p_rowmapB_begins,
                           p_rowmapB_ends, p_set_index_b, p_set_b, p_rowmapC, NULL, dummy);
 
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<MyExecSpace>(this->a_row_cnt + 1, rowmapC_);
-  MyExecSpace().fence();
+  typename c_row_view_t::non_const_value_type c_nnz_size;
+  KokkosKernels::exclusive_parallel_prefix_sum(MyExecSpace(), rowmapC_, c_nnz_size);
 
-  auto d_c_nnz_size = Kokkos::subview(rowmapC_, this->a_row_cnt);
-  auto h_c_nnz_size = Kokkos::create_mirror_view(d_c_nnz_size);
-  Kokkos::deep_copy(h_c_nnz_size, d_c_nnz_size);
-  typename c_row_view_t::non_const_value_type c_nnz_size = h_c_nnz_size();
   this->handle->get_spgemm_handle()->set_c_nnz(c_nnz_size);
 
   if (KOKKOSKERNELS_VERBOSE) {

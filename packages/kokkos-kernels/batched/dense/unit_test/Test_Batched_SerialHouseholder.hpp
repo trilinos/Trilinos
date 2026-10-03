@@ -55,11 +55,11 @@ void test_Householder_analytic_real() {
 
   // x = [4, 2, 2, 1]
   // output = [-5, 2/9, 2/9, 1/9]
-  Test::EXPECT_NEAR_KK_REL(reflector_h(0), Scalar(-5), tol);
-  Test::EXPECT_NEAR_KK_REL(reflector_h(1), Scalar(2.0 / 9), tol);
-  Test::EXPECT_NEAR_KK_REL(reflector_h(2), Scalar(2.0 / 9), tol);
-  Test::EXPECT_NEAR_KK_REL(reflector_h(3), Scalar(1.0 / 9), tol);
-  Test::EXPECT_NEAR_KK_REL(tau_h(0), Scalar(10.0 / 18), tol);
+  EXPECT_NEAR_KK_REL(reflector_h(0), Scalar(-5), tol);
+  EXPECT_NEAR_KK_REL(reflector_h(1), Scalar(2.0 / 9), tol);
+  EXPECT_NEAR_KK_REL(reflector_h(2), Scalar(2.0 / 9), tol);
+  EXPECT_NEAR_KK_REL(reflector_h(3), Scalar(1.0 / 9), tol);
+  EXPECT_NEAR_KK_REL(tau_h(0), Scalar(10.0 / 18), tol);
 
   vec_type workspace("workspace", 1);
   auto u = Kokkos::subview(reflector, Kokkos::pair<int, int>(1, 4));
@@ -70,10 +70,10 @@ void test_Householder_analytic_real() {
   ;
 
   Kokkos::deep_copy(vec_h, vec);
-  Test::EXPECT_NEAR_KK_REL(vec_h(0), reflector_h(0), tol);
-  Test::EXPECT_NEAR_KK(vec_h(1), 0.0, tol);
-  Test::EXPECT_NEAR_KK(vec_h(2), 0.0, tol);
-  Test::EXPECT_NEAR_KK(vec_h(3), 0.0, tol);
+  EXPECT_NEAR_KK_REL(vec_h(0), reflector_h(0), tol);
+  EXPECT_NEAR_KK(vec_h(1), 0.0, tol);
+  EXPECT_NEAR_KK(vec_h(2), 0.0, tol);
+  EXPECT_NEAR_KK(vec_h(3), 0.0, tol);
 }
 
 template <class Device, class Scalar>
@@ -111,11 +111,11 @@ void test_Householder_analytic_cplx() {
   // x = [4+3i, 2+5i, 2+5i, 1+4i]
   // tau  = (14+3i)/10, 1/tau = (14-3i)/20.5
   // output = [-10, (43 - 64i) / 205, (43 - 64i) / 205, (26 - 53i) / 205]
-  Test::EXPECT_NEAR_KK_REL(reflector_h(0), Scalar(-10, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(reflector_h(1), Scalar(43.0 / 205, 64.0 / 205), tol);
-  Test::EXPECT_NEAR_KK_REL(reflector_h(2), Scalar(43.0 / 205, 64.0 / 205), tol);
-  Test::EXPECT_NEAR_KK_REL(reflector_h(3), Scalar(26.0 / 205, 53.0 / 205), tol);
-  Test::EXPECT_NEAR_KK_REL(tau_h(0), Scalar(10, 0) / Scalar(14, 3), tol);
+  EXPECT_NEAR_KK_REL(reflector_h(0), Scalar(-10, 0), tol);
+  EXPECT_NEAR_KK_REL(reflector_h(1), Scalar(43.0 / 205, 64.0 / 205), tol);
+  EXPECT_NEAR_KK_REL(reflector_h(2), Scalar(43.0 / 205, 64.0 / 205), tol);
+  EXPECT_NEAR_KK_REL(reflector_h(3), Scalar(26.0 / 205, 53.0 / 205), tol);
+  EXPECT_NEAR_KK_REL(tau_h(0), Scalar(10, 0) / Scalar(14, 3), tol);
 
   vec_type workspace("workspace", 1);
   auto v = Kokkos::subview(reflector, Kokkos::pair<int, int>(1, 4));
@@ -125,10 +125,10 @@ void test_Householder_analytic_cplx() {
       });
 
   Kokkos::deep_copy(vec_h, vec);
-  Test::EXPECT_NEAR_KK_REL(vec_h(0), reflector_h(0), tol);
-  Test::EXPECT_NEAR_KK(vec_h(1), zero, tol);
-  Test::EXPECT_NEAR_KK(vec_h(2), zero, tol);
-  Test::EXPECT_NEAR_KK(vec_h(3), zero, tol);
+  EXPECT_NEAR_KK_REL(vec_h(0), reflector_h(0), tol);
+  EXPECT_NEAR_KK(vec_h(1), zero, tol);
+  EXPECT_NEAR_KK(vec_h(2), zero, tol);
+  EXPECT_NEAR_KK(vec_h(3), zero, tol);
 }
 
 }  // namespace Test

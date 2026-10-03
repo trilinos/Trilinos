@@ -347,8 +347,7 @@ void applyQ_analytic() {
   Kokkos::deep_copy(h_Q, Q);
   for (int rowIdx = 0; rowIdx < 3; ++rowIdx) {
     for (int colIdx = 0; colIdx < 3; ++colIdx) {
-      Test::EXPECT_NEAR_KK_REL(h_Qref(rowIdx, colIdx), h_Q(rowIdx, colIdx),
-                               10 * KokkosKernels::ArithTraits<Scalar>::eps());
+      EXPECT_NEAR_KK_REL(h_Qref(rowIdx, colIdx), h_Q(rowIdx, colIdx), 10 * KokkosKernels::ArithTraits<Scalar>::eps());
     }
   }
 }
