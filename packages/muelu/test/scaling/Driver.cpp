@@ -18,6 +18,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 // Kokkos
 #include <Kokkos_Core.hpp>
@@ -270,8 +271,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("scale", "noscale", &scaleResidualHist, "scaled Krylov residual history");
   bool solvePreconditioned = true;
   clp.setOption("solve-preconditioned", "no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
-  bool useStackedTimer = false;
-  clp.setOption("stacked-timer", "no-stacked-timer", &useStackedTimer, "use stacked timer");
   std::string watchrProblemName = std::string("MueLu Setup-Solve ") + std::to_string(comm->getSize()) + " ranks";
   clp.setOption("watchr-problem-name", &watchrProblemName, "Problem name for Watchr plot headers");
 
@@ -318,7 +317,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("tuning-with-kokkos", "no-tuning-with-kokkos", &kokkosTuning, "enable Kokkos tuning inferface");
 #endif
   bool timeMatrixBuild = true;
-  clp.setOption("time-matrix-build", "no-time-matrix-build", &timeMatrixBuild, "time matrix construction (always true if not using stacked timers)");
+  clp.setOption("time-matrix-build", "no-time-matrix-build", &timeMatrixBuild, "time matrix construction");
 
   clp.recogniseAllOptions(true);
 
@@ -427,17 +426,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
 
   comm->barrier();
-  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
-  // Constructing the globalTimeMonitor should only be done if not using StackedTimer.
-  // This is because if a StackedTimer is already active, globalTimer will be become a sub-timer of the root.
-  RCP<TimeMonitor> globalTimeMonitor = Teuchos::null;
-  if (useStackedTimer) {
-    stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver", timeMatrixBuild));
-    Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
-    if (!timeMatrixBuild)
-      stacked_timer->disableTimers();  // will be reenabled below after linear system setup
-  } else
-    globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver", timeMatrixBuild));
+  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+  if (!timeMatrixBuild)
+    stacked_timer->disableTimers();  // will be reenabled below after linear system setup
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
 
   RCP<Matrix> A;
@@ -591,7 +583,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
       // Timers might have been disabled by option --no-time-matrix-build.
       // In that case, base timer itself won't be running.
-      if (useStackedTimer && !timeMatrixBuild) {
+      if (!timeMatrixBuild) {
         stacked_timer->startBaseTimer();
         stacked_timer->enableTimers();
       }
@@ -660,6 +652,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         }
 
         // If we want Level-specific performance model diagnostics, now is the time!
+        Teuchos::RCP<Teuchos::TimeMonitor> tm2;
         if ((levelPerformanceModel == "yes" || levelPerformanceModel == "verbose") && !H.is_null()) {
           for (int i = 0; i < H->GetNumLevels(); i++) {
             RCP<Level> level = H->GetLevel(i);
@@ -667,7 +660,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
               RCP<Matrix> A_level    = level->Get<RCP<Matrix>>("A");
               std::string level_name = std::string("Level-") + std::to_string(i) + std::string(": ");
               std::vector<const char*> timers;  // MueLu: Laplace2D: Hierarchy: Solve (level=0)
-              MueLu::report_spmv_performance_models<Matrix>(A_level, 100, timers, globalTimeMonitor, level_name, levelPerformanceModel == "verbose");
+              MueLu::report_spmv_performance_models<Matrix>(A_level, 100, timers, tm2, level_name, levelPerformanceModel == "verbose");
             } catch (...) {
               ;
             }
@@ -676,9 +669,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
       }  // end loop over setup/solve pairs
 
-      globalTimeMonitor = Teuchos::null;
-      if (useStackedTimer)
-        resetStackedTimer = true;
+      resetStackedTimer = true;
 
       if (printTimings) {
         RCP<ParameterList> reportParams = rcp(new ParameterList);
@@ -693,27 +684,16 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         // FIXME: no "ignoreZeroTimers"
 
         const std::string filter = "";
-
-        if (useStackedTimer) {
-          stacked_timer->stopBaseTimer();
-          Teuchos::StackedTimer::OutputOptions options;
-          options.output_fraction = options.output_histogram = options.output_minmax = true;
-          stacked_timer->report(out2, comm, options);
-          auto xmlOut = stacked_timer->reportWatchrXML(watchrProblemName, comm);
-          if (xmlOut.length())
-            std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
-          if (rerunCount < numReruns) {
-            stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
-            Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
-          }
-        } else {
-          std::ios_base::fmtflags ff(out2.flags());
-          if (timingsFormat == "table-fixed")
-            out2 << std::fixed;
-          else
-            out2 << std::scientific;
-          TimeMonitor::report(comm.ptr(), out, filter, reportParams);
-          out2 << std::setiosflags(ff);
+        stacked_timer->stopBaseTimer();
+        Teuchos::StackedTimer::OutputOptions options;
+        options.output_fraction = options.output_histogram = options.output_minmax = true;
+        stacked_timer->report(out2, comm, options);
+        auto xmlOut = stacked_timer->reportWatchrXML(watchrProblemName, comm);
+        if (xmlOut.length())
+          std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
+        if (rerunCount < numReruns) {
+          stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+          Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
         }
       }
 

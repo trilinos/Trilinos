@@ -373,9 +373,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   clp.setOption("tol", &tol, "solver convergence tolerance");
   int maxIts = 200;
   clp.setOption("its", &maxIts, "maximum number of solver iterations");
-  bool use_stacked_timer = false;
-  clp.setOption("stacked-timer",
-                "no-stacked-timer", &use_stacked_timer, "use stacked timer");
   bool ensure_kn = false;
   clp.setOption("ensure-kn",
                 "no-ensure-kn", &ensure_kn, "generate a kn matrix if the user doesn't provide one");
@@ -443,9 +440,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
       xml = "Hypre.xml";
   }
 
-  RCP<Teuchos::StackedTimer> stacked_timer;
-  if (use_stacked_timer)
-    stacked_timer = rcp(new Teuchos::StackedTimer("Maxwell Driver"));
+  RCP<Teuchos::StackedTimer> stacked_timer = rcp(new Teuchos::StackedTimer("Maxwell Driver"));
   TimeMonitor::setStackedTimer(stacked_timer);
 
   auto globalTimeMonitor = TimeMonitor::getNewTimer("Maxwell: S - Global Time");
@@ -624,33 +619,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   globalTimeMonitor = Teuchos::null;
 
   if (printTimings) {
-    if (use_stacked_timer) {
-      stacked_timer->stop("Maxwell Driver");
-      Teuchos::StackedTimer::OutputOptions options;
-      options.output_fraction = options.output_histogram = options.output_minmax = true;
-      stacked_timer->report(*out, comm, options);
-    } else {
-      RCP<Teuchos::ParameterList> reportParams = rcp(new Teuchos::ParameterList);
-      if (timingsFormat == "yaml") {
-        reportParams->set("Report format", "YAML");  // "Table" or "YAML"
-        reportParams->set("YAML style", "compact");  // "spacious" or "compact"
-      }
-      reportParams->set("How to merge timer sets", "Union");
-      reportParams->set("alwaysWriteLocal", false);
-      reportParams->set("writeGlobalStats", true);
-      reportParams->set("writeZeroTimers", false);
-      // FIXME: no "ignoreZeroTimers"
-
-      const std::string filter = "";
-
-      std::ios_base::fmtflags ff(out->flags());
-      if (timingsFormat == "table-fixed")
-        *out << std::fixed;
-      else
-        *out << std::scientific;
-      TimeMonitor::report(comm.ptr(), *out, filter, reportParams);
-      *out << std::setiosflags(ff);
-    }
+    stacked_timer->stop("Maxwell Driver");
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stacked_timer->report(*out, comm, options);
   }
 
   TimeMonitor::clearCounters();
