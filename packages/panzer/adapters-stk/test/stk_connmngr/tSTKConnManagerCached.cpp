@@ -350,4 +350,55 @@ namespace panzer_stk {
 
     STKConnManager::clearCachedConnectivityData();
   }
+
+  TEUCHOS_UNIT_TEST(tSTKConnManager, cache_key_sideset_order)
+  {
+    using Teuchos::RCP;
+
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    TEUCHOS_ASSERT(numProcs<=2);
+
+    RCP<STK_Interface> mesh = build2DMesh(2,1,2,1);
+    RCP<const panzer::FieldPattern> fp
+      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
+
+    STKConnManager::cacheConnectivity();
+    const int startCount = STKConnManager::getCachedReuseCount();
+
+    STKConnManager cmA(mesh);
+    cmA.associateElementsInSideset("left");
+    cmA.associateElementsInSideset("right");
+    cmA.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount);
+
+    // The same sidesets in a different order are a distinct cache key
+    STKConnManager cmB(mesh);
+    cmB.associateElementsInSideset("right");
+    cmB.associateElementsInSideset("left");
+    cmB.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount);
+
+    // A list with a subset of the cached sidesets is also a distinct cache key
+    STKConnManager cmC(mesh);
+    cmC.associateElementsInSideset("left");
+    cmC.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount);
+
+    // Each order reuses its own cached entry
+    STKConnManager cmD(mesh);
+    cmD.associateElementsInSideset("left");
+    cmD.associateElementsInSideset("right");
+    cmD.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+1);
+    TEST_EQUALITY(cmD.getConnectivity(0),cmA.getConnectivity(0));
+
+    STKConnManager cmE(mesh);
+    cmE.associateElementsInSideset("right");
+    cmE.associateElementsInSideset("left");
+    cmE.buildConnectivity(*fp);
+    TEST_EQUALITY(STKConnManager::getCachedReuseCount(),startCount+2);
+    TEST_EQUALITY(cmE.getConnectivity(0),cmB.getConnectivity(0));
+
+    STKConnManager::clearCachedConnectivityData();
+  }
 }
