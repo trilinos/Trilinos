@@ -192,7 +192,7 @@ namespace panzer_stk {
     RCP<STK_Interface> meshB = build2DMesh(4,1,2,1);
 
     RCP<const panzer::FieldPattern> fp
-      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
+      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device,double,double> >();
 
     STKConnManager::cacheConnectivity();
     const int startCount = STKConnManager::getCachedReuseCount();
@@ -301,7 +301,7 @@ namespace panzer_stk {
 
     RCP<STK_Interface> mesh = build2DMesh(2,1,2,1);
     RCP<const panzer::FieldPattern> fp
-      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
+      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device,double,double> >();
     auto fp_dummy = Teuchos::make_rcp<panzer::ElemFieldPattern>(fp->getCellTopology());
 
     STKConnManager::cacheConnectivity();
@@ -360,7 +360,7 @@ namespace panzer_stk {
 
     RCP<STK_Interface> mesh = build2DMesh(2,1,2,1);
     RCP<const panzer::FieldPattern> fp
-      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
+      = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device,double,double> >();
 
     STKConnManager::cacheConnectivity();
     const int startCount = STKConnManager::getCachedReuseCount();
