@@ -556,6 +556,7 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
             }
             for (std::size_t is=0; is<pyramid.getSideCount(); ++is) {
               const std::size_t nodeCount = pyramid.getNodeCount(2,is);
+              if(nodeCount != 3) continue;
               for (std::size_t k=0; k<nodeCount; ++k)
               {
                 auto pyrNode = pyramid.getNodeMap(2,is,k);
