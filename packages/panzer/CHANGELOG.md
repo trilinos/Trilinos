@@ -20,10 +20,10 @@
   a GPU build that does not set the matching option gets a host node from
   Tpetra and fails to link.
 
-- Panzer's CMake refuses a GPU build in which `Phalanx_ENABLE_SHARED_SPACE` and
-  `Tpetra_ALLOCATE_IN_SHARED_SPACE` disagree. Both select the same
-  `Kokkos::SharedSpace`, so enabling one alone produces a node type Tpetra did
-  not instantiate.
+- `Phalanx_ENABLE_SHARED_SPACE` and `Tpetra_ALLOCATE_IN_SHARED_SPACE` must
+  agree on a GPU build. Both select the same `Kokkos::SharedSpace`, so enabling
+  one alone produces a node type Tpetra did not instantiate; the `static_assert`
+  above catches it.
 
 - `panzer::createIntrepid2Basis` and `panzer::PureBasis::getIntrepid2Basis`
   name their first template parameter `DeviceType`, which is what it has always

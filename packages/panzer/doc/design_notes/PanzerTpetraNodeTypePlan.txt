@@ -330,8 +330,8 @@ WHAT PHASES A, B AND C ACTUALLY DID
   nothing and the shared space axis is untouched.  That is phase E.
 
 
-PHASE D -- DONE, shared space only.  CMake-level diagnostic.  Friendlier, not
-  a substitute.
+PHASE D -- ABANDONED.  There is no CMake-level diagnostic.  A shared space
+  check was implemented and then removed; see decision N6 for why.
   Added to packages/panzer/dof-mgr/CMakeLists.txt: a FATAL_ERROR when
   Phalanx_ENABLE_SHARED_SPACE and Tpetra_ALLOCATE_IN_SHARED_SPACE disagree.
 
@@ -468,15 +468,28 @@ N5  No CMake check that Tpetra instantiated the node.
     inside Panzer, where they would rot the next time Tpetra changes them.  The
     static_assert of N3 covers it exactly and cannot go out of date.  Phase D.
 
-N6  The one CMake check that does exist -- shared space agreement -- is GATED
-    ON A GPU BACKEND.
-    REJECTED: an unconditional equality check.  WHY: with host backends alone
-    Kokkos defines Kokkos::SharedSpace AS Kokkos::HostSpace, which is already
-    the host execution space's own memory space, so the two node types are
-    identical whatever the options say.  An unconditional check would reject a
-    configuration that works -- specifically the one used to verify phase 4 of
-    the shared space plan.  The gate is on Kokkos_ENABLE_CUDA/HIP/SYCL, i.e.
-    Kokkos flags, so it is not exposed to the drift N5 is about.  Phase D.
+N6  There is NO CMake check that Phalanx' and Tpetra' shared space options
+    agree.  The static_assert of N3 is the only check.
+    REJECTED, in three successive forms, each rejected for a different reason:
+      (a) an unconditional STREQUAL comparison of the two options.  CMake does
+          not normalise booleans, so ON and TRUE compare unequal -- and so do
+          OFF and FALSE, which made a perfectly ordinary GPU build fail
+          configure.  A boolean comparison, IF((A AND NOT B) OR (B AND NOT A)),
+          fixes that part.
+      (b) the same, gated on Kokkos_ENABLE_CUDA/HIP/SYCL.  Still wrong: with a
+          host execution space on a GPU build, panzer's node is a host node,
+          and Tpetra's host node typedefs ignore
+          Tpetra_ALLOCATE_IN_SHARED_SPACE entirely -- so there is nothing to
+          conflict, yet the check fires.
+      (c) additionally gating on Phalanx_DEFAULT_EXECUTION_SPACE being at its
+          default, which would have been exact.  Not taken.
+    WHY NONE OF THEM: CMake cannot evaluate C++ types, so every version is an
+    approximation of a question the static_assert answers exactly, and each
+    approximation cost a round of false positives on configurations that work.
+    This is the same conclusion N5 reaches about the node instantiation check,
+    for the same reason, and it should be the default answer for anything of
+    this shape.  WHAT IS LOST: the mismatch is reported when the first affected
+    translation unit compiles rather than at configure time.
 
 N7  mini-em's dead get_Tpetra_CrsMatrix was DELETED, not corrected.
     WHY: declared, defined and never called anywhere in Trilinos, with no

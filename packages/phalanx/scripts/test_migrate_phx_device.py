@@ -388,6 +388,34 @@ class CommandLine(unittest.TestCase):
         self.assertEqual(self.read("a.hpp"),
                          "Intrepid2::Basis<PHX::Device> b;\n")
 
+    def test_apply_preserves_bytes_that_are_not_utf8(self):
+        # REGRESSION: the file was read with errors="replace", so a byte that is
+        # not valid UTF-8 -- a Latin-1 name in a comment, say -- was rewritten
+        # as U+FFFD on disk.  The script must not corrupt what it did not come
+        # to change.
+        path = os.path.join(self.root, "a.hpp")
+        raw = b"// Fran\xe7ois\nauto x = PHX::exec_space();\n"
+        with open(path, "wb") as fh:
+            fh.write(raw)
+        self.run_script("--apply")
+        with open(path, "rb") as fh:
+            after = fh.read()
+        self.assertIn(b"\xe7", after, "the non-UTF-8 byte was not preserved")
+        self.assertNotIn("\ufffd".encode("utf-8"), after)
+        self.assertIn(b"PHX::ExecutionSpace", after, "the rewrite still happened")
+
+    def test_apply_preserves_crlf_line_endings(self):
+        # REGRESSION: text-mode writing turned CRLF into LF, so every line of a
+        # Windows-style file showed up as changed.
+        path = os.path.join(self.root, "a.hpp")
+        with open(path, "wb") as fh:
+            fh.write(b"auto x = PHX::exec_space();\r\nint y = 0;\r\n")
+        self.run_script("--apply")
+        with open(path, "rb") as fh:
+            after = fh.read()
+        self.assertEqual(after.count(b"\r\n"), 2, "CRLF endings were not kept")
+        self.assertIn(b"PHX::ExecutionSpace", after)
+
     def test_extra_exec_template_can_be_supplied(self):
         self.write("a.hpp", "MyPolicy<PHX::Device> p;\n")
         self.run_script("--apply", "--exec-template", "MyPolicy")

@@ -395,7 +395,12 @@ def main():
 
     for path in iter_files(args.path, extensions, set(args.exclude)):
         try:
-            original = open(path, encoding="utf-8", errors="replace").read()
+            # surrogateescape round-trips bytes that are not valid UTF-8 --
+            # a Latin-1 name in a comment, say -- instead of replacing them
+            # with U+FFFD and writing that back.  newline="" keeps CRLF
+            # files from being rewritten with LF.
+            original = open(path, encoding="utf-8",
+                            errors="surrogateescape", newline="").read()
         except OSError as exc:
             print(f"warning: cannot read {path}: {exc}", file=sys.stderr)
             continue
@@ -411,7 +416,8 @@ def main():
             for k, v in counts.items():
                 totals[k] = totals.get(k, 0) + v
             if args.apply:
-                with open(path, "w", encoding="utf-8") as fh:
+                with open(path, "w", encoding="utf-8",
+                          errors="surrogateescape", newline="") as fh:
                     fh.write(updated)
 
         for n, line in enumerate(updated.splitlines(), 1):
