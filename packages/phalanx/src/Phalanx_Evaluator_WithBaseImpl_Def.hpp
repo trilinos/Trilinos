@@ -421,11 +421,11 @@ PHX::EvaluatorWithBaseImpl<Traits>::unsharedFields() const
 //**********************************************************************
 #ifdef PHX_ENABLE_KOKKOS_AMT
 template<typename Traits>
-Kokkos::Future<void,PHX::exec_space>
+Kokkos::Future<void,PHX::ExecutionSpace>
 PHX::EvaluatorWithBaseImpl<Traits>::
-createTask(Kokkos::TaskScheduler<PHX::exec_space>& ,
+createTask(Kokkos::TaskScheduler<PHX::ExecutionSpace>& ,
 	   const int& ,
-           const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
+           const std::vector<Kokkos::Future<void,PHX::ExecutionSpace>>& dependent_futures,
 	   typename Traits::EvalData )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,

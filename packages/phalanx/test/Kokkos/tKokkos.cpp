@@ -37,7 +37,7 @@ namespace phalanx_test {
     double k_;
 
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
 
     ComputeRho(Kokkos::View<Scalar**,Device> &rho,
 	       Kokkos::View<Scalar**,Device> &P,
@@ -95,15 +95,15 @@ namespace phalanx_test {
     Kokkos::deep_copy(P, host_P);
     Kokkos::deep_copy(T, host_T);
 
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     Kokkos::parallel_for(num_cells, ComputeRho<double,PHX::Device>(rho, P, T, k));
 
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     Kokkos::deep_copy(host_rho, rho);
 
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
 
@@ -126,7 +126,7 @@ namespace phalanx_test {
     Kokkos::View<Scalar*,Device> k_;
 
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
 
     ComputeRho2(Kokkos::View<Scalar**,Device> &rho,
 		Kokkos::View<Scalar**,Device> &P,
@@ -199,15 +199,15 @@ namespace phalanx_test {
     Kokkos::deep_copy(T, host_T);
     Kokkos::deep_copy(k, host_k);
 
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     Kokkos::parallel_for(num_cells, ComputeRho2<FadType,PHX::Device>(rho, P, T, k));
 
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     Kokkos::deep_copy(host_rho, rho);
 
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
 
@@ -285,8 +285,8 @@ namespace phalanx_test {
   // Tests the basic DAG dependency model
   TEUCHOS_UNIT_TEST(kokkos, AMT)
   {
-    using execution_space = PHX::exec_space;
-    using memory_space = PHX::Device::memory_space;
+    using execution_space = PHX::ExecutionSpace;
+    using memory_space = PHX::MemorySpace;
     using policy_type = Kokkos::TaskScheduler<execution_space>;
     const unsigned memory_span = 3 * sizeof(TaskDep<execution_space>);
     policy_type policy(memory_space(),memory_span);
@@ -308,7 +308,7 @@ namespace phalanx_test {
     double k_;
 
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
 
     struct DataParallelTag {};
 
@@ -326,7 +326,7 @@ namespace phalanx_test {
 
     // Test we can reuse same functor for data parallel team (non-task
     // based) kokkos
-    void operator() (const DataParallelTag,const Kokkos::TeamPolicy<PHX::exec_space>::member_type & team) const
+    void operator() (const DataParallelTag,const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type & team) const
     {
       const int cell = team.league_rank();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,view_.extent_int(1)), [&] (const int& ip) {
@@ -365,8 +365,8 @@ namespace phalanx_test {
   // Tests hybrid parallelism in that a task is threaded.
   TEUCHOS_UNIT_TEST(kokkos, AMT_TeamHybrid)
   {
-    using execution_space = PHX::exec_space;
-    using memory_space = PHX::Device::memory_space;
+    using execution_space = PHX::ExecutionSpace;
+    using memory_space = PHX::MemorySpace;
     using policy_type = Kokkos::TaskScheduler<execution_space>;
 
     double k=2.0;
@@ -387,13 +387,13 @@ namespace phalanx_test {
     // Initialize: Team parallel over cells and qp
     Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space,typename InitializeView<double,execution_space>::DataParallelTag>(num_cells,num_ip,1),
                          InitializeView<double,execution_space>(T,4.0));
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
     Kokkos::parallel_for(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     Kokkos::View<double**,PHX::Device>::host_mirror_type host_rho = Kokkos::create_mirror_view(rho);
     Kokkos::deep_copy(host_rho,rho);
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     double tol = std::numeric_limits<double>::epsilon() * 100.0;
     for (int i=0; i< num_cells; i++)
@@ -438,7 +438,7 @@ namespace phalanx_test {
     Kokkos::wait(policy);
 
     Kokkos::deep_copy(host_rho,rho);
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     for (int i=0; i< num_cells; i++)
       for (int j=0; j< num_ip; j++)
@@ -448,7 +448,7 @@ namespace phalanx_test {
   // // Tests pthreads functions
   // TEUCHOS_UNIT_TEST(kokkos, AMT_policy_query)
   // {
-  //   //using execution_space = PHX::exec_space;
+  //   //using execution_space = PHX::ExecutionSpace;
   //   //using policy_type = Kokkos::Experimental::TaskScheduler<execution_space>;
 
   //   out << "num threads total = "
@@ -467,7 +467,7 @@ namespace phalanx_test {
     Array a_;
 
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
 
     AssignValue(Array& a) : a_(a) {}
 
@@ -485,7 +485,7 @@ namespace phalanx_test {
     Array a_;
 
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
 
     AssignValueBracket(Array& a) : a_(a) {}
 
@@ -499,9 +499,9 @@ namespace phalanx_test {
   TEUCHOS_UNIT_TEST(kokkos, DynRankView)
   {
     using array_type =
-      Kokkos::DynRankView<int, PHX::exec_space>;
+      Kokkos::DynRankView<int, PHX::ExecutionSpace>;
 
-    //using val_t = Kokkos::DynRankView<int, PHX::exec_space>::value_type;
+    //using val_t = Kokkos::DynRankView<int, PHX::ExecutionSpace>::value_type;
 
     array_type a("a",10,4);
     Kokkos::parallel_for(a.extent(0),AssignValue<array_type>(a));
@@ -604,7 +604,7 @@ namespace phalanx_test {
     Array c_;
 
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
 
     AssignFad(Array& a, Array& b, Array& c) : a_(a),b_(b),c_(c) {}
 
@@ -688,7 +688,7 @@ namespace phalanx_test {
     KokkosSparse::CrsMatrix<double,int,PHX::Device> Jacobian;
 
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
     FillJacobian(KokkosSparse::CrsMatrix<double,int,PHX::Device> inJ)
       : Jacobian(inJ)
     {}
@@ -773,7 +773,7 @@ namespace phalanx_test {
     const double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
 
     Kokkos::parallel_reduce("check matrix values",
-			    Kokkos::RangePolicy<PHX::Device>(0,J.numRows()),
+			    Kokkos::RangePolicy<PHX::ExecutionSpace>(0,J.numRows()),
 			    KOKKOS_LAMBDA (const int row, int& lsum) {
       if (row == 0) {
 	PHX_TEST_EQUAL(J.rowConst(0).length,3,lsum);
@@ -930,7 +930,7 @@ namespace phalanx_test {
     //     a(2) = 6;
     //   });
 
-    PHX::Device().fence();
+    PHX::ExecutionSpace().fence();
 
     // Do an offline (two-pass) standard deviation for the gold value
     double mean_gold = 0.0;
@@ -964,7 +964,7 @@ namespace phalanx_test {
           success_local = (n_minus_one == Kokkos::atomic_compare_exchange(&(values()),n_minus_one,n));
         } while (!success_local);
       });
-      PHX::Device().fence();
+      PHX::ExecutionSpace().fence();
 
       auto values_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),values);
       mean = values_host().mean_;
@@ -991,7 +991,7 @@ namespace phalanx_test {
   {
     Kokkos::print_configuration(out);
 
-    using ExecutionSpace = PHX::exec_space;
+    using ExecutionSpace = PHX::ExecutionSpace;
 
     Kokkos::Experimental::UniqueToken<ExecutionSpace> token;
 

@@ -185,7 +185,7 @@ evaluateFields(typename TRAITS::EvalData workset)
         });
       }
       else if (rank==2) {
-        Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<2>> policy({0,0},{static_cast<int64_t>(workset.num_cells),static_cast<int64_t>(inField_v.extent(1))});
+        Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{static_cast<int64_t>(workset.num_cells),static_cast<int64_t>(inField_v.extent(1))});
         Kokkos::parallel_for("ReorderADValues: Jacobian rank 2",policy,KOKKOS_LAMBDA(const int& i, const int& j){
           outField_v(i,j).val() = inField_v(i,j).val();
           for (size_t dx = 0; dx < dstFromSrcMap_v.size(); ++dx)
@@ -193,7 +193,7 @@ evaluateFields(typename TRAITS::EvalData workset)
         });
       }
       else if (rank==3) {
-        Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{static_cast<int64_t>(workset.num_cells),
+        Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<3>> policy({0,0,0},{static_cast<int64_t>(workset.num_cells),
               static_cast<int64_t>(inField_v.extent(1)),static_cast<int64_t>(inField_v.extent(2))});
         Kokkos::parallel_for("ReorderADValues: Jacobian rank 2",policy,KOKKOS_LAMBDA(const int& i, const int& j, const int& k){
           outField_v(i,j,k).val() = inField_v(i,j,k).val();
@@ -202,7 +202,7 @@ evaluateFields(typename TRAITS::EvalData workset)
         });
       }
       else if (rank==4) {
-        Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<4>> policy({0,0,0,0},{static_cast<int64_t>(workset.num_cells),
+        Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<4>> policy({0,0,0,0},{static_cast<int64_t>(workset.num_cells),
               static_cast<int64_t>(inField_v.extent(1)),static_cast<int64_t>(inField_v.extent(2)),
               static_cast<int64_t>(inField_v.extent(3))});
         Kokkos::parallel_for("ReorderADValues: Jacobian rank 2",policy,KOKKOS_LAMBDA(const int& i, const int& j, const int& k, const int& l){
@@ -212,7 +212,7 @@ evaluateFields(typename TRAITS::EvalData workset)
         });
       }
       else if (rank==5) {
-        Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<5>> policy({0,0,0,0,0},{static_cast<int64_t>(workset.num_cells),
+        Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<5>> policy({0,0,0,0,0},{static_cast<int64_t>(workset.num_cells),
               static_cast<int64_t>(inField_v.extent(1)),static_cast<int64_t>(inField_v.extent(2)),
               static_cast<int64_t>(inField_v.extent(3)),static_cast<int64_t>(inField_v.extent(4))});
         Kokkos::parallel_for("ReorderADValues: Jacobian rank 2",policy,KOKKOS_LAMBDA(const int& i, const int& j, const int& k, const int& l, const int& m){

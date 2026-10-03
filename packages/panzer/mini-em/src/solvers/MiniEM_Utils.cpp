@@ -53,7 +53,7 @@ namespace mini_em {
   {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
-    using NT = Tpetra::Map<>::node_type;
+    using NT = panzer::TpetraNodeType;
     if (out!=Teuchos::null) {
       const RCP<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::GlobalOrdinal,NT> >(Teuchos::rcpFromRef(op));
       if(tOp != Teuchos::null) {
@@ -69,16 +69,6 @@ namespace mini_em {
     describeMatrix(s, op, out);
     if (doWrite)
       writeOut(s+".mm", op);
-  }
-
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > get_Tpetra_CrsMatrix(const Thyra::LinearOpBase<double> & op) {
-    using Teuchos::RCP;
-    using Teuchos::rcp_dynamic_cast;
-    const RCP<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(Teuchos::rcpFromRef(op),true);
-    RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tOp->getConstTpetraOperator(),true);
-    return crsOp;
   }
 
 

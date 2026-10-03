@@ -30,23 +30,48 @@
 
 namespace PHX {
 
-  // Phalanx_DEFAULT_EXECUTION_SPACE and Phalanx_DEFAULT_MEMORY_SPACE are
-  // configured as free-form type names, so a plausible-looking mistake -- a
-  // memory space in the execution space slot, say -- otherwise surfaces much
-  // later as an unreadable template error.
   static_assert(Kokkos::is_execution_space_v<PHX::DefaultExecutionSpace>,
                 "Phalanx: the type configured through "
                 "Phalanx_DEFAULT_EXECUTION_SPACE is not a Kokkos execution "
                 "space.");
   static_assert(Kokkos::is_memory_space_v<PHX::DefaultMemorySpace>,
-                "Phalanx: the type configured through "
-                "Phalanx_DEFAULT_MEMORY_SPACE is not a Kokkos memory space.");
+                "Phalanx: the memory space derived from "
+                "Phalanx_DEFAULT_EXECUTION_SPACE is not a Kokkos memory "
+                "space.");
 
-  using exec_space = PHX::Device::execution_space;
-  using mem_space  = PHX::Device::memory_space;
+  //! The execution space Phalanx runs in.
+  using ExecutionSpace = PHX::Device::execution_space;
 
-  using ExecSpace  = PHX::Device::execution_space;
-  using MemSpace   = PHX::Device::memory_space;
+  //! The memory space Phalanx allocates in.
+  using MemorySpace = PHX::Device::memory_space;
+
+  // Shared space pairs a configured execution space with a memory space it
+  // did not choose, so nothing but this stops a pairing that cannot work.
+  // Kokkos would otherwise report it from somewhere deep inside the first
+  // kernel launch.
+  static_assert(Kokkos::SpaceAccessibility<PHX::ExecutionSpace,
+                                           PHX::MemorySpace>::accessible,
+                "Phalanx: the configured execution space cannot access the "
+                "memory space it was paired with.  Check "
+                "Phalanx_DEFAULT_EXECUTION_SPACE against "
+                "Phalanx_ENABLE_SHARED_SPACE, which replaces the memory space "
+                "with Kokkos::SharedSpace.");
+
+  // Earlier names for the two types above.  Phalanx accumulated several
+  // spellings of each; they all mean what ExecutionSpace and MemorySpace mean.
+  // Deprecated -- see packages/phalanx/scripts/migrate_phx_device.py.
+  // Configure with Phalanx_HIDE_DEPRECATED_CODE=ON to build as though they
+  // were already gone, which is how to check that code no longer needs them.
+#ifndef PHALANX_HIDE_DEPRECATED_CODE
+  using exec_space PHALANX_DEPRECATED_MSG("Use PHX::ExecutionSpace") =
+      PHX::ExecutionSpace;
+  using mem_space PHALANX_DEPRECATED_MSG("Use PHX::MemorySpace") =
+      PHX::MemorySpace;
+  using ExecSpace PHALANX_DEPRECATED_MSG("Use PHX::ExecutionSpace") =
+      PHX::ExecutionSpace;
+  using MemSpace PHALANX_DEPRECATED_MSG("Use PHX::MemorySpace") =
+      PHX::MemorySpace;
+#endif
 
 }
 
@@ -62,7 +87,7 @@ namespace PHX {
   template <typename T> 
   struct remove_all_pointers<T*>{using type = typename PHX::remove_all_pointers<T>::type;};
 
-  using DefaultDevLayout = PHX::exec_space::array_layout;
+  using DefaultDevLayout = PHX::ExecutionSpace::array_layout;
 
 #if defined(SACADO_GPU_HIERARCHICAL_DFAD) || defined(SACADO_GPU_HIERARCHICAL)
 

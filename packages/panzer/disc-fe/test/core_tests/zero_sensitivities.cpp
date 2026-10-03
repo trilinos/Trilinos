@@ -49,7 +49,7 @@ namespace panzer {
   class ComputeA {
     Array a_;
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
     
     ComputeA(Array& a)
       : a_(a)
@@ -69,7 +69,7 @@ namespace panzer {
   class ComputeB {
     Array a_;
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecutionSpace execution_space;
     
     ComputeB(Array& a)
       : a_(a)
@@ -115,7 +115,7 @@ namespace panzer {
       
       // Compute
       Kokkos::parallel_for(a.extent_int(0),ComputeA<panzer::Traits::RealType,PHX::Device,PHX::MDField<panzer::Traits::RealType,Cell,BASIS> > (a));
-      typename PHX::Device().fence();
+      typename PHX::ExecutionSpace().fence();
 
       auto a_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),a.get_static_view());
       
@@ -158,7 +158,7 @@ namespace panzer {
 
       // Compute
       Kokkos::parallel_for(a.extent(0),ComputeB<PHX::Device,PHX::MDField<panzer::Traits::FadType,Cell,BASIS> > (a));
-      typename PHX::Device().fence();
+      typename PHX::ExecutionSpace().fence();
       
       // Check
       Kokkos::deep_copy(a_host,a.get_static_view());

@@ -14,6 +14,7 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
+#include "Panzer_NodeType.hpp"
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -68,7 +69,7 @@ protected:
 
 
 
-  typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::Device> NodeType;
+  typedef panzer::TpetraNodeType NodeType;
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, NodeType> Map;
   typedef Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, NodeType> Graph;
   typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, NodeType> Export;

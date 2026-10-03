@@ -148,8 +148,10 @@ findCellAndComputeBasisValues(typename Traits::EvalData d)
   // This evaluator needs to run on host until checkPointwiseInclusion
   // is moved to device.
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
-  using CTD = Intrepid2::CellTools<HostSpace>;
-  using FST = Intrepid2::FunctionSpaceTools<HostSpace>;
+  // Intrepid2's first template parameter is a device, not an execution space.
+  using HostDevice = HostSpace::device_type;
+  using CTD = Intrepid2::CellTools<HostDevice>;
+  using FST = Intrepid2::FunctionSpaceTools<HostDevice>;
 
   // Find which cell contains our point
   const int num_points = 1;
@@ -216,7 +218,7 @@ findCellAndComputeBasisValues(typename Traits::EvalData d)
 
     // Evaluate basis at reference values
     Kokkos::DynRankView<double,HostSpace> ref_basis_values("ref_basis_values", num_basis, 1); // <B,P>
-    basis_->getIntrepid2Basis<HostSpace,double,double>()->getValues(ref_basis_values,
+    basis_->getIntrepid2Basis<HostDevice,double,double>()->getValues(ref_basis_values,
                                                                     reference_points_cell,
                                                                     Intrepid2::OPERATOR_VALUE);
 
@@ -230,7 +232,7 @@ findCellAndComputeBasisValues(typename Traits::EvalData d)
 
     // Evaluate basis at reference values
     Kokkos::DynRankView<double,HostSpace> ref_basis_values("ref_basis_values", num_basis, 1, num_dim); // <B,P,D>
-    basis_->getIntrepid2Basis<HostSpace,double,double>()->getValues(ref_basis_values,
+    basis_->getIntrepid2Basis<HostDevice,double,double>()->getValues(ref_basis_values,
                                                                     reference_points_cell,
                                                                     Intrepid2::OPERATOR_VALUE);
 
@@ -274,6 +276,8 @@ void ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData d)
 {
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
+  // Intrepid2's first template parameter is a device, not an execution space.
+  using HostDevice = HostSpace::device_type;
 
   if ( !haveProbe_ ||
        (haveProbe_ && d.getIdentifier() != workset_id_) )
@@ -288,7 +292,7 @@ evaluateFields(typename Traits::EvalData d)
 
   auto basis_values_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values_);
 
-  Intrepid2::FunctionSpaceTools<HostSpace>::evaluate(field_val, field_coeffs_host_subview, basis_values_host);
+  Intrepid2::FunctionSpaceTools<HostDevice>::evaluate(field_val, field_coeffs_host_subview, basis_values_host);
   responseObj_->value = field_val(0,0);
   responseObj_->have_probe = true;
 }

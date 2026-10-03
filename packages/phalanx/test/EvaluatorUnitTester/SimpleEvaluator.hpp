@@ -34,7 +34,7 @@ public:
                   const Teuchos::RCP<PHX::DataLayout>& c_layout);
   void evaluateFields(typename Traits::EvalData workset) override;
   KOKKOS_INLINE_FUNCTION
-  void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
+  void operator () (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const;
 };
 
 #include "SimpleEvaluator_Def.hpp"
