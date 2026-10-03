@@ -170,7 +170,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                 }
               }
             }
-            if (!rowptrUpdated) rowptr(rlid + 2) = my_nnz;
+            if (!rowptrUpdated && (rlid + 1 < lclA.numRows())) rowptr(rlid + 2) = my_nnz;
           },
           nnz);
 
