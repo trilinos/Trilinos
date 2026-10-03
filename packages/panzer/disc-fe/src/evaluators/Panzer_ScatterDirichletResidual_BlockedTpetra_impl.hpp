@@ -15,6 +15,7 @@
 #include "Teuchos_Assert.hpp"
 
 #include "Phalanx_DataLayout.hpp"
+#include "Panzer_NodeType.hpp"
 
 // #include "Epetra_Map.h"
 // #include "Epetra_Vector.h"
@@ -597,7 +598,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
 
     const int blockRowIndex = productVectorBlockIndex_[fieldIndex];
-    typename Tpetra::Vector<double,LO,GO,PHX::ExecutionSpace>::dual_view_type::t_dev kokkosResidual;
+    typename Tpetra::Vector<double,LO,GO,panzer::TpetraNodeType>::dual_view_type::t_dev kokkosResidual;
     if (haveResidual) {
       auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
       kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::ReadWrite);

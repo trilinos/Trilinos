@@ -21,6 +21,7 @@
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
 #include "Panzer_ConnManager.hpp"
+#include "Panzer_NodeType.hpp"
 
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
@@ -82,7 +83,7 @@ protected:
   PHX::View<int *[2]> blocks_by_face_;
   PHX::View<int *[2]> procs_by_face_;
 
-  typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::ExecutionSpace> NodeType;
+  typedef panzer::TpetraNodeType NodeType;
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, NodeType> Map;
   typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, NodeType> Export;
   typedef Tpetra::Import<LocalOrdinal, GlobalOrdinal, NodeType> Import;
