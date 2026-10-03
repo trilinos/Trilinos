@@ -126,10 +126,6 @@ namespace mini_em {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    if (solver == AUGMENTATION) {
-      TEUCHOS_ASSERT(physics == MAXWELL);
-    }
-
     RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
     {
       if (xml == "") {
@@ -139,23 +135,13 @@ namespace mini_em {
         // * linear algebra library
         // * spatial dimension
         // * node type
-        if (solver == AUGMENTATION)
-          updateParams("solverAugmentation.xml", lin_solver_pl, comm, out);
-        else if (solver == CG)
+        if (solver == CG)
           updateParams("solverCG.xml", lin_solver_pl, comm, out);
         else if (solver == GMRES)
           updateParams("solverGMRES.xml", lin_solver_pl, comm, out);
         else if ((solver == MUELU) || (solver == MAXWELL1_RS) || (solver == MAXWELL1_SA_RS) || (solver == MAXWELL1_EMIN)) {
 
           updateParams("solverMueLu.xml", lin_solver_pl, comm, out);
-
-          if (dim == 2)
-            updateParams("solverMueLu2D.xml", lin_solver_pl, comm, out);
-
-          if (panzer::TpetraNodeType::is_cpu && !panzer::TpetraNodeType::is_serial)
-            updateParams("solverMueLuOpenMP.xml", lin_solver_pl, comm, out);
-          if (panzer::TpetraNodeType::is_gpu)
-            updateParams("solverMueLuCuda.xml", lin_solver_pl, comm, out);
 
           if (truncateMueLuHierarchy)
             updateParams("solverMueLuTruncated.xml", lin_solver_pl, comm, out);
