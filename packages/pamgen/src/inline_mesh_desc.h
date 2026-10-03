@@ -26,6 +26,8 @@
 #include <string>
 #include <set>
 
+#include "pamgen_kokkos_utils.h"
+
 class Inline_Mesh_Desc;
 
 namespace PAMGEN_NEVADA {
@@ -343,9 +345,13 @@ namespace PAMGEN_NEVADA {
           )
       {};
 
-      void Offset_Coords(double * coords,long long num_nodes,long long dim);
+       void Offset_Coords(double * coords,long long num_nodes,long long dim);
+       KOKKOS_INLINE_FUNCTION
+       void Offset_Coords_Device(View2D<double> coords, long long num_nodes, long long dim);
 
-      void Customize_Coords(double * coords,long long num_nodes,long long dim);
+       void Customize_Coords(double * coords,long long num_nodes,long long dim);
+       KOKKOS_INLINE_FUNCTION
+       void Customize_Coords_Device(View2D<double> coords, long long num_nodes, long long dim);
 
       double * IJKcoors[3];
 
