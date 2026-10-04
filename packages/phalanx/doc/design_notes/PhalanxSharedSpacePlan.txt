@@ -341,17 +341,101 @@ PHASE 4 -- DONE on host; the divergent-space path is untested.  Make the
   basis factory, whose guard is inactive on a host build.  First CUDA or SYCL
   run with the option on is where that gets tested.  See phase 5.
 
-PHASE 5 -- test matrix.  Each of these with shared space ON and OFF:
-    host (Serial, and Serial+OpenMP)
-    CUDA, with and without UVM
-    SYCL x3 (no hierarchical, HIERARCHICAL, HIERARCHICAL_DFAD)
-  Plus two configurations the review showed the matrix was blind to (section 7):
-    Phalanx_DEFAULT_EXECUTION_SPACE set to something other than
-      Kokkos::DefaultExecutionSpace -- several bugs hid behind those being the
-      same type
-    Phalanx_INDEX_SIZE_TYPE=KOKKOS -- the default "int" never takes that path
-  Note the SYCL machine still needs the unmerged Kokkos PR 9585 patch re-applied
-  after any reset; see the sacado-sycl-port memory note.
+PHASE 5 -- test matrix.  The tables below exceed 80 columns deliberately;
+  they are the operative part of this section.  Shared space ON and OFF is the
+  axis that matters most, because on a host build Kokkos::SharedSpace IS
+  Kokkos::HostSpace and so nothing about it is really exercised there.
+
+  Phalanx_ENABLE_SHARED_SPACE was added to both arms of the USE-UVM switch in
+  packages/framework/ini-files/config-specs.ini, beside
+  Tpetra_ALLOCATE_IN_SHARED_SPACE and KokkosKernels_INST_MEMSPACE_CUDAUVMSPACE.
+  That is worth more than the configure check this branch removed: the two
+  options cannot disagree in any CI build, because they are now one switch.
+  Phalanx joins the pattern the other packages already follow.  Everything
+  below is as of 2026-10-04 and was read out of that ini file.
+
+
+  COVERED BY TRILINOS CI -- do not spend machine time on these
+  ------------------------------------------------------------------------------
+  | Configuration                                  | CI builds                             |
+  |------------------------------------------------|---------------------------------------|
+  | CUDA, defaults (no UVM)                        | several cuda-gcc-openmpi, USE-UVM|NO  |
+  | CUDA + shared space, on real GPUs              | 2: Ampere80 and Hopper90, USE-UVM|YES |
+  | Serial host                                    | several gcc-serial                    |
+  | OpenMP backend host                            | 3 x gcc-openmpi-openmp                |
+  | Phalanx_HIDE_DEPRECATED_CODE=ON, BOTH packages | 1 x deprecated-off_all                |
+  | Other compilers (clang, oneAPI, aue-gcc)       | ~10 more                              |
+
+  USE-DEPRECATED|NO sets Phalanx_HIDE_DEPRECATED_CODE=ON and
+  Panzer_HIDE_DEPRECATED_CODE=ON together, so the "Panzer has never been built
+  that way" gap closes by itself.
+
+
+  RUN BY HAND -- CI cannot, or should not be the first to find out
+  ------------------------------------------------------------------------------
+  | # | Build                      | Flags                                                              |
+  |---|----------------------------|--------------------------------------------------------------------|
+  | A | CUDA + shared space        | USE-UVM|YES, or both shared switches ON                            |
+  | B | CUDA, host execution space | Phalanx_DEFAULT_EXECUTION_SPACE=Kokkos::DefaultHostExecutionSpace, |
+  |   |                            | plus Tpetra_INST_SERIAL=ON (or _OPENMP)                            |
+  | C | Any, legacy index type     | Phalanx_INDEX_SIZE_TYPE=KOKKOS                                     |
+  | D | CUDA, deprecated mode      | Phalanx_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON             |
+  | E | SYCL x3                    | Tpetra_INST_SYCL=ON, plus none / HIERARCHICAL /                    |
+  |   |                            | HIERARCHICAL_DFAD, each with shared space ON and OFF               |
+
+  A  CI covers it, but as a PR GATE.  Run it first so a pull request is not
+     what discovers a problem.  This is the first GPU activation of the
+     PHX::Device instantiation in Panzer_IntrepidBasisFactory.cpp, whose guard
+     is inactive on a host build.
+  B  The build that hit an nvcc cicc segfault in Panzer_BasisDescriptor.cpp,
+     fixed by "Panzer: put PointGenerator's points on PHX::Device".  Never set
+     in the ini, so CI will never cover it.
+  C  Did not compile at all before the review fix (section 7, finding 1); only
+     one translation unit has been verified since.  Never set in the ini.
+  D  Both modes are live and both need coverage; only tested on host.  Never
+     set in the ini.
+  E  NO SYCL BUILD EXISTS IN CI -- the oneapi-intelmpi builds do not enable it.
+     Entirely manual, and the largest remaining block.
+
+  No HIP build exists in CI either, if a machine is available.
+
+
+  NEGATIVE TESTS -- the guards must be SEEN to fire
+  ------------------------------------------------------------------------------
+  A guard nobody has watched fail is not a guard.
+
+  | # | Configuration                                                 | Expected                             | When      |
+  |---|---------------------------------------------------------------|--------------------------------------|-----------|
+  | F | CUDA, shared space ON + Tpetra_ALLOCATE_IN_SHARED_SPACE=OFF   | static_assert in Panzer_NodeType.hpp | COMPILE   |
+  | G | SYCL or HIP without the matching Tpetra_INST_SYCL / _HIP=ON   | the same static_assert               | COMPILE   |
+  | H | shared space ON + ..._DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON | FATAL_ERROR from Phalanx             | configure |
+
+  The static_assert names the offending node type.
+
+  F now requires OVERRIDING THE INI, since the two switches are tied to
+  USE-UVM.  That is the point of tying them -- the mismatch cannot arise
+  accidentally any more -- but it means forcing it deliberately to watch the
+  guard work.  Note F is no longer a configure-time error; see the node type
+  notes, decision N6.
+
+
+  A CAUTION ABOUT THE CI COVERAGE.  The two UVM builds are PR gates, so the
+  first GPU exercise of Phalanx shared space will be someone's pull request
+  rather than a developer's machine.  The part that activates there for the
+  first time is the PHX::Device instantiation in
+  Panzer_IntrepidBasisFactory.cpp.  Traced by hand for a CUDA UVM build it
+  should hold -- PHX::MemorySpace is CudaUVMSpace,
+  PHX::ExecutionSpace::memory_space is CudaSpace, so the guard's static_assert
+  passes and the extra instantiation is emitted for the type callers actually
+  pass -- but that is reasoning, not a build.  Hence row A.
+
+  SYCL PRECONDITIONS.  The SYCL machine needs the unmerged Kokkos PR 9585 patch
+  re-applied after any reset, and watch for the -qmkl with -fsycl ILP64 trap;
+  see the sacado-sycl-port and sycl-mkl-ilp64-trap notes.
+
+  SUGGESTED ORDER.  B first -- there is a fix waiting on it and a known failure
+  to compare against.  Then A, before this reaches a PR.  Then F, the cheapest
+  negative test.  E is the largest block and the only one nobody else can do.
 
 
 --------------------------------------------------------------------------------

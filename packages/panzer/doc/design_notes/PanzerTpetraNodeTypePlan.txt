@@ -374,7 +374,10 @@ PHASE D (original sketch, for reference) -- CMake-level diagnostics.
   must not pretend to.
 
 PHASE E -- test matrix.  Fold into the shared space plan's phase 5 rather than
-  running separately:
+  running separately -- that is also where the record of what Trilinos CI
+  already covers lives, which since 2026-10-04 includes two CUDA UVM builds
+  that exercise Phalanx shared space on real GPUs.  The rows below are the
+  node-type-specific ones:
     host Serial, Tpetra_INST_SERIAL ON               (today's build; passes)
     host, Phalanx_DEFAULT_EXECUTION_SPACE non-default
     CUDA, Tpetra_INST_CUDA ON, shared space OFF/OFF
