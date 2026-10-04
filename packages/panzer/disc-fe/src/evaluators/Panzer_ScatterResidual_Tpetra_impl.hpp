@@ -398,7 +398,7 @@ public:
   bool fillResidual;
   Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
 
-  Kokkos::View<const LO**> lids; // local indices for unknowns.
+  PHX::View<const LO**> lids;    // local indices for unknowns.
   PHX::View<const int*> offsets; // how to get a particular field
   FieldType field;
   std::size_t num_params;

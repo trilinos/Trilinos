@@ -132,15 +132,15 @@ namespace panzer {
         const panzer::BasisValues2<double>* bv_ptr;
         int num_cells_owned_ghosted_virtual = 0;
         int num_cells_owned = 0;
-        Kokkos::View<const panzer::LocalOrdinal*> cell_local_ids;
+        PHX::View<const panzer::LocalOrdinal*> cell_local_ids;
         if (useUserSuppliedBasisValues_) {
           // Skip this block if there are no elements in this block on this mpi process
           auto tmp = connManager_->getElementBlock(block); // no ghosting or virtual in this case
           if (tmp.size() == 0)
             continue;
 
-          Kokkos::View<panzer::LocalOrdinal*>::host_mirror_type cell_local_ids_host(tmp.data(),tmp.size());
-          Kokkos::View<panzer::LocalOrdinal*> cell_local_ids_nonconst("cell_local_ids",tmp.size());
+          PHX::View<panzer::LocalOrdinal*>::host_mirror_type cell_local_ids_host(tmp.data(),tmp.size());
+          PHX::View<panzer::LocalOrdinal*> cell_local_ids_nonconst("cell_local_ids",tmp.size());
           Kokkos::deep_copy(cell_local_ids_nonconst,cell_local_ids_host);
           cell_local_ids = cell_local_ids_nonconst;
 
@@ -266,15 +266,15 @@ namespace panzer {
         const panzer::BasisValues2<double>* bv_ptr;
         int num_cells_owned_ghosted_virtual = 0;
         int num_cells_owned = 0;
-        Kokkos::View<const panzer::LocalOrdinal*> cell_local_ids;
+        PHX::View<const panzer::LocalOrdinal*> cell_local_ids;
         if (useUserSuppliedBasisValues_) {
           // Skip this block if there are no elements in this block on this mpi process
           auto tmp = connManager_->getElementBlock(block); // no ghosting or virtual in this case
           if (tmp.size() == 0)
             continue;
 
-          Kokkos::View<panzer::LocalOrdinal*>::host_mirror_type cell_local_ids_host(tmp.data(),tmp.size());
-          Kokkos::View<panzer::LocalOrdinal*> cell_local_ids_nonconst("cell_local_ids",tmp.size());
+          PHX::View<panzer::LocalOrdinal*>::host_mirror_type cell_local_ids_host(tmp.data(),tmp.size());
+          PHX::View<panzer::LocalOrdinal*> cell_local_ids_nonconst("cell_local_ids",tmp.size());
           Kokkos::deep_copy(cell_local_ids_nonconst,cell_local_ids_host);
           cell_local_ids = cell_local_ids_nonconst;
 
