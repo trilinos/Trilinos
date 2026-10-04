@@ -1,0 +1,15 @@
+# Standalone build of PinT example tanks/example_01 (serial: runs single-process).
+# Reached only under STANDALONE_ROL AND ENABLE_MPI; MPI is linked so the real
+# ROL::GlobalMPISession resolves. Own subdir => own working dir.
+set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/../../PinT/tanks)
+
+add_executable(tanks_example_01 ${SRC}/example_01.cpp)
+target_include_directories(tanks_example_01 PRIVATE ${SRC})
+target_link_libraries(tanks_example_01 PRIVATE rol MPI::MPI_CXX)
+
+configure_file(${SRC}/tank-parameters.xml ${CMAKE_CURRENT_BINARY_DIR}/tank-parameters.xml COPYONLY)
+
+if(ENABLE_TESTS)
+  add_test(NAME tanks_example_01 COMMAND $<TARGET_FILE:tanks_example_01> PrintItAll)
+  set_tests_properties(tanks_example_01 PROPERTIES PASS_REGULAR_EXPRESSION "TEST PASSED")
+endif()

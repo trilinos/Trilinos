@@ -244,9 +244,12 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     }
     H(i+1,i) = std::sqrt(w1->dot(*w1) + w2->dot(*w2));
     
-    V1.push_back(b1.clone()); (V1[i+1])->set(*w1); (V1[i+1])->scale(one/H(i+1,i));
-    V2.push_back(b2.clone()); (V2[i+1])->set(*w2); (V2[i+1])->scale(one/H(i+1,i));
-
+    const bool breakdown = (H(i+1,i) == zero);
+    if (!breakdown) {
+      V1.push_back(b1.clone()); (V1[i+1])->set(*w1); (V1[i+1])->scale(one/H(i+1,i));
+      V2.push_back(b2.clone()); (V2[i+1])->set(*w2); (V2[i+1])->scale(one/H(i+1,i));
+    }
+   
     // Apply Givens rotations.
     for (k=0; k<=i-1; k++) {
       temp     = cs(k)*H(k,i) + sn(k)*H(k+1,i);
@@ -295,15 +298,7 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
       z2->axpy(y(k), *(Z2[k]));
     }
 
-    // Evaluate special stopping condition.
-    //tol = ???;
-
-//    std::cout << "  " << i+1 << ": " << res[i+1]/res[0] << std::endl;
-    if (res[i+1] <= tol) {
-//      std::cout << "  solved in " << i+1 << " iterations to " << res[i+1] << " (" << res[i+1]/res[0] << ")" << std::endl;
-      // Update solution vector.
-      //v1.plus(*z1);
-      //v2.plus(*z2);
+    if (res[i+1] <= tol || breakdown) {
       break;
     }
 
