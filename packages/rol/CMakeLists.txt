@@ -20,6 +20,9 @@ if( STANDALONE_ROL )
   set(CMAKE_CXX_EXTENSIONS OFF)
   set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
+  include(GNUInstallDirs)
+  include(CMakePackageConfigHelpers)
+
   find_package(BLAS REQUIRED)
   find_package(LAPACK REQUIRED)
 
@@ -52,21 +55,45 @@ if( STANDALONE_ROL )
     message(STATUS "Detected Fortran name mangling: ${F77_BLAS_MANGLE}")
   endif()
 
-  # Add pugixml for XML parameter file support
+  # Add pugixml for XML parameter file support.
+  # Prefer an installed CMake package so installed ROLConfig.cmake can
+  # reproduce the same public dependency for downstream consumers.  Fall back
+  # to FetchContent for standalone source/CI builds where pugixml is not
+  # preinstalled.
   include(FetchContent)
-  FetchContent_Declare(
-    pugixml
-    GIT_REPOSITORY https://github.com/zeux/pugixml.git
-    GIT_TAG        v1.14
-  )
-  FetchContent_MakeAvailable(pugixml)
+  find_package(pugixml CONFIG QUIET)
+
+  if(NOT pugixml_FOUND)
+    FetchContent_Declare(
+      pugixml
+      GIT_REPOSITORY https://github.com/zeux/pugixml.git
+      GIT_TAG        v1.14
+    )
+    FetchContent_MakeAvailable(pugixml)
+  endif()
+
+  if(TARGET pugixml::pugixml)
+    set(ROL_PUGIXML_TARGET pugixml::pugixml)
+  elseif(TARGET pugixml)
+    set(ROL_PUGIXML_TARGET pugixml)
+  elseif(TARGET pugixml-static)
+    set(ROL_PUGIXML_TARGET pugixml-static)
+  elseif(TARGET pugixml::static)
+    set(ROL_PUGIXML_TARGET pugixml::static)
+  else()
+    message(FATAL_ERROR "Could not find or create a pugixml CMake target")
+  endif()
 
   include(ROLUtils)
+  
+  option(ROL_ENABLE_TEUCHOS_LITE_OBJECTS
+    "Compile Teuchos-lite object implementations into standalone ROL"
+    ON)
 
   # Configure the config header
   configure_file("${PROJECT_SOURCE_DIR}/cmake/ROL_config.h.in" ROL_config.h @ONLY)
 
-  add_library(rol SHARED)
+  add_library(rol)
 
   set(SRC ${PROJECT_SOURCE_DIR}/src)
 
@@ -87,9 +114,11 @@ if( STANDALONE_ROL )
                                  ${SRC}/compatibility/teuchos/stacktrace
                                  ${SRC}/compatibility/teuchos-lite)
 
-  add_library(Teuchos_BLAS OBJECT ${SRC}/compatibility/teuchos-lite/Teuchos_BLAS.cpp)
-  add_library(Teuchos_CompObject OBJECT ${SRC}/compatibility/teuchos-lite/Teuchos_CompObject.cpp)
-  add_library(Teuchos_TestForException OBJECT ${SRC}/compatibility/teuchos-lite/Teuchos_TestForException.cpp)
+  if(ROL_ENABLE_TEUCHOS_LITE_OBJECTS)
+    add_library(Teuchos_BLAS OBJECT ${SRC}/compatibility/teuchos-lite/Teuchos_BLAS.cpp)
+    add_library(Teuchos_CompObject OBJECT ${SRC}/compatibility/teuchos-lite/Teuchos_CompObject.cpp)
+    add_library(Teuchos_TestForException OBJECT ${SRC}/compatibility/teuchos-lite/Teuchos_TestForException.cpp)
+  endif()
 
   # Use GLOB_RECURSE to find all directories in core components
   set(ROL_CORE_DIRS ${SRC}/algorithm
@@ -115,15 +144,42 @@ if( STANDALONE_ROL )
     endforeach()
   endforeach()
 
-  target_include_directories(rol PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
-                                        ${ROL_COMPATIBILITY_INCLUDES}
-                                        ${ROL_CORE_INCLUDES})
+  set(ROL_BUILD_INTERFACE_INCLUDES
+      ${CMAKE_CURRENT_BINARY_DIR}
+      ${ROL_COMPATIBILITY_INCLUDES}
+      ${ROL_CORE_INCLUDES})
+
+  set(ROL_BUILD_INTERFACE_INCLUDE_GENERATOR_EXPRESSIONS)
+  foreach(dir IN LISTS ROL_BUILD_INTERFACE_INCLUDES)
+    list(APPEND ROL_BUILD_INTERFACE_INCLUDE_GENERATOR_EXPRESSIONS "$<BUILD_INTERFACE:${dir}>")
+  endforeach()
+
+  target_include_directories(rol
+    PUBLIC
+      ${ROL_BUILD_INTERFACE_INCLUDE_GENERATOR_EXPRESSIONS}
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  )
+
+  if(ROL_ENABLE_TEUCHOS_LITE_OBJECTS)
+    target_sources(rol
+      PRIVATE
+        $<TARGET_OBJECTS:Teuchos_BLAS>
+        $<TARGET_OBJECTS:Teuchos_CompObject>
+        $<TARGET_OBJECTS:Teuchos_TestForException>
+    )
+  else()
+    # guard against risk that CMake will complain about not having any compiled sources:
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/rol_empty.cpp"
+      "namespace { const int rol_empty_translation_unit = 0; }
+")
+    target_sources(rol PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/rol_empty.cpp")
+  endif()
 
   target_link_libraries(rol PUBLIC ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
-                                    pugixml
-                                    Teuchos_BLAS Teuchos_CompObject Teuchos_TestForException)
+                                    ${ROL_PUGIXML_TARGET})
 
   add_library(rol::rol ALIAS rol)
+  add_library(ROL::rol ALIAS rol)
 
   option(ENABLE_TESTS OFF)
   option(ENABLE_EXAMPLES OFF)
@@ -179,17 +235,46 @@ if( STANDALONE_ROL )
   endforeach()
   
   install(
-		TARGETS rol   
-		#TARGETS Teuchos_TestForException  
-    LIBRARY DESTINATION lib 
-    #ARCHIVE DESTINATION lib 
+    TARGETS rol
+    EXPORT ROLTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+  install(
+    EXPORT ROLTargets
+    FILE ROLTargets.cmake
+    NAMESPACE ROL::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ROL
+  )
+
+  configure_package_config_file(
+    "${PROJECT_SOURCE_DIR}/cmake/ROLConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/ROLConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ROL
+    PATH_VARS CMAKE_INSTALL_INCLUDEDIR CMAKE_INSTALL_LIBDIR
+  )
+
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/ROLConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+  )
+
+  install(
+    FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/ROLConfig.cmake"
+      "${CMAKE_CURRENT_BINARY_DIR}/ROLConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ROL
   )
 
   # Install all headers into one flat include directory
   foreach(hdr IN LISTS PROJECT_HEADERS)
-      install(FILES "${hdr}" DESTINATION include)
+      install(FILES "${hdr}" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
   endforeach()
-  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ROL_config.h" DESTINATION include)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ROL_config.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 else() # Build with Trilinos
   include(cmake/TrilinosROL.cmake)
 endif()

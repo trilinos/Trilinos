@@ -57,3 +57,16 @@ if(ENABLE_TESTS)
                          PROCESSORS ${np})
   endforeach()
 endif()
+
+# --- Un-gated upstream serial PinT examples, one subdir each ---------------------
+# Each example gets its OWN subdirectory (hence its own build/working dir) so the
+# per-example XML inputs never collide: several examples hard-code the same filename
+# (e.g. input_ex01.xml) with DIFFERENT contents. They are "serial" (single-process)
+# but still link MPI::MPI_CXX, since under ENABLE_MPI the real ROL::GlobalMPISession
+# calls MPI_Init; they simply run as a 1-rank process (no mpirun needed).
+add_subdirectory(Van_der_Pol_example_01)
+add_subdirectory(nonlinear_example_01)
+add_subdirectory(parabolic-control_example_01)
+add_subdirectory(tanks_LowerBandedMatrix_test)
+add_subdirectory(tanks_example_01)
+add_subdirectory(tanks_example_04)
