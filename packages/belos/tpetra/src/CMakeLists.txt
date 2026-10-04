@@ -4,6 +4,10 @@
 # A) Package-specific configuration options
 #
 
+SET(CURRENT_PACKAGE BELOSTPETRA)
+CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+  ${CMAKE_CURRENT_BINARY_DIR}/BelosTpetra_DLLExportMacro.h)
+
 #
 # B) Define the header and source files (and directories)
 #
@@ -16,6 +20,9 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+APPEND_SET(HEADERS
+  ${CMAKE_CURRENT_BINARY_DIR}/BelosTpetra_DLLExportMacro.h
+  )
 
 #
 # Core Files
@@ -39,6 +46,7 @@ APPEND_SET(SOURCES
   BelosTpetraAdapter.cpp
   Belos_Details_Tpetra_registerLinearSolverFactory.cpp
   Belos_Details_Tpetra_registerSolverFactory.cpp
+  BelosSolverFactory_Tpetra_ETI.cpp
   )
 
 APPEND_SET(HEADERS
@@ -136,4 +144,5 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS belos
+  DEFINES -DBELOSTPETRA_LIB_EXPORTS_MODE
   )
