@@ -20,7 +20,10 @@
 /// LightweightView represents a minimal nonowning multidimensional array,
 /// like an unmanaged Kokkos::View or an mdspan.
 /// It uses 32-bit extents and strides, unlike the mdspan version of Kokkos::View which
-/// always uses 64 bit.
+/// always uses 64 bit. This does not depend on mdspan, so it works without C++23 and
+/// with or without Kokkos_ENABLE_IMPL_MDSPAN.
+/// TODO: when Kokkos requires C++23 and removes the legacy View impl, replace this
+/// with std::mdspan (or a device-friendly version of it, if Kokkos provides that).
 
 namespace Ifpack2 {
 namespace Details {
