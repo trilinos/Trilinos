@@ -4724,31 +4724,6 @@ struct SolveTridiags {
     }
   };
 
-  /*
-  template <int B, int ScratchLevel>
-  KOKKOS_INLINE_FUNCTION void
-  operator()(const SingleVectorTag<B, ScratchLevel> &, const member_type &member) const {
-    const local_ordinal_type packidx     = member.league_rank();
-    const local_ordinal_type partidx     = packptr(packidx);
-    const local_ordinal_type npacks      = packptr(packidx + 1) - partidx;
-    const local_ordinal_type pri0        = part2packrowidx0(partidx);
-    const local_ordinal_type i0          = pack_td_ptr(partidx, 0);
-    const local_ordinal_type r0          = part2packrowidx0(partidx);
-    const local_ordinal_type nrows       = partptr(partidx + 1) - partptr(partidx);
-    const local_ordinal_type blocksize   = (B == 0 ? D_internal_vector_values.extent(1) : B);
-    const local_ordinal_type num_vectors = 1;
-    internal_vector_scratch_type_3d_view
-        WW(member.team_scratch(ScratchLevel), blocksize, 1, vector_loop_size);
-    Kokkos::single(Kokkos::PerTeam(member), [&]() {
-      Z_scalar_vector(member.league_rank()) = impl_scalar_type(0);
-    });
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const int &v) {
-      solveSingleVector(member, blocksize, i0, r0, nrows, v, WW);
-      copyToFlatMultiVector(member, partidx, npacks, pri0, v, blocksize, num_vectors);
-    });
-  }
-  */
-
   template <int B, int ScratchLevel>
   KOKKOS_INLINE_FUNCTION void
   operator()(const MultiVectorTag<B, ScratchLevel> &, const member_type &member) const {
