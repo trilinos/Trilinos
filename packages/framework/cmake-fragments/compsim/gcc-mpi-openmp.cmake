@@ -191,8 +191,9 @@ set(TPL_ENABLE_METIS ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(TPL_ENABLE_ParMETIS ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(TPL_ENABLE_Pthread OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(TPL_ENABLE_yaml OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
-set(TPL_ENABLE_Kokkos ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
-set(TPL_ENABLE_KokkosKernels ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+# While the spack package.py sets these, we use the internal kokkos/kernels instead
+#set(TPL_ENABLE_Kokkos ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+#set(TPL_ENABLE_KokkosKernels ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +scotch
 set(TPL_ENABLE_Scotch ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +umfpack
