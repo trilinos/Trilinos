@@ -4474,33 +4474,30 @@ struct SolveTridiags {
   template <int B, int ScratchLevel>
   struct SingleVectorFunctor {
     SingleVectorFunctor(const SolveTridiags<MatrixType> &solve)
-      : packptr(Ifpack2::Details::view_to_lightweight(solve.packptr))
-      , part2packrowidx0(Ifpack2::Details::view_to_lightweight(solve.part2packrowidx0))
-      , pack_td_ptr(Ifpack2::Details::view_to_lightweight(solve.pack_td_ptr))
-      , partptr(Ifpack2::Details::view_to_lightweight(solve.partptr))
-      , D_internal_vector_values(Ifpack2::Details::view_to_lightweight(solve.D_internal_vector_values))
+      : packptr(Ifpack2::Details::view_to_const_lightweight(solve.packptr))
+      , part2packrowidx0(Ifpack2::Details::view_to_const_lightweight(solve.part2packrowidx0))
+      , pack_td_ptr(Ifpack2::Details::view_to_const_lightweight(solve.pack_td_ptr))
+      , partptr(Ifpack2::Details::view_to_const_lightweight(solve.partptr))
+      , D_internal_vector_values(Ifpack2::Details::view_to_const_lightweight(solve.D_internal_vector_values))
+      , lclrow(Ifpack2::Details::view_to_const_lightweight(solve.lclrow))
       , X_internal_vector_values(Ifpack2::Details::view_to_lightweight(solve.X_internal_vector_values))
       , Y_scalar_multivector(Ifpack2::Details::view_to_lightweight(solve.Y_scalar_multivector))
       , Z_scalar_vector(Ifpack2::Details::view_to_lightweight(solve.Z_scalar_vector))
-      , lclrow(Ifpack2::Details::view_to_lightweight(solve.lclrow))
       , df(solve.df)
       , vector_loop_size(solve.vector_loop_size) {}
 
     // LightweightView members use 32-bit indices/strides to avoid the
     // performance regression caused by the 64-bit mdspan-based Kokkos::View
     // (Kokkos 5.0.0), without depending on mdspan being available.
-    decltype(Ifpack2::Details::view_to_lightweight(std::declval<ConstUnmanaged<local_ordinal_type_1d_view>>())) packptr;
-    decltype(Ifpack2::Details::view_to_lightweight(std::declval<ConstUnmanaged<local_ordinal_type_1d_view>>())) part2packrowidx0;
-    decltype(Ifpack2::Details::view_to_lightweight(std::declval<ConstUnmanaged<size_type_2d_view>>())) pack_td_ptr;
-    decltype(Ifpack2::Details::view_to_lightweight(std::declval<ConstUnmanaged<local_ordinal_type_1d_view>>())) partptr;
-    decltype(Ifpack2::Details::view_to_lightweight(std::declval<ConstUnmanaged<internal_vector_type_4d_view>>())) D_internal_vector_values;
-    decltype(Ifpack2::Details::view_to_lightweight(std::declval<Unmanaged<internal_vector_type_4d_view>>())) X_internal_vector_values;
-    decltype(Ifpack2::Details::view_to_lightweight(std::declval<Unmanaged<impl_scalar_type_2d_view_tpetra>>())) Y_scalar_multivector;
-    decltype(Ifpack2::Details::view_to_lightweight(std::declval<ConstUnmanaged<local_ordinal_type_1d_view>>())) lclrow;
-    // Z_scalar_vector has the Atomic memory trait, which LightweightView does
-    // not model, so it is stored as a plain LightweightView and updated via
-    // explicit Kokkos atomics instead of the Atomic trait.
-    decltype(Ifpack2::Details::view_to_lightweight(std::declval<Unmanaged<impl_scalar_type_1d_view>>())) Z_scalar_vector;
+    Details::ConstLightweightView_t<local_ordinal_type_1d_view> packptr;
+    Details::ConstLightweightView_t<local_ordinal_type_1d_view> part2packrowidx0;
+    Details::ConstLightweightView_t<size_type_2d_view> pack_td_ptr;
+    Details::ConstLightweightView_t<local_ordinal_type_1d_view> partptr;
+    Details::ConstLightweightView_t<internal_vector_type_4d_view> D_internal_vector_values;
+    Details::ConstLightweightView_t<local_ordinal_type_1d_view> lclrow;
+    Details::LightweightView_t<internal_vector_type_4d_view> X_internal_vector_values;
+    Details::LightweightView_t<impl_scalar_type_2d_view_tpetra> Y_scalar_multivector;
+    Details::LightweightView_t<impl_scalar_type_1d_view> Z_scalar_vector;
     const impl_scalar_type df;
     const local_ordinal_type vector_loop_size;
 

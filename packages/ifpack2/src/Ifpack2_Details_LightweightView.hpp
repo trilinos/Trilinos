@@ -39,6 +39,12 @@ namespace Details {
 template <typename ValueType, int Rank, typename Layout>
 class LightweightView;
 
+template<typename ViewType>
+using LightweightView_t = LightweightView<typename ViewType::value_type, ViewType::rank, typename ViewType::array_layout>;
+
+template<typename ViewType>
+using ConstLightweightView_t = LightweightView<typename ViewType::const_value_type, ViewType::rank, typename ViewType::array_layout>;
+
 namespace Impl {
 
 // Number of explicitly stored strides for each layout. LayoutStride stores all
@@ -281,6 +287,19 @@ class LightweightView<ValueType, Rank, Kokkos::LayoutRight> {
 template <typename View>
 KOKKOS_INLINE_FUNCTION auto view_to_lightweight(const View& v) {
   using value_type = typename View::value_type;
+  using src_layout = typename View::array_layout;
+  constexpr int R  = static_cast<int>(View::rank());
+  using layout =
+      std::conditional_t<std::is_same<src_layout, Kokkos::LayoutLeft>::value,
+                         Kokkos::LayoutLeft,
+                         std::conditional_t<std::is_same<src_layout, Kokkos::LayoutRight>::value,
+                                            Kokkos::LayoutRight, Kokkos::LayoutStride>>;
+  return LightweightView<value_type, R, layout>(v);
+}
+
+template <typename View>
+KOKKOS_INLINE_FUNCTION auto view_to_const_lightweight(const View& v) {
+  using value_type = typename View::const_value_type;
   using src_layout = typename View::array_layout;
   constexpr int R  = static_cast<int>(View::rank());
   using layout =
