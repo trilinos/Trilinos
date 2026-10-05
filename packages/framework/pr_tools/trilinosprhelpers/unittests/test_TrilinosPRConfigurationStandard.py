@@ -174,7 +174,8 @@ class TrilinosPRConfigurationStandardTest(TestCase):
             dry_run = False,
             use_explicit_cachefile = False,
             extra_configure_args = "",
-            skip_run_tests = False
+            skip_run_tests = False,
+            extra_ctest_driver_args = "",
         )
         return output
 
@@ -238,6 +239,34 @@ class TrilinosPRConfigurationStandardTest(TestCase):
                                "generatedPRFragment.cmake"))
 
         self.assertIn("-DENABLE_ASAN:BOOL=ON", self.mock_subprocess_check_call.call_args_list[-1][0][0])
+
+
+    def test_extra_ctest_driver_args_passed(self):
+        """
+        Test that extra arbitrary CTest driver args are propagated correctly.
+        """
+        print("")
+        args = self.dummy_args()
+        args.extra_ctest_driver_args = '-DARG1=val1 -DARG2="val with spaces"'
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
+
+        # prepare step
+        ret = pr_config.prepare_test()
+        self.assertEqual(ret, 0)
+        self.mock_cpu_count.assert_called()
+
+        # execute step
+        ret = pr_config.execute_test()
+        self.mock_chdir.assert_called_once()
+        self.mock_subprocess_check_call.assert_called()
+        self.assertEqual(ret, 0)
+        self.assertTrue(Path(os.path.join(args.workspace_dir,
+                                          "generatedPRFragment.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "generatedPRFragment.cmake"))
+
+        self.assertIn("-DARG1=val1", self.mock_subprocess_check_call.call_args_list[-1][0][0])
+        self.assertIn("-DARG2=val with spaces", self.mock_subprocess_check_call.call_args_list[-1][0][0])
 
 
     def test_TrilinosPRConfigurationStandardDryRun(self):
