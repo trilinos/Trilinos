@@ -1,46 +1,46 @@
 Clearing old data (if any)
 
 Level 0
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+Setup Smoother (total, level=0) (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Gauss-Seidel
  timer for apply = 0
 
 Level 1
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory)
-BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+Prolongator smoothing (PG-AMG) (total, level=1) (MueLu::PgPFactory)
+Build (total, level=1) (MueLu::TentativePFactory_kokkos)
+Build (total, level=0) (MueLu::UncoupledAggregationFactory)
+BuildScalar (total, level=0) (MueLu::CoalesceDropFactory_kokkos)
 dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = no symmetrization
 project auxiliary matrices -> 
  [empty list]
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
-Build (MueLu::AmalgamationFactory)
+Build (total, level=0) (MueLu::AmalgamationFactory)
 [empty list]
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=0) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=0) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
-Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+PgPFactory::ComputeRowBasedOmega (total, level=1) (MueLu::PgPFactory)
+Call prolongator factory for calculating restrictor (total, level=1) (MueLu::GenericRFactory)
+Prolongator smoothing (PG-AMG) (total, level=1) (MueLu::PgPFactory)
+PgPFactory::ComputeRowBasedOmega (total, level=1) (MueLu::PgPFactory)
 [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=1) (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+Setup Smoother (total, level=1) (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Gauss-Seidel
  timer for apply = 0
 
 Level 2
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory)
-BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+Prolongator smoothing (PG-AMG) (total, level=2) (MueLu::PgPFactory)
+Build (total, level=2) (MueLu::TentativePFactory_kokkos)
+Build (total, level=1) (MueLu::UncoupledAggregationFactory)
+BuildScalar (total, level=1) (MueLu::CoalesceDropFactory_kokkos)
 dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = no symmetrization
 project auxiliary matrices -> 
  [empty list]
@@ -48,23 +48,23 @@ BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-Build (MueLu::AmalgamationFactory)
+Build (total, level=1) (MueLu::AmalgamationFactory)
 [empty list]
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=1) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=1) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
-Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
-Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
-PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+PgPFactory::ComputeRowBasedOmega (total, level=2) (MueLu::PgPFactory)
+Call prolongator factory for calculating restrictor (total, level=2) (MueLu::GenericRFactory)
+Prolongator smoothing (PG-AMG) (total, level=2) (MueLu::PgPFactory)
+PgPFactory::ComputeRowBasedOmega (total, level=2) (MueLu::PgPFactory)
 [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=2) (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 Max coarse size (<= 2000) achieved
-Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
+Setup Smoother (total, level=2) (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
  Amesos2 -> 
   [empty list]

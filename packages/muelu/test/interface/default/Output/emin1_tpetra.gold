@@ -1,7 +1,7 @@
 Clearing old data (if any)
 
 Level 0
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+Setup Smoother (total, level=0) (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -9,13 +9,13 @@ smoother ->
  timer for apply = 0
 
 Level 1
-Prolongator minimization (MueLu::EminPFactory)
-Constraint (MueLu::ConstraintFactory)
-Ppattern (MueLu::PatternFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
+Prolongator minimization (total, level=1) (MueLu::EminPFactory)
+Constraint (total, level=1) (MueLu::ConstraintFactory)
+Ppattern (total, level=1) (MueLu::PatternFactory)
+Build (total, level=1) (MueLu::TentativePFactory)
+Build (total, level=0) (MueLu::UncoupledAggregationFactory)
+Build (total, level=0) (MueLu::CoalesceDropFactory)
+Build (total, level=0) (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
@@ -23,12 +23,12 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=0) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=0) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Matrix filtering (MueLu::FilteredAFactory)
+Matrix filtering (total, level=0) (MueLu::FilteredAFactory)
 Filtered matrix is not being constructed as no filtering is being done
 PrepareLeastSquaresSolveDirect (MueLu::DenseConstraint)
 Getting P from coarseLevel
@@ -42,13 +42,13 @@ Getting P from coarseLevel
 *******************************************************
 Iter 0, [ 1] :    6.665458e+01
 Iter 1, [ 1] :    6.447167e-12
-Transpose P (MueLu::TransPFactory)
+Transpose P (total, level=1) (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=1) (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+Setup Smoother (total, level=1) (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -56,13 +56,13 @@ smoother ->
  timer for apply = 0
 
 Level 2
-Prolongator minimization (MueLu::EminPFactory)
-Constraint (MueLu::ConstraintFactory)
-Ppattern (MueLu::PatternFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
+Prolongator minimization (total, level=2) (MueLu::EminPFactory)
+Constraint (total, level=2) (MueLu::ConstraintFactory)
+Ppattern (total, level=2) (MueLu::PatternFactory)
+Build (total, level=2) (MueLu::TentativePFactory)
+Build (total, level=1) (MueLu::UncoupledAggregationFactory)
+Build (total, level=1) (MueLu::CoalesceDropFactory)
+Build (total, level=1) (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
@@ -70,12 +70,12 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=1) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=1) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Matrix filtering (MueLu::FilteredAFactory)
+Matrix filtering (total, level=1) (MueLu::FilteredAFactory)
 Filtered matrix is not being constructed as no filtering is being done
 PrepareLeastSquaresSolveDirect (MueLu::DenseConstraint)
 Getting P from coarseLevel
@@ -89,14 +89,14 @@ Getting P from coarseLevel
 *******************************************************
 Iter 0, [ 1] :    4.275004e+00
 Iter 1, [ 1] :    5.179015e-13
-Transpose P (MueLu::TransPFactory)
+Transpose P (total, level=2) (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=2) (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 Max coarse size (<= 2000) achieved
-Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
+Setup Smoother (total, level=2) (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
  Amesos2 -> 
   [empty list]

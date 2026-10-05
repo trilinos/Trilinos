@@ -1,7 +1,7 @@
 Clearing old data (if any)
 
 Level 0
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+Setup Smoother (total, level=0) (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -9,34 +9,34 @@ smoother ->
  timer for apply = 0
 
 Level 1
-Prolongator smoothing (MueLu::SaPFactory)
-Matrix filtering (MueLu::FilteredAFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
+Prolongator smoothing (total, level=1) (MueLu::SaPFactory)
+Matrix filtering (total, level=0) (MueLu::FilteredAFactory)
+Build (total, level=0) (MueLu::CoalesceDropFactory)
+Build (total, level=0) (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Build (total, level=1) (MueLu::TentativePFactory)
+Build (total, level=0) (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=0) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=0) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
-Transpose P (MueLu::TransPFactory)
+Transpose P (total, level=1) (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=1) (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+Setup Smoother (total, level=1) (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -44,34 +44,34 @@ smoother ->
  timer for apply = 0
 
 Level 2
-Prolongator smoothing (MueLu::SaPFactory)
-Matrix filtering (MueLu::FilteredAFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
+Prolongator smoothing (total, level=2) (MueLu::SaPFactory)
+Matrix filtering (total, level=1) (MueLu::FilteredAFactory)
+Build (total, level=1) (MueLu::CoalesceDropFactory)
+Build (total, level=1) (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Build (total, level=2) (MueLu::TentativePFactory)
+Build (total, level=1) (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=1) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=1) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
-Transpose P (MueLu::TransPFactory)
+Transpose P (total, level=2) (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=2) (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+Setup Smoother (total, level=2) (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -79,32 +79,32 @@ smoother ->
  timer for apply = 0
 
 Level 3
-Prolongator smoothing (MueLu::SaPFactory)
-Matrix filtering (MueLu::FilteredAFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
+Prolongator smoothing (total, level=3) (MueLu::SaPFactory)
+Matrix filtering (total, level=2) (MueLu::FilteredAFactory)
+Build (total, level=2) (MueLu::CoalesceDropFactory)
+Build (total, level=2) (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Build (total, level=3) (MueLu::TentativePFactory)
+Build (total, level=2) (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=2) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=2) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
-Transpose P (MueLu::TransPFactory)
+Transpose P (total, level=3) (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=3) (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+Setup Smoother (total, level=3) (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -112,32 +112,32 @@ smoother ->
  timer for apply = 0
 
 Level 4
-Prolongator smoothing (MueLu::SaPFactory)
-Matrix filtering (MueLu::FilteredAFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
+Prolongator smoothing (total, level=4) (MueLu::SaPFactory)
+Matrix filtering (total, level=3) (MueLu::FilteredAFactory)
+Build (total, level=3) (MueLu::CoalesceDropFactory)
+Build (total, level=3) (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Build (total, level=4) (MueLu::TentativePFactory)
+Build (total, level=3) (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=3) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=3) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
-Transpose P (MueLu::TransPFactory)
+Transpose P (total, level=4) (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=4) (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+Setup Smoother (total, level=4) (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -145,29 +145,29 @@ smoother ->
  timer for apply = 0
 
 Level 5
-Prolongator smoothing (MueLu::SaPFactory)
-Matrix filtering (MueLu::FilteredAFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
+Prolongator smoothing (total, level=5) (MueLu::SaPFactory)
+Matrix filtering (total, level=4) (MueLu::FilteredAFactory)
+Build (total, level=4) (MueLu::CoalesceDropFactory)
+Build (total, level=4) (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
 Filtered matrix is not being constructed as no filtering is being done
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
+Build (total, level=5) (MueLu::TentativePFactory)
+Build (total, level=4) (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=4) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=4) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
  [empty list]
-Transpose P (MueLu::TransPFactory)
+Transpose P (total, level=5) (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=5) (MueLu::RAPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 Max coarse size (<= 100) achieved

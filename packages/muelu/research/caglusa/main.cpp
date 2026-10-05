@@ -9,6 +9,7 @@
 
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 #include <Xpetra_HierarchicalOperator_decl.hpp>
 #include <Xpetra_HierarchicalOperator_def.hpp>

@@ -17,6 +17,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 // Xpetra
 #include <Xpetra_MultiVectorFactory.hpp>
