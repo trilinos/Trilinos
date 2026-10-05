@@ -75,14 +75,15 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 
   int status = 0;
   if ( this->root_ ) {
+    if (tacho_initialized_) {
+      // release inernal memory if symbolic was called before
+      data_.solver.release();
+      tacho_initialized_ = false;
+    }
+
     if(do_optimization()) {
       this->matrixA_->returnRowPtr_kokkos_view(host_row_ptr_view_);
       this->matrixA_->returnColInd_kokkos_view(host_cols_view_);
-    }
-
-    if (tacho_initialized_) {
-      data_.solver.release();
-      tacho_initialized_ = false;
     }
 
     data_.solver.setSolutionMethod(data_.method);

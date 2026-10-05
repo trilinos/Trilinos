@@ -142,8 +142,6 @@ int driver(const std::string file, const std::string rhs, const std::string meth
 
     /// set common options
     solver.setVerbose(verbose);
-    solver.setSolutionMethod(method);
-    solver.setLevelSetOptionAlgorithmVariant(variant);
     if (store_transpose) {
       std::cout << "  > Using explicit transpose " << std::endl;
       solver.storeExplicitTranspose(true);
@@ -170,10 +168,16 @@ int driver(const std::string file, const std::string rhs, const std::string meth
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
 
     int num_setups = (single_setup ? 1 : 2); // number of symbolic calls
-    DenseMultiVectorType b("b", A.NumRows(), 1), // rhs multivector
-      x("x", A.NumRows(), 1),                    // solution multivector
-      t("t", A.NumRows(), 1);                    // temp workspace (store permuted rhs)
+    DenseMultiVectorType
+      b("b", A.NumRows(), 1), // rhs multivector
+      x("x", A.NumRows(), 1), // solution multivector
+      t("t", A.NumRows(), 1); // temp workspace (store permuted rhs)
+
     for (int s = 0; s < num_setups; s++) {
+      // set initial method/variant to test
+      solver.setSolutionMethod(method);
+      solver.setLevelSetOptionAlgorithmVariant(variant);
+
       /// initialize
       r_val = solver.analyze(A.NumRows(), A.RowPtr(), A.Cols());
       if(r_val == 0) {
@@ -223,8 +227,12 @@ int driver(const std::string file, const std::string rhs, const std::string meth
         std::cout << "  > Diagonal entries shifted by " << shift << std::endl << std::endl;
 
         /// solve
-        if (step == 1) {
-          // first solve with one RHS, and then with "nrhs" for the rest
+        // first solve with one RHS, and then with "nrhs" for the rest
+        if (step == 0) {
+          Kokkos::resize(b, A.NumRows(), 1); // rhs multivector
+          Kokkos::resize(x, A.NumRows(), 1); // solution multivector
+          Kokkos::resize(t, A.NumRows(), 1); // temp workspace (store permuted rhs)
+        } else if (step == 1) {
           Kokkos::resize(b, A.NumRows(), nrhs); // rhs multivector
           Kokkos::resize(x, A.NumRows(), nrhs); // solution multivector
           Kokkos::resize(t, A.NumRows(), nrhs); // temp workspace (store permuted rhs)
