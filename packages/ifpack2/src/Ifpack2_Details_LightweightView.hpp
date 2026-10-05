@@ -39,10 +39,10 @@ namespace Details {
 template <typename ValueType, int Rank, typename Layout>
 class LightweightView;
 
-template<typename ViewType>
+template <typename ViewType>
 using LightweightView_t = LightweightView<typename ViewType::value_type, ViewType::rank, typename ViewType::array_layout>;
 
-template<typename ViewType>
+template <typename ViewType>
 using ConstLightweightView_t = LightweightView<typename ViewType::const_value_type, ViewType::rank, typename ViewType::array_layout>;
 
 namespace Impl {
