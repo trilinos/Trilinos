@@ -56,8 +56,12 @@ namespace PHX {
   // ****************************
   // Devices
   // ****************************
-  template<typename T> struct is_device : std::false_type {};
+  template<typename T> struct is_device : Kokkos::is_device<T> {};
+#if defined(PHX_DEPRECATED_DEVICE_AS_EXECUTION_SPACE)
+  // PHX::Device is an execution space in this mode, so Kokkos::is_device
+  // rejects it.  Remove with the deprecated device code.
   template<> struct is_device<PHX::Device> : std::true_type {};
+#endif
 
   // ****************************
   // Rank count

@@ -108,40 +108,28 @@ TEUCHOS_UNIT_TEST(NonConstDynRankViewFromView,FAD) {
       }
 }
 
-// An MDField may name its own device rather than taking PHX::Device, so the
-// DynRankView wrapped around its data has to follow the field.  Naming
-// PHX::Device instead would type the view for a memory space the field's
-// pointer does not live in whenever the two differ -- which is what happens
-// with Phalanx_ENABLE_SHARED_SPACE on a GPU.
+// The wrapped view must follow the field's device, not PHX::Device.  Only has
+// teeth where the two differ, i.e. a shared space build: PHX::Device is then
+// <Cuda,CudaUVMSpace> while MyDevice below is <Cuda,CudaSpace>.
 TEUCHOS_UNIT_TEST(NonConstDynRankViewFromView,user_specified_device) {
   using ScalarType = double;
-  // A device spelled out explicitly, rather than defaulted to PHX::Device.
   using MyDevice = Kokkos::Device<exec_t,mem_t>;
   using field_t = PHX::MDField<const ScalarType,CELL,QP,EQ,MyDevice>;
 
+  static_assert(PHX::is_device<MyDevice>::value,
+                "MDField should accept any Kokkos device");
   static_assert(std::is_same<typename field_t::device_type,MyDevice>::value,
                 "the field did not take the device it was given");
 
-  PHX::MDField<ScalarType,CELL,QP,EQ,MyDevice>
-    nc("nc","layout",num_cells,num_pts,num_equations);
+  PHX::MDField<ScalarType,CELL,QP,EQ,MyDevice> nc("nc","layout",num_cells,num_pts,num_equations);
   Kokkos::deep_copy(nc.get_static_view(),2.0);
   field_t c = nc;
 
   auto drv = PHX::getNonConstDynRankViewFromConstMDField<ScalarType>(c);
-
-  // The contract: the view's device is the FIELD's device, whatever that is.
-  //
-  // NOTE this only has teeth where PHX::Device and the field's device can
-  // differ, which needs two memory spaces -- a shared space build on a GPU,
-  // where PHX::Device is <Cuda,CudaUVMSpace> and a field may name
-  // <Cuda,CudaSpace>.  On a host only build the two are the same type, so the
-  // assertion below passes even if the device is hardcoded to PHX::Device
-  // again.  Verified by reverting the header: this test did not notice.
   static_assert(std::is_same<typename decltype(drv)::device_type,
                              typename field_t::device_type>::value,
                 "the DynRankView did not follow the field's device");
 
-  // And it must genuinely alias the field, so writes through it are visible.
   Kokkos::parallel_for("write through the wrapper",num_cells,KOKKOS_LAMBDA (const int cell) {
     for (int pt=0; pt < num_pts; ++pt)
       for (int eq=0; eq < num_equations; ++eq)
@@ -149,7 +137,6 @@ TEUCHOS_UNIT_TEST(NonConstDynRankViewFromView,user_specified_device) {
   });
   exec_t().fence();
 
-  auto c_host = Kokkos::create_mirror_view(c.get_static_view());
-  Kokkos::deep_copy(c_host,c.get_static_view());
+  auto c_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),c.get_static_view());
   TEST_FLOATING_EQUALITY(c_host(0,0,0),7.0,100.0*Teuchos::ScalarTraits<ScalarType>::eps());
 }
