@@ -257,8 +257,10 @@ int driver(const std::string file, const std::string rhs, const std::string meth
                     << std::endl << std::endl;
         }
       } // end of for steps
+
+      // release before next initialize
+      solver.release();
     }
-    solver.release();
     A.clear();
   } catch (const std::exception &e) {
     r_val = -1;

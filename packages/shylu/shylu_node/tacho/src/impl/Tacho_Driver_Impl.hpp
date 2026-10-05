@@ -841,6 +841,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::release() {
   }
   {
     _method = 0;
+    _method_setup = 0;
 
     _m = 0;
     _nnz = 0;
