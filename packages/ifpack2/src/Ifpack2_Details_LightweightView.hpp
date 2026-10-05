@@ -79,7 +79,7 @@ class LightweightView<ValueType, Rank, Kokkos::LayoutStride> {
   template <typename View,
             typename = std::enable_if_t<Kokkos::is_view<View>::value>>
   KOKKOS_INLINE_FUNCTION explicit LightweightView(const View& v)
-      : data_(v.data()) {
+    : data_(v.data()) {
     static_assert(static_cast<int>(View::rank()) == Rank,
                   "LightweightView: rank mismatch with source Kokkos::View");
     for (int i = 0; i < Rank; ++i) {
@@ -139,7 +139,7 @@ class LightweightView<ValueType, Rank, Kokkos::LayoutLeft> {
   template <typename View,
             typename = std::enable_if_t<Kokkos::is_view<View>::value>>
   KOKKOS_INLINE_FUNCTION explicit LightweightView(const View& v)
-      : data_(v.data()) {
+    : data_(v.data()) {
     static_assert(static_cast<int>(View::rank()) == Rank,
                   "LightweightView: rank mismatch with source Kokkos::View");
     for (int i = 0; i < Rank; ++i) {
@@ -205,7 +205,7 @@ class LightweightView<ValueType, Rank, Kokkos::LayoutRight> {
   template <typename View,
             typename = std::enable_if_t<Kokkos::is_view<View>::value>>
   KOKKOS_INLINE_FUNCTION explicit LightweightView(const View& v)
-      : data_(v.data()) {
+    : data_(v.data()) {
     static_assert(static_cast<int>(View::rank()) == Rank,
                   "LightweightView: rank mismatch with source Kokkos::View");
     for (int i = 0; i < Rank; ++i) {
@@ -225,7 +225,7 @@ class LightweightView<ValueType, Rank, Kokkos::LayoutRight> {
   /// wrap a padded allocation.
   template <typename... Extents>
   KOKKOS_INLINE_FUNCTION LightweightView(value_type* ptr, Extents... exts)
-      : data_(ptr) {
+    : data_(ptr) {
     static_assert(sizeof...(Extents) == Rank,
                   "LightweightView: wrong number of extents");
     const size_type e[Rank] = {static_cast<size_type>(exts)...};

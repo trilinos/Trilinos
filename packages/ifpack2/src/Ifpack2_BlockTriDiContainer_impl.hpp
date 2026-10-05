@@ -4477,20 +4477,19 @@ struct SolveTridiags {
 #define IFPACK2_BTDC_MDSPAN_ACCESS(mds, ...) (mds(__VA_ARGS__))
 
   template <int B, int ScratchLevel>
-  struct SingleVectorFunctor
-  {
-    SingleVectorFunctor(const SolveTridiags<MatrixType>& solve) :
-      packptr(Ifpack2::Details::view_to_lightweight(solve.packptr)),
-      part2packrowidx0(Ifpack2::Details::view_to_lightweight(solve.part2packrowidx0)),
-      pack_td_ptr(Ifpack2::Details::view_to_lightweight(solve.pack_td_ptr)),
-      partptr(Ifpack2::Details::view_to_lightweight(solve.partptr)),
-      D_internal_vector_values(Ifpack2::Details::view_to_lightweight(solve.D_internal_vector_values)),
-      X_internal_vector_values(Ifpack2::Details::view_to_lightweight(solve.X_internal_vector_values)),
-      Y_scalar_multivector(Ifpack2::Details::view_to_lightweight(solve.Y_scalar_multivector)),
-      Z_scalar_vector(Ifpack2::Details::view_to_lightweight(solve.Z_scalar_vector)),
-      lclrow(Ifpack2::Details::view_to_lightweight(solve.lclrow)),
-      df(solve.df),
-      vector_loop_size(solve.vector_loop_size) {}
+  struct SingleVectorFunctor {
+    SingleVectorFunctor(const SolveTridiags<MatrixType> &solve)
+      : packptr(Ifpack2::Details::view_to_lightweight(solve.packptr))
+      , part2packrowidx0(Ifpack2::Details::view_to_lightweight(solve.part2packrowidx0))
+      , pack_td_ptr(Ifpack2::Details::view_to_lightweight(solve.pack_td_ptr))
+      , partptr(Ifpack2::Details::view_to_lightweight(solve.partptr))
+      , D_internal_vector_values(Ifpack2::Details::view_to_lightweight(solve.D_internal_vector_values))
+      , X_internal_vector_values(Ifpack2::Details::view_to_lightweight(solve.X_internal_vector_values))
+      , Y_scalar_multivector(Ifpack2::Details::view_to_lightweight(solve.Y_scalar_multivector))
+      , Z_scalar_vector(Ifpack2::Details::view_to_lightweight(solve.Z_scalar_vector))
+      , lclrow(Ifpack2::Details::view_to_lightweight(solve.lclrow))
+      , df(solve.df)
+      , vector_loop_size(solve.vector_loop_size) {}
 
     // LightweightView members use 32-bit indices/strides to avoid the
     // performance regression caused by the 64-bit mdspan-based Kokkos::View
@@ -4518,7 +4517,7 @@ struct SolveTridiags {
                       const local_ordinal_type &r0,
                       const local_ordinal_type &nrows,
                       const local_ordinal_type &v,
-                      const WWViewType& WW) const {
+                      const WWViewType &WW) const {
       typedef SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space> default_mode_and_algo_type;
 
       typedef typename default_mode_and_algo_type::mode_type default_mode_type;
@@ -4653,8 +4652,8 @@ struct SolveTridiags {
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(member, blocksize),
                                      [&](const local_ordinal_type &i) {
                                        const local_ordinal_type row = blocksize * lclrow(ri0 + j) + i;
-                                       impl_scalar_type &y       = IFPACK2_BTDC_MDSPAN_ACCESS(Y_scalar_multivector, row, 0);
-                                       const impl_scalar_type yd = IFPACK2_BTDC_MDSPAN_ACCESS(X_internal_vector_values, pri, i, 0, v)[vi] - y;
+                                       impl_scalar_type &y          = IFPACK2_BTDC_MDSPAN_ACCESS(Y_scalar_multivector, row, 0);
+                                       const impl_scalar_type yd    = IFPACK2_BTDC_MDSPAN_ACCESS(X_internal_vector_values, pri, i, 0, v)[vi] - y;
                                        y += df * yd;
 
                                        {  // if (compute_diff) {
@@ -4695,14 +4694,14 @@ struct SolveTridiags {
 
     KOKKOS_INLINE_FUNCTION void
     operator()(const member_type &member) const {
-      const local_ordinal_type packidx     = member.league_rank();
-       const local_ordinal_type partidx     = packptr(packidx);
-       const local_ordinal_type npacks      = packptr(packidx + 1) - partidx;
-       const local_ordinal_type pri0        = part2packrowidx0(partidx);
-       const local_ordinal_type i0          = IFPACK2_BTDC_MDSPAN_ACCESS(pack_td_ptr, partidx, 0);
-       const local_ordinal_type r0          = pri0;
-       const local_ordinal_type nrows       = partptr(partidx + 1) - partptr(partidx);
-      const local_ordinal_type blocksize   = (B == 0 ? D_internal_vector_values.extent(1) : B);
+      const local_ordinal_type packidx   = member.league_rank();
+      const local_ordinal_type partidx   = packptr(packidx);
+      const local_ordinal_type npacks    = packptr(packidx + 1) - partidx;
+      const local_ordinal_type pri0      = part2packrowidx0(partidx);
+      const local_ordinal_type i0        = IFPACK2_BTDC_MDSPAN_ACCESS(pack_td_ptr, partidx, 0);
+      const local_ordinal_type r0        = pri0;
+      const local_ordinal_type nrows     = partptr(partidx + 1) - partptr(partidx);
+      const local_ordinal_type blocksize = (B == 0 ? D_internal_vector_values.extent(1) : B);
       // Raw scratch allocation wrapped in a 32-bit-indexed LightweightView
       // (LayoutRight, extents blocksize x vector_loop_size) instead of a Kokkos
       // scratch View, to keep indices/strides 32-bit for the single-vector
@@ -5089,37 +5088,37 @@ struct SolveTridiags {
   if (packindices_schur.extent(1) <= 0) {                                                                                                             \
     if (num_vectors == 1) {                                                                                                                           \
       if (per_team_scratch < max_scratch) {                                                                                                           \
-        Kokkos::TeamPolicy<execution_space>                                                                                    \
+        Kokkos::TeamPolicy<execution_space>                                                                                                           \
             policy(packptr.extent(0) - 1, team_size, vector_loop_size);                                                                               \
         policy.set_scratch_size(0, Kokkos::PerTeam(per_team_scratch));                                                                                \
-        Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,0>",                                                                          \
-        Kokkos::Experimental::require(policy, Kokkos::Experimental::WorkItemProperty::HintHeavyWeight), \
+        Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,0>",                                                                        \
+                             Kokkos::Experimental::require(policy, Kokkos::Experimental::WorkItemProperty::HintHeavyWeight),                          \
                              SingleVectorFunctor<B, 0>(*this));                                                                                       \
       } else {                                                                                                                                        \
-        Kokkos::TeamPolicy<execution_space>                                                                                    \
+        Kokkos::TeamPolicy<execution_space>                                                                                                           \
             policy(packptr.extent(0) - 1, team_size, vector_loop_size);                                                                               \
         policy.set_scratch_size(1, Kokkos::PerTeam(per_team_scratch));                                                                                \
-        Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,1>",                                                                          \
-        Kokkos::Experimental::require(policy, Kokkos::Experimental::WorkItemProperty::HintHeavyWeight), \
-                             SingleVectorFunctor<B, 1>(*this));                                                                                                          \
+        Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,1>",                                                                        \
+                             Kokkos::Experimental::require(policy, Kokkos::Experimental::WorkItemProperty::HintHeavyWeight),                          \
+                             SingleVectorFunctor<B, 1>(*this));                                                                                       \
       }                                                                                                                                               \
     } else {                                                                                                                                          \
       if (per_team_scratch < max_scratch) {                                                                                                           \
         Kokkos::TeamPolicy<execution_space, MultiVectorTag<B, 0>>                                                                                     \
             policy(packptr.extent(0) - 1, team_size, vector_loop_size);                                                                               \
         policy.set_scratch_size(0, Kokkos::PerTeam(per_team_scratch));                                                                                \
-        Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<MultiVector,0>",                                                                           \
+        Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<MultiVector,0>",                                                                         \
                              policy, *this);                                                                                                          \
       } else {                                                                                                                                        \
         Kokkos::TeamPolicy<execution_space, MultiVectorTag<B, 1>>                                                                                     \
             policy(packptr.extent(0) - 1, team_size, vector_loop_size);                                                                               \
         policy.set_scratch_size(1, Kokkos::PerTeam(per_team_scratch));                                                                                \
-        Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<MultiVector,1>",                                                                           \
+        Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<MultiVector,1>",                                                                         \
                              policy, *this);                                                                                                          \
       }                                                                                                                                               \
     }                                                                                                                                                 \
   } else {                                                                                                                                            \
-    Kokkos::deep_copy(execution_space(), Z, impl_scalar_type(0)); \
+    Kokkos::deep_copy(execution_space(), Z, impl_scalar_type(0));                                                                                     \
     for (local_ordinal_type vec = 0; vec < num_vectors; vec++) {                                                                                      \
       this->active_schur_solve_vec = vec;                                                                                                             \
       {                                                                                                                                               \
@@ -5129,13 +5128,13 @@ struct SolveTridiags {
           Kokkos::TeamPolicy<execution_space, SingleVectorSubLineTag<B, 0>>                                                                           \
               policy(packindices_sub.extent(0), team_size, vector_loop_size);                                                                         \
           policy.set_scratch_size(0, Kokkos::PerTeam(per_team_scratch));                                                                              \
-          Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,0>",                                                                        \
+          Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,0>",                                                                      \
                                policy, *this);                                                                                                        \
         } else {                                                                                                                                      \
           Kokkos::TeamPolicy<execution_space, SingleVectorSubLineTag<B, 1>>                                                                           \
               policy(packindices_sub.extent(0), team_size, vector_loop_size);                                                                         \
           policy.set_scratch_size(1, Kokkos::PerTeam(per_team_scratch));                                                                              \
-          Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,1>",                                                                        \
+          Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,1>",                                                                      \
                                policy, *this);                                                                                                        \
         }                                                                                                                                             \
         write4DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), X_internal_scalar_values, "x_scalar_values_after_SingleVectorSubLineTag.mm");  \
@@ -5158,13 +5157,13 @@ struct SolveTridiags {
           Kokkos::TeamPolicy<execution_space, SingleVectorSchurTag<B, 0>>                                                                             \
               policy(packindices_schur.extent(0), team_size, vector_loop_size);                                                                       \
           policy.set_scratch_size(0, Kokkos::PerTeam(per_team_scratch));                                                                              \
-          Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,0>",                                                                        \
+          Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,0>",                                                                      \
                                policy, *this);                                                                                                        \
         } else {                                                                                                                                      \
           Kokkos::TeamPolicy<execution_space, SingleVectorSchurTag<B, 1>>                                                                             \
               policy(packindices_schur.extent(0), team_size, vector_loop_size);                                                                       \
           policy.set_scratch_size(1, Kokkos::PerTeam(per_team_scratch));                                                                              \
-          Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,1>",                                                                        \
+          Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,1>",                                                                      \
                                policy, *this);                                                                                                        \
         }                                                                                                                                             \
         write4DMultiVectorValuesToFile(part2packrowidx0_sub.extent(0), X_internal_scalar_values, "x_scalar_values_after_SingleVectorSchurTag.mm");    \
