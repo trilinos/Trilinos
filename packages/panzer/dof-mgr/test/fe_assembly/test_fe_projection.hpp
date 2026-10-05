@@ -123,14 +123,10 @@ enum ElemShape {HEX, TET, QUAD, TRI};
 template<typename ValueType, typename DeviceSpaceType>
 int feProjection(int argc, char *argv[]) {
 
-  using HostSpaceType = typename
-#if KOKKOS_VERSION >= 50199
-      Kokkos::Impl::HostMirror<typename DeviceSpaceType::memory_space>::Space::execution_space;
-#else
-      Kokkos::Impl::HostMirror<DeviceSpaceType>::Space::execution_space;
-#endif
+  using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
+  using HostDeviceType = typename HostSpaceType::device_type;
   using DynRankView = Kokkos::DynRankView<ValueType,DeviceSpaceType>;
-  using DynRankViewHost = Kokkos::DynRankView<ValueType,HostSpaceType>;
+  using DynRankViewHost = Kokkos::DynRankView<ValueType,HostDeviceType>;
 
   using map_t = Tpetra::Map<panzer::LocalOrdinal, panzer::GlobalOrdinal>;
 
@@ -204,32 +200,32 @@ int feProjection(int argc, char *argv[]) {
     Teuchos::RCP<CellTopology> cellTopoPtr = Teuchos::rcp(new CellTopology);
 
     //brickBasis: used to compute the coordinates of the mesh vertices
-    Teuchos::RCP< Intrepid2::Basis<HostSpaceType, scalar_t,scalar_t> > brickBasis;
+    Teuchos::RCP< Intrepid2::Basis<HostDeviceType, scalar_t,scalar_t> > brickBasis;
 
     //linearBasis: used to compute the coordinates of the quadrature points for computing the L2 error
     Teuchos::RCP< Intrepid2::Basis<DeviceSpaceType, scalar_t,scalar_t> > linearBasis;
 
     if(shape == "Hexahedron") {
       cellTopoPtr = Teuchos::rcp(new CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >()));
-      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<HostSpaceType,scalar_t,scalar_t>);
+      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<HostDeviceType,scalar_t,scalar_t>);
       linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,scalar_t,scalar_t>);
       eShape = HEX;
       dim = 3;
     } else if (shape == "Tetrahedron") {
       cellTopoPtr = Teuchos::rcp(new CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >()));
-      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<HostSpaceType,scalar_t,scalar_t>);
+      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<HostDeviceType,scalar_t,scalar_t>);
       linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,scalar_t,scalar_t>);
       eShape = TET;
       dim = 3;
     } else if (shape == "Quadrilateral") {
       cellTopoPtr = Teuchos::rcp(new CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >()));
-      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<HostSpaceType,scalar_t,scalar_t>);
+      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<HostDeviceType,scalar_t,scalar_t>);
       linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,scalar_t,scalar_t>);
       eShape = QUAD;
       dim = 2;
     } else if (shape == "Triangle") {
       cellTopoPtr = Teuchos::rcp(new CellTopology(shards::getCellTopologyData<shards::Triangle<3> >()));
-      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<HostSpaceType,scalar_t,scalar_t>);
+      brickBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<HostDeviceType,scalar_t,scalar_t>);
       linearBasis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,scalar_t,scalar_t>);
       eShape = TRI;
       dim = 2;
@@ -417,7 +413,7 @@ int feProjection(int argc, char *argv[]) {
     {
       auto physVertexesHost = Kokkos::create_mirror_view(physVertexes);
 
-      //Intrepid2::Basis_HGRAD_QUAD_C1_FEM<HostSpaceType,scalar_t,scalar_t> brickBasis;
+      //Intrepid2::Basis_HGRAD_QUAD_C1_FEM<HostDeviceType,scalar_t,scalar_t> brickBasis;
       int numNodesPerBrick = brickBasis->getCardinality();
       DynRankViewHost refVerticesHexa("refVerticesHexa", numNodesPerBrick, dim);
       DynRankViewHost physVerticesHexa("physVerticesHexa", numNodesPerBrick, dim);
@@ -566,7 +562,7 @@ int feProjection(int argc, char *argv[]) {
     {
       std::map<global_ordinal_t,scalar_t> mapL2Proj;
       std::map<global_ordinal_t,int> mapCell;
-      std::map<global_ordinal_t, typename Intrepid2::Basis<HostSpaceType, scalar_t,scalar_t>::OrdinalTypeArrayStride1DHost> mapDofTag;
+      std::map<global_ordinal_t, typename Intrepid2::Basis<HostDeviceType, scalar_t,scalar_t>::OrdinalTypeArrayStride1DHost> mapDofTag;
       std::vector<global_ordinal_t> elementGIDs(basisCardinality);
       Teuchos::TimeMonitor vTimer1 =  *Teuchos::TimeMonitor::getNewTimer("Verification, assemble solution");
       auto basisCoeffsL2ProjHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsL2Proj);
