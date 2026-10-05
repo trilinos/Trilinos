@@ -22,7 +22,7 @@
     \li     \f$\xi_j\f$ are points of the subcell manifold
 
     Note: the points \xi_j and tangent vectors t_j are chosen such that the bases \phi_i are
-    uniquely identified by the values \phi_i(\xi_j) \dot t_j.
+    uniquely identified by the values \f$\phi_i(\xi_j) \dot t_j\f$.
 
     \author Created by Kyungjoo Kim
  */
