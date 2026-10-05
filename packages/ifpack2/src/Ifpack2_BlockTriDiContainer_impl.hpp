@@ -4471,11 +4471,6 @@ struct SolveTridiags {
   template <int B>
   struct CopyVectorToFlatTag {};
 
-  // Ifpack2::Details::LightweightView forwards operator()(i,j,...) to the layout
-  // mapping and is callable from device code for any supported C++ standard, so
-  // we always use the call-operator form for multidimensional element access.
-#define IFPACK2_BTDC_MDSPAN_ACCESS(mds, ...) (mds(__VA_ARGS__))
-
   template <int B, int ScratchLevel>
   struct SingleVectorFunctor {
     SingleVectorFunctor(const SolveTridiags<MatrixType> &solve)
@@ -4652,8 +4647,8 @@ struct SolveTridiags {
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(member, blocksize),
                                      [&](const local_ordinal_type &i) {
                                        const local_ordinal_type row = blocksize * lclrow(ri0 + j) + i;
-                                       impl_scalar_type &y          = IFPACK2_BTDC_MDSPAN_ACCESS(Y_scalar_multivector, row, 0);
-                                       const impl_scalar_type yd    = IFPACK2_BTDC_MDSPAN_ACCESS(X_internal_vector_values, pri, i, 0, v)[vi] - y;
+                                       impl_scalar_type &y          = Y_scalar_multivector(row, 0);
+                                       const impl_scalar_type yd    = X_internal_vector_values(pri, i, 0, v)[vi] - y;
                                        y += df * yd;
 
                                        {  // if (compute_diff) {
@@ -4674,8 +4669,8 @@ struct SolveTridiags {
                                    if (j < nrows) {
                                      for (local_ordinal_type i = 0; i < blocksize; ++i) {
                                        const local_ordinal_type row = blocksize * lclrow(ri0 + j) + i;
-                                       impl_scalar_type &y          = IFPACK2_BTDC_MDSPAN_ACCESS(Y_scalar_multivector, row, 0);
-                                       const impl_scalar_type yd    = IFPACK2_BTDC_MDSPAN_ACCESS(X_internal_vector_values, pri, i, 0, v)[vi] - y;
+                                       impl_scalar_type &y          = Y_scalar_multivector(row, 0);
+                                       const impl_scalar_type yd    = X_internal_vector_values(pri, i, 0, v)[vi] - y;
                                        y += df * yd;
 
                                        {  // if (compute_diff) {
@@ -4698,7 +4693,7 @@ struct SolveTridiags {
       const local_ordinal_type partidx   = packptr(packidx);
       const local_ordinal_type npacks    = packptr(packidx + 1) - partidx;
       const local_ordinal_type pri0      = part2packrowidx0(partidx);
-      const local_ordinal_type i0        = IFPACK2_BTDC_MDSPAN_ACCESS(pack_td_ptr, partidx, 0);
+      const local_ordinal_type i0        = pack_td_ptr(partidx, 0);
       const local_ordinal_type r0        = pri0;
       const local_ordinal_type nrows     = partptr(partidx + 1) - partptr(partidx);
       const local_ordinal_type blocksize = (B == 0 ? D_internal_vector_values.extent(1) : B);
