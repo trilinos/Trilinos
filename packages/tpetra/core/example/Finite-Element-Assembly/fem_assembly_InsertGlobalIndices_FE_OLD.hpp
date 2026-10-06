@@ -22,7 +22,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Tpetra_Assembly_Helpers.hpp"
-#include "Tpetra_FECrsGraph.hpp"
 
 #include "fem_assembly_typedefs.hpp"
 #include "fem_assembly_MeshDatabase.hpp"
@@ -327,31 +326,60 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     row_map->describe(out);
   }
 
-  // Use Tpetra::assembleFECrsGraph (which internally uses
-  // Tpetra::Details::GraphAssembly) to construct a fully-assembled FECrsGraph.
-  // This performs, entirely on device, everything that begin/endAssembly of an
-  // FECrsGraph would do: the local owned+shared graph is assembled with Kokkos
-  // kernels and a fused Export + fillComplete produces the owned graph.
+  // Graph Construction
+  // ------------------
+  // - Loop over every element in the mesh.
+  //   - Get list of nodes associated with each element.
+  //   - Insert the clique of nodes associated with each element into the graph.
+  //
   auto domain_map = row_map;
   auto range_map  = row_map;
 
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
 
-  RCP<fe_graph_type> fe_graph;
+  RCP<fe_graph_type> fe_graph =
+      rcp(new fe_graph_type(row_map, owned_plus_shared_map, nodesPerElem * nodesPerElem));
+
+  // Because we're using quads for this example, there will
+  // be 4 nodes associated with each element.
+  Teuchos::Array<global_ordinal_type> global_ids_in_row(nodesPerElem);
+
   {
-    RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
+    TimeMonitor timerElementLoopGraph(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)"));
+    auto owned_element_to_node_gids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
-    // The element-to-node connectivity (global node IDs) of the owned elements,
-    // as a dynamic-rank-2 device view of const GlobalOrdinal.
-    Kokkos::View<const global_ordinal_type**, deviceType> owned_element_to_node_ids =
-        mesh.getOwnedElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
+    // for each element in the mesh...
+    Tpetra::beginAssembly(*fe_graph);
+    for (int element_gidx = 0; element_gidx < (int)mesh.getNumOwnedElements(); ++element_gidx) {
+      // Populate global_ids_in_row:
+      // - Copy the global node ids for current element into an array.
+      // - Since each element's contribution is a clique, we can re-use this for
+      //   each row associated with this element's contribution.
+      for (int element_node_idx = 0; element_node_idx < nodesPerElem; ++element_node_idx) {
+        global_ids_in_row[element_node_idx] =
+            owned_element_to_node_gids(element_gidx, element_node_idx);
+      }
 
-    fe_graph = Tpetra::assembleFECrsGraph<local_ordinal_type, global_ordinal_type,
-                                          map_type::node_type>(
-        owned_element_to_node_ids, row_map, owned_plus_shared_map);
+      // Add the contributions from the current row into the graph.
+      // - For example, if Element 0 contains nodes [0,1,4,5] then we insert the nodes:
+      //   - node 0 inserts [0, 1, 4, 5]
+      //   - node 1 inserts [0, 1, 4, 5]
+      //   - node 4 inserts [0, 1, 4, 5]
+      //   - node 5 inserts [0, 1, 4, 5]
+      for (int element_node_idx = 0; element_node_idx < nodesPerElem; ++element_node_idx) {
+        fe_graph->insertGlobalIndices(global_ids_in_row[element_node_idx],
+                                      global_ids_in_row());
+      }
+    }
   }
 
-  // Print out verbose information about the graph.
+  // Call fillComplete on the fe_graph to 'finalize' it.
+  {
+    TimeMonitor timer(*TimeMonitor::getNewTimer("2) FillComplete (Graph)"));
+    Tpetra::endAssembly(*fe_graph);
+  }
+
+  // Print out verbose information about the fe_graph.
   if (opts.verbose) fe_graph->describe(out, Teuchos::VERB_EXTREME);
 
   // Matrix Fill
@@ -389,7 +417,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // - sumIntoGlobalValues( 3,  [  2  3  7  6  ],  [  -1  2  -1  0  ])
   // - sumIntoGlobalValues( 7,  [  2  3  7  6  ],  [  0  -1  2  -1  ])
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
-  RCP<TimeMonitor> timerElementLoopMemory = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2.1) ElementLoop  (Memory)")));
+  RCP<TimeMonitor> timerElementLoopMemory = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.1) ElementLoop  (Memory)")));
 
   // the number of finite elements this process will handle, and the number of
   // nodes associated with each element.
@@ -397,22 +425,16 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // in parallel.
   const int numOwnedElements = mesh.getNumOwnedElements();
 
-  // Build an FECrsMatrix and FEMultiVector on top of the assembled FE graph.
-  // These manage the owned+shared -> owned communication internally through the
-  // begin/endAssembly calls, exactly like the non-Kokkos path.
   RCP<fe_matrix_type> fe_matrix = rcp(new fe_matrix_type(fe_graph));
   RCP<fe_multivector_type> rhs =
       rcp(new fe_multivector_type(domain_map, fe_graph->getImporter(), 1));
 
-  // Row map and column map local views for the assembly (owned+shared) objects.
   auto localMap    = owned_plus_shared_map->getLocalMap();
   auto localColMap = fe_matrix->getColMap()->getLocalMap();
 
   timerElementLoopMemory = Teuchos::null;
   {
-    TimeMonitor timerElementLoopMatrix(*TimeMonitor::getNewTimer("2.2) ElementLoop  (Matrix)"));
-
-    // Put the FE matrix/RHS into assembly (owned+shared) mode.
+    TimeMonitor timerElementLoopMatrix(*TimeMonitor::getNewTimer("3.2) ElementLoop  (Matrix)"));
     Tpetra::beginAssembly(*fe_matrix, *rhs);
 
     auto owned_element_to_node_gids =
@@ -446,17 +468,8 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
           // - populate the values array
           // - add the values to the fe_matrix.
           for (int element_node_idx = 0; element_node_idx < nodesPerElem; ++element_node_idx) {
-            // The matrix's owned+shared row map is the owned+shared map, so the
-            // matrix row is indexed by the owned+shared LID.
             const local_ordinal_type local_row_id =
                 localMap.getLocalElement(owned_element_to_node_gids(element_idx, element_node_idx));
-
-            // The RHS (an FEMultiVector) lives on the importer's target map,
-            // i.e. the graph's column map -- NOT the owned+shared row map (the
-            // two differ once the column map orders owned GIDs before remote
-            // GIDs, as the assembled owned column map does).  Index the RHS by
-            // its column-map LID, which is exactly element_lcids[node].
-            const local_ordinal_type local_rhs_row_id = element_lcids[element_node_idx];
 
             // Atomically contribute for sums: parallel elements may be contributing
             // to the same node at the same time
@@ -465,22 +478,20 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
                                         &(element_matrix[element_node_idx][col_idx]),
                                         true, true);
             }
-            Kokkos::atomic_add(&(localRHS(local_rhs_row_id, 0)), element_rhs[element_node_idx]);
+            Kokkos::atomic_add(&(localRHS(local_row_id, 0)), element_rhs[element_node_idx]);
           }
         });
-    execution_space().fence();
   }
 
-  // After the contributions are added, 'finalize' the matrix using endAssembly,
-  // which performs the owned+shared -> owned Export with ADD.
+  // After the contributions are added, 'finalize' the matrix using fillComplete()
   {
-    TimeMonitor timer(*TimeMonitor::getNewTimer("3) FillComplete (Matrix)"));
+    TimeMonitor timer(*TimeMonitor::getNewTimer("4) FillComplete (Matrix)"));
     Tpetra::endAssembly(*fe_matrix);
   }
 
   {
-    // Global assemble the RHS the same way.
-    TimeMonitor timer(*TimeMonitor::getNewTimer("4) GlobalAssemble (RHS)"));
+    // Global assemble the RHS
+    TimeMonitor timer(*TimeMonitor::getNewTimer("5) GlobalAssemble (RHS)"));
     Tpetra::endAssembly(*rhs);
   }
 
@@ -503,3 +514,4 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
 }  // namespace TpetraExamples
 
 #endif  // TPETRAEXAMPLES_FEM_ASSEMBLY_INSERTGLOBALINDICES_FE_SP_HPP
+
