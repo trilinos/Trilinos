@@ -386,7 +386,7 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
            const Teuchos::ArrayView<const size_t>& numEntPerRow,
            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  /// \brief Constructor specifying column Map and an existing graph to subview.
+  /// \brief Constructor specifying row Map and an existing graph to subview.
   ///   The graph created will point to the views of the existing graph,
   ///   but only have the rows contained in the passed-in rowMap.
   ///   This constructor assumes it will alias the first N rows of the graph,
@@ -400,6 +400,44 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///   default values.
   CrsGraph(CrsGraph<local_ordinal_type, global_ordinal_type, node_type>& originalGraph,
            const Teuchos::RCP<const map_type>& rowMap,
+           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+  /// \brief Constructor specifying row and column Map and an existing graph to view.
+  ///
+  /// \param rowMap [in] New distribution of rows of the graph.
+  ///   Needs to have the same number of elements on each rank as the row map of originalGraph.
+  /// \param colMap [in] Distribution of columns of the graph.
+  ///   Needs to have the same number of elements on each rank as the column map of originalGraph.
+  /// \param originalGraph [in] The existing graph to view.
+  ///
+  /// \param params [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  CrsGraph(const Teuchos::RCP<const map_type>& rowMap,
+           const Teuchos::RCP<const map_type>& colMap,
+           const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>& originalGraph,
+           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+  /// \brief Constructor specifying maps and an existing graph to view.
+  ///
+  /// \param rowMap [in] Distribution of rows of the graph.
+  ///   Needs to have the same number of elements on each rank as the row map of originalGraph.
+  /// \param colMap [in] Distribution of columns of the graph.
+  ///   Needs to have the same number of elements on each rank as the column map of originalGraph.
+  /// \param domainMap [in] Distribution of domain of the graph.
+  ///   Needs to have the same number of elements on each rank as the domain map of originalGraph.
+  /// \param domainMap [in] Distribution of range of the graph.
+  ///   Needs to have the same number of elements on each rank as the range map of originalGraph.
+  /// \param originalGraph [in] The existing graph to view.
+  ///
+  /// \param params [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  CrsGraph(const Teuchos::RCP<const map_type>& rowMap,
+           const Teuchos::RCP<const map_type>& colMap,
+           const Teuchos::RCP<const map_type>& domainMap,
+           const Teuchos::RCP<const map_type>& rangeMap,
+           const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>& originalGraph,
            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
   /// \brief Constructor specifying column Map and arrays containing
