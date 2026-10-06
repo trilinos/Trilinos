@@ -14,6 +14,7 @@
     \brief Belos concrete class for performing the flexible GCRO-DR iteration.
 */
 
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosGCRODRIter.hpp"
 
 namespace Belos {
@@ -31,7 +32,8 @@ public:
 };
 
 template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int, ScalarType> >
-class FGCRODRIter : virtual public GCRODRIteration<ScalarType,MV,OP,DM> {
+class FGCRODRIter : virtual public GCRODRIteration<ScalarType,MV,OP,DM>,
+                    public CurrentSolutionProvider<ScalarType,MV,OP,DM> {
 public:
   typedef MultiVecTraits<ScalarType,MV,DM> MVT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
@@ -77,6 +79,15 @@ public:
   getNativeResiduals(std::vector<MagnitudeType> *norms) const;
 
   Teuchos::RCP<MV> getCurrentUpdate() const;
+
+  //! Whether this iteration can currently provide a solution estimate.
+  bool hasCurrentSolution() const override;
+
+  //! Get the current update in solution space.
+  Teuchos::RCP<const MV> getCurrentSolutionUpdate() const override;
+
+  //! Get the current solution estimate for the linear system.
+  Teuchos::RCP<MV> getCurrentSolution() const override;
 
   void updateLSQR(int dim = -1);
 
@@ -280,6 +291,40 @@ FGCRODRIter<ScalarType,MV,OP,DM>::getCurrentUpdate() const
   }
 
   return currentUpdate;
+}
+
+
+template<class ScalarType, class MV, class OP, class DM>
+bool
+FGCRODRIter<ScalarType,MV,OP,DM>::hasCurrentSolution() const
+{
+  return initialized_ && curDim_ > 0 && lp_->getCurrLHSVec() != Teuchos::null;
+}
+
+
+template<class ScalarType, class MV, class OP, class DM>
+Teuchos::RCP<const MV>
+FGCRODRIter<ScalarType,MV,OP,DM>::getCurrentSolutionUpdate() const
+{
+  if (!hasCurrentSolution()) {
+    return Teuchos::null;
+  }
+  return getCurrentUpdate();
+}
+
+
+template<class ScalarType, class MV, class OP, class DM>
+Teuchos::RCP<MV>
+FGCRODRIter<ScalarType,MV,OP,DM>::getCurrentSolution() const
+{
+  if (!hasCurrentSolution()) {
+    return Teuchos::null;
+  }
+  Teuchos::RCP<const MV> update = getCurrentSolutionUpdate();
+  Teuchos::RCP<MV> curX = lp_->getCurrLHSVec();
+  Teuchos::RCP<MV> currentSolution = MVT::Clone(*curX, MVT::GetNumberVecs(*curX));
+  MVT::MvAddMv(SCT::one(), *curX, SCT::one(), *update, *currentSolution);
+  return currentSolution;
 }
 
 

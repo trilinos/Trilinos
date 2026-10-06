@@ -17,6 +17,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosMatOrthoManager.hpp"
 #include "BelosOutputManager.hpp"
@@ -107,7 +108,8 @@ namespace Belos {
   //@}
 
   template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
-  class RCGIter : virtual public Iteration<ScalarType,MV,OP,DM> {
+  class RCGIter : virtual public Iteration<ScalarType,MV,OP,DM>,
+                  public CurrentSolutionProvider<ScalarType,MV,OP,DM> {
 
   public:
 

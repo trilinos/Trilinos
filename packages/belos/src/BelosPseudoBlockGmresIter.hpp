@@ -16,6 +16,7 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosIteration.hpp"
 #include "BelosGmresIteration.hpp"
 
@@ -48,7 +49,8 @@
 namespace Belos {
 
   template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
-  class PseudoBlockGmresIter : virtual public Iteration<ScalarType,MV,OP,DM> {
+  class PseudoBlockGmresIter : virtual public Iteration<ScalarType,MV,OP,DM>,
+                               public CurrentSolutionProvider<ScalarType,MV,OP,DM> {
     
   public:
     
@@ -71,6 +73,7 @@ namespace Belos {
      *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method. Default: 1
      *   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis. Default: 25
      *   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
+     *   - "Use Flexible Gmres Update for One Iteration" = a \c bool specifying whether to store the first right-preconditioned basis vector for a flexible-GMRES-style one-step update. Default: false
      */
     PseudoBlockGmresIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
 			  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
@@ -204,7 +207,16 @@ namespace Belos {
       problem contains the current solution.
     */
     Teuchos::RCP<MV> getCurrentUpdate() const;
-    
+
+    //! Whether a one-step right-preconditioned solution update is available.
+    bool hasCurrentSolution() const override;
+
+    //! Get the current update in solution space for the one-step right-preconditioned case.
+    Teuchos::RCP<const MV> getCurrentSolutionUpdate() const override;
+
+    //! Get the current solution estimate for the linear system.
+    Teuchos::RCP<MV> getCurrentSolution() const override;
+
     //! Method for updating QR factorization of upper Hessenberg matrix
     /*! \note If \c dim >= \c getCurSubspaceDim() and \c dim < \c getMaxSubspaceDim(), then 
       the \c dim-th equations of the least squares problem will be updated.
@@ -270,7 +282,12 @@ namespace Belos {
     // Storage for QR factorization of the least squares system.
     std::vector<Teuchos::RCP<std::vector<ScalarType> > > sn_;
     std::vector<Teuchos::RCP<std::vector<MagnitudeType> > > cs_;
-    
+
+    // Storage for the optional one-step right-preconditioned solution update.
+    bool useFlexibleGmresUpdateForOneIter_;
+    bool storedRightPrecBasisValid_;
+    Teuchos::RCP<MV> storedRightPrecBasis_;
+
     // Pointers to a work vector used to improve aggregate performance.
     Teuchos::RCP<MV> U_vec_, AU_vec_;    
 
@@ -319,6 +336,8 @@ namespace Belos {
     ortho_(ortho),
     numRHS_(0),
     numBlocks_(0),
+    useFlexibleGmresUpdateForOneIter_(false),
+    storedRightPrecBasisValid_(false),
     initialized_(false),
     curDim_(0),
     iter_(0)
@@ -327,6 +346,7 @@ namespace Belos {
     TEUCHOS_TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
                        "Belos::PseudoBlockGmresIter::constructor: mandatory parameter 'Num Blocks' is not specified.");
     int nb = Teuchos::getParameter<int>(params, "Num Blocks");
+    useFlexibleGmresUpdateForOneIter_ = params.get("Use Flexible Gmres Update for One Iteration", false);
 
     setNumBlocks( nb );
   }
@@ -343,6 +363,7 @@ namespace Belos {
 
     numBlocks_ = numBlocks;
     curDim_ = 0;
+    storedRightPrecBasisValid_ = false;
 
     initialized_ = false;
   }
@@ -394,10 +415,75 @@ namespace Belos {
     }
     return currentUpdate;
   }
-  
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Get the native residuals stored in this iteration.  
+  // Whether this iteration has a stored one-step right-preconditioned update.
+  template <class ScalarType, class MV, class OP, class DM>
+  bool PseudoBlockGmresIter<ScalarType,MV,OP,DM>::hasCurrentSolution() const
+  {
+    return useFlexibleGmresUpdateForOneIter_ &&
+           storedRightPrecBasisValid_ &&
+           !Teuchos::is_null(storedRightPrecBasis_) &&
+           !Teuchos::is_null(lp_->getRightPrec()) &&
+           Teuchos::is_null(lp_->getLeftPrec()) &&
+           curDim_ == 1;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Get the current one-step right-preconditioned update from this subspace.
+  template <class ScalarType, class MV, class OP, class DM>
+  Teuchos::RCP<const MV> PseudoBlockGmresIter<ScalarType,MV,OP,DM>::getCurrentSolutionUpdate() const
+  {
+    Teuchos::RCP<MV> currentUpdate = Teuchos::null;
+    if (!hasCurrentSolution()) {
+      return currentUpdate;
+    }
+
+    currentUpdate = MVT::Clone(*storedRightPrecBasis_, numRHS_);
+    std::vector<int> index(1);
+    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    Teuchos::BLAS<int,ScalarType> blas;
+
+    for (int i=0; i<numRHS_; ++i) {
+      index[0] = i;
+      Teuchos::RCP<MV> cur_block_copy_vec = MVT::CloneViewNonConst( *currentUpdate, index );
+      Teuchos::RCP<DM> y = DMT::SubviewCopy(*Z_[i], curDim_, 1);
+      DMT::SyncDeviceToHost( *y );
+      DMT::SyncDeviceToHost( *H_[i] );
+      blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+                 Teuchos::NON_UNIT_DIAG, curDim_, 1, one,
+                 DMT::GetConstRawHostPtr(*H_[i]), DMT::GetStride(*H_[i]),
+                 DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
+
+      DMT::SyncHostToDevice( *y );
+      DMT::SyncHostToDevice( *H_[i] );
+      Teuchos::RCP<const MV> Zj = MVT::CloneView( *storedRightPrecBasis_, index );
+      MVT::MvTimesMatAddMv( one, *Zj, *y, zero, *cur_block_copy_vec );
+    }
+    return currentUpdate;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Get the current solution estimate from this subspace.
+  template <class ScalarType, class MV, class OP, class DM>
+  Teuchos::RCP<MV> PseudoBlockGmresIter<ScalarType,MV,OP,DM>::getCurrentSolution() const
+  {
+    if (hasCurrentSolution()) {
+      Teuchos::RCP<const MV> update = getCurrentSolutionUpdate();
+      Teuchos::RCP<MV> curX = lp_->getCurrLHSVec();
+      Teuchos::RCP<MV> currentSolution = MVT::Clone(*curX, MVT::GetNumberVecs(*curX));
+      MVT::MvAddMv( SCT::one(), *curX, SCT::one(), *update, *currentSolution );
+      return currentSolution;
+    }
+
+    Teuchos::RCP<MV> update = getCurrentUpdate();
+    return lp_->updateSolution(update, false);
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Get the native residuals stored in this iteration.
   // Note:  No residual vector will be returned by Gmres.
   template <class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<const MV> 
@@ -432,6 +518,7 @@ namespace Belos {
     // (Re)set the number of right-hand sides, by interrogating the
     // current LinearProblem to solve.
     this->numRHS_ = MVT::GetNumberVecs (*(lp_->getCurrLHSVec()));
+    storedRightPrecBasisValid_ = false;
 
     // NOTE:  In PseudoBlockGmresIter, V and Z are required!!!  
     // Inconsistent multivectors widths and lengths will not be tolerated, and
@@ -665,7 +752,24 @@ namespace Belos {
       //
       // Apply the operator to _work_vector
       //
-      lp_->apply( *U_vec, *AU_vec );
+      const bool useStoredRightPrecBasis =
+        useFlexibleGmresUpdateForOneIter_ &&
+        !Teuchos::is_null(lp_->getRightPrec()) &&
+        Teuchos::is_null(lp_->getLeftPrec()) &&
+        curDim_ == 0;
+      if (useStoredRightPrecBasis) {
+        if (Teuchos::is_null(storedRightPrecBasis_) ||
+            MVT::GetNumberVecs(*storedRightPrecBasis_) != numRHS_) {
+          storedRightPrecBasis_ = MVT::Clone(*U_vec, numRHS_);
+        }
+        lp_->applyRightPrec(*U_vec, *storedRightPrecBasis_);
+        lp_->applyOp(*storedRightPrecBasis_, *AU_vec);
+        storedRightPrecBasisValid_ = true;
+      }
+      else {
+        lp_->apply( *U_vec, *AU_vec );
+        storedRightPrecBasisValid_ = false;
+      }
       //
       //
       // Resize index.
