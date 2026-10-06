@@ -375,7 +375,7 @@ PHASE 5 -- test matrix.  The tables below exceed 80 columns deliberately;
   ------------------------------------------------------------------------------
   | # | Build                      | Flags                                                              |
   |---|----------------------------|--------------------------------------------------------------------|
-  | A | CUDA + shared space        | USE-UVM|YES, or both shared switches ON                            |
+  | A | CUDA + shared space DONE   | USE-UVM|YES, or both shared switches ON                            |
   | B | CUDA, host execution space | Phalanx_DEFAULT_EXECUTION_SPACE=Kokkos::DefaultHostExecutionSpace, |
   |   |                            | plus Tpetra_INST_SERIAL=ON (or _OPENMP)                            |
   | C | Any, legacy index type     | Phalanx_INDEX_SIZE_TYPE=KOKKOS                                     |
@@ -383,13 +383,40 @@ PHASE 5 -- test matrix.  The tables below exceed 80 columns deliberately;
   | E | SYCL x3                    | Tpetra_INST_SYCL=ON, plus none / HIERARCHICAL /                    |
   |   |                            | HIERARCHICAL_DFAD, each with shared space ON and OFF               |
 
-  A  CI covers it, but as a PR GATE.  Run it first so a pull request is not
-     what discovers a problem.  This is the first GPU activation of the
+  A  DONE, 2026-10-06, Ampere/V100 box: builds clean and all Phalanx and Panzer
+     tests pass.  Getting there took four code fixes, all of one family; see
+     section 9.  CI covers this configuration too, but as a PR GATE, so it was
+     worth running by hand first.  It is the first GPU activation of the
      PHX::Device instantiation in Panzer_IntrepidBasisFactory.cpp, whose guard
      is inactive on a host build.
+
+     REBUILD FROM SCRATCH WHEN THE SPACE CONFIGURATION CHANGES.  An incremental
+     build in a long lived container produced MPI segfaults inside OpenMPI's
+     CUDA IPC path (cuIpcGetEventHandle, via the smcuda BTL) in
+     tFaceToElem and PoissonExample, and a symptom that should have been read
+     first: the same ~345 files recompiled on every make, so the tree never
+     reached a consistent state.  A fresh build passed with no other change.
+     The reason this configuration is especially unforgiving: flipping
+     Phalanx_ENABLE_SHARED_SPACE changes what PHX::Device IS, so objects
+     compiled before and after the change disagree about the type across
+     translation unit boundaries -- an ODR violation, and one that shows up as
+     a crash in whatever first inspects a pointer, which here was MPI.  Treat
+     perpetual rebuilds as corruption, not as a nuisance.
+
+     Noted while chasing that, and still true: the non-UVM Ampere80 and
+     Hopper90 CI builds pass "--mca btl ^smcuda" and their UVM twins do not.
+     That was not the cause here, but smcuda plus managed memory is a known
+     bad combination -- CUDA IPC does not support managed allocations -- so if
+     it does surface, OMPI_MCA_btl='^smcuda' is the lever, and giving the UVM
+     builds the flags their non-UVM twins already have is the fix.
   B  The build that hit an nvcc cicc segfault in Panzer_BasisDescriptor.cpp,
      fixed by "Panzer: put PointGenerator's points on PHX::Device".  Never set
      in the ini, so CI will never cover it.
+     It then found pattern P5, execution policies defaulting to Kokkos'
+     execution space, in three Phalanx tests.  This is the ONLY row where the
+     two execution spaces differ -- every other row varies the memory space
+     alone -- so it is the only row that can find P5 at all.  Worth rerunning
+     whenever a test gains a kernel.
   C  Did not compile at all before the review fix (section 7, finding 1); only
      one translation unit has been verified since.  Never set in the ini.
   D  Both modes are live and both need coverage; only tested on host.  Never
@@ -954,3 +981,116 @@ D19 --check exits non-zero on a fully migrated tree, and that is intended.
     Read the "would rewrite" section rather than the exit status.  Making it
     gateable would need either a --strict split or a suppression mechanism;
     neither was built.
+
+
+--------------------------------------------------------------------------------
+9. THE FOUR BUG PATTERNS A SHARED SPACE BUILD EXPOSES
+--------------------------------------------------------------------------------
+
+Everything that broke when matrix row A was first built on a GPU was one of
+four things.  They are worth stating as a family, because the list is short, it
+is almost certainly not exhausted by Phalanx and Panzer, and an application
+migrating to a shared space will meet the same four.
+
+WHY A HOST BUILD CANNOT FIND ANY OF THEM.  On a host build Kokkos::SharedSpace
+IS Kokkos::HostSpace, and Kokkos' default device coincides with Phalanx's.  So
+every one of these defects compiles and passes its tests on a host build, and
+all four were sitting in a green tree.  A GPU build with shared space on is the
+only configuration that separates the two devices, which is the whole reason
+row A is first in the matrix and not last.
+
+P1  A VIEW TYPE THAT DEFAULTS TO KOKKOS' DEVICE WHERE PHALANX'S WAS MEANT.
+    By far the most common, and the only one that was found more than once.
+    Kokkos::View<T*> and Kokkos::DynRankView<T> with no device argument take
+    Kokkos::DefaultExecutionSpace::device_type, which is CudaSpace, not
+    CudaUVMSpace.  Before this branch PHX::Device WAS the default execution
+    space, so the omission was invisible; now it is a different memory space.
+    Sites fixed:
+      - PointGenerator::getPoints returned DynRankView<double>.  Note
+        DynRankView<double> and DynRankView<double,PHX::Device> are different
+        template-ids even when their traits are identical, so this also wanted
+        an instantiation deleted.
+      - Panzer_L2Projection.cpp, 6 bare Kokkos::View sites.
+      - Panzer_ScatterResidual_Tpetra_impl.hpp, the Tangent functor's lids.
+      - getNonConstDynRankViewFromConstMDField, 13 occurrences with no device
+        argument at all.  This one took the device from the passed MDField
+        rather than naming PHX::Device, because the device of an MDField is
+        always the user's to choose.
+    THE FIX IN GENERAL: name the device.  PHX::View, or the device of whatever
+    was passed in.
+    STILL OUTSTANDING: a survey found 13 further bare-view sites in Panzer
+    that allocate in the wrong space without breaking anything today.  They
+    are latent P1s.
+
+P2  AN EXPRESSION THAT DERIVES A HOST SPACE AND STOPS DERIVING ONE.
+    Kokkos::Impl::HostMirror<MemSpace>::Space returns a MEMORY space, and when
+    the memory space is already host accessible it KEEPS it -- so for
+    CudaUVMSpace the mirror space is CudaUVMSpace, whose ::execution_space is
+    Kokkos::Cuda.  Code that reached for a host execution space that way got a
+    device one.  Symptom: the runtime error "attempting to access inaccessible
+    memory space (label='refVerticesHexa')" in test_fe_projection.hpp.
+    THE FIX: ask for the host space directly --
+    Kokkos::DefaultHostExecutionSpace, and its ::device_type for a device slot
+    -- rather than deriving it from a space that may now be host accessible.
+    Kokkos itself marks HostMirror "FIXME: should be deprecated eventually".
+
+P3  A TRAIT THAT ADMITS ONLY ONE DEVICE.
+    PHX::is_device was written to accept PHX::Device and nothing else.  That
+    passes on a host build only because Device<exec_t,mem_t> happens to BE
+    PHX::Device there.  Generalized to derive from Kokkos::is_device, with the
+    single PHX::Device specialization kept behind
+    PHX_DEPRECATED_DEVICE_AS_EXECUTION_SPACE, since in that mode PHX::Device is
+    an execution space and Kokkos::is_device rightly rejects it -- so the
+    specialization is removable with the deprecated code.
+
+P4  auto AT THE CALL SITE, WHICH HIDES ALL THREE ABOVE.
+    Not a defect on its own; it is why the others survived review.  A site that
+    spells its view type out fails to compile when the type is wrong.  One that
+    writes auto silently takes whatever came back and defers the failure to the
+    first access, or to nvcc.
+
+P5  AN EXECUTION POLICY THAT DEFAULTS TO KOKKOS' EXECUTION SPACE.
+    P1's sibling, in the kernel slot rather than the data slot, and the one
+    that row B found.  Kokkos::MDRangePolicy<Kokkos::Rank<N>> with no execution
+    space, and Kokkos::parallel_for(N, lambda) with an integer count instead of
+    a policy, both run on Kokkos::DefaultExecutionSpace.  Where the kernel
+    touches Phalanx data, that is the wrong space the moment
+    Phalanx_DEFAULT_EXECUTION_SPACE is set.
+    Sites fixed, all in Phalanx' own tests -- the library sources were clean:
+      - tPhalanxViewOfViews.cpp.  The file's own exec_t and mem_t aliases, from
+        2021, were Kokkos' defaults, while its streams come from
+        PHX::ExecutionSpace.  Six MDRangePolicy and seven counted parallel_for
+        besides.
+      - NonConstDynRankViewFromConstMDField.cpp, which has TWO field families
+        on purpose and so needs two spaces: fields with no device argument are
+        on PHX::Device and their kernels take PHX::ExecutionSpace, while the
+        deliberately-different MyDevice fields keep exec_t.
+      - tKokkosVirtualFunctionOnDevice.cpp, two MDRangePolicy over PHX::View.
+    Tests that use Kokkos' defaults throughout and never touch a PHX space --
+    tKokkosViewOfViews, tKokkosNestedLambda, tKokkosFencing -- are
+    self-consistent and were left alone.  So was the wrapper test inside
+    tPhalanxViewOfViews that forces a non-UVM space on purpose; it was given
+    its own space by name rather than borrowing exec_t.
+    THE FIX IN GENERAL: name the execution space in the policy, and use
+    Kokkos::RangePolicy<exec>(0,N) rather than a bare count.
+
+    WHY ONLY TWO OF THESE WERE COMPILE ERRORS.  A policy whose space is wrong
+    is caught at compile time ONLY when an execution space INSTANCE is passed
+    to it -- that is a type mismatch.  With no instance the policy is
+    well-formed and the mismatch becomes a runtime access violation on first
+    use.  Row B reported two errors; eleven more sites would have aborted at
+    run time, or silently run in the wrong space.  Do not take the compiler's
+    list as the extent of the problem: grep for the pattern.
+
+HOW THESE ANNOUNCE THEMSELVES.  Three symptoms, and only the third names the
+problem:
+  - nvcc "cicc died due to signal 11", with NO diagnostic.  P1 in
+    getNonConstDynRankViewFromConstMDField presented this way, in
+    Panzer_BasisValues2.cpp and Panzer_IntegrationValues2.cpp.  Two plausible
+    hypotheses were tested and both were WRONG: cicc resource exhaustion
+    (disproved -- -O0 fails identically) and Intrepid2 on a UVM device
+    (disproved -- the reproducers in uvm-repro/, including setJacobian on
+    LayoutStride subviews, all compile).  A cicc SIGSEGV is not evidence about
+    which construct is at fault; reduce before theorizing.
+  - a runtime "inaccessible memory space" error naming a view label.  P2.
+  - an ordinary compile error about mismatched device types.  The good case.

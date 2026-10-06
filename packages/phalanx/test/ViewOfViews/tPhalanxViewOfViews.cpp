@@ -21,8 +21,12 @@
 // This test demonstrates how to create a view of views for double and FAD types.
 // Original implementation
 // ********************************
-using exec_t = Kokkos::DefaultExecutionSpace;
-using mem_t = Kokkos::DefaultExecutionSpace::memory_space;
+// Phalanx' spaces, not Kokkos' defaults.  These differ whenever
+// Phalanx_DEFAULT_EXECUTION_SPACE or Phalanx_ENABLE_SHARED_SPACE is set, and
+// the streams below come from PHX::ExecutionSpace, so taking Kokkos' defaults
+// here pairs a host stream with a device policy.
+using exec_t = PHX::ExecutionSpace;
+using mem_t = PHX::MemorySpace;
 
 TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_DefaultStreamInitialize) {
 
@@ -59,7 +63,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_DefaultStreamInitialize) {
 
     {
       auto v_dev = v_of_v.getViewDevice();
-      auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
+      auto policy = Kokkos::MDRangePolicy<exec_t,Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
       Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
         v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
       });
@@ -121,7 +125,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_DefaultStreamCtor) {
 
     {
       auto v_dev = v_of_v.getViewDevice();
-      auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
+      auto policy = Kokkos::MDRangePolicy<exec_t,Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
       Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
         v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
       });
@@ -193,7 +197,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_UserStreamCtor) {
 
     {
       auto v_dev = v_of_v.getViewDevice();
-      auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>(streams[3],{0,0,0},{num_cells,num_pts,num_equations});
+      auto policy = Kokkos::MDRangePolicy<exec_t,Kokkos::Rank<3>>(streams[3],{0,0,0},{num_cells,num_pts,num_equations});
       Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
         v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
       });
@@ -272,7 +276,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_UserStreamInitialize) {
 
     {
       auto v_dev = v_of_v.getViewDevice();
-      auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>(streams[3],{0,0,0},{num_cells,num_pts,num_equations});
+      auto policy = Kokkos::MDRangePolicy<exec_t,Kokkos::Rank<3>>(streams[3],{0,0,0},{num_cells,num_pts,num_equations});
       Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
         v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
       });
@@ -398,7 +402,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_StructOfViews) {
     TEST_ASSERT(v_of_v.deviceViewIsSynced());
 
     auto v_dev = v_of_v.getViewDevice();
-    auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
+    auto policy = Kokkos::MDRangePolicy<exec_t,Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
     Kokkos::parallel_for("view of view struct-of-views test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
       results(cell,pt,eq) = v_dev(0).sum(cell,pt,eq) + v_dev(1).sum(cell,pt,eq);
     });
@@ -493,7 +497,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,WrapperExample) {
 
   for (int i=0; i < 3; ++i) {
     Wrapper tmp = uo[i];
-    Kokkos::parallel_for("initialize view_of_uo",1,KOKKOS_LAMBDA(const int ) {
+    Kokkos::parallel_for("initialize view_of_uo",Kokkos::RangePolicy<DeviceExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ) {
       // reference counting is disabled on device
       v_of_uo(i) = tmp;
     });
@@ -501,7 +505,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,WrapperExample) {
   }
 
   Kokkos::View<double**,DeviceMemorySpace> results("results",num_objects,view_size);
-  Kokkos::MDRangePolicy<exec_t,Kokkos::Rank<2>> policy({0,0},{num_objects,view_size});
+  Kokkos::MDRangePolicy<DeviceExecutionSpace,Kokkos::Rank<2>> policy({0,0},{num_objects,view_size});
   Kokkos::parallel_for("v_of_uo",policy,KOKKOS_LAMBDA(const int i,const int j) {
     results(i,j) = v_of_uo(i).multiply(j) + static_cast<double>(j);
   });
@@ -549,7 +553,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
 
     auto vov = pvov.getViewDevice();
 
-    Kokkos::parallel_for("vov1",num_cells,KOKKOS_LAMBDA(const int cell) {
+    Kokkos::parallel_for("vov1",Kokkos::RangePolicy<exec_t>(0,num_cells),KOKKOS_LAMBDA(const int cell) {
       vov(3)(cell) = vov(0)(cell) * vov(1)(cell) + vov(2)(cell);
     });
 
@@ -578,7 +582,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
 
     auto vov = pvov.getViewDevice();
 
-    Kokkos::parallel_for("vov1",num_cells,KOKKOS_LAMBDA(const int cell) {
+    Kokkos::parallel_for("vov1",Kokkos::RangePolicy<exec_t>(0,num_cells),KOKKOS_LAMBDA(const int cell) {
       vov(1,1)(cell) = vov(0,0)(cell) * vov(0,1)(cell) + vov(1,0)(cell) + 1.0;
     });
 
@@ -607,7 +611,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
 
     auto vov = pvov.getViewDevice();
 
-    Kokkos::parallel_for("vov1",num_cells,KOKKOS_LAMBDA(const int cell) {
+    Kokkos::parallel_for("vov1",Kokkos::RangePolicy<exec_t>(0,num_cells),KOKKOS_LAMBDA(const int cell) {
         vov(0,1,2)(cell) = vov(0,0,0)(cell) * vov(1,1,1)(cell) + vov(2,2,2)(cell) + 2.0;
     });
 
@@ -661,7 +665,7 @@ void initializeVoV(VoVType& vov)
 
   // Initialize a, b and c
   // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
-  Kokkos::parallel_for("FadAndAssignment init",a.extent(0),KOKKOS_LAMBDA(const int cell) {
+  Kokkos::parallel_for("FadAndAssignment init",Kokkos::RangePolicy<exec_t>(0,a.extent(0)),KOKKOS_LAMBDA(const int cell) {
     for (size_t pt=0; pt < a.extent(1); ++pt) {
       a(cell,pt).val() = double(cell) + double(pt);
       a(cell,pt).fastAccessDx(0) = 0.0;
@@ -780,7 +784,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
 
   {
     // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
-    Kokkos::parallel_for("FadRawPtr init",a.extent(0),KOKKOS_LAMBDA(const int cell) {
+    Kokkos::parallel_for("FadRawPtr init",Kokkos::RangePolicy<exec_t>(0,a.extent(0)),KOKKOS_LAMBDA(const int cell) {
       for (size_t pt=0; pt < a.extent(1); ++pt) {
         a(cell,pt).val() = double(cell) + double(pt);
         a(cell,pt).fastAccessDx(1) = 2.0 + double(cell) + double(pt);
@@ -809,7 +813,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
       // printf("DEVICE: b(%d,%d).val()=%f, b.dx(1)=%f\n",cell,pt,b(cell,pt).val(),b(cell,pt).fastAccessDx(1));
     });
   } else {
-    Kokkos::parallel_for("FadRawPtr b=a*a",a.extent(0),KOKKOS_LAMBDA(const int cell) {
+    Kokkos::parallel_for("FadRawPtr b=a*a",Kokkos::RangePolicy<exec_t>(0,a.extent(0)),KOKKOS_LAMBDA(const int cell) {
       for (size_t pt=0; pt < a.extent(1); ++pt) {
         b(cell,pt) = a(cell,pt) * a(cell,pt);
         // printf("DEVICE: b(%d,%d).val()=%f, b.dx(1)=%f\n",cell,pt,b(cell,pt).val(),b(cell,pt).fastAccessDx(1));
@@ -877,7 +881,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView_SafetyCheckAbort) {
     TEST_ASSERT(v_of_v.deviceViewIsSynced());
 
     auto v_dev = v_of_v.getViewDevice();
-    auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
+    auto policy = Kokkos::MDRangePolicy<exec_t,Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
     Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
       v_dev(1,1)(cell,pt,eq) = v_dev(0,0)(cell,pt,eq) + v_dev(0,1)(cell,pt,eq) + v_dev(1,0)(cell,pt,eq);
     });

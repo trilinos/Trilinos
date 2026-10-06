@@ -85,7 +85,7 @@ namespace phalanx_test {
                                  const PHX::View<double***> p,
                                  const PHX::View<double**> rho_e,
                                  const PHX::View<double**> /* residual */) {
-    auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0,0},{rho.extent(0),rho.extent(1)});
+    auto policy = Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>>({0,0},{rho.extent(0),rho.extent(1)});
     EOS eos;
     Kokkos::parallel_for(policy,KOKKOS_LAMBDA (const int cell, const int pt) {
         double P = 0.0;
@@ -114,7 +114,7 @@ namespace phalanx_test {
                                    const PHX::View<double**> /* residual */,
                                    EquationOfState* eos_ptr) {
 
-    auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0,0},{rho.extent(0),rho.extent(1)});
+    auto policy = Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>>({0,0},{rho.extent(0),rho.extent(1)});
     Kokkos::parallel_for(policy,KOKKOS_LAMBDA (const int cell, const int pt) {
 
         double P = 0.0;
