@@ -30,6 +30,10 @@
   cannot decide rather than guessing. Run it with `--check` first.
   `scripts/test_migrate_phx_device.py` is its test suite.
 
+- `Phalanx_DEFAULT_EXECUTION_SPACE` set to a host space on a GPU build now
+  works throughout Phalanx. Panzer does not build in that configuration and
+  was not changed, so it is a Phalanx-only capability for now.
+
 - Design notes: `doc/design_notes/PhalanxSharedSpacePlan.txt`, whose decisions
   register records what was chosen and what was rejected.
 

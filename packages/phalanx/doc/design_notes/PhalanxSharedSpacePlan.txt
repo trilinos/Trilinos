@@ -376,11 +376,11 @@ PHASE 5 -- test matrix.  The tables below exceed 80 columns deliberately;
   | # | Build                      | Flags                                                              |
   |---|----------------------------|--------------------------------------------------------------------|
   | A | CUDA + shared space DONE   | USE-UVM|YES, or both shared switches ON                            |
-  | B | CUDA, host execution space | Phalanx_DEFAULT_EXECUTION_SPACE=Kokkos::DefaultHostExecutionSpace, |
+  | B | CUDA, host exec sp.   DONE | Phalanx_DEFAULT_EXECUTION_SPACE=Kokkos::DefaultHostExecutionSpace, |
   |   |                            | plus Tpetra_INST_SERIAL=ON (or _OPENMP)                            |
-  | C | Any, legacy index type     | Phalanx_INDEX_SIZE_TYPE=KOKKOS                                     |
-  | D | CUDA, deprecated mode      | Phalanx_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON             |
-  | E | SYCL x3                    | Tpetra_INST_SYCL=ON, plus none / HIERARCHICAL /                    |
+  | C | Any, legacy index t.  DONE | Phalanx_INDEX_SIZE_TYPE=KOKKOS                                     |
+  | D | CUDA, deprecated mode DONE | Phalanx_ENABLE_DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON             |
+  | E | SYCL x3               DONE | Tpetra_INST_SYCL=ON, plus none / HIERARCHICAL /                    |
   |   |                            | HIERARCHICAL_DFAD, each with shared space ON and OFF               |
 
   A  DONE, 2026-10-06, Ampere/V100 box: builds clean and all Phalanx and Panzer
@@ -420,12 +420,32 @@ PHASE 5 -- test matrix.  The tables below exceed 80 columns deliberately;
      row varies the memory space alone.  So it is the only row that can find
      P5 or P6 at all, and it took three rounds to come clean.  Worth rerunning
      whenever a test or an example gains a kernel.
-  C  Did not compile at all before the review fix (section 7, finding 1); only
-     one translation unit has been verified since.  Never set in the ini.
+     DONE for PHALANX, 2026-10-06: builds clean and all 39 tests pass.
+     NOT DONE for PANZER, and deliberately so -- see D20.
+  C  Did not compile at all before the review fix (section 7, finding 1).
+     DONE, 2026-10-06: builds and runs with the legacy index type.  Never set
+     in the ini, so CI will never cover it.
   D  Both modes are live and both need coverage; only tested on host.  Never
      set in the ini.
   E  NO SYCL BUILD EXISTS IN CI -- the oneapi-intelmpi builds do not enable it.
-     Entirely manual, and the largest remaining block.
+     Entirely manual, and was the largest remaining block.
+     DONE for PHALANX, 2026-10-06: all six arms build and pass.  That is the
+     first and so far only execution of PHX::DefaultFadLayout with
+     SACADO_GPU_HIERARCHICAL live, and of FAD views carrying
+     LayoutContiguous<...,32> in Kokkos::SYCLSharedUSMSpace -- a combination
+     nothing in Trilinos had built before.
+     NOT DONE for PANZER, because PANZER IS NOT PORTED TO SYCL AT ALL.  This
+     is a pre-existing gap, not something this branch introduced, and it is a
+     different gap from D20: D20 is Panzer not following a non-default
+     EXECUTION space, this is Panzer having no SYCL support to begin with.
+     LEFT UNTESTED BY IT, and worth knowing before trusting them:
+       - the Tpetra_INST_SYCL arm of the static_assert in Panzer_NodeType.hpp;
+       - PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::SYCL) in
+         Panzer_IntrepidBasisFactory.cpp, and the extra bare-PHX::Device
+         instantiation that PHX_MEMORY_SPACE_IS_NOT_EXECUTION_SPACE_MEMORY_SPACE
+         switches on, which the shared-space arms would have been the first to
+         activate on SYCL;
+       - negative test G, which needs a SYCL or HIP Panzer build to run.
 
   No HIP build exists in CI either, if a machine is available.
 
@@ -434,13 +454,25 @@ PHASE 5 -- test matrix.  The tables below exceed 80 columns deliberately;
   ------------------------------------------------------------------------------
   A guard nobody has watched fail is not a guard.
 
-  | # | Configuration                                                 | Expected                             | When      |
-  |---|---------------------------------------------------------------|--------------------------------------|-----------|
-  | F | CUDA, shared space ON + Tpetra_ALLOCATE_IN_SHARED_SPACE=OFF   | static_assert in Panzer_NodeType.hpp | COMPILE   |
-  | G | SYCL or HIP without the matching Tpetra_INST_SYCL / _HIP=ON   | the same static_assert               | COMPILE   |
-  | H | shared space ON + ..._DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON | FATAL_ERROR from Phalanx             | configure |
+  | # | Configuration                                                 | Expected                             | When      | Status  |
+  |---|---------------------------------------------------------------|--------------------------------------|-----------|---------|
+  | F | CUDA, shared space ON + Tpetra_ALLOCATE_IN_SHARED_SPACE=OFF   | static_assert in Panzer_NodeType.hpp | COMPILE   | DONE    |
+  | G | SYCL or HIP without the matching Tpetra_INST_SYCL / _HIP=ON   | the same static_assert               | COMPILE   | BLOCKED |
+  | H | shared space ON + ..._DEPRECATED_DEVICE_AS_EXECUTION_SPACE=ON | FATAL_ERROR from Phalanx             | configure | DONE    |
 
   The static_assert names the offending node type.
+
+  F and H were both watched to fire, 2026-10-06, and each failed where and how
+  it was meant to: F at compile time out of Panzer_NodeType.hpp, H during
+  configure out of Phalanx' CMakeLists.  So both guards are guards.
+
+  G IS BLOCKED, not pending.  It needs a SYCL or HIP build of PANZER, and
+  Panzer is ported to neither.  The assert itself is shared with F, which has
+  now been seen to fire, so what G would add is only that the
+  TpetraNodeIsInstantiated specializations for SYCL and HIP are spelled
+  correctly -- those are the two arms that cannot be reached today.  Worth
+  rerunning the moment a Panzer SYCL or HIP build exists, and worth treating
+  those two specializations as unverified until then.
 
   F now requires OVERRIDING THE INI, since the two switches are tied to
   USE-UVM.  That is the point of tying them -- the mismatch cannot arise
@@ -986,14 +1018,37 @@ D19 --check exits non-zero on a fully migrated tree, and that is intended.
     neither was built.
 
 
+D20 A NON-DEFAULT Phalanx EXECUTION SPACE IS SUPPORTED IN PHALANX ONLY, NOT
+    IN PANZER.  Phalanx_DEFAULT_EXECUTION_SPACE set to a host space on a GPU
+    build (matrix row B) works and is tested in Phalanx.  Panzer in that
+    configuration does NOT build, and was not fixed.
+    WHY: the capability is not used above Phalanx, and making Panzer follow
+    would be a large change -- Panzer hands views to Intrepid2, Tpetra and its
+    own worksets, and those hand-offs assume the Phalanx space and Kokkos'
+    default space agree.  The first wall is Panzer_L2Projection.cpp, where
+    GlobalIndexer::getElementLIDs takes a PHX::View<const int*> while
+    cell_local_ids is a plain device view, so the subview will not convert.
+    Expect many more of the same once that one is fixed.
+    CONSEQUENCE, accepted: row B covers Phalanx alone.  Anyone enabling this
+    for an application stack has to do the Panzer work first, and should start
+    by rerunning the P1/P5/P6 greps of section 9 over Panzer -- P6 in
+    particular, since Panzer has its own KOKKOS_ENABLE_ guards that were never
+    examined.
+    NOT a limitation of shared space itself: rows A and C, which vary the
+    memory space and the index type rather than the execution space, do cover
+    Panzer and do pass.
+
 --------------------------------------------------------------------------------
-9. THE FOUR BUG PATTERNS A SHARED SPACE BUILD EXPOSES
+9. THE BUG PATTERNS A NON-DEFAULT SPACE EXPOSES
 --------------------------------------------------------------------------------
 
-Everything that broke when matrix row A was first built on a GPU was one of
-four things.  They are worth stating as a family, because the list is short, it
-is almost certainly not exhausted by Phalanx and Panzer, and an application
-migrating to a shared space will meet the same four.
+Everything that broke when the matrix rows were first built on a GPU was one of
+six things: P1 to P4 came from row A, which changes the memory space, and P5
+and P6 from row B, which changes the execution space.  They are worth stating
+as a family, because the list is short, it is almost certainly not exhausted by
+Phalanx and Panzer, and an application doing either migration will meet the
+same six.  All six reduce to one mistake: taking KOKKOS' default where
+PHALANX' space was meant, in a view, a policy, a derivation or a guard.
 
 WHY A HOST BUILD CANNOT FIND ANY OF THEM.  On a host build Kokkos::SharedSpace
 IS Kokkos::HostSpace, and Kokkos' default device coincides with Phalanx's.  So
