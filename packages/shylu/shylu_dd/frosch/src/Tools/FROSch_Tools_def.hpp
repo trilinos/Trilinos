@@ -1339,11 +1339,12 @@ namespace FROSch {
             repeatedMatrix->getGlobalRowView(row,indices,values);
             nnz = indices.size();
             if (indices.size()==1) {
+                // Values might be zero and still be stored explicitly, so this case does not numerically determine the number of zeros.
                 oneEntryOnlyRows[tmp] = row;
                 tmp++;
-            } else if (tol > zero) {
+            } else if (tol >= zero) {
                 for (LO j=0; j<values.size(); j++) {
-                    if (fabs(values[j])<tol) {
+                    if (fabs(values[j])<=tol) {
                         nnz--;
                     }
                 }
