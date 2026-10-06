@@ -1,0 +1,274 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#ifndef _FROSCH_GEOMETRICTWOLEVELPRECONDITIONER_DEF_HPP
+#define _FROSCH_GEOMETRICTWOLEVELPRECONDITIONER_DEF_HPP
+
+#include <FROSch_GeometricTwoLevelPreconditioner_decl.hpp>
+
+
+namespace FROSch {
+
+    using namespace std;
+    using namespace Teuchos;
+    using namespace Xpetra;
+
+    template <class SC,class LO,class GO,class NO>
+    GeometricTwoLevelPreconditioner<SC,LO,GO,NO>::GeometricTwoLevelPreconditioner(
+        ConstXMatrixPtr  k,
+        GraphPtr         dualGraph,
+        ParameterListPtr parameterList) :
+    GeometricOneLevelPreconditioner<SC,LO,GO,NO> (k, dualGraph, parameterList)
+    {
+        FROSCH_DETAILTIMER_START_LEVELID(twoLevelPreconditionerTime, "GeometricTwoLevelPreconditioner::GeometricTwoLevelPreconditioner::");
+
+        if (!this->ParameterList_->get("CoarseOperator Type", "IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
+            // Set the LevelID in the sublist
+            parameterList->sublist("IPOUHarmonicCoarseOperator").set("Level ID",this->LevelID_);
+            CoarseOperator_ = IPOUHarmonicCoarseOperatorPtr(new IPOUHarmonicCoarseOperator<SC,LO,GO,NO>(k, sublist(parameterList, "IPOUHarmonicCoarseOperator")));
+        } else if (!this->ParameterList_->get("CoarseOperator Type", "IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
+            // Set the LevelID in the sublist
+            parameterList->sublist("GDSWCoarseOperator").set("Level ID",this->LevelID_);
+            CoarseOperator_ = GDSWCoarseOperatorPtr(new GDSWCoarseOperator<SC,LO,GO,NO>(k, sublist(parameterList,"GDSWCoarseOperator")));
+        } else if (!this->ParameterList_->get("CoarseOperator Type", "IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
+            // Set the LevelID in the sublist
+            parameterList->sublist("RGDSWCoarseOperator").set("Level ID", this->LevelID_);
+            CoarseOperator_ = RGDSWCoarseOperatorPtr(new RGDSWCoarseOperator<SC,LO,GO,NO>(k, sublist(parameterList, "RGDSWCoarseOperator")));
+        } else {
+            FROSCH_ASSERT(false, "CoarseOperator Type unkown.");
+        } // TODO: Add ability to disable individual levels
+        if (this->UseMultiplicative_) {
+            this->MultiplicativeOperator_->addOperator(CoarseOperator_);
+        }
+        else{
+            this->SumOperator_->addOperator(CoarseOperator_);
+        }
+    }
+
+
+
+    template <class SC,class LO,class GO,class NO>
+    int 
+    GeometricTwoLevelPreconditioner<SC,LO,GO,NO>::initialize(bool /*useDefaultParameters*/)
+    {
+        FROSCH_ASSERT(false, "TwpLevelOptimizedPreconditioner requires an repeatedMap");
+    }
+
+
+
+    template <class SC,class LO,class GO,class NO>
+    int 
+    GeometricTwoLevelPreconditioner<SC,LO,GO,NO>::initialize(ConstXMapPtr repeatedMap)
+    {
+        return initialize(this->ParameterList_->get("Dimension",1), this->ParameterList_->get("DofsPerNode", 1), repeatedMap);
+    }
+
+
+
+    template <class SC,class LO,class GO,class NO>
+    int 
+    GeometricTwoLevelPreconditioner<SC,LO,GO,NO>::initialize(
+        UN                   dimension,
+        UN                   dofsPerNode,
+        XMapPtr              repeatedMap,
+        ConstXMultiVectorPtr nullSpaceBasis,
+        ConstXMultiVectorPtr nodeList,
+        DofOrdering          dofOrdering,
+        ConstXMapPtrVecPtr   dofsMaps,
+        GOVecPtr             dirichletBoundaryDofs)
+    {
+        FROSCH_TIMER_START_LEVELID(initializeTime, "GeometricTwoLevelPreconditioner::initialize");
+        ////////////
+        // Checks //
+        ////////////
+        FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise || dofOrdering == Custom, "ERROR: Specify a valid DofOrdering.");
+        int ret = 0;
+
+        //////////
+        // Maps //
+        //////////
+        
+        // Build dofsMaps and repeatedNodesMap
+        ConstXMapPtr repeatedNodesMap;
+        if (dofsMaps.is_null()) {
+            FROSCH_DETAILTIMER_START_LEVELID(buildDofMapsTime, "BuildDofMaps");
+            if (0 > BuildDofMaps(repeatedMap.getConst(), dofsPerNode, dofOrdering, repeatedNodesMap, dofsMaps)) ret -= 100; // Todo: Rückgabewerte
+        } else {
+            FROSCH_ASSERT(dofsMaps.size()==dofsPerNode, "dofsMaps.size()!=dofsPerNode");
+            for (UN i = 0; i < dofsMaps.size(); i++) {
+                FROSCH_ASSERT(!dofsMaps[i].is_null(), "dofsMaps[i].is_null()");
+            }
+            if (repeatedNodesMap.is_null()) {
+                repeatedNodesMap = dofsMaps[0];
+            }
+        }
+
+        //////////////////////////
+        // Communicate nodeList //
+        //////////////////////////
+        if (!nodeList.is_null()) {
+            FROSCH_DETAILTIMER_START_LEVELID(communicateNodeListTime, "Communicate Node List");
+            ConstXMapPtr nodeListMap = nodeList->getMap();
+            if (!nodeListMap->isSameAs(*repeatedNodesMap)) {
+                RCP<MultiVector<SC,LO,GO,NO> > tmpNodeList = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMap,nodeList->getNumVectors());
+                RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(nodeListMap,repeatedNodesMap);
+                tmpNodeList->doImport(*nodeList, *scatter, INSERT);
+                nodeList = tmpNodeList.getConst();
+            }
+        }
+
+        /////////////////////////////////////
+        // Determine dirichletBoundaryDofs //
+        /////////////////////////////////////
+        if (dirichletBoundaryDofs.is_null()) {
+            FROSCH_DETAILTIMER_START_LEVELID(determineDirichletRowsTime, "Determine Dirichlet Rows");
+#ifdef FindOneEntryOnlyRowsGlobal_Matrix
+            GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(), repeatedMap.getConst());
+#else
+            GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),repeatedMap);
+#endif
+        }
+
+        ////////////////////////////////////
+        // Initialize OverlappingOperator //
+        ////////////////////////////////////
+        if (!this->ParameterList_->get("OverlappingOperator Type", "GeometricOverlappingOperator").compare("GeometricOverlappingOperator")) {
+            GeometricOverlappingOperatorPtr geometricOverlappingOperator = rcp_static_cast<GeometricOverlappingOperator<SC,LO,GO,NO> >(this->OverlappingOperator_);
+            if (0 > geometricOverlappingOperator->initialize(repeatedMap)) ret -= 1;
+        } else {
+            FROSCH_ASSERT(false,"GeometricOverlappingOperator Type unkown.");
+        }
+
+        ///////////////////////////////
+        // Initialize CoarseOperator //
+        ///////////////////////////////
+        if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
+            // Build Null Space
+            if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Laplace")) {
+                nullSpaceBasis = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMap,dofsPerNode,dofsMaps);
+            } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Linear Elasticity")) {
+                nullSpaceBasis = BuildNullSpace(dimension, NullSpaceType::Elasticity, repeatedMap.getConst(), dofsPerNode, dofsMaps, nodeList);
+            } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Input")) {
+                FROSCH_ASSERT(!nullSpaceBasis.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
+                ConstXMapPtr nullSpaceBasisMap = nullSpaceBasis->getMap();
+                if (!nullSpaceBasisMap->isSameAs(*repeatedMap)) {
+                    FROSCH_DETAILTIMER_START_LEVELID(communicateNullSpaceBasis,"Communicate Null Space");
+                    RCP<MultiVector<SC,LO,GO,NO> > tmpNullSpaceBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap, nullSpaceBasis->getNumVectors());
+                    RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(nullSpaceBasisMap, repeatedMap);
+                    tmpNullSpaceBasis->doImport(*nullSpaceBasis, *scatter, INSERT);
+                    nullSpaceBasis = tmpNullSpaceBasis.getConst();
+                }
+            } else {
+                FROSCH_ASSERT(false,"Null Space Type unknown.");
+            }
+            IPOUHarmonicCoarseOperatorPtr iPOUHarmonicCoarseOperator = rcp_static_cast<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
+            if (0>iPOUHarmonicCoarseOperator->initialize(dimension,dofsPerNode,repeatedNodesMap,dofsMaps,nullSpaceBasis,nodeList,dirichletBoundaryDofs)) ret -=10;
+        } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
+            GDSWCoarseOperatorPtr gDSWCoarseOperator = rcp_static_cast<GDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
+            if (0>gDSWCoarseOperator->initialize(dimension,dofsPerNode,repeatedNodesMap,dofsMaps,dirichletBoundaryDofs,nodeList)) ret -=10;
+        } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
+            RGDSWCoarseOperatorPtr rGDSWCoarseOperator = rcp_static_cast<RGDSWCoarseOperator<SC,LO,GO,NO> >(CoarseOperator_);
+            if (0>rGDSWCoarseOperator->initialize(dimension,dofsPerNode,repeatedNodesMap,dofsMaps,dirichletBoundaryDofs,nodeList)) ret -=10;
+        } else {
+            FROSCH_ASSERT(false,"CoarseOperator Type unkown.");
+        }
+        return ret;
+    }
+
+
+
+    template <class SC,class LO,class GO,class NO>
+    int 
+    GeometricTwoLevelPreconditioner<SC,LO,GO,NO>::compute()
+    {
+        FROSCH_TIMER_START_LEVELID(computeTime,"GeometricTwoLevelPreconditioner::compute");
+
+        FROSCH_ASSERT(false, "GeometricOneLevelPreconditioner cannot be computed without input parameters.");
+
+        return -1;
+    }
+
+
+
+    template <class SC,class LO,class GO,class NO>
+    int 
+    GeometricTwoLevelPreconditioner<SC,LO,GO,NO>::compute(
+        ConstXMatrixPtr neumannMatrix, 
+        ConstXMatrixPtr robinMatrix)
+    {
+        FROSCH_TIMER_START_LEVELID(computeTime, "GeometricOneLevelPreconditioner::compute");
+
+        int ret = 0;
+        if (!this->ParameterList_->get("OverlappingOperator Type", "GeometricOverlappingOperator").compare("GeometricOverlappingOperator")) {
+            GeometricOverlappingOperatorPtr geometricOverlappingOperator = rcp_static_cast<GeometricOverlappingOperator<SC,LO,GO,NO> >(this->OverlappingOperator_);
+            ret = geometricOverlappingOperator->compute(neumannMatrix, robinMatrix);
+        } else {
+            FROSCH_ASSERT(false,"Optimized operator type unkown.");
+        }
+        return ret;
+    }
+
+ 
+
+    template <class SC,class LO,class GO,class NO>
+    int 
+    GeometricTwoLevelPreconditioner<SC,LO,GO,NO>::communicateOverlappingTriangulation(
+      XMultiVectorPtr                     nodeList,
+      XMultiVectorTemplatePtr<long long>  elementList,
+      XMultiVectorTemplatePtr<long long>  auxillaryList,
+      XMultiVectorPtr                    &nodeListOverlapping,
+      XMultiVectorTemplatePtr<long long> &elementListOverlapping,
+      XMultiVectorTemplatePtr<long long> &auxillaryListOverlapping)
+
+    {
+        FROSCH_TIMER_START_LEVELID(computeTime, "GeometricTwoLevelPreconditioner::compute");
+
+        int ret = 0;
+        if (!this->ParameterList_->get("OverlappingOperator Type", "GeometricOverlappingOperator").compare("GeometricOverlappingOperator")) {
+            GeometricOverlappingOperatorPtr geometricOverlappingOperator = rcp_static_cast<GeometricOverlappingOperator<SC,LO,GO,NO> >(this->OverlappingOperator_);
+            ret = geometricOverlappingOperator->communicateOverlappingTriangulation(
+                      nodeList, elementList, auxillaryList, nodeListOverlapping, elementListOverlapping, auxillaryListOverlapping);
+        } else {
+            FROSCH_ASSERT(false,"Optimized operator type unkown.");
+        }
+        return ret;
+    }
+
+
+
+    template <class SC,class LO,class GO,class NO>
+    void GeometricTwoLevelPreconditioner<SC,LO,GO,NO>::describe(FancyOStream &/*out*/,
+                                                       const EVerbosityLevel  /*verbLevel*/) const
+    {
+        FROSCH_ASSERT(false,"describe() has to be implemented properly...");
+    }
+
+
+
+    template <class SC,class LO,class GO,class NO>
+    string GeometricTwoLevelPreconditioner<SC,LO,GO,NO>::description() const
+    {
+        return "Two-Level Optimized Schwarz Preconditioner";
+    }
+
+
+
+    template <class SC,class LO,class GO,class NO>
+    int GeometricTwoLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr &k)
+    {
+        FROSCH_DETAILTIMER_START_LEVELID(resetMatrixTime,"GeometricTwoLevelPreconditioner::resetMatrix");
+        this->K_ = k;
+        this->OverlappingOperator_->resetMatrix(this->K_);
+        CoarseOperator_->resetMatrix(this->K_);
+        if (this->UseMultiplicative_) this->MultiplicativeOperator_->resetMatrix(this->K_);
+        return 0;
+    }
+}
+
+#endif // _FROSCH_GEOMETRICTWOLEVELPRECONDITIONER_DEF_HPP
