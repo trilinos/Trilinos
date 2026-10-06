@@ -102,7 +102,7 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
                                                      origMatrix->getColMap()->getComm()));
 
     // Create the new matrix
-    Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>(new cm_t(origMatrix->getLocalMatrixDevice(), this->newRowMap_, this->newColMap_));
+    Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>(new cm_t(this->newRowMap_, this->newColMap_, *origMatrix));
 
     this->newObj_ = newMatrix;
   }

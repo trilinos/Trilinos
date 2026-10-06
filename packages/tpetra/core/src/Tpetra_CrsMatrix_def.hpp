@@ -715,6 +715,51 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    CrsMatrix(const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::RCP<const map_type>& colMap,
+              const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+              const Teuchos::RCP<Teuchos::ParameterList>& params)
+  : dist_object_type(rowMap)
+  , storageStatus_(Details::STORAGE_1D_PACKED)
+  , fillComplete_(true) {
+  const char tfecfFuncName[] =
+      "Tpetra::CrsMatrix(RCP<const Map>, "
+      "RCP<const Map>, CrsMatrix[, RCP<ParameterList>]): ";
+  const char suffix[] =
+      "  Please report this bug to the Tpetra developers.";
+
+  Teuchos::RCP<crs_graph_type> graph = Teuchos::rcp(new crs_graph_type(rowMap, colMap, *source.getCrsGraph(), params));
+  if (!graph->isFillComplete()) {
+    graph->fillComplete();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!graph->isFillComplete(), std::logic_error,
+                                          "CrsGraph constructor (RCP"
+                                          "<const Map>, RCP<const Map>, local_graph_device_type[, RCP<ParameterList>]) "
+                                          "did not produce a fill-complete graph.  Please report this bug to the "
+                                          "Tpetra developers.");
+  }
+  // myGraph_ not null means that the matrix owns the graph.  This
+  // is true because the column indices come in as nonconst through
+  // the matrix, implying shared ownership.
+  myGraph_     = graph;
+  staticGraph_ = graph;
+
+  valuesPacked_wdv   = values_wdv_type(source.valuesPacked_wdv);
+  valuesUnpacked_wdv = values_wdv_type(source.valuesUnpacked_wdv);
+
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive(), std::logic_error,
+                                        "At the end of a CrsMatrix constructor that should produce "
+                                        "a fillComplete matrix, isFillActive() is true."
+                                            << suffix);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(), std::logic_error,
+                                        "At the end of a "
+                                        "CrsMatrix constructor that should produce a fillComplete "
+                                        "matrix, isFillComplete() is false."
+                                            << suffix);
+  checkInternalState();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     CrsMatrix(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
               const Teuchos::DataAccess copyOrView)
   : dist_object_type(source.getCrsGraph()->getRowMap())
