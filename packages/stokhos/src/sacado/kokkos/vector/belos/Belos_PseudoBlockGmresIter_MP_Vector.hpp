@@ -55,6 +55,8 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<typename Storage::value_type> SVT;
+    using MDM = typename DMT::MDM;
+    using MDMT = DenseMatTraits<MagnitudeType,MDM>;
     
     //! @name Constructors/Destructor
     //@{ 
@@ -266,8 +268,8 @@ namespace Belos {
     Mask<MagnitudeType> lucky_breakdown_;
    
     // Storage for QR factorization of the least squares system.
-    std::vector<Teuchos::RCP<std::vector<ScalarType> > > sn_;
-    std::vector<Teuchos::RCP<std::vector<MagnitudeType> > > cs_;
+    std::vector<Teuchos::RCP<DM> > sn_;
+    std::vector<Teuchos::RCP<MDM> > cs_;
  
     // Pointers to a work vector used to improve aggregate performance.
     Teuchos::RCP<MV> U_vec_, AU_vec_;    
@@ -624,23 +626,27 @@ namespace Belos {
     // Copy over rotation angles if they exist
     if ((int)newstate.cs.size() == numRHS_ && (int)newstate.sn.size() == numRHS_) {
       for (int i=0; i<numRHS_; ++i) {
-        if (cs_[i] != newstate.cs[i])
-          cs_[i] = Teuchos::rcp( new std::vector<MagnitudeType>(*newstate.cs[i]) );
-        if (sn_[i] != newstate.sn[i])
-          sn_[i] = Teuchos::rcp( new std::vector<ScalarType>(*newstate.sn[i]) );
+        if (cs_[i] != newstate.cs[i]) {
+          cs_[i] = MDMT::Create(numBlocks_+1, 1);
+          MDMT::Assign(*MDMT::Subview(*cs_[i], MDMT::GetNumRows(*newstate.cs[i]), 1), *newstate.cs[i]);
+        }
+        if (sn_[i] != newstate.sn[i]) {
+          sn_[i] = DMT::Create(numBlocks_+1, 1);
+          DMT::Assign(*DMT::Subview(*sn_[i], DMT::GetNumRows(*newstate.sn[i]), 1), *newstate.sn[i]);
+        }
       }
     }
 
     // Resize or create the vectors as necessary
     for (int i=0; i<numRHS_; ++i) {
       if (cs_[i] == Teuchos::null)
-        cs_[i] = Teuchos::rcp( new std::vector<MagnitudeType>(numBlocks_+1) );
+        cs_[i] = MDMT::Create(numBlocks_+1, 1);
       else
-        cs_[i]->resize(numBlocks_+1);
+        MDMT::Reshape(*cs_[i], numBlocks_+1, 1);
       if (sn_[i] == Teuchos::null)
-        sn_[i] = Teuchos::rcp( new std::vector<ScalarType>(numBlocks_+1) );
+        sn_[i] = DMT::Create(numBlocks_+1, 1);
       else
-        sn_[i]->resize(numBlocks_+1);
+        DMT::Reshape(*sn_[i], numBlocks_+1, 1);
     }
 
     // the solver is initialized
@@ -811,47 +817,12 @@ namespace Belos {
       curDim = dim;
     }
 
-    int i, j;
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-
-    Teuchos::BLAS<int, ScalarType> blas;
-
-    for (i=0; i<numRHS_; ++i) {
+    for (int i=0; i<numRHS_; ++i) {
       //
       // Update the least-squares QR for each linear system.
       //
-      // QR factorization of Least-Squares system with Givens rotations
-      //
-      DMT::SyncDeviceToHost(*H_[i]);
-      DMT::SyncDeviceToHost(*Z_[i]);
-      for (j=0; j<curDim; j++) {
-        //
-        // Apply previous Givens rotations to new column of Hessenberg matrix
-        //
-        blas.ROT( 1, &(DMT::Value(*H_[i],j,curDim)), 1, &(DMT::Value(*H_[i],j+1, curDim)), 1, &(*cs_[i])[j], &(*sn_[i])[j] );
-      }
-      //
-      // Calculate new Givens rotation
-      //
-      if ( curDim == 0)
-      {
-        // Initialize the lucky_breakdown_ mask to take account of perfect initial guess
-        lucky_breakdown_ = (DMT::Value(*Z_[i],curDim,0) == zero);
-      }
-      auto lucky_breakdown_tmp = (DMT::Value(*H_[i],curDim+1,curDim) == zero);
-      mask_assign(lucky_breakdown_,DMT::Value(*H_[i],curDim,curDim)) = one;
-      lucky_breakdown_ = lucky_breakdown_ || lucky_breakdown_tmp;
-      //Teuchos::my_GivensRotator<ScalarType> GR;
-      blas.ROTG( &(DMT::Value(*H_[i],curDim,curDim)), &(DMT::Value(*H_[i],curDim+1,curDim)), &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
-      DMT::Value(*H_[i],curDim+1,curDim) = zero;
-      //
-      // Update RHS w/ new transformation
-      //
-      blas.ROT( 1, &(DMT::Value(*Z_[i],curDim,0)), 1, &(DMT::Value(*Z_[i],curDim+1,0)), 1, &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
-      //
-      DMT::SyncHostToDevice(*H_[i]);
-      DMT::SyncHostToDevice(*Z_[i]);
+
+      DMT::updateLSQR(*H_[i], *Z_[i], cs_[i], sn_[i], Teuchos::null, curDim, 1);
     }
 
   } // end updateLSQR()
