@@ -294,7 +294,8 @@ class PointwiseFillReuseFunctor {
         graph.entries(graph_offset + jj) = rowA.colidx(k);
         ++jj;
       } else if constexpr (lumping) {
-        diagCorrection += rowA.value(k);
+        if (results(row_start + k) != BOUNDARY_ENTRY)
+          diagCorrection += rowA.value(k);
         rowFilteredA.colidx(j) = rowA.colidx(k);
         rowFilteredA.value(j)  = zero;
         ++j;
@@ -376,7 +377,8 @@ class PointwiseFillNoReuseFunctor {
         }
         ++j;
       } else if constexpr (lumpingChoice != no_lumping) {
-        droppedSum += rowA.value(k);
+        if (results(K + k) != BOUNDARY_ENTRY)
+          droppedSum += rowA.value(k);
       }
     }
     if constexpr (lumpingChoice == diag_lumping) {
@@ -873,7 +875,8 @@ class VectorFillFunctor {
             rowFilteredA.value(j)  = rowA.value(k);
             ++j;
           } else if constexpr (lumping) {
-            diagCorrection += rowA.value(k);
+            if (results(row_start + k) != BOUNDARY_ENTRY)
+              diagCorrection += rowA.value(k);
             if constexpr (reuse) {
               rowFilteredA.colidx(j) = rowA.colidx(k);
               rowFilteredA.value(j)  = zero;
