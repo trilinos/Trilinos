@@ -413,12 +413,13 @@ PHASE 5 -- test matrix.  The tables below exceed 80 columns deliberately;
      fixed by "Panzer: put PointGenerator's points on PHX::Device".  Never set
      in the ini, so CI will never cover it.
      It then found pattern P5, execution policies defaulting to Kokkos'
-     execution space, in six Phalanx tests and three examples, and pattern P6,
-     a KOKKOS_ENABLE_CUDA guard in Phalanx' own stream checker -- the first
-     defect this work has found in library code rather than tests.  This is the ONLY row where the
-     two execution spaces differ -- every other row varies the memory space
-     alone -- so it is the only row that can find P5 at all.  Worth rerunning
-     whenever a test gains a kernel.
+     execution space, in six Phalanx tests and three examples, and pattern P6
+     in three places, two of them library code -- the first defects this work
+     has found outside tests.
+     This is the ONLY row where the two execution spaces differ; every other
+     row varies the memory space alone.  So it is the only row that can find
+     P5 or P6 at all, and it took three rounds to come clean.  Worth rerunning
+     whenever a test or an example gains a kernel.
   C  Did not compile at all before the review fix (section 7, finding 1); only
      one translation unit has been verified since.  Never set in the ini.
   D  Both modes are live and both need coverage; only tested on host.  Never
@@ -1103,11 +1104,32 @@ P6  A GUARD THAT ASKS WHETHER A BACKEND IS ENABLED, NOT WHETHER PHALANX USES
     that case, so the check fired on every kernel and failed the two user
     stream tests.  Now gated on std::is_same_v<PHX::ExecutionSpace,Kokkos::Cuda>
     (or HIP) instead.
+    A sweep of every KOKKOS_ENABLE_ guard in the package then found two more,
+    and this is the most productive single grep in the whole exercise:
+      - Phalanx_KokkosDeviceTypes.hpp, PHX::DefaultFadLayout.  The FAD stride
+        was chosen by a KOKKOS_ENABLE_CUDA / _HIP / _SYCL chain, so a CUDA
+        build running Phalanx on the host got 32 where it needs 1, and the
+        host branch was unreachable because the CUDA one always won.  The
+        header's own comment says the stride MUST equal the vector_size passed
+        to Kokkos::TeamPolicy, so this was a silent disagreement with the team
+        policy, not a cosmetic one.  Now a PHX::Impl::FadStride trait
+        specialized per execution space, with a static_assert naming the
+        missing one.  Latent: only live under SACADO_GPU_HIERARCHICAL(_DFAD),
+        which row E turns on.  Both branches were verified by compiling with
+        the macro forced on.
+      - the FiniteElementAssembly examples' CommandLineParser.hpp, which set
+        team 8 / vector 32 under KOKKOS_ENABLE_CUDA.  Serial's maximum team
+        size is 1, so Kokkos rejected the policy at run time and three
+        examples died.
     THE FIX IN GENERAL: KOKKOS_ENABLE_<BACKEND> answers "was it compiled in",
     which is the right question for whether a type NAME exists and the wrong
     one for whether Phalanx RUNS there.  For the latter, compare against
-    PHX::ExecutionSpace.  Worth re-reading every KOKKOS_ENABLE_ guard in a
-    package that has its own configurable space.
+    PHX::ExecutionSpace.  Note the two are the same question in every
+    configuration CI builds, which is why these survived: only a build that
+    sets Phalanx_DEFAULT_EXECUTION_SPACE separates them.
+    A WARNING ABOUT SUCH CHAINS: an #if/#elif over backends silently makes
+    every branch after the first unreachable on a multi-backend build.  Prefer
+    a trait keyed on PHX::ExecutionSpace, which cannot shadow a case.
 
 HOW THESE ANNOUNCE THEMSELVES.  Three symptoms, and only the third names the
 problem:

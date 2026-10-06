@@ -828,18 +828,23 @@ namespace phalanx_test {
     using DefaultDevLayout = PHX::DefaultDevLayout;
 #if defined(SACADO_GPU_HIERARCHICAL_DFAD) || defined(SACADO_GPU_HIERARCHICAL)
 
+    // Restated from PHX::DefaultFadLayout on purpose, to catch the two
+    // drifting apart, so this deliberately does NOT reuse PHX::Impl::FadStride.
+    // Keyed on PHX::ExecutionSpace rather than on which backends are compiled
+    // in -- a GPU build can still run Phalanx on the host.
+    constexpr int expected_fad_stride =
 #if defined(KOKKOS_ENABLE_CUDA)
-    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
-#elif defined(KOKKOS_ENABLE_HIP)
-    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,64>;
-#elif defined(KOKKOS_ENABLE_SYCL)
-    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
-#elif defined(KOKKOS_ENABLE_SERIAL) || defined(KOKKOS_ENABLE_OPENMP) ||        \
-      defined(KOKKOS_ENABLE_THREADS)
-    using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,1>;
-#else
-#error "Phalanx: no FAD stride is defined for this backend.  Keep this in step with PHX::DefaultFadLayout in Phalanx_KokkosDeviceTypes.hpp -- the point of restating it here is to catch the two drifting apart."
+      std::is_same_v<PHX::ExecutionSpace,Kokkos::Cuda> ? 32 :
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+      std::is_same_v<PHX::ExecutionSpace,Kokkos::HIP> ? 64 :
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+      std::is_same_v<PHX::ExecutionSpace,Kokkos::SYCL> ? 32 :
+#endif
+      1;
+    using DefaultFadLayout =
+      Sacado::LayoutContiguous<DefaultDevLayout,expected_fad_stride>;
 
 #else
     using DefaultFadLayout = DefaultDevLayout;
@@ -911,13 +916,13 @@ namespace phalanx_test {
 
   TEUCHOS_UNIT_TEST(kokkos, OnlineStandardDeviation)
   {
-    Kokkos::Random_XorShift64_Pool<> random_pool(/*seed=*/12345);
+    Kokkos::Random_XorShift64_Pool<PHX::ExecutionSpace> random_pool(/*seed=*/12345);
     // const int N = 1'000'000; // This runs really slow. Runtime grows exponentially with size.
     const int N = 10000;        // This runs fast!
     // const int N = 3;         // For testing hand coded values, converges fine!
     Kokkos::View<double*,PHX::Device> a("a",N);
 
-    Kokkos::parallel_for("random number generator",N,KOKKOS_LAMBDA(const int i) {
+    Kokkos::parallel_for("random number generator",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,N),KOKKOS_LAMBDA(const int i) {
       auto generator = random_pool.get_state();
       a(i) = generator.drand(0.,1.);
       random_pool.free_state(generator);
@@ -937,12 +942,12 @@ namespace phalanx_test {
     double stddev_gold = 0.0;
     {
       double sum = 0.0;
-      Kokkos::parallel_reduce("offline stdandard deviation",N,KOKKOS_LAMBDA(const int i, double& tmp_sum) {
+      Kokkos::parallel_reduce("offline stdandard deviation",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,N),KOKKOS_LAMBDA(const int i, double& tmp_sum) {
           tmp_sum += a(i);
       },sum);
       mean_gold = sum/(static_cast<double>(N));
 
-      Kokkos::parallel_reduce("offline stdandard deviation",N,KOKKOS_LAMBDA(const int i, double& tmp_sum) {
+      Kokkos::parallel_reduce("offline stdandard deviation",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,N),KOKKOS_LAMBDA(const int i, double& tmp_sum) {
           tmp_sum += (a(i) - mean_gold) * (a(i) - mean_gold);
       },stddev_gold);
       stddev_gold = std::sqrt(stddev_gold/static_cast<double>(N-1)); // unbiased
@@ -953,7 +958,7 @@ namespace phalanx_test {
     double stddev = 0.0;
     {
       Kokkos::View<StdDevAtomic,PHX::Device> values("v");
-      Kokkos::parallel_for("offline stdandard deviation",N,KOKKOS_LAMBDA(const int i) {
+      Kokkos::parallel_for("offline stdandard deviation",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,N),KOKKOS_LAMBDA(const int i) {
         bool success_local = false;
         do {
           StdDevAtomic n_minus_one(values());

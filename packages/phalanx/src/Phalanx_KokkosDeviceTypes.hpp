@@ -96,21 +96,52 @@ namespace PHX {
   // IMPORTANT: The FadStride must be the same as the vector_size in the
   // Kokkos::TeamPolicy constructor. This value is only used for SFad and
   // SLFad, not for DFad.
+  //
+  // The stride follows PHX::ExecutionSpace, the space Phalanx actually runs
+  // on, and NOT whichever backends happen to be compiled in.  A CUDA build
+  // that sets Phalanx_DEFAULT_EXECUTION_SPACE to a host space has no vector
+  // dimension and wants a stride of 1, but a chain of KOKKOS_ENABLE_ tests
+  // would hand it 32 and silently disagree with the team policy.
+  namespace Impl {
+    template <typename T> inline constexpr bool dependent_false = false;
+
+    template <typename ExecSpace>
+    struct FadStride {
+      static_assert(dependent_false<ExecSpace>,
+                    "Phalanx: hierarchical parallelism is enabled but no FAD "
+                    "stride is defined for this execution space.  The stride "
+                    "must equal the vector_size passed to Kokkos::TeamPolicy, "
+                    "so it cannot be guessed -- add a specialization above, or "
+                    "build without Sacado_ENABLE_HIERARCHICAL / "
+                    "Sacado_ENABLE_HIERARCHICAL_DFAD.");
+    };
+
 #if defined(KOKKOS_ENABLE_CUDA)
-  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
-#elif defined(KOKKOS_ENABLE_HIP)
-  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,64>;
-#elif defined(KOKKOS_ENABLE_SYCL)
-  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
-#elif defined(KOKKOS_ENABLE_SERIAL) || defined(KOKKOS_ENABLE_OPENMP) ||        \
-      defined(KOKKOS_ENABLE_THREADS)
-  // A host backend has no vector dimension to partition, so hierarchical is a
-  // no-op here.  Carried anyway so the hierarchical code paths still compile
-  // on a CPU-only build.
-  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,1>;
-#else
-#error "Phalanx: hierarchical parallelism is enabled but no FAD stride is defined for this backend.  The stride must equal the vector_size passed to Kokkos::TeamPolicy, so it cannot be guessed -- add a branch above for the new backend, or build without Sacado_ENABLE_HIERARCHICAL / Sacado_ENABLE_HIERARCHICAL_DFAD."
+    template <> struct FadStride<Kokkos::Cuda> {static constexpr int value = 32;};
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+    template <> struct FadStride<Kokkos::HIP> {static constexpr int value = 64;};
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+    template <> struct FadStride<Kokkos::SYCL> {static constexpr int value = 32;};
+#endif
+    // A host backend has no vector dimension to partition, so hierarchical is
+    // a no-op there.  Carried anyway so the hierarchical code paths still
+    // compile, including on a GPU build that runs Phalanx on the host.
+#if defined(KOKKOS_ENABLE_SERIAL)
+    template <> struct FadStride<Kokkos::Serial> {static constexpr int value = 1;};
+#endif
+#if defined(KOKKOS_ENABLE_OPENMP)
+    template <> struct FadStride<Kokkos::OpenMP> {static constexpr int value = 1;};
+#endif
+#if defined(KOKKOS_ENABLE_THREADS)
+    template <> struct FadStride<Kokkos::Threads> {static constexpr int value = 1;};
+#endif
+  }
+
+  using DefaultFadLayout =
+    Sacado::LayoutContiguous<DefaultDevLayout,
+                             PHX::Impl::FadStride<PHX::ExecutionSpace>::value>;
 
 #else
   using DefaultFadLayout = DefaultDevLayout;
