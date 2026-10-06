@@ -11,6 +11,9 @@ on:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+permissions:
+  pull-requests: write
+
 jobs:
   pre-commit-comment:
     runs-on: ubuntu-latest
@@ -46,21 +49,19 @@ jobs:
     - run: |
         cd ${{ runner.temp }}/artifacts
         unzip format_patch_message.zip
-        MY_PR_NUMBER=$(cat pr_number)
-        echo "PR_NUMBER=$MY_PR_NUMBER" >> $GITHUB_ENV
 
     - name: Post artifact in issue comment
       id: comment
       uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0.8.3.12.0
       with:
         message-id: format-patch
-        issue:  ${{ env.PR_NUMBER }}
+        issue: ${{ github.event.workflow_run.pull_requests[0].number }}
         refresh-message-position: true
         message-path: ${{ runner.temp }}/artifacts/format_patch_message.txt
 
     - name: Process message
       run: |
-        MY_PR_NUMBER=${{ env.PR_NUMBER }}
+        MY_PR_NUMBER=${{ github.event.workflow_run.pull_requests[0].number }}
         MY_COMMENT_ID=${{ steps.comment.outputs.comment-id }}
         cp ${{ runner.temp }}/artifacts/format_patch_message.txt processed_format_patch.txt  
         sed -i "s/PR_NUMBER/${MY_PR_NUMBER}/" processed_format_patch.txt
@@ -70,6 +71,6 @@ jobs:
       uses: peter-evans/create-or-update-comment@v5
       with:
         comment-id: ${{ steps.comment.outputs.comment-id }}
-        issue-number: ${{ env.PR_NUMBER }}
+        issue-number: ${{ github.event.workflow_run.pull_requests[0].number }}
         body-path: processed_format_patch.txt
         edit-mode: replace
