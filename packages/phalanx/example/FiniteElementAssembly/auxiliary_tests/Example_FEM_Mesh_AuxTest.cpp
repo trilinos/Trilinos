@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST(mesh, coord_gids)
 
   // Test gradient values from reference basis
   num_failures = 0;
-  Kokkos::View<double***> DTDX_qp("DTDX_qp",num_cells,qp_per_element,3);
+  PHX::View<double***> DTDX_qp("DTDX_qp",num_cells,qp_per_element,3);
   Kokkos::deep_copy(DTDX_qp,0.0);
   const auto& invJac = mesh.getInvJac();
   Kokkos::parallel_reduce("Compute and check DTDX at qp (ref)",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells),KOKKOS_LAMBDA (const int& cell,int& lfailures) {

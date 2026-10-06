@@ -186,7 +186,7 @@ Teuchos::StackedTimer:12.5579 [1] (0)
         a_ = PHX::View<Scalar**>("a",num_cells,num_points,1+num_derivatives);
 
         // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
-        Kokkos::parallel_for("init derivatives",num_cells,KOKKOS_CLASS_LAMBDA(const int c){
+        Kokkos::parallel_for("init derivatives",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells),KOKKOS_CLASS_LAMBDA(const int c){
           for (size_t p=0; p < num_points; ++p) {
             rho_(c,p).val() = 8.0;
             p_(c,p).val() = 5.0;
@@ -242,7 +242,7 @@ Teuchos::StackedTimer:12.5579 [1] (0)
         const auto tol = 100.0 * std::numeric_limits<double>::epsilon();
         // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
         PHX::ExecutionSpace().fence();
-        Kokkos::parallel_reduce("check results", num_cells, KOKKOS_CLASS_LAMBDA(const int c, int& count) {
+        Kokkos::parallel_reduce("check results", Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells), KOKKOS_CLASS_LAMBDA(const int c, int& count) {
           for (size_t p=0; p < num_points; ++p)
           {
             const double val_exp = 0.625;

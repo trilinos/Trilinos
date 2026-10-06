@@ -413,7 +413,9 @@ PHASE 5 -- test matrix.  The tables below exceed 80 columns deliberately;
      fixed by "Panzer: put PointGenerator's points on PHX::Device".  Never set
      in the ini, so CI will never cover it.
      It then found pattern P5, execution policies defaulting to Kokkos'
-     execution space, in three Phalanx tests.  This is the ONLY row where the
+     execution space, in six Phalanx tests and three examples, and pattern P6,
+     a KOKKOS_ENABLE_CUDA guard in Phalanx' own stream checker -- the first
+     defect this work has found in library code rather than tests.  This is the ONLY row where the
      two execution spaces differ -- every other row varies the memory space
      alone -- so it is the only row that can find P5 at all.  Worth rerunning
      whenever a test gains a kernel.
@@ -1073,6 +1075,14 @@ P5  AN EXECUTION POLICY THAT DEFAULTS TO KOKKOS' EXECUTION SPACE.
     its own space by name rather than borrowing exec_t.
     THE FIX IN GENERAL: name the execution space in the policy, and use
     Kokkos::RangePolicy<exec>(0,N) rather than a bare count.
+    WHAT IS ALREADY SAFE, and worth knowing before changing it: a bare count is
+    fine when the FUNCTOR names the space, because Kokkos takes the functor's
+    execution_space typedef over its own default.  PHX::Evaluator declares
+        typedef typename PHX::ExecutionSpace execution_space;
+    so every evaluator kernel written as parallel_for(n,*this) is correct
+    already.  That is why the whole AssemblyHeatFluxFad suite passed while the
+    lambda-based tests did not.  Lambdas have no such typedef, which is what
+    makes KOKKOS_LAMBDA the form that needs the policy spelled out.
 
     WHY ONLY TWO OF THESE WERE COMPILE ERRORS.  A policy whose space is wrong
     is caught at compile time ONLY when an execution space INSTANCE is passed
@@ -1081,6 +1091,23 @@ P5  AN EXECUTION POLICY THAT DEFAULTS TO KOKKOS' EXECUTION SPACE.
     use.  Row B reported two errors; eleven more sites would have aborted at
     run time, or silently run in the wrong space.  Do not take the compiler's
     list as the extent of the problem: grep for the pattern.
+
+P6  A GUARD THAT ASKS WHETHER A BACKEND IS ENABLED, NOT WHETHER PHALANX USES
+    IT.  The one pattern so far that is a LIBRARY bug rather than a test bug.
+    Phalanx_Kokkos_Tools_CheckStreams.cpp enforces that no kernel runs on the
+    default stream, and gated itself on
+        #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    which asks whether Kokkos HAS such a backend.  Its own header already said
+    the check is meaningless on Serial, where every kernel reports the same
+    device id -- and a CUDA build running Phalanx on a host space is exactly
+    that case, so the check fired on every kernel and failed the two user
+    stream tests.  Now gated on std::is_same_v<PHX::ExecutionSpace,Kokkos::Cuda>
+    (or HIP) instead.
+    THE FIX IN GENERAL: KOKKOS_ENABLE_<BACKEND> answers "was it compiled in",
+    which is the right question for whether a type NAME exists and the wrong
+    one for whether Phalanx RUNS there.  For the latter, compare against
+    PHX::ExecutionSpace.  Worth re-reading every KOKKOS_ENABLE_ guard in a
+    package that has its own configurable space.
 
 HOW THESE ANNOUNCE THEMSELVES.  Three symptoms, and only the third names the
 problem:

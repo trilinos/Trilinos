@@ -568,7 +568,7 @@ namespace phalanx_test {
 	Kokkos::DynRankView<FadType,PHX::Device> f("f",num_cells,deriv_dim_plus_one);
 	const double tol = std::numeric_limits<double>::epsilon() * 100.0;
 
-	Kokkos::parallel_for(num_cells,KOKKOS_LAMBDA (const int i) {
+	Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells),KOKKOS_LAMBDA (const int i) {
 	    f(i).val() = 2.0;
 	    f(i).fastAccessDx(0) = 3.0;
 	  });
@@ -580,7 +580,7 @@ namespace phalanx_test {
 	}
 
 #ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
-	Kokkos::parallel_for(num_cells,KOKKOS_LAMBDA (const int i) {
+	Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells),KOKKOS_LAMBDA (const int i) {
 	    f[i].val() = 3.0;
 	    f[i].fastAccessDx(0) = 4.0;
 	  });

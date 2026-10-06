@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
     }
 
     // Kokkos::deep_copy(x,1.0);
-    Kokkos::parallel_for(x.extent(0),KOKKOS_LAMBDA (const int& i) {x(i)=static_cast<double>(i);});
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,x.extent(0)),KOKKOS_LAMBDA (const int& i) {x(i)=static_cast<double>(i);});
     Kokkos::deep_copy(f,0.0);
     RCP<Time> residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time <<Host DAG>>");
     typename PHX::ExecutionSpace().fence();

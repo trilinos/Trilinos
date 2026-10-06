@@ -13,6 +13,7 @@
 #include "Kokkos_Core.hpp"
 #include "Teuchos_Assert.hpp"
 #include <limits>
+#include <type_traits>
 
 // **********************************
 // Ideally, we would like to also check allocations, deallocations,
@@ -27,6 +28,19 @@
 // device id.
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 namespace {
+  // The check only means anything when Phalanx' OWN execution space is the one
+  // with streams.  A CUDA or HIP build can still run Phalanx on a host space
+  // via Phalanx_DEFAULT_EXECUTION_SPACE, and there every kernel reports the
+  // same device id, so the checks below would fire on every one of them.
+  constexpr bool phalanx_space_has_streams =
+#if defined(KOKKOS_ENABLE_CUDA)
+    std::is_same_v<PHX::ExecutionSpace,Kokkos::Cuda> ||
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    std::is_same_v<PHX::ExecutionSpace,Kokkos::HIP> ||
+#endif
+    false;
+
   uint32_t phalanx_default_stream_device_id = std::numeric_limits<uint32_t>::max();
 
   void phalanx_kt_parallel_x_callback(char const *label, uint32_t device_id,
@@ -56,21 +70,25 @@ namespace {
 void PHX::set_enforce_no_default_stream_use()
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-  phalanx_default_stream_device_id = Kokkos::Tools::Experimental::device_id(PHX::ExecutionSpace());
+  if constexpr (phalanx_space_has_streams) {
+    phalanx_default_stream_device_id = Kokkos::Tools::Experimental::device_id(PHX::ExecutionSpace());
 
-  Kokkos::Tools::Experimental::set_begin_parallel_for_callback(phalanx_kt_parallel_x_callback);
-  Kokkos::Tools::Experimental::set_begin_parallel_reduce_callback(phalanx_kt_parallel_x_callback);
-  Kokkos::Tools::Experimental::set_begin_parallel_scan_callback(phalanx_kt_parallel_x_callback);
-  Kokkos::Tools::Experimental::set_begin_fence_callback(phalanx_kt_fence_callback);
+    Kokkos::Tools::Experimental::set_begin_parallel_for_callback(phalanx_kt_parallel_x_callback);
+    Kokkos::Tools::Experimental::set_begin_parallel_reduce_callback(phalanx_kt_parallel_x_callback);
+    Kokkos::Tools::Experimental::set_begin_parallel_scan_callback(phalanx_kt_parallel_x_callback);
+    Kokkos::Tools::Experimental::set_begin_fence_callback(phalanx_kt_fence_callback);
+  }
 #endif
 }
 
 void PHX::unset_enforce_no_default_stream_use()
 {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-  Kokkos::Tools::Experimental::set_begin_parallel_for_callback(nullptr);
-  Kokkos::Tools::Experimental::set_begin_parallel_reduce_callback(nullptr);
-  Kokkos::Tools::Experimental::set_begin_parallel_scan_callback(nullptr);
-  Kokkos::Tools::Experimental::set_begin_fence_callback(nullptr);
+  if constexpr (phalanx_space_has_streams) {
+    Kokkos::Tools::Experimental::set_begin_parallel_for_callback(nullptr);
+    Kokkos::Tools::Experimental::set_begin_parallel_reduce_callback(nullptr);
+    Kokkos::Tools::Experimental::set_begin_parallel_scan_callback(nullptr);
+    Kokkos::Tools::Experimental::set_begin_fence_callback(nullptr);
+  }
 #endif
 }
