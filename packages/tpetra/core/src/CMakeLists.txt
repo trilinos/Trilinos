@@ -177,6 +177,74 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   )
   LIST(APPEND SOURCES ${CRSGRAPHTRANSPOSER_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::BlockedMap.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(
+    BLOCKEDMAP_OUTPUT_FILES
+    "Tpetra_ETI_LO_GO_NT.tmpl"
+    "BlockedMap"
+    "BLOCKEDMAP"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+  )
+  LIST(APPEND SOURCES ${BLOCKEDMAP_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::MapExtractor.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(
+    MAPEXTRACTOR_OUTPUT_FILES
+    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+    "MapExtractor"
+    "MAPEXTRACTOR"
+    "${CrsMatrix_ETI_SCALARS}"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+    TRUE
+  )
+  LIST(APPEND SOURCES ${MAPEXTRACTOR_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::BlockedMultiVector.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(
+    BLOCKEDMULTIVECTOR_OUTPUT_FILES
+    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+    "BlockedMultiVector"
+    "BLOCKEDMULTIVECTOR"
+    "${CrsMatrix_ETI_SCALARS}"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+    TRUE
+  )
+  LIST(APPEND SOURCES ${BLOCKEDMULTIVECTOR_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::BlockedVector.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(
+    BLOCKEDVECTOR_OUTPUT_FILES
+    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+    "BlockedVector"
+    "BLOCKEDVECTOR"
+    "${CrsMatrix_ETI_SCALARS}"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+    TRUE
+  )
+  LIST(APPEND SOURCES ${BLOCKEDVECTOR_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::BlockedCrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(
+    BLOCKEDCRSMATRIX_OUTPUT_FILES
+    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+    "BlockedCrsMatrix"
+    "BLOCKEDCRSMATRIX"
+    "${CrsMatrix_ETI_SCALARS}"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+    TRUE
+  )
+  LIST(APPEND SOURCES ${BLOCKEDCRSMATRIX_OUTPUT_FILES})
+
   # Generate ETI .cpp files for Tpetra::BlockCrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(
     BLOCKCRSMATRIX_OUTPUT_FILES
