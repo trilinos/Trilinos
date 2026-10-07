@@ -384,37 +384,37 @@ void reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   int offset                                     = 0;
   mpireq_idx                                     = 0;
   for (int i = 0; i < ProcsTo.size(); ++i) {
-    int recv_data_size     = ReverseRecvSizes[i] * 2;
-    int recvData_MPI_Tag   = mpi_tag_base_ * 2 + ProcsTo[i];
     MPI_Request rawRequest = MPI_REQUEST_NULL;
-    GO* rec_bptr;
-    if (offset < AllReverseRecv.size())
-      rec_bptr = (GO*)(&AllReverseRecv[offset]);
-    offset += ReverseRecvSizes[i];
-    MPI_Irecv(rec_bptr,
-              recv_data_size,
-              ::Tpetra::Details::MpiTypeTraits<GO>::getType(rec_bptr[0]),
-              ProcsTo[i],
-              recvData_MPI_Tag,
-              rawComm,
-              &rawRequest);
+    if (offset < AllReverseRecv.size() && (ReverseRecvSizes[i] > 0)) {
+      int recvData_MPI_Tag = mpi_tag_base_ * 2 + ProcsTo[i];
+      int recv_data_size   = ReverseRecvSizes[i] * 2;
+      GO* rec_bptr         = (GO*)(&AllReverseRecv[offset]);
+      offset += ReverseRecvSizes[i];
+      MPI_Irecv(rec_bptr,
+                recv_data_size,
+                ::Tpetra::Details::MpiTypeTraits<GO>::getType(rec_bptr[0]),
+                ProcsTo[i],
+                recvData_MPI_Tag,
+                rawComm,
+                &rawRequest);
+    }
     rawBreq[mpireq_idx++] = rawRequest;
   }
   for (int ii = 0; ii < ProcsFrom.size(); ++ii) {
-    GO* send_bptr;
-    if (RSB[ii].size() > 0)
-      send_bptr = (GO*)(RSB[ii].getRawPtr());
     MPI_Request rawSequest = MPI_REQUEST_NULL;
-    int send_data_size     = ReverseSendSizes[ii] * 2;  // 2 == count of pair
-    int sendData_MPI_Tag   = mpi_tag_base_ * 2 + MyPID;
-    MPI_Isend(send_bptr,
-              send_data_size,
-              ::Tpetra::Details::MpiTypeTraits<GO>::getType(send_bptr[0]),
-              ProcsFrom[ii],
-              sendData_MPI_Tag,
-              rawComm,
-              &rawSequest);
+    if ((RSB[ii].size() > 0) && (ReverseSendSizes[ii] > 0)) {
+      int send_data_size = ReverseSendSizes[ii] * 2;  // 2 == count of pair
+      GO* send_bptr      = (GO*)(RSB[ii].getRawPtr());
 
+      int sendData_MPI_Tag = mpi_tag_base_ * 2 + MyPID;
+      MPI_Isend(send_bptr,
+                send_data_size,
+                ::Tpetra::Details::MpiTypeTraits<GO>::getType(send_bptr[0]),
+                ProcsFrom[ii],
+                sendData_MPI_Tag,
+                rawComm,
+                &rawSequest);
+    }
     rawBreq[mpireq_idx++] = rawSequest;
   }
 #ifdef HAVE_TPETRA_DEBUG
