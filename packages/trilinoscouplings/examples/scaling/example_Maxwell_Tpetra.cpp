@@ -2422,6 +2422,16 @@ int body(int argc, char *argv[]) {
   // delete mesh
   Delete_Pamgen_Mesh();
 
+  // clean up topo_entity allocations
+  for(int i=0;i<(int)edge_vector.size(); i++) delete edge_vector[i];
+  edge_vector.resize(0);
+  for(int i=0;i<(int)face_vector.size(); i++) delete face_vector[i];
+  face_vector.resize(0);
+
+  // clean up mu/sigma arrays
+  delete [] mu;
+  delete [] sigma;
+
   //clean up
   for(long long b = 0; b < numElemBlk; b++){
     delete [] elmt_node_linkage[b];
