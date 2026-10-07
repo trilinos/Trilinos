@@ -279,12 +279,12 @@ struct SolveSingletonProblemFunctor {
           //  look for matching col ID
           LocalOrdinal targetCol = ColSingletonColLIDs[myNum];
           for (size_t j = lclFullRowPtr(i); j < lclFullRowPtr(i + 1); j++) {
-            if (lclFullColMap.getGlobalElement(lclFullColInd[j]) == targetCol) {
+            if (lclFullColInd[j] == targetCol) {
               impl_scalar_type pivot = lclFullValues[j];
               if (pivot == zero) {
                 Kokkos::atomic_exchange(&error_code(0), 2);
               } else {
-                ColSingletonPivotLIDs[myNum] = j;
+                ColSingletonPivotLIDs[myNum] = j - lclFullRowPtr(i);
                 ColSingletonPivots[myNum]    = pivot;
               }
               break;
@@ -309,6 +309,7 @@ struct SolveSingletonProblemFunctor {
     LocalOrdinal lclID  = lclReducedRowMap.getLocalElement(glbID);
 
     if (lclID == INVALID) {
+      // not part of reduced-matrix, so it is singletone
       if (lclFullRowPtr(i + 1) == lclFullRowPtr(i) + 1) {
         // Singleton row
         LocalOrdinal indX      = lclFullColInd(lclFullRowPtr(i));
@@ -322,7 +323,7 @@ struct SolveSingletonProblemFunctor {
         }
       } else {
         // Not singleton row, but need to be removed == Singleton column
-        //  look for matching row ID
+        // look for matching row ID
         int myNum = -1;
         for (local_ordinal_type j = 0; j < localNumSingletonCols; j++) {
           if (ColSingletonRowLIDs[j] == i) {
@@ -332,18 +333,12 @@ struct SolveSingletonProblemFunctor {
         if (myNum == -1) {
           Kokkos::atomic_exchange(&error_code(0), 3);
         } else {
-          //  look for matching col ID
-          LocalOrdinal targetCol = ColSingletonColLIDs[myNum];
-          for (size_t j = lclFullRowPtr(i); j < lclFullRowPtr(i + 1); j++) {
-            if (lclFullColMap.getGlobalElement(lclFullColInd[j]) == targetCol) {
-              impl_scalar_type pivot = lclFullValues[j];
-              if (pivot == zero) {
-                Kokkos::atomic_exchange(&error_code(0), 2);
-              } else {
-                ColSingletonPivots[myNum] = pivot;
-              }
-              break;
-            }
+          size_t j               = ColSingletonPivotLIDs[myNum] + lclFullRowPtr(i);
+          impl_scalar_type pivot = lclFullValues[j];
+          if (pivot == zero) {
+            Kokkos::atomic_exchange(&error_code(0), 2);
+          } else {
+            ColSingletonPivots[myNum] = pivot;
           }
           lclNumSingletonCols++;
         }
@@ -1333,7 +1328,7 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
       }
       ReducedMatrix()->fillComplete(ReducedMatrix()->getDomainMap(), ReducedMatrix()->getRangeMap());
     } else {
-      // Not part of the reduced matrix
+      // Not part of the reduced matrix (singletones)
       {
         using error_code_type = typename Kokkos::View<int*, execution_space>;
         using functor_type    = SolveSingletonProblemFunctor<scalar_type, local_ordinal_type, global_ordinal_type, Node, local_map_type, local_matrix_type,
@@ -1371,7 +1366,6 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(h_error(0) == 3, std::runtime_error,
                                               "UpdateReducedProblem: Unable to find local column.");
       }
-
       // Part of the reduced matrix
       {
         using functor_type    = UpdateReducedProblemFunctor<local_ordinal_type, global_ordinal_type, local_map_type, local_matrix_type>;
