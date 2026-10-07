@@ -1827,6 +1827,10 @@ int main(int argc, char *argv[]) {
   // delete mesh
   Delete_Pamgen_Mesh();
 
+  // clean up Basis allocations
+  delete myHGradBasis;
+  delete myHGradBasis_aux;
+
   return 0;
   if (!Kokkos::is_finalized())
     Kokkos::finalize();
