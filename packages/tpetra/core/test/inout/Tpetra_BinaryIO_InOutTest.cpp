@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <fstream>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -49,6 +50,31 @@ void cleanupFile(const std::string& filename,
   }
   comm->barrier();
 }
+
+void overwriteHeaderField(const std::string& filename,
+                          const unsigned long long fieldOffset,
+                          const unsigned long long value,
+                          const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
+  comm->barrier();
+  if (comm->getRank() == 0) {
+    std::fstream file(filename.c_str(), std::ios::binary | std::ios::in | std::ios::out);
+    TEUCHOS_TEST_FOR_EXCEPTION(!file.good(), std::runtime_error, "Failed to open " << filename << " for header patching.");
+    file.seekp(static_cast<std::streamoff>(fieldOffset), std::ios::beg);
+    file.write(reinterpret_cast<const char*>(&value), sizeof(value));
+    TEUCHOS_TEST_FOR_EXCEPTION(!file.good(), std::runtime_error, "Failed to patch " << filename << ".");
+  }
+  comm->barrier();
+}
+
+class BinaryIOChunkLimitGuard {
+ public:
+  explicit BinaryIOChunkLimitGuard(const unsigned long long maxChunk) {
+    Tpetra::Details::binaryIOSetMaxChunkForUnitTests(maxChunk);
+  }
+  ~BinaryIOChunkLimitGuard() {
+    Tpetra::Details::binaryIOSetMaxChunkForUnitTests(0ull);
+  }
+};
 
 TEUCHOS_UNIT_TEST(BinaryIO, ByteChunkBoundaries) {
   const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<int>::max());
@@ -411,6 +437,53 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, DenseRoundTripCustomMap,
   cleanupFile(filename, comm);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, DenseRoundTripSmallChunks,
+                                  ST, LO, GO, NODE) {
+  using map_type       = Tpetra::Map<LO, GO, NODE>;
+  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, NODE>;
+
+  auto comm                         = Tpetra::getDefaultComm();
+  const global_size_t globalNumElts = 17 * static_cast<global_size_t>(comm->getSize()) + 3;
+  auto map                          = rcp(new map_type(globalNumElts,
+                                                       static_cast<GO>(0),
+                                                       comm,
+                                                       Tpetra::GloballyDistributed));
+  auto X                            = makeDenseTestMultiVector<ST, LO, GO, NODE>(map, 2);
+  const std::string filename        = makeFilename("Tpetra_BinaryIO_DenseRoundTripSmallChunks", *comm);
+
+  {
+    BinaryIOChunkLimitGuard smallChunks(16ull);
+    binary_io_type::writeDenseFile(filename, *X);
+    auto Y = binary_io_type::readDenseFile(filename, comm);
+    assertSameMultiVector(*X, *Y);
+  }
+  cleanupFile(filename, comm);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, HeaderLocalOrdinalMismatchThrows,
+                                  ST, LO, GO, NODE) {
+  using map_type       = Tpetra::Map<LO, GO, NODE>;
+  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, NODE>;
+
+  auto comm                         = Tpetra::getDefaultComm();
+  const global_size_t globalNumElts = 5 * static_cast<global_size_t>(comm->getSize()) + 1;
+  auto map                          = rcp(new map_type(globalNumElts,
+                                                       static_cast<GO>(0),
+                                                       comm,
+                                                       Tpetra::GloballyDistributed));
+  auto X                            = makeDenseTestMultiVector<ST, LO, GO, NODE>(map, 1);
+  const std::string filename        = makeFilename("Tpetra_BinaryIO_HeaderLocalOrdinalMismatchThrows", *comm);
+
+  binary_io_type::writeDenseFile(filename, *X);
+
+  const unsigned long long localOrdinalSizeOffset = 48ull;
+  const unsigned long long mismatchedSize         = static_cast<unsigned long long>(sizeof(LO)) + 1ull;
+  overwriteHeaderField(filename, localOrdinalSizeOffset, mismatchedSize, comm);
+
+  TEST_THROW(binary_io_type::readDenseFile(filename, comm), std::runtime_error);
+  cleanupFile(filename, comm);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BinaryIO, DenseLocalOrdinalScalarRoundTrip,
                                   LO, GO, NODE) {
   using map_type       = Tpetra::Map<LO, GO, NODE>;
@@ -486,6 +559,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, SparseRoundTripCustomRowMap,
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTripImbalancedContiguous, double, LO, GO, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripDefaultMap, double, LO, GO, NODE)         \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripCustomMap, double, LO, GO, NODE)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripSmallChunks, double, LO, GO, NODE)        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, HeaderLocalOrdinalMismatchThrows, double, LO, GO, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripDefaultMap, double, LO, GO, NODE)        \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripCustomRowMap, double, LO, GO, NODE)
 #else

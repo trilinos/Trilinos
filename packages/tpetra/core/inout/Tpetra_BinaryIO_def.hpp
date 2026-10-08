@@ -308,7 +308,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::broadcastBytesFromRoot
                                                                                  const trcp_tcomm_t& comm) {
   unsigned long long remaining      = byteCount;
   char* current                     = data;
-  const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<int>::max());
+  const unsigned long long maxChunk = Details::binaryIOIntCountMaxChunk();
   while (remaining > 0) {
     const unsigned long long chunk = std::min(remaining, maxChunk);
     Teuchos::broadcast(*comm, 0, static_cast<int>(chunk), current);
@@ -551,7 +551,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeArrayFromRoot(con
     if (comm->getRank() == 0) {
       const char* current                = reinterpret_cast<const char*>(data);
       unsigned long long currentOffset   = dataOffset;
-      const unsigned long long maxChunk  = static_cast<unsigned long long>(std::numeric_limits<int>::max());
+      const unsigned long long maxChunk  = Details::binaryIOIntCountMaxChunk();
       const unsigned long long numChunks = Details::binaryIOChunkCount(byteCount, maxChunk);
       for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && writeErr == MPI_SUCCESS; ++chunkIndex) {
         const unsigned long long chunk = Details::binaryIOChunkSize(byteCount, maxChunk, chunkIndex);
@@ -617,7 +617,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readArrayFromRoot(cons
     if (comm->getRank() == 0) {
       char* current                     = reinterpret_cast<char*>(data);
       unsigned long long currentOffset  = dataOffset;
-      const unsigned long long maxChunk  = static_cast<unsigned long long>(std::numeric_limits<int>::max());
+      const unsigned long long maxChunk  = Details::binaryIOIntCountMaxChunk();
       const unsigned long long numChunks = Details::binaryIOChunkCount(byteCount, maxChunk);
       for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && readErr == MPI_SUCCESS; ++chunkIndex) {
         const unsigned long long chunk = Details::binaryIOChunkSize(byteCount, maxChunk, chunkIndex);
@@ -686,8 +686,8 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeArrayCollective(c
     const char* current                     = reinterpret_cast<const char*>(data);
     unsigned long long remaining            = byteCount;
     unsigned long long currentOffset        = byteOffset;
-    const unsigned long long maxChunk       = static_cast<unsigned long long>(std::numeric_limits<int>::max());
-    const unsigned long long localNumChunks = (byteCount + maxChunk - 1ull) / maxChunk;
+    const unsigned long long maxChunk       = Details::binaryIOIntCountMaxChunk();
+    const unsigned long long localNumChunks = Details::binaryIOChunkCount(byteCount, maxChunk);
     unsigned long long numChunks            = 0;
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &localNumChunks, &numChunks);
     int writeErr = MPI_SUCCESS;
@@ -752,8 +752,8 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readArrayCollective(co
     char* current                           = reinterpret_cast<char*>(data);
     unsigned long long remaining            = byteCount;
     unsigned long long currentOffset        = byteOffset;
-    const unsigned long long maxChunk       = static_cast<unsigned long long>(std::numeric_limits<int>::max());
-    const unsigned long long localNumChunks = (byteCount + maxChunk - 1ull) / maxChunk;
+    const unsigned long long maxChunk       = Details::binaryIOIntCountMaxChunk();
+    const unsigned long long localNumChunks = Details::binaryIOChunkCount(byteCount, maxChunk);
     unsigned long long numChunks            = 0;
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &localNumChunks, &numChunks);
     int readErr = MPI_SUCCESS;

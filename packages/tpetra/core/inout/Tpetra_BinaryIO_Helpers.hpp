@@ -48,6 +48,26 @@ LocalOrdinal binaryIOCheckedLocalOrdinalCount(const size_t count, const char lab
   return static_cast<LocalOrdinal>(count);
 }
 
+/// \brief Override byte chunks for unit tests; zero means use production limits.
+inline unsigned long long& binaryIOMaxChunkOverrideForUnitTests() {
+  static unsigned long long maxChunk = 0;
+  return maxChunk;
+}
+
+/// \brief Set a small int-count chunk limit for BinaryIO unit tests.
+inline void binaryIOSetMaxChunkForUnitTests(const unsigned long long maxChunk) {
+  TEUCHOS_TEST_FOR_EXCEPTION(maxChunk > static_cast<unsigned long long>(std::numeric_limits<int>::max()),
+                             std::logic_error,
+                             "Tpetra::BinaryIO: Unit-test chunk limit must fit in int.");
+  binaryIOMaxChunkOverrideForUnitTests() = maxChunk;
+}
+
+/// \brief Return the int-count chunk limit for byte transfers.
+inline unsigned long long binaryIOIntCountMaxChunk() {
+  const unsigned long long maxChunk = binaryIOMaxChunkOverrideForUnitTests();
+  return maxChunk == 0 ? static_cast<unsigned long long>(std::numeric_limits<int>::max()) : maxChunk;
+}
+
 /// \brief Return the number of byte chunks needed for a transfer.
 inline unsigned long long binaryIOChunkCount(const unsigned long long byteCount,
                                              const unsigned long long maxChunk) {
