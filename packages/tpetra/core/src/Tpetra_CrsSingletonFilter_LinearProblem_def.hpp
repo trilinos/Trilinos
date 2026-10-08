@@ -178,17 +178,20 @@ struct UpdateReducedProblemFunctor {
     LocalOrdinal lclRowID  = lclReducedRowMap.getLocalElement(glbRowID);
 
     if (lclRowID != INVALID) {
+      size_t k = lclReducedRowPtr(lclRowID);
       for (size_t j = lclFullRowPtr(i); j < lclFullRowPtr(i + 1); j++) {
         GlobalOrdinal glbColID = lclFullColMap.getGlobalElement(lclFullColInd(j));
         LocalOrdinal lclColID  = lclReducedColMap.getLocalElement(glbColID);
         if (lclColID != INVALID) {
-          for (size_t k = lclReducedRowPtr(lclRowID); k < lclReducedRowPtr(lclRowID + 1); k++) {
-            if (lclReducedColInd[k] == lclColID) {
-              lclReducedValues[k] = lclFullValues[j];
-            }
-          }
+          // because ConstructReducedProblemFunctor and UpdateReducedProblemFunctor scan non-zeros in the same order (based on lclFullRowPtr)
+          //  lclColID should match lclReducedColInd[k].
+          //if (lclReducedColInd[k] != lclColID) printf( "WARNING: lclReducedColInd[%d]=%d does not match lclColID=%d\n",k,lclReducedColInd[k],lclColID );
+          lclReducedColInd[k] = lclColID;
+          lclReducedValues[k] = lclFullValues[j];
+          k++;
         }
       }
+      //if (k != lclReducedRowPtr(lclRowID+1)) printf("WARNING: k=%d does not match lclReducedRowPtr(%d)=%d\n",k,lclRowID+1,lclReducedRowPtr(lclRowID+1));
     }
   }
 };
