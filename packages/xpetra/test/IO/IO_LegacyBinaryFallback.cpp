@@ -162,8 +162,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IO, LegacyBinaryConversionDistributed, Scalar,
   cleanupFile(convertedFilename, comm);
 }
 
-#define XP_IO_LEGACY_INSTANT(S, LO, GO, N)                                               \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IO, LegacyBinaryFallbackDistributed, S, LO, GO, N)  \
+#define XP_IO_LEGACY_INSTANT(S, LO, GO, N)                                                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IO, LegacyBinaryFallbackDistributed, S, LO, GO, N) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(IO, LegacyBinaryConversionDistributed, S, LO, GO, N)
 
 #include <TpetraCore_config.h>

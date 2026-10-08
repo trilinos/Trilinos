@@ -615,8 +615,8 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readArrayFromRoot(cons
                                "Tpetra::BinaryIO: MPI_File_open failed while reading root-owned array data.");
     int readErr = MPI_SUCCESS;
     if (comm->getRank() == 0) {
-      char* current                     = reinterpret_cast<char*>(data);
-      unsigned long long currentOffset  = dataOffset;
+      char* current                      = reinterpret_cast<char*>(data);
+      unsigned long long currentOffset   = dataOffset;
       const unsigned long long maxChunk  = Details::binaryIOIntCountMaxChunk();
       const unsigned long long numChunks = Details::binaryIOChunkCount(byteCount, maxChunk);
       for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && readErr == MPI_SUCCESS; ++chunkIndex) {
