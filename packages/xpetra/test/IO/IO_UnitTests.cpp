@@ -41,7 +41,8 @@ void cleanupFile(const std::string& filename,
 }
 
 void writeLegacyBinaryMissingRowsFile(const std::string& filename,
-                                      const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+                                      const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                                      const bool appendTrailingBytes = false) {
   comm->barrier();
   if (comm->getRank() == 0) {
     std::ofstream out(filename.c_str(), std::ios::binary | std::ios::trunc);
@@ -69,6 +70,10 @@ void writeLegacyBinaryMissingRowsFile(const std::string& filename,
         out.write(reinterpret_cast<const char*>(&column), sizeof(column));
         out.write(reinterpret_cast<const char*>(&value), sizeof(value));
       }
+    }
+    if (appendTrailingBytes) {
+      const char padding[4] = {'P', 'A', 'D', '\0'};
+      out.write(padding, sizeof(padding));
     }
     TEUCHOS_TEST_FOR_EXCEPTION(!out.good(), std::runtime_error, "Failed to write " << filename << ".");
   }
@@ -201,7 +206,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryLegacyConversion, M, MA, Scalar, LO,
   const std::string legacyFilename    = makeBinaryFilename("xpetra_io_legacy_missing_rows", *comm);
   const std::string convertedFilename = makeBinaryFilename("xpetra_io_legacy_missing_rows_converted", *comm);
 
-  writeLegacyBinaryMissingRowsFile(legacyFilename, comm);
+  writeLegacyBinaryMissingRowsFile(legacyFilename, comm, true);
   Xpetra::IO<Scalar, LO, GO, Node>::ConvertLegacyBinaryToBinary(legacyFilename, convertedFilename, lib, comm);
 
   auto A = Xpetra::IO<Scalar, LO, GO, Node>::Read(convertedFilename, lib, comm, true);
@@ -239,7 +244,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryLegacyFallback, M, MA, Scalar, LO, G
   Xpetra::UnderlyingLib lib        = testMap.lib();
   const std::string legacyFilename = makeBinaryFilename("xpetra_io_legacy_fallback", *comm);
 
-  writeLegacyBinaryMissingRowsFile(legacyFilename, comm);
+  writeLegacyBinaryMissingRowsFile(legacyFilename, comm, true);
 
   auto A = Xpetra::IO<Scalar, LO, GO, Node>::Read(legacyFilename, lib, comm, true);
   TEUCHOS_ASSERT_EQUALITY(A->getGlobalNumRows(), 5);

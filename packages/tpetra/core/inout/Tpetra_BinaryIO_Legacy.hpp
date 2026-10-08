@@ -48,6 +48,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TestForException.hpp"
 
 #include "Kokkos_Core.hpp"
@@ -170,10 +171,12 @@ inline LegacyBinaryHeader readAndValidateLegacyBinaryHeader(const std::string& f
   const unsigned long long minSize  = static_cast<unsigned long long>(3 * sizeof(int)) +
                                      static_cast<unsigned long long>(header.numRows) * static_cast<unsigned long long>(2 * sizeof(int)) +
                                      static_cast<unsigned long long>(header.numEntries) * static_cast<unsigned long long>(sizeof(int) + sizeof(double));
-  TEUCHOS_TEST_FOR_EXCEPTION(fileSize != minSize,
+  // Legacy files may have trailing padding or metadata, but they must contain
+  // at least the bytes required by the dimensions and entry count in the header.
+  TEUCHOS_TEST_FOR_EXCEPTION(fileSize < minSize,
                              std::runtime_error,
                              "Tpetra::BinaryIO: File '" << fileName << "' is not a valid legacy Xpetra binary matrix file."
-                                                        << " Expected " << minSize << " bytes from its header, but file has " << fileSize << " bytes.");
+                                                        << " Expected at least " << minSize << " bytes from its header, but file has " << fileSize << " bytes.");
   return header;
 }
 
@@ -183,6 +186,21 @@ void readLegacyBinaryValue(std::ifstream& in, T& value, const std::string& fileN
   TEUCHOS_TEST_FOR_EXCEPTION(!in.good(),
                              std::runtime_error,
                              "Tpetra::BinaryIO: Failed to read " << label << " from legacy binary file '" << fileName << "'.");
+}
+
+/// \brief Convert a legacy real-valued double to the requested matrix scalar.
+template <class Scalar>
+typename std::enable_if<!Teuchos::ScalarTraits<Scalar>::isComplex, Scalar>::type
+legacyDoubleToScalar(const double value) {
+  return static_cast<Scalar>(value);
+}
+
+/// \brief Convert a legacy real-valued double to a complex scalar.
+template <class Scalar>
+typename std::enable_if<Teuchos::ScalarTraits<Scalar>::isComplex, Scalar>::type
+legacyDoubleToScalar(const double value) {
+  using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  return Scalar(static_cast<magnitude_type>(value), magnitude_type(0));
 }
 
 /// \brief Read a matrix stored in the legacy Xpetra binary matrix format.
@@ -322,7 +340,7 @@ readLegacyBinarySparseFile(const std::string& oldFileName,
       for (int j = 0; j < rownnz; ++j) {
         double value = 0.0;
         readLegacyBinaryValue(in, value, oldFileName, "matrix value");
-        valuesHost(offset + static_cast<size_t>(j)) = static_cast<Scalar>(value);
+        valuesHost(offset + static_cast<size_t>(j)) = legacyDoubleToScalar<Scalar>(value);
       }
       nextPtr(static_cast<size_t>(row)) += static_cast<unsigned long long>(rownnz);
     }

@@ -8,6 +8,8 @@
 // @HEADER
 
 #include "Tpetra_BinaryIO.hpp"
+#include "Tpetra_BinaryIO_Helpers.hpp"
+#include "Tpetra_BinaryIO_Legacy.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Import_Util2.hpp"
@@ -20,6 +22,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <utility>
@@ -45,6 +48,33 @@ void cleanupFile(const std::string& filename,
     std::remove(filename.c_str());
   }
   comm->barrier();
+}
+
+TEUCHOS_UNIT_TEST(BinaryIO, ByteChunkBoundaries) {
+  const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<int>::max());
+
+  TEST_EQUALITY(Tpetra::Details::binaryIOChunkCount(0ull, maxChunk), 0ull);
+  TEST_EQUALITY(Tpetra::Details::binaryIOChunkCount(maxChunk, maxChunk), 1ull);
+  TEST_EQUALITY(Tpetra::Details::binaryIOChunkSize(maxChunk, maxChunk, 0ull), maxChunk);
+
+  const unsigned long long onePastMax = maxChunk + 1ull;
+  TEST_EQUALITY(Tpetra::Details::binaryIOChunkCount(onePastMax, maxChunk), 2ull);
+  TEST_EQUALITY(Tpetra::Details::binaryIOChunkSize(onePastMax, maxChunk, 0ull), maxChunk);
+  TEST_EQUALITY(Tpetra::Details::binaryIOChunkSize(onePastMax, maxChunk, 1ull), 1ull);
+
+  const unsigned long long remainder      = 17ull;
+  const unsigned long long multiChunkSize = 2ull * maxChunk + remainder;
+  TEST_EQUALITY(Tpetra::Details::binaryIOChunkCount(multiChunkSize, maxChunk), 3ull);
+  TEST_EQUALITY(Tpetra::Details::binaryIOChunkSize(multiChunkSize, maxChunk, 0ull), maxChunk);
+  TEST_EQUALITY(Tpetra::Details::binaryIOChunkSize(multiChunkSize, maxChunk, 1ull), maxChunk);
+  TEST_EQUALITY(Tpetra::Details::binaryIOChunkSize(multiChunkSize, maxChunk, 2ull), remainder);
+
+  unsigned long long offset = 1234ull;
+  for (unsigned long long chunkIndex = 0; chunkIndex < Tpetra::Details::binaryIOChunkCount(multiChunkSize, maxChunk); ++chunkIndex) {
+    offset = Tpetra::Details::binaryIOCheckedAddByteOffset(offset,
+                                                           Tpetra::Details::binaryIOChunkSize(multiChunkSize, maxChunk, chunkIndex));
+  }
+  TEST_EQUALITY(offset, 1234ull + multiChunkSize);
 }
 
 template <class LO, class GO, class Node>
@@ -381,6 +411,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, DenseRoundTripCustomMap,
   cleanupFile(filename, comm);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BinaryIO, DenseLocalOrdinalScalarRoundTrip,
+                                  LO, GO, NODE) {
+  using map_type       = Tpetra::Map<LO, GO, NODE>;
+  using binary_io_type = Tpetra::BinaryIO<LO, LO, GO, NODE>;
+
+  auto comm                         = Tpetra::getDefaultComm();
+  const global_size_t globalNumElts = 7 * static_cast<global_size_t>(comm->getSize()) + 1;
+  auto map                          = rcp(new map_type(globalNumElts,
+                                                       static_cast<GO>(0),
+                                                       comm,
+                                                       Tpetra::GloballyDistributed));
+  auto X                            = makeDenseTestMultiVector<LO, LO, GO, NODE>(map, 2);
+  const std::string filename        = makeFilename("Tpetra_BinaryIO_DenseLocalOrdinalScalarRoundTrip", *comm);
+
+  binary_io_type::writeDenseFile(filename, *X);
+  auto Y = Tpetra::Details::readBinaryDenseFileLocalOrdinal<LO, GO, NODE>(filename, map);
+
+  assertSameMultiVector(*X, *Y);
+  cleanupFile(filename, comm);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, SparseRoundTripDefaultMap,
                                   ST, LO, GO, NODE) {
   using map_type       = Tpetra::Map<LO, GO, NODE>;
@@ -441,8 +492,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, SparseRoundTripCustomRowMap,
 #define UNIT_TEST_GROUP(LO, GO, NODE)
 #endif
 
+#if !defined(HAVE_TPETRA_REDUCED_ETI) && !defined(HAVE_TPETRA_INST_INT_INT)
+#define LOCAL_ORDINAL_SCALAR_TEST_GROUP(LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(BinaryIO, DenseLocalOrdinalScalarRoundTrip, LO, GO, NODE)
+#else
+#define LOCAL_ORDINAL_SCALAR_TEST_GROUP(LO, GO, NODE)
+#endif
+
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
 TPETRA_INSTANTIATE_LGN(UNIT_TEST_GROUP)
+TPETRA_INSTANTIATE_LGN(LOCAL_ORDINAL_SCALAR_TEST_GROUP)
 
 }  // namespace

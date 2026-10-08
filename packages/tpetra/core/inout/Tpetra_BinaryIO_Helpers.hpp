@@ -23,8 +23,10 @@
 
 #include "Teuchos_TestForException.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <limits>
+#include <stdexcept>
 
 namespace Tpetra {
 namespace Details {
@@ -44,6 +46,36 @@ LocalOrdinal binaryIOCheckedLocalOrdinalCount(const size_t count, const char lab
                              std::overflow_error,
                              "Tpetra::BinaryIO: " << label << " does not fit in LocalOrdinal.");
   return static_cast<LocalOrdinal>(count);
+}
+
+/// \brief Return the number of byte chunks needed for a transfer.
+inline unsigned long long binaryIOChunkCount(const unsigned long long byteCount,
+                                             const unsigned long long maxChunk) {
+  TEUCHOS_TEST_FOR_EXCEPTION(maxChunk == 0,
+                             std::logic_error,
+                             "Tpetra::BinaryIO: Chunk size must be nonzero.");
+  return byteCount == 0 ? 0 : 1ull + (byteCount - 1ull) / maxChunk;
+}
+
+/// \brief Return the size of one byte chunk in a chunked transfer.
+inline unsigned long long binaryIOChunkSize(const unsigned long long byteCount,
+                                            const unsigned long long maxChunk,
+                                            const unsigned long long chunkIndex) {
+  const unsigned long long numChunks = binaryIOChunkCount(byteCount, maxChunk);
+  TEUCHOS_TEST_FOR_EXCEPTION(chunkIndex >= numChunks,
+                             std::logic_error,
+                             "Tpetra::BinaryIO: Chunk index is outside the chunked transfer.");
+  const unsigned long long chunkOffset = chunkIndex * maxChunk;
+  return std::min(byteCount - chunkOffset, maxChunk);
+}
+
+/// \brief Add a byte increment to a file offset, throwing on overflow.
+inline unsigned long long binaryIOCheckedAddByteOffset(const unsigned long long offset,
+                                                       const unsigned long long increment) {
+  TEUCHOS_TEST_FOR_EXCEPTION(offset > std::numeric_limits<unsigned long long>::max() - increment,
+                             std::overflow_error,
+                             "Tpetra::BinaryIO: Byte offset overflow while advancing file offset.");
+  return offset + increment;
 }
 
 }  // namespace Details
