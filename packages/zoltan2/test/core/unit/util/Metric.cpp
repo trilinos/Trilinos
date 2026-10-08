@@ -507,4 +507,5 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     numLocalObj, nWeights, original_numLocalParts, givePartSizes);
 
   delete ia;
+  delete [] myGids;
 }

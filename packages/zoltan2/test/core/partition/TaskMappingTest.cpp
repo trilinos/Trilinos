@@ -370,6 +370,10 @@ int main(int narg, char *arg[]) {
     }
 
 
+    delete [] task_gnos;
+    delete [] task_communication_xadj_;
+    delete [] task_communication_adj_;
+
     for (int i = 0; i < coordDim; i++) delete [] partCenters[i];
     delete [] partCenters;
 
