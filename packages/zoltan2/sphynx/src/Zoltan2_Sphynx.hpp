@@ -502,6 +502,7 @@ namespace Zoltan2 {
       bool randomInit_;          // obtained from user params or decided internally
       int verbosity_;            // obtained from user params
       bool skipPrep_;            // obtained from user params
+      std::vector<std::vector<weight_t>> weightStorage_;
   };
 
   ///////////////////////////////////////////////////////////////////////////
@@ -932,9 +933,11 @@ namespace Zoltan2 {
       int numConstraints = numWeights > 0 ? numWeights : 1;
 
       size_t myNumVertices = adapter_->getLocalNumVertices();
-      weight_t ** weights = new weight_t*[numConstraints];
+
+      weightStorage_.clear();
+      weightStorage_.resize(numConstraints);
       for(int j = 0; j < numConstraints; j++)
-        weights[j] = new weight_t[myNumVertices];
+        weightStorage_[j].resize(myNumVertices);
 
       // Will be needed if we use degree as weight
       const offset_t *offset;
@@ -946,9 +949,9 @@ namespace Zoltan2 {
         // Compute the weight of vertex i as the number of nonzeros in row i.
         adapter_->getEdgesView(offset, columnId);
         for (size_t i = 0; i < myNumVertices; i++)
-          weights[0][i] = offset[i+1] - offset[i] - 1;
+          weightStorage_[0][i] = offset[i+1] - offset[i] - 1;
 
-        vecweights.push_back(weights[0]);
+        vecweights.push_back(weightStorage_[0].data());
         strides.push_back(1);
       }
       else {
@@ -960,7 +963,7 @@ namespace Zoltan2 {
             // Compute the weight of vertex i as the number of nonzeros in row i.
             adapter_->getEdgesView(offset, columnId);
             for (size_t i = 0; i < myNumVertices; i++)
-              weights[j][i] = offset[i+1] - offset[i];
+              weightStorage_[j][i] = offset[i+1] - offset[i];
           }
           else{
             int stride;
@@ -968,10 +971,10 @@ namespace Zoltan2 {
             adapter_->getVertexWeightsView(wgt, stride, j);
 
             for (size_t i = 0; i < myNumVertices; i++)
-              weights[j][i] = wgt[i];
+              weightStorage_[j][i] = wgt[i];
           }
 
-          vecweights.push_back(weights[j]);
+          vecweights.push_back(weightStorage_[j].data());
           strides.push_back(1);
 
         }
