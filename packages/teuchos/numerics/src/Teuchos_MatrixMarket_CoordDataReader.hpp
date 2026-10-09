@@ -376,10 +376,16 @@ namespace Teuchos {
             dims[2] = theNumNonzeros;
           }
         }
-        // It would be nice to validate the read-in data further.  The
-        // only thing we can do now is test if it's negative.  However,
-        // we don't know syntactically whether Ordinal is a signed or
-        // unsigned type, so we shouldn't even test for negativity.
+        // Validate that dimensions are non-negative.
+        // The check is safe for unsigned Ordinal types because the
+        // comparison will always be false.
+        if (dims[0] < 0 || dims[1] < 0 || dims[2] < 0) {
+          std::ostringstream os;
+          os << "Invalid Matrix Market dimensions on line " << lineNumber
+             << ": dimensions must be non-negative, got "
+             << dims[0] << " " << dims[1] << " " << dims[2];
+          throw std::invalid_argument(os.str());
+        }
         return std::make_pair (dims, true);
       }
     };

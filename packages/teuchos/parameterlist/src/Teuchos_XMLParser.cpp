@@ -463,7 +463,7 @@ void XMLParser::getReference(std::string &refstr) {
     //               | '&#x' [0-9]+ ';'
     // get first number
     XMLPARSER_TFE(_is->readBytes(&c,1) < 1,  "EOF before reference was terminated");
-    if (c == 'x') {
+    if (c == 'x' || c == 'X') {
       base = 16;
       num = 0;
     }
@@ -477,11 +477,22 @@ void XMLParser::getReference(std::string &refstr) {
 
     do {
       XMLPARSER_TFE(_is->readBytes(&c,1) < 1,  "EOF before reference was terminated");
-      XMLPARSER_TFE( c != ';' && !('0' <= c && c <= '9') ,  "invalid character in character reference: expected [0-9] or ';'");
       if (c == ';') {
         break;
       }
-      num = num*base + (c-'0');
+      int digit;
+      if (base == 10) {
+        XMLPARSER_TFE(!('0' <= c && c <= '9'), "invalid character in character reference: expected [0-9] or ';'");
+        digit = c - '0';
+      }
+      else {
+        XMLPARSER_TFE(!('0' <= c && c <= '9') && !('a' <= c && c <= 'f') && !('A' <= c && c <= 'F'), "invalid character in character reference: expected [0-9a-fA-F] or ';'");
+        if ('0' <= c && c <= '9') digit = c - '0';
+        else if ('a' <= c && c <= 'f') digit = 10 + c - 'a';
+        else digit = 10 + c - 'A';
+      }
+      XMLPARSER_TFE(num > (0xFF - digit) / base, "character reference value out of range");
+      num = num*base + digit;
     } while (1);
     XMLPARSER_TFE(num > 0xFF,  "character reference value out of range");
     refstr.push_back( (unsigned char)num );
