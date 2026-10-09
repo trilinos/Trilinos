@@ -5,7 +5,8 @@ set(Trilinos_ENABLE_Amesos OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # cmake_args - packages
 set(Trilinos_ENABLE_Amesos2 ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +umfpack
-set(Amesos2_ENABLE_UMFPACK ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+# Enabled in spack based build but turned off at guidance of @sebrowne
+set(Amesos2_ENABLE_UMFPACK OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # cmake_args - packages
 set(Trilinos_ENABLE_Anasazi ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # ~epetra_stack
@@ -197,9 +198,11 @@ set(TPL_ENABLE_yaml OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +scotch
 set(TPL_ENABLE_Scotch ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +umfpack
-set(TPL_ENABLE_UMFPACK ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+# Enabled in spack based build but turned off at guidance of @sebrowne
+set(TPL_ENABLE_UMFPACK OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # cmake_args() - tpls
-set(TPL_ENABLE_y12m ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+# Enabled in spack based build but turned off at guidance of @sebrowne
+set(TPL_ENABLE_y12m OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # generator
 set(CMAKE_GENERATOR Ninja CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # cxxflags='-fPIC -fno-semantic-interposition'
