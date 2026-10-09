@@ -11,6 +11,7 @@
 #define MATRIXMARKET_TPETRA_DEF_HPP
 
 #include "MatrixMarket_Tpetra_decl.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Operator.hpp"
@@ -177,9 +178,13 @@ void MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::distribute(T
 
       // Use the resulting array to figure out how many column
       // indices and values I should ask from the root process.
-      const local_ordinal_type myNumEntries =
+      const size_t myNumEntries =
           std::accumulate(myNumEntriesPerRow.begin(),
-                          myNumEntriesPerRow.end(), 0);
+                          myNumEntriesPerRow.end(), size_t(0));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          myNumEntries > static_cast<size_t>(std::numeric_limits<int>::max()),
+          std::overflow_error,
+          "MatrixMarketReader::distribute: myNumEntries exceeds int range");
 
       // Make space for my entries of the sparse matrix.  Note
       // that they don't have to be sorted by row index.
@@ -222,9 +227,13 @@ void MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::distribute(T
       cerr << "]" << endl;
     }
     // The total number of matrix entries that my proc owns.
-    const local_ordinal_type myNumEntries =
+    const size_t myNumEntries =
         std::accumulate(myNumEntriesPerRow.begin(),
-                        myNumEntriesPerRow.end(), 0);
+                        myNumEntriesPerRow.end(), size_t(0));
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        myNumEntries > static_cast<size_t>(std::numeric_limits<int>::max()),
+        std::overflow_error,
+        "MatrixMarketReader::distribute: myNumEntries exceeds int range");
     if (debug) {
       cerr << "-- Proc 0: I own " << myNumRows << " rows and "
            << myNumEntries << " entries" << endl;
@@ -337,9 +346,13 @@ void MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::distribute(T
              theirNumEntriesPerRow.getRawPtr(), p);
 
         // Figure out how many entries Proc p owns.
-        const local_ordinal_type theirNumEntries =
+        const size_t theirNumEntries =
             std::accumulate(theirNumEntriesPerRow.begin(),
-                            theirNumEntriesPerRow.end(), 0);
+                            theirNumEntriesPerRow.end(), size_t(0));
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            theirNumEntries > static_cast<size_t>(std::numeric_limits<int>::max()),
+            std::overflow_error,
+            "MatrixMarketReader::distribute: theirNumEntries exceeds int range");
 
         if (debug) {
           cerr << "-- Proc 0: Proc " << p << " owns "
@@ -1125,7 +1138,12 @@ MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseGraphHe
   Teuchos::Array<size_t> numEntriesPerRow(proc0Map->getLocalNumElements());
   for (const auto& ent : numEntriesPerRow_map) {
     const local_ordinal_type lclRow = proc0Map->getLocalElement(ent.first);
-    numEntriesPerRow[lclRow]        = ent.second;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        lclRow == Teuchos::OrdinalTraits<local_ordinal_type>::invalid(),
+        std::runtime_error,
+        "MatrixMarketReader::readSparseGraphHelper: global row "
+            << ent.first << " is not owned by proc0Map.  This should not happen.");
+    numEntriesPerRow[lclRow] = ent.second;
   }
   // Free anything we don't need before allocating the graph.
   // Swapping with an empty data structure is the standard idiom
@@ -1761,6 +1779,16 @@ MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparse(std::i
         }
         cerr << rowPtr[numRows] << "]" << endl;
       }
+
+      // Broadcast success flag to all ranks
+      int mergeAndConvertSucceededAll = mergeAndConvertSucceeded;
+      broadcast(*pComm, rootRank, ptr(&mergeAndConvertSucceededAll));
+      if (mergeAndConvertSucceededAll == 0) {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::runtime_error,
+            "Failed to merge sparse matrix entries and convert to CSR format: "
+                << errMsg.str());
+      }
     }  // if myRank == rootRank
   }    // Done converting sparse matrix data to CSR format
 
@@ -2283,6 +2311,16 @@ MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparse(std::i
           }
         }
         cerr << rowPtr[numRows] << "]" << endl;
+      }
+
+      // Broadcast success flag to all ranks
+      int mergeAndConvertSucceededAll = mergeAndConvertSucceeded;
+      broadcast(*pComm, rootRank, ptr(&mergeAndConvertSucceeded));
+      if (mergeAndConvertSucceededAll == 0) {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::runtime_error,
+            "Failed to merge sparse matrix entries and convert to CSR format: "
+                << errMsg.str());
       }
     }  // if myRank == rootRank
   }    // Done converting sparse matrix data to CSR format
@@ -3297,6 +3335,12 @@ MatrixMarketReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readDenseImpl(std
       global_size_t numRows, numCols;
       in.read(reinterpret_cast<char*>(&numRows), sizeof(numRows));
       in.read(reinterpret_cast<char*>(&numCols), sizeof(numCols));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          numRows == 0 || numCols == 0,
+          std::runtime_error,
+          "Matrix Market dense binary header has non-positive dimensions: "
+          "numRows="
+              << numRows << ", numCols=" << numCols);
       dims[0] = Teuchos::as<GO>(numRows);
       dims[1] = Teuchos::as<GO>(numCols);
       if ((typeid(ST) == typeid(double)) || Teuchos::ScalarTraits<ST>::isOrdinal) {
