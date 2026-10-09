@@ -505,7 +505,7 @@ TEST(MiniTensor, SVD3x3)
 
   Real const error = norm(A - B) / norm(A);
 
-  ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
+  ASSERT_LE(error, TOL_ITERATIVE);
 }
 
 TEST(MiniTensor, SVD3x3Fad)
@@ -523,7 +523,7 @@ TEST(MiniTensor, SVD3x3Fad)
   Sacado::Fad::DFad<Real> const
   error = norm(B - A) / norm(A);
 
-  ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
+  ASSERT_LE(error, TOL_ITERATIVE);
 }
 
 TEST(MiniTensor, SymmetricEigen2x2)
@@ -569,7 +569,7 @@ TEST(MiniTensor, SymmetricEigen3x3)
 
   Real const error = norm(A - B) / norm(A);
 
-  ASSERT_LE(error, 4.0 * machine_epsilon<Real>());
+  ASSERT_LE(error, TOL_DIRECT);
 }
 
 TEST(MiniTensor, Polar3x3)
