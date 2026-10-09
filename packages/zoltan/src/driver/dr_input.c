@@ -81,11 +81,11 @@ int read_cmd_file (
       &Chaco_In_Assign_Inv) == 1)       /* ??? Is this used anymore?  */
       continue;
 
-    else if (sscanf(line," decomposition method" SKIPEQ "%s", prob->method)== 1)
+    else if (sscanf(line," decomposition method" SKIPEQ "%31s", prob->method)== 1)
       continue;
 
-    else if (sscanf(line, " file name" SKIPEQ "%s", pio_info->pexo_fname) == 1)
-      sscanf(original_line, "%*[^=]= %s", pio_info->pexo_fname); /*save case*/
+    else if (sscanf(line, " file name" SKIPEQ "%4095s", pio_info->pexo_fname) == 1)
+      sscanf(original_line, "%*[^=]= %4095s", pio_info->pexo_fname); /*save case*/
 
     else if (sscanf(line, " compression" SKIPEQ "%s", value) == 1) {
       if (!strcmp(value, "uncompressed")) {
@@ -409,9 +409,11 @@ int read_cmd_file (
 	sscanf(original_line + (pline-line), NEXTARG LASTARG, dummy, value); /* reread value from orig line to preserve case */
 
 	if (strcmp(string, "root") == 0)
-	  strcpy(pio_info->pdsk_root, value);
+	  strncpy(pio_info->pdsk_root, value, sizeof(pio_info->pdsk_root)-1);
+	  pio_info->pdsk_root[sizeof(pio_info->pdsk_root)-1] = '\0';
 	if (strcmp(string, "subdir") == 0)   {
-	  strcpy(pio_info->pdsk_subdir, value);
+	  strncpy(pio_info->pdsk_subdir, value, sizeof(pio_info->pdsk_subdir)-1);
+	  pio_info->pdsk_subdir[sizeof(pio_info->pdsk_subdir)-1] = '\0';
 	  if (value [strlen(value)-1] != '/')  {
 	    pio_info->pdsk_subdir [strlen(value)] = '/';
 	    pio_info->pdsk_subdir [strlen(value)+1] = 0;
