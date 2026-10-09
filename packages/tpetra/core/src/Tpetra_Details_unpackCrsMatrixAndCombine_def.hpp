@@ -74,7 +74,7 @@ unpackRow(const typename PackTraits<GO>::output_array_type& gids_out,
           const typename PackTraits<ST>::output_array_type& vals_out,
           const char imports[],
           const size_t offset,
-          const size_t /* num_bytes */,
+          const size_t num_bytes,
           const size_t num_ent,
           const size_t bytes_per_value) {
   if (num_ent == 0) {
@@ -95,6 +95,11 @@ unpackRow(const typename PackTraits<GO>::output_array_type& gids_out,
 
   const size_t vals_beg = gids_beg + gids_len + pids_len;
   const size_t vals_len = num_ent * bytes_per_value;
+
+  const size_t expected_num_bytes = num_ent_len + gids_len + pids_len + vals_len;
+  if (expected_num_bytes > num_bytes) {
+    return 25;  // error code: insufficient bytes
+  }
 
   const char* const num_ent_in = imports + num_ent_beg;
   const char* const gids_in    = imports + gids_beg;
@@ -131,7 +136,6 @@ unpackRow(const typename PackTraits<GO>::output_array_type& gids_out,
     num_bytes_out += p.second;
   }
 
-  const size_t expected_num_bytes = num_ent_len + gids_len + pids_len + vals_len;
   if (num_bytes_out != expected_num_bytes) {
     return 24;  // error code
   }
