@@ -303,11 +303,17 @@ TwoDArray<T> TwoDArray<T>::fromString(const std::string& string_in){
   //Get actual data
   Array<T> array = fromStringToArray<T>(curString);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(array.size() != (typename Array<T>::size_type)(numRows*numCols),
+  // Check for overflow in numRows*numCols
+  TEUCHOS_TEST_FOR_EXCEPTION(numRows != 0 && numCols > (typename Array<T>::size_type)(-1) / numRows,
+    InvalidArrayStringRepresentation,
+    "Error: TwoDArray dimensions " << numRows << "x" << numCols << " overflow size_t."
+  )
+  typename Array<T>::size_type expectedSize = numRows * numCols;
+  TEUCHOS_TEST_FOR_EXCEPTION(array.size() != expectedSize,
     InvalidArrayStringRepresentation,
     "Error: You've specified an TwoDArray as having the dimensions of "
     << numRows << "x" << numCols << ". This means you should have " <<
-    (numRows*numCols) << " entries specified in your array. However you "
+    expectedSize << " entries specified in your array. However you "
     "only specified " << array.size() << " entries."
   )
 
