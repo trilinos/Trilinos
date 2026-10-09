@@ -27,8 +27,8 @@
 
 #if defined(__GNUC__) && !defined(__clang__) && \
     !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) && \
-    (__GNUC__ == 12)
-// GCC 12 can emit false-positive -Wnonnull diagnostics.
+    (__GNUC__ >= 12)
+// GCC 12 and later can emit false-positive -Wnonnull diagnostics.
 #  define TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
 #endif
 
