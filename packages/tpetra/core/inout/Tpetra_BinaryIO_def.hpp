@@ -857,14 +857,12 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapSection(const std::s
 
   Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> gids("Tpetra::BinaryIO::mapGids",
                                                        Details::binaryIOCheckedSize(localCount, "map section local element count"));
-  if (localCount > 0) {
-    readArrayCollective(filename,
-                        mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
-                        gids.data(),
-                        localCount,
-                        globalOffset,
-                        comm);
-  }
+  readArrayCollective(filename,
+                      mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
+                      gids.data(),
+                      localCount,
+                      globalOffset,
+                      comm);
 
   using device_type = typename map_type::device_type;
   Kokkos::View<GlobalOrdinal*, device_type> gidsDevice("Tpetra::BinaryIO::mapGidsDevice", gids.extent(0));
@@ -1146,15 +1144,11 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
   const unsigned long long globalRowOffset = exclusiveScanUnsignedLongLong(localNumRows64, comm);
 
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> localRowPtr("Tpetra::BinaryIO::localRowPtr", localNumRows + 1);
-  if (localNumRows > 0) {
-    readArrayCollective(filename, header.rowPtrOffset, localRowPtr.data(),
-                        localNumRows64 + 1, globalRowOffset, comm);
-    TEUCHOS_TEST_FOR_EXCEPTION(localRowPtr(localNumRows) < localRowPtr(0),
-                               std::runtime_error,
-                               "Tpetra::BinaryIO: Sparse row pointers in file are not monotonic on this rank.");
-  } else {
-    localRowPtr(0) = 0;
-  }
+  readArrayCollective(filename, header.rowPtrOffset, localRowPtr.data(),
+                      localNumRows64 + 1, globalRowOffset, comm);
+  TEUCHOS_TEST_FOR_EXCEPTION(localRowPtr(localNumRows) < localRowPtr(0),
+                             std::runtime_error,
+                             "Tpetra::BinaryIO: Sparse row pointers in file are not monotonic on this rank.");
   const unsigned long long nnzStart          = localRowPtr(0);
   unsigned long long nonmonotonicRowPtrCount = 0;
   Kokkos::parallel_reduce(
@@ -1180,15 +1174,16 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
   const size_t localNnz               = Details::binaryIOCheckedSize(localNnz64, "local sparse entry count");
   Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> globalColumns("Tpetra::BinaryIO::globalColumns", localNnz);
   Kokkos::View<Scalar*, Kokkos::HostSpace> values("Tpetra::BinaryIO::values", localNnz);
-  if (localNnz64 > 0) {
-    readArrayCollective(filename, header.columnIndicesOffset, globalColumns.data(), localNnz64, nnzStart, comm);
-    readArrayCollective(filename, header.valuesOffset, values.data(), localNnz64, nnzStart, comm);
-  }
+  readArrayCollective(filename, header.columnIndicesOffset, globalColumns.data(), localNnz64, nnzStart, comm);
+  readArrayCollective(filename, header.valuesOffset, values.data(), localNnz64, nnzStart, comm);
 
   const auto dom = domainMap.is_null() ? fileDomainMap : domainMap;
   const auto ran = rangeMap.is_null() ? fileRangeMap : rangeMap;
 
-  if (rowMap->isSameAs(*fileRowMap)) {
+  int mapsAreSameLocal = rowMap->locallySameAs(*fileRowMap) ? 1 : 0;
+  int mapsAreSame      = 0;
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &mapsAreSameLocal, &mapsAreSame);
+  if (mapsAreSame != 0) {
     auto matrix = Details::buildSparseMatrixFromLocalCrsViews<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, dom, localRowPtr, globalColumns, values);
     if (callFillComplete) {
       matrix->fillComplete(dom, ran);

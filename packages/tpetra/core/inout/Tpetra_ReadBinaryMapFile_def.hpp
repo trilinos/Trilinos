@@ -370,14 +370,12 @@ binaryIOReadMapSection(const std::string& filename,
 
   Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> gids("Tpetra::BinaryIO::mapGids",
                                                        binaryIOCheckedSize(localCount, "map section local element count"));
-  if (localCount > 0) {
-    binaryIOReadArrayCollective(filename,
-                                mapSectionOffset + static_cast<unsigned long long>(sizeof(BinaryIOMapSectionHeader)) + sectionHeader.numRanks * sizeof(unsigned long long),
-                                gids.data(),
-                                localCount,
-                                globalOffset,
-                                comm);
-  }
+  binaryIOReadArrayCollective(filename,
+                              mapSectionOffset + static_cast<unsigned long long>(sizeof(BinaryIOMapSectionHeader)) + sectionHeader.numRanks * sizeof(unsigned long long),
+                              gids.data(),
+                              localCount,
+                              globalOffset,
+                              comm);
 
   using device_type = typename map_type::device_type;
   Kokkos::View<GlobalOrdinal*, device_type> gidsDevice("Tpetra::BinaryIO::mapGidsDevice", gids.extent(0));
