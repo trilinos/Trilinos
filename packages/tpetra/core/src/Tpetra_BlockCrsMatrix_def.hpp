@@ -177,7 +177,7 @@ BlockCrsMatrix<Scalar, LO, GO, Node>::
   Y_rowMap_(new Teuchos::RCP<BMV>())
   ,  // ptr to a null ptr
   pointImporter_(new Teuchos::RCP<typename crs_graph_type::import_type>())
-  , offsetPerBlock_(blockSize * blockSize)
+  , offsetPerBlock_(0)
   , localError_(new bool(false))
   , errs_(new Teuchos::RCP<std::ostringstream>())  // ptr to a null ptr
 {
@@ -200,6 +200,13 @@ BlockCrsMatrix<Scalar, LO, GO, Node>::
       "Tpetra::"
       "BlockCrsMatrix constructor: The input blockSize = "
           << blockSize << " <= 0.  The block size must be positive.");
+
+  const size_t blockSizeProd = static_cast<size_t>(blockSize) * static_cast<size_t>(blockSize);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      blockSizeProd > static_cast<size_t>(std::numeric_limits<LO>::max()),
+      std::overflow_error,
+      "Tpetra::BlockCrsMatrix constructor: blockSize * blockSize overflows LO");
+  offsetPerBlock_ = static_cast<LO>(blockSizeProd);
 
   domainPointMap_ = BMV::makePointMap(*(graph.getDomainMap()), blockSize);
   rangePointMap_  = BMV::makePointMap(*(graph.getRangeMap()), blockSize);
@@ -240,7 +247,7 @@ BlockCrsMatrix<Scalar, LO, GO, Node>::
   Y_rowMap_(new Teuchos::RCP<BMV>())
   ,  // ptr to a null ptr
   pointImporter_(new Teuchos::RCP<typename crs_graph_type::import_type>())
-  , offsetPerBlock_(blockSize * blockSize)
+  , offsetPerBlock_(0)
   , localError_(new bool(false))
   , errs_(new Teuchos::RCP<std::ostringstream>())  // ptr to a null ptr
 {
@@ -263,6 +270,13 @@ BlockCrsMatrix<Scalar, LO, GO, Node>::
       "Tpetra::"
       "BlockCrsMatrix constructor: The input blockSize = "
           << blockSize << " <= 0.  The block size must be positive.");
+
+  const size_t blockSizeProd = static_cast<size_t>(blockSize) * static_cast<size_t>(blockSize);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      blockSizeProd > static_cast<size_t>(std::numeric_limits<LO>::max()),
+      std::overflow_error,
+      "Tpetra::BlockCrsMatrix constructor: blockSize * blockSize overflows LO");
+  offsetPerBlock_ = static_cast<LO>(blockSizeProd);
 
   domainPointMap_ = BMV::makePointMap(*(graph.getDomainMap()), blockSize);
   rangePointMap_  = BMV::makePointMap(*(graph.getRangeMap()), blockSize);
@@ -306,7 +320,7 @@ BlockCrsMatrix<Scalar, LO, GO, Node>::
   Y_rowMap_(new Teuchos::RCP<BMV>())
   ,  // ptr to a null ptr
   pointImporter_(new Teuchos::RCP<typename crs_graph_type::import_type>())
-  , offsetPerBlock_(blockSize * blockSize)
+  , offsetPerBlock_(0)
   , localError_(new bool(false))
   , errs_(new Teuchos::RCP<std::ostringstream>())  // ptr to a null ptr
 {
