@@ -34,12 +34,13 @@ public:
  
   virtual ~BasisCoordsGenerator() = default;
 
-  virtual Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const override
+  virtual Kokkos::DynRankView<double,PHX::Device>
+  getPoints(const shards::CellTopology & topo) const override
   {
-    Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
-        intrepid_basis = createIntrepid2Basis<PHX::Device::execution_space,double,double>(_basis_type,_basis_order,topo);
+    Teuchos::RCP<Intrepid2::Basis<PHX::Device,double,double> > 
+        intrepid_basis = createIntrepid2Basis<PHX::Device,double,double>(_basis_type,_basis_order,topo);
     
-    Kokkos::DynRankView<double> view(_basis_type+"_ref_coords",intrepid_basis->getCardinality(),topo.getDimension());
+    Kokkos::DynRankView<double,PHX::Device> view(_basis_type+"_ref_coords",intrepid_basis->getCardinality(),topo.getDimension());
   
     intrepid_basis->getDofCoords(view);
   
@@ -48,8 +49,8 @@ public:
 
   virtual int numPoints(const shards::CellTopology & topo) const override
   {
-    Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
-        intrepid_basis = createIntrepid2Basis<PHX::Device::execution_space,double,double>(_basis_type,_basis_order,topo);
+    Teuchos::RCP<Intrepid2::Basis<PHX::Device,double,double> > 
+        intrepid_basis = createIntrepid2Basis<PHX::Device,double,double>(_basis_type,_basis_order,topo);
     return intrepid_basis->getCardinality();
   }
 

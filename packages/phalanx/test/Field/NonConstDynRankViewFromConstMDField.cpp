@@ -19,6 +19,9 @@ PHX_EXTENT(CELL)
 PHX_EXTENT(QP)
 PHX_EXTENT(EQ)
 
+// Kokkos' defaults, used ONLY to build MyDevice below -- a device deliberately
+// different from PHX::Device.  Fields declared without a device argument are on
+// PHX::Device, so their kernels must name PHX::ExecutionSpace, not this.
 using exec_t = Kokkos::DefaultExecutionSpace;
 using mem_t = Kokkos::DefaultExecutionSpace::memory_space;
 
@@ -48,12 +51,12 @@ namespace {
     auto tmp_c = PHX::getNonConstDynRankViewFromConstMDField<Scalar>(c);
 
     // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
-    Kokkos::parallel_for("use non-const DynRankView from const View",num_cells,KOKKOS_LAMBDA (const int cell) {
+    Kokkos::parallel_for("use non-const DynRankView from const View",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells),KOKKOS_LAMBDA (const int cell) {
       for (int pt=0; pt < num_pts; ++pt)
         for (int eq=0; eq < num_equations; ++eq)
           tmp_c(cell,pt,eq) = tmp_a(cell,pt,eq) + tmp_b(cell,pt,eq);
     });
-    exec_t().fence();
+    PHX::ExecutionSpace().fence();
   }
 }
 
@@ -86,7 +89,7 @@ TEUCHOS_UNIT_TEST(NonConstDynRankViewFromView,FAD) {
   auto tmp_a = a.get_static_view();
   auto tmp_b = b.get_static_view();
   // Use RangePolicy as MDRange does not work for FADs when HIERARCHIC parallelism is enabled.
-  Kokkos::parallel_for("initialize fads",num_cells,KOKKOS_LAMBDA (const int cell) {
+  Kokkos::parallel_for("initialize fads",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells),KOKKOS_LAMBDA (const int cell) {
     for (int pt=0; pt < num_pts; ++pt) {
       for (int eq=0; eq < num_equations; ++eq) {
         tmp_a(cell,pt,eq).val() = 2.0;
@@ -94,7 +97,7 @@ TEUCHOS_UNIT_TEST(NonConstDynRankViewFromView,FAD) {
       }
     }
   });
-  exec_t().fence();
+  PHX::ExecutionSpace().fence();
 
   runTest<ScalarType>(out,success,a,b,c);
 
@@ -106,4 +109,38 @@ TEUCHOS_UNIT_TEST(NonConstDynRankViewFromView,FAD) {
       for (int eq=0; eq < num_equations; ++eq) {
         TEST_FLOATING_EQUALITY(c_host(cell,pt,eq).val(),5.0,tol);
       }
+}
+
+// The wrapped view must follow the field's device, not PHX::Device.  Only has
+// teeth where the two differ: a shared space build, where PHX::Device is
+// <Cuda,CudaUVMSpace> against MyDevice's <Cuda,CudaSpace>, or a build setting
+// Phalanx_DEFAULT_EXECUTION_SPACE, where the execution spaces differ too.
+TEUCHOS_UNIT_TEST(NonConstDynRankViewFromView,user_specified_device) {
+  using ScalarType = double;
+  using MyDevice = Kokkos::Device<exec_t,mem_t>;
+  using field_t = PHX::MDField<const ScalarType,CELL,QP,EQ,MyDevice>;
+
+  static_assert(PHX::is_device<MyDevice>::value,
+                "MDField should accept any Kokkos device");
+  static_assert(std::is_same<typename field_t::device_type,MyDevice>::value,
+                "the field did not take the device it was given");
+
+  PHX::MDField<ScalarType,CELL,QP,EQ,MyDevice> nc("nc","layout",num_cells,num_pts,num_equations);
+  Kokkos::deep_copy(nc.get_static_view(),2.0);
+  field_t c = nc;
+
+  auto drv = PHX::getNonConstDynRankViewFromConstMDField<ScalarType>(c);
+  static_assert(std::is_same<typename decltype(drv)::device_type,
+                             typename field_t::device_type>::value,
+                "the DynRankView did not follow the field's device");
+
+  Kokkos::parallel_for("write through the wrapper",Kokkos::RangePolicy<exec_t>(0,num_cells),KOKKOS_LAMBDA (const int cell) {
+    for (int pt=0; pt < num_pts; ++pt)
+      for (int eq=0; eq < num_equations; ++eq)
+        drv(cell,pt,eq) = 7.0;
+  });
+  exec_t().fence();
+
+  auto c_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),c.get_static_view());
+  TEST_FLOATING_EQUALITY(c_host(0,0,0),7.0,100.0*Teuchos::ScalarTraits<ScalarType>::eps());
 }

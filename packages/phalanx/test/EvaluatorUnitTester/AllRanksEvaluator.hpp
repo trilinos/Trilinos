@@ -46,7 +46,7 @@ public:
                     const Teuchos::RCP<PHX::DataLayout>& dl6);
   void evaluateFields(typename Traits::EvalData workset) override;
   KOKKOS_INLINE_FUNCTION
-  void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
+  void operator () (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const;
 };
 
 #include "AllRanksEvaluator_Def.hpp"

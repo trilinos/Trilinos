@@ -362,9 +362,9 @@ namespace panzer
 
         /**
          *  \brief This tells Kokkos to only execute this functor in the
-         *         `PHX::Device` execution space.
+         *         `PHX::ExecutionSpace` execution space.
          */
-        using execution_space = PHX::Device;
+        using execution_space = PHX::ExecutionSpace;
 
         /**
          *  \brief A field that will be used to build up the result of the
@@ -466,9 +466,9 @@ namespace panzer
 
         /**
          *  \brief This tells Kokkos to only execute this functor in the
-         *         `PHX::Device` execution space.
+         *         `PHX::ExecutionSpace` execution space.
          */
-        using execution_space = PHX::Device;
+        using execution_space = PHX::ExecutionSpace;
 
         /**
          *  \brief A field that will be used to build up the result of the
@@ -543,9 +543,9 @@ namespace panzer
 
         /**
          *  \brief This tells Kokkos to only execute this functor in the
-         *         `PHX::Device` execution space.
+         *         `PHX::ExecutionSpace` execution space.
          */
-        using execution_space = PHX::Device;
+        using execution_space = PHX::ExecutionSpace;
 
         /**
          *  \brief A field representing the result of this integration.
@@ -616,9 +616,9 @@ namespace panzer
 
         /**
          *  \brief This tells Kokkos to only execute this functor in the
-         *         `PHX::Device` execution space.
+         *         `PHX::ExecutionSpace` execution space.
          */
-        using execution_space = PHX::Device;
+        using execution_space = PHX::ExecutionSpace;
 
         /**
          *  \brief A field representing the result of this integration.
@@ -660,7 +660,7 @@ namespace panzer
     using Kokkos::parallel_for;
     using Kokkos::RangePolicy;
     using panzer::BasisValues2;
-    using PHX::Device;
+    using PHX::ExecutionSpace;
     using PHX::MDField;
     using std::vector;
 
@@ -684,7 +684,7 @@ namespace panzer
 
       // Multiply the integrand by the scalar multiplier out in front of the
       // integral.
-      parallel_for(RangePolicy<Device, ScalarMultiplierTag>(0,
+      parallel_for(RangePolicy<ExecutionSpace, ScalarMultiplierTag>(0,
         workset.num_cells), preMultiply);
 
       // Multiply the integrand by any field multipliers out in front of the
@@ -692,7 +692,7 @@ namespace panzer
       for (const auto& field : fieldMults_)
       {
         preMultiply.fieldMult = field;
-        parallel_for(RangePolicy<Device, FieldMultiplierTag>(0,
+        parallel_for(RangePolicy<ExecutionSpace, FieldMultiplierTag>(0,
           workset.num_cells), preMultiply);
       } // end loop over the field multipliers
 
@@ -719,7 +719,7 @@ namespace panzer
 
       // Multiply the integrand by the scalar multiplier out in front of the
       // integral.
-      parallel_for(RangePolicy<Device, ScalarMultiplierTag>(0,
+      parallel_for(RangePolicy<ExecutionSpace, ScalarMultiplierTag>(0,
         workset.num_cells), preMultiply);
 
       // Multiply the integrand by any field multipliers out in front of the
@@ -727,7 +727,7 @@ namespace panzer
       for (const auto& field : fieldMults_)
       {
         preMultiply.fieldMult = field;
-        parallel_for(RangePolicy<Device, FieldMultiplierTag>(0,
+        parallel_for(RangePolicy<ExecutionSpace, FieldMultiplierTag>(0,
           workset.num_cells), preMultiply);
       } // end loop over the field multipliers
 

@@ -1,0 +1,526 @@
+Node type consistency: Phalanx, Panzer, Tpetra
+================================================================================
+Written 2026-10-03, kept current through the work.  Phases A-D are implemented;
+phase E needs GPU hardware.
+
+Section 9 is the decisions register: every choice, what was rejected, and why.
+Start there if you want the conclusions rather than the argument.
+
+Investigated against Trilinos develop at merge-base 28987c7d3af plus the
+phalanx-unify-space-names branch.  Companion document:
+PhalanxSharedSpacePlan.txt, which this one follows from.
+
+
+0. THE SHORT ANSWER TO "DOES THE OLD MIMICRY STILL HOLD?"
+--------------------------------------------------------------------------------
+Partly, and it never covered the part that matters.
+
+Phalanx used to pick its execution space with its own backend chain
+(Phalanx_KOKKOS_DEVICE_TYPE, removed in a7c4583e729), and that chain was
+ordered SYCL > HIP > CUDA > OPENMP > SERIAL > THREADS.  That order is TPETRA's,
+not Kokkos': Tpetra_Details_DefaultTypes.hpp goes SYCL > HIP > CUDA > OPENMP >
+THREADS > SERIAL, while Kokkos' DefaultExecutionSpace goes CUDA > HIP > SYCL >
+... .  So yes, Phalanx was deliberately mimicking Tpetra.
+
+Today Phalanx just uses Kokkos::DefaultExecutionSpace, i.e. CUDA > HIP > SYCL.
+In practice that still agrees with Tpetra, because Kokkos permits only one GPU
+backend per build, so the three orderings can never disagree about which GPU
+backend wins.  The Serial/Threads tail differs but both land on a host space.
+
+The mimicry was never the thing that mattered, though, for two reasons:
+
+  * It keyed off Kokkos_ENABLE_*, and Tpetra's node ETI keys off Tpetra_INST_*.
+    Those are DIFFERENT SWITCHES.  Tpetra_INST_HIP and Tpetra_INST_SYCL
+    default to OFF unconditionally, so on a HIP or SYCL build Kokkos (and hence
+    Phalanx) picks the GPU while Tpetra instantiates a host node.  That hole
+    predates this work.
+
+  * Phalanx had no memory space at all, so there was nothing to align.  It has
+    one now, and Tpetra has had one all along, so this work introduced a NEW
+    axis that has to agree.  See section 3.
+
+
+1. HOW EACH PACKAGE DECIDES, TODAY
+--------------------------------------------------------------------------------
+PHALANX
+  Phalanx_DEFAULT_EXECUTION_SPACE  (cache, default "Kokkos::DefaultExecutionSpace")
+  Phalanx_ENABLE_SHARED_SPACE      (option, default OFF)
+
+      PHX::ExecutionSpace = the configured execution space
+      PHX::MemorySpace    = Kokkos::SharedSpace       if shared space is ON
+                          = ExecutionSpace::memory_space otherwise
+      PHX::Device         = Kokkos::Device<ExecutionSpace, MemorySpace>
+
+  Phalanx does NOT depend on Tpetra.  Its required packages are TeuchosCore,
+  TeuchosParameterList, TeuchosComm, Kokkos and Sacado.  This is the binding
+  constraint on the whole design -- see section 4.
+
+TPETRA
+  Tpetra_INST_<BACKEND>            which node types get explicit instantiation
+  Tpetra_DefaultNode               which one is the default (auto if empty)
+  Tpetra_ALLOCATE_IN_SHARED_SPACE  -> HAVE_TPETRA_SHARED_ALLOCS
+
+  "Tpetra uses exactly one Kokkos execution space by default, whether ETI is ON
+  or OFF" (packages/tpetra/CMakeLists.txt:145).  The INST default chain is
+  CUDA (if Tpetra_ENABLE_CUDA) > OPENMP > SERIAL > THREADS; HIP and SYCL are
+  hard OFF.  Tpetra already warns about the consequence in so many words:
+
+      "If you use the Kokkos::Serial Node type in Tpetra without doing this,
+       you will get link errors!"
+
+  The node typedefs PIN A MEMORY SPACE, and for GPUs it depends on the shared
+  alloc switch (Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp:78-112):
+
+      KokkosCudaWrapperNode   = <Cuda, CudaUVMSpace>        if SHARED_ALLOCS
+                              = <Cuda>                      otherwise
+      KokkosHIPWrapperNode    = <HIP, HIPManagedSpace>      / <HIP, HIPSpace>
+      KokkosSYCLWrapperNode   = <SYCL, SYCLSharedUSMSpace>  / <SYCL, SYCLDeviceUSMSpace>
+      KokkosSerialWrapperNode = <Serial>        (host nodes ignore the switch)
+
+  NOTE, and this is the nice part: CudaUVMSpace, HIPManagedSpace and
+  SYCLSharedUSMSpace are EXACTLY what Kokkos::SharedSpace resolves to per
+  backend.  So "Tpetra_ALLOCATE_IN_SHARED_SPACE" and
+  "Phalanx_ENABLE_SHARED_SPACE" are the same idea spelled twice, and when both
+  are ON the two memory spaces are the same type.
+
+PANZER
+  packages/panzer/dof-mgr/src/Panzer_NodeType.hpp
+
+      typedef Tpetra::KokkosCompat::KokkosDeviceWrapperNode<PHX::ExecutionSpace>
+              TpetraNodeType;
+
+  (That is the one-argument form chosen during phase 1 of the space
+  unification, which preserves the pre-existing behaviour exactly.  Its doc
+  comment is now stale: it still says the node wraps "PHX::Device".)
+
+  Panzer has NO node or ETI logic in CMake at all.
+
+
+2. HOW CONSISTENTLY PANZER SPELLS IT
+--------------------------------------------------------------------------------
+Mostly well, with three exceptions worth cleaning up.
+
+    148   panzer::TpetraNodeType                     the typedef, as intended
+      9   KokkosDeviceWrapperNode<PHX::ExecutionSpace> spelled out longhand, in
+              disc-fe/src/Panzer_L2Projection.hpp                    (4)
+              disc-fe/src/Panzer_FaceToElement.hpp
+              adapters-stk/test/face_to_elem/Panzer_Relations.hpp
+              adapters-stk/test/projection/projection.cpp
+      2   PHX::ExecutionSpace IN TPETRA'S NODE SLOT:
+              disc-fe/src/evaluators/Panzer_ScatterResidual_BlockedTpetra_impl.hpp:494
+              disc-fe/src/evaluators/Panzer_ScatterDirichletResidual_BlockedTpetra_impl.hpp:600
+          both of the form
+              typename Tpetra::Vector<double,LO,GO,PHX::ExecutionSpace>::dual_view_type::t_dev
+          This is a bare execution space where a Node belongs.  PRE-EXISTING --
+          before the branch it read PHX::Device, which was also an execution
+          space -- so this is not a regression, but it is wrong in a way that
+          matters: dual_view_type is then computed from the EXECUTION SPACE's
+          default memory space, so on a Tpetra shared-alloc build it describes
+          a non-UVM view while the actual residual vector is UVM.  It compiles
+          and links today only because the type is used to name a view, never
+          to instantiate Tpetra::Vector's methods.
+      2   Tpetra::Map<>::node_type -- Tpetra's default node, a third source of
+          truth, in mini-em/src/solvers/MiniEM_Utils.{hpp,cpp}
+
+
+3. THE FAILURE MODES THAT EXIST TODAY
+--------------------------------------------------------------------------------
+All three produce link errors or silently wrong memory spaces, and none is
+caught at configure time.
+
+(A) EXECUTION SPACE NOT INSTANTIATED BY TPETRA.
+    Build with Kokkos_ENABLE_SYCL=ON and leave Tpetra_INST_SYCL at its default
+    OFF.  Then
+        PHX::ExecutionSpace     = Kokkos::SYCL
+        panzer::TpetraNodeType  = KokkosDeviceWrapperNode<Kokkos::SYCL>
+        Tpetra's instantiated node = a host node
+    Every Tpetra object Panzer creates is over a node Tpetra never
+    instantiated.  Link errors, far from the cause.  Same for HIP.  This is the
+    most likely one to bite, because it needs no unusual options at all -- just
+    a SYCL or HIP build without knowing to set Tpetra_INST_*.
+
+(B) SHARED SPACE FLAGS DISAGREE.
+    Phalanx_ENABLE_SHARED_SPACE=ON with Tpetra_ALLOCATE_IN_SHARED_SPACE=OFF on
+    a CUDA build:
+        PHX::MemorySpace = CudaUVMSpace
+        Tpetra's node    = <Cuda, CudaSpace>
+    Panzer's node, if it follows Phalanx, is <Cuda, CudaUVMSpace>, which Tpetra
+    did not instantiate.  Link errors.  Reversed, Tpetra allocates UVM while
+    Phalanx fields are in CudaSpace, and any view assignment between them
+    fails.  NOTE this axis is new with the shared space work and is NOT
+    reachable today, because Phalanx refuses shared space on anything but a
+    host build where SharedSpace IS HostSpace -- but it opens up the moment
+    phase 5 of the shared space plan runs on a GPU.
+
+(C) A NON-DEFAULT EXECUTION SPACE.
+    Phalanx_DEFAULT_EXECUTION_SPACE=Kokkos::Serial on a CUDA build, which is a
+    legitimate thing to want.  Tpetra's default node stays CUDA, and
+    Tpetra_INST_SERIAL may well be OFF.  Link errors again, plus mini-em's
+    Tpetra::Map<>::node_type now disagrees with panzer::TpetraNodeType inside
+    one build.
+
+
+4. THE DESIGN CONSTRAINT
+--------------------------------------------------------------------------------
+Phalanx cannot check any of this.  It does not depend on Tpetra and must not
+start: that would invert the dependency and drag Tpetra into every Phalanx-only
+build.
+
+Panzer can.  PanzerDofMgr requires both Tpetra and Phalanx, and
+Panzer_NodeType.hpp already includes both Phalanx_KokkosDeviceTypes.hpp and
+Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp.  So:
+
+    Phalanx decides.  Panzer follows, and Panzer is where the check lives.
+
+That matches the stated intent -- Phalanx chooses, Panzer defaults to the same
+thing, Tpetra must have instantiated it -- and it is also the only arrangement
+the dependency graph allows.
+
+
+5. THE MECHANISM: ONE CHECK THAT COVERS EVERYTHING
+--------------------------------------------------------------------------------
+The temptation is to check the execution space against the Tpetra_INST_*
+macros, then check the memory spaces separately.  There is a better option,
+because Tpetra's node typedefs already encode BOTH the execution space and the
+shared-alloc memory space choice.  So asking "is Panzer's node one of the nodes
+Tpetra instantiated?" answers (A), (B) and (C) at once:
+
+    namespace panzer {
+      template<class Node> struct TpetraNodeIsInstantiated : std::false_type {};
+    #ifdef HAVE_TPETRA_INST_SERIAL
+      template<> struct TpetraNodeIsInstantiated<
+          Tpetra::KokkosCompat::KokkosSerialWrapperNode> : std::true_type {};
+    #endif
+    #ifdef HAVE_TPETRA_INST_OPENMP
+      ... KokkosOpenMPWrapperNode ...
+    #endif
+    #ifdef HAVE_TPETRA_INST_PTHREAD
+      ... KokkosThreadsWrapperNode ...
+    #endif
+    #ifdef HAVE_TPETRA_INST_CUDA
+      ... KokkosCudaWrapperNode ...
+    #endif
+    #ifdef HAVE_TPETRA_INST_HIP
+      ... KokkosHIPWrapperNode ...
+    #endif
+    #ifdef HAVE_TPETRA_INST_SYCL
+      ... KokkosSYCLWrapperNode ...
+    #endif
+
+      static_assert(TpetraNodeIsInstantiated<TpetraNodeType>::value,
+                    "panzer: the Tpetra node type Panzer derives from Phalanx' "
+                    "execution and memory spaces is not one Tpetra "
+                    "instantiated, so every Tpetra object Panzer creates would "
+                    "fail to link.  Set the matching Tpetra_INST_<BACKEND>=ON, "
+                    "and make Tpetra_ALLOCATE_IN_SHARED_SPACE agree with "
+                    "Phalanx_ENABLE_SHARED_SPACE.");
+    }
+
+  All six HAVE_TPETRA_INST_* macros exist in TpetraCore_config.h
+  (TpetraCore_config.h.in:136-141) and are visible to Panzer.
+
+  Why this is exact where a string comparison would not be: it compares TYPES,
+  so it does not care how the execution space was spelled, and it cannot be
+  fooled by one type named two ways.  This is the same trap that cost us two
+  rounds on the Intrepid2 instantiation guard in the shared space work.
+
+  What it deliberately does NOT do: require Panzer's node to be Tpetra's
+  DEFAULT node.  Asserting equality with Tpetra::Details::DefaultTypes::node_type
+  would be a one-liner and would also guarantee ETI coverage, since Tpetra's
+  CMake enforces that its default node is instantiated.  But it would reject a
+  legitimate build that instantiates several nodes and puts Panzer on a
+  non-default one.  Worth adding as a separate, softer diagnostic if we want
+  the common misconfiguration to produce a friendlier message.
+
+  WORTH RAISING UPSTREAM: this trait arguably belongs in Tpetra, not Panzer.
+  Every downstream package that picks its own node has the same problem, and
+  Tpetra is the only package that knows the answer.
+
+
+6. THE PLAN
+--------------------------------------------------------------------------------
+PHASE A -- DONE.  Make Panzer speak with one voice.  No behaviour change.
+  1. Route the 9 longhand KokkosDeviceWrapperNode<PHX::ExecutionSpace> sites
+     through panzer::TpetraNodeType.
+  2. Fix the 2 dual_view_type sites to use panzer::TpetraNodeType instead of a
+     bare execution space in the Node slot.  Behaviour-preserving today;
+     prevents a wrong view type on a future shared-alloc build.
+  3. Decide what to do about mini-em's 2 Tpetra::Map<>::node_type uses:
+     either panzer::TpetraNodeType, or leave them and let the phase C check
+     prove the two agree.
+  4. Refresh the stale doc comment in Panzer_NodeType.hpp, which still
+     describes the node as wrapping PHX::Device.
+
+PHASE B -- DONE, with PHX::MemorySpace.  What panzer::TpetraNodeType is.
+  Today:  KokkosDeviceWrapperNode<PHX::ExecutionSpace>
+          memory space = the execution space's own, Phalanx' choice ignored.
+  Option: KokkosDeviceWrapperNode<PHX::ExecutionSpace, PHX::MemorySpace>
+          follows Phalanx exactly, which is the stated intent, and makes
+          Panzer's Tpetra objects land in shared memory when Phalanx is
+          configured for it.
+  These are the same type whenever Phalanx shared space is OFF, so this is a
+  no-op for every configuration that exists today and only takes effect
+  alongside shared space.  See the open question in section 8.
+
+PHASE C -- DONE.  Add the check.  Section 5, in Panzer_NodeType.hpp.
+  Add the trait and the static_assert.  Verify it FIRES on a deliberately
+  broken configuration, not just that it passes on a good one -- the lesson
+  from the shared space work is that a guard nobody has seen fail is not a
+  guard.  Testable locally on this Serial-only build by configuring
+  Tpetra_INST_SERIAL=OFF, Tpetra_INST_OPENMP=ON, or by pointing
+  Phalanx_DEFAULT_EXECUTION_SPACE at a space Tpetra did not instantiate.
+
+WHAT PHASES A, B AND C ACTUALLY DID
+  B: panzer::TpetraNodeType is now
+         KokkosDeviceWrapperNode<PHX::ExecutionSpace, PHX::MemorySpace>
+     and its doc comment says so, plus what has to agree for it to link.  A
+     no-op for every configuration that exists today, since PHX::MemorySpace is
+     the execution space's own whenever shared space is off.
+  A: 11 sites routed through the typedef, across 6 files -- 9 longhand
+     KokkosDeviceWrapperNode<PHX::ExecutionSpace> and the 2
+     Tpetra::Vector<double,LO,GO,PHX::ExecutionSpace>::dual_view_type sites that
+     had a bare execution space in Tpetra's Node slot.  Each file gained
+     #include "Panzer_NodeType.hpp"; none had it.  No spelling of a node or a
+     space in a node slot remains anywhere in panzer outside the typedef.
+     mini-em's 2 Tpetra::Map<>::node_type uses were RESOLVED, once it was clear
+     what they were:
+       MiniEM_Utils.hpp get_Tpetra_CrsMatrix was DELETED.  Its default
+         template argument was Tpetra's node, but the function is declared,
+         defined and never called anywhere in Trilinos, with no explicit
+         instantiation -- dead code whose only effect would have been to hand
+         a first caller the wrong node silently.
+       MiniEM_Utils.cpp describeMatrix now uses panzer::TpetraNodeType, which
+         is what its three siblings in the same file already did (writeOut at
+         line 25, and lines 107 and 131).  Being the odd one out was an
+         oversight, not a choice.
+     Also removed two commented-out lines in Panzer_NodeType.hpp that proposed
+     Tpetra::Map<>::node_type as the definition -- the opposite of the decision
+     above, left sitting at the top of the file.
+
+     WHY describeMatrix MATTERED, and a correction to an earlier claim in this
+     plan's discussion: a node mismatch there does NOT fail to compile.  The
+     rcp_dynamic_cast is a downcast from Thyra::LinearOpBase<double>, so it
+     compiles for any node; a mismatch returns null and TEUCHOS_ASSERT(false)
+     aborts AT RUNTIME.  Worse, it is reached only through debugInfo, gated on
+     doDebug, so it would have aborted only when someone turned on debug
+     output, on an unusual configuration.  35 call sites feed it.
+     Phase C's static_assert does not cover this case: a shared-space mismatch
+     makes panzer's node uninstantiated and so fires the assert first, but a
+     MULTI-NODE Tpetra build (say Tpetra_INST_SERIAL and Tpetra_INST_OPENMP
+     both ON) with Phalanx on the non-default one passes phase C and still had
+     the runtime abort.  That is exactly the "user picks a specific execution
+     space" case this work is about.
+  C: the TpetraNodeIsInstantiated trait and the static_assert, in
+     Panzer_NodeType.hpp.
+
+  VERIFIED, on the Serial-only host build:
+    full build clean, Phalanx 39/39, Panzer 227/227.
+    The trait defaults to false for an unrelated type, and is true for the
+    node this build instantiated -- so the assert is not vacuous.
+    The assert FIRES when the node is not instantiated.  Checked by mutating a
+    scratch copy of the header to disable its one specialization:
+        static assertion failed due to requirement
+        'TpetraNodeIsInstantiated<Tpetra::KokkosCompat::KokkosDeviceWrapperNode<
+         Kokkos::Serial, Kokkos::HostSpace>>::value': panzer: the Tpetra node
+         type panzer derives ...
+    It names the offending node type, which is what someone debugging needs.
+
+  NOT VERIFIED, and only a GPU build can: every case in section 3.  On this
+  build PHX::MemorySpace IS the execution space's own, so phase B changed
+  nothing and the shared space axis is untouched.  That is phase E.
+
+
+PHASE D -- ABANDONED.  There is no CMake-level diagnostic.  A shared space
+  check was implemented and then removed; see decision N6 for why.
+  Added to packages/panzer/dof-mgr/CMakeLists.txt: a FATAL_ERROR when
+  Phalanx_ENABLE_SHARED_SPACE and Tpetra_ALLOCATE_IN_SHARED_SPACE disagree.
+
+  DELIBERATELY NOT ADDED: any check that Tpetra instantiated the node.  That
+  would mean restating Tpetra's node selection rules inside panzer, where they
+  would rot the next time Tpetra changes them.  The static_assert from phase C
+  already covers it exactly, by comparing types, and cannot go out of date.
+
+  GATED ON A GPU BACKEND BEING ENABLED, which is not timidity.  With host
+  backends alone Kokkos defines SharedSpace AS HostSpace, which is already the
+  host execution space's own memory space, so the two node types are identical
+  whatever the two options say.  An ungated check would reject a configuration
+  that works -- and specifically it would have rejected the one used to verify
+  phase 4 of the shared space plan, Phalanx_ENABLE_SHARED_SPACE=ON with
+  Tpetra_ALLOCATE_IN_SHARED_SPACE=OFF on this host build, which built clean and
+  passed 39/39 and 227/227 twice.  The gate is on Kokkos_ENABLE_CUDA/HIP/SYCL,
+  i.e. Kokkos flags, not Tpetra node logic, so it is not exposed to the drift
+  the paragraph above is about.
+
+  VERIFIED, truth table of the condition in isolation:
+      no GPU, any combination of the two flags      -> quiet  (correct)
+      GPU, both ON                                  -> quiet
+      GPU, both OFF                                 -> quiet
+      GPU, Phalanx ON  / Tpetra OFF                 -> FIRES
+      GPU, Phalanx OFF / Tpetra ON                  -> FIRES
+  and on the real host build all four flag combinations still configure, build
+  clean and pass 39/39 + 227/227.
+
+
+PHASE D (original sketch, for reference) -- CMake-level diagnostics.
+  A static_assert fires at compile time, deep in a build.  PanzerDofMgr's
+  CMakeLists could catch the common cases at configure time instead:
+    - Phalanx_ENABLE_SHARED_SPACE != Tpetra_ALLOCATE_IN_SHARED_SPACE, warn or
+      error (only meaningful on a GPU build, since host nodes ignore the
+      switch -- the same exactness trap as before, so condition it on a GPU
+      backend being enabled).
+    - Kokkos_ENABLE_SYCL/HIP ON with the matching Tpetra_INST_* OFF: a loud
+      STATUS or WARNING naming the flag to set.
+  Keep the C++ assert as the authority; CMake cannot compare C++ types and
+  must not pretend to.
+
+PHASE E -- test matrix.  Fold into the shared space plan's phase 5 rather than
+  running separately -- that is also where the record of what Trilinos CI
+  already covers lives, which since 2026-10-04 includes two CUDA UVM builds
+  that exercise Phalanx shared space on real GPUs.  The rows below are the
+  node-type-specific ones:
+    host Serial, Tpetra_INST_SERIAL ON               (today's build; passes)
+    host, Phalanx_DEFAULT_EXECUTION_SPACE non-default
+    CUDA, Tpetra_INST_CUDA ON, shared space OFF/OFF
+    CUDA, both shared space switches ON
+    CUDA, switches deliberately mismatched           (must FAIL, clearly)
+    SYCL with Tpetra_INST_SYCL ON
+    SYCL with Tpetra_INST_SYCL OFF                   (must FAIL, clearly)
+
+
+7. WHAT WAS VERIFIED, AND ON WHAT
+--------------------------------------------------------------------------------
+Everything in sections 1-3 was read out of the source rather than recalled.
+The build it was checked against is SERIAL ONLY -- Kokkos_ENABLE_OPENMP is OFF
+-- and in it:
+
+    Kokkos::DefaultExecutionSpace  = Kokkos::Serial
+    PHX::ExecutionSpace            = Kokkos::Serial
+    PHX::Device                    = Kokkos::Device<Serial, HostSpace>
+    Tpetra_DefaultNode             = Tpetra::KokkosCompat::KokkosSerialWrapperNode
+    Tpetra_INST_SERIAL             = ON,  all other INST = OFF
+    Tpetra_ALLOCATE_IN_SHARED_SPACE= OFF
+    Tpetra_ENABLE_EXPLICIT_INSTANTIATION = ON
+
+  so panzer::TpetraNodeType is KokkosDeviceWrapperNode<Serial>, which IS
+  KokkosSerialWrapperNode, which IS instantiated.  Everything agrees here,
+  which is exactly why none of section 3 has ever shown up.
+
+  ETI being ON is what makes section 3 bite: with it OFF the templates would
+  instantiate implicitly and the link errors would not appear.
+
+  CORRECTION TO THE SHARED SPACE PLAN: its phase 4 and phase 5 notes describe
+  the local build as "host (Serial + OpenMP)".  It is Serial only.  Worth
+  fixing there, since it changes what those green test runs actually covered.
+
+
+8. OPEN QUESTIONS
+--------------------------------------------------------------------------------
+1. PHASE B: should panzer::TpetraNodeType carry PHX::MemorySpace?  Following
+   Phalanx is the stated intent and is a no-op until shared space runs on a
+   GPU.  Against it: it couples Panzer's Tpetra allocations to a Phalanx switch,
+   and someone may want Phalanx fields in shared space while Tpetra stays in
+   device memory.  If so, the two switches are genuinely independent and the
+   node should keep deriving its memory space from the execution space -- in
+   which case phase C's check needs splitting back into two.
+
+2. Should the ETI trait be proposed to Tpetra instead of living in Panzer?
+
+3. Do we want phase D at all, or is the compile-time assert enough?  It is one
+   more place that can drift out of step with the C++.
+
+4. RESOLVED: mini-em is unified onto panzer::TpetraNodeType, and the dead
+   get_Tpetra_CrsMatrix is gone.  No node or space spelling remains anywhere in
+   panzer outside Panzer_NodeType.hpp.
+
+
+--------------------------------------------------------------------------------
+9. DECISIONS REGISTER
+--------------------------------------------------------------------------------
+
+N1  panzer::TpetraNodeType carries PHX::MemorySpace as well as
+    PHX::ExecutionSpace.
+    REJECTED: the one-argument form, which leaves the memory space as the
+    execution space's own and ignores Phalanx' choice.  WHY: Phalanx decides,
+    Panzer follows -- so Tpetra objects Panzer creates allocate where Phalanx
+    fields allocate.  A no-op for every configuration that exists today, since
+    the two forms are the same type whenever shared space is off.  Section 6,
+    phase B.
+
+N2  Phalanx decides, Panzer follows, and the CHECK LIVES IN PANZER.
+    REJECTED: checking in Phalanx.  WHY: not a preference -- Phalanx does not
+    depend on Tpetra and must not start, since that would invert the dependency
+    and drag Tpetra into every Phalanx-only build.  PanzerDofMgr requires both.
+    Section 4.
+
+N3  The check compares NODE TYPES, not execution spaces.
+    WHY: Tpetra's node typedefs already encode the memory space, including its
+    Tpetra_ALLOCATE_IN_SHARED_SPACE choice, so one comparison covers the
+    execution space and both shared space switches at once.  It also compares
+    types rather than spellings, so one type named two ways cannot fool it.
+    Section 5.
+
+N4  The check does NOT require Panzer's node to be Tpetra's DEFAULT node.
+    REJECTED: asserting equality with Tpetra::Details::DefaultTypes::node_type,
+    which would be a one-liner and would also guarantee ETI coverage.  WHY: it
+    would reject a legitimate build that instantiates several nodes and puts
+    Panzer on a non-default one.  Section 5.
+
+N5  No CMake check that Tpetra instantiated the node.
+    REJECTED: a configure-time check mapping Phalanx' execution space onto the
+    Tpetra_INST_* options.  WHY: it would restate Tpetra's node selection rules
+    inside Panzer, where they would rot the next time Tpetra changes them.  The
+    static_assert of N3 covers it exactly and cannot go out of date.  Phase D.
+
+N6  There is NO CMake check that Phalanx' and Tpetra' shared space options
+    agree.  The static_assert of N3 is the only check.
+    REJECTED, in three successive forms, each rejected for a different reason:
+      (a) an unconditional STREQUAL comparison of the two options.  CMake does
+          not normalise booleans, so ON and TRUE compare unequal -- and so do
+          OFF and FALSE, which made a perfectly ordinary GPU build fail
+          configure.  A boolean comparison, IF((A AND NOT B) OR (B AND NOT A)),
+          fixes that part.
+      (b) the same, gated on Kokkos_ENABLE_CUDA/HIP/SYCL.  Still wrong: with a
+          host execution space on a GPU build, panzer's node is a host node,
+          and Tpetra's host node typedefs ignore
+          Tpetra_ALLOCATE_IN_SHARED_SPACE entirely -- so there is nothing to
+          conflict, yet the check fires.
+      (c) additionally gating on Phalanx_DEFAULT_EXECUTION_SPACE being at its
+          default, which would have been exact.  Not taken.
+    WHY NONE OF THEM: CMake cannot evaluate C++ types, so every version is an
+    approximation of a question the static_assert answers exactly, and each
+    approximation cost a round of false positives on configurations that work.
+    This is the same conclusion N5 reaches about the node instantiation check,
+    for the same reason, and it should be the default answer for anything of
+    this shape.  WHAT IS LOST: the mismatch is reported when the first affected
+    translation unit compiles rather than at configure time.
+
+N7  mini-em's dead get_Tpetra_CrsMatrix was DELETED, not corrected.
+    WHY: declared, defined and never called anywhere in Trilinos, with no
+    explicit instantiation.  Its Tpetra-default-node template argument would
+    only ever have mattered by handing a first caller the wrong node silently.
+    Phase A.
+
+N8  mini-em's describeMatrix now uses panzer::TpetraNodeType.
+    WHY: its three siblings in the same file already did.  A mismatch there
+    does not fail to compile -- the rcp_dynamic_cast is a downcast, so it
+    returns null and TEUCHOS_ASSERT(false) aborts at runtime, in a path reached
+    only when debug output is switched on.  Phase A.
+
+N9  The name stays panzer::TpetraNodeType.
+    REJECTED: panzer::NodeType, on the argument that the type now derives from
+    Phalanx rather than Tpetra.  WHY: the name describes what the type IS -- a
+    Tpetra::KokkosCompat::KokkosDeviceWrapperNode, whose only purpose is to be
+    passed to Tpetra -- and what changed is where its value comes from, which
+    belongs in the doc comment.  More decisively, "node" in Panzer
+    overwhelmingly means a MESH VERTEX: num_nodes, node_coordinates,
+    getElementNodes, numNodesPerElem and friends run to several hundred uses,
+    so a bare NodeType at namespace scope is ambiguous in a way the existing
+    NodeT template parameter is not, since NodeT always appears beside
+    ScalarT/LocalOrdinalT/GlobalOrdinalT.  Renaming would also cost a
+    deprecation cycle for applications that have just absorbed the PHX::Device
+    migration.  If it is ever revisited, KokkosNodeType or
+    LinearAlgebraNodeType keep the disambiguator without the stale provenance.
+
+N10 The ETI trait lives in Panzer, for now, but arguably belongs in Tpetra.
+    Every downstream package that picks its own node has the same problem, and
+    Tpetra is the only package that knows the answer.  Not pursued.  Section 5.

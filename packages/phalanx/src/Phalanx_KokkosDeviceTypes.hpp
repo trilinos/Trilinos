@@ -30,23 +30,48 @@
 
 namespace PHX {
 
-  // Phalanx_DEFAULT_EXECUTION_SPACE and Phalanx_DEFAULT_MEMORY_SPACE are
-  // configured as free-form type names, so a plausible-looking mistake -- a
-  // memory space in the execution space slot, say -- otherwise surfaces much
-  // later as an unreadable template error.
   static_assert(Kokkos::is_execution_space_v<PHX::DefaultExecutionSpace>,
                 "Phalanx: the type configured through "
                 "Phalanx_DEFAULT_EXECUTION_SPACE is not a Kokkos execution "
                 "space.");
   static_assert(Kokkos::is_memory_space_v<PHX::DefaultMemorySpace>,
-                "Phalanx: the type configured through "
-                "Phalanx_DEFAULT_MEMORY_SPACE is not a Kokkos memory space.");
+                "Phalanx: the memory space derived from "
+                "Phalanx_DEFAULT_EXECUTION_SPACE is not a Kokkos memory "
+                "space.");
 
-  using exec_space = PHX::Device::execution_space;
-  using mem_space  = PHX::Device::memory_space;
+  //! The execution space Phalanx runs in.
+  using ExecutionSpace = PHX::Device::execution_space;
 
-  using ExecSpace  = PHX::Device::execution_space;
-  using MemSpace   = PHX::Device::memory_space;
+  //! The memory space Phalanx allocates in.
+  using MemorySpace = PHX::Device::memory_space;
+
+  // Shared space pairs a configured execution space with a memory space it
+  // did not choose, so nothing but this stops a pairing that cannot work.
+  // Kokkos would otherwise report it from somewhere deep inside the first
+  // kernel launch.
+  static_assert(Kokkos::SpaceAccessibility<PHX::ExecutionSpace,
+                                           PHX::MemorySpace>::accessible,
+                "Phalanx: the configured execution space cannot access the "
+                "memory space it was paired with.  Check "
+                "Phalanx_DEFAULT_EXECUTION_SPACE against "
+                "Phalanx_ENABLE_SHARED_SPACE, which replaces the memory space "
+                "with Kokkos::SharedSpace.");
+
+  // Earlier names for the two types above.  Phalanx accumulated several
+  // spellings of each; they all mean what ExecutionSpace and MemorySpace mean.
+  // Deprecated -- see packages/phalanx/scripts/migrate_phx_device.py.
+  // Configure with Phalanx_HIDE_DEPRECATED_CODE=ON to build as though they
+  // were already gone, which is how to check that code no longer needs them.
+#ifndef PHALANX_HIDE_DEPRECATED_CODE
+  using exec_space PHALANX_DEPRECATED_MSG("Use PHX::ExecutionSpace") =
+      PHX::ExecutionSpace;
+  using mem_space PHALANX_DEPRECATED_MSG("Use PHX::MemorySpace") =
+      PHX::MemorySpace;
+  using ExecSpace PHALANX_DEPRECATED_MSG("Use PHX::ExecutionSpace") =
+      PHX::ExecutionSpace;
+  using MemSpace PHALANX_DEPRECATED_MSG("Use PHX::MemorySpace") =
+      PHX::MemorySpace;
+#endif
 
 }
 
@@ -62,7 +87,7 @@ namespace PHX {
   template <typename T> 
   struct remove_all_pointers<T*>{using type = typename PHX::remove_all_pointers<T>::type;};
 
-  using DefaultDevLayout = PHX::exec_space::array_layout;
+  using DefaultDevLayout = PHX::ExecutionSpace::array_layout;
 
 #if defined(SACADO_GPU_HIERARCHICAL_DFAD) || defined(SACADO_GPU_HIERARCHICAL)
 
@@ -71,21 +96,52 @@ namespace PHX {
   // IMPORTANT: The FadStride must be the same as the vector_size in the
   // Kokkos::TeamPolicy constructor. This value is only used for SFad and
   // SLFad, not for DFad.
+  //
+  // The stride follows PHX::ExecutionSpace, the space Phalanx actually runs
+  // on, and NOT whichever backends happen to be compiled in.  A CUDA build
+  // that sets Phalanx_DEFAULT_EXECUTION_SPACE to a host space has no vector
+  // dimension and wants a stride of 1, but a chain of KOKKOS_ENABLE_ tests
+  // would hand it 32 and silently disagree with the team policy.
+  namespace Impl {
+    template <typename T> inline constexpr bool dependent_false = false;
+
+    template <typename ExecSpace>
+    struct FadStride {
+      static_assert(dependent_false<ExecSpace>,
+                    "Phalanx: hierarchical parallelism is enabled but no FAD "
+                    "stride is defined for this execution space.  The stride "
+                    "must equal the vector_size passed to Kokkos::TeamPolicy, "
+                    "so it cannot be guessed -- add a specialization above, or "
+                    "build without Sacado_ENABLE_HIERARCHICAL / "
+                    "Sacado_ENABLE_HIERARCHICAL_DFAD.");
+    };
+
 #if defined(KOKKOS_ENABLE_CUDA)
-  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
-#elif defined(KOKKOS_ENABLE_HIP)
-  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,64>;
-#elif defined(KOKKOS_ENABLE_SYCL)
-  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,32>;
-#elif defined(KOKKOS_ENABLE_SERIAL) || defined(KOKKOS_ENABLE_OPENMP) ||        \
-      defined(KOKKOS_ENABLE_THREADS)
-  // A host backend has no vector dimension to partition, so hierarchical is a
-  // no-op here.  Carried anyway so the hierarchical code paths still compile
-  // on a CPU-only build.
-  using DefaultFadLayout = Sacado::LayoutContiguous<DefaultDevLayout,1>;
-#else
-#error "Phalanx: hierarchical parallelism is enabled but no FAD stride is defined for this backend.  The stride must equal the vector_size passed to Kokkos::TeamPolicy, so it cannot be guessed -- add a branch above for the new backend, or build without Sacado_ENABLE_HIERARCHICAL / Sacado_ENABLE_HIERARCHICAL_DFAD."
+    template <> struct FadStride<Kokkos::Cuda> {static constexpr int value = 32;};
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+    template <> struct FadStride<Kokkos::HIP> {static constexpr int value = 64;};
+#endif
+#if defined(KOKKOS_ENABLE_SYCL)
+    template <> struct FadStride<Kokkos::SYCL> {static constexpr int value = 32;};
+#endif
+    // A host backend has no vector dimension to partition, so hierarchical is
+    // a no-op there.  Carried anyway so the hierarchical code paths still
+    // compile, including on a GPU build that runs Phalanx on the host.
+#if defined(KOKKOS_ENABLE_SERIAL)
+    template <> struct FadStride<Kokkos::Serial> {static constexpr int value = 1;};
+#endif
+#if defined(KOKKOS_ENABLE_OPENMP)
+    template <> struct FadStride<Kokkos::OpenMP> {static constexpr int value = 1;};
+#endif
+#if defined(KOKKOS_ENABLE_THREADS)
+    template <> struct FadStride<Kokkos::Threads> {static constexpr int value = 1;};
+#endif
+  }
+
+  using DefaultFadLayout =
+    Sacado::LayoutContiguous<DefaultDevLayout,
+                             PHX::Impl::FadStride<PHX::ExecutionSpace>::value>;
 
 #else
   using DefaultFadLayout = DefaultDevLayout;

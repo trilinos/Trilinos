@@ -89,7 +89,7 @@ globalToGhost(int /* mem */)
 
   // Do the global distribution.
   ghostedVector_->doImport(*ownedVector_, *importer_, Tpetra::INSERT);
-  PHX::ExecSpace().fence();
+  PHX::ExecutionSpace().fence();
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -101,7 +101,7 @@ initializeData()
                               "TpetraVector_ReadOnly_GED has not been initialized, cannot call \"initializeData\"!");
 
    ghostedVector_->putScalar(0.0);
-   PHX::ExecSpace().fence();
+   PHX::ExecutionSpace().fence();
 
    auto values = ghostedVector_->getLocalViewHost(Tpetra::Access::OverwriteAll);
 

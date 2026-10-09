@@ -56,8 +56,12 @@ namespace PHX {
   // ****************************
   // Devices
   // ****************************
-  template<typename T> struct is_device : std::false_type {};
+  template<typename T> struct is_device : Kokkos::is_device<T> {};
+#if defined(PHX_DEPRECATED_DEVICE_AS_EXECUTION_SPACE)
+  // PHX::Device is an execution space in this mode, so Kokkos::is_device
+  // rejects it.  Remove with the deprecated device code.
   template<> struct is_device<PHX::Device> : std::true_type {};
+#endif
 
   // ****************************
   // Rank count
@@ -257,7 +261,9 @@ namespace PHX {
     using device_type = typename traits::device;
     using data_type = typename traits::data_type;
     using array_type = typename traits::array_type;
-    using size_type = typename device_type::size_type;
+    // Both from array_type: device_type may be a Kokkos::Device, which has no
+    // size_type of its own, and the View is the authority on how it indexes.
+    using size_type = typename array_type::size_type;
     using execution_space = typename array_type::execution_space;
 #ifdef PHX_DEBUG
     enum { rank_value = traits::rank }; // for printing in debug mode

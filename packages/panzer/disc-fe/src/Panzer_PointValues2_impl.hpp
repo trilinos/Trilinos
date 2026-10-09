@@ -98,7 +98,7 @@ namespace panzer {
     auto s_jac_inv = Kokkos::subview(jac_inv.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
     auto s_node_coordinates = Kokkos::subview(node_coordinates.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
     auto s_point_coords = Kokkos::subview(point_coords.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
-    Intrepid2::CellTools<PHX::exec_space> cell_tools;
+    Intrepid2::CellTools<PHX::Device> cell_tools;
 
     cell_tools.setJacobian(s_jac, coords_ref.get_view(), s_node_coordinates, *(point_rule->topology));
     cell_tools.setJacobianInv(s_jac_inv, s_jac);
@@ -119,9 +119,9 @@ namespace panzer {
       const size_type num_nodes = in_node_coords.extent(1);
       const size_type num_dims = in_node_coords.extent(2);
 
-      Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_nodes,num_dims});
+      Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_nodes,num_dims});
       Kokkos::parallel_for("PointValues2::copyNodeCoords",policy,panzer::CopyNodeCoords<Scalar,CoordinateArray>(in_node_coords,node_coordinates));
-      PHX::Device::execution_space().fence();
+      PHX::ExecutionSpace().fence();
     }
   }
 
@@ -135,9 +135,9 @@ namespace panzer {
       const size_type num_points = in_point_coords.extent(0);
       const size_type num_dims = in_point_coords.extent(1);
 
-      Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{num_points,num_dims});
+      Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{num_points,num_dims});
       Kokkos::parallel_for("PointValues2::copyPointCoords",policy,panzer::CopyPointCoords<Scalar,CoordinateArray>(in_point_coords,coords_ref));
-      PHX::Device::execution_space().fence();
+      PHX::ExecutionSpace().fence();
     }
   }
 

@@ -200,7 +200,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto& worksetLIDs = worksetLIDs_;
     const auto& fieldValues = gatherFields_[fieldIndex];
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
         const int lid = worksetLIDs(cell,fieldOffsets(basis));
         fieldValues(cell,basis) = kokkosSolution(lid,0);        

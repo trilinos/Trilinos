@@ -12,6 +12,7 @@
 #define __Panzer_PointGenerator_hpp__
 
 #include "Kokkos_DynRankView.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {
 
@@ -21,8 +22,16 @@ namespace panzer {
   */
 class PointGenerator {
 public:
-  //! Get the points for a particular topology
-  virtual Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const = 0;
+  /** \brief Get the points for a particular topology
+    *
+    * The view is on PHX::Device rather than on Kokkos' default device.  Those
+    * are the same device in most configurations, but not when
+    * Phalanx_DEFAULT_EXECUTION_SPACE names a host space on a GPU build, and
+    * these points are handed to Intrepid2::Basis, whose view type is built
+    * from the device panzer asked for.
+    */
+  virtual Kokkos::DynRankView<double,PHX::Device>
+  getPoints(const shards::CellTopology & topo) const = 0;
 
   //! Get the points for a particular topology
   virtual int numPoints(const shards::CellTopology & topo) const = 0;
