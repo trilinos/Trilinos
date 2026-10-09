@@ -357,23 +357,21 @@ char *c = buf;
 int count=0;
 
   while (1){
-    if ( (c-buf) >= bufsize) break;
+    if ((c - buf) >= bufsize) break;
 
-    while (!(isdigit(*c))){
-      if ((c - buf) >= bufsize) break;
+    while ((c - buf) < bufsize && !isdigit(*c)){
       c++;
     }
-  
-    if ( (c-buf) >= bufsize) break;
-  
+
+    if ((c - buf) >= bufsize) break;
+
     vals[count++] = atoi(c);
-  
-    while (isdigit(*c)){
-      if ((c - buf) >= bufsize) break;
+
+    while ((c - buf) < bufsize && isdigit(*c)){
       c++;
     }
-  
-    if ( (c-buf) >= bufsize) break;
+
+    if ((c - buf) >= bufsize) break;
   }
 
   return count;

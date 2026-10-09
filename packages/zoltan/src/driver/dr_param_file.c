@@ -152,8 +152,10 @@ void zoltanParams_hier_set_param(int level, char *param, char *value) {
   SAFE_MALLOC(newparam, struct zoltanParams_list_entry *,
 	      (long)sizeof(struct zoltanParams_list_entry));
 
-  strcpy(newparam->param, param);
-  strcpy(newparam->value, value);
+  strncpy(newparam->param, param, MAX_PARAM_STRING_LEN-1);
+  newparam->param[MAX_PARAM_STRING_LEN-1] = '\0';
+  strncpy(newparam->value, value, MAX_PARAM_STRING_LEN-1);
+  newparam->value[MAX_PARAM_STRING_LEN-1] = '\0';
   newparam->next = NULL;
   
   if (!zph[level]->first) {
@@ -291,7 +293,7 @@ void zoltanParams_read_file(struct Zoltan_Struct *lb, char *file,
   }
 #endif
 
-  while (fscanf(fp, "%s %s\n", str1, str2) == 2) {
+  while (fscanf(fp, "%499s %499s\n", str1, str2) == 2) {
     ierr = Zoltan_Set_Param(lb, str1, str2);
     if (ierr != ZOLTAN_OK) {
       fprintf(stderr,"Zoltan_Set_Param failed to set param <%s> to <%s>",str1,str2);
@@ -321,7 +323,7 @@ void zoltanParams_read_file(struct Zoltan_Struct *lb, char *file,
 	  if (proc == mypid) zoltanParams_hier_set_partition(level, partition);
 	}
 	/* then parameters until we get LEVEL END */
-	while ((fscanf(fp, "%s %s\n", str1, str2) == 2) &&
+	while ((fscanf(fp, "%499s %499s\n", str1, str2) == 2) &&
 	       (strcmp(str1, "LEVEL") != 0) &&
 	       (strcmp(str2, "END") != 0)) {
 	  

@@ -785,7 +785,10 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   }
 
   for (ielem = 0; ielem < nelemb; ielem++) {
-    elements[bor_elem[ielem]-1].border = 1;
+    int idx = bor_elem[ielem] - 1;
+    if (idx >= 0 && idx < mesh->num_elems) {
+      elements[idx].border = 1;
+    }
   }
 
   free(int_elem);
