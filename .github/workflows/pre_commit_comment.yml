@@ -51,85 +51,85 @@ jobs:
         unzip format_patch_message.zip
 
     - name: Find PR associated with failed workflow run
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        id: pr
-        env:
-          REPO: ${{ github.repository }}
-          SHA: ${{ github.event.workflow_run.head_sha }}
-          HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
-          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-        with:
-          script: |
-           const run = context.payload.workflow_run;
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      id: pr
+      env:
+        REPO: ${{ github.repository }}
+        SHA: ${{ github.event.workflow_run.head_sha }}
+        HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+        HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      with:
+        script: |
+          const run = context.payload.workflow_run;
 
-            if (!run) {
-              core.setFailed("No workflow_run payload found.");
-              return;
+          if (!run) {
+            core.setFailed("No workflow_run payload found.");
+            return;
+          }
+
+          if (run.event !== "pull_request") {
+            core.setFailed(`Workflow run was triggered by ${run.event}, not pull_request.`);
+            return;
+          }
+
+          const { owner, repo } = context.repo;
+          const baseRepoFullName = `${owner}/${repo}`;
+
+          const sha = run.head_sha;
+          const headRepoFullName = run.head_repository?.full_name;
+          const headBranch = run.head_branch;
+
+          core.info(`Workflow run id: ${run.id}`);
+          core.info(`Workflow run URL: ${run.html_url}`);
+          core.info(`Workflow run SHA: ${sha}`);
+          core.info(`Head repo: ${headRepoFullName}`);
+          core.info(`Head branch: ${headBranch}`);
+
+          if (!sha || !headRepoFullName || !headBranch) {
+            core.setFailed("Missing required workflow_run metadata.");
+            return;
+          }
+
+          const prs = await github.paginate(
+            github.rest.repos.listPullRequestsAssociatedWithCommit,
+            {
+              owner,
+              repo,
+              commit_sha: sha,
+              per_page: 100
+            }
+          );
+
+          core.info(`Found ${prs.length} PR(s) associated with commit ${sha}.`);
+
+          const candidates = prs.filter(pr =>
+            pr.base?.repo?.full_name === baseRepoFullName &&
+            pr.head?.repo?.full_name === headRepoFullName &&
+            pr.head?.ref === headBranch
+          );
+
+          if (candidates.length !== 1) {
+            core.warning("Could not uniquely identify PR.");
+            core.warning("Candidate PRs from GitHub API:");
+
+            for (const pr of prs) {
+              core.warning(
+                `#${pr.number} state=${pr.state} ` +
+                `head=${pr.head?.repo?.full_name}:${pr.head?.ref} ` +
+                `headSha=${pr.head?.sha} ` +
+                `base=${pr.base?.repo?.full_name}:${pr.base?.ref}`
+              );
             }
 
-            if (run.event !== "pull_request") {
-              core.setFailed(`Workflow run was triggered by ${run.event}, not pull_request.`);
-              return;
-            }
+            core.setFailed(`Expected exactly one matching PR, found ${candidates.length}.`);
+            return;
+          }
 
-            const { owner, repo } = context.repo;
-            const baseRepoFullName = `${owner}/${repo}`;
+          const pr = candidates[0];
 
-            const sha = run.head_sha;
-            const headRepoFullName = run.head_repository?.full_name;
-            const headBranch = run.head_branch;
-
-            core.info(`Workflow run id: ${run.id}`);
-            core.info(`Workflow run URL: ${run.html_url}`);
-            core.info(`Workflow run SHA: ${sha}`);
-            core.info(`Head repo: ${headRepoFullName}`);
-            core.info(`Head branch: ${headBranch}`);
-
-            if (!sha || !headRepoFullName || !headBranch) {
-              core.setFailed("Missing required workflow_run metadata.");
-              return;
-            }
-
-            const prs = await github.paginate(
-              github.rest.repos.listPullRequestsAssociatedWithCommit,
-              {
-                owner,
-                repo,
-                commit_sha: sha,
-                per_page: 100
-              }
-            );
-
-            core.info(`Found ${prs.length} PR(s) associated with commit ${sha}.`);
-
-            const candidates = prs.filter(pr =>
-              pr.base?.repo?.full_name === baseRepoFullName &&
-              pr.head?.repo?.full_name === headRepoFullName &&
-              pr.head?.ref === headBranch
-            );
-
-            if (candidates.length !== 1) {
-              core.warning("Could not uniquely identify PR.");
-              core.warning("Candidate PRs from GitHub API:");
-
-              for (const pr of prs) {
-                core.warning(
-                  `#${pr.number} state=${pr.state} ` +
-                  `head=${pr.head?.repo?.full_name}:${pr.head?.ref} ` +
-                  `headSha=${pr.head?.sha} ` +
-                  `base=${pr.base?.repo?.full_name}:${pr.base?.ref}`
-                );
-              }
-
-              core.setFailed(`Expected exactly one matching PR, found ${candidates.length}.`);
-              return;
-            }
-
-            const pr = candidates[0];
-
-            core.info(`Matched PR #${pr.number}: ${pr.html_url}`);
-            core.setOutput("number", String(pr.number));
-            core.setOutput("url", pr.html_url);
+          core.info(`Matched PR #${pr.number}: ${pr.html_url}`);
+          core.setOutput("number", String(pr.number));
+          core.setOutput("url", pr.html_url);
 
     - name: Post artifact in issue comment
       id: comment
