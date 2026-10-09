@@ -180,19 +180,6 @@ T
 smallest_eigenvalue(Tensor<T, N> const & A);
 
 ///
-/// Check strict ellipticity condition for 4th-order tensor.
-/// Assume A has major symmetries.
-/// \param A 4th-order tensor is transformed into 2nd-order
-/// tensor.
-/// \return whether the smallest eigenvalue of the 2nd-order
-/// tensor is less or equal than zero.
-///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-bool
-check_strict_ellipticity(Tensor4<T, N> const & A);
-
-///
 /// Check strong ellipticity condition for 4th-order tensor.
 /// Assume A has major and minor symmetries.
 /// \param A 4th-order tensor.
@@ -769,38 +756,6 @@ smallest_eigenvalue(Tensor<T, N> const & A)
   }
 
   return v * A * v;
-}
-
-//
-// Check strict ellipticity condition for 4th-order tensor.
-// Assume A has major symmetries.
-//
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-bool
-check_strict_ellipticity(Tensor4<T, N> const & A)
-{
-  // Convert to 2nd-order tensor
-  Tensor<T, dimension_square<N>::value> const
-  B(A);
-
-  // Check bounds for eigenvalues
-  T const
-  lower_bound = bounds_eigenvalues(B).first;
-
-  if (lower_bound > 0.0) {
-    return true;
-  }
-
-  // Get eigenvalue closest to zero only
-  T const
-  smallest_eigenvalue = smallest_eigenvavlue(B);
-
-  if (smallest_eigenvalue > 0.0) {
-    return true;
-  }
-
-  return false;
 }
 
 //

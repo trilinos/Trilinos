@@ -653,6 +653,44 @@ TEST(MiniTensor, SvdProperties)
   }
 }
 
+// A diagonal input never enters the Jacobi loop, so the singular vectors
+// start as the identity and the sort permutation is the only operation applied
+// to them. Random inputs leave the loop with the diagonal already in descending
+// order, which hides a permutation applied to the wrong side of V. The
+// mechanics case is a pure stretch whose principal values are not in
+// descending order along the axes, e.g. uniaxial compression.
+TEST(MiniTensor, SvdUnsortedDiagonal)
+{
+  std::vector<std::vector<Real>> const diagonals = {
+      {1.0, 3.0, 2.0}, {2.0, 1.0, 3.0}, {0.9, 1.05, 1.05},
+      {1.0, 4.0, 2.0, 3.0}, {2.0, 3.0, 4.0, 1.0}};
+
+  for (auto const & d : diagonals) {
+    Index const dimension = d.size();
+
+    Tensor<Real> A(dimension, Filler::ZEROS);
+    for (Index i = 0; i < dimension; ++i) {
+      A(i, i) = d[i];
+    }
+
+    Tensor<Real> U(dimension), S(dimension), V(dimension);
+    std::tie(U, S, V) = svd(A);
+
+    ASSERT_LE(norm(A - U * S * transpose(V)) / norm(A), TOL_ITERATIVE)
+        << "svd reconstruction of diag, dim " << dimension;
+    ASSERT_LE(orthonormality_error(U), TOL_ITERATIVE);
+    ASSERT_LE(orthonormality_error(V), TOL_ITERATIVE);
+    ASSERT_TRUE(is_descending(S));
+
+    if (dimension == 3) {
+      Tensor<Real> Vl(dimension), R(dimension), logV(dimension);
+      std::tie(Vl, R, logV) = polar_left_logV(A);
+      ASSERT_LE(norm(A - Vl * R) / norm(A), TOL_ITERATIVE)
+          << "polar_left_logV of a pure stretch, dim " << dimension;
+    }
+  }
+}
+
 TEST(MiniTensor, PolarLeftProperties)
 {
   for (Index const dimension : {2, 3}) {
