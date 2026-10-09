@@ -918,8 +918,10 @@ TEST(MiniTensor, TemplateMetaProgramming)
     std::string const
     double_string = "double";
 
+    // The value type of a nested DFad is DFad<double>; its name depends on
+    // the Sacado design in use, so take it from Sacado itself.
     std::string const
-    fad_string = "Sacado::Fad::Exp::GeneralFad< double >";
+    fad_string = Sacado::StringName<Sacado::Fad::DFad<double>>::eval();
 
     std::string
     type_string =

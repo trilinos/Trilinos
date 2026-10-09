@@ -258,6 +258,39 @@ TEST(MiniTensor, Determinant)
   }
 }
 
+// The Laplace expansion for dimensions of 4 or more returned the negated
+// determinant for every even dimension (the cofactor sign of the column it
+// expanded along started at the wrong value); odd dimensions came out right
+// because the error cancelled in the recursion through the even minor.
+TEST(MiniTensor, DeterminantSign)
+{
+  for (Index const dimension : {4, 5, 6}) {
+    Tensor<Real> D(dimension, Filler::ZEROS);
+    Tensor<Real> P(dimension, Filler::ZEROS);
+    Tensor<Real> L(dimension, Filler::ZEROS);
+
+    Real factorial = 1.0;
+    for (Index i = 0; i < dimension; ++i) {
+      D(i, i) = static_cast<Real>(i + 1);
+      factorial *= static_cast<Real>(i + 1);
+      P(i, i) = 1.0;
+      L(i, i) = 1.0;
+      for (Index j = 0; j < i; ++j) {
+        L(i, j) = 0.3 * static_cast<Real>(i + j + 1);
+      }
+    }
+    // A transposition of the first two rows.
+    P(0, 0) = 0.0; P(1, 1) = 0.0; P(0, 1) = 1.0; P(1, 0) = 1.0;
+
+    ASSERT_NEAR(det(D), factorial, 64 * machine_epsilon<Real>() * factorial)
+        << "det of a diagonal tensor, dim " << dimension;
+    ASSERT_NEAR(det(P), -1.0, 64 * machine_epsilon<Real>())
+        << "det of a transposition, dim " << dimension;
+    ASSERT_NEAR(det(L), 1.0, 64 * machine_epsilon<Real>())
+        << "det of a unit lower triangular tensor, dim " << dimension;
+  }
+}
+
 TEST(MiniTensor, Inverse2x2)
 {
   Index const
