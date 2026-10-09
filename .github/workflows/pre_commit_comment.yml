@@ -76,6 +76,7 @@ jobs:
           const baseRepoFullName = `${owner}/${repo}`;
 
           const sha = run.head_sha;
+          const { source_owner, source_repo } = run.head_repository;
           const headRepoFullName = run.head_repository?.full_name;
           const headBranch = run.head_branch;
 
@@ -84,6 +85,8 @@ jobs:
           core.info(`Workflow run SHA: ${sha}`);
           core.info(`Head repo: ${headRepoFullName}`);
           core.info(`Head branch: ${headBranch}`);
+          core.info(`Base repo: ${baseRepoFullName}`);
+          core.info(`Owner/repo: ${source_owner}/${source_repo}`);
 
           if (!sha || !headRepoFullName || !headBranch) {
             core.setFailed("Missing required workflow_run metadata.");
@@ -93,8 +96,8 @@ jobs:
           const prs = await github.paginate(
             github.rest.repos.listPullRequestsAssociatedWithCommit,
             {
-              owner,
-              repo,
+              source_owner,
+              source_repo,
               commit_sha: sha,
               per_page: 100
             }
