@@ -84,6 +84,7 @@ jobs:
           core.info(`Workflow run SHA: ${sha}`);
           core.info(`Head repo: ${headRepoFullName}`);
           core.info(`Head branch: ${headBranch}`);
+          core.info(`Owner/repo: ${baseRepoFullName}`);
 
           if (!sha || !headRepoFullName || !headBranch) {
             core.setFailed("Missing required workflow_run metadata.");
