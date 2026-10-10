@@ -33,7 +33,6 @@ struct Parameters {
   int use_cuda;
   int use_hip;
   int use_sycl;
-  int use_openmptarget;
   int use_serial;
   int a_mem_space, b_mem_space, c_mem_space, work_mem_space;
 
@@ -79,7 +78,6 @@ struct Parameters {
     use_cuda                  = 0;
     use_hip                   = 0;
     use_sycl                  = 0;
-    use_openmptarget          = 0;
     use_serial                = 0;
     a_mem_space = b_mem_space = c_mem_space = work_mem_space = 1;
     a_mtx_bin_file = b_mtx_bin_file = c_mtx_bin_file = "";

@@ -44,11 +44,11 @@ void check_triple_product(const AMatrix& A, const SVector& S, const UMatrix& U, 
   for (int rowIdx = 0; rowIdx < A.extent_int(0); ++rowIdx) {
     for (int colIdx = 0; colIdx < A.extent_int(1); ++colIdx) {
       if (1000 * tol < Kokkos::abs(A_h(rowIdx, colIdx))) {
-        EXPECT_NEAR_KK_REL(A_h(rowIdx, colIdx), M_h(rowIdx, colIdx), tol,
-                           "Value in SVD triple product did not match original matrix");
+        EXPECT_NEAR_KK_REL(A_h(rowIdx, colIdx), M_h(rowIdx, colIdx), tol)
+            << "Value in SVD triple product did not match original matrix";
       } else {
-        EXPECT_NEAR_KK(A_h(rowIdx, colIdx), M_h(rowIdx, colIdx), tol,
-                       "Value in SVD triple product did not match original matrix");
+        EXPECT_NEAR_KK(A_h(rowIdx, colIdx), M_h(rowIdx, colIdx), tol)
+            << "Value in SVD triple product did not match original matrix";
       }
     }
   }
@@ -69,11 +69,11 @@ void check_unitary_orthogonal_matrix(
   for (int rowIdx = 0; rowIdx < M.extent_int(0); ++rowIdx) {
     for (int colIdx = 0; colIdx < M.extent_int(0); ++colIdx) {
       if (rowIdx == colIdx) {
-        EXPECT_NEAR_KK_REL(I0_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::one(), tol,
-                           "Matrix of left or right singular vectors is not unitary; diagonal of MM^H is not 1");
+        EXPECT_NEAR_KK_REL(I0_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::one(), tol)
+            << "Matrix of left or right singular vectors is not unitary; diagonal of MM^H is not 1";
       } else {
-        EXPECT_NEAR_KK(I0_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::zero(), tol,
-                       "Matrix of left or right singular vectors is not unitary; off-diagonal of MM^H is not 0");
+        EXPECT_NEAR_KK(I0_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::zero(), tol)
+            << "Matrix of left or right singular vectors is not unitary; off-diagonal of MM^H is not 0";
       }
     }
   }
@@ -85,11 +85,11 @@ void check_unitary_orthogonal_matrix(
   for (int rowIdx = 0; rowIdx < M.extent_int(1); ++rowIdx) {
     for (int colIdx = 0; colIdx < M.extent_int(1); ++colIdx) {
       if (rowIdx == colIdx) {
-        EXPECT_NEAR_KK_REL(I1_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::one(), tol,
-                           "Matrix of left or right singular vectors is not unitary; diagonal of M^HM is not 1");
+        EXPECT_NEAR_KK_REL(I1_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::one(), tol)
+            << "Matrix of left or right singular vectors is not unitary; diagonal of M^HM is not 1";
       } else {
-        EXPECT_NEAR_KK(I1_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::zero(), tol,
-                       "Matrix of left or right singular vectors is not unitary; off-diagonal of M^HM is not 0");
+        EXPECT_NEAR_KK(I1_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::zero(), tol)
+            << "Matrix of left or right singular vectors is not unitary; off-diagonal of M^HM is not 0";
       }
     }
   }
@@ -453,7 +453,7 @@ int impl_test_svd(const int m, const int n) {
 
   // Initialize A with random numbers
   scalar_type randStart = 0, randEnd = 0;
-  Test::getRandomBounds(max_val, randStart, randEnd);
+  TestUtils::getRandomBounds(max_val, randStart, randEnd);
   Kokkos::fill_random(A, rand_pool, randStart, randEnd);
   Kokkos::deep_copy(Aref, A);
 

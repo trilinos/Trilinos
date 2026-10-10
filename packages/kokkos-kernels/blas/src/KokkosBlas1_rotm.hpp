@@ -45,18 +45,19 @@ void rotm(execution_space const& space, VectorView const& X, VectorView const& Y
 
   using VectorView_Internal = Kokkos::View<typename VectorView::non_const_value_type*,
                                            typename KokkosKernels::Impl::GetUnifiedLayout<VectorView>::array_layout,
-                                           Kokkos::Device<execution_space, typename VectorView::memory_space>,
-                                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                                           execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  using ParamView_Internal = Kokkos::View<
-      typename ParamView::const_value_type[5], typename KokkosKernels::Impl::GetUnifiedLayout<ParamView>::array_layout,
-      Kokkos::Device<execution_space, typename ParamView::memory_space>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using ParamView_Internal = Kokkos::View<typename ParamView::const_value_type[5],
+                                          typename KokkosKernels::Impl::GetUnifiedLayout<ParamView>::array_layout,
+                                          execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  VectorView_Internal X_(X), Y_(Y);
-  ParamView_Internal param_(param);
+  VectorView_Internal X_internal    = KokkosKernels::Impl::unificationCast<VectorView_Internal>(X);
+  VectorView_Internal Y_internal    = KokkosKernels::Impl::unificationCast<VectorView_Internal>(Y);
+  ParamView_Internal param_internal = KokkosKernels::Impl::unificationCast<ParamView_Internal>(param);
 
   Kokkos::Profiling::pushRegion("KokkosBlas::rotm");
-  Impl::Rotm<execution_space, VectorView_Internal, ParamView_Internal>::rotm(space, X_, Y_, param_);
+  Impl::Rotm<execution_space, VectorView_Internal, ParamView_Internal>::rotm(space, X_internal, Y_internal,
+                                                                             param_internal);
   Kokkos::Profiling::popRegion();
 }
 

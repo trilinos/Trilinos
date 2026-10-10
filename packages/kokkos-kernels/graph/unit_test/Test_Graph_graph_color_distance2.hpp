@@ -135,6 +135,64 @@ void test_dist2_coloring(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t r
   }
 }
 
+// Distance-2 coloring of a clique/complete graph forces exactly n distinct colors.
+// This is an adversarial case for two off-by-one/window bugs:
+//  - In resolveConflictsSerial, the last-colored vertex drives the color
+//    search up to c == numVerts, reading forbidden[numVerts]. This means the
+//    test will only run cleanly under ASan/Valgrind if forbidden is correctly sized to be numVerts+1.
+//  - VB_BIT: because n > 64 this exercises the case where we loop over multiple 64-color windows.
+template <typename scalar_unused, typename lno_t, typename size_type, typename device>
+void test_dist2_coloring_clique(lno_t numVerts) {
+  using execution_space = typename device::execution_space;
+  using memory_space    = typename device::memory_space;
+  using crsMat          = KokkosSparse::CrsMatrix<double, lno_t, device, void, size_type>;
+  using graph_type      = typename crsMat::StaticCrsGraphType;
+  using c_rowmap_t      = typename graph_type::row_map_type;
+  using c_entries_t     = typename graph_type::entries_type;
+  using rowmap_t        = typename c_rowmap_t::non_const_type;
+  using entries_t       = typename c_entries_t::non_const_type;
+  using KernelHandle    = KokkosKernelsHandle<size_type, lno_t, double, execution_space, memory_space, memory_space>;
+
+  // Build a complete graph (every vertex adjacent to every other vertex)
+  const size_type nnz = size_type(numVerts) * (numVerts - 1);
+  rowmap_t rowmap("rowmap", numVerts + 1);
+  entries_t entries("entries", nnz);
+  auto rowmapHost  = Kokkos::create_mirror_view(rowmap);
+  auto entriesHost = Kokkos::create_mirror_view(entries);
+  size_type pos    = 0;
+  rowmapHost(0)    = 0;
+  for (lno_t v = 0; v < numVerts; v++) {
+    for (lno_t u = 0; u < numVerts; u++) {
+      if (u != v) entriesHost(pos++) = u;
+    }
+    rowmapHost(v + 1) = pos;
+  }
+  Kokkos::deep_copy(rowmap, rowmapHost);
+  Kokkos::deep_copy(entries, entriesHost);
+
+  std::vector<GraphColoringAlgorithmDistance2> algos = {COLORING_D2_DEFAULT, COLORING_D2_SERIAL,    COLORING_D2_VB,
+                                                        COLORING_D2_VB_BIT,  COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT};
+  for (auto algo : algos) {
+    KernelHandle kh;
+    kh.create_distance2_graph_coloring_handle(algo);
+    // Compute the Distance-2 graph coloring.
+    graph_color_distance2<KernelHandle, c_rowmap_t, c_entries_t>(&kh, numVerts, rowmap, entries);
+    auto coloring_handle = kh.get_distance2_graph_coloring_handle();
+    auto colors          = coloring_handle->get_vertex_colors();
+    auto colorsHost      = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), colors);
+    auto numColors       = coloring_handle->get_num_colors();
+    // Expect a clique to use exactly n colors
+    EXPECT_EQ(numColors, numVerts) << "Clique: algorithm " << coloring_handle->getD2AlgorithmName()
+                                   << " did not use exactly numVerts colors";
+    bool success =
+        Test::verifyD2Coloring<lno_t, size_type, decltype(rowmapHost), decltype(entriesHost), decltype(colorsHost)>(
+            numVerts, rowmapHost, entriesHost, colorsHost);
+    EXPECT_TRUE(success) << "Clique: algorithm " << coloring_handle->getD2AlgorithmName()
+                         << " produced invalid coloring";
+    kh.destroy_distance2_graph_coloring_handle();
+  }
+}
+
 template <typename scalar_unused, typename lno_t, typename size_type, typename device>
 void test_bipartite_symmetric(lno_t numVerts, size_type nnz, lno_t bandwidth, lno_t row_size_variance) {
   using execution_space = typename device::execution_space;
@@ -242,6 +300,8 @@ void test_bipartite(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth
   TEST_F(TestCategory, graph##_##graph_color_distance2##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {     \
     test_dist2_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(5000, 5000 * 20, 1000, 10);                       \
     test_dist2_coloring<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 10, 40, 10);                             \
+    test_dist2_coloring_clique<SCALAR, ORDINAL, OFFSET, DEVICE>(64);                                       \
+    test_dist2_coloring_clique<SCALAR, ORDINAL, OFFSET, DEVICE>(130);                                      \
   }                                                                                                        \
   TEST_F(TestCategory, graph##_##graph_color_bipartite_sym##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
     test_bipartite_symmetric<SCALAR, ORDINAL, OFFSET, DEVICE>(50, 50 * 5, 30, 1);                          \

@@ -22,8 +22,8 @@ void impl_test_team_dot(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
 
-  view_stride_adapter<ViewTypeA> a("a", N);
-  view_stride_adapter<ViewTypeB> b("b", N);
+  TestUtils::view_stride_adapter<ViewTypeA> a("a", N);
+  TestUtils::view_stride_adapter<ViewTypeB> b("b", N);
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
@@ -124,8 +124,8 @@ void impl_test_team_dot_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
 
-  view_stride_adapter<ViewTypeA> a("A", N, K);
-  view_stride_adapter<ViewTypeB> b("B", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> a("A", N, K);
+  TestUtils::view_stride_adapter<ViewTypeB> b("B", N, K);
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 

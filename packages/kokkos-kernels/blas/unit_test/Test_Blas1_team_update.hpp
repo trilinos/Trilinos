@@ -29,10 +29,10 @@ void impl_test_team_update(int N) {
   ScalarC c  = 7;
   double eps = std::is_same<ScalarC, float>::value ? 2 * 1e-5 : 1e-7;
 
-  view_stride_adapter<ViewTypeA> x("X", N);
-  view_stride_adapter<ViewTypeB> y("Y", N);
-  view_stride_adapter<ViewTypeC> z("Z", N);
-  view_stride_adapter<ViewTypeC> org_z("Org_Z", N);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
+  TestUtils::view_stride_adapter<ViewTypeC> z("Z", N);
+  TestUtils::view_stride_adapter<ViewTypeC> org_z("Org_Z", N);
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
@@ -121,10 +121,10 @@ void impl_test_team_update_mv(int N, int K) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
 
-  view_stride_adapter<ViewTypeA> x("X", N, K);
-  view_stride_adapter<ViewTypeB> y("Y", N, K);
-  view_stride_adapter<ViewTypeC> z("Z", N, K);
-  view_stride_adapter<ViewTypeC> org_z("Org_Z", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N, K);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N, K);
+  TestUtils::view_stride_adapter<ViewTypeC> z("Z", N, K);
+  TestUtils::view_stride_adapter<ViewTypeC> org_z("Org_Z", N, K);
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 
