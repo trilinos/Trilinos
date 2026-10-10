@@ -39,7 +39,7 @@ template<typename Traits>
 PHX::DeviceEvaluator<Traits>*
 GatherSolution<PHX::MyTraits::Residual, Traits>::createDeviceEvaluator() const
 {
-  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(field.get_static_view(),
+  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::ExecutionSpace,PHX::MemorySpace>(field.get_static_view(),
                                                                                      num_equations,
                                                                                      field_index,
                                                                                      x,
@@ -52,7 +52,7 @@ void GatherSolution<PHX::MyTraits::Residual, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 {
   auto e = PHX::make_dev_eval(MyDevEval(field.get_static_view(),num_equations,field_index,x,gids),workset);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
 
 // **********************************************************************
@@ -99,7 +99,7 @@ template<typename Traits>
 PHX::DeviceEvaluator<Traits>*
 GatherSolution<PHX::MyTraits::Jacobian, Traits>::createDeviceEvaluator() const
 {
-  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(field.get_static_view(),
+  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::ExecutionSpace,PHX::MemorySpace>(field.get_static_view(),
                                                                                      num_equations,
                                                                                      field_index,
                                                                                      x,
@@ -112,7 +112,7 @@ void GatherSolution<PHX::MyTraits::Jacobian, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 {
   auto e = PHX::make_dev_eval(MyDevEval(field.get_static_view(),num_equations,field_index,x,gids),workset);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
 
 // **********************************************************************

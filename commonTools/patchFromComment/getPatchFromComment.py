@@ -10,11 +10,11 @@ import questionary
 repo = "trilinos/Trilinos"
 
 
-def getComment(pr_number, comment_id):
+def getComment(issue_number, comment_id):
     g = Github()
     r = g.get_repo(repo)
-    pr = r.get_pull(pr_number)
-    comment = pr.as_issue().get_comment(comment_id)
+    issue = r.get_issue(issue_number)
+    comment = issue.get_comment(comment_id)
     return comment
 
 
@@ -44,17 +44,20 @@ def main():
     args = parser.parse_args()
 
     try:
-        m = re.compile(repo+r"/pull/([0-9]+)#issuecomment-([0-9]+)").search(args.url)
-        pr_number = int(m.group(1))
-        comment_id = int(m.group(2))
-    except:
+        m = re.compile(repo+r"/(pull|issue)/([0-9]+)#issuecomment-([0-9]+)").search(args.url)
+        issue_type = m.group(1)
+        issue_number = int(m.group(2))
+        comment_id = int(m.group(3))
+    except Exception as e:
+        print(e)
         questionary.print("Could not parse the url.\n"
                           "Expected: trilinos/Trilinos/pull/XXXXX#issuecomment-XXXXXXXXXX\n"
+                          "Or:       trilinos/Trilinos/issue/XXXXX#issuecomment-XXXXXXXXXX\n"
                           f"Got:      {args.url}")
         exit(1)
 
     try:
-        comment = getComment(pr_number, comment_id)
+        comment = getComment(issue_number, comment_id)
     except Exception as e:
         questionary.print(f"Failed to retrieve comment. Error:\n {e}")
         exit(1)
@@ -65,7 +68,7 @@ def main():
         exit(1)
 
     if args.op == "save":
-        patchFile = Path().cwd()/f"pr{pr_number}_comment{comment_id}.patch"
+        patchFile = Path().cwd()/f"{issue_type}{issue_number}_comment{comment_id}.patch"
         if patchFile.exists():
             overwrite = questionary.confirm(f"File {patchFile} already exists. Overwrite?", default=True).ask()
             if not overwrite:

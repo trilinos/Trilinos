@@ -125,7 +125,7 @@ evaluateFields(
           scalef = (*tmp_sfs)[fieldName];
       }
 
-      PHX::Device().fence();
+      PHX::ExecutionSpace().fence();
       mesh_->setCellFieldData(fieldName+d_mod[dim],blockId,localCellIds,average.get_view(),scalef);
     }
   }

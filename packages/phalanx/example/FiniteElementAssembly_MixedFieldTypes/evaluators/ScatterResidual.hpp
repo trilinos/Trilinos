@@ -64,7 +64,7 @@ public:
   void evaluateFields(typename Traits::EvalData d);
 
   KOKKOS_INLINE_FUNCTION
-  void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
+  void operator () (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const;
 };
 
 // **************************************************************
@@ -99,7 +99,7 @@ public:
   void evaluateFields(typename Traits::EvalData d);
 
   KOKKOS_INLINE_FUNCTION
-  void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
+  void operator () (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const;
 };
 
 /*

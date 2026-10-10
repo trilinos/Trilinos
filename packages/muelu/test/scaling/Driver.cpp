@@ -18,6 +18,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 // Kokkos
 #include <Kokkos_Core.hpp>
@@ -270,7 +271,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("scale", "noscale", &scaleResidualHist, "scaled Krylov residual history");
   bool solvePreconditioned = true;
   clp.setOption("solve-preconditioned", "no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
-  bool useStackedTimer = false;
+  bool useStackedTimer = true;
   clp.setOption("stacked-timer", "no-stacked-timer", &useStackedTimer, "use stacked timer");
   std::string watchrProblemName = std::string("MueLu Setup-Solve ") + std::to_string(comm->getSize()) + " ranks";
   clp.setOption("watchr-problem-name", &watchrProblemName, "Problem name for Watchr plot headers");

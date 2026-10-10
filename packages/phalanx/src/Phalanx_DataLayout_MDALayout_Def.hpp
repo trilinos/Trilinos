@@ -21,7 +21,7 @@ namespace PHX {
 
 //**********************************************************************
 template<int N, typename CurrentExtent, typename... Extents>
-void setExtentsVariadic(std::vector<PHX::Device::size_type>& e, CurrentExtent ce, Extents... extents)
+void setExtentsVariadic(std::vector<PHX::ExecutionSpace::size_type>& e, CurrentExtent ce, Extents... extents)
 {
   e[N] = ce;
 
@@ -103,14 +103,14 @@ operator==(const PHX::DataLayout& right) const
 
 //**********************************************************************
 template<typename... Tags>
-PHX::Device::size_type
+PHX::ExecutionSpace::size_type
 PHX::MDALayout<Tags...>::rank() const
 { return Rank; }
 
 //**********************************************************************
 template<typename... Tags>
 void PHX::MDALayout<Tags...>::
-dimensions(std::vector<PHX::Device::size_type>& dim) const
+dimensions(std::vector<PHX::ExecutionSpace::size_type>& dim) const
 {
   dim.resize(Rank);
   for(std::size_t i=0; i < Rank; ++i)
@@ -129,7 +129,7 @@ names(std::vector<std::string>& names) const
 
 //**********************************************************************
 template<typename... Tags>
-PHX::Device::size_type PHX::MDALayout<Tags...>::
+PHX::ExecutionSpace::size_type PHX::MDALayout<Tags...>::
 size() const
 { return m_size; }
 
@@ -152,7 +152,7 @@ identifier() const
 
 //**********************************************************************
 template<typename... Tags>
-PHX::Device::size_type
+PHX::ExecutionSpace::size_type
 PHX::MDALayout<Tags...>::
 dimension(size_type ordinal) const
 {
@@ -164,7 +164,7 @@ dimension(size_type ordinal) const
 
 //**********************************************************************
 template<typename... Tags>
-PHX::Device::size_type
+PHX::ExecutionSpace::size_type
 PHX::MDALayout<Tags...>::
 extent(size_type ordinal) const
 {
@@ -233,7 +233,7 @@ createIdentifier(const std::string& prefix)
 template<typename... Tags>
 void
 PHX::MDALayout<Tags...>::
-setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents)
+setExtentsOnDerivedClass(const std::vector<PHX::ExecutionSpace::size_type>& extents)
 {
 #ifdef PHX_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(extents.size() != Rank, std::runtime_error,

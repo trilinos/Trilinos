@@ -17,7 +17,7 @@
 
 struct WorksetBuilder {
 
-  using team_t = Kokkos::TeamPolicy<PHX::exec_space>::member_type;
+  using team_t = Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type;
   struct CopyWorksetDetJac_Tag{};
   struct CopyWorksetGradBasisReal_Tag{};
 
@@ -95,8 +95,8 @@ struct WorksetBuilder {
       workset_det_jac = worksets[w].det_jac_;
       workset_grad_basis_real = worksets[w].grad_basis_real_;
       
-      Kokkos::parallel_for(Kokkos::TeamPolicy<CopyWorksetDetJac_Tag,PHX::exec_space>(worksets[w].num_cells_,Kokkos::AUTO()), *this);
-      Kokkos::parallel_for(Kokkos::TeamPolicy<CopyWorksetGradBasisReal_Tag,PHX::exec_space>(worksets[w].num_cells_,Kokkos::AUTO()), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<CopyWorksetDetJac_Tag,PHX::ExecutionSpace>(worksets[w].num_cells_,Kokkos::AUTO()), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<CopyWorksetGradBasisReal_Tag,PHX::ExecutionSpace>(worksets[w].num_cells_,Kokkos::AUTO()), *this);
       Kokkos::fence();
     }
   }

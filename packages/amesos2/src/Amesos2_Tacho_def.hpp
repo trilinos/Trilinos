@@ -36,14 +36,16 @@ TachoSolver<Matrix,Vector>::TachoSolver(
   data_.verbose    = false; // verbose
   data_.team_on_user_stream  = false; // use user stream-0 for team/batched kernels
   data_.small_problem_threshold_size = 1024;
+  tacho_initialized_ = false;
 }
 
 
 template <class Matrix, class Vector>
 TachoSolver<Matrix,Vector>::~TachoSolver( )
 {
-  if ( this->root_ ) {
+  if ( this->root_ && tacho_initialized_) {
     data_.solver.release();
+    tacho_initialized_ = false;
   }
 }
 
@@ -73,6 +75,12 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 
   int status = 0;
   if ( this->root_ ) {
+    if (tacho_initialized_) {
+      // release inernal memory if symbolic was called before
+      data_.solver.release();
+      tacho_initialized_ = false;
+    }
+
     if(do_optimization()) {
       this->matrixA_->returnRowPtr_kokkos_view(host_row_ptr_view_);
       this->matrixA_->returnColInd_kokkos_view(host_cols_view_);
@@ -93,6 +101,7 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
       data_.solver.analyze(this->globalNumCols_, host_row_ptr_view_, host_cols_view_);
     }
     data_.solver.initialize();
+    tacho_initialized_ = true;
   }
   return status;
 }

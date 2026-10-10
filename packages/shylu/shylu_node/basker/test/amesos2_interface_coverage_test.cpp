@@ -66,10 +66,10 @@ int main(int argc, char* argv[])
   vn = n;
   x = new Entry[vn]();
   xhat = new Entry[vn]();
+  y = new Entry[m]();
   //Populate Vector
   {
     vm = m;
-    y = new Entry[m]();
     for(Int i = 0; i < vm; i++)
     {
       xhat[i] = (Entry) i;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, xhat, y);
     for(Int i = 0; i < vm; i++)
     {
-      //std::cout  << "y " << y[i] << std::endl;
+      //std::cout << "y " << y[i] << std::endl;
       xhat[i] = (Entry) 0.0;
     }
   }
@@ -137,9 +137,6 @@ int main(int argc, char* argv[])
     if(error != 0) return error;
     //mybasker.DEBUG_PRINT();
     double ttime = myTime();
-    Int *lperm;
-    Int *rperm;
-    mybasker.GetPerm(&lperm,&rperm);
     
     error = mybasker.Solve(y,x);
     std::cout << "Done with Solve, Time: "
@@ -220,9 +217,6 @@ int main(int argc, char* argv[])
     if(error != 0) return error;
     //mybasker.DEBUG_PRINT();
     double ttime = myTime();
-    Int *lperm;
-    Int *rperm;
-    mybasker.GetPerm(&lperm,&rperm);
     
     error = mybasker.Solve(y,x);
     std::cout << "Done with Solve, Time: "
@@ -303,10 +297,7 @@ int main(int argc, char* argv[])
               << totalTime(ftime, myTime()) << std::endl;
     //mybasker.DEBUG_PRINT();
     double ttime = myTime();
-    Int *lperm;
-    Int *rperm;
-    mybasker.GetPerm(&lperm,&rperm);
-    
+
     mybasker.Solve(y,x);
     std::cout << "Done with Solve, Time: "
               << totalTime(ttime, myTime()) << std::endl;
@@ -344,6 +335,12 @@ int main(int argc, char* argv[])
     mybasker.Finalize();
   }
 */
+  delete [] x;
+  delete [] xhat;
+  delete [] y;
+  delete [] col_ptr;
+  delete [] row_idx;
+  delete [] val;
   
   Kokkos::finalize();
 

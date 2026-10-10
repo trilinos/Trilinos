@@ -151,7 +151,7 @@ ArrayToFieldVector::getGhostedDataVector(const std::string & fieldName,const std
    // do import from finalReducedVec
    Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> importer(reducedMap,map);
    finalVec->doImport(*finalReducedVec,importer,Tpetra::INSERT);
-   PHX::Device::execution_space().fence();
+   PHX::ExecutionSpace().fence();
 
    return finalVec;
 }
@@ -181,7 +181,7 @@ ArrayToFieldVector::getDataVector(const std::string & fieldName,const std::map<s
    // do import
    Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> importer(sourceVec->getMap(),destMap);
    destVec->doImport(*sourceVec,importer,Tpetra::INSERT); 
-   PHX::Device::execution_space().fence();
+   PHX::ExecutionSpace().fence();
 
    return destVec;
 }

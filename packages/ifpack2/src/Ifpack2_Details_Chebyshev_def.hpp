@@ -835,7 +835,7 @@ void Chebyshev<ScalarType, MV>::compute() {
 
   // Have we estimated eigenvalues before?
   const bool computedEigenvalueEstimates =
-      STS::isnaninf(computedLambdaMax_) || STS::isnaninf(computedLambdaMin_);
+      !(STS::isnaninf(computedLambdaMax_) || STS::isnaninf(computedLambdaMin_));
 
   // Only recompute the eigenvalue estimates if
   // - we are supposed to assume that the matrix may have changed, or
@@ -1273,6 +1273,10 @@ void Chebyshev<ScalarType, MV>::
                         const int numIters,
                         const ST lambdaMax,
                         const V& D_inv) {
+  if (numIters <= 0) {
+    return;
+  }
+
   // standard 4th kind Chebyshev smoother has \beta_i := 1
   std::vector<ScalarType> betas(numIters, 1.0);
   if (chebyshevAlgorithm_ == "opt_fourth") {

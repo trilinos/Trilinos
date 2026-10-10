@@ -48,25 +48,25 @@ namespace PHX {
   template<typename Traits,typename Derived>
   struct TaskBase : public PHX::EvaluatorWithBaseImpl<Traits> {
 
-    virtual Kokkos::Future<void,PHX::exec_space>
-    createTask(Kokkos::TaskScheduler<PHX::exec_space>& policy,
+    virtual Kokkos::Future<void,PHX::ExecutionSpace>
+    createTask(Kokkos::TaskScheduler<PHX::ExecutionSpace>& policy,
 	       const int& work_size,
-               const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
+               const std::vector<Kokkos::Future<void,PHX::ExecutionSpace>>& dependent_futures,
 	       typename Traits::EvalData ) override
     {
       if (dependent_futures.size() == 0)
-        return policy.host_spawn(PHX::TaskWrap<PHX::exec_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam);
+        return policy.host_spawn(PHX::TaskWrap<PHX::ExecutionSpace,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam);
       else if (dependent_futures.size() == 1)
-        return policy.host_spawn(PHX::TaskWrap<PHX::exec_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam,dependent_futures[0]);
+        return policy.host_spawn(PHX::TaskWrap<PHX::ExecutionSpace,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam,dependent_futures[0]);
 
       auto aggregate_future = policy.when_all(dependent_futures.size(),dependent_futures.data());
-      return policy.host_spawn(PHX::TaskWrap<PHX::exec_space,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam,aggregate_future);
+      return policy.host_spawn(PHX::TaskWrap<PHX::ExecutionSpace,Derived>(work_size,*dynamic_cast<Derived*>(this)),Kokkos::TaskTeam,aggregate_future);
     }
 
     //! Returns the size of the task functor in bytes
     unsigned taskSize() const override
     {
-      return sizeof(PHX::TaskWrap<PHX::exec_space,Derived>);
+      return sizeof(PHX::TaskWrap<PHX::ExecutionSpace,Derived>);
     }
   };
 

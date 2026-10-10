@@ -116,20 +116,16 @@ int main(int argc, char* argv[])
       double stime = myTime();
       mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,val);
       std::cout << "Done with Symbolic, Time: " 
-        	      << totalTime(stime, myTime()) << std::endl;
+                << totalTime(stime, myTime()) << std::endl;
       double ftime = myTime();
       mybasker.Factor(m,n,nnz,col_ptr,row_idx,val);
       std::cout << "Done with Factor, Time: "
-	              << totalTime(ftime, myTime()) << std::endl;
+                << totalTime(ftime, myTime()) << std::endl;
       //mybasker.DEBUG_PRINT();
       double ttime = myTime();
-      Int *lperm;
-      Int *rperm;
-      mybasker.GetPerm(&lperm,&rperm);
-    
       mybasker.Solve(ny,x);
       std::cout << "Done with Solve, Time: "
-        	      << totalTime(ttime, myTime()) << std::endl;
+                << totalTime(ttime, myTime()) << std::endl;
 
       //std::cout << "Non-transpose solution" << std::endl;
       //for (Int i = 0; i < m; ++i) {
@@ -163,20 +159,16 @@ int main(int argc, char* argv[])
       double stime = myTime();
       mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,val);
       std::cout << "Done with Symbolic, Time: " 
-        	      << totalTime(stime, myTime()) << std::endl;
+                << totalTime(stime, myTime()) << std::endl;
       double ftime = myTime();
       mybasker.Factor(m,n,nnz,col_ptr,row_idx,val);
       std::cout << "Done with Factor, Time: "
-	              << totalTime(ftime, myTime()) << std::endl;
+                << totalTime(ftime, myTime()) << std::endl;
       //mybasker.DEBUG_PRINT();
       double ttime = myTime();
-      Int *lperm;
-      Int *rperm;
-      mybasker.GetPerm(&lperm,&rperm);
-    
       mybasker.Solve(ty,x);
       std::cout << "Done with Solve, Time: "
-        	      << totalTime(ttime, myTime()) << std::endl;
+                << totalTime(ttime, myTime()) << std::endl;
 
       //std::cout << "Transpose solution" << std::endl;
       //for (Int i = 0; i < m; ++i) {

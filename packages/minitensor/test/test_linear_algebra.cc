@@ -258,6 +258,39 @@ TEST(MiniTensor, Determinant)
   }
 }
 
+// The Laplace expansion for dimensions of 4 or more returned the negated
+// determinant for every even dimension (the cofactor sign of the column it
+// expanded along started at the wrong value); odd dimensions came out right
+// because the error cancelled in the recursion through the even minor.
+TEST(MiniTensor, DeterminantSign)
+{
+  for (Index const dimension : {4, 5, 6}) {
+    Tensor<Real> D(dimension, Filler::ZEROS);
+    Tensor<Real> P(dimension, Filler::ZEROS);
+    Tensor<Real> L(dimension, Filler::ZEROS);
+
+    Real factorial = 1.0;
+    for (Index i = 0; i < dimension; ++i) {
+      D(i, i) = static_cast<Real>(i + 1);
+      factorial *= static_cast<Real>(i + 1);
+      P(i, i) = 1.0;
+      L(i, i) = 1.0;
+      for (Index j = 0; j < i; ++j) {
+        L(i, j) = 0.3 * static_cast<Real>(i + j + 1);
+      }
+    }
+    // A transposition of the first two rows.
+    P(0, 0) = 0.0; P(1, 1) = 0.0; P(0, 1) = 1.0; P(1, 0) = 1.0;
+
+    ASSERT_NEAR(det(D), factorial, 64 * machine_epsilon<Real>() * factorial)
+        << "det of a diagonal tensor, dim " << dimension;
+    ASSERT_NEAR(det(P), -1.0, 64 * machine_epsilon<Real>())
+        << "det of a transposition, dim " << dimension;
+    ASSERT_NEAR(det(L), 1.0, 64 * machine_epsilon<Real>())
+        << "det of a unit lower triangular tensor, dim " << dimension;
+  }
+}
+
 TEST(MiniTensor, Inverse2x2)
 {
   Index const
@@ -472,7 +505,7 @@ TEST(MiniTensor, SVD3x3)
 
   Real const error = norm(A - B) / norm(A);
 
-  ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
+  ASSERT_LE(error, TOL_ITERATIVE);
 }
 
 TEST(MiniTensor, SVD3x3Fad)
@@ -490,7 +523,7 @@ TEST(MiniTensor, SVD3x3Fad)
   Sacado::Fad::DFad<Real> const
   error = norm(B - A) / norm(A);
 
-  ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
+  ASSERT_LE(error, TOL_ITERATIVE);
 }
 
 TEST(MiniTensor, SymmetricEigen2x2)
@@ -536,7 +569,7 @@ TEST(MiniTensor, SymmetricEigen3x3)
 
   Real const error = norm(A - B) / norm(A);
 
-  ASSERT_LE(error, 4.0 * machine_epsilon<Real>());
+  ASSERT_LE(error, TOL_DIRECT);
 }
 
 TEST(MiniTensor, Polar3x3)
@@ -649,6 +682,44 @@ TEST(MiniTensor, SvdProperties)
         ASSERT_GE(S(i, i), -TOL_ITERATIVE)
             << "svd singular value negative, dim " << dimension << ", sample " << sample;
       }
+    }
+  }
+}
+
+// A diagonal input never enters the Jacobi loop, so the singular vectors
+// start as the identity and the sort permutation is the only operation applied
+// to them. Random inputs leave the loop with the diagonal already in descending
+// order, which hides a permutation applied to the wrong side of V. The
+// mechanics case is a pure stretch whose principal values are not in
+// descending order along the axes, e.g. uniaxial compression.
+TEST(MiniTensor, SvdUnsortedDiagonal)
+{
+  std::vector<std::vector<Real>> const diagonals = {
+      {1.0, 3.0, 2.0}, {2.0, 1.0, 3.0}, {0.9, 1.05, 1.05},
+      {1.0, 4.0, 2.0, 3.0}, {2.0, 3.0, 4.0, 1.0}};
+
+  for (auto const & d : diagonals) {
+    Index const dimension = d.size();
+
+    Tensor<Real> A(dimension, Filler::ZEROS);
+    for (Index i = 0; i < dimension; ++i) {
+      A(i, i) = d[i];
+    }
+
+    Tensor<Real> U(dimension), S(dimension), V(dimension);
+    std::tie(U, S, V) = svd(A);
+
+    ASSERT_LE(norm(A - U * S * transpose(V)) / norm(A), TOL_ITERATIVE)
+        << "svd reconstruction of diag, dim " << dimension;
+    ASSERT_LE(orthonormality_error(U), TOL_ITERATIVE);
+    ASSERT_LE(orthonormality_error(V), TOL_ITERATIVE);
+    ASSERT_TRUE(is_descending(S));
+
+    if (dimension == 3) {
+      Tensor<Real> Vl(dimension), R(dimension), logV(dimension);
+      std::tie(Vl, R, logV) = polar_left_logV(A);
+      ASSERT_LE(norm(A - Vl * R) / norm(A), TOL_ITERATIVE)
+          << "polar_left_logV of a pure stretch, dim " << dimension;
     }
   }
 }

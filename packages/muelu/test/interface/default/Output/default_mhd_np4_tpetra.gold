@@ -1,7 +1,7 @@
 Clearing old data (if any)
 
 Level 0
-Setup Smoother (MueLu::Ifpack2Smoother{type = SCHWARZ})
+Setup Smoother (total, level=0) (MueLu::Ifpack2Smoother{type = SCHWARZ})
 smoother -> 
  schwarz: overlap level = 1   [unused]
  schwarz: combine mode = Zero   [unused]
@@ -15,26 +15,26 @@ smoother ->
   fact: relax value = 0   [unused]
 
 Level 1
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
+Build (total, level=1) (MueLu::TentativePFactory)
+Build (total, level=0) (MueLu::UncoupledAggregationFactory)
+Build (total, level=0) (MueLu::CoalesceDropFactory)
+Build (total, level=0) (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=0) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=0) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=1) (MueLu::RAPFactory)
 transpose: use implicit = 1
 rap: triple product = 1
 matrixmatrix: kernel params -> 
  [empty list]
-Setup Smoother (MueLu::Ifpack2Smoother{type = SCHWARZ})
+Setup Smoother (total, level=1) (MueLu::Ifpack2Smoother{type = SCHWARZ})
 smoother -> 
  schwarz: overlap level = 1   [unused]
  schwarz: combine mode = Zero   [unused]
@@ -48,10 +48,10 @@ smoother ->
   fact: relax value = 0   [unused]
 
 Level 2
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
+Build (total, level=2) (MueLu::TentativePFactory)
+Build (total, level=1) (MueLu::UncoupledAggregationFactory)
+Build (total, level=1) (MueLu::CoalesceDropFactory)
+Build (total, level=1) (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
@@ -59,18 +59,18 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-Nullspace factory (MueLu::NullspaceFactory)
+Nullspace factory (total, level=1) (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
+Build (total, level=1) (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=2) (MueLu::RAPFactory)
 transpose: use implicit = 1
 rap: triple product = 1
 matrixmatrix: kernel params -> 
  [empty list]
 Max coarse size (<= 2000) achieved
-Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
+Setup Smoother (total, level=2) (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
  Amesos2 -> 
   [empty list]
