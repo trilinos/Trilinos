@@ -160,7 +160,7 @@
  * release. There is no replacement.
  */
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
-    !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+    !defined(KOKKOS_ENABLE_SYCL)
 #define KOKKOSKERNELS_ENABLE_HOST_ONLY
 #endif
 

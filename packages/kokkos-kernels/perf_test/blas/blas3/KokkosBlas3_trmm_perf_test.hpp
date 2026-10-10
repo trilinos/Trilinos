@@ -160,7 +160,7 @@ static void print_trmm_perf_test_options(options_t /*options*/) { return; }
 
 /*************************** Internal templated fns **************************/
 // Need to take subviews on the device
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 template <class scalar_type, class vta, class vtb, class device_type>
 void do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
   uint32_t warm_up_n = options.warm_up_n;
@@ -199,14 +199,14 @@ template <class scalar_type, class vta, class vtb, class device_type>
 void do_trmm_serial_blas(options_t /*options*/, trmm_args_t /*trmm_args*/) {
   std::cerr << std::string(__func__)
             << " disabled since KOKKOS_ENABLE_CUDA or "
-               "KOKKOS_ENABLE_OPENMPTARGET is defined."
+               "KOKKOS_ENABLE_HIP is defined."
             << std::endl;
   return;
 }
-#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_OPENMPTARGET
+#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP
 
 // Need to take subviews on the device
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 template <class side, class uplo, class trans, class diag>
 void do_trmm_serial_batched_template(options_t options, trmm_args_t trmm_args) {
   uint32_t warm_up_n = options.warm_up_n;
@@ -243,10 +243,10 @@ template <class side, class uplo, class trans, class diag>
 void do_trmm_serial_batched_template(options_t /*options*/, trmm_args_t /*trmm_args*/) {
   std::cerr << std::string(__func__)
             << " disabled since KOKKOS_ENABLE_CUDA or "
-               "KOKKOS_ENABLE_OPENMPTARGET is defined."
+               "KOKKOS_ENABLE_HIP is defined."
             << std::endl;
 }
-#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_OPENMPTARGET
+#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP
 
 template <class scalar_type, class vta, class vtb, class device_type>
 void do_trmm_serial_batched(options_t options, trmm_args_t trmm_args) {
@@ -327,7 +327,7 @@ void do_trmm_serial_batched(options_t options, trmm_args_t trmm_args) {
   return;
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 template <class ExecutionSpace>
 struct parallel_blas_trmm {
   trmm_args_t trmm_args_;
@@ -347,8 +347,8 @@ struct parallel_blas_trmm {
 
 template <class scalar_type, class vta, class vtb, class device_type>
 void do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
-// TODO: Note why this is disabled on CUDA, OPENMPTARGET and HIP
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+// TODO: Note why this is disabled on CUDA and HIP
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -375,8 +375,8 @@ void do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
   trmm_output_csv_row(options, trmm_args, timer.seconds());
 #else
   std::cerr << std::string(__func__)
-            << " disabled since KOKKOS_ENABLE_CUDA, KOKKOS_ENABLE_HIP "
-               "or KOKKOS_ENABLE_OPENMPTARGET is defined."
+            << " disabled since KOKKOS_ENABLE_CUDA or KOKKOS_ENABLE_HIP "
+               "is defined."
             << std::endl;
   trmm_output_csv_row(options, trmm_args, -1);
 #endif  // !KOKKOS_ENABLE_DEVICE

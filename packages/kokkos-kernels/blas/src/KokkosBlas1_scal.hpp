@@ -5,6 +5,7 @@
 #define KOKKOSBLAS1_SCAL_HPP_
 
 #include <KokkosBlas1_scal_spec.hpp>
+#include <KokkosBlas1_scal_unification.hpp>
 #include <KokkosBlas1_serial_scal_impl.hpp>
 #include <KokkosBlas1_team_scal_impl.hpp>
 #include <KokkosKernels_helpers.hpp>
@@ -24,11 +25,14 @@ namespace KokkosBlas {
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization. It must have
 ///   the same rank as RMV.
-/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam AV  Scalar, rank-0 Kokkos::View, or (for 2-D RMV/XMV only)
+///   rank-1 Kokkos::View.  Rank-0 host-accessible Views have their value
+///   extracted on host; rank-0 device Views are read inside the kernel
+///   (no optimization shortcut for 0/-1/1 in that case).
 ///
 /// \param space [in] the execution space instance on which the kernel will run.
 /// \param R [in/out] view of type RMV in which the results will be stored.
-/// \param a [in] view of type AV, scaling parameter for X.
+/// \param a [in] scaling parameter for X.
 /// \param X [in] input view of type XMV.
 template <class execution_space, class RMV, class AV, class XMV>
 void scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X) {
@@ -55,6 +59,18 @@ void scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X)
   static_assert(RMV::rank == 1 || RMV::rank == 2,
                 "KokkosBlas::scal: "
                 "RMV and XMV must either have rank 1 or rank 2.");
+  if constexpr (Kokkos::is_view_v<AV>) {
+    static_assert((int)AV::rank == 0 || ((int)AV::rank == 1 && (int)RMV::rank == 2),
+                  "KokkosBlas::scal: a must be a scalar, a rank-0 View, "
+                  "or (for 2-D R and X) a rank-1 View.");
+    static_assert(
+        (int)AV::rank != 0 || Kokkos::SpaceAccessibility<execution_space, typename AV::memory_space>::accessible ||
+            Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename AV::memory_space>::accessible,
+        "KokkosBlas::scal: a rank-0 View must be accessible from execution_space or the host.");
+    static_assert(
+        (int)AV::rank == 0 || Kokkos::SpaceAccessibility<execution_space, typename AV::memory_space>::accessible,
+        "KokkosBlas::scal: a rank >0 View must be accessible from execution_space.");
+  }
 
   // Check compatibility of dimensions at run time.
   if constexpr (RMV::rank == 1) {
@@ -79,15 +95,17 @@ void scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X)
   // Create unmanaged versions of the input Views.  RMV and XMV may be
   // rank 1 or rank 2.  AV may be either a rank-1 View, or a scalar
   // value.
-  using RMV_Internal = Kokkos::View<typename RMV::non_const_data_type, UnifiedRLayout, typename RMV::device_type,
+  using RMV_Internal = Kokkos::View<typename RMV::non_const_data_type, UnifiedRLayout, execution_space,
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, typename XMV::device_type,
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
                                     Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-  using AV_Internal  = typename KokkosKernels::Impl::GetUnifiedScalarViewType<AV, XMV_Internal, true>::type;
+  using AV_Internal =
+      typename KokkosBlas::Impl::UnifiedScalCoeff<execution_space, AV, typename XMV_Internal::non_const_value_type,
+                                                  UnifiedXLayout>::type;
 
-  RMV_Internal R_internal = R;
-  AV_Internal a_internal  = a;
-  XMV_Internal X_internal = X;
+  RMV_Internal R_internal = KokkosKernels::Impl::unificationCast<RMV_Internal>(R);
+  AV_Internal a_internal  = KokkosBlas::Impl::unifyScalCoeff<AV_Internal>(a);
+  XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);
 
   Impl::Scal<execution_space, RMV_Internal, AV_Internal, XMV_Internal>::scal(space, R_internal, a_internal, X_internal);
 }
@@ -101,10 +119,11 @@ void scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X)
 /// \tparam RMV 1-D or 2-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization. It must have
 ///   the same rank as RMV.
-/// \tparam AV 1-D or 2-D Kokkos::View specialization.
+/// \tparam AV  Scalar, rank-0 Kokkos::View, or (for 2-D RMV/XMV only)
+///   rank-1 Kokkos::View.
 ///
 /// \param R [in/out] view of type RMV in which the results will be stored.
-/// \param a [in] view of type AV, scaling parameter for X.
+/// \param a [in] scaling parameter for X.
 /// \param X [in] input view of type XMV.
 template <class RMV, class AV, class XMV>
 void scal(const RMV& R, const AV& a, const XMV& X) {

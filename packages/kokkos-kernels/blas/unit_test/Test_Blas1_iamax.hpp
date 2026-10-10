@@ -15,12 +15,12 @@ void impl_test_iamax(int N) {
   using mag_type  = typename AT::mag_type;
   using size_type = typename ViewTypeA::size_type;
 
-  view_stride_adapter<ViewTypeA> a("X", N);
+  TestUtils::view_stride_adapter<ViewTypeA> a("X", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  Test::getRandomBounds(10.0, randStart, randEnd);
+  TestUtils::getRandomBounds(10.0, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
   Kokkos::deep_copy(a.h_base, a.d_base);
@@ -98,12 +98,12 @@ void impl_test_iamax_mv(int N, int K) {
   typedef typename AT::mag_type mag_type;
   typedef typename ViewTypeA::size_type size_type;
 
-  view_stride_adapter<ViewTypeA> a("A", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> a("A", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  Test::getRandomBounds(10.0, randStart, randEnd);
+  TestUtils::getRandomBounds(10.0, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
   Kokkos::deep_copy(a.h_base, a.d_base);

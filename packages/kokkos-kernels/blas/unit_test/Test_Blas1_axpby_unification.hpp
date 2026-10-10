@@ -43,6 +43,8 @@
 
 static constexpr int numVecsAxpbyTest = 15;
 
+using TestUtils::view_stride_adapter;
+
 namespace Test {
 
 template <typename T, bool Enable = false>
@@ -76,14 +78,14 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
 
   {
     ScalarTypeX randStart, randEnd;
-    Test::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   Kokkos::deep_copy(x.h_base, x.d_base);
 
   {
     ScalarTypeY randStart, randEnd;
-    Test::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(max_val, randStart, randEnd);
     if (testWithNanY) {
       Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarTypeY>::nan());
     } else {
@@ -215,14 +217,14 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
 
   {
     ScalarTypeX randStart, randEnd;
-    Test::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(max_val, randStart, randEnd);
     Kokkos::fill_random(x.d_view, rand_pool, randStart, randEnd);
   }
   Kokkos::deep_copy(x.h_base, x.d_base);
 
   {
     ScalarTypeY randStart, randEnd;
-    Test::getRandomBounds(max_val, randStart, randEnd);
+    TestUtils::getRandomBounds(max_val, randStart, randEnd);
     if (testWithNanY) {
       Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarTypeY>::nan());
     } else {

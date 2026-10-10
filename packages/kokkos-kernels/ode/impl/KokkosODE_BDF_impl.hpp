@@ -155,13 +155,20 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, const table_type& table, scalar_type
   }
 
   // solver the nonlinear problem
-  { KokkosODE::Experimental::Newton::Solve(sys, param, jac, temp, y_new, rhs, update, scale); }
+  {
+    int newton_iterations;
+    KokkosODE::Experimental::Newton::Solve(sys, param, jac, temp, y_new, rhs, update, scale, newton_iterations);
+  }
 
 }  // BDFStep
 
 template <class mat_type, class scalar_type>
 KOKKOS_FUNCTION void compute_coeffs(const int order, const scalar_type factor, const mat_type& coeffs) {
+  // initialize coeffs
   coeffs(0, 0) = 1.0;
+  for (int rowIdx = 0; rowIdx < order; ++rowIdx) {
+    coeffs(rowIdx + 1, 0) = 0.0;
+  }
   for (int colIdx = 0; colIdx < order; ++colIdx) {
     coeffs(0, colIdx + 1) = 1.0;
     for (int rowIdx = 0; rowIdx < order; ++rowIdx) {
@@ -248,11 +255,11 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
 }  // initial_step_size
 
 template <class ode_type, class vec_type, class res_type, class mat_type, class scalar_type>
-KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, scalar_type t_end, int& order,
-                             int& num_equal_steps, const int max_newton_iters, const scalar_type atol,
-                             const scalar_type rtol, const scalar_type min_factor, const vec_type& y_old,
-                             const vec_type& y_new, const res_type& rhs, const res_type& update, const mat_type& temp,
-                             const mat_type& temp2) {
+KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, scalar_type t_end,
+                             const scalar_type max_step, int& order, int& num_equal_steps, const int max_newton_iters,
+                             const scalar_type atol, const scalar_type rtol, const scalar_type min_factor,
+                             const vec_type& y_old, const vec_type& y_new, const res_type& rhs, const res_type& update,
+                             const mat_type& temp, const mat_type& temp2) {
   using newton_params = KokkosODE::Experimental::Newton_params;
 
   constexpr int max_order = 5;
@@ -302,11 +309,8 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   gamma(5)    = 2.28333333;
 
   BDF_system_wrapper2 sys(ode, psi, update, t, dt);
-  const newton_params param(
-      max_newton_iters, atol,
-      Kokkos::max(10 * KokkosKernels::ArithTraits<scalar_type>::eps() / rtol, Kokkos::min(0.03, Kokkos::sqrt(rtol))));
+  const newton_params param(max_newton_iters, atol, rtol);
 
-  scalar_type max_step = KokkosKernels::ArithTraits<scalar_type>::max();
   scalar_type min_step = KokkosKernels::ArithTraits<scalar_type>::min();
   scalar_type safety = 0.675, error_norm = 0.0;
   if (dt > max_step) {
@@ -359,21 +363,23 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
     sys.compute_jac = true;
     Kokkos::Experimental::local_deep_copy(y_new, y_predict);
     Kokkos::Experimental::local_deep_copy(update, 0);
+    int newton_iterations;
     KokkosODE::Experimental::newton_solver_status newton_status =
-        KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new, rhs, update, scale);
+        KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new, rhs, update, scale, newton_iterations);
 
     for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
       update(eqIdx) = y_new(eqIdx) - y_predict(eqIdx);
     }
 
-    if (newton_status == KokkosODE::Experimental::newton_solver_status::MAX_ITER) {
+    // Reject the step on any status that isn't a converged solve
+    if (newton_status != KokkosODE::Experimental::newton_solver_status::NLS_SUCCESS) {
       dt = 0.5 * dt;
       update_D(order, 0.5, coeffs, tempD, D);
       num_equal_steps = 0;
 
     } else {
       // Estimate the solution error
-      safety     = 0.9 * (2 * max_newton_iters + 1) / (2 * max_newton_iters + param.iters);
+      safety     = 0.9 * (2 * max_newton_iters + 1) / (2 * max_newton_iters + newton_iterations);
       error_norm = 0;
       for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
         scale(eqIdx) = atol + rtol * Kokkos::abs(y_new(eqIdx));

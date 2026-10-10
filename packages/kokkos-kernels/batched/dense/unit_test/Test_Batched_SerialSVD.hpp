@@ -50,11 +50,11 @@ void verifyOrthogonal(const Mat& X, const double epsilon = -1) {
   for (int i = 0; i < k; i++) {
     auto col1  = Kokkos::subview(X, Kokkos::ALL(), i);
     double len = simpleNorm2(col1);
-    Test::EXPECT_NEAR_KK(len, 1.0, tol);
+    EXPECT_NEAR_KK(len, 1.0, tol);
     for (int j = 0; j < i; j++) {
       auto col2 = Kokkos::subview(X, Kokkos::ALL(), j);
       double d  = KokkosKernels::ArithTraits<Scalar>::abs(simpleDot(col1, col2));
-      Test::EXPECT_NEAR_KK(d, 0.0, tol);
+      EXPECT_NEAR_KK(d, 0.0, tol);
     }
   }
 }
@@ -81,7 +81,7 @@ void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView
   }
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
-      Test::EXPECT_NEAR_KK(usvt(i, j), A(i, j), tol);
+      EXPECT_NEAR_KK(usvt(i, j), A(i, j), tol);
     }
   }
   // Make sure all singular values are positive
@@ -236,7 +236,7 @@ void testSerialSVDSingularValuesOnly(int m, int n) {
   auto sigma2Host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), sigma2);
   // Make sure they match
   for (int i = 0; i < maxrank; i++) {
-    Test::EXPECT_NEAR_KK(sigma1Host(i), sigma2Host(i), Test::svdEpsilon<Scalar>());
+    EXPECT_NEAR_KK(sigma1Host(i), sigma2Host(i), Test::svdEpsilon<Scalar>());
   }
 }
 
@@ -270,18 +270,18 @@ void testSerialSVDZeroLastRow(int n) {
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
       if (i != j && i + 1 != j) {
-        Test::EXPECT_NEAR_KK(B(i, j), KAT::zero(), Test::svdEpsilon<Scalar>());
+        EXPECT_NEAR_KK(B(i, j), KAT::zero(), Test::svdEpsilon<Scalar>());
       }
     }
   }
   // Check that the last superdiagonal is now zero
-  Test::EXPECT_NEAR_KK(B(n - 2, n - 1), KAT::zero(), Test::svdEpsilon<Scalar>());
+  EXPECT_NEAR_KK(B(n - 2, n - 1), KAT::zero(), Test::svdEpsilon<Scalar>());
   // Check that the product is still maintained
   Matrix BVt2("UBVt", n, n);
   Test::vanillaGEMM(1.0, B, Vt, 0.0, BVt2);
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
-      Test::EXPECT_NEAR_KK(BVt(i, j), BVt2(i, j), Test::svdEpsilon<Scalar>());
+      EXPECT_NEAR_KK(BVt(i, j), BVt2(i, j), Test::svdEpsilon<Scalar>());
     }
   }
   // Check that Vt is still orthogonal
@@ -320,18 +320,18 @@ void testSerialSVDZeroDiagonal(int n, int row) {
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
       if (i != j && i + 1 != j) {
-        Test::EXPECT_NEAR_KK(B(i, j), KAT::zero(), Test::svdEpsilon<Scalar>());
+        EXPECT_NEAR_KK(B(i, j), KAT::zero(), Test::svdEpsilon<Scalar>());
       }
     }
   }
   // Check that row's diagonal is now zero
-  Test::EXPECT_NEAR_KK(B(row, row), KAT::zero(), Test::svdEpsilon<Scalar>());
+  EXPECT_NEAR_KK(B(row, row), KAT::zero(), Test::svdEpsilon<Scalar>());
   // Check that the product is still maintained
   Matrix UB2("UB", m, n);
   Test::vanillaGEMM(1.0, U, B, 0.0, UB2);
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) {
-      Test::EXPECT_NEAR_KK(UB(i, j), UB2(i, j), Test::svdEpsilon<Scalar>());
+      EXPECT_NEAR_KK(UB(i, j), UB2(i, j), Test::svdEpsilon<Scalar>());
     }
   }
   // Check that U is still orthogonal
@@ -601,8 +601,8 @@ void testTwoByTwoInternal() {
   Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1), tester);
   typename Vector::host_mirror_type evs_host = Kokkos::create_mirror_view(evs);
   Kokkos::deep_copy(evs_host, evs);
-  Test::EXPECT_NEAR_KK(evs_host(0), 0.000625, Test::svdEpsilon<Scalar>());
-  Test::EXPECT_NEAR_KK(evs_host(1), 0.000625, Test::svdEpsilon<Scalar>());
+  EXPECT_NEAR_KK(evs_host(0), 0.000625, Test::svdEpsilon<Scalar>());
+  EXPECT_NEAR_KK(evs_host(1), 0.000625, Test::svdEpsilon<Scalar>());
 }
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)

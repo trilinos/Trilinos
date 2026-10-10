@@ -1486,7 +1486,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
     std::cout << "\tStructureC Kernel time:" << timer1.seconds() << std::endl << std::endl;
   }
   typename c_row_view_t::non_const_value_type c_nnz_size = 0;
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<MyExecSpace>(m + 1, rowmapC, c_nnz_size);
+  KokkosKernels::exclusive_parallel_prefix_sum(MyExecSpace(), rowmapC, c_nnz_size);
   this->handle->get_spgemm_handle()->set_c_nnz(c_nnz_size);
   nnz_lno_t c_max_nnz = KokkosSparse::Impl::graph_max_degree<MyExecSpace, size_type, c_row_view_t>(rowmapC);
   this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
@@ -1937,7 +1937,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   }
 #endif
   typename c_row_view_t::non_const_value_type c_nnz_size = 0;
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<MyExecSpace>(m + 1, rowmapC, c_nnz_size);
+  KokkosKernels::exclusive_parallel_prefix_sum(MyExecSpace(), rowmapC, c_nnz_size);
   this->handle->get_spgemm_handle()->set_c_nnz(c_nnz_size);
   nnz_lno_t c_max_nnz = KokkosSparse::Impl::graph_max_degree<MyExecSpace, size_type, c_row_view_t>(rowmapC);
   this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);

@@ -684,7 +684,7 @@ class ClusterGaussSeidel {
     color_t numColors = gsHandle->get_num_colors();
 
     if (init_zero_x_vector) {
-      KokkosKernels::Impl::zero_vector<x_value_array_type, MyExecSpace>(num_cols, x_lhs_output_vec);
+      Kokkos::deep_copy(MyExecSpace(), x_lhs_output_vec, nnz_scalar_t(0));
     }
 
     scalar_persistent_work_view_t inverse_diagonal = gsHandle->get_inverse_diagonal();
