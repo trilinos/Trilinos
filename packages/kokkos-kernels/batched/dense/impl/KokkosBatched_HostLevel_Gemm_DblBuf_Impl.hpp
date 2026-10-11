@@ -5,6 +5,7 @@
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_Error.hpp"
+#include <bit>
 
 #include <bit>  // std::bit_floor
 
