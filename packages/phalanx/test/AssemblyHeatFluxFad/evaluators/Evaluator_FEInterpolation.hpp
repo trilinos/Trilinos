@@ -47,10 +47,10 @@ public:
   void operator () (const int i) const;
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-  Kokkos::Future<void,PHX::exec_space>
-    createTask(Kokkos::TaskScheduler<PHX::exec_space>& policy,
+  Kokkos::Future<void,PHX::ExecutionSpace>
+    createTask(Kokkos::TaskScheduler<PHX::ExecutionSpace>& policy,
 	       const int& work_size,
-               const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
+               const std::vector<Kokkos::Future<void,PHX::ExecutionSpace>>& dependent_futures,
 	       typename Traits::EvalData d) override;
 #endif
   

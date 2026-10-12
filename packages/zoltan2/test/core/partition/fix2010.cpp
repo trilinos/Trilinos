@@ -59,5 +59,6 @@ int main(int narg, char **arg)
   if (rank==0)
     std::cout << "PASS" << std:: endl;
 
+  delete adapter;
   return 0;
 }

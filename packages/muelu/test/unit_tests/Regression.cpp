@@ -8,6 +8,7 @@
 // @HEADER
 
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Matrix.hpp>

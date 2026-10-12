@@ -18,7 +18,7 @@ namespace PHX {
   //! Pure virtual interface for instantiating an evaluator on device 
   template<typename Traits>
   struct DeviceEvaluator {
-    using team_policy = Kokkos::TeamPolicy<PHX::exec_space>;
+    using team_policy = Kokkos::TeamPolicy<PHX::ExecutionSpace>;
     using member_type = team_policy::member_type;
     using traits = Traits;
     

@@ -118,8 +118,8 @@ TEUCHOS_UNIT_TEST(mesh, coord_gids)
   }
 
   // Test values and gradients by projecting a linear function to the qp
-  Kokkos::View<double**,PHX::MemSpace> T("T",num_cells,nodes_per_element); // <cell,node>
-  Kokkos::parallel_for("Fill T values",Kokkos::RangePolicy<PHX::ExecSpace>(0,num_cells),KOKKOS_LAMBDA (const int& cell){
+  Kokkos::View<double**,PHX::MemorySpace> T("T",num_cells,nodes_per_element); // <cell,node>
+  Kokkos::parallel_for("Fill T values",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells),KOKKOS_LAMBDA (const int& cell){
       //for (int cell=0; cell < num_cells; ++cell) {
     for (int node=0; node < nodes_per_element; ++node) {
       const auto& x = coords(cell,node,0);
@@ -128,20 +128,20 @@ TEUCHOS_UNIT_TEST(mesh, coord_gids)
       T(cell,node) = 2.0 * (lx-x) / lx + 3.0 * (ly-y) / ly + 4.0 * (lz-z) / lz;
     }
   });
-  PHX::ExecSpace().fence();
+  PHX::ExecutionSpace().fence();
 
   // Perform projection to qp
-  Kokkos::View<double**,PHX::MemSpace> T_qp("T_qp",num_cells,qp_per_element);
+  Kokkos::View<double**,PHX::MemorySpace> T_qp("T_qp",num_cells,qp_per_element);
   Kokkos::deep_copy(T_qp,0.0);
 
-  Kokkos::View<double***,PHX::MemSpace> DTDX_qp_local("DTDX_qp_local",num_cells,qp_per_element,3);
+  Kokkos::View<double***,PHX::MemorySpace> DTDX_qp_local("DTDX_qp_local",num_cells,qp_per_element,3);
   Kokkos::deep_copy(DTDX_qp_local,0.0);
 
   const auto& N = mesh.getBasis();
   const auto& DNDX = mesh.getGradBasisRef();
   const auto& qp_coords = mesh.getQPCoordinates();
   int num_failures = 0;
-  Kokkos::parallel_reduce("Compute and check T at qp",Kokkos::RangePolicy<PHX::ExecSpace>(0,num_cells),KOKKOS_LAMBDA (const int& cell,int& lfailures) {
+  Kokkos::parallel_reduce("Compute and check T at qp",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells),KOKKOS_LAMBDA (const int& cell,int& lfailures) {
     for (int qp=0; qp < qp_per_element; ++qp) {
       for (int basis=0; basis < nodes_per_element; ++basis) {
         T_qp(cell,qp) += T(cell,basis) * N(qp,basis);
@@ -157,10 +157,10 @@ TEUCHOS_UNIT_TEST(mesh, coord_gids)
 
   // Test gradient values from reference basis
   num_failures = 0;
-  Kokkos::View<double***> DTDX_qp("DTDX_qp",num_cells,qp_per_element,3);
+  PHX::View<double***> DTDX_qp("DTDX_qp",num_cells,qp_per_element,3);
   Kokkos::deep_copy(DTDX_qp,0.0);
   const auto& invJac = mesh.getInvJac();
-  Kokkos::parallel_reduce("Compute and check DTDX at qp (ref)",Kokkos::RangePolicy<PHX::ExecSpace>(0,num_cells),KOKKOS_LAMBDA (const int& cell,int& lfailures) {
+  Kokkos::parallel_reduce("Compute and check DTDX at qp (ref)",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells),KOKKOS_LAMBDA (const int& cell,int& lfailures) {
     for (int qp=0; qp < qp_per_element; ++qp) {
       for (int dim1=0; dim1 < 3; ++dim1) {
         for (int dim2=0; dim2 < 3; ++dim2) {
@@ -178,7 +178,7 @@ TEUCHOS_UNIT_TEST(mesh, coord_gids)
   num_failures = 0;
   Kokkos::deep_copy(DTDX_qp,0.0);
   const auto& grad_basis_real = mesh.getGradBasisReal();
-  Kokkos::parallel_reduce("Compute and check DTDX at qp (real)",Kokkos::RangePolicy<PHX::ExecSpace>(0,num_cells),KOKKOS_LAMBDA (const int& cell,int& lfailures) {
+  Kokkos::parallel_reduce("Compute and check DTDX at qp (real)",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,num_cells),KOKKOS_LAMBDA (const int& cell,int& lfailures) {
     for (int qp=0; qp < qp_per_element; ++qp) {
       for (int basis=0; basis < nodes_per_element; ++basis) {
         for (int dim=0; dim < 3; ++dim) {

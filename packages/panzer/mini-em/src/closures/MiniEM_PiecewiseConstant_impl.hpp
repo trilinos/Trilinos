@@ -80,7 +80,7 @@ void PiecewiseConstant<EvalT,Traits>::evaluateFields(typename Traits::EvalData w
   const double zr = zr_;
 
   if (ir_dim == 3) {
-    Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,values.extent_int(1)});
+    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,values.extent_int(1)});
     Kokkos::parallel_for("panzer:PiecewiseConstant 3D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
 
         auto x = tmp_coords(cell,point,0);
@@ -95,7 +95,7 @@ void PiecewiseConstant<EvalT,Traits>::evaluateFields(typename Traits::EvalData w
           tmp_values(cell,point) = value1;
       });
   } else {
-    Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,values.extent_int(1)});
+    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,values.extent_int(1)});
     Kokkos::parallel_for("panzer:PiecewiseConstant 2D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
 
         auto x = tmp_coords(cell,point,0);

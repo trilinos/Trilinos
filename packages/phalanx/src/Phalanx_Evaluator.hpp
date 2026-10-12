@@ -38,7 +38,7 @@ namespace PHX {
 
   public:
 
-    typedef typename PHX::Device execution_space;
+    typedef typename PHX::ExecutionSpace execution_space;
 
     //! Ctor
     Evaluator() {};
@@ -98,10 +98,10 @@ namespace PHX {
 	@param work_size The number of parallel work units.
 	@param d User defined data.
     */
-    virtual Kokkos::Future<void,PHX::exec_space>
-    createTask(Kokkos::TaskScheduler<PHX::exec_space>& policy,
+    virtual Kokkos::Future<void,PHX::ExecutionSpace>
+    createTask(Kokkos::TaskScheduler<PHX::ExecutionSpace>& policy,
 	       const int& work_size,
-               const std::vector<Kokkos::Future<void,PHX::exec_space>>& dependent_futures,
+               const std::vector<Kokkos::Future<void,PHX::ExecutionSpace>>& dependent_futures,
 	       typename Traits::EvalData d) = 0;
 
     //! Returns the size of the kokkos task for AMT.

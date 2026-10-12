@@ -63,6 +63,7 @@ class Test_parse_args(unittest.TestCase):
                                          source_dir='/some/source/dir',
                                          build_dir='/some/build/dir',
                                          ctest_driver='/some/source/dir/cmake/SimpleTesting/cmake/ctest-driver.cmake',
+                                         extra_ctest_driver_args='',
                                          ctest_drop_site='testing.sandia.gov',
                                          pullrequest_cdash_track='Pull Request',
                                          pullrequest_env_config_file='/dev/null/Trilinos_clone/pr_config/pullrequest.ini',

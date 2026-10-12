@@ -753,7 +753,13 @@ void UserInputForTests::readGeometricGenTestData(string path,
     }
 
     vtxWeights_ = RCP<tMVector_t>(new tMVector_t(mp, weightView.view(0, numWeightsPerCoord),
-                                                 numWeightsPerCoord));
+                                                  numWeightsPerCoord));
+    for(int i = 0; i < coord_dim; ++i) delete [] coords[i];
+    delete [] coords;
+    if(numWeightsPerCoord) {
+      for(int i = 0; i < numWeightsPerCoord; ++i) delete [] weight[i];
+      delete [] weight;
+    }
   }
 }
 

@@ -42,14 +42,14 @@ evaluateFields(typename Traits::EvalData workset)
 {
   gids = workset.gids_;
   cell_global_offset_index = workset.first_cell_global_index_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 // **********************************************************************
 template<typename Traits>
 PHALANX_HIP_HACK_KOKKOS_FUNCTION
 void ScatterResidual<PHX::MyTraits::Residual,Traits>::
-operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
 {
   const int local_cell = team.league_rank();
   if (team.team_rank() == 0) {
@@ -93,14 +93,14 @@ evaluateFields(typename Traits::EvalData workset)
 { 
   gids = workset.gids_;
   cell_global_offset_index = workset.first_cell_global_index_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 // **********************************************************************
 template<typename Traits>
 PHALANX_HIP_HACK_KOKKOS_FUNCTION
 void ScatterResidual<PHX::MyTraits::Jacobian,Traits>::
-operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
 {
   const int cell = team.league_rank();
   const int num_nodes = residual_contribution.extent(1);

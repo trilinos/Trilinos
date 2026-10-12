@@ -74,7 +74,7 @@ namespace mini_em {
     auto tmp_source = source.get_static_view();
 
     if (ir_dim == 3) {
-      Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,source.extent_int(1)});
+      Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,source.extent_int(1)});
       Kokkos::parallel_for("panzer:MaxwellAnalyticForcing 3D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
           auto x = coords(cell,point,0);
           auto y = coords(cell,point,1);
@@ -84,7 +84,7 @@ namespace mini_em {
           tmp_source(cell,point, 2) = - epsilon * pi*timeScale * Kokkos::cos(timeScale*time) * Kokkos::sin(pi*x) * Kokkos::sin(pi*y) * Kokkos::cos(pi*z);
         });
     } else {
-      Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,source.extent_int(1)});
+      Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,source.extent_int(1)});
       Kokkos::parallel_for("panzer:MaxwellAnalyticForcing 2D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
           auto x = coords(cell,point,0);
           auto y = coords(cell,point,1);

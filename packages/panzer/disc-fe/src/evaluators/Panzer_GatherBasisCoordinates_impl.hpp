@@ -67,7 +67,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   auto d_basisCoordinates = basisCoordinates_.get_static_view();
   auto s_basis_coordinates = bv->basis_coordinates.get_static_view();
 
-  Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{int(workset.num_cells),s_basis_coordinates.extent_int(1),s_basis_coordinates.extent_int(2)});
+  Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<3>> policy({0,0,0},{int(workset.num_cells),s_basis_coordinates.extent_int(1),s_basis_coordinates.extent_int(2)});
   Kokkos::parallel_for("GatherBasisCoords",policy, KOKKOS_LAMBDA(const int i, const int j, const int k) {
     auto d_basisCoordinates_tmp = d_basisCoordinates;
     auto s_basis_coordinates_tmp = s_basis_coordinates;

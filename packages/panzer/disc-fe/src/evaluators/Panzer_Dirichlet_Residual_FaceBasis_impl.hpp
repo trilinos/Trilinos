@@ -106,11 +106,11 @@ evaluateFields(
   if(workset.num_cells<=0)
     return;
   else {
-    Intrepid2::CellTools<PHX::exec_space>::getPhysicalFaceNormals(faceNormal,
+    Intrepid2::CellTools<PHX::Device>::getPhysicalFaceNormals(faceNormal,
                                                                   pointValues.jac.get_view(),
                                                                   subcellOrd,
                                                                   parentCell);
-    PHX::Device().fence();
+    PHX::ExecutionSpace().fence();
 
     const auto subcellBaseTopo = shards::CellTopology(parentCell.getBaseCellTopologyData(subcellDim, subcellOrd));
     TEUCHOS_ASSERT(subcellBaseTopo.getBaseKey() == shards::Triangle<>::key ||

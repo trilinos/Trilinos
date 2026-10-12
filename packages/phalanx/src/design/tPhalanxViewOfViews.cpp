@@ -269,15 +269,15 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamCtor) {
   const int num_pts = 8;
   const int num_equations = 32;
 
-  std::vector<PHX::Device> streams;
-  if (PHX::Device().concurrency() >= 4) {
-    std::cout << "Using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
-    streams = Kokkos::Experimental::partition_space(PHX::Device(),std::vector<int>(4,1));
+  std::vector<PHX::ExecutionSpace> streams;
+  if (PHX::ExecutionSpace().concurrency() >= 4) {
+    std::cout << "Using partition_space, concurrency=" << PHX::ExecutionSpace().concurrency() << std::endl;
+    streams = Kokkos::Experimental::partition_space(PHX::ExecutionSpace(),std::vector<int>(4,1));
   }
   else {
-    std::cout << "NOT using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+    std::cout << "NOT using partition_space, concurrency=" << PHX::ExecutionSpace().concurrency() << std::endl;
     for (int i=0; i < 4; ++i)
-      streams.push_back(PHX::Device());
+      streams.push_back(PHX::ExecutionSpace());
   }
 
   PHX::set_enforce_no_default_stream_use();
@@ -350,15 +350,15 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
   const int num_pts = 8;
   const int num_equations = 32;
 
-  std::vector<PHX::Device> streams;
-  if (PHX::Device().concurrency() >= 4) {
-    std::cout << "Using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
-    streams = Kokkos::Experimental::partition_space(PHX::Device(),std::vector<int>(4,1));
+  std::vector<PHX::ExecutionSpace> streams;
+  if (PHX::ExecutionSpace().concurrency() >= 4) {
+    std::cout << "Using partition_space, concurrency=" << PHX::ExecutionSpace().concurrency() << std::endl;
+    streams = Kokkos::Experimental::partition_space(PHX::ExecutionSpace(),std::vector<int>(4,1));
   }
   else {
-    std::cout << "NOT using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+    std::cout << "NOT using partition_space, concurrency=" << PHX::ExecutionSpace().concurrency() << std::endl;
     for (int i=0; i < 4; ++i)
-      streams.push_back(PHX::Device());
+      streams.push_back(PHX::ExecutionSpace());
   }
 
   PHX::set_enforce_no_default_stream_use();
@@ -436,7 +436,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,KokkosToolsDefaultStreamCheck) {
   PHX::set_enforce_no_default_stream_use();
   // Checks are only active for CUDA and HIP backends
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-  TEST_THROW(PHX::Device().fence(),std::runtime_error);
+  TEST_THROW(PHX::ExecutionSpace().fence(),std::runtime_error);
 #endif
   PHX::unset_enforce_no_default_stream_use();
 }
@@ -704,7 +704,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadAndAssignment) {
 
     // Initialize a and b
     {
-      Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
+      Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
       Kokkos::parallel_for("FadAndAssignment init",policy,KOKKOS_LAMBDA(const int cell, const int pt) {
         a(cell,pt).val() = double(cell) + double(pt);
         a(cell,pt).fastAccessDx(0) = 0.0;
@@ -713,27 +713,27 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadAndAssignment) {
         b(cell,pt).fastAccessDx(0) = 0.0;
         b(cell,pt).fastAccessDx(1) = 0.0;
       });
-      PHX::Device::execution_space().fence();
+      PHX::ExecutionSpace().fence();
     }
 
     // Compute c using device vov
     auto Mat = vov.getViewDevice();
     const bool use_hierarchic = true;
     if (use_hierarchic) {
-      Kokkos::TeamPolicy<PHX::exec_space> policy(a.extent(0),Kokkos::AUTO());
-      Kokkos::parallel_for("FadAndAssignement compute",policy,KOKKOS_LAMBDA(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) {
+      Kokkos::TeamPolicy<PHX::ExecutionSpace> policy(a.extent(0),Kokkos::AUTO());
+      Kokkos::parallel_for("FadAndAssignement compute",policy,KOKKOS_LAMBDA(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) {
         const auto cell = team.league_rank();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,a.extent(1)), [&] (const int& pt) {
           Mat(1,0)(cell,pt) = Mat(0,0)(cell,pt) * Mat(0,1)(cell,pt);
         });
       });
     } else {
-      Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
+      Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
       Kokkos::parallel_for("FadAndAssignement compute",policy,KOKKOS_LAMBDA(const int cell, const int pt) {
         Mat(1,0)(cell,pt) = Mat(0,0)(cell,pt) * Mat(0,1)(cell,pt);
       });
     }
-    PHX::Device::execution_space().fence();
+    PHX::ExecutionSpace().fence();
 
     // Check the results
     auto c_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),c);
@@ -771,12 +771,12 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
   VT b("b",num_cell,num_pt,num_deriv);
 
   {
-    Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
+    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
     Kokkos::parallel_for("FadRawPtr init",policy,KOKKOS_LAMBDA(const int cell, const int pt) {
       a(cell,pt).val() = double(cell) + double(pt);
       a(cell,pt).fastAccessDx(1) = 2.0 + double(cell) + double(pt);
     });
-    PHX::exec_space().fence(); // don't need this but being safe for debugging
+    PHX::ExecutionSpace().fence(); // don't need this but being safe for debugging
   }
 
   std::cout << std::endl;
@@ -784,8 +784,8 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
   // const PHX_KERNEL_TYPE kernel = PHX_KERNEL_TYPE::MDRANGE; // This fails for FAD scalar types
   // const PHX_KERNEL_TYPE kernel = PHX_KERNEL_TYPE::FLAT; // This passes
   if (kernel == PHX_KERNEL_TYPE::TEAM) {
-    Kokkos::TeamPolicy<PHX::exec_space> policy(num_cell,Kokkos::AUTO());
-    Kokkos::parallel_for("FadRawPtr b=a*a",policy,KOKKOS_LAMBDA(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) {
+    Kokkos::TeamPolicy<PHX::ExecutionSpace> policy(num_cell,Kokkos::AUTO());
+    Kokkos::parallel_for("FadRawPtr b=a*a",policy,KOKKOS_LAMBDA(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) {
       const auto cell = team.league_rank();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,a.extent(1)), [&] (const int& pt) {
         b(cell,pt) = a(cell,pt) * a(cell,pt);
@@ -793,7 +793,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
       });
     });
   } else if (kernel == PHX_KERNEL_TYPE::MDRANGE) {
-    Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
+    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{a.extent(0),a.extent(1)});
     Kokkos::parallel_for("FadRawPtr b=a*a",policy,KOKKOS_LAMBDA(const int cell, const int pt) {
       b(cell,pt) = a(cell,pt) * a(cell,pt);
       // printf("DEVICE: b(%d,%d).val()=%f, b.dx(1)=%f\n",cell,pt,b(cell,pt).val(),b(cell,pt).fastAccessDx(1));
@@ -807,7 +807,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
     });
   }
 
-  PHX::exec_space().fence();
+  PHX::ExecutionSpace().fence();
 
   auto b_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),b);
   const auto tol = std::numeric_limits<double>::epsilon() * 100.0;

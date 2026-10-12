@@ -30,14 +30,14 @@ DuplicateFieldEvaluator(const Teuchos::RCP<PHX::DataLayout>& a_layout,
 template<typename EvalT, typename Traits>
 void DuplicateFieldEvaluator<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset_size)
 {
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset_size,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset_size,Kokkos::AUTO()),*this);
 }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void DuplicateFieldEvaluator<EvalT,Traits>::
-operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
 {
   const int cell = team.league_rank();
   const int num_qp = static_cast<int>(a.extent(1));

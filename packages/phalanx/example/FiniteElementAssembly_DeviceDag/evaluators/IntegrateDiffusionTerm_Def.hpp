@@ -31,7 +31,7 @@ PHX::DeviceEvaluator<Traits>*
 IntegrateDiffusionTerm<EvalT,Traits>::createDeviceEvaluator() const
 {
   using MyDevEval = typename std::conditional<std::is_same<EvalT,PHX::MyTraits::Residual>::value,MyDevEvalResidual,MyDevEvalJacobian>::type;
-  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(flux.get_static_view(),
+  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::ExecutionSpace,PHX::MemorySpace>(flux.get_static_view(),
                                                                                      residual.get_static_view());
 }
 
@@ -41,7 +41,7 @@ void IntegrateDiffusionTerm<EvalT,Traits>::evaluateFields(typename Traits::EvalD
 {
   using MyDevEval = typename std::conditional<std::is_same<EvalT,PHX::MyTraits::Residual>::value,MyDevEvalResidual,MyDevEvalJacobian>::type;
   auto e = PHX::make_dev_eval(MyDevEval(flux.get_static_view(),residual.get_static_view()),workset);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
 
 //**********************************************************************

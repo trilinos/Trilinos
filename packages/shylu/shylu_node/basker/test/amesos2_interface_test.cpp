@@ -185,8 +185,7 @@ int main(int argc, char* argv[])
       std::cout << "Done with Transpose Solve, Time: "
         << totalTime(ttime, myTime()) << std::endl;
 
-      Entry *e;
-      e = new Entry[vm]();
+      Entry *e = new Entry[vm]();
       multiply_tr<Int,Entry>(m,n,col_ptr,row_idx,val,x,xhat);
       for(Int i = 0; i < m; i++)
       {
@@ -206,7 +205,7 @@ int main(int argc, char* argv[])
       std::cout << "   Matrix: " << mname << "(" << m << "x" << n << ")"
         << std::endl;
       delete [] e;
-
+      delete [] yt;
     }
     mybasker.Finalize();
 
@@ -271,6 +270,9 @@ int main(int argc, char* argv[])
   delete [] y;
   delete [] x;
   delete [] xhat;
+  delete [] col_ptr;
+  delete [] row_idx;
+  delete [] val;
   
   Kokkos::finalize();
 

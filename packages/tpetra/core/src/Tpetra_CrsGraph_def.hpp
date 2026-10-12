@@ -14,6 +14,7 @@
 /// \brief Definition of the Tpetra::CrsGraph class
 
 #include <memory>
+#include "Teuchos_Assert.hpp"
 #include "Tpetra_Details_iallreduce.hpp"
 #ifdef KOKKOS_ENABLE_SYCL
 #include <sycl/sycl.hpp>
@@ -491,6 +492,74 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   } else {
     gblInds_wdv = global_inds_wdv_type(originalGraph.gblInds_wdv, 0, numNonZeros);
   }
+
+  checkInternalState();
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+    CrsGraph(const Teuchos::RCP<const map_type>& rowMap,
+             const Teuchos::RCP<const map_type>& colMap,
+             const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>& originalGraph,
+             const Teuchos::RCP<Teuchos::ParameterList>& params)
+  : CrsGraph(rowMap, colMap, Teuchos::null, Teuchos::null, originalGraph, params) {}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+    CrsGraph(const Teuchos::RCP<const map_type>& rowMap,
+             const Teuchos::RCP<const map_type>& colMap,
+             const Teuchos::RCP<const map_type>& domainMap,
+             const Teuchos::RCP<const map_type>& rangeMap,
+             const CrsGraph<local_ordinal_type, global_ordinal_type, node_type>& originalGraph,
+             const Teuchos::RCP<Teuchos::ParameterList>& params)
+  : dist_object_type(rowMap)
+  , rowMap_(rowMap)
+  , colMap_(colMap)
+  , numAllocForAllRows_(originalGraph.numAllocForAllRows_)
+  , storageStatus_(originalGraph.storageStatus_)
+  , indicesAreAllocated_(originalGraph.indicesAreAllocated_)
+  , indicesAreLocal_(originalGraph.indicesAreLocal_)
+  , indicesAreSorted_(originalGraph.indicesAreSorted_) {
+  staticAssertions();
+
+  const char tfecfFuncName[] = "CrsGraph(Map,Map,CrsGraph)";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      originalGraph.getRowMap()->getLocalNumElements() != rowMap->getLocalNumElements(),
+      std::runtime_error,
+      ": The input row Map and the original graph need to have the same "
+      "number of elements.");
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      originalGraph.getColMap()->getLocalNumElements() != colMap->getLocalNumElements(),
+      std::runtime_error,
+      ": The input column Map and the original graph need to have the same "
+      "number of elements.");
+  if (!domainMap.is_null()) {
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        originalGraph.getDomainMap()->getLocalNumElements() != domainMap->getLocalNumElements(),
+        std::runtime_error,
+        ": The input domain Map and the original graph need to have the same "
+        "number of elements.");
+  }
+  if (!rangeMap.is_null()) {
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        originalGraph.getRangeMap()->getLocalNumElements() != rangeMap->getLocalNumElements(),
+        std::runtime_error,
+        ": The input range Map and the original graph need to have the same "
+        "number of elements.");
+  }
+
+  this->setRowPtrsUnpacked(originalGraph.getRowPtrsUnpackedDevice());
+  this->setRowPtrsPacked(originalGraph.getRowPtrsPackedDevice());
+
+  if (indicesAreLocal_) {
+    lclIndsUnpacked_wdv = originalGraph.lclIndsUnpacked_wdv;
+    lclIndsPacked_wdv   = originalGraph.lclIndsPacked_wdv;
+  } else {
+    gblInds_wdv = originalGraph.gblInds_wdv;
+  }
+
+  setDomainRangeMaps(domainMap.is_null() ? originalGraph.getDomainMap() : domainMap,
+                     rangeMap.is_null() ? originalGraph.getRangeMap() : rangeMap);
 
   checkInternalState();
 }

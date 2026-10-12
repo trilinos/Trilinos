@@ -191,7 +191,7 @@ namespace panzer
   Integrator_DivBasisTimesScalar<EvalT, Traits>::
   operator()(
     const FieldMultTag<NUM_FIELD_MULT>& /* tag */,
-    const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
   {
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
@@ -262,7 +262,7 @@ namespace panzer
   Integrator_DivBasisTimesScalar<EvalT, Traits>::
   operator()(
     const SharedFieldMultTag<NUM_FIELD_MULT>& /* tag */,
-    const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
   {
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
@@ -382,13 +382,13 @@ namespace panzer
       // number of field multipliers.  The parallel_fors will loop over the cells
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::ExecutionSpace>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
 	parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 1) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::ExecutionSpace>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
 	parallel_for(this->getName(), policy, *this);
       } else {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<-1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<-1>,PHX::ExecutionSpace>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
 	parallel_for(this->getName(), policy, *this);
       }
     }
@@ -397,13 +397,13 @@ namespace panzer
       // number of field multipliers.  The parallel_fors will loop over the cells
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::ExecutionSpace>(workset.num_cells);
 	parallel_for(this->getName(), policy, *this);
       } else if (fieldMults_.size() == 1) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::ExecutionSpace>(workset.num_cells);
 	parallel_for(this->getName(), policy, *this);
       } else {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::ExecutionSpace>(workset.num_cells);
 	parallel_for(this->getName(), policy, *this);
       }
     }

@@ -138,7 +138,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
     const auto kokkosOffsets = dofManager->getGIDFieldOffsetsKokkos(elementBlockNames[0],fieldNumber);
     const auto hostKokkosOffsets = Kokkos::create_mirror_view(kokkosOffsets);
     Kokkos::deep_copy(hostKokkosOffsets,kokkosOffsets);
-    typename PHX::Device().fence();
+    typename PHX::ExecutionSpace().fence();
 
     TEST_EQUALITY(hostOffsetsStdVector.size(),hostKokkosOffsets.size());
     for (size_t i=0; i < hostOffsetsStdVector.size(); ++i) {

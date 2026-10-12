@@ -16,7 +16,7 @@
 namespace PHX {
 
   // template<typename ScalarT>
-  // using ScratchView = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
+  // using ScratchView = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::ExecutionSpace::scratch_memory_space,Kokkos::MemoryUnmanaged>;
 
   // Returns the Fad derivtive size of an already allocated View. This
   // can be called with non-FAD scalar types.
@@ -29,7 +29,7 @@ namespace PHX {
   // Binds the shared memory to a view. 
   template<typename ScalarT,typename... Indices>
   KOKKOS_INLINE_FUNCTION
-  void bindSharedMemory(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team,
+  void bindSharedMemory(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team,
 			const PHX::ScratchView<ScalarT*>& view,
 			const Indices & ... indices,
 			const std::size_t fad_size = 0)

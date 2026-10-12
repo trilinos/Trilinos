@@ -52,7 +52,7 @@ setup(const panzer::LocalMeshPartition & partition)
       subcell_to_local_subcells(num_cells_per_face*face + 0) = face_to_lidx(face,0);
       subcell_to_local_subcells(num_cells_per_face*face + 1) = face_to_lidx(face,1);
     });
-    PHX::Device::execution_space().fence();
+    PHX::ExecutionSpace().fence();
   }
 
   // This line not needed since kokkos initializes the arrays above to zero
@@ -68,7 +68,7 @@ setup(const panzer::LocalMeshPartition & partition)
         cell_to_subcells(num_faces_per_cell*cell+local_face) = cell_to_faces(cell,local_face);
       }
     });
-    PHX::Device::execution_space().fence();
+    PHX::ExecutionSpace().fence();
   }
 
   // Copy values to host

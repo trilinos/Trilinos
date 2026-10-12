@@ -32,7 +32,7 @@ class EvaluateCurlWithSens_Vector {
   int numPoints;
 
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
 
   EvaluateCurlWithSens_Vector(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
                               PHX::MDField<ScalarT,Cell,Point,Dim> in_dof_curl,
@@ -94,7 +94,7 @@ class EvaluateCurlWithSens_Scalar {
   int numPoints;
 
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
 
   EvaluateCurlWithSens_Scalar(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
                               PHX::MDField<ScalarT,Cell,Point> in_dof_curl,
@@ -152,7 +152,7 @@ class EvaluateCurlFastSens_Vector {
   int numPoints;
 
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
 
   EvaluateCurlFastSens_Vector(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
                               PHX::MDField<ScalarT,Cell,Point,Dim> in_dof_curl,
@@ -221,7 +221,7 @@ class EvaluateCurlFastSens_Scalar {
   int numPoints;
 
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
 
   EvaluateCurlFastSens_Scalar(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
                               PHX::MDField<ScalarT,Cell,Point> in_dof_curl,

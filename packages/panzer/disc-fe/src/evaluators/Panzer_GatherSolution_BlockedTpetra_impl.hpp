@@ -199,7 +199,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto& worksetLIDs = worksetLIDs_;
     const auto& fieldValues = gatherFields_[fieldIndex];
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
         const int lid = worksetLIDs(cell,fieldOffsets(basis));
         fieldValues(cell,basis) = kokkosSolution(lid,0);        
@@ -386,7 +386,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       const int numTangents = tangentFields_[fieldIndex].size();
       const auto tangentFieldsDevice = tangentFieldsVoV_.getViewDevice();
       const auto kokkosTangents = Kokkos::subview(tangentFieldsDevice,fieldIndex,Kokkos::ALL());
-      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
         for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
           const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
 	       fieldValues(cell,basis).zero();
@@ -396,7 +396,7 @@ evaluateFields(typename TRAITS::EvalData workset)
         }
       });
     } else {
-      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
         for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
           const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
 	       fieldValues(cell,basis).zero();
@@ -596,7 +596,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     Kokkos::deep_copy(blockOffsets_h, blockOffsets);
     const int blockStart = blockOffsets_h(blockRowIndex);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
       for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
         const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
 	fieldValues(cell,basis).zero();

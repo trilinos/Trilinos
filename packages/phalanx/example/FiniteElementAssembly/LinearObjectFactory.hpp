@@ -24,8 +24,8 @@ namespace phx_example {
   class LinearObjectFactory {
 
     // Phalanx device spaces
-    using exec_t = PHX::exec_space;
-    using mem_t = PHX::mem_space;
+    using exec_t = PHX::ExecutionSpace;
+    using mem_t = PHX::MemorySpace;
     using local_matrix_type = KokkosSparse::CrsMatrix<double,int,PHX::Device>;
     using local_graph_type = typename local_matrix_type::StaticCrsGraphType;
     using team_t =  Kokkos::TeamPolicy<exec_t>::member_type;

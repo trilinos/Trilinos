@@ -32,7 +32,7 @@ public:
                    const Teuchos::RCP<PHX::DataLayout>& qp_layout);
   void evaluateFields(typename Traits::EvalData d) override;
   KOKKOS_INLINE_FUNCTION
-  void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
+  void operator () (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const;
 };
 
 #endif

@@ -323,12 +323,8 @@ char *recv_data)		/* array of data I'll own after comm */
                 if (plan->sizes_to[self_num]) {
                     char* lrecv = &plan->recv_buff[self_recv_address];
                     char* lsend = &send_data[(size_t)(plan->starts_to_ptr[self_num]) * (size_t)nbytes];
-                    int sindex = plan->sizes_to[self_num], idx;
-                    for (idx=0; idx<nbytes; idx++) {
-                        memcpy(lrecv, lsend, sindex);
-                        lrecv += sindex;
-                        lsend += sindex;
-                    }
+                    int sindex = plan->sizes_to[self_num];
+                    memcpy(lrecv, lsend, (size_t)sindex * (size_t)nbytes);
                 }
 	    }
 	}
@@ -368,12 +364,8 @@ char *recv_data)		/* array of data I'll own after comm */
                         char* lrecv = &plan->recv_buff[self_recv_address];
                         size_t send_idx = (size_t)kk * (size_t)nbytes;
                         char* lsend = &send_data[send_idx];
-                        int sindex = plan->sizes[plan->indices_to[j]], idx;
-                        for (idx=0; idx<nbytes; idx++) {
-                            memcpy(lrecv, lsend, sindex);
-                            lrecv += sindex;
-                            lsend += sindex;
-                        }
+                        int sindex = plan->sizes[plan->indices_to[j]];
+                        memcpy(lrecv, lsend, (size_t)sindex * (size_t)nbytes);
 		        self_recv_address += (size_t)(plan->sizes[plan->indices_to[j]])
                                            * (size_t) nbytes;
 		        j++;

@@ -85,7 +85,7 @@ namespace phalanx_test {
                                  const PHX::View<double***> p,
                                  const PHX::View<double**> rho_e,
                                  const PHX::View<double**> /* residual */) {
-    auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0,0},{rho.extent(0),rho.extent(1)});
+    auto policy = Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>>({0,0},{rho.extent(0),rho.extent(1)});
     EOS eos;
     Kokkos::parallel_for(policy,KOKKOS_LAMBDA (const int cell, const int pt) {
         double P = 0.0;
@@ -114,7 +114,7 @@ namespace phalanx_test {
                                    const PHX::View<double**> /* residual */,
                                    EquationOfState* eos_ptr) {
 
-    auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0,0},{rho.extent(0),rho.extent(1)});
+    auto policy = Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>>({0,0},{rho.extent(0),rho.extent(1)});
     Kokkos::parallel_for(policy,KOKKOS_LAMBDA (const int cell, const int pt) {
 
         double P = 0.0;
@@ -170,7 +170,7 @@ namespace phalanx_test {
       Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("Inheritance");
       Teuchos::TimeMonitor tm(*timer);
       auto eos_host = Teuchos::rcp(new IdealGasLaw);
-      auto eos_device = PHX::copy_virtual_class_to_device<Kokkos::Device<PHX::ExecSpace,PHX::MemSpace>,IdealGasLaw>(*eos_host);
+      auto eos_device = PHX::copy_virtual_class_to_device<Kokkos::Device<PHX::ExecutionSpace,PHX::MemorySpace>,IdealGasLaw>(*eos_host);
       evaluateResidualInheritance(rho,p,rho_e,residual,eos_device.get());
       Kokkos::fence();
     }
@@ -219,13 +219,13 @@ namespace phalanx_test {
     std::vector<std::shared_ptr<BaseSum>> device_functors(num_functors);
     {
       DerivedSum<1> df1;
-      device_functors[0] = PHX::copy_virtual_class_to_device<Kokkos::Device<PHX::ExecSpace,PHX::MemSpace>,DerivedSum<1>>(df1);
+      device_functors[0] = PHX::copy_virtual_class_to_device<Kokkos::Device<PHX::ExecutionSpace,PHX::MemorySpace>,DerivedSum<1>>(df1);
       DerivedSum<2> df2;
-      device_functors[1] = PHX::copy_virtual_class_to_device<Kokkos::Device<PHX::ExecSpace,PHX::MemSpace>,DerivedSum<2>>(df2);
+      device_functors[1] = PHX::copy_virtual_class_to_device<Kokkos::Device<PHX::ExecutionSpace,PHX::MemorySpace>,DerivedSum<2>>(df2);
       DerivedSum<3> df3;
-      device_functors[2] = PHX::copy_virtual_class_to_device<Kokkos::Device<PHX::ExecSpace,PHX::MemSpace>,DerivedSum<3>>(df3);
+      device_functors[2] = PHX::copy_virtual_class_to_device<Kokkos::Device<PHX::ExecutionSpace,PHX::MemorySpace>,DerivedSum<3>>(df3);
       DerivedSum<4> df4;
-      device_functors[3] = PHX::copy_virtual_class_to_device<Kokkos::Device<PHX::ExecSpace,PHX::MemSpace>,DerivedSum<4>>(df4);
+      device_functors[3] = PHX::copy_virtual_class_to_device<Kokkos::Device<PHX::ExecutionSpace,PHX::MemorySpace>,DerivedSum<4>>(df4);
     }
 
     // Create a view of virtual base class pointers
@@ -236,7 +236,7 @@ namespace phalanx_test {
     Kokkos::deep_copy(sum_into_functors,host_sum_into_functors);
 
     // Run the functors on device
-    Kokkos::parallel_for("do sum into functors",Kokkos::RangePolicy<PHX::Device>(0,a.extent(0)),
+    Kokkos::parallel_for("do sum into functors",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,a.extent(0)),
                          KOKKOS_LAMBDA (const int i) {
                            for (int functor=0; functor < num_functors; ++functor)
                              sum_into_functors(functor).ptr->sumInto(a(i));

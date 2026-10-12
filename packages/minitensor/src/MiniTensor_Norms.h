@@ -332,11 +332,13 @@ det(Tensor<T, N> const & A)
     }
   }
 
+  // Laplace expansion along the first column: the cofactor of A(i,0) has
+  // the sign (-1)^i.
   if constexpr (dimension_reachable<N, 4>) {
     int sign = 1;
     for (Index i = 0; i < dimension; ++i) {
-      const T d = det(subtensor(A, i, 1));
-      s += sign * d * A(i, 1);
+      const T d = det(subtensor(A, i, 0));
+      s += sign * d * A(i, 0);
       sign *= -1;
     }
   }

@@ -32,9 +32,6 @@ template void PointValues2<SCALAR>::copyPointCoords<PHX::MDField<SCALAR2> >(cons
 template void PointValues2<SCALAR>::copyPointCoords<PHX::MDField<SCALAR2,BASIS,Dim> >(const PHX::MDField<SCALAR2,BASIS,Dim> & in_node_coords); \
 template void PointValues2<SCALAR>::copyPointCoords<Kokkos::DynRankView<SCALAR2,PHX::Device> >(const Kokkos::DynRankView<SCALAR2,PHX::Device> & in_node_coords);
 
-// special case for PointGenerator....yikes!
-template void PointValues2<double>::copyPointCoords<Kokkos::DynRankView<double> >(const Kokkos::DynRankView<double> & in_node_coords);
-
 POINT_VALUES_INSTANTIATION(panzer::Traits::RealType)
 // Disabled FAD support due to long build times on cuda (in debug mode
 // it takes multiple hours on some platforms). If we need

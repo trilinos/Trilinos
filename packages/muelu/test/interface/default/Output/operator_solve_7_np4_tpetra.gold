@@ -1,7 +1,7 @@
 Clearing old data (if any)
 
 Level 0
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
+Setup Smoother (total, level=0) (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
@@ -9,11 +9,11 @@ smoother ->
  timer for apply = 0
 
 Level 1
-Computing Ac (MueLu::RAPFactory)
+Computing Ac (total, level=1) (MueLu::RAPFactory)
 transpose: use implicit = 1
 matrixmatrix: kernel params -> 
  [empty list]
-Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
+Setup Smoother (total, level=1) (MueLu::Amesos2Smoother{type = <ignored>})
 presmoother -> 
  Amesos2 -> 
   [empty list]

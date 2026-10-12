@@ -172,9 +172,11 @@ endif()
 # Set CTEST_SITE to the name of the system.
 cmake_host_system_information(RESULT HOSTNAME QUERY HOSTNAME)
 
-set(CTEST_SITE "${HOSTNAME}")
-
 set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS 500)
+
+if( NOT DEFINED CTEST_SITE )
+    set(CTEST_SITE "${HOSTNAME}")
+endif()
 
 # See: https://cmake.org/cmake/help/latest/command/site_name.html#command:site_name
 site_name(${CTEST_SITE})

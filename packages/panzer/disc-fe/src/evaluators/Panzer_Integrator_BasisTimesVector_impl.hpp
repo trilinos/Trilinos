@@ -256,7 +256,7 @@ namespace panzer
   Integrator_BasisTimesVector<EvalT, Traits>::
   operator()(
     const FieldMultTag<NUM_FIELD_MULT>& /* tag */,
-    const typename Kokkos::TeamPolicy<FieldMultTag<NUM_FIELD_MULT>,PHX::exec_space>::member_type& team) const
+    const typename Kokkos::TeamPolicy<FieldMultTag<NUM_FIELD_MULT>,PHX::ExecutionSpace>::member_type& team) const
   {
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
@@ -326,19 +326,19 @@ namespace panzer
     // number of field multipliers.  The parallel_fors will loop over the cells
     // in the Workset and execute operator()() above.
     if (fieldMults_.size() == 0) {
-      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::exec_space>(workset.num_cells);
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::ExecutionSpace>(workset.num_cells);
       parallel_for("Panzer_Integrator_BasisTimesVector<0>", policy, *this);
     }
     else if (fieldMults_.size() == 1) {
-      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::exec_space>(workset.num_cells);
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::ExecutionSpace>(workset.num_cells);
       parallel_for("Panzer_Integrator_BasisTimesVector<1>", policy, *this);
     }
     else  if (fieldMults_.size() == 2) {
-      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<2>,PHX::exec_space>(workset.num_cells);
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<2>,PHX::ExecutionSpace>(workset.num_cells);
       parallel_for("Panzer_Integrator_BasisTimesVector<2>", policy, *this);
     }
     else  if (fieldMults_.size() == 3) {
-      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<3>,PHX::exec_space>(workset.num_cells);
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<3>,PHX::ExecutionSpace>(workset.num_cells);
       parallel_for("Panzer_Integrator_BasisTimesVector<3>", policy, *this);
     }
   } // end of evaluateFields()

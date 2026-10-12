@@ -528,10 +528,14 @@ svd_NxN(Tensor<T, N> const &A) {
 
   std::tie(s, P) = sort_permutation(diag(S));
   S = scale * diag(s);
-  U = U * P;
-  V = V * P;
 
-  return std::make_tuple(U, diag(diag(S)), transpose(V));
+  // V has accumulated the right rotations on its left, so the right singular
+  // vectors are the columns of transpose(V). The permutation reorders those
+  // columns, as it does the columns of U.
+  U = U * P;
+  V = transpose(V) * P;
+
+  return std::make_tuple(U, diag(diag(S)), V);
 }
 
 } // namespace impl

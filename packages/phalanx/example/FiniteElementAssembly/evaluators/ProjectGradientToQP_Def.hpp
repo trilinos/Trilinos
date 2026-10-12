@@ -27,14 +27,14 @@ template<typename EvalT, typename Traits>
 void ProjectGradientToQP<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   grad_basis_view = workset.grad_basis_real_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void ProjectGradientToQP<EvalT,Traits>::
-operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
 {
   const int cell = team.league_rank();
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_field_at_qp.extent(1)), [&] (const int& qp) {

@@ -66,7 +66,7 @@ void GaussianPulse<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
   const auto coords = workset.int_rules[ir_index]->ip_coordinates.get_static_view();
   auto tmp_current = current;
   if (ir_dim == 3) {
-    Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,current.extent_int(1)});
+    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,current.extent_int(1)});
     Kokkos::parallel_for("panzer:GaussianPulse 3D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
       auto x = coords(cell,point,0);
       auto y = coords(cell,point,1);
@@ -77,7 +77,7 @@ void GaussianPulse<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
       tmp_current(cell,point,2) = std::exp(-r2*scale)*factor;
     });
   } else {
-    Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,current.extent_int(1)});
+    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,current.extent_int(1)});
     Kokkos::parallel_for("panzer:GaussianPulse 2D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
       auto x = coords(cell,point,0);
       auto y = coords(cell,point,1);

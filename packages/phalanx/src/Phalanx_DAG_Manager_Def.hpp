@@ -510,7 +510,7 @@ namespace PHX {
       data_(data) {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    void operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
     {
       const int num_evaluators = static_cast<int>(evaluators_.extent(0));
       for (int e=0; e < num_evaluators; ++e) {
@@ -539,7 +539,7 @@ evaluateFieldsDeviceDag(const int& work_size,
   //! DAG support on CUDA (i.e. RDC off), so this ifdef will hide the
   //! RDC required code.
 #if defined(PHX_ENABLE_DEVICE_DAG)
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(work_size,team_size,vector_size),
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(work_size,team_size,vector_size),
                        PHX::RunDeviceDag<Traits>(device_evaluators_,d));
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
@@ -554,8 +554,8 @@ void PHX::DagManager<Traits>::
 evaluateFieldsTaskParallel(const int& work_size,
 			   typename Traits::EvalData d)
 {
-  using execution_space = PHX::exec_space;
-  using memory_space = PHX::Device::memory_space;
+  using execution_space = PHX::ExecutionSpace;
+  using memory_space = PHX::MemorySpace;
   using policy_type = Kokkos::TaskScheduler<execution_space>;
 
   // Requested the ability to query policy for required sizes of calls
@@ -571,7 +571,7 @@ evaluateFieldsTaskParallel(const int& work_size,
 
   // Issue in reusing vector. The assign doesn't like the change of policy.
   //node_futures_.resize(nodes_.size());
-  std::vector<Kokkos::Future<void,PHX::exec_space>> node_futures_(nodes_.size());
+  std::vector<Kokkos::Future<void,PHX::ExecutionSpace>> node_futures_(nodes_.size());
 
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
 

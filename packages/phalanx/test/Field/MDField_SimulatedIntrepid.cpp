@@ -44,7 +44,7 @@ namespace phalanx_test {
   void simulated_intrepid_integrate(VectorType v)
   {
     Kokkos::parallel_for("simulated intrepid rank-3",
-		 Kokkos::RangePolicy<PHX::Device>(0,10),
+		 Kokkos::RangePolicy<PHX::ExecutionSpace>(0,10),
 		 KOKKOS_LAMBDA (const int i)
     {
       if (v.rank() == 3) {

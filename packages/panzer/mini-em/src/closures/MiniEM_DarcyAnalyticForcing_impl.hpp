@@ -72,7 +72,7 @@ void DarcyAnalyticForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalDat
   auto tmp_source = source.get_static_view();
 
   if (ir_dim == 3) {
-    Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,source.extent_int(1)});
+    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,source.extent_int(1)});
     Kokkos::parallel_for("panzer:DarcyAnalyticForcing 3D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
       auto x = coords(cell,point,0);
       auto y = coords(cell,point,1);
@@ -80,7 +80,7 @@ void DarcyAnalyticForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalDat
       tmp_source(cell,point) = (pi*Kokkos::cos(pi*time) + pi*pi*kappa*dim*Kokkos::sin(pi*time)) * Kokkos::sin(pi*x) * Kokkos::sin(pi*y) * Kokkos::sin(pi*z);
     });
   } else {
-    Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,source.extent_int(1)});
+    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,source.extent_int(1)});
     Kokkos::parallel_for("panzer:DarcyAnalyticForcing 2D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
       auto x = coords(cell,point,0);
       auto y = coords(cell,point,1);

@@ -52,7 +52,7 @@ postRegistrationSetup(typename Traits::SetupData  /* worksets */,
 {
   auto vals = this->vals_;
   auto vec = this->vec_;
-  Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{static_cast<int64_t>(vec.extent(0)),
+  Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<3>> policy({0,0,0},{static_cast<int64_t>(vec.extent(0)),
         static_cast<int64_t>(vec.extent(1)),static_cast<int64_t>(vec.extent(2))});
   Kokkos::parallel_for("panzer::ConstantVector",policy,KOKKOS_LAMBDA(const int c, const int p, const int d){
     vec(c,p,d) = vals(d);

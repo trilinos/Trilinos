@@ -108,11 +108,11 @@ evaluateFields(typename TRAITS::EvalData workset)
     int spaceDim  = basisValues->basis_vector.extent(3);
     if(spaceDim==3) {
       dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues->basis_vector);
-      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
     }
     else {
       dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues->basis_vector);
-      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
     }
   }
   else {
@@ -229,11 +229,11 @@ evaluateFields(typename TRAITS::EvalData workset)
       int spaceDim  = basisValues->basis_vector.extent(3);
       if(spaceDim==3) {
         dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues->basis_vector);
-	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
+	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
       }
       else {
         dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues->basis_vector);
-	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
+	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
       }
     }
   }

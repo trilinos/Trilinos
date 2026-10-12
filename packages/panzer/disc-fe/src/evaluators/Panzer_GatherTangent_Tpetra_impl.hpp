@@ -155,7 +155,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   auto gidFieldOffsets = vov.getViewDevice();
   auto gatherFieldsDevice = gatherFieldsVoV_.getViewDevice();
   auto x_view = x->getLocalViewDevice(Tpetra::Access::ReadWrite);
-  Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{cellLocalIdsKokkos.extent(0),gidFieldOffsets.extent(0)});
+  Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{cellLocalIdsKokkos.extent(0),gidFieldOffsets.extent(0)});
   Kokkos::parallel_for("GatherSolutionTpetra<Tangent>",policy,KOKKOS_LAMBDA(const int worksetCellIndex, const int fieldIndex) {
     for(std::size_t basis=0;basis<gidFieldOffsets(fieldIndex).extent(0);basis++) {
       int offset = gidFieldOffsets(fieldIndex)(basis);

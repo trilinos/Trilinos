@@ -57,7 +57,7 @@ public:
                  const Kokkos::View<double*,PHX::Device>& x);
   void evaluateFields(typename Traits::EvalData d) override;
   KOKKOS_INLINE_FUNCTION
-  void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
+  void operator () (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const;
 };
 
 // **************************************************************
@@ -84,7 +84,7 @@ public:
                  const Kokkos::View<double*,PHX::Device>& x);
   void evaluateFields(typename Traits::EvalData d) override;
   KOKKOS_INLINE_FUNCTION
-  void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
+  void operator () (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const;
 };
 
 // **************************************************************

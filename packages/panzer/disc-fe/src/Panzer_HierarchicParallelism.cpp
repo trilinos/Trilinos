@@ -59,8 +59,8 @@ namespace panzer {
       return;
     }
 
-    Kokkos::TeamPolicy<PHX::Device> policy(1, Kokkos::AUTO);
-    auto blank_functor = KOKKOS_LAMBDA ( const Kokkos::TeamPolicy<PHX::exec_space>::member_type) {};
+    Kokkos::TeamPolicy<PHX::ExecutionSpace> policy(1, Kokkos::AUTO);
+    auto blank_functor = KOKKOS_LAMBDA ( const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type) {};
 
     int team_size_max = std::min(in_team_size, policy.team_size_max(blank_functor, Kokkos::ParallelForTag()));
     team_size_=roundDownToPowerOfTwo(team_size_max);

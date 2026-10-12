@@ -107,10 +107,6 @@ int main(int argc, char* argv[])
     
       if (error == 0) {
         double ttime = myTime();
-        Int *lperm;
-        Int *rperm;
-        mybasker.GetPerm(&lperm,&rperm);
-
         std::cout << "Create RHS Views" << std::endl;
         // Non-transpose b = A*xsoln
         // [-2; 2];

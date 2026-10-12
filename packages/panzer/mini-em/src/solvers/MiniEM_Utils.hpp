@@ -35,10 +35,6 @@ namespace mini_em {
   /// \brief Calls describeMatrix(), then also calls writeOut() (writing to "s.mm") if doWrite is true.
   void describeAndWriteMatrix(const std::string & s, const Thyra::LinearOpBase<double> & op, Teuchos::RCP<Teuchos::FancyOStream> out, const bool doWrite);
 
-  /// \brief Returns the underlying Tpetra::CrsMatrix wrapped by a Tpetra-backed Thyra operator. Asserts if op is not Tpetra-backed or not a CRS matrix.
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node=Tpetra::Map<>::node_type>
-  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > get_Tpetra_CrsMatrix(const Thyra::LinearOpBase<double> & op);
-
   /// \brief Builds a (scaled) identity operator with the same row map and range/domain spaces as the given Tpetra-backed operator.
   Teko::LinearOp getIdentityMatrix(const Teko::LinearOp& op, double scaling);
 

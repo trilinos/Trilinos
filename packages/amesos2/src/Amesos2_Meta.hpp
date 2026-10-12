@@ -93,7 +93,7 @@ namespace Amesos2 {
      *
      * \code
      * make_list3<float,double,quad>
-     * \encode
+     * \endcode
      *
      * is a list of three types: \c float , \c double , and \c quad .
      */
@@ -141,6 +141,7 @@ namespace Amesos2 {
      * } else {
      *   // This will always execute
      * }
+     * \endcode
      */
 
     /* SR: We will not use external initialization for the static const types.

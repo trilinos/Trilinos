@@ -41,7 +41,7 @@ template<typename Traits>
 PHX::DeviceEvaluator<Traits>*
 ScatterResidual<PHX::MyTraits::Residual,Traits>::createDeviceEvaluator() const
 {
-  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(residual_contribution.get_static_view(),
+  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::ExecutionSpace,PHX::MemorySpace>(residual_contribution.get_static_view(),
                                                                                      gids,
                                                                                      equation_index,
                                                                                      num_equations);
@@ -57,7 +57,7 @@ evaluateFields(typename Traits::EvalData workset)
                                         equation_index,
                                         num_equations),
                               workset);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
 
 // **********************************************************************
@@ -105,7 +105,7 @@ template<typename Traits>
 PHX::DeviceEvaluator<Traits>*
 ScatterResidual<PHX::MyTraits::Jacobian,Traits>::createDeviceEvaluator() const
 {
-  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(residual_contribution.get_static_view(),
+  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::ExecutionSpace,PHX::MemorySpace>(residual_contribution.get_static_view(),
                                                                                      gids,
                                                                                      equation_index,
                                                                                      num_equations);
@@ -121,7 +121,7 @@ evaluateFields(typename Traits::EvalData workset)
                                         equation_index,
                                         num_equations),
                               workset);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
 
 // **********************************************************************
@@ -161,7 +161,7 @@ evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
 			 const int col_node,
 			 const int cell_global_offset_index,
 			 const int num_equations,
-			 const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team,
+			 const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team,
 			 const Kokkos::View<const int**,PHX::Device>& gids,
 			 const PHX::View<const ScalarT**>& residual_contribution,
 			 KokkosSparse::CrsMatrix<double,int,PHX::Device>& global_jacobian) {

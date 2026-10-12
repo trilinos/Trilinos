@@ -66,7 +66,7 @@ class EvaluateDOFWithSens_Vector {
   const bool use_shared_memory;
 
 public:
-  using scratch_view = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
+  using scratch_view = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::ExecutionSpace::scratch_memory_space,Kokkos::MemoryUnmanaged>;
 
   /**
    * \brief Constructor.
@@ -88,7 +88,7 @@ public:
 
   /// \brief Computes dof_ip for one cell (team.league_rank()), optionally staging through team scratch memory.
   KOKKOS_INLINE_FUNCTION
-  void operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+  void operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
   {
     const int cell = team.league_rank();
 
@@ -179,7 +179,7 @@ class EvaluateDOFWithSens_Scalar {
   int numPoints;
 
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
 
   /**
    * \brief Constructor.
@@ -234,7 +234,7 @@ class EvaluateDOFFastSens_Vector {
   const int numPoints;
 
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
 
   /**
    * \brief Constructor.
@@ -298,7 +298,7 @@ class EvaluateDOFFastSens_Scalar {
   int numPoints;
 
 public:
-  typedef typename PHX::Device execution_space;
+  typedef typename PHX::ExecutionSpace execution_space;
 
   /**
    * \brief Constructor.

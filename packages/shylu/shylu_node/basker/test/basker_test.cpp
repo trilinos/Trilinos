@@ -26,8 +26,6 @@ int main(int argc, char* argv[])
      ./driver.exe matrixfilename.mtx nthreads 
   */
 
-  //typedef long long Int;
-  //typedef int Int;
   using Int = long;
   using Entry = double;
   using Exe_Space = Kokkos::DefaultHostExecutionSpace;
@@ -36,9 +34,6 @@ int main(int argc, char* argv[])
 
   std::string fname = std::string(argv[1]);
   Int nthreads = atoi(argv[2]);
-  //std::string rhsname = std::string(argv[2]);
-  //Int nthreads = atoi(argv[3]);
-  //std::string fname = "matrix1.mtx";
  
   cout << "basker_test: using " << nthreads << "threads" << endl;
   Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(nthreads));
@@ -101,21 +96,11 @@ int main(int argc, char* argv[])
 
     cout << nrows << " " << ncols  << " " << nnz << endl;
     n = ncols;
-    //M.mcol = ncols;
     m = nrows;
-    //M.nrow = nrows;
-    //M.nnz = nnz;
 
     col_ptr = new Int[ncols+1]();
-    //MALLOC_INT_1DARRAY(M.col_ptr, ncols+1);
-    //init_value(M.col_ptr, ncols+1,(Int) 0);
     row_idx = new Int[nnz]();
-    //MALLOC_INT_1DARRAY(M.row_idx, nnz);
-    //init_value(M.row_idx, nnz, (Int) 0);
     vals = new Entry[nnz]();
-    //MALLOC_ENTRY_1DARRAY(M.val, nnz);
-    //init_value(M.val, nnz, (Entry) 0.0);
-    //Int innz = 0;
     //cout << "MTX Malloc Done " << endl;
 
     while(nnz > 0)
@@ -123,15 +108,12 @@ int main(int argc, char* argv[])
       inp_str >> i;
       //cout << "row: " << i-1 ;
       row_idx[innz] = i-1;
-      //M.row_idx[innz] = i-1;
       inp_str >> j;
       //cout << " col: " << j-1;
       col_ptr[j] = col_ptr[j]+1;
-      //M.col_ptr[j] = M.col_ptr[j]+1;
       inp_str >> val;
       //cout << " val: " << val << endl;
       vals[innz] = val;
-      //M.val[innz] = val;
 
       //Other type options..
       innz++;
@@ -144,7 +126,6 @@ int main(int argc, char* argv[])
     for(Int k =1 ; k<(ncols+1); k++)
     {
       col_ptr[k] = col_ptr[k] + col_ptr[k-1];
-      //M.col_ptr[k] = M.col_ptr[k] +M.col_ptr[k-1];
     }
     //cout << "MTX done sorting " << endl;
 
@@ -161,21 +142,7 @@ int main(int argc, char* argv[])
   Entry* y = new Entry[n]();
   Entry* x = new Entry[n]();
   string t;
-  ifstream fprhs;
-  /*
-  Int ii = 0;
-  fprhs.open(rhsname.c_str());
-  while(fprhs >> t)
-    {
-      y[ii] = (Entry) atof(t.c_str());
-      ii++;
-    }
-  fprhs.close();
-  */
 
-  //Before Init
-  //{
-  //int result = 0; // NDE: warning unused
   BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
   //----Basker - Options
   mybasker.Options.no_pivot  = true;
@@ -199,9 +166,14 @@ int main(int argc, char* argv[])
   mybasker.GetPerm(&lperm, &rperm);
   mybasker.Finalize();
   cout << "--------------Called Finalize-----------------"<<endl;
- 
-  //}//After
-  //Kokkos::fence();
+
+  delete [] lperm;
+  delete [] rperm;
+  delete [] col_ptr;
+  delete [] row_idx;
+  delete [] vals;
+  delete [] y;
+  delete [] x;
   }
   Kokkos::finalize();
 }

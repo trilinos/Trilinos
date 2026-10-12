@@ -26,8 +26,8 @@ namespace user_app {
       const auto& coords = workset.getCellNodes();
       const int num_points = coords.extent(1);
       auto temperature = temperature_;
-      auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
-      Kokkos::parallel_for("Initial Condition Evaluator",policy,KOKKOS_LAMBDA(Kokkos::TeamPolicy<PHX::exec_space>::member_type team)
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
+      Kokkos::parallel_for("Initial Condition Evaluator",policy,KOKKOS_LAMBDA(Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type team)
       {
         const int cell = team.league_rank();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_points), [&] (const int point)

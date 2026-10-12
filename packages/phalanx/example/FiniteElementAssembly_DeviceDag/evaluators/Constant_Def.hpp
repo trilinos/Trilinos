@@ -29,7 +29,7 @@ template<typename EvalT, typename Traits>
 PHX::DeviceEvaluator<Traits>*
 Constant<EvalT,Traits>::createDeviceEvaluator() const
 {
-  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>();
+  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::ExecutionSpace,PHX::MemorySpace>();
 }
 
 //**********************************************************************

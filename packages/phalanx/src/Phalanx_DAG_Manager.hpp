@@ -302,7 +302,7 @@ namespace PHX {
     bool allow_multiple_evaluators_for_same_field_;
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-    //std::vector<Kokkos::Experimental::Future<void,PHX::exec_space>> node_futures_;
+    //std::vector<Kokkos::Experimental::Future<void,PHX::ExecutionSpace>> node_futures_;
 #endif
 
     //! A map that returns all evaluators that bind the memory of a particular field. Key is unique field identifier.  

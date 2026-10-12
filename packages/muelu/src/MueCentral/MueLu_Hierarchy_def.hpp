@@ -282,12 +282,7 @@ bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(int coarseLevel
 
   Level& level = *Levels_[coarseLevelID];
 
-  bool useStackedTimer = !Teuchos::TimeMonitor::stackedTimerNameIsDefault();
-
   std::string label = FormattingHelper::getColonLabel(level.getObjectLabel());
-  RCP<TimeMonitor> m1;
-  if (!useStackedTimer)
-    m1 = rcp(new TimeMonitor(*this, label + this->ShortClassName() + ": " + "Setup (total)"));
   TimeMonitor m2(*this, label + this->ShortClassName() + ": " + "Setup" + " (total, level=" + Teuchos::toString(coarseLevelID) + ")");
 
   // TODO: pass coarseLevelManager by reference
@@ -902,14 +897,10 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
   std::string levelSuffix  = " (level=" + toString(startLevel) + ")";
   std::string levelSuffix1 = " (level=" + toString(startLevel + 1) + ")";
 
-  bool useStackedTimer = !Teuchos::TimeMonitor::stackedTimerNameIsDefault();
-
   RCP<Monitor> iterateTime;
   RCP<TimeMonitor> iterateTime1;
   if (startLevel == 0)
     iterateTime = rcp(new Monitor(*this, "Solve", label, (nIts == 1) ? None : Runtime0, Timings0));
-  else if (!useStackedTimer)
-    iterateTime1 = rcp(new TimeMonitor(*this, prefix + "Solve (total, level=" + toString(startLevel) + ")", Timings0));
 
   std::string iterateLevelTimeLabel = prefix + "Solve" + levelSuffix;
   RCP<TimeMonitor> iterateLevelTime = rcp(new TimeMonitor(*this, iterateLevelTimeLabel, Timings0));
@@ -1000,8 +991,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
       {
         // ============== PRESMOOTHING ==============
         RCP<TimeMonitor> STime;
-        if (!useStackedTimer)
-          STime = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)", Timings0));
         RCP<TimeMonitor> SLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing" + levelSuffix, Timings0));
 
         if (Fine->IsAvailable("PreSmoother")) {
@@ -1014,8 +1003,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
       RCP<MultiVector> residual;
       {
         RCP<TimeMonitor> ATime;
-        if (!useStackedTimer)
-          ATime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation (total)", Timings0));
         RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
         if (zeroGuess) {
           // If there's a pre-smoother, then zeroGuess is false.  If there isn't and people still have zeroGuess set,
@@ -1036,8 +1023,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
       {
         // ============== RESTRICTION ==============
         RCP<TimeMonitor> RTime;
-        if (!useStackedTimer)
-          RTime = rcp(new TimeMonitor(*this, prefix + "Solve : restriction (total)", Timings0));
         RCP<TimeMonitor> RLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : restriction" + levelSuffix, Timings0));
         coarseRhs                   = coarseRhs_[startLevel];
 
@@ -1057,8 +1042,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
       coarseX = coarseX_[startLevel];
       if (!doPRrebalance_ && !importer.is_null()) {
         RCP<TimeMonitor> ITime;
-        if (!useStackedTimer)
-          ITime = rcp(new TimeMonitor(*this, prefix + "Solve : import (total)", Timings0));
         RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : import" + levelSuffix1, Timings0));
 
         // Import: range map of R --> domain map of rebalanced Ac (before subcomm replacement)
@@ -1093,8 +1076,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
 
       if (!doPRrebalance_ && !importer.is_null()) {
         RCP<TimeMonitor> ITime;
-        if (!useStackedTimer)
-          ITime = rcp(new TimeMonitor(*this, prefix + "Solve : export (total)", Timings0));
         RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : export" + levelSuffix1, Timings0));
 
         // Import: range map of rebalanced Ac (before subcomm replacement) --> domain map of P
@@ -1106,8 +1087,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
       {
         // ============== PROLONGATION ==============
         RCP<TimeMonitor> PTime;
-        if (!useStackedTimer)
-          PTime = rcp(new TimeMonitor(*this, prefix + "Solve : prolongation (total)", Timings0));
         RCP<TimeMonitor> PLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : prolongation" + levelSuffix, Timings0));
         // Update X += P * coarseX
         // Note that due to what may be round-off error accumulation, use of the fused kernel
@@ -1125,8 +1104,6 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
       {
         // ============== POSTSMOOTHING ==============
         RCP<TimeMonitor> STime;
-        if (!useStackedTimer)
-          STime = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)", Timings0));
         RCP<TimeMonitor> SLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing" + levelSuffix, Timings0));
 
         if (Fine->IsAvailable("PostSmoother")) {

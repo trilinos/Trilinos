@@ -15,6 +15,7 @@
 #include "Teuchos_Assert.hpp"
 
 #include "Phalanx_DataLayout.hpp"
+#include "Panzer_NodeType.hpp"
 
 #include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
@@ -195,7 +196,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto& worksetLIDs = worksetLIDs_;
     const auto& fieldValues = scatterFields_[fieldIndex].get_static_view();
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
 	      const int lid = worksetLIDs(cell,fieldOffsets(basis));
 	      Kokkos::atomic_add(&kokkosResidual(lid,0), fieldValues(cell,basis));
@@ -491,7 +492,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
 
     const int blockRowIndex = productVectorBlockIndex_[fieldIndex];
-    typename Tpetra::Vector<double,LO,GO,PHX::Device>::dual_view_type::t_dev kokkosResidual;
+    typename Tpetra::Vector<double,LO,GO,panzer::TpetraNodeType>::dual_view_type::t_dev kokkosResidual;
     if (haveResidual) {
       auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
       kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::ReadWrite);
@@ -506,7 +507,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const Kokkos::View<const LO**, Kokkos::LayoutRight, PHX::Device> colWorksetLIDs = colWorksetLIDs_;
     Kokkos::View<typename Sacado::ScalarType<ScalarT>::type**, Kokkos::LayoutRight, PHX::Device> workset_vals = workset_vals_;
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
         typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
         typename FieldType::array_type::reference_type tmpFieldVal = fieldValues(cell,basis);
@@ -703,7 +704,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto& kokkosTangents = Kokkos::subview(tangentFieldsDevice,Kokkos::ALL(),productVectorBlockIndex_[fieldIndex]);
     const std::size_t num_params = Sacado::dimension_scalar(fieldValues)-1;
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
 	      const int lid = worksetLIDs(cell,fieldOffsets(basis));
 	      Kokkos::atomic_add(&kokkosResidual(lid,0), fieldValues(cell,basis).val());

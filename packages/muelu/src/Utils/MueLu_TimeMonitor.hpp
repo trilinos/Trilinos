@@ -12,15 +12,10 @@
 
 #include <string>
 #include <Teuchos_DefaultComm.hpp>
-#include <Teuchos_Time.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_VerboseObject.hpp"
-#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-#include "Teuchos_StackedTimer.hpp"
-#include <sstream>
-#endif
 
 namespace MueLu {
 
@@ -38,8 +33,7 @@ class TimeMonitor : public BaseClass {
   TimeMonitor();
 
  private:
-  RCP<Teuchos::Time> timer_;
-  bool useStackedTimer_;
+  RCP<Teuchos::TimeMonitor> timer_;
   std::string label_;
 };  // class TimeMonitor
 

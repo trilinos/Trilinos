@@ -106,7 +106,8 @@ Teuchos::RCP<Matrix> Elasticity2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Ma
   Memory2D R("R", D->extent(0), Teuchos::as<LO>(bDim));
   R(0, 0) = R(1, 3) = R(2, 1) = R(2, 2) = 1;
 
-  this->A_ = MatrixTraits<Map, Matrix>::Build(this->Map_, 8 * numNodesPerElem);
+  constexpr size_t numNodesInStencil = 9;
+  this->A_ = MatrixTraits<Map, Matrix>::Build(this->Map_, numNodesInStencil * numDofPerNode);
   this->A_->setObjectLabel(this->getObjectLabel());
 
   auto one = KAT::one(), zero = KAT::zero();

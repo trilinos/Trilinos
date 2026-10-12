@@ -209,7 +209,7 @@ namespace panzer
       void
       operator()(
         const FieldMultTag<NUM_FIELD_MULT>& tag,
-        const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
+        const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const;
 
       /**
        *  \brief Perform the integration. Shared memory version.
@@ -231,7 +231,7 @@ namespace panzer
       void
       operator()(
         const SharedFieldMultTag<NUM_FIELD_MULT>& tag,
-        const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
+        const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const;
 
     private:
 
@@ -253,7 +253,7 @@ namespace panzer
       using ScalarT = typename EvalT::ScalarT;
 
       /// Type for shared memory
-    using scratch_view = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
+    using scratch_view = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::ExecutionSpace::scratch_memory_space,Kokkos::MemoryUnmanaged>;
 
       /**
        *  \brief An `enum` determining the behavior of this `Evaluator`.

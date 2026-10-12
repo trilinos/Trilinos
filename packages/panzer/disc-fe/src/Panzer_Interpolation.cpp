@@ -693,7 +693,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
       Kokkos::View<int*,DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
       Kokkos::deep_copy(elementIds_d, elementIds_h);
       for(std::size_t elemIter = 0; elemIter < elementIds_d.extent(0); elemIter += numCells) {
-        using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
+        using range_type = Kokkos::RangePolicy<LocalOrdinal, PHX::ExecutionSpace>;
         Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop",
                              range_type(elemIter, std::min(elemIter+numCells,
                                                            elementIds_d.extent(0))),
@@ -755,7 +755,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcp_dynamic_cast;
-    using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, PHX::ExecutionSpace>;
 
     using ots = Intrepid2::OrientationTools<DeviceSpace>;
     using li = Intrepid2::LagrangianInterpolation<DeviceSpace>;
@@ -969,7 +969,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcp_dynamic_cast;
-    using range_type = Kokkos::RangePolicy<LocalOrdinal, DeviceSpace>;
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, PHX::ExecutionSpace>;
 
     typedef Intrepid2::OrientationTools<DeviceSpace> ots;
     typedef Intrepid2::LagrangianInterpolation<DeviceSpace> li;

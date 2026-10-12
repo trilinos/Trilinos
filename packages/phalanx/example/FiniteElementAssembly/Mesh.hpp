@@ -18,7 +18,7 @@ namespace phx_example {
 
 class Mesh {
 
-  using team_t =  Kokkos::TeamPolicy<PHX::exec_space>::member_type;
+  using team_t =  Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type;
   
   const int nex_;
   const int ney_;

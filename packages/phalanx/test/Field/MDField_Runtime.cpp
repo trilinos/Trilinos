@@ -395,9 +395,9 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
       (f1,f2,f3,f4,f5,f6,f7,cf1,cf2,cf3,cf4,cf5,cf6,cf7);
 
     Kokkos::parallel_for("TestAssignmentFunctor",
-    			 Kokkos::RangePolicy<PHX::Device>(0,f7.extent(0)),
+    			 Kokkos::RangePolicy<PHX::ExecutionSpace>(0,f7.extent(0)),
     			 func);
-    PHX::Device().fence();
+    PHX::ExecutionSpace().fence();
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for const mdfield assignment from non-const factory
@@ -454,9 +454,9 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
        cf1_fad,cf2_fad,cf3_fad,cf4_fad,cf5_fad,cf6_fad,cf7_fad);
 
     Kokkos::parallel_for("TestAssignmentFunctor",
-    			 Kokkos::RangePolicy<PHX::Device>(0,f7_fad.extent(0)),
+    			 Kokkos::RangePolicy<PHX::ExecutionSpace>(0,f7_fad.extent(0)),
     			 func_fad);
-    PHX::Device().fence();
+    PHX::ExecutionSpace().fence();
 
     out << "passed!" << endl;
 
@@ -464,14 +464,14 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     // operator[]
     out << "Testing operator[](...) accessors...";
 
-    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<double>,double>(f1));
+    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),BracketAssignmentTest<MDField<double>,double>(f1));
 
     int num_failed = 0;
-    Kokkos::parallel_reduce("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentCheck<MDField<double>,double>(f1,cf1),num_failed);
+    Kokkos::parallel_reduce("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),BracketAssignmentCheck<MDField<double>,double>(f1,cf1),num_failed);
     TEST_EQUALITY(num_failed,0);
 
     // fad checking
-    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<MyTraits::FadType>,MyTraits::FadType>(f1_fad));
+    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),BracketAssignmentTest<MDField<MyTraits::FadType>,MyTraits::FadType>(f1_fad));
 
     out << "passed!" << endl;
 
@@ -485,14 +485,14 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     {
       // non-const view
       auto kva = a.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
       auto kvc = c.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
       // const view (view const, not const data)
       const auto const_kva = a.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
       const auto const_kvc = c.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

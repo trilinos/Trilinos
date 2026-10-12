@@ -67,7 +67,7 @@ namespace PHX {
     typedef typename Kokkos::View<kokkos_data_type,Layout,PHX::Device> array_type;
     typedef typename array_type::array_layout layout_type;
     typedef typename array_type::device_type device_type;
-    typedef typename PHX::Device::size_type size_type;
+    typedef typename PHX::ExecutionSpace::size_type size_type;
     typedef typename array_type::execution_space execution_space;
 #ifdef PHX_DEBUG
     enum { rank_value = Rank }; // for printing in debug mode

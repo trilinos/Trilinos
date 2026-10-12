@@ -293,7 +293,7 @@ TEUCHOS_UNIT_TEST(field, all)
 					cf1,cf2,cf3,cf4,cf5,cf6,cf7);
 
     Kokkos::parallel_for("TestAssignmentFunctor",
-			 Kokkos::RangePolicy<PHX::Device>(0,f7.extent(0)),
+			 Kokkos::RangePolicy<PHX::ExecutionSpace>(0,f7.extent(0)),
 			 func);
 
     cout << "passed!" << endl;
@@ -325,27 +325,27 @@ TEUCHOS_UNIT_TEST(field, all)
     {
       // non-const view
       auto kva = a.get_static_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
       auto kvc = c.get_static_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
       // const view (view const, not const data)
       const auto const_kva = a.get_static_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
       const auto const_kvc = c.get_static_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
     }
     // Kokkos DynRankView accessors
     {
       // non-const view
       auto kva = a.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
       auto kvc = c.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
       // const view (view const, not const data)
       const Kokkos::DynRankView<double,typename PHX::DevLayout<double>::type,PHX::Device> const_kva = a.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
       const auto const_kvc = c.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecutionSpace>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     TimeMonitor tm(*total_time);
 
     Kokkos::initialize(argc,argv);
-    PHX::exec_space().print_configuration(std::cout);
+    PHX::ExecutionSpace().print_configuration(std::cout);
     
     // *********************************************************
     // * Build the Finite Element data structures
@@ -273,15 +273,15 @@ int main(int argc, char *argv[])
     }
 
     // Kokkos::deep_copy(x,1.0);
-    Kokkos::parallel_for(x.extent(0),KOKKOS_LAMBDA (const int& i) {x(i)=static_cast<double>(i);});
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace>(0,x.extent(0)),KOKKOS_LAMBDA (const int& i) {x(i)=static_cast<double>(i);});
     Kokkos::deep_copy(f,0.0);
     RCP<Time> residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time");
-    typename PHX::exec_space().fence();
+    typename PHX::ExecutionSpace().fence();
     if (p.doResidual()) {
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Residual>(workset);
-      typename PHX::exec_space().fence();
+      typename PHX::ExecutionSpace().fence();
     }
 
     if (p.printResidual())
@@ -291,12 +291,12 @@ int main(int argc, char *argv[])
     Kokkos::deep_copy(f,0.0);
     Kokkos::deep_copy(J.values,0.0);
     RCP<Time> jacobian_eval_time = TimeMonitor::getNewTimer("Jacobian Evaluation Time");
-    typename PHX::exec_space().fence();
+    typename PHX::ExecutionSpace().fence();
     if (p.doJacobian()) {
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Jacobian>(workset);
-      typename PHX::exec_space().fence();
+      typename PHX::ExecutionSpace().fence();
     }
 
     if (p.printJacobian())

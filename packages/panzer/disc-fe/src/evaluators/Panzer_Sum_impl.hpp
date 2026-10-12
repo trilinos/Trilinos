@@ -347,9 +347,9 @@ evaluateFields(typename TRAITS::EvalData /* d */)
 
   // Kokkos::parallel_for(sum.extent(0), *this);
   if(useScalars) 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,ScalarsTag>(0,sum.extent(0)), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace,ScalarsTag>(0,sum.extent(0)), *this);
   else
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoScalarsTag>(0,sum.extent(0)), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecutionSpace,NoScalarsTag>(0,sum.extent(0)), *this);
 }
 
 //**********************************************************************

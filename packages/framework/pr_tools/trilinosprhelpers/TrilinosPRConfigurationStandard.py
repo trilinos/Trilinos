@@ -80,6 +80,9 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         if self.arg_extra_configure_args:
             cmd.append(f"-DEXTRA_CONFIGURE_ARGS:STRING={self.arg_extra_configure_args}")
 
+        if self.arg_extra_ctest_driver_args:
+            cmd.extend(self.arg_extra_ctest_driver_args)
+
         self.message( "--- ctest version:")
         if not self.args.dry_run:
             try:

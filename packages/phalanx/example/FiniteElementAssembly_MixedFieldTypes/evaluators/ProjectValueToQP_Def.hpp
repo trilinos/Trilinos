@@ -27,14 +27,14 @@ template<typename EvalT, typename Traits>
 void ProjectValueToQP<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   basis_view = workset.basis_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::ExecutionSpace>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
 void ProjectValueToQP<EvalT,Traits>::
-operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
 {
   const int cell = team.league_rank();
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,field_at_qp.extent(1)), [&] (const int& qp) {

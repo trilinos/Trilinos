@@ -50,11 +50,11 @@ void PHX::Layout::setKokkosLayout(const PHX::DataLayout::KokkosLayoutType& klt)
 }
 
 //**********************************************************************
-PHX::Device::size_type PHX::Layout::rank() const
-{ return static_cast<PHX::Device::size_type>(m_extents.size()); }
+PHX::ExecutionSpace::size_type PHX::Layout::rank() const
+{ return static_cast<PHX::ExecutionSpace::size_type>(m_extents.size()); }
 
 //**********************************************************************
-void PHX::Layout::dimensions(std::vector<PHX::Device::size_type>& dim) const
+void PHX::Layout::dimensions(std::vector<PHX::ExecutionSpace::size_type>& dim) const
 {
   dim.resize(m_extents.size());
   for(std::size_t i=0; i < m_extents.size(); ++i)
@@ -62,9 +62,9 @@ void PHX::Layout::dimensions(std::vector<PHX::Device::size_type>& dim) const
 }
 
 //**********************************************************************
-PHX::Device::size_type PHX::Layout::size() const
+PHX::ExecutionSpace::size_type PHX::Layout::size() const
 {
-  PHX::Device::size_type my_size = 0;
+  PHX::ExecutionSpace::size_type my_size = 0;
   if (m_extents.size() > 0) {
     my_size = 1;
     for (const auto& i : m_extents) {
@@ -87,13 +87,13 @@ std::string PHX::Layout::identifier() const
 }
 
 //**********************************************************************
-PHX::Device::size_type PHX::Layout::dimension(size_type ordinal) const
+PHX::ExecutionSpace::size_type PHX::Layout::dimension(size_type ordinal) const
 {
   return m_extents[ordinal];
 }
 
 //**********************************************************************
-PHX::Device::size_type PHX::Layout::extent(size_type ordinal) const
+PHX::ExecutionSpace::size_type PHX::Layout::extent(size_type ordinal) const
 {
   return m_extents[ordinal];
 }
@@ -132,7 +132,7 @@ void PHX::Layout::print(std::ostream& os, int /* offset */) const
 //**********************************************************************
 void
 PHX::Layout::
-setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents)
+setExtentsOnDerivedClass(const std::vector<PHX::ExecutionSpace::size_type>& extents)
 {
   m_extents = std::move(extents);
 }

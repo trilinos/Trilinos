@@ -30,7 +30,7 @@ class EvaluateDOFDiv_withSens {
   const bool use_shared_memory;
 
 public:
-  using scratch_view = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
+  using scratch_view = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::ExecutionSpace::scratch_memory_space,Kokkos::MemoryUnmanaged>;
 
   EvaluateDOFDiv_withSens(PHX::MDField<ScalarT,Cell,IP> & in_dof_div,
                           PHX::MDField<const ScalarT,Cell,Point> & in_dof_value,
@@ -46,7 +46,7 @@ public:
   {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+  void operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
   {
     const int cell = team.league_rank();
 
@@ -195,7 +195,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   Array div_basis = use_descriptors_ ? basisValues.getDivVectorBasis(false) : Array(basisValues.div_basis);
 
   const bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
-  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
+  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
   auto f = EvaluateDOFDiv_withSens<ScalarT,Array>(dof_div,dof_value,div_basis,use_shared_memory);
   Kokkos::parallel_for(this->getName(),policy,f);
 }
@@ -301,7 +301,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   if(!accelerate_jacobian) {
     const bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
-    auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
+    auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
     auto f = EvaluateDOFDiv_withSens<ScalarT,Array>(dof_div,dof_value,div_basis,use_shared_memory);
     Kokkos::parallel_for(this->getName(),policy,f);
     return;

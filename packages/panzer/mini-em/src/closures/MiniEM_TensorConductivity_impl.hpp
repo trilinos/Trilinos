@@ -65,7 +65,7 @@ void TensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData 
     auto temp_betax = betax;
     auto temp_betay = betay;
     auto temp_betaz = betaz;
-    Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,conductivity.extent_int(1)});
+    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,conductivity.extent_int(1)});
     Kokkos::parallel_for("panzer:TensorConductivity 3D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
@@ -85,7 +85,7 @@ void TensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData 
   } else {
     auto temp_conductivity = conductivity;
     auto temp_sigma = sigma;
-    Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,conductivity.extent_int(1)});
+    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,conductivity.extent_int(1)});
     Kokkos::parallel_for("panzer:TensorConductivity 2D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);

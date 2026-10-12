@@ -840,8 +840,11 @@ template <typename VT, typename DT> int Driver<VT, DT>::release() {
     _N = nullptr;
   }
   {
-    _method = 0;
-
+    // "release" will just free memory, and won't reset parameters
+    //_method = 0;
+    //_method_setup = 0;
+    //_verbose = 0;
+    //_small_problem_thres = 1024;
     _m = 0;
     _nnz = 0;
 
@@ -887,8 +890,6 @@ template <typename VT, typename DT> int Driver<VT, DT>::release() {
     _P = ordinal_type_array_host();
     _dv = mag_type_array();
 
-    _verbose = 0;
-    _small_problem_thres = 1024;
   }
   return 0;
 }
