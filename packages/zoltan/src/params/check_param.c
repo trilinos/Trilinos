@@ -111,7 +111,8 @@ int *matched_index)		/* where in struct the match occurs */
 	}
 
 	else if (!strcmp(params->type, "STRING")) {
-	    strncpy((*result).sval, val, MAX_PARAM_STRING_LEN);
+	    strncpy((*result).sval, val, MAX_PARAM_STRING_LEN-1);
+	    (*result).sval[MAX_PARAM_STRING_LEN-1] = '\0';
 	}
 
 	else if (!strcmp(params->type, "CHAR")) {

@@ -85,6 +85,8 @@ public:
 
   void print(int);
 
+  ~PamgenMeshAdapter();
+
   ////////////////////////////////////////////////////////////////
   // The MeshAdapter interface.
   // This is the interface that would be called by a model or a problem .
@@ -315,7 +317,11 @@ private:
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 					   std::string typestr, int nEntWgts):
-  dimension_(0), nWeightsPerEntity_(nEntWgts), entityDegreeWeight_()
+  dimension_(0), num_nodes_global_(0), num_elems_global_(0), num_nodes_(0), num_elem_(0),
+  element_num_map_(nullptr), node_num_map_(nullptr), elemToNode_(nullptr), elemOffsets_(nullptr),
+  nodeToElem_(nullptr), nodeOffsets_(nullptr), nWeightsPerEntity_(nEntWgts), entityDegreeWeight_(nullptr),
+  coords_(nullptr), Acoords_(nullptr), eStart_(nullptr), nStart_(nullptr), eAdj_(nullptr), nAdj_(nullptr),
+  nodeTopology(nullptr), elemTopology(nullptr)
 {
   using Teuchos::as;
 
@@ -854,6 +860,26 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       entityDegreeWeight_[i] = false;
     }
   }
+}
+
+template <typename User>
+PamgenMeshAdapter<User>::~PamgenMeshAdapter()
+{
+  delete[] element_num_map_;
+  delete[] node_num_map_;
+  delete[] elemToNode_;
+  delete[] elemOffsets_;
+  delete[] nodeToElem_;
+  delete[] nodeOffsets_;
+  delete[] coords_;
+  delete[] Acoords_;
+  delete[] eStart_;
+  delete[] nStart_;
+  delete[] eAdj_;
+  delete[] nAdj_;
+  delete[] nodeTopology;
+  delete[] elemTopology;
+  delete[] entityDegreeWeight_;
 }
 
 ////////////////////////////////////////////////////////////////////////////

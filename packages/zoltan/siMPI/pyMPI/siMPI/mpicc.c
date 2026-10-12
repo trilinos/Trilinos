@@ -31,7 +31,7 @@ char* lib_directory = LFLAG;
 char* lib_library = "-lsimpi";
 
 int main(int argc, char** argv) {
-  char* arguments[1000];
+  char* arguments[4096];
   int i;
   int verbose = 0;
   int dash_c = 0;
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
   /* with real C compiler                            */
   /* ----------------------------------------------- */
   arguments[0] = cc;
-  for(i=1;i<argc;++i) arguments[i] = argv[i];
+  for(i=1;i<argc && i<4095;++i) arguments[i] = argv[i];
 
 
   /* ----------------------------------------------- */
@@ -57,19 +57,19 @@ int main(int argc, char** argv) {
   /* ----------------------------------------------- */
   /* Add in include directories....                  */
   /* ----------------------------------------------- */
-  arguments[argc++] = "-I.";
-  arguments[argc++] = include_directory;
+  if (argc < 4095) arguments[argc++] = "-I.";
+  if (argc < 4095) arguments[argc++] = include_directory;
 
 
   /* ----------------------------------------------- */
   /* If the -c switch is not there, add in link flag */
   /* ----------------------------------------------- */
   if ( !dash_c ) {
-    arguments[argc++] = "-L.";
-    arguments[argc++] = lib_directory;
-    arguments[argc++] = lib_library;
+    if (argc < 4095) arguments[argc++] = "-L.";
+    if (argc < 4095) arguments[argc++] = lib_directory;
+    if (argc < 4095) arguments[argc++] = lib_library;
   }
-  arguments[argc] = 0;
+  if (argc < 4096) arguments[argc] = 0;
   
 
   /* ----------------------------------------------- */
