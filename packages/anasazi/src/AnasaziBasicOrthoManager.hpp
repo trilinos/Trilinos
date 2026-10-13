@@ -979,6 +979,8 @@ namespace Anasazi {
 
         // Check if Xj has any directional information left after the orthogonalization.
         MatOrthoManager<ScalarType,MV,OP>::normMat(*Xj,newNorm,MXj);
+        TEUCHOS_TEST_FOR_EXCEPTION(SCT::isnaninf(newNorm[0]), OrthoError,
+            "Anasazi::BasicOrthoManager::findBasis(): Detected NaN/Inf norm while orthogonalizing vector " + Teuchos::toString(j) + ".");
         if ( newNorm[0] != ZERO && newNorm[0] > SCT::sfmin() ) {
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG
           *out << "Normalizing X[" << j << "], norm(X[" << j << "]) = " << newNorm[0] << "\n";
