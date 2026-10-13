@@ -10,12 +10,14 @@
 #ifndef PYTRILINOS2_THYRA_ETI
 #define PYTRILINOS2_THYRA_ETI
 
-#include <Thyra_TpetraThyraWrappers.hpp>
+#include <Thyra_TpetraThyraWrappers_decl.hpp>
+#include <Thyra_TpetraThyraWrappers_def.hpp>
 #include <Thyra_TpetraEuclideanScalarProd.hpp>
 #include <Thyra_TpetraVectorSpace.hpp>
 #include <Thyra_TpetraMultiVector.hpp>
 #include <Thyra_TpetraVector.hpp>
-#include <Thyra_TpetraLinearOp.hpp>
+#include <Thyra_TpetraLinearOp_decl.hpp>
+#include <Thyra_TpetraLinearOp_def.hpp>
 
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_LinearSolverBuilderBase.hpp>

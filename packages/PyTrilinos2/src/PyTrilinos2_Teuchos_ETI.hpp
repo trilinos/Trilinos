@@ -11,6 +11,7 @@
 #define PYTRILINOS2_TEUCHOS_ETI
 
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 namespace Teuchos {
     inline void initiate(ParameterList p) {};
