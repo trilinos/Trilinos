@@ -377,12 +377,11 @@ template <typename Adapter>
       } else {
 	graphModel->getVertexList(Ids, vwgts);
       }
-      scalar_t *wgt = new scalar_t[numLocalObjects];
       for (int i=0; i < nWeights; i++){
+        ArrayRCP<scalar_t> wgtArray(numLocalObjects);
 	for (size_t j=0; j < numLocalObjects; j++) {
-	  wgt[j] = vwgts[i][j];
+	  wgtArray[j] = vwgts[i][j];
 	}
-	ArrayRCP<const scalar_t> wgtArray(wgt,0,numLocalObjects,false);
 	weights[i] = sdata_t(wgtArray, 1);
       }
     } else {

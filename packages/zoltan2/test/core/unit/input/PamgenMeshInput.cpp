@@ -281,6 +281,15 @@ int main(int narg, char *arg[]) {
     return 1;
   }
 
+  delete[] element_num_map;
+  delete[] node_num_map;
+  delete[] num_nodes_per_elem;
+  delete[] num_elem_this_blk;
+  for(int b = 0; b < num_elem_blk; b++) {
+    delete[] connect[b];
+  }
+  delete[] connect;
+
   // delete mesh
   if (me == 0) std::cout << "Deleting the mesh ... \n\n";
 
