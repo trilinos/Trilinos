@@ -65,7 +65,7 @@ Scalar Stepper_ErrorNorm<Scalar>::computeWRMSNorm(
                          errorWeightVector_.ptr());
 
   const auto space_dim = err->space()->dim();
-  Scalar err_norm      = std::abs(Thyra::norm(*errorWeightVector_) / space_dim);
+  Scalar err_norm      = Thyra::norm(*errorWeightVector_) / std::sqrt(static_cast<Scalar>(space_dim));
   return err_norm;
 }
 
