@@ -1,5 +1,10 @@
 # CHANGELOG
 
+5.31.6   (STK_VERSION 5310600) 10/14/2026
+  stk_mesh: add parallel consistency check for spatial dimensions
+  stk_search_util: fix ASAN issue (array-bounds when using shell topology)
+                   in MasterElementProviderIntrepid2::evaluate_field
+            
 5.31.4    (STK_VERSION 5310400) 10/1/2026
   stk_mesh: various developments in DeviceMesh (GPU support) including
             fixing compile-warnings for AMD/HIP/ROCm
