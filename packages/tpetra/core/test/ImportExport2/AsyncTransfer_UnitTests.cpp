@@ -31,6 +31,7 @@ using Teuchos::as;
 using Teuchos::Comm;
 using Teuchos::FancyOStream;
 using Teuchos::OrdinalTraits;
+using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ScalarTraits;
@@ -45,6 +46,23 @@ using Tpetra::Import;
 using Tpetra::INSERT;
 using Tpetra::Map;
 using Tpetra::MultiVector;
+
+std::string distributorSendType("Send");
+
+TEUCHOS_STATIC_SETUP() {
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
+  clp.setOption("distributor-send-type", &distributorSendType,
+                "In MPI tests, the type of send operation that the Tpetra::Distributor will use.");
+}
+
+RCP<ParameterList> getDistributorParameterList() {
+  static RCP<ParameterList> plist;
+  if (plist.is_null()) {
+    plist = Teuchos::parameterList("Tpetra::Distributor");
+    plist->set("Send type", distributorSendType);
+  }
+  return plist;
+}
 
 //
 // UNIT TEST FIXTURES
@@ -136,7 +154,7 @@ class ReferenceImportMultiVector {
  public:
   RCP<mv_type> generateWithClassicalCodePath(RCP<mv_type> sourceMV, RCP<const map_type> targetMap) const {
     RCP<const map_type> sourceMap = sourceMV->getMap();
-    Import<LO, GO> importer(sourceMap, targetMap);
+    Import<LO, GO> importer(sourceMap, targetMap, getDistributorParameterList());
     expertSetRemoteLIDsContiguous(importer, false);
     TEUCHOS_ASSERT(!importer.areRemoteLIDsContiguous());
 
@@ -158,7 +176,7 @@ class ReferenceExportMultiVector {
  public:
   RCP<mv_type> generateWithClassicalCodePath(RCP<mv_type> sourceMV, RCP<const map_type> targetMap) const {
     RCP<const map_type> sourceMap = sourceMV->getMap();
-    Export<LO, GO> exporter(sourceMap, targetMap);
+    Export<LO, GO> exporter(sourceMap, targetMap, getDistributorParameterList());
     expertSetRemoteLIDsContiguous(exporter, false);
     TEUCHOS_ASSERT(!exporter.areRemoteLIDsContiguous());
 
@@ -394,7 +412,7 @@ class ReferenceImportMatrix {
  public:
   RCP<crs_type> generateUsingAllInOne(RCP<crs_type> sourceMat, RCP<const map_type> targetMap) const {
     RCP<const map_type> sourceMap = sourceMat->getMap();
-    Import<LO, GO> importer(sourceMap, targetMap);
+    Import<LO, GO> importer(sourceMap, targetMap, getDistributorParameterList());
 
     Teuchos::ParameterList dummy;
     RCP<crs_type> referenceMat = Tpetra::importAndFillCompleteCrsMatrix<crs_type>(
@@ -412,7 +430,7 @@ class ReferenceExportMatrix {
  public:
   RCP<crs_type> generateUsingAllInOne(RCP<crs_type> sourceMat, RCP<const map_type> targetMap) const {
     RCP<const map_type> sourceMap = sourceMat->getMap();
-    Export<LO, GO> exporter(sourceMap, targetMap);
+    Export<LO, GO> exporter(sourceMap, targetMap, getDistributorParameterList());
 
     Teuchos::ParameterList dummy;
     RCP<crs_type> referenceMat = Tpetra::exportAndFillCompleteCrsMatrix<crs_type>(
@@ -541,7 +559,7 @@ class ForwardImport {
 
  public:
   void operator()(DistObjectRCP source, DistObjectRCP target) const {
-    Import<LO, GO> importer(source->getMap(), target->getMap());
+    Import<LO, GO> importer(source->getMap(), target->getMap(), getDistributorParameterList());
     target->beginImport(*source, importer, INSERT);
     target->endImport(*source, importer, INSERT);
   }
@@ -586,7 +604,7 @@ class ReverseImport {
 
  public:
   void operator()(DistObjectRCP source, DistObjectRCP target) const {
-    Export<LO, GO> exporter(target->getMap(), source->getMap());
+    Export<LO, GO> exporter(target->getMap(), source->getMap(), getDistributorParameterList());
     target->beginImport(*source, exporter, INSERT);
     target->endImport(*source, exporter, INSERT);
   }
@@ -631,7 +649,7 @@ class ForwardExport {
 
  public:
   void operator()(DistObjectRCP source, DistObjectRCP target) const {
-    Export<LO, GO> exporter(source->getMap(), target->getMap());
+    Export<LO, GO> exporter(source->getMap(), target->getMap(), getDistributorParameterList());
     target->beginExport(*source, exporter, INSERT);
     target->endExport(*source, exporter, INSERT);
   }
@@ -676,7 +694,7 @@ class ReverseExport {
 
  public:
   void operator()(DistObjectRCP source, DistObjectRCP target) const {
-    Import<LO, GO> importer(target->getMap(), source->getMap());
+    Import<LO, GO> importer(target->getMap(), source->getMap(), getDistributorParameterList());
     target->beginExport(*source, importer, INSERT);
     target->endExport(*source, importer, INSERT);
   }
@@ -758,7 +776,7 @@ class CheckTransferArrivedForwardImport {
     , success(s) {}
 
   void operator()(DistObjectRCP source, DistObjectRCP target) const {
-    Import<LO, GO> importer(source->getMap(), target->getMap());
+    Import<LO, GO> importer(source->getMap(), target->getMap(), getDistributorParameterList());
 
     target->beginImport(*source, importer, INSERT);
     while (!target->transferArrived())
@@ -800,7 +818,7 @@ class CheckTransferArrivedForwardExport {
     , success(s) {}
 
   void operator()(DistObjectRCP source, DistObjectRCP target) const {
-    Export<LO, GO> exporter(source->getMap(), target->getMap());
+    Export<LO, GO> exporter(source->getMap(), target->getMap(), getDistributorParameterList());
 
     target->beginExport(*source, exporter, INSERT);
     while (!target->transferArrived())
@@ -846,7 +864,7 @@ class CheckTransferNotArrivedForwardImport {
     int myRank   = comm->getRank();
     int numProcs = comm->getSize();
 
-    Import<LO, GO> importer(source->getMap(), target->getMap());
+    Import<LO, GO> importer(source->getMap(), target->getMap(), getDistributorParameterList());
 
     if (numProcs > 1) {
       if (myRank == 0) {
@@ -888,7 +906,7 @@ class CheckTransferNotArrivedForwardExport {
     int myRank   = comm->getRank();
     int numProcs = comm->getSize();
 
-    Export<LO, GO> exporter(source->getMap(), target->getMap());
+    Export<LO, GO> exporter(source->getMap(), target->getMap(), getDistributorParameterList());
 
     if (numProcs > 1) {
       if (myRank == 0) {
@@ -922,7 +940,7 @@ class ForwardImportGroup {
 
  public:
   void operator()(std::vector<DistObjectRCP>& sources, std::vector<DistObjectRCP>& targets) const {
-    Import<LO, GO> importer(sources[0]->getMap(), targets[0]->getMap());
+    Import<LO, GO> importer(sources[0]->getMap(), targets[0]->getMap(), getDistributorParameterList());
 
     for (unsigned i = 0; i < sources.size(); i++) {
       targets[i]->beginImport(*sources[i], importer, INSERT);
