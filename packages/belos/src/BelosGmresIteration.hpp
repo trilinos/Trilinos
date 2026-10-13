@@ -17,6 +17,8 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosIteration.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
 
 namespace Belos {
 
@@ -75,6 +77,9 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
 
+    using DMT = DenseMatTraits<ScalarType,DM>;
+    using MDM = typename DMT::MDM;
+
     /*! \brief The current dimension of the reduction.
      *
      * This should always be equal to PseudoBlockGmresIter::getCurSubspaceDim()
@@ -93,8 +98,8 @@ namespace Belos {
     /*! \brief The current right-hand side of the least squares system RY = Z. */
     std::vector<Teuchos::RCP<const DM> > Z;
     /*! \brief The current Given's rotation coefficients. */
-    std::vector<Teuchos::RCP<const std::vector<ScalarType> > > sn;
-    std::vector<Teuchos::RCP<const std::vector<MagnitudeType> > > cs;
+    std::vector<Teuchos::RCP<const DM > > sn;
+    std::vector<Teuchos::RCP<const MDM > > cs;
 
     PseudoBlockGmresIterState() : curDim(0), V(0),
                                   H(0), R(0), Z(0),
