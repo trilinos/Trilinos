@@ -75,7 +75,7 @@ bool MeshModification::modification_begin(const std::string& /*description*/, bo
       this->increment_sync_count();
     }
 
-    if(m_bulkData.is_mesh_consistency_check_on()) {
+    if(m_bulkData.is_mesh_consistency_check_on() && !isSyncToHost) {
       if (m_bulkData.m_createUpwardConnectivity) {
         //We can only check owned-closure if upward-connectivity is on.
         //Otherwise, we'll just have to trust that owned-closure is maintained correctly.

@@ -1254,6 +1254,12 @@ void DeviceMeshT<NgpMemSpace>::update_bulk_data()
     }
   }
 
+  // Mesh consistency check requires updated mesh indices
+  if (bulk->parallel_size() > 1)
+  {
+    bulk->check_mesh_consistency();
+  }
+
   update_field_metadata_host_pointers();
 
   for (unsigned i = 0; i < allFields.size(); ++i) {

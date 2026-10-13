@@ -226,6 +226,31 @@ public:
       EXPECT_FALSE(is_in_aura(std::move(entitiesToCheck)));
   }
 
+  void check_host_bucket_part_membership(stk::mesh::EntityVector&& entitiesToCheck, std::vector<std::string>&& includedPartNames, std::vector<std::string>&& excludedPartNames)
+  {
+    using EntityViewOnHost = Kokkos::View<stk::mesh::Entity*, stk::ngp::HostMemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+    Kokkos::View<unsigned*, stk::ngp::HostMemSpace> expectedPartOrdinals("", includedPartNames.size());
+    Kokkos::View<unsigned*, stk::ngp::HostMemSpace> excludedPartOrdinals("", excludedPartNames.size());
+
+    fill_view(includedPartNames, expectedPartOrdinals);
+    fill_view(excludedPartNames, excludedPartOrdinals);
+
+    EntityViewOnHost entitiesOnHost(entitiesToCheck.data(), entitiesToCheck.size());
+
+    for (unsigned i = 0; i < entitiesOnHost.extent(0); ++i) {
+      auto entity = entitiesOnHost(i);
+      auto meshIdx = bulk->mesh_index(entity);
+      auto bucket = meshIdx.bucket;
+
+      for (unsigned j = 0; j < expectedPartOrdinals.extent(0); ++j) {
+        EXPECT_TRUE(bucket->member(expectedPartOrdinals(j)));
+      }
+      for (unsigned j = 0; j < excludedPartOrdinals.extent(0); ++j) {
+        EXPECT_FALSE(bucket->member(excludedPartOrdinals(j)));
+      }
+    }
+  }
+
   void check_device_bucket_part_membership(stk::mesh::EntityVector&& entitiesToCheck, std::vector<std::string>&& includedPartNames, std::vector<std::string>&& excludedPartNames)
   {
     using EntityViewOnHost = Kokkos::View<stk::mesh::Entity*, stk::ngp::HostMemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
@@ -1736,9 +1761,6 @@ NGP_TEST_F(DeviceMeshParallelMeshModTester_WithAura, change_entity_parts_add_unr
   auto node5 = bulk->get_entity(stk::topology::NODE_RANK, 5);
   auto node12 = bulk->get_entity(stk::topology::NODE_RANK, 12);
 
-  auto& deviceMeshBefore = stk::mesh::get_updated_ngp_mesh(*bulk);
-  auto numNodeBucketsBefore = deviceMeshBefore.get_device_bucket_repository().num_buckets(stk::topology::NODE_RANK);
-
   if (myRank == 0) {
     check_entity_ownership({node1},  {Status::isOwned, Status::notShared, Status::notInAura});
     check_entity_ownership({node5},  {Status::isOwned, Status::isShared, Status::notInAura});
@@ -2106,7 +2128,6 @@ NGP_TEST_F(DeviceMeshParallelMeshModTester_WithGhosting, check_custom_ghost_owne
   auto elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
   auto elem2 = bulk->get_entity(stk::topology::ELEM_RANK, 2);
   auto node1 = bulk->get_entity(stk::topology::NODE_RANK, 1);
-  auto node5 = bulk->get_entity(stk::topology::NODE_RANK, 5);
   auto node12 = bulk->get_entity(stk::topology::NODE_RANK, 12);
 
   if (myRank == 0) {
@@ -2554,6 +2575,126 @@ NGP_TEST_F(DeviceMeshParallelMeshModTester_WithGhosting, change_entity_parts_add
     check_device_bucket_part_membership({elem3}, {}, {ghostPart});
     check_device_bucket_part_membership({node1, node5, node8}, {ghostPart}, {});
     check_device_bucket_part_membership({node9, node13, node16}, {}, {ghostPart});
+  }
+}
+
+NGP_TEST_F(DeviceMeshParallelMeshModTester_NoAura, update_bulk_data_after_change_entity_parts)
+{
+  if (stk::parallel_machine_size(stk::parallel_machine_world()) != 2) { GTEST_SKIP(); }
+
+  std::string desc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n" \
+                     "1,2,HEX_8,5,6,7,8,9,10,11,12,block_2";
+  setup_mesh(desc);
+
+  std::string newRankedPart1 = "new_elem_part1";
+  std::string newRankedPart2 = "new_elem_part2";
+  std::string newUnrankedPart1 = "new_part1";
+  std::string newUnrankedPart2 = "new_part2";
+  declare_new_parts({newRankedPart1, newRankedPart2}, stk::topology::topology_t::HEX_8);
+  declare_new_parts({newUnrankedPart1, newUnrankedPart2});
+
+  auto elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
+  auto elem2 = bulk->get_entity(stk::topology::ELEM_RANK, 2);
+  auto node7 = bulk->get_entity(stk::topology::NODE_RANK, 7);
+  auto node8 = bulk->get_entity(stk::topology::NODE_RANK, 8);
+  auto node12 = bulk->get_entity(stk::topology::NODE_RANK, 12);
+
+  if (stk::parallel_machine_rank(stk::parallel_machine_world()) == 0) {
+    change_entity_parts_in_parallel({elem1, node8}, {newRankedPart1, newUnrankedPart1}, {});
+  } else {
+    change_entity_parts_in_parallel({elem2, node12}, {newRankedPart2, newUnrankedPart2}, {});
+  }
+
+  auto& deviceMesh = stk::mesh::get_updated_ngp_mesh(*bulk);
+  deviceMesh.update_bulk_data();
+
+  if (stk::parallel_machine_rank(stk::parallel_machine_world()) == 0) {
+    check_host_bucket_part_membership({node7}, {newRankedPart1}, {newUnrankedPart1});
+    check_host_bucket_part_membership({elem1, node8}, {newRankedPart1, newUnrankedPart1}, {});
+  } else {
+    check_host_bucket_part_membership({node8}, {newRankedPart2}, {newUnrankedPart2});
+    check_host_bucket_part_membership({elem2, node12}, {newRankedPart2, newUnrankedPart2}, {});
+  }
+}
+
+NGP_TEST_F(DeviceMeshParallelMeshModTester_WithAura, update_bulk_data_after_change_entity_parts)
+{
+  if (stk::parallel_machine_size(stk::parallel_machine_world()) != 2) { GTEST_SKIP(); }
+
+  std::string desc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n" \
+                     "1,2,HEX_8,5,6,7,8,9,10,11,12,block_2";
+  setup_mesh(desc);
+
+  std::string newPart1 = "new_elem_part1";
+  std::string newPart2 = "new_elem_part2";
+  declare_new_parts({newPart1, newPart2}, stk::topology::topology_t::HEX_8);
+
+  auto myRank = stk::parallel_machine_rank(stk::parallel_machine_world());
+  auto elem1  = bulk->get_entity(stk::topology::ELEM_RANK, 1);
+  auto elem2  = bulk->get_entity(stk::topology::ELEM_RANK, 2);
+  auto node1  = bulk->get_entity(stk::topology::NODE_RANK, 1);
+  auto node5  = bulk->get_entity(stk::topology::NODE_RANK, 5);
+  auto node8  = bulk->get_entity(stk::topology::NODE_RANK, 8);
+  auto node12 = bulk->get_entity(stk::topology::NODE_RANK, 12);
+
+  if (myRank == 0) {
+    change_entity_parts_in_parallel({elem1}, {newPart1}, {});
+  } else {
+    change_entity_parts_in_parallel({elem2}, {newPart2}, {});
+  }
+
+  auto& deviceMesh = stk::mesh::get_updated_ngp_mesh(*bulk);
+  deviceMesh.update_bulk_data();
+
+  check_host_bucket_part_membership({elem1}, {newPart1}, {newPart2});
+  check_host_bucket_part_membership({elem2}, {newPart2}, {newPart1});
+  check_host_bucket_part_membership({node1},  {newPart1}, {newPart2});
+  check_host_bucket_part_membership({node5}, {newPart1, newPart2}, {});
+  check_host_bucket_part_membership({node8}, {newPart1, newPart2}, {});
+  check_host_bucket_part_membership({node12}, {newPart2}, {newPart1});
+}
+
+NGP_TEST_F(DeviceMeshParallelMeshModTester_WithGhosting, update_bulk_data_after_change_entity_parts)
+{
+  if (stk::parallel_machine_size(stk::parallel_machine_world()) != 2) { GTEST_SKIP(); }
+
+  std::string desc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n" \
+                     "1,2,HEX_8,5,6,7,8,9,10,11,12,block_2";
+  setup_mesh(desc);
+
+  auto rank = stk::parallel_machine_rank(stk::parallel_machine_world());
+  std::string newPart = "new_part1";
+
+  stk::mesh::EntityProcVec entitiesToGhost;
+  if (rank == 0) {
+    entitiesToGhost.emplace_back(bulk->get_entity(stk::topology::ELEM_RANK, 1), 1);
+  } else {
+    entitiesToGhost.emplace_back(bulk->get_entity(stk::topology::ELEM_RANK, 2), 0);
+  }
+  const stk::mesh::Ghosting& ghosting = create_custom_ghosting("customGhosting", entitiesToGhost);
+  const std::string ghostPart = ghosting_part_name(ghosting);
+
+  declare_new_parts({newPart});
+
+  auto elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
+  auto elem2 = bulk->get_entity(stk::topology::ELEM_RANK, 2);
+
+  if (rank == 0) {
+    EXPECT_NO_THROW(change_entity_parts_in_parallel({elem1}, {newPart}, {}));
+  } else {
+    EXPECT_NO_THROW(change_entity_parts_in_parallel({elem2}, {newPart}, {}));
+  }
+
+  auto& deviceMesh = stk::mesh::get_updated_ngp_mesh(*bulk);
+  deviceMesh.update_bulk_data();
+
+  if (rank == 0) {
+    check_host_bucket_part_membership({elem1}, {newPart}, {ghostPart});
+    check_host_bucket_part_membership({elem2}, {newPart, ghostPart}, {});
+  } else {
+    check_host_bucket_part_membership({elem1}, {newPart, ghostPart}, {});
+    check_host_bucket_part_membership({elem2}, {newPart}, {ghostPart});
+
   }
 }
 
