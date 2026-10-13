@@ -424,6 +424,35 @@ namespace Intrepid2 {
        errorFlag = -1000;
      }
       
+     *outStream
+     << "\n"
+     << "===============================================================================\n"
+     << "| TEST 5: sub-cell bases are defined on the topology of each sub-cell         |\n"
+     << "===============================================================================\n";
+
+     try {
+       const auto cellTopo = pyrBasis.getBaseCellTopology();
+       for (ordinal_type scDim=1;scDim<3;++scDim) {
+         const ordinal_type numSubcells = cellTopo.getSubcellCount(scDim);
+         for (ordinal_type scOrd=0;scOrd<numSubcells;++scOrd) {
+           const auto subcellBasis = pyrBasis.getSubCellRefBasis(scDim, scOrd);
+           const auto subcellTopoData = cellTopo.getCellTopologyData(scDim, scOrd);
+           if (subcellBasis->getBaseCellTopology().getKey() != subcellTopoData->key) {
+             errorFlag++;
+             *outStream << std::setw(70) << "------------- TEST FAILURE! -------------" << "\n";
+             *outStream << " getSubCellRefBasis(" << scDim << ", " << scOrd << ") is defined on "
+                        << subcellBasis->getBaseCellTopology().getName() << ", but sub-cell "
+                        << scOrd << " of dimension " << scDim << " is a " << subcellTopoData->name << "\n";
+           }
+         }
+       }
+     } catch (std::logic_error &err){
+       *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+       *outStream << err.what() << '\n';
+       *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+       errorFlag = -1000;
+     }
+
      if (errorFlag != 0)
        std::cout << "End Result: TEST FAILED\n";
      else

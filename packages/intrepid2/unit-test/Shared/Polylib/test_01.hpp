@@ -117,12 +117,18 @@
    NPLOWER <= np <= NPUPPER
    2     <= n  <= np - 1
    
-   The error is check in a pointwise sense and if it is larger than
+   The error is checked in a pointwise sense and if it is larger than
    EPS then the value of alpha,beta,np,n and the error is printed to
    the screen. After every alpha value the statement
    "finished checking all beta values for alpha = #"
    is printed
    
+   It then checks the derivative returned by JacobiPolynomial (with and
+   without the values) against JacobiPolynomialDerivative at interior points,
+   and the zeros computed with Newton iteration and polynomial deflation
+   against the zeros computed as eigenvalues of the tridiagonal matrix, for
+   -0.5 <= alpha, beta <= 5 and polynomial orders up to 20.
+
    The above checks are performed for all the Gauss, Gauss-Radau and
    Gauss-Lobatto points. If you want to disable any routine then set
    GAUSS_INT, GAUSS_RADAU_INT, GAUSS_LOBATTO_INT = 0
@@ -143,6 +149,9 @@
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
+
+#include <algorithm>
+#include <limits>
 
 namespace Intrepid2 {
   
@@ -370,6 +379,95 @@ namespace Intrepid2 {
         }          
         /******************************************/
         *outStream << "\n";
+      } catch (std::logic_error &err) {
+        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+        *outStream << err.what() << '\n';
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+        errorFlag = -1000;
+      }
+
+      *outStream
+        << "\n"
+        << "===============================================================================\n"\
+        << "| TEST 3: Jacobi polynomial derivatives and zeros                             |\n"\
+        << "===============================================================================\n";
+
+      // JacobiPolynomial can return the derivative together with the values (or the derivative
+      // alone, with a null view for the values). Check it against JacobiPolynomialDerivative, which
+      // uses a different identity: d/dz P_n^{a,b}(z) = (a+b+n+1)/2 P_{n-1}^{a+1,b+1}(z).
+      // The derivative returned by JacobiPolynomial is only valid for -1 < z < 1.
+      // Then check the zeros computed with Newton iteration and polynomial deflation, which uses the
+      // derivative returned by JacobiPolynomial, against the default zeros (tridiagonal eigenvalues).
+      try {
+        const ordinal_type np = 15, maxN = 20, maxReported = 10;
+        Kokkos::View<ValueType*,Kokkos::HostSpace>
+          z("z", np),
+          p("p", np),
+          pd("pd", np),
+          pdOnly("pdOnly", np),
+          pdRef("pdRef", np),
+          zerosTri("zerosTri", maxN),
+          zerosDefl("zerosDefl", maxN),
+          null;
+        using zerosViewType = decltype(zerosDefl);
+
+        for (ordinal_type i = 0; i < np; ++i)
+          z(i) = -1.0 + 2.0*(i + 1)/(ValueType)(np + 1); // interior points
+
+        ordinal_type numDerivativeFailures = 0, numZerosFailures = 0;
+        ValueType maxDerivativeError = 0, maxZerosError = 0;
+        ValueType alpha = -0.5;
+        while (alpha <= 5.0) {
+          ValueType beta = -0.5;
+          while (beta <= 5.0) {
+            for (ordinal_type n = 0; n <= maxN; ++n) {
+              Polylib::Serial::JacobiPolynomial(np, z, p, pd, n, alpha, beta);
+              Kokkos::deep_copy(pdOnly, std::numeric_limits<ValueType>::quiet_NaN());
+              Polylib::Serial::JacobiPolynomial(np, z, null, pdOnly, n, alpha, beta);
+              Polylib::Serial::JacobiPolynomialDerivative(np, z, pdRef, n, alpha, beta);
+              for (ordinal_type i = 0; i < np; ++i) {
+                const ValueType scale = std::max(ValueType(1), std::abs(pdRef(i)));
+                const ValueType err = std::max(std::abs(pd(i) - pdRef(i)), std::abs(pdOnly(i) - pdRef(i)))/scale;
+                if (!(err <= highOrderTol)) { // also catches NaN
+                  if (numDerivativeFailures++ < maxReported)
+                    *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta << ", n = " << n
+                               << ", z = " << z(i) << "  derivative from JacobiPolynomial " << pd(i)
+                               << " (without values: " << pdOnly(i) << "), from JacobiPolynomialDerivative "
+                               << pdRef(i) << "\n";
+                } else {
+                  maxDerivativeError = std::max(maxDerivativeError, err);
+                }
+              }
+            }
+
+            for (ordinal_type n = 1; n <= maxN; ++n) {
+              Polylib::Serial::JacobiZeros(zerosTri, n, alpha, beta);
+              Polylib::Serial::JacobiZeros<zerosViewType,true>(zerosDefl, n, alpha, beta);
+              std::sort(zerosTri.data(),  zerosTri.data()  + n);
+              std::sort(zerosDefl.data(), zerosDefl.data() + n);
+              for (ordinal_type i = 0; i < n; ++i) {
+                const ValueType err = std::abs(zerosDefl(i) - zerosTri(i));
+                if (!(err <= tol)) {
+                  if (numZerosFailures++ < maxReported)
+                    *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta << ", n = " << n
+                               << "  zero " << i << " with deflation " << zerosDefl(i)
+                               << ", from tridiagonal matrix " << zerosTri(i) << "\n";
+                } else {
+                  maxZerosError = std::max(maxZerosError, err);
+                }
+              }
+            }
+            beta += 0.5;
+          }
+          alpha += 0.5;
+        }
+        *outStream << "Derivatives of Jacobi polynomials: " << numDerivativeFailures << " failures"
+                   << ", max relative difference otherwise " << maxDerivativeError
+                   << " (tolerance " << highOrderTol << ")\n";
+        *outStream << "Zeros of Jacobi polynomials with deflation: " << numZerosFailures << " failures"
+                   << ", max difference otherwise " << maxZerosError << " (tolerance " << tol << ")\n";
+        if (numDerivativeFailures + numZerosFailures > 0)
+          errorFlag = -1000;
       } catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';

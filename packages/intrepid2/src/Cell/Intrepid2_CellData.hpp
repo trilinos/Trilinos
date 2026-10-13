@@ -222,7 +222,7 @@ private:
     double line[2][3], line_3[3][3];
     double triangle[3][3], triangle_4[4][3], triangle_6[6][3];
     double quadrilateral[4][3], quadrilateral_8[8][3], quadrilateral_9[9][3];
-    double tetrahedron[4][3], tetrahedron_8[8][3], tetrahedron_10[10][3], tetrahedron_11[10][3];
+    double tetrahedron[4][3], tetrahedron_8[8][3], tetrahedron_10[10][3], tetrahedron_11[11][3];
     double hexahedron[8][3], hexahedron_20[20][3], hexahedron_27[27][3];
     double pyramid[5][3], pyramid_13[13][3], pyramid_14[14][3];
     double wedge[6][3], wedge_15[15][3], wedge_18[18][3];
