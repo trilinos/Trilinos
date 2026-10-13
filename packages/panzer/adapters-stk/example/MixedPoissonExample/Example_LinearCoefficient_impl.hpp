@@ -12,6 +12,7 @@
 #define __Example_LinearCoefficient_impl_hpp__
 
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_HierarchicParallelism.hpp"
 
 namespace Example {
 
@@ -48,9 +49,14 @@ void LinearCoefficient<EvalT,Traits>::evaluateFields(typename Traits::EvalData w
   auto ip_coords = this->wda(workset).int_rules[ir_index]->ip_coordinates.get_static_view();
   const int d = direction;
 
-  Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{static_cast<int>(workset.num_cells),c.extent_int(1)});
-  Kokkos::parallel_for("MixedPoisson LinearCoefficient",policy,KOKKOS_LAMBDA (const int cell,const int pt) {
-    c(cell,pt) = 1.0 + ip_coords(cell,pt,d);
+  const int num_points = c.extent_int(1);
+
+  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
+  Kokkos::parallel_for("MixedPoisson LinearCoefficient",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) {
+    const int cell = team.league_rank();
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_points), [&] (const int pt) {
+      c(cell,pt) = 1.0 + ip_coords(cell,pt,d);
+    });
   });
 }
 

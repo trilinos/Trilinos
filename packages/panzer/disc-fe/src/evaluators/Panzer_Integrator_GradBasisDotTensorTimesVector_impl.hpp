@@ -195,12 +195,19 @@ namespace panzer
       {
         for (int dim(0); dim < numDim; ++dim)
         {
-          tmp_(cell) = 0.0;
-          for (int dim2(0); dim2 < numDim; ++dim2)
-            tmp_(cell) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
-	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
-	    field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp_(cell);
-	  });
+          // tmp_(cell) is shared by the team, so a single team thread (all of
+          // its vector lanes, to keep hierarchic Fad partitions intact)
+          // computes it, and barriers fence it from the reads.
+          team.team_barrier();
+          if (team.team_rank() == 0) {
+            tmp_(cell) = 0.0;
+            for (int dim2(0); dim2 < numDim; ++dim2)
+              tmp_(cell) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
+          }
+          team.team_barrier();
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp_(cell);
+          });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     }
@@ -250,12 +257,19 @@ namespace panzer
       {
         for (int dim(0); dim < numDim; ++dim)
         {
-          tmp(cell) = 0.0;
-          for (int dim2(0); dim2 < numDim; ++dim2)
-            tmp(cell) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
-	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
-	    tmp_field(basis) += basis_(cell, basis, qp, dim) * tmp(cell);
-	  });
+          // tmp(0) is shared by the team, so a single team thread (all of its
+          // vector lanes, to keep hierarchic Fad partitions intact) computes
+          // it, and barriers fence it from the reads.
+          team.team_barrier();
+          if (team.team_rank() == 0) {
+            tmp(0) = 0.0;
+            for (int dim2(0); dim2 < numDim; ++dim2)
+              tmp(0) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
+          }
+          team.team_barrier();
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+            tmp_field(basis) += basis_(cell, basis, qp, dim) * tmp(0);
+          });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     }

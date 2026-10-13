@@ -23,6 +23,7 @@
 
 // include evaluators here
 #include "Panzer_Integrator_GradBasisDotVector.hpp"
+#include "Panzer_Integrator_GradBasisDotTensorTimesVector.hpp"
 #include "Panzer_Integrator_DivBasisTimesScalar.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_Sum.hpp"
@@ -50,6 +51,7 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
     valid_parameters.set("HGrad Basis Order",-1,"Polynomial order of hgrad basis");
     valid_parameters.set("HDiv Basis Order",-1,"Polynomial order of hdiv basis");
     valid_parameters.set("Variable Coefficient",false,"Weight the div-div term by the COEFF_X, COEFF_Y and COEFF_Z field multipliers");
+    valid_parameters.set("Anisotropic Tensor",false,"Use the K_TENSOR field as the diffusion tensor in the (grad phi, grad q) term");
     
     params->validateParametersAndSetDefaults(valid_parameters);
   }
@@ -60,6 +62,7 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
   int grad_basis_order = params->get<int>("HDiv Basis Order");
   int integration_order = params->get<int>("Integration Order");
   variable_coefficient_ = params->get<bool>("Variable Coefficient");
+  anisotropic_tensor_ = params->get<bool>("Anisotropic Tensor");
   std::string model_id = params->get<std::string>("Model ID");
 
   // ********************
@@ -154,8 +157,18 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
-  // "diffusion" operator (\nabla \phi,\nabla q)
-  {   
+  // "diffusion" operator (\nabla \phi,\nabla q). With an anisotropic
+  // tensor this is (K\nabla \phi,\nabla q), so v = K\nabla \phi and the
+  // source is \nabla\cdot(K\nabla \phi).
+  if (anisotropic_tensor_) {
+    RCP< PHX::Evaluator<panzer::Traits> > op =
+      rcp(new panzer::Integrator_GradBasisDotTensorTimesVector<EvalT,panzer::Traits>(
+        EvaluatorStyle::EVALUATES, "RESIDUAL_PHI_DIFFUSION_OP", "GRAD_PHI",
+        *basis_phi, *ir, "K_TENSOR"));
+
+    this->template registerEvaluator<EvalT>(fm, op);
+  }
+  else {
     ParameterList p("Source Residual");
     p.set("Residual Name", "RESIDUAL_PHI_DIFFUSION_OP");
     p.set("Flux Name", "GRAD_PHI"); 

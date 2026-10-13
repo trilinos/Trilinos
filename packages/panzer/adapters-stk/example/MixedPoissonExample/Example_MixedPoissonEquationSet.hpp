@@ -55,6 +55,7 @@ public:
 
 private:
    bool variable_coefficient_;
+   bool anisotropic_tensor_;
 };
 
 }
