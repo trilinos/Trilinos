@@ -49,6 +49,7 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
     valid_parameters.set("Integration Order",-1,"Order of the integration rule");
     valid_parameters.set("HGrad Basis Order",-1,"Polynomial order of hgrad basis");
     valid_parameters.set("HDiv Basis Order",-1,"Polynomial order of hdiv basis");
+    valid_parameters.set("Variable Coefficient",false,"Weight the div-div term by the COEFF_X, COEFF_Y and COEFF_Z field multipliers");
     
     params->validateParametersAndSetDefaults(valid_parameters);
   }
@@ -58,6 +59,7 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
   int basis_order = params->get<int>("HGrad Basis Order");
   int grad_basis_order = params->get<int>("HDiv Basis Order");
   int integration_order = params->get<int>("Integration Order");
+  variable_coefficient_ = params->get<bool>("Variable Coefficient");
   std::string model_id = params->get<std::string>("Model ID");
 
   // ********************
@@ -125,13 +127,19 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   //
   // where w \in HDIV and q \in HGRAD
 
-  // "diffusion" operator (-\nabla\cdot v,-\nabla\cdot w)
+  // "diffusion" operator (-\nabla\cdot v,-\nabla\cdot w). With a variable
+  // coefficient this is (-k\nabla\cdot v,-\nabla\cdot w), where k is the
+  // product of three field multipliers, and the source is scaled by k so
+  // the exact solution is unchanged.
   {   
     string resName("RESIDUAL_GRADPHI_FIELD"),
            valName("DIV_GRADPHI_FIELD");
+    std::vector<std::string> fmNames;
+    if (variable_coefficient_)
+      fmNames = {"COEFF_X", "COEFF_Y", "COEFF_Z"};
     RCP<Evaluator<Traits>> op = rcp(new
       Integrator_DivBasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
-      resName, valName, *basis_v, *ir));
+      resName, valName, *basis_v, *ir, 1.0, fmNames));
     this->template registerEvaluator<EvalT>(fm, op);
   }
 

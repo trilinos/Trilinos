@@ -28,6 +28,7 @@
 
 #include "Example_SineSource.hpp"
 #include "Example_SineSolution.hpp"
+#include "Example_LinearCoefficient.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -123,6 +124,20 @@ buildClosureModels(const std::string& model_id,
        RCP< Evaluator<panzer::Traits> > e = 
          rcp(new Example::SineSource<EvalT,panzer::Traits>(key,*ir));
        evaluators->push_back(e);
+
+        found = true;
+      }
+      else if(type=="WEIGHTED SINE SOURCE") {
+        RCP< Evaluator<panzer::Traits> > e =
+          rcp(new Example::SineSource<EvalT,panzer::Traits>(key,*ir,true));
+        evaluators->push_back(e);
+
+        found = true;
+      }
+      else if(type=="LINEAR COEFFICIENT") {
+        RCP< Evaluator<panzer::Traits> > e =
+          rcp(new Example::LinearCoefficient<EvalT,panzer::Traits>(key,*ir,plist.get<int>("Direction")));
+        evaluators->push_back(e);
 
         found = true;
       }

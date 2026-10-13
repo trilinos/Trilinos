@@ -30,7 +30,8 @@ namespace Example {
   using panzer::Point;
   using panzer::Dim;
 
-/** A source for the curl Laplacian that results in the solution
+/** A source for the curl Laplacian that results in the solution. If
+  * weighted, the source is scaled by (1+x)(1+y)(1+z).
   */
 template<typename EvalT, typename Traits>
 class SineSource : public panzer::EvaluatorWithBaseImpl<Traits>,
@@ -38,7 +39,8 @@ class SineSource : public panzer::EvaluatorWithBaseImpl<Traits>,
 
 public:
     SineSource(const std::string & name,
-                       const panzer::IntegrationRule & ir);
+                       const panzer::IntegrationRule & ir,
+                       const bool weighted = false);
                                                                         
     void postRegistrationSetup(typename Traits::SetupData d,           
                                PHX::FieldManager<Traits>& fm);        
@@ -52,6 +54,7 @@ private:
   // Simulation source
   PHX::MDField<ScalarT,Cell,Point> source;
   int ir_degree, ir_index;
+  bool weighted;
 };
 
 }

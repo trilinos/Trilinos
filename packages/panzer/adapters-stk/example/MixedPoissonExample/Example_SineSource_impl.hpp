@@ -23,7 +23,9 @@ namespace Example {
 //**********************************************************************
 template <typename EvalT,typename Traits>
 SineSource<EvalT,Traits>::SineSource(const std::string & name,
-                                         const panzer::IntegrationRule & ir)
+                                         const panzer::IntegrationRule & ir,
+                                         const bool in_weighted)
+  : weighted(in_weighted)
 {
   using Teuchos::RCP;
 
@@ -51,10 +53,12 @@ template<typename Scalar>
 class SineSourceFunctor {
   PHX::View<Scalar**> source;           // source at ip
   PHX::View<const double***> ip_coords; // coordinates
+  bool weighted;                        // scale by (1+x)(1+y)(1+z)
 public:
   SineSourceFunctor(const PHX::View<Scalar**>& in_source,
-		    const PHX::View<const double***>& in_ip_coords)
-    : source(in_source), ip_coords(in_ip_coords) {}
+                    const PHX::View<const double***>& in_ip_coords,
+                    const bool in_weighted)
+    : source(in_source), ip_coords(in_ip_coords), weighted(in_weighted) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) const
@@ -66,6 +70,8 @@ public:
       const double & y = ip_coords(cell,pt,1);
       const double & z = ip_coords(cell,pt,2);
       source(cell,pt) = -12.0*M_PI*M_PI*std::sin(2.0*M_PI*x)*std::sin(2*M_PI*y)*std::sin(2.0*M_PI*z);
+      if (weighted)
+        source(cell,pt) *= (1.0+x)*(1.0+y)*(1.0+z);
     });
   }
 };
@@ -75,7 +81,8 @@ template <typename EvalT,typename Traits>
 void SineSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   Example::SineSourceFunctor<ScalarT> ssf(source.get_static_view(),
-					  this->wda(workset).int_rules[ir_index]->ip_coordinates.get_static_view());
+                                          this->wda(workset).int_rules[ir_index]->ip_coordinates.get_static_view(),
+                                          weighted);
 
   auto policy = panzer::HP::inst().teamPolicy<ScalarT>(workset.num_cells);
 
