@@ -108,7 +108,7 @@ TEST(TransferUtil, tet10_composite_findParamCoords)
 
   double parametricDistanceInside = 0.0;
   double parametricDistanceOnEdge = 1.0;
-  double parametricDistanceOutside = 222.0;
+  double parametricDistanceOutside = 12.0;
 
   const bool useCompositeTet10 = true;
   stk::unit_test_util::test_find_parametric_coordinates(meshDesc, stk::topology::ELEM_RANK, 1, create_MasterElementProvider(useCompositeTet10), pointInside, parametricDistanceInside);
