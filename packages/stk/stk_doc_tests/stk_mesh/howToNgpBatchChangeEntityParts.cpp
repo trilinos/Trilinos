@@ -109,12 +109,9 @@ void populate_device_entity_view(DeviceEntityViewType& deviceEntityView, const s
 NGP_TEST(StkMeshHowTo, NgpMeshBatchChangeEntityParts)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
-  const int numProcs = stk::parallel_machine_size(communicator);
   const int myProc = stk::parallel_machine_rank(communicator);
-
-//The function ngpMesh.update_bulk_data() (called below) doesn't support
-//MPI-parallel yet (as of 9/28/2026). We plan to implement soon.
-  if(numProcs > 1) { GTEST_SKIP(); }
+  const int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs > 2) { GTEST_SKIP(); }
 
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
