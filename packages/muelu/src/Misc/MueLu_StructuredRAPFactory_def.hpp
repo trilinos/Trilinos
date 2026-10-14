@@ -291,11 +291,11 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
   const LO interiorNode = interior[2] * fineNodes[0] * fineNodes[1] +
                           interior[1] * fineNodes[0] + interior[0];
 
-  using device_type     = typename Node::device_type;
-  using execution_space = typename device_type::execution_space;
-  const auto localA      = A.getLocalMatrixDevice();
-  const auto rowLocalMap = rowMap->getLocalMap();
-  const auto colLocalMap = colMap->getLocalMap();
+  using device_type          = typename Node::device_type;
+  using execution_space      = typename device_type::execution_space;
+  const auto localA          = A.getLocalMatrixDevice();
+  const auto rowLocalMap     = rowMap->getLocalMap();
+  const auto colLocalMap     = colMap->getLocalMap();
   const size_t maxRowEntries = A.getLocalMaxNumRowEntries();
   Kokkos::View<LO**, Kokkos::LayoutRight, device_type> ownedColumns(
       Kokkos::ViewAllocateWithoutInitializing("StructuredRAP: detected stencil columns"),
@@ -311,15 +311,15 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
         "StructuredRAP: detect fine stencil",
         Kokkos::RangePolicy<execution_space>(0, dofsPerNode),
         KOKKOS_LAMBDA(const LO rowDof) {
-          const LO row       = interiorNode * dofsPerNode + rowDof;
-          const size_t begin = localA.graph.row_map(row);
-          const size_t end   = localA.graph.row_map(row + 1);
+          const LO row               = interiorNode * dofsPerNode + rowDof;
+          const size_t begin         = localA.graph.row_map(row);
+          const size_t end           = localA.graph.row_map(row + 1);
           detectedRowLengths(rowDof) = end - begin;
           if (begin == end)
             Kokkos::atomic_exchange(&invalidStencil(), 1);
           for (size_t entry = begin; entry < end; ++entry) {
-            const GO globalColumn = colLocalMap.getGlobalElement(localA.graph.entries(entry));
-            const LO ownedColumn  = rowLocalMap.getLocalElement(globalColumn);
+            const GO globalColumn               = colLocalMap.getGlobalElement(localA.graph.entries(entry));
+            const LO ownedColumn                = rowLocalMap.getLocalElement(globalColumn);
             ownedColumns(rowDof, entry - begin) = ownedColumn;
             if (ownedColumn == Teuchos::OrdinalTraits<LO>::invalid())
               Kokkos::atomic_exchange(&invalidStencil(), 1);
@@ -355,8 +355,8 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
       const size_t rowLength = detectedRowLengthsHost(rowDof);
       for (size_t entry = 0; entry < rowLength; ++entry) {
         const LO ownedColumn = ownedColumnsHost(rowDof, entry);
-        const LO columnNode = ownedColumn / dofsPerNode;
-        const LO columnDof  = ownedColumn % dofsPerNode;
+        const LO columnNode  = ownedColumn / dofsPerNode;
+        const LO columnDof   = ownedColumn % dofsPerNode;
         LO columnX, columnY, columnZ;
         StructuredRAPFactoryDetails::getLocalNodeIndices(
             columnNode, fineNodes, columnX, columnY, columnZ);
@@ -398,8 +398,8 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
       entryOffsetData[3 * entry]     = stencil.entries[entry].offset.x;
       entryOffsetData[3 * entry + 1] = stencil.entries[entry].offset.y;
       entryOffsetData[3 * entry + 2] = stencil.entries[entry].offset.z;
-      entryData[2 * entry]     = stencil.entries[entry].rowDof;
-      entryData[2 * entry + 1] = stencil.entries[entry].columnDof;
+      entryData[2 * entry]           = stencil.entries[entry].rowDof;
+      entryData[2 * entry + 1]       = stencil.entries[entry].columnDof;
     }
   }
 
@@ -712,7 +712,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
 
   const bool debug = Behavior::debug();
   if (debug) {
-    const auto rowLocalMap = rowMap->getLocalMap();
+    const auto rowLocalMap  = rowMap->getLocalMap();
     size_t invalidLocalRows = 0;
     Kokkos::parallel_reduce(
         "StructuredRAP: validate local rows", range_policy(executionSpace, 0, localNumRows),
@@ -844,9 +844,9 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
     executionSpace.fence("StructuredRAP: column map GIDs ready");
 
     typename Map::global_indices_array_device_type constColMapGids = colMapGids;
-    colMap = MapFactory::Build(
-        rowMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-        constColMapGids, rowMap->getIndexBase(), comm);
+    colMap                                                         = MapFactory::Build(
+                                                                rowMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                                constColMapGids, rowMap->getIndexBase(), comm);
   }
 
   // For each low/interior/high boundary combination, precompute the affine
@@ -858,7 +858,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
   Kokkos::Array<std::int64_t, numBoundaryClasses> prefixX{};
   Kokkos::Array<std::int64_t, numBoundaryClasses> prefixY{};
   Kokkos::Array<std::int64_t, numBoundaryClasses> prefixZ{};
-  size_t localNnz = 0;
+  size_t localNnz              = 0;
   const int procCoordinates[3] = {myProcX, myProcY, myProcZ};
   for (size_t stencil = 0; stencil < stencilSize; ++stencil) {
     const StencilOffset& offset = stencilOffsets[stencil];
@@ -881,9 +881,10 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
     for (size_t boundaryClass = 0; boundaryClass < numBoundaryClasses; ++boundaryClass) {
       std::int64_t coordinates[3];
       for (int dim = 0; dim < 3; ++dim) {
-        const bool low  = boundaryClass & (size_t(1) << (2 * dim));
-        const bool high = boundaryClass & (size_t(2) << (2 * dim));
-        coordinates[dim] = low ? 0 : high ? static_cast<std::int64_t>(localNodes[dim] - 1) : 1;
+        const bool low   = boundaryClass & (size_t(1) << (2 * dim));
+        const bool high  = boundaryClass & (size_t(2) << (2 * dim));
+        coordinates[dim] = low ? 0 : high ? static_cast<std::int64_t>(localNodes[dim] - 1)
+                                          : 1;
       }
       std::int64_t* coefficients[3] = {
           &prefixX[boundaryClass], &prefixY[boundaryClass], &prefixZ[boundaryClass]};
@@ -912,7 +913,8 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
 
   entries_type colind(
       Kokkos::ViewAllocateWithoutInitializing(
-          "StructuredRAP: graph column indices"), localNnz);
+          "StructuredRAP: graph column indices"),
+      localNnz);
 
   const LO invalidLocalOrdinal = Teuchos::OrdinalTraits<LO>::invalid();
   Kokkos::View<int, device_type> invalidColumn;
@@ -934,10 +936,10 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
               (y == 0 ? size_t(4) : 0) | (y + 1 == localNodes[1] ? size_t(8) : 0) |
               (z == 0 ? size_t(16) : 0) | (z + 1 == localNodes[2] ? size_t(32) : 0);
           const size_t nodeRowStart = static_cast<size_t>(
-              prefixConstant[boundaryClass] + prefixX[boundaryClass] * static_cast<std::int64_t>(x) +
-              prefixY[boundaryClass] * static_cast<std::int64_t>(y) +
-              prefixZ[boundaryClass] * static_cast<std::int64_t>(z)) *
-                                          rowsPerNode * rowsPerNode;
+                                          prefixConstant[boundaryClass] + prefixX[boundaryClass] * static_cast<std::int64_t>(x) +
+                                          prefixY[boundaryClass] * static_cast<std::int64_t>(y) +
+                                          prefixZ[boundaryClass] * static_cast<std::int64_t>(z)) *
+                                      rowsPerNode * rowsPerNode;
           size_t columnOffset = 0;
           const bool isInterior =
               x > 0 && x + 1 < localNodes[0] &&
@@ -945,7 +947,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
               (numDimensions < 3 || (z > 0 && z + 1 < localNodes[2]));
 
           if (isInterior) {
-            const size_t firstRow = localNodeIndex * rowsPerNode;
+            const size_t firstRow  = localNodeIndex * rowsPerNode;
             const size_t rowLength = stencilSize * rowsPerNode;
             for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof)
               rowptr(firstRow + rowDof) = nodeRowStart + rowDof * rowLength;
@@ -1024,10 +1026,10 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
             nodeColumns[insertion] = value;
           }
 
-          const size_t firstRow = localNodeIndex * rowsPerNode;
+          const size_t firstRow  = localNodeIndex * rowsPerNode;
           const size_t rowLength = columnOffset;
           for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof) {
-            const size_t rowStart = nodeRowStart + rowDof * rowLength;
+            const size_t rowStart     = nodeRowStart + rowDof * rowLength;
             rowptr(firstRow + rowDof) = rowStart;
             for (size_t entry = 0; entry < columnOffset; ++entry)
               colind(rowStart + entry) = nodeColumns[entry];
@@ -1068,7 +1070,8 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
   using values_type = typename Matrix::local_matrix_type::values_type;
   values_type values(
       Kokkos::ViewAllocateWithoutInitializing(
-          "StructuredRAP: matrix values"), localNnz);
+          "StructuredRAP: matrix values"),
+      localNnz);
   Ac = MatrixFactory::Build(graph, values, paramList);
 }
 
@@ -1138,8 +1141,8 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
         tripleProductImplementation != "xpetra" && tripleProductImplementation != "structured",
         Exceptions::RuntimeError,
         "StructuredRAPFactory: unknown value \"" << tripleProductImplementation
-                                                   << "\" for \"rap: triple product implementation\". "
-                                                      "Valid values are \"xpetra\" and \"structured\".");
+                                                 << "\" for \"rap: triple product implementation\". "
+                                                    "Valid values are \"xpetra\" and \"structured\".");
 
     const RCP<const FactoryBase> coarseDimensionsFactory =
         GetStructuredMetadataFactory("lCoarseNodesPerDim");
@@ -1162,7 +1165,6 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
             : Get<Teuchos::Array<LocalOrdinal>>(fineLevel, "lNodesPerDim");
     Teuchos::Array<int> structuredCoarseningRate;
     if (tripleProductImplementation == "structured") {
-
       // lCoarseNodesPerDim and structuredInterpolationOrder are produced by
       // StructuredAggregationFactory. Read the rate from that same producer
       // so the structured RAP path uses the existing

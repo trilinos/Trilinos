@@ -198,10 +198,10 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 computeStructuredRAP(
     const StructuredKernelData<Scalar, LocalOrdinal, GlobalOrdinal, Node>& data,
     const int coarseningRate) {
-  using SC        = Scalar;
-  using LO        = LocalOrdinal;
-  using GO        = GlobalOrdinal;
-  using NO        = Node;
+  using SC         = Scalar;
+  using LO         = LocalOrdinal;
+  using GO         = GlobalOrdinal;
+  using NO         = Node;
   using Matrix     = Xpetra::Matrix<SC, LO, GO, NO>;
   using RAPFactory = MueLu::StructuredRAPFactory<SC, LO, GO, NO>;
 
@@ -406,21 +406,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       "Elasticity3D", 7, 6, 5, 2, out, success);
 }
 
-#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                         \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(                               \
-      StructuredKernel, ConstantLaplace1DMatchesXpetra,              \
-      Scalar, LO, GO, Node)                                          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(                               \
-      StructuredKernel, ConstantLaplace2DMatchesXpetra,              \
-      Scalar, LO, GO, Node)                                          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(                               \
-      StructuredKernel, ConstantLaplace3DMatchesXpetra,              \
-      Scalar, LO, GO, Node)                                          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(                               \
-      StructuredKernel, ConstantElasticity2DMatchesXpetra,           \
-      Scalar, LO, GO, Node)                                          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(                               \
-      StructuredKernel, ConstantElasticity3DMatchesXpetra,           \
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)              \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(                    \
+      StructuredKernel, ConstantLaplace1DMatchesXpetra,    \
+      Scalar, LO, GO, Node)                                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(                    \
+      StructuredKernel, ConstantLaplace2DMatchesXpetra,    \
+      Scalar, LO, GO, Node)                                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(                    \
+      StructuredKernel, ConstantLaplace3DMatchesXpetra,    \
+      Scalar, LO, GO, Node)                                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(                    \
+      StructuredKernel, ConstantElasticity2DMatchesXpetra, \
+      Scalar, LO, GO, Node)                                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(                    \
+      StructuredKernel, ConstantElasticity3DMatchesXpetra, \
       Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>

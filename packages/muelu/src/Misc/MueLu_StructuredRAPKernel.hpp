@@ -58,21 +58,21 @@ class StructuredRAPKernel {
   // Keep the midpoint tie on the lower coarse node, including the short end interval.
   KOKKOS_INLINE_FUNCTION
   static Kokkos::Array<LO, 2> aggregateBounds(LO coarse, LO numFine,
-                                            LO numCoarse, LO rate) {
-    const LO anchor = coarseAnchor(coarse, numFine, numCoarse, rate);
+                                              LO numCoarse, LO rate) {
+    const LO anchor   = coarseAnchor(coarse, numFine, numCoarse, rate);
     const LO previous = coarse == 0 ? LO(0) : coarseAnchor(coarse - 1, numFine, numCoarse, rate);
-    const LO next = coarse + 1 == numCoarse ? numFine - 1
-                                          : coarseAnchor(coarse + 1, numFine, numCoarse, rate);
+    const LO next     = coarse + 1 == numCoarse ? numFine - 1
+                                                : coarseAnchor(coarse + 1, numFine, numCoarse, rate);
     return {{coarse == 0 ? LO(0) : previous + (anchor - previous) / 2 + 1,
              coarse + 1 == numCoarse ? numFine - 1 : anchor + (next - anchor) / 2}};
   }
 
   static size_t boundaryClass(LO coarse, LO numCoarse,
-                             size_t leftDepth, size_t rightDepth) {
-    const size_t left = static_cast<size_t>(coarse);
+                              size_t leftDepth, size_t rightDepth) {
+    const size_t left  = static_cast<size_t>(coarse);
     const size_t right = static_cast<size_t>(numCoarse - coarse - 1);
     return left < leftDepth ? left
-                           : (right < rightDepth ? leftDepth + rightDepth - right : leftDepth);
+                            : (right < rightDepth ? leftDepth + rightDepth - right : leftDepth);
   }
 
   // Keep host mirrors alive until the preparation fence, allowing asynchronous copies.
@@ -82,8 +82,8 @@ class StructuredRAPKernel {
     typename View::host_mirror_type host;
 
     PlanArray(const char* label, size_t size)
-        : device(Kokkos::ViewAllocateWithoutInitializing(label), size),
-          host(Kokkos::create_mirror_view(device)) {}
+      : device(Kokkos::ViewAllocateWithoutInitializing(label), size)
+      , host(Kokkos::create_mirror_view(device)) {}
 
     View copyToDevice(const typename device_type::execution_space& executionSpace) const {
       Kokkos::deep_copy(executionSpace, device, host);
@@ -94,9 +94,9 @@ class StructuredRAPKernel {
   struct AxisClassMap {
     lo_view boundaryClasses;
     LO numCoordinates = 0;
-    LO leftCount = 0;
-    LO rightCount = 0;
-    LO interiorClass = 0;
+    LO leftCount      = 0;
+    LO rightCount     = 0;
+    LO interiorClass  = 0;
 
     KOKKOS_INLINE_FUNCTION
     LO operator()(const LO coordinate) const {
@@ -124,7 +124,7 @@ class StructuredRAPKernel {
     if (endRate == 0)
       endRate = rate;
 
-    LocalOrdinal coarse = fine / rate;
+    LocalOrdinal coarse          = fine / rate;
     const LocalOrdinal remainder = fine % rate;
     const LocalOrdinal activeRate =
         fine < numFine - endRate ? rate : endRate;
@@ -140,10 +140,10 @@ class StructuredRAPKernel {
       const Kokkos::Array<LO, 3>& coarseNodes,
       const Kokkos::Array<LO, 3>& rate) {
     const LO fineNode = fineRow / dofsPerNode;
-    const LO fineX = fineNode % fineNodes[0];
-    const LO fineYZ = fineNode / fineNodes[0];
-    const LO coarseX = constantInterpolationCoarse(
-        fineX, fineNodes[0], rate[0]);
+    const LO fineX    = fineNode % fineNodes[0];
+    const LO fineYZ   = fineNode / fineNodes[0];
+    const LO coarseX  = constantInterpolationCoarse(
+         fineX, fineNodes[0], rate[0]);
     const LO coarseY = constantInterpolationCoarse(
         fineYZ % fineNodes[1], fineNodes[1], rate[1]);
     const LO coarseZ = constantInterpolationCoarse(
@@ -153,7 +153,8 @@ class StructuredRAPKernel {
          static_cast<size_t>(coarseNodes[0]) *
              (static_cast<size_t>(coarseY) +
               static_cast<size_t>(coarseNodes[1]) * coarseZ)) *
-            dofsPerNode + fineRow % dofsPerNode);
+            dofsPerNode +
+        fineRow % dofsPerNode);
   }
 
  public:
@@ -167,25 +168,25 @@ class StructuredRAPKernel {
                       const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
                       const Teuchos::Array<int>& structuredCoarseningRate,
                       const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
-    using SC              = Scalar;
-    using execution_space = typename device_type::execution_space;
-    using range_policy    = Kokkos::RangePolicy<execution_space,
-                                                Kokkos::IndexType<size_t>>;
+    using SC                      = Scalar;
+    using execution_space         = typename device_type::execution_space;
+    using range_policy            = Kokkos::RangePolicy<execution_space,
+                                             Kokkos::IndexType<size_t>>;
     const std::string timerPrefix = "MueLu: StructuredRAPKernel: ";
 
     const int numDimensions = fineStencil.numDimensions;
-    const LO dofsPerNode     = fineStencil.dofsPerNode;
+    const LO dofsPerNode    = fineStencil.dofsPerNode;
 
     Kokkos::Array<LO, 3> localFineNodes{{Teuchos::as<LO>(1), Teuchos::as<LO>(1), Teuchos::as<LO>(1)}};
     Kokkos::Array<LO, 3> localCoarseNodes{{Teuchos::as<LO>(1), Teuchos::as<LO>(1), Teuchos::as<LO>(1)}};
     Kokkos::Array<LO, 3> coarseningRate{{Teuchos::as<LO>(1), Teuchos::as<LO>(1), Teuchos::as<LO>(1)}};
     for (int dim = 0; dim < numDimensions; ++dim) {
-      localFineNodes[dim] = lFineNodesPerDim[dim];
+      localFineNodes[dim]   = lFineNodesPerDim[dim];
       localCoarseNodes[dim] = lCoarseNodesPerDim[dim];
-      coarseningRate[dim] = static_cast<LO>(
+      coarseningRate[dim]   = static_cast<LO>(
           structuredCoarseningRate.size() == 1
-              ? structuredCoarseningRate[0]
-              : structuredCoarseningRate[dim]);
+                ? structuredCoarseningRate[0]
+                : structuredCoarseningRate[dim]);
     }
 
     execution_space executionSpace;
@@ -224,7 +225,7 @@ class StructuredRAPKernel {
       throw std::runtime_error(
           "StructuredRAPKernel supports only 1D, 2D, or 3D order-zero structured RAP.");
 
-    const SC zero  = Teuchos::ScalarTraits<SC>::zero();
+    const SC zero     = Teuchos::ScalarTraits<SC>::zero();
     const auto localA = A.getLocalMatrixDevice();
     auto localAc      = Ac.getLocalMatrixDevice();
 
@@ -243,14 +244,16 @@ class StructuredRAPKernel {
       const auto remoteLids = graphImporter->getRemoteLIDs();
       lo_view remoteLidsDevice(
           Kokkos::ViewAllocateWithoutInitializing(
-              "StructuredRAP: remote fine LIDs"), remoteLids.size());
+              "StructuredRAP: remote fine LIDs"),
+          remoteLids.size());
       auto remoteLidsMirror = Kokkos::create_mirror_view(remoteLidsDevice);
       for (size_t i = 0; i < static_cast<size_t>(remoteLids.size()); ++i)
         remoteLidsMirror(i) = remoteLids[i];
       Kokkos::deep_copy(executionSpace, remoteLidsDevice, remoteLidsMirror);
       Kokkos::View<GlobalOrdinal*, device_type> remoteFineGidsDevice(
           Kokkos::ViewAllocateWithoutInitializing(
-              "StructuredRAP: remote fine GIDs"), remoteLids.size());
+              "StructuredRAP: remote fine GIDs"),
+          remoteLids.size());
       const auto fineColumnMap = A.getColMap()->getLocalMap();
       Kokkos::parallel_for(
           "StructuredRAP: map remote fine GIDs",
@@ -279,19 +282,19 @@ class StructuredRAPKernel {
       auto ownedData = ownedCoarseGids->getLocalViewDevice(
           Tpetra::Access::OverwriteAll);
       const auto coarseColumnMap = P.getColMap()->getLocalMap();
-      const auto exportLidsHost = remoteImporter->getExportLIDs();
+      const auto exportLidsHost  = remoteImporter->getExportLIDs();
       PlanArray<lo_view> exportLids(
           "StructuredRAP: halo export LIDs", exportLidsHost.size());
       for (size_t i = 0; i < static_cast<size_t>(exportLidsHost.size()); ++i)
         exportLids.host(i) = exportLidsHost[i];
-      const auto exportLidsDevice = exportLids.copyToDevice(executionSpace);
+      const auto exportLidsDevice     = exportLids.copyToDevice(executionSpace);
       size_t invalidInterpolationRows = 0;
       Kokkos::parallel_reduce(
           "StructuredRAP: build halo coarse target GIDs",
           range_policy(executionSpace, 0,
                        static_cast<size_t>(exportLidsHost.size())),
           KOKKOS_LAMBDA(const size_t exportIndex, size_t& invalid) {
-            const LO row = exportLidsDevice(exportIndex);
+            const LO row          = exportLidsDevice(exportIndex);
             const size_t rowBegin = localP.graph.row_map(row);
             const size_t rowEnd   = localP.graph.row_map(row + 1);
             if (rowEnd - rowBegin != size_t(1)) {
@@ -315,10 +318,9 @@ class StructuredRAPKernel {
     }
 
     const size_t numFineStencilOffsets = fineStencil.stencilOffsets.size();
-    Kokkos::Array<int, 3> minStencilOffset{{
-        fineStencil.stencilOffsets[0].x,
-        fineStencil.stencilOffsets[0].y,
-        fineStencil.stencilOffsets[0].z}};
+    Kokkos::Array<int, 3> minStencilOffset{{fineStencil.stencilOffsets[0].x,
+                                            fineStencil.stencilOffsets[0].y,
+                                            fineStencil.stencilOffsets[0].z}};
     Kokkos::Array<int, 3> maxStencilOffset = minStencilOffset;
     for (size_t offset = 1; offset < numFineStencilOffsets; ++offset) {
       const int values[3] = {fineStencil.stencilOffsets[offset].x,
@@ -379,14 +381,14 @@ class StructuredRAPKernel {
         LO fineEnd;
       };
       auto buildAxisAggregatePlanClasses = [&](
-          const LO numFine, const LO numCoarse, const LO rate,
-          const int minOffset, const int maxOffset,
-          const size_t leftDepth, const size_t rightDepth,
-          std::vector<AxisAggregatePlanClass>& classes) {
+                                               const LO numFine, const LO numCoarse, const LO rate,
+                                               const int minOffset, const int maxOffset,
+                                               const size_t leftDepth, const size_t rightDepth,
+                                               std::vector<AxisAggregatePlanClass>& classes) {
         std::vector<std::vector<int>> aggregateSignatures;
         std::vector<int> aggregateSignature;
         auto aggregateClass = [&](const LO coarse) {
-          const auto bounds = aggregateBounds(coarse, numFine, numCoarse, rate);
+          const auto bounds  = aggregateBounds(coarse, numFine, numCoarse, rate);
           const LO fineBegin = bounds[0], fineEnd = bounds[1];
           aggregateSignature.clear();
           aggregateSignature.push_back(static_cast<int>(
@@ -398,11 +400,12 @@ class StructuredRAPKernel {
                 fineCoarse, numCoarse, leftDepth, rightDepth)));
             for (int offset = minOffset; offset <= maxOffset; ++offset) {
               const LO neighbor = fine + static_cast<LO>(offset);
-              const bool valid = neighbor >= LO(0) && neighbor < numFine;
+              const bool valid  = neighbor >= LO(0) && neighbor < numFine;
               aggregateSignature.push_back(valid);
               aggregateSignature.push_back(valid ? static_cast<int>(
-                  constantInterpolationCoarse(neighbor, numFine, rate) -
-                  fineCoarse) : 0);
+                                                       constantInterpolationCoarse(neighbor, numFine, rate) -
+                                                       fineCoarse)
+                                                 : 0);
             }
           }
           const auto found = std::find(
@@ -416,7 +419,7 @@ class StructuredRAPKernel {
         };
 
         AxisClassMap result;
-        result.numCoordinates = numCoarse;
+        result.numCoordinates  = numCoarse;
         const LO explicitLimit = static_cast<LO>(
             2 * (leftDepth + rightDepth + size_t(3)));
         std::vector<LO> leftClasses, rightClasses;
@@ -427,7 +430,7 @@ class StructuredRAPKernel {
             leftClasses.push_back(aggregateClass(coarse));
         } else {
           const LO representative = numCoarse / LO(2);
-          result.interiorClass = aggregateClass(representative);
+          result.interiorClass    = aggregateClass(representative);
           for (LO coarse = 0; coarse < representative; ++coarse) {
             const LO id = aggregateClass(coarse);
             if (id == result.interiorClass)
@@ -441,7 +444,7 @@ class StructuredRAPKernel {
             rightClasses.push_back(id);
           }
           std::reverse(rightClasses.begin(), rightClasses.end());
-          result.leftCount = static_cast<LO>(leftClasses.size());
+          result.leftCount  = static_cast<LO>(leftClasses.size());
           result.rightCount = static_cast<LO>(rightClasses.size());
         }
 
@@ -449,7 +452,7 @@ class StructuredRAPKernel {
             Kokkos::ViewAllocateWithoutInitializing(
                 "StructuredRAP: compact axis aggregate classes"),
             leftClasses.size() + rightClasses.size());
-        auto host = Kokkos::create_mirror_view(result.boundaryClasses);
+        auto host    = Kokkos::create_mirror_view(result.boundaryClasses);
         size_t entry = 0;
         for (const LO id : leftClasses)
           host(entry++) = id;
@@ -485,20 +488,20 @@ class StructuredRAPKernel {
       };
       std::vector<PendingContribution> pendingContributions;
       for (size_t zClass = 0; zClass < numAggregatePlanClasses[2]; ++zClass) {
-        const auto& zAggregate = aggregatePlanClasses[2][zClass];
-        const LO coarseZ = zAggregate.representativeCoarse;
+        const auto& zAggregate  = aggregatePlanClasses[2][zClass];
+        const LO coarseZ        = zAggregate.representativeCoarse;
         const size_t fineZBegin = static_cast<size_t>(zAggregate.fineBegin);
-        const size_t fineZEnd = static_cast<size_t>(zAggregate.fineEnd);
+        const size_t fineZEnd   = static_cast<size_t>(zAggregate.fineEnd);
         for (size_t yClass = 0; yClass < numAggregatePlanClasses[1]; ++yClass) {
-          const auto& yAggregate = aggregatePlanClasses[1][yClass];
-          const LO coarseY = yAggregate.representativeCoarse;
+          const auto& yAggregate  = aggregatePlanClasses[1][yClass];
+          const LO coarseY        = yAggregate.representativeCoarse;
           const size_t fineYBegin = static_cast<size_t>(yAggregate.fineBegin);
-          const size_t fineYEnd = static_cast<size_t>(yAggregate.fineEnd);
+          const size_t fineYEnd   = static_cast<size_t>(yAggregate.fineEnd);
           for (size_t xClass = 0; xClass < numAggregatePlanClasses[0]; ++xClass) {
-            const auto& xAggregate = aggregatePlanClasses[0][xClass];
-            const LO coarseX = xAggregate.representativeCoarse;
+            const auto& xAggregate  = aggregatePlanClasses[0][xClass];
+            const LO coarseX        = xAggregate.representativeCoarse;
             const size_t fineXBegin = static_cast<size_t>(xAggregate.fineBegin);
-            const size_t fineXEnd = static_cast<size_t>(xAggregate.fineEnd);
+            const size_t fineXEnd   = static_cast<size_t>(xAggregate.fineEnd);
             const size_t coarseNode =
                 static_cast<size_t>(coarseX) +
                 static_cast<size_t>(localCoarseNodes[0]) *
@@ -506,14 +509,17 @@ class StructuredRAPKernel {
                      static_cast<size_t>(localCoarseNodes[1]) * coarseZ);
             const size_t firstFineNode =
                 fineXBegin + static_cast<size_t>(localFineNodes[0]) *
-                    (fineYBegin + static_cast<size_t>(localFineNodes[1]) * fineZBegin);
+                                 (fineYBegin + static_cast<size_t>(localFineNodes[1]) * fineZBegin);
             for (size_t rowDof = 0; rowDof < numDofs; ++rowDof) {
               const size_t reverseRow =
                   ((zClass * numAggregatePlanClasses[1] + yClass) *
-                       numAggregatePlanClasses[0] + xClass) * numDofs + rowDof;
-              const size_t acRow = coarseNode * numDofs + rowDof;
+                       numAggregatePlanClasses[0] +
+                   xClass) *
+                      numDofs +
+                  rowDof;
+              const size_t acRow      = coarseNode * numDofs + rowDof;
               const size_t acRowBegin = acRowMapHost(acRow);
-              const size_t acRowEnd = acRowMapHost(acRow + 1);
+              const size_t acRowEnd   = acRowMapHost(acRow + 1);
               const size_t firstAValue =
                   aRowMapHost(firstFineNode * numDofs + rowDof);
               for (size_t fineZ = fineZBegin; fineZ <= fineZEnd; ++fineZ) {
@@ -521,7 +527,7 @@ class StructuredRAPKernel {
                   for (size_t fineX = fineXBegin; fineX <= fineXEnd; ++fineX) {
                     const size_t sourceFineNode =
                         fineX + static_cast<size_t>(localFineNodes[0]) *
-                            (fineY + static_cast<size_t>(localFineNodes[1]) * fineZ);
+                                    (fineY + static_cast<size_t>(localFineNodes[1]) * fineZ);
                     const size_t aRowBegin =
                         aRowMapHost(sourceFineNode * numDofs + rowDof);
                     const size_t aRowEnd =
@@ -558,19 +564,18 @@ class StructuredRAPKernel {
           Kokkos::ViewAllocateWithoutInitializing(
               "StructuredRAP: plan target columns"),
           planFineColumns.size());
-      const auto fineColumnMap = A.getColMap()->getLocalMap();
-      const auto fineRowMap = A.getRowMap()->getLocalMap();
-      const auto coarseRowMap = Ac.getRowMap()->getLocalMap();
+      const auto fineColumnMap   = A.getColMap()->getLocalMap();
+      const auto fineRowMap      = A.getRowMap()->getLocalMap();
+      const auto coarseRowMap    = Ac.getRowMap()->getLocalMap();
       const auto coarseColumnMap = Ac.getColMap()->getLocalMap();
-      const LO invalid = Teuchos::OrdinalTraits<LO>::invalid();
-      size_t invalidTargets = 0;
+      const LO invalid           = Teuchos::OrdinalTraits<LO>::invalid();
+      size_t invalidTargets      = 0;
       if (distributed) {
         const auto remoteFineLocalMap = remoteFineMap->getLocalMap();
-        const auto remoteCoarseData = remoteCoarseGids->getLocalViewDevice(
-            Tpetra::Access::ReadOnly);
+        const auto remoteCoarseData   = remoteCoarseGids->getLocalViewDevice(
+              Tpetra::Access::ReadOnly);
         Kokkos::parallel_reduce(
-            "StructuredRAP: map plan columns", range_policy(
-                executionSpace, 0, planFineColumns.size()),
+            "StructuredRAP: map plan columns", range_policy(executionSpace, 0, planFineColumns.size()),
             KOKKOS_LAMBDA(const size_t column, size_t& invalidCount) {
               const GlobalOrdinal fineGid = fineColumnMap.getGlobalElement(
                   fineColumnsDevice(column));
@@ -594,11 +599,11 @@ class StructuredRAPKernel {
                 ++invalidCount;
               else
                 targetColumnsDevice(column) = target;
-            }, invalidTargets);
+            },
+            invalidTargets);
       } else {
         Kokkos::parallel_reduce(
-            "StructuredRAP: map plan columns", range_policy(
-                executionSpace, 0, planFineColumns.size()),
+            "StructuredRAP: map plan columns", range_policy(executionSpace, 0, planFineColumns.size()),
             KOKKOS_LAMBDA(const size_t column, size_t& invalidCount) {
               const GlobalOrdinal fineGid = fineColumnMap.getGlobalElement(
                   fineColumnsDevice(column));
@@ -616,7 +621,8 @@ class StructuredRAPKernel {
                 ++invalidCount;
               else
                 targetColumnsDevice(column) = target;
-            }, invalidTargets);
+            },
+            invalidTargets);
       }
       TEUCHOS_TEST_FOR_EXCEPTION(
           invalidTargets != 0, std::runtime_error,
@@ -624,9 +630,10 @@ class StructuredRAPKernel {
       const auto targetColumnsHost = Kokkos::create_mirror_view_and_copy(
           Kokkos::HostSpace(), targetColumnsDevice);
       for (const auto& contribution : pendingContributions) {
-        const size_t column = static_cast<size_t>(std::lower_bound(
-            planFineColumns.begin(), planFineColumns.end(),
-            contribution.fineColumn) - planFineColumns.begin());
+        const size_t column   = static_cast<size_t>(std::lower_bound(
+                                                        planFineColumns.begin(), planFineColumns.end(),
+                                                        contribution.fineColumn) -
+                                                  planFineColumns.begin());
         const LO targetColumn = targetColumnsHost(column);
         for (size_t acEntry = contribution.acRowBegin;
              acEntry < contribution.acRowEnd; ++acEntry) {
@@ -658,17 +665,17 @@ class StructuredRAPKernel {
       for (size_t bucket = 0; bucket < reverseBucketCount; ++bucket) {
         offsets.host(bucket) = contribution;
         for (const auto& entry : reverseBuckets[bucket]) {
-          fineNodeOffsets.host(contribution) = entry.fineNodeOffset;
-          aRowEntryOffsets.host(contribution) = entry.aRowEntryOffset;
+          fineNodeOffsets.host(contribution)     = entry.fineNodeOffset;
+          aRowEntryOffsets.host(contribution)    = entry.aRowEntryOffset;
           directAValueOffsets.host(contribution) = entry.directAValueOffset;
           ++contribution;
         }
       }
       offsets.host(reverseBucketCount) = contribution;
-      reverseContributionOffsets = offsets.copyToDevice(executionSpace);
-      reverseFineNodeOffsets = fineNodeOffsets.copyToDevice(executionSpace);
-      reverseARowEntryOffsets = aRowEntryOffsets.copyToDevice(executionSpace);
-      reverseDirectAValueOffsets = directAValueOffsets.copyToDevice(executionSpace);
+      reverseContributionOffsets       = offsets.copyToDevice(executionSpace);
+      reverseFineNodeOffsets           = fineNodeOffsets.copyToDevice(executionSpace);
+      reverseARowEntryOffsets          = aRowEntryOffsets.copyToDevice(executionSpace);
+      reverseDirectAValueOffsets       = directAValueOffsets.copyToDevice(executionSpace);
 
       executionSpace.fence("StructuredRAP: numeric entry plan prepared");
     }
@@ -684,18 +691,18 @@ class StructuredRAPKernel {
           policy,
           KOKKOS_LAMBDA(const size_t coarseNodeIndex) {
             const SC* KOKKOS_RESTRICT aValues = localA.values.data();
-            SC* KOKKOS_RESTRICT acValues = localAc.values.data();
+            SC* KOKKOS_RESTRICT acValues      = localAc.values.data();
             const size_t* KOKKOS_RESTRICT fineNodeOffsets =
                 reverseFineNodeOffsets.data();
             const size_t* KOKKOS_RESTRICT aRowEntryOffsets =
                 reverseARowEntryOffsets.data();
             const size_t* KOKKOS_RESTRICT directAValueOffsets =
                 reverseDirectAValueOffsets.data();
-            const LO coarseNode = static_cast<LO>(coarseNodeIndex);
-            const LO coarseX = coarseNode % localCoarseNodes[0];
-            const LO coarseYZ = coarseNode / localCoarseNodes[0];
-            const LO coarseY = coarseYZ % localCoarseNodes[1];
-            const LO coarseZ = coarseYZ / localCoarseNodes[1];
+            const LO coarseNode         = static_cast<LO>(coarseNodeIndex);
+            const LO coarseX            = coarseNode % localCoarseNodes[0];
+            const LO coarseYZ           = coarseNode / localCoarseNodes[0];
+            const LO coarseY            = coarseYZ % localCoarseNodes[1];
+            const LO coarseZ            = coarseYZ / localCoarseNodes[1];
             const size_t firstCoarseRow = coarseNodeIndex * numDofs;
 
             const auto fineXBounds = aggregateBounds(
@@ -720,12 +727,13 @@ class StructuredRAPKernel {
                       numAggregatePlanClasses[1] +
                   coarseAggregatePlanClass[1](coarseY)) *
                      numAggregatePlanClasses[0] +
-                 coarseAggregatePlanClass[0](coarseX)) * numDofs;
+                 coarseAggregatePlanClass[0](coarseX)) *
+                numDofs;
 
             for (size_t rowDof = 0; rowDof < numDofs; ++rowDof) {
-              const size_t acRow = firstCoarseRow + rowDof;
-              const size_t acRowBegin = localAc.graph.row_map(acRow);
-              const size_t acRowEnd = localAc.graph.row_map(acRow + size_t(1));
+              const size_t acRow          = firstCoarseRow + rowDof;
+              const size_t acRowBegin     = localAc.graph.row_map(acRow);
+              const size_t acRowEnd       = localAc.graph.row_map(acRow + size_t(1));
               const size_t reversePlanRow = reversePlanNodeBegin + rowDof;
               const size_t firstAValue =
                   localA.graph.row_map(firstFineNode * numDofs + rowDof);
@@ -733,7 +741,7 @@ class StructuredRAPKernel {
                 const size_t bucket =
                     reversePlanRow * maxAcEntriesPerRow + acOffset;
                 const size_t contributionBegin = reverseContributionOffsets(bucket);
-                const size_t contributionEnd = reverseContributionOffsets(bucket + 1);
+                const size_t contributionEnd   = reverseContributionOffsets(bucket + 1);
                 SC sum0 = zero, sum1 = zero, sum2 = zero, sum3 = zero;
                 size_t contribution = contributionBegin;
                 if (useDirectOffsets) {
@@ -785,7 +793,7 @@ class StructuredRAPKernel {
     if (!Ac.isFillComplete()) {
       Teuchos::TimeMonitor timer(
           *Teuchos::TimeMonitor::getNewTimer(timerPrefix +
-                                         "fillComplete"));
+                                             "fillComplete"));
       Ac.fillComplete(P.getDomainMap(), P.getDomainMap(), params);
     }
   }

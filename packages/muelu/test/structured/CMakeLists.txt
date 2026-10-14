@@ -107,8 +107,7 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
 
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       UnitTests
-      NAME "StructuredRAPKernel"
-      DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../unit_tests"
+      NAME "StructuredRAPKernel" DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../unit_tests"
       POSTFIX_AND_ARGS_0 "Constant_Laplace1D" --linAlgebra=Tpetra --group=StructuredKernel* --test=ConstantLaplace1DMatchesXpetra
       POSTFIX_AND_ARGS_1 "Constant_Laplace2D" --linAlgebra=Tpetra --group=StructuredKernel* --test=ConstantLaplace2DMatchesXpetra
       POSTFIX_AND_ARGS_2 "Constant_Laplace3D" --linAlgebra=Tpetra --group=StructuredKernel* --test=ConstantLaplace3DMatchesXpetra
