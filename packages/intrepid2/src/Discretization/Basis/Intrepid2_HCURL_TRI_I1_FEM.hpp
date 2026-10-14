@@ -45,19 +45,24 @@ namespace Intrepid2 {
       \endverbatim
 
       \remarks
-      \li     In the DoF functional \f${\bf t}\f$ is an edge tangent. Direction of edge
-      tangents follows the vertex order of the edges in the cell topology and runs from
-      edge vertex 0 to edge vertex 1, whereas their length is set equal to the edge length. For
-      example, edge 1 of all Triangle reference cells has vertex order {1,2}, i.e., its tangent
-      runs from vertex 1 of the reference Triangle to vertex 2 of that cell. On the reference
-      Triangle the coordinates of these vertices are (1,0) and (0,1), respectively. Therefore,
-      the tangent to edge 1 is (0,1)-(1,0) = (-1,1). Because its length already equals edge length,
-      no further rescaling of the edge tangent is needed.
+      \li     In the DoF functional \f${\bf t}\f$ is the reference edge tangent, i.e., the tangent
+      returned by Intrepid2::CellTools::getReferenceEdgeTangent and by getDofCoeffs(). Direction of
+      edge tangents follows the vertex order of the edges in the cell topology and runs from edge
+      vertex 0 to edge vertex 1, whereas their length is one-half the edge length, because reference
+      edges are parametrized over [-1,1]. For example, edge 1 of all Triangle reference cells has
+      vertex order {1,2}, i.e., its tangent runs from vertex 1 of the reference Triangle to vertex 2
+      of that cell. On the reference Triangle the coordinates of these vertices are (1,0) and (0,1),
+      respectively. Therefore, the tangent to edge 1 is ((0,1) - (1,0))/2 = (-1/2,1/2).
 
-      \li     The length of the edge tangent equals the edge length. As a result, the DoF functional
-      is the value of the tangent component of a vector field at the edge midpoint times the
-      edge length. The resulting basis is equivalent to a basis defined by using the edge circulation as a DoF functional. Note that edges
-      0 and 2 of reference Triangle<> cells have unit lengths and edge 1 has length Sqrt(2).
+      \li     For functions in the span of this basis, the tangent component is constant along each
+      edge. On this space the DoF functional is therefore one-half of the edge circulation,
+      \f$L_i({\bf u}) = \frac{1}{2}\int_{e_i} {\bf u}\cdot\hat{\bf t}_i\,ds\f$, where
+      \f$\hat{\bf t}_i\f$ is the unit tangent, and each basis function has circulation 2 along its
+      own edge (and 0 along the other edges). In fact, the basis functions are twice the Whitney
+      edge functions, \f$2(\lambda_a\nabla\lambda_b - \lambda_b\nabla\lambda_a)\f$ for the edge
+      running from vertex a to vertex b, where \f$\lambda\f$ are the barycentric coordinates. Note
+      that edges 0 and 2 of reference Triangle<> cells have unit lengths and edge 1 has length
+      Sqrt(2).
 
   */
 

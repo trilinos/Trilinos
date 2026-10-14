@@ -988,11 +988,11 @@ namespace Intrepid2 {
      requires a cache of size (p_x+1)*(p_y+1).  So long as one is not over-integrating by too much, these sizes are about the same.  The real advantage of our approach here is (we expect)
      that it improves data locality.
        */
-      template<class Scalar, class DeviceType, int integralViewRank>
-      class F_IntegratePointValueCache
-      {
-        using ExecutionSpace = typename DeviceType::execution_space;
-      using TeamPolicy = Kokkos::TeamPolicy<DeviceType>;
+    template<class Scalar, class DeviceType, int integralViewRank>
+    class F_IntegratePointValueCache
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+      using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
       using TeamMember = typename TeamPolicy::member_type;
 
       using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, integralViewRank>::value_type, DeviceType>;
@@ -2559,7 +2559,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> &integrals,
                 const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
                 const int teamSize            = functor.teamSize(recommendedTeamSize);
                 
-                policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
+                policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
                 Kokkos::parallel_for("F_IntegratePointValueCache rank 2", policy, functor);
                 
@@ -2610,7 +2610,7 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> &integrals,
                 const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
                 const int teamSize            = functor.teamSize(recommendedTeamSize);
                 
-                policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
+                policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
                 Kokkos::parallel_for("F_Integrate rank 3", policy, functor);
                 

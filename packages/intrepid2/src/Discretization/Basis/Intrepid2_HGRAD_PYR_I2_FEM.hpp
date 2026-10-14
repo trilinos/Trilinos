@@ -241,7 +241,7 @@ namespace Intrepid2 {
         return Teuchos::rcp(new
             Basis_HGRAD_LINE_C2_FEM<DeviceType,outputValueType,pointValueType>());
       } else if(subCellDim == 2) {
-        if(subCellOrd == 0)  //pyramid base
+        if(subCellOrd == 4)  //pyramid base (shards Pyramid faces 0-3 are triangles, face 4 is the quadrilateral)
           return Teuchos::rcp(new
             Basis_HGRAD_QUAD_I2_FEM<DeviceType,outputValueType,pointValueType>());
         else

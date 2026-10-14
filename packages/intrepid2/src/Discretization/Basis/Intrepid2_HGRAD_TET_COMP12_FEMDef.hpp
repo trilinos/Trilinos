@@ -22,108 +22,54 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
 
-    // assume that subtets are disjoint and a single point belong to one subtet
-    // at the interface, it returns the first one that satisfy the condition
+    // Returns the index (0 - 11) of the subtet containing the point (x,y,z), with the subtet
+    // numbering used in Serial<OPERATOR_VALUE>::getValues:
+    //
+    //   subtets #0..#3  : corner tets of the regular refinement, #k = { lambda_k >= 1/2 }
+    //   subtets #4..#11 : the inner octahedron { 0 <= lambda_k <= 1/2 } split into 8 tets
+    //                     by the centroid c = (1/4,1/4,1/4); each one is the cone from c
+    //                     over one octahedron face, lambda_k = 1/2 or lambda_k = 0
+    //
+    // where lambda_0 = 1-x-y-z, lambda_1 = x, lambda_2 = y, lambda_3 = z are the barycentric
+    // coordinates of the point. A point on an interface may be assigned to either adjacent
+    // subtet: the basis functions are continuous, so the result does not depend on the choice.
+    //
+    // The classification is total: it never fails, including for points on the boundary that
+    // round-off puts slightly outside the reference tet. A point outside the tet is assigned
+    // to an adjacent subtet, so basis values there are the linear extension from that subtet.
     template<typename pointValueType>
     KOKKOS_INLINE_FUNCTION
     ordinal_type
     Basis_HGRAD_TET_COMP12_FEM::getLocalSubTet( const pointValueType x, 
                                                 const pointValueType y, 
                                                 const pointValueType z ) {
-      
-      const pointValueType 
-        xyz = x + y + z,
-        xy = x + y,
-        xz = x + z,
-        yz = y + z;
-      
-      // cycle through each subdomain and push back if the point lies within
-      
-      // subtet #0 E0 := 0.0 <= r + s + t <= 0.5 && 0.0 <= r <= 0.5 && 0.0 <= s <= 0.5 && 0.0 <= t <= 0.5
-      if ( (0.0 <= xyz && xyz <= 0.5) && 
-           (0.0 <= x   && x   <= 0.5) && 
-           (0.0 <= y   && y   <= 0.5) && 
-           (0.0 <= z   && z   <= 0.5) ) 
-        return 0;
+      // only the point values are needed (not the derivatives, for Fad types)
+      typedef typename ScalarTraits<pointValueType>::scalar_type scalar_type;
+      const scalar_type
+        r = get_scalar_value(x),
+        s = get_scalar_value(y),
+        t = get_scalar_value(z);
 
-      // subtet #1 E1 := 0.5 <= r + s + t <= 1.0 && 0.5 <= r <= 1.0 && 0.0 <= s <= 0.5 && 0.0 <= t <= 0.5
-      if ( (0.5 <= xyz && xyz <= 1.0) && 
-           (0.5 <= x   && x   <= 1.0) && 
-           (0.0 <= y   && y   <= 0.5) && 
-           (0.0 <= z   && z   <= 0.5) ) 
-        return 1;
-      
-      // subtet #2 E2 := 0.5 <= r + s + t <= 1.0 && 0.0 <= r <= 0.5 && 0.5 <= s <= 1.0 && 0.0 <= t <= 0.5
-      if ( (0.5 <= xyz && xyz <= 1.0) && 
-           (0.0 <= x   && x   <= 0.5) && 
-           (0.5 <= y   && y   <= 1.0) && 
-           (0.0 <= z   && z   <= 0.5) ) 
-        return 2;
-      
-      // subtet #3 E3 := 0.5 <= r + s + t <= 1.0 && 0.0 <= r <= 0.5 && 0.0 <= s <= 0.5 && 0.5 <= t <= 1.0
-      if ( (0.5 <= xyz && xyz <= 1.0) && 
-           (0.0 <= x   && x   <= 0.5) && 
-           (0.0 <= y   && y   <= 0.5) && 
-           (0.5 <= z   && z   <= 1.0) ) 
-        return 3;
-      
-      // subtet #4 E4 := 0.0 <= s + t <= 0.5 && 0.5 <= r + s <= 1.0 && 0.5 <= r + t <= 1.0 && 0.0 <= r <= 0.5
-      if ( (0.0 <= yz && yz <= 0.5) && 
-           (0.5 <= xy && xy <= 1.0) && 
-           (0.5 <= xz && xz <= 1.0) && 
-           (0.0 <= x  && x  <= 0.5) ) 
-        return 4;
-      
-      // subtet #5 E5 := 0.5 <= r + s <= 1.0 && 0.5 <= s + t <= 1.0 && 0.5 <= r + t <= 1.0 && 0.75 <= r + s + t <= 1.0
-      if ( (0.5  <= xy  && xy  <= 1.0) && 
-           (0.5  <= yz  && yz  <= 1.0) && 
-           (0.5  <= xz  && xz  <= 1.0) && 
-           (0.75 <= xyz && xyz <= 1.0) ) 
-        return 5;
-      
-      // subtet #6 E6 := 0.5 <= s + t <= 1.0 && 0.0 <= r + s <= 0.5 && 0.5 <= r + t <= 1.0 && 0.0 <= t <= 0.5
-      if ( (0.5 <= yz && yz <= 1.0) && 
-           (0.0 <= xy && xy <= 0.5) && 
-           (0.5 <= xz && xz <= 1.0) && 
-           (0.0 <= z  && z  <= 0.5) ) 
-        return 6;
+      const scalar_type lambda[4] = { scalar_type(1.0) - r - s - t, r, s, t };
 
-      // subtet #7 E7 := 0.0 <= s + t <= 0.5 && 0.0 <= r + s <= 0.5 && 0.5 <= r + t <= 1.0 && 0.0 <= s <= 0.25
-      if ( (0.0 <= yz && yz <= 0.5) && 
-           (0.0 <= xy && xy <= 0.5) &&
-           (0.5 <= xz && xz <= 1.0) && 
-           (0.0 <= y  && y  <= 0.25) ) 
-        return 7;
-      
-      // subtet #8 E8 := 0.0 <= r + t <= 0.5 && 0.0 <= s + t <= 0.5 &&  0.5 <= r + s <= 1.0 && 0.0 <= t <= 0.25
-      if ( (0.0 <= xz && xz <= 0.5) && 
-           (0.0 <= yz && yz <= 0.5) &&
-           (0.5 <= xy && xy <= 1.0) &&
-           (0.0 <= z  && z  <= 0.25) )
-        return 8;
-      
-      // subtet #9 E9 := 0.0 <= r + t <= 0.5 && 0.5 <= r + s <= 1.0 &&  0.5 <= s + t <= 1.0 && 0.0 <= s <= 0.5
-      if ( (0.0 <= xz && xz <= 0.5) && 
-           (0.5 <= xy && xy <= 1.0) && 
-           (0.5 <= yz && yz <= 1.0) && 
-           (0.0 <= y  && y  <= 0.5) ) 
-        return 9;
-      
-      // subtet #10 E10 := 0.0 <= r + t <= 0.5 && 0.5 <= s + t <= 1.0 && 0.0 <= r + s <= 0.5 && 0.0 <= r <= 0.25
-      if ( (0.0 <= xz && xz <= 0.5) && 
-           (0.5 <= yz && yz <= 1.0) && 
-           (0.0 <= xy && xy <= 0.5) && 
-           (0.0 <= x  && x  <= 0.25) )
-        return 10;
-      
-      // subtet #11 E11 := 0.5 <= r + s + t <= 0.75 && 0.0 <= r + t <= 0.5 && 0.0 <= s + t <= 0.5 && 0.0 <= r + s <= 0.5
-      if ( (0.5 <= xyz && xyz <= 0.75) && 
-           (0.0 <= xz  && xz  <= 0.5) &&
-           (0.0 <= yz  && yz  <= 0.5) && 
-           (0.0 <= xy  && xy  <= 0.5) ) 
-        return 11;
+      // corner subtets #0..#3: the point is in subtet #k if lambda_k >= 1/2
+      ordinal_type k = 0;
+      for (ordinal_type i=1;i<4;++i)
+        if (lambda[i] > lambda[k]) k = i;
+      if (lambda[k] >= 0.5)
+        return k;
 
-      return -1;
+      // inner octahedron: the point is in the cone over the octahedron face that is hit first
+      // by the ray from the centroid through the point, i.e. the face lambda_k = 1/2 (if
+      // lambda_k > 1/4) or lambda_k = 0 (if lambda_k < 1/4) for the k maximizing |lambda_k - 1/4|
+      k = 0;
+      for (ordinal_type i=1;i<4;++i) {
+        const scalar_type di = lambda[i] - 0.25, dk = lambda[k] - 0.25;
+        if (di*di > dk*dk) k = i;
+      }
+      const ordinal_type subTetInnerFace[4] = { 11, 4, 9, 6 }; // face lambda_k = 1/2
+      const ordinal_type subTetOuterFace[4] = {  5, 10, 7, 8 }; // face lambda_k = 0
+      return (lambda[k] > 0.25) ? subTetInnerFace[k] : subTetOuterFace[k];
     }
     
     template<EOperator OpType>
@@ -144,96 +90,96 @@ namespace Intrepid2 {
         for (auto i=0;i<10;++i) 
           output(i) = 0.0;
         
+        // the basis functions are continuous, so a point on an interface between subtets
+        // produces the same values whichever of the adjacent subtets is returned
         const auto subtet = getLocalSubTet( r, s, t );
-        
-        // idependent verification shows that a given point will produce
-        // the same shape functions for each tet that contains it, so
-        // we only need to use the first one returned.
-        if (subtet != -1) {
-          typename inputPointViewType::value_type aux = 0.0;
-          switch (subtet) {
-          case 0:
-            output(0) = 1. - 2. * (r + s + t);
-            output(4) = 2. * r;
-            output(6) = 2. * s;
-            output(7) = 2. * t;
-            break;
-          case 1:
-            output(1) = 2. * r - 1.;
-            output(4) = 2. - 2. * (r + s + t);
-            output(5) = 2. * s;
-            output(8) = 2. * t;
-            break;
-          case 2:
-            output(2) = 2. * s - 1.;
-            output(5) = 2. * r;
-            output(6) = 2. - 2. * (r + s + t);
-            output(9) = 2. * t;
-            break;
-          case 3:
-            output(3) = 2. * t - 1.;
-            output(7) = 2. - 2. * (r + s + t);
-            output(8) = 2. * r;
-            output(9) = 2. * s;
-            break;
-          case 4:
-            output(4) = 1. - 2. * (s + t);
-            output(5) = 2. * (r + s) - 1.;
-            output(8) = 2. * (r + t) - 1.;
-            aux = 2. - 4. * r;
-            break;
-          case 5:
-            output(5) = 2. * (r + s) - 1.;
-            output(8) = 2. * (r + t) - 1.;
-            output(9) = 2. * (s + t) - 1.;
-            aux = 4. - 4. * (r + s + t);
-            break;
-          case 6:
-            output(7) = 1. - 2. * (r + s);
-            output(8) = 2. * (r + t) - 1.;
-            output(9) = 2. * (s + t) - 1.;
-            aux = 2. - 4. * t;
-            break;
-          case 7:
-            output(4) = 1. - 2. * (s + t);
-            output(7) = 1. - 2. * (r + s);
-            output(8) = 2. * (r + t) - 1.;
-            aux = 4. * s;
-            break;
-          case 8:
-            output(4) = 1. - 2. * (s + t);
-            output(5) = 2. * (r + s) - 1.;
-            output(6) = 1. - 2. * (r + t);
-            aux = 4. * t;
-            break;
-          case 9:
-            output(5) = 2. * (r + s) - 1.;
-            output(6) = 1. - 2. * (r + t);
-            output(9) = 2. * (s + t) - 1.;
-            aux = 2. - 4. * s;
-            break;
-          case 10:
-            output(6) = 1. - 2. * (r + t);
-            output(7) = 1. - 2. * (r + s);
-            output(9) = 2. * (s + t) - 1.;
-            aux = 4. * r;
-            break;
-          case 11:
-            output(4) = 1. - 2. * (s + t);
-            output(6) = 1. - 2. * (r + t);
-            output(7) = 1. - 2. * (r + s);
-            aux = 4. * (r + s + t) - 2.;
-            break;
-          }
-          for (auto i=4;i<10;++i)
-            output(i) += aux/6.0;
+
+        typename inputPointViewType::value_type aux = 0.0;
+        switch (subtet) {
+        case 0:
+          output(0) = 1. - 2. * (r + s + t);
+          output(4) = 2. * r;
+          output(6) = 2. * s;
+          output(7) = 2. * t;
+          break;
+        case 1:
+          output(1) = 2. * r - 1.;
+          output(4) = 2. - 2. * (r + s + t);
+          output(5) = 2. * s;
+          output(8) = 2. * t;
+          break;
+        case 2:
+          output(2) = 2. * s - 1.;
+          output(5) = 2. * r;
+          output(6) = 2. - 2. * (r + s + t);
+          output(9) = 2. * t;
+          break;
+        case 3:
+          output(3) = 2. * t - 1.;
+          output(7) = 2. - 2. * (r + s + t);
+          output(8) = 2. * r;
+          output(9) = 2. * s;
+          break;
+        case 4:
+          output(4) = 1. - 2. * (s + t);
+          output(5) = 2. * (r + s) - 1.;
+          output(8) = 2. * (r + t) - 1.;
+          aux = 2. - 4. * r;
+          break;
+        case 5:
+          output(5) = 2. * (r + s) - 1.;
+          output(8) = 2. * (r + t) - 1.;
+          output(9) = 2. * (s + t) - 1.;
+          aux = 4. - 4. * (r + s + t);
+          break;
+        case 6:
+          output(7) = 1. - 2. * (r + s);
+          output(8) = 2. * (r + t) - 1.;
+          output(9) = 2. * (s + t) - 1.;
+          aux = 2. - 4. * t;
+          break;
+        case 7:
+          output(4) = 1. - 2. * (s + t);
+          output(7) = 1. - 2. * (r + s);
+          output(8) = 2. * (r + t) - 1.;
+          aux = 4. * s;
+          break;
+        case 8:
+          output(4) = 1. - 2. * (s + t);
+          output(5) = 2. * (r + s) - 1.;
+          output(6) = 1. - 2. * (r + t);
+          aux = 4. * t;
+          break;
+        case 9:
+          output(5) = 2. * (r + s) - 1.;
+          output(6) = 1. - 2. * (r + t);
+          output(9) = 2. * (s + t) - 1.;
+          aux = 2. - 4. * s;
+          break;
+        case 10:
+          output(6) = 1. - 2. * (r + t);
+          output(7) = 1. - 2. * (r + s);
+          output(9) = 2. * (s + t) - 1.;
+          aux = 4. * r;
+          break;
+        case 11:
+          output(4) = 1. - 2. * (s + t);
+          output(6) = 1. - 2. * (r + t);
+          output(7) = 1. - 2. * (r + s);
+          aux = 4. * (r + s + t) - 2.;
+          break;
         }
+        for (auto i=4;i<10;++i)
+          output(i) += aux/6.0;
       }
       else if constexpr (OpType == OPERATOR_GRAD) {
         const typename inputPointViewType::value_type r = input(0);
         const typename inputPointViewType::value_type s = input(1);
         const typename inputPointViewType::value_type t = input(2);
-        
+
+        // These are NOT the gradients of the piecewise linear functions returned by
+        // OPERATOR_VALUE (which are piecewise constant on the 12 subtets), but their L2
+        // projection, over the parent tet, onto linear polynomials. See the class documentation.
         output(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
         output(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;
         output(0,2) = (-17 + 20*r + 20*s + 20*t)/8.;

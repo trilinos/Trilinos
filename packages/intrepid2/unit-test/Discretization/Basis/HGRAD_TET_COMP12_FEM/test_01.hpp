@@ -372,6 +372,100 @@ namespace Intrepid2 {
         }
         
     
+        // Check VALUE of basis functions at boundary points affected by round-off: points on the
+        // face x+y+z=1 computed from normalized barycentric coordinates (x+y+z can exceed 1 by an
+        // ulp), and boundary points moved outside the reference tet by a few ulps. The basis
+        // functions must still sum to 1 and be continuous across the boundary of the tet.
+        {
+          *outStream << " check VALUE of basis functions at boundary points perturbed by round-off\n";
+          const ordinal_type numFacePoints = 4096;
+          const ValueType delta = 4.0*epsilon<ValueType>();
+
+          // points exactly on the boundary, and outward directions used to perturb them
+          const ValueType bdryPoints[][3] = {
+            { 0.3,  0.0,  0.3 },   // face y=0
+            { 0.0,  0.2,  0.2 },   // face x=0
+            { 0.2,  0.3,  0.0 },   // face z=0
+            { 0.25, 0.25, 0.5 },   // face x+y+z=1
+            { 0.0,  0.0,  0.0 },   // vertex 0
+            { 1.0,  0.0,  0.0 },   // vertex 1
+            { 0.5,  0.5,  0.0 },   // midpoint of edge 1
+            { 0.0,  0.5,  0.5 }    // midpoint of edge 5
+          };
+          const ValueType outward[][3] = {
+            {  0.0, -1.0,  0.0 },
+            { -1.0,  0.0,  0.0 },
+            {  0.0,  0.0, -1.0 },
+            {  1.0,  1.0,  1.0 },
+            { -1.0, -1.0, -1.0 },
+            {  1.0,  0.0,  0.0 },
+            {  1.0,  1.0, -1.0 },
+            { -1.0,  1.0,  1.0 }
+          };
+          const ordinal_type numBdryPoints = sizeof(bdryPoints)/sizeof(bdryPoints[0]);
+          const ordinal_type numTestPoints = numFacePoints + 2*numBdryPoints;
+
+          DynRankViewHost ConstructWithLabel(testPointsHost, numTestPoints, 3);
+          {
+            std::mt19937 gen(12345);
+            std::uniform_real_distribution<> dis(0, 1);
+            for (ordinal_type j=0;j<numFacePoints;++j) {
+              const ValueType w1 = dis(gen), w2 = dis(gen), w3 = dis(gen), w = w1 + w2 + w3;
+              testPointsHost(j,0) = w1/w;
+              testPointsHost(j,1) = w2/w;
+              testPointsHost(j,2) = w3/w;
+            }
+            for (ordinal_type p=0;p<numBdryPoints;++p)
+              for (ordinal_type d=0;d<3;++d) {
+                testPointsHost(numFacePoints + 2*p,     d) = bdryPoints[p][d];
+                testPointsHost(numFacePoints + 2*p + 1, d) = bdryPoints[p][d] + delta*outward[p][d];
+              }
+          }
+          auto testPoints = Kokkos::create_mirror_view(typename DeviceType::memory_space(), testPointsHost);
+          Kokkos::deep_copy(testPoints, testPointsHost);
+
+          DynRankView vals = DynRankView("vals", numFields, numTestPoints);
+          tetBasis.getValues(space, vals, testPoints, OPERATOR_VALUE);
+          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          Kokkos::deep_copy(vals_host, vals);
+
+          // partition of unity
+          ordinal_type numSumFailures = 0;
+          for (ordinal_type j=0;j<numTestPoints;++j) {
+            ValueType sum = 0.0;
+            for (ordinal_type i=0;i<numFields;++i)
+              sum += vals_host(i,j);
+
+            if (std::abs(sum - 1.0) > tol) {
+              if (numSumFailures++ < 10)
+                *outStream << " Composite tet basis functions are not summing to 1.0 at point ("
+                           << testPointsHost(j,0) << ", " << testPointsHost(j,1) << ", "
+                           << testPointsHost(j,2) << "), sum : " << sum << "\n";
+            }
+          }
+          if (numSumFailures > 0) {
+            errorFlag += numSumFailures;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << " partition of unity fails at " << numSumFailures << " of "
+                       << numTestPoints << " boundary points\n";
+          }
+
+          // continuity across the boundary of the reference tet
+          for (ordinal_type p=0;p<numBdryPoints;++p) {
+            const ordinal_type jIn = numFacePoints + 2*p, jOut = jIn + 1;
+            for (ordinal_type i=0;i<numFields;++i) {
+              if (std::abs(vals_host(i,jOut) - vals_host(i,jIn)) > tol) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << " Basis function " << i << " is discontinuous across the boundary at point ("
+                           << bdryPoints[p][0] << ", " << bdryPoints[p][1] << ", " << bdryPoints[p][2]
+                           << "): value " << vals_host(i,jIn) << " on the boundary, but "
+                           << vals_host(i,jOut) << " just outside\n";
+              }
+            }
+          }
+        }
+
         // Check GRAD of basis functions at points: resize vals to rank-3 container:\n";
         {
           DynRankView vals = DynRankView("vals", numFields, numPoints, spaceDim);

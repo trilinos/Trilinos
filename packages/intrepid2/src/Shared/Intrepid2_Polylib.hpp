@@ -499,13 +499,13 @@ namespace Intrepid2 {
       /** \brief Calculate the  derivative of Jacobi polynomials
 
           \li Generates a vector \a poly of values of the derivative of the
-          \a n-th order Jacobi polynomial \f$ P^(\alpha,\beta)_n(z)\f$ at the
+          \a n-th order Jacobi polynomial \f$ P^{\alpha,\beta}_n(z)\f$ at the
           \a np points \a z.
 
           \li To do this we have used the relation
           \n
           \f$ \frac{d}{dz} P^{\alpha,\beta}_n(z)
-          = \frac{1}{2} (\alpha + \beta + n + 1)  P^{\alpha,\beta}_n(z) \f$
+          = \frac{1}{2} (\alpha + \beta + n + 1)  P^{\alpha+1,\beta+1}_{n-1}(z) \f$
 
           \li This formulation is valid for \f$ -1 \leq z \leq 1 \f$
       */
@@ -527,8 +527,11 @@ namespace Intrepid2 {
       /** \brief  Calculate the \a n zeros, \a z, of the Jacobi polynomial, i.e.
           \f$ P_n^{\alpha,\beta}(z) = 0 \f$
 
-          This routine is only valid for \f$( \alpha > -1, \beta > -1)\f$
-          and uses polynomial deflation in a Newton iteration
+          This routine is only valid for \f$( \alpha > -1, \beta > -1)\f$.
+          By default (\a DeflationEnabled = false) the zeros are computed as the eigenvalues
+          of a tridiagonal matrix (see JacobiZerosTriDiagonal); if \a DeflationEnabled = true,
+          they are computed with polynomial deflation in a Newton iteration
+          (see JacobiZerosPolyDeflation).
       */
       template<typename zViewType,
                bool DeflationEnabled = false>

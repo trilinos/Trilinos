@@ -72,7 +72,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(cell), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceVertex): the specified cell topology does not have a reference cell." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( (vertexOrd < 0) || vertexOrd > static_cast<ordinal_type>(cell.getVertexCount()), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( (vertexOrd < 0) || vertexOrd >= static_cast<ordinal_type>(cell.getVertexCount()), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceVertex): invalid node ordinal for the specified cell topology." );
 
     INTREPID2_TEST_FOR_EXCEPTION( rank(cellVertex) != 1, std::invalid_argument,
