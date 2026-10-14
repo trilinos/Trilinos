@@ -28,13 +28,16 @@ namespace mini_em {
 
   using panzer::Cell;
   using panzer::Point;
+  using panzer::Dim;
 
   /** \brief Computes a constant, spatially-uniform magnetized
     * (Hall-effect) conductivity tensor field, of the form
-    * sigma*(I + beta⊗beta - [beta]_x), where sigma is the scalar
-    * conductivity and beta=(betax,betay,betaz) is the (dimensionless)
-    * Hall parameter vector, with [beta]_x the cross-product matrix of
-    * beta.
+    * sigma/(1+|beta|^2)*(I + beta⊗beta + [beta]_x), where sigma is the
+    * scalar conductivity and beta=(betax,betay,betaz) is the
+    * (dimensionless) Hall parameter vector, with [beta]_x the
+    * cross-product matrix of beta ([beta]_x v = beta x v). In 2D the
+    * field lies in the x-y plane, so the tensor is the in-plane block of
+    * the 3D tensor.
     */
   template<typename EvalT, typename Traits>
   class TensorConductivity : public panzer::EvaluatorWithBaseImpl<Traits>,
