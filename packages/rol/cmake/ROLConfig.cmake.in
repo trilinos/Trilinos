@@ -1,0 +1,19 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(pugixml CONFIG)
+
+include("${CMAKE_CURRENT_LIST_DIR}/ROLTargets.cmake")
+
+set(ROL_FOUND TRUE)
+set(ROL_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@")
+set(ROL_INCLUDE_DIRS "${ROL_INCLUDE_DIR}")
+set(ROL_LIBRARIES ROL::rol)
+
+# Compatibility alias for consumers that look for an uppercase ROL target.
+if(TARGET ROL::rol AND NOT TARGET ROL::ROL)
+  add_library(ROL::ROL INTERFACE IMPORTED)
+  target_link_libraries(ROL::ROL INTERFACE ROL::rol)
+endif()
+
+check_required_components(ROL)
