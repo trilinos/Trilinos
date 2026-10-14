@@ -185,13 +185,11 @@ struct UpdateReducedProblemFunctor {
         if (lclColID != INVALID) {
           // because ConstructReducedProblemFunctor and UpdateReducedProblemFunctor scan non-zeros in the same order (based on lclFullRowPtr)
           //  lclColID should match lclReducedColInd[k].
-          //if (lclReducedColInd[k] != lclColID) printf( "WARNING: lclReducedColInd[%d]=%d does not match lclColID=%d\n",k,lclReducedColInd[k],lclColID );
           lclReducedColInd[k] = lclColID;
           lclReducedValues[k] = lclFullValues[j];
           k++;
         }
       }
-      //if (k != lclReducedRowPtr(lclRowID+1)) printf("WARNING: k=%d does not match lclReducedRowPtr(%d)=%d\n",k,lclRowID+1,lclReducedRowPtr(lclRowID+1));
     }
   }
 };
