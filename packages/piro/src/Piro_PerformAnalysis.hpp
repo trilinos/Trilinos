@@ -19,9 +19,13 @@
 
 namespace Piro {
 
+  //! Stream buffer that stores the ROL output and, if echo is true, also prints it
+  //! to the standard output (with putchar, so it is not affected by redirections of std::cout).
   template<class CharT, class Traits=std::char_traits<CharT>>
   class RolOutputBuffer : public std::basic_streambuf<CharT,Traits> {
      public:
+     explicit RolOutputBuffer(bool echo = true) : echo_(echo) {}
+
      const std::stringstream& getStringStream() const;
 
      protected:
@@ -29,6 +33,7 @@ namespace Piro {
 
      private:
      std::stringstream ss;
+     bool echo_;
   };
 
   Teuchos::RCP<Thyra::ProductVectorBase<double> > createProductVector(const Teuchos::RCP<Thyra::VectorBase<double> >& vec);
