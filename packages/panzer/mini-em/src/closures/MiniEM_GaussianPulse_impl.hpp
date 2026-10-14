@@ -16,6 +16,7 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_HierarchicParallelism.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 
 namespace mini_em {
@@ -66,24 +67,34 @@ void GaussianPulse<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
   const auto coords = workset.int_rules[ir_index]->ip_coordinates.get_static_view();
   auto tmp_current = current;
   if (ir_dim == 3) {
-    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,current.extent_int(1)});
-    Kokkos::parallel_for("panzer:GaussianPulse 3D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
-      auto x = coords(cell,point,0);
-      auto y = coords(cell,point,1);
-      auto z = coords(cell,point,2);
-      auto r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) + (z-0.5)*(z-0.5);
-      tmp_current(cell,point,0) = 0.0;
-      tmp_current(cell,point,1) = 0.0;
-      tmp_current(cell,point,2) = std::exp(-r2*scale)*factor;
+    const int num_points = current.extent_int(1);
+    auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
+    Kokkos::parallel_for("panzer:GaussianPulse 3D",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) {
+      const int cell = team.league_rank();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_points), [&] (const int point) {
+        auto x = coords(cell,point,0);
+        auto y = coords(cell,point,1);
+        auto z = coords(cell,point,2);
+	// coords from a workset is always double, so this is ok on device (no fad scalar alloc on device)
+        auto r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) + (z-0.5)*(z-0.5);
+        tmp_current(cell,point,0) = 0.0;
+        tmp_current(cell,point,1) = 0.0;
+        tmp_current(cell,point,2) = std::exp(-r2*scale)*factor;
+      });
     });
   } else {
-    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,current.extent_int(1)});
-    Kokkos::parallel_for("panzer:GaussianPulse 2D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
-      auto x = coords(cell,point,0);
-      auto y = coords(cell,point,1);
-      auto r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5);
-      tmp_current(cell,point,0) = 0.0;
-      tmp_current(cell,point,1) = std::exp(-r2*scale)*factor;
+    const int num_points = current.extent_int(1);
+    auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
+    Kokkos::parallel_for("panzer:GaussianPulse 2D",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) {
+      const int cell = team.league_rank();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_points), [&] (const int point) {
+        auto x = coords(cell,point,0);
+        auto y = coords(cell,point,1);
+	// coords from a workset is always double, so this is ok on device (no fad scalar alloc on device)
+        auto r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5);
+        tmp_current(cell,point,0) = 0.0;
+        tmp_current(cell,point,1) = std::exp(-r2*scale)*factor;
+      });
     });
   }
 }

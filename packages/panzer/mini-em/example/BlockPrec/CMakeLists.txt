@@ -18,7 +18,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   maxwell-blob-R0.xml maxwell-blob-R1.xml maxwell-blob-R2.xml maxwell-blob-R3.xml maxwell-blob-R4.xml
   maxwell-bdot-small.xml maxwell-bdot-medium.xml maxwell-bdot-large.xml
   maxwell-exterior-small.xml maxwell-exterior-medium.xml maxwell-exterior-large.xml
-  maxwell-donut.xml maxwell-analyticSolution.xml
+  maxwell-donut.xml maxwell-analyticSolution.xml maxwell-analyticSolution2D.xml
   steadyState.xml steadyState2D.xml
   darcyTet.xml darcyHex.xml
   darcyTetAnalytic.xml darcyHexAnalytic.xml
@@ -91,6 +91,7 @@ TRIBITS_ADD_TEST(
    POSTFIX_AND_ARGS_13 "order1_maxwell1_smoothed"   --solver=Maxwell1-SA-RS --numTimeSteps=1
    POSTFIX_AND_ARGS_14 "order1_maxwell1_emin"       --solver=Maxwell1-Emin --numTimeSteps=1
    POSTFIX_AND_ARGS_15 "order1_direct"              --solver=direct
+   POSTFIX_AND_ARGS_16 "order1_2D_analytic"         --solver=MueLu --inputFile=maxwell-analyticSolution2D.xml
    NUM_MPI_PROCS 4
    )
 

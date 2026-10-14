@@ -16,6 +16,7 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_HierarchicParallelism.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 
 namespace mini_em {
@@ -80,8 +81,11 @@ void PiecewiseConstant<EvalT,Traits>::evaluateFields(typename Traits::EvalData w
   const double zr = zr_;
 
   if (ir_dim == 3) {
-    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,values.extent_int(1)});
-    Kokkos::parallel_for("panzer:PiecewiseConstant 3D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
+    const int num_points = values.extent_int(1);
+    auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
+    Kokkos::parallel_for("panzer:PiecewiseConstant 3D",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) {
+      const int cell = team.league_rank();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_points), [&] (const int point) {
 
         auto x = tmp_coords(cell,point,0);
         auto y = tmp_coords(cell,point,1);
@@ -94,9 +98,13 @@ void PiecewiseConstant<EvalT,Traits>::evaluateFields(typename Traits::EvalData w
         else
           tmp_values(cell,point) = value1;
       });
+    });
   } else {
-    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,values.extent_int(1)});
-    Kokkos::parallel_for("panzer:PiecewiseConstant 2D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
+    const int num_points = values.extent_int(1);
+    auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
+    Kokkos::parallel_for("panzer:PiecewiseConstant 2D",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) {
+      const int cell = team.league_rank();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_points), [&] (const int point) {
 
         auto x = tmp_coords(cell,point,0);
         auto y = tmp_coords(cell,point,1);
@@ -107,6 +115,7 @@ void PiecewiseConstant<EvalT,Traits>::evaluateFields(typename Traits::EvalData w
         else
           tmp_values(cell,point) = value1;
       });
+    });
   }
 }
 
