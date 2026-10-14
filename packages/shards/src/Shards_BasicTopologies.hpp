@@ -1138,15 +1138,15 @@ template<> struct BasicTopologyOf< Tetrahedron<8>::Traits >
 
 /** \brief  Map traits to basic topology type */
 template<> struct BasicTopologyOf< Pyramid<5>::Traits >
-{ typedef Tetrahedron<5> type ; };
+{ typedef Pyramid<5> type ; };
 
 /** \brief  Map traits to basic topology type */
 template<> struct BasicTopologyOf< Pyramid<13>::Traits >
-{ typedef Tetrahedron<13> type ; };
+{ typedef Pyramid<13> type ; };
 
 /** \brief  Map traits to basic topology type */
 template<> struct BasicTopologyOf< Pyramid<14>::Traits >
-{ typedef Tetrahedron<14> type ; };
+{ typedef Pyramid<14> type ; };
 
 /** \brief  Map traits to basic topology type */
 template<> struct BasicTopologyOf< Wedge<6>::Traits >
