@@ -65,9 +65,15 @@ computeRecurrenceCoefficients(ordinal_type n,
   }
   else
   {
-    aalpha[0] = getB(0)/getA(0);
+    value_type s = a + b;
+    if (std::abs(s) < 1e-14) {
+      aalpha[0] = -(a - b) / 2.0;
+      adelta[0] = 1.0;
+    } else {
+      aalpha[0] = getB(0)/getA(0);
+      adelta[0] = getC(0)/getA(0);
+    }
     abeta[0] = 1.0;
-    adelta[0] = getC(0)/getA(0);
     agamma[0] = 1.0;
   }
   for (ordinal_type i=1; i<n; i++) 
