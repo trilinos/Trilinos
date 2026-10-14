@@ -2439,8 +2439,9 @@ class StepperSDIRK_2Stage2ndOrder : virtual public StepperDIRK<Scalar> {
 
     int order = 1;
     if (std::abs((gamma_ - gammaDefault_) / gamma_) < 1.0e-08) order = 2;
-    if (std::abs((gamma_ - 
-        Teuchos::as<Scalar>((2 * one + ST::squareroot(2 * one)) / (2 * one))) / gamma_) < 1.0e-08) order = 2;
+    if (std::abs((gamma_ -
+                  Teuchos::as<Scalar>((2 * one + ST::squareroot(2 * one)) / (2 * one))) /
+                 gamma_) < 1.0e-08) order = 2;
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
         this->getStepperType(), A, b, c, order, order, order));

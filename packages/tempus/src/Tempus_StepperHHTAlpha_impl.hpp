@@ -226,7 +226,6 @@ void StepperHHTAlpha<Scalar>::setSchemeName(std::string schemeName)
   this->isInitialized_ = false;
 }
 
-
 template <class Scalar>
 void StepperHHTAlpha<Scalar>::validateSchemeParameters() const
 {
@@ -257,7 +256,8 @@ void StepperHHTAlpha<Scalar>::validateSchemeParameters() const
           << "   gamma_   = " << gamma_ << "\n"
           << "   beta_    = " << beta_ << "\n"
           << std::endl;
-  } else if (!gamma_ok) {
+  }
+  else if (!gamma_ok) {
     out_->setOutputToRootOnly(0);
     *out_ << "\nWARNING: For HHT-Alpha,\n"
           << "  gamma_ (" << gamma_ << ") != 0.5+alpha_f_ ("
@@ -271,7 +271,8 @@ void StepperHHTAlpha<Scalar>::validateSchemeParameters() const
           << "   gamma_   = " << gamma_ << "\n"
           << "   beta_    = " << beta_ << "\n"
           << std::endl;
-  } else if (!beta_ok) {
+  }
+  else if (!beta_ok) {
     out_->setOutputToRootOnly(0);
     *out_ << "\nWARNING: For HHT-Alpha,\n"
           << "  beta_ (" << beta_ << ") != 0.25*(1.0+alpha_f_)^2 ("
@@ -287,7 +288,6 @@ void StepperHHTAlpha<Scalar>::validateSchemeParameters() const
           << std::endl;
   }
 }
-
 
 template <class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha()

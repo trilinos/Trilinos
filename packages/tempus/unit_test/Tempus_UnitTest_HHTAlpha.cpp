@@ -159,8 +159,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, StepperGetter_DefaultSchemeIgnoresUserBetaGamma)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   stepper->setSchemeName("Newmark Beta Average Acceleration");
-  stepper->setBeta(0.3025);    // should be ignored
-  stepper->setGamma(0.6);      // should be ignored
+  stepper->setBeta(0.3025);  // should be ignored
+  stepper->setGamma(0.6);    // should be ignored
   stepper->setAlphaF(0.1);
   stepper->setAlphaM(0.0);
   stepper->initialize();

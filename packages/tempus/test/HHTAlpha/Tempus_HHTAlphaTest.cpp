@@ -637,9 +637,9 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
 // ************************************************************
 TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder_NonzeroAlpha_Converges)
 {
-  RCP<Tempus::IntegratorBasic<double> > integrator;
-  std::vector<RCP<Thyra::VectorBase<double> > > solutions;
-  std::vector<RCP<Thyra::VectorBase<double> > > solutionsDot;
+  RCP<Tempus::IntegratorBasic<double>> integrator;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
@@ -660,7 +660,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder_NonzeroAlpha_Converges)
   // Explicitly exercise the nonzero-alpha HHT/generalized-alpha path.
   ParameterList& stepperPL =
       pl->sublist("Default Stepper")
-        .sublist("HHT-Alpha Parameters");
+          .sublist("HHT-Alpha Parameters");
   stepperPL.set("Alpha_f", 0.1);
   stepperPL.set("Alpha_m", 0.0);
   stepperPL.set("Beta", 0.3025);
@@ -723,9 +723,9 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder_NonzeroAlpha_Converges)
   // Check convergence.  Before the bug fix, this path stalls with essentially
   // zero convergence rate for Alpha_f != 0.  After the fix, it should regain
   // clear refinement convergence.
-  double xSlope    = 0.0;
-  double xDotSlope = 0.0;
-  RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
+  double xSlope                        = 0.0;
+  double xDotSlope                     = 0.0;
+  RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
   writeOrderError("Tempus_HHTAlpha_SinCos_SecondOrder_NonzeroAlpha-Error.dat",
                   stepper, StepSize, solutions, xErrorNorm, xSlope,
                   solutionsDot, xDotErrorNorm, xDotSlope, out);
@@ -734,16 +734,9 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder_NonzeroAlpha_Converges)
       << "  xSlope       = " << xSlope << "\n"
       << "  xDotSlope    = " << xDotSlope << "\n"
       << "  xErrorNorm0  = " << xErrorNorm[0] << "\n"
-      << "  xErrorNormN  = " << xErrorNorm[xErrorNorm.size()-1] << "\n"
+      << "  xErrorNormN  = " << xErrorNorm[xErrorNorm.size() - 1] << "\n"
       << "  xDotError0   = " << xDotErrorNorm[0] << "\n"
-      << "  xDotErrorN   = " << xDotErrorNorm[xDotErrorNorm.size()-1] << "\n";
-
-  // Use robust lower bounds instead of exact hard-coded slopes, since
-  // generalized-alpha damping can alter constants slightly across builds.
-  //TEST_ASSERT(xSlope > 1.5);
-  //TEST_ASSERT(xDotSlope > 1.5);
-  //TEST_ASSERT(xErrorNorm.back() < xErrorNorm.front());
-  //TEST_ASSERT(xDotErrorNorm.back() < xDotErrorNorm.front());
+      << "  xDotErrorN   = " << xDotErrorNorm[xDotErrorNorm.size() - 1] << "\n";
 
   double order = stepper->getOrder();
   TEST_FLOATING_EQUALITY(xSlope, order, 0.04);
@@ -775,7 +768,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ZeroAlphaMatchesExplicitZeroSettings)
   // Case B: explicitly set zero alpha values.
   ParameterList& stepperPLB =
       plB->sublist("Default Stepper")
-         .sublist("HHT-Alpha Parameters");
+          .sublist("HHT-Alpha Parameters");
   stepperPLB.set("Alpha_f", 0.0);
   stepperPLB.set("Alpha_m", 0.0);
 

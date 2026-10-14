@@ -50,7 +50,6 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
   options.push_back("Linear Acceleration");
 
   for (const auto& option : options) {
-
     RCP<Tempus::IntegratorBasic<double>> integrator;
     std::vector<RCP<Thyra::VectorBase<double>>> solutions;
     std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
@@ -162,7 +161,8 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
     TEST_FLOATING_EQUALITY(xSlope, order, 0.01);
     if (option == "Average Acceleration") {
       TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.0484483, 1.0e-4);
-    } else if (option == "Linear Acceleration") {
+    }
+    else if (option == "Linear Acceleration") {
       TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.0996998, 1.0e-4);
     }
     TEST_FLOATING_EQUALITY(xDotSlope, order, 0.01);

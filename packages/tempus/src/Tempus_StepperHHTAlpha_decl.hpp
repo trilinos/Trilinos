@@ -171,7 +171,7 @@ class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar> {
   virtual Scalar getGamma() const { return gamma_; }
   virtual Scalar getAlphaF() const { return alpha_f_; }
   virtual Scalar getAlphaM() const { return alpha_m_; }
- 
+
   /// Validate final scheme parameters and emit any consistency warnings.
   void validateSchemeParameters() const;
 
