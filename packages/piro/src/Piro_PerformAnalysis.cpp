@@ -69,6 +69,7 @@
 #include "Piro_ThyraProductME_Tempus_FinalObjective.hpp"
 #include "Piro_ThyraProductME_ROL_DynamicConstraint.hpp"
 #include "Piro_ThyraProductME_ROL_ObservedObjective.hpp"
+#include "Tempus_AdjointSensitivityUtils.hpp"
 #include "ROL_ReducedDynamicObjective.hpp"
 #include "ROL_ReducedDynamicStationaryControlsObjective.hpp"
 #endif
@@ -999,23 +1000,49 @@ Piro::PerformROLTransientAnalysis(
   // response and the derivative.
   // In the first approach ROL is not aware that we solve a transient problem.
   //
-  // 3. The third option is whether the response depends only on the final time step or
-  // if it is integrated over time.
-  // Currently, both cases of the option 2 support a response that depends only on
-  // the final time step. However, only the "Tempus Driver" set to false support the
-  // time integrated response for now.
+  // 3. The third option is the type of objective ("Response Type"), with g the response:
+  //    - "Final Time": g(x(T), p, T),
+  //    - "Time Integral": the integral of g(x(t), p, t) over time,
+  //    - "Sum Over Times": the sum of g(x(t_k), p, t_k) over the times t_k of the
+  //      "Response Time List", e.g., the times at which observations are available.
+  // All the types are supported by both cases of the option 2. With the Tempus driver,
+  // "Time Integral" and "Sum Over Times" require a response that does not depend on x_dot.
+  // The older parameter "Response Depends Only On Final Time" selects "Final Time" (true)
+  // or "Time Integral" (false).
   //
   bool useFullSpace = rolParams.get("Full Space",false);
   bool useTempusDriver = rolParams.get("Tempus Driver",false);
-  bool useFinalTimeStepResponse = rolParams.get<bool>("Response Depends Only On Final Time", true);
 
   TEUCHOS_TEST_FOR_EXCEPTION(useFullSpace, Teuchos::Exceptions::InvalidParameter,
       std::endl << "Piro::PerformROLTransientAnalysis, ERROR: " <<
       "full space approach is currently not supported."<<std::endl);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(useTempusDriver && !useFinalTimeStepResponse, Teuchos::Exceptions::InvalidParameter,
-      std::endl << "Piro::PerformROLTransientAnalysis, ERROR: " <<
-      "integrated response is currently not supported with the Tempus driver."<<std::endl);
+  std::string responseTypeName;
+  if (rolParams.isParameter("Response Type")) {
+    responseTypeName = rolParams.get<string>("Response Type");
+    TEUCHOS_TEST_FOR_EXCEPTION(rolParams.isParameter("Response Depends Only On Final Time") &&
+        (responseTypeName != "Sum Over Times") &&
+        (rolParams.get<bool>("Response Depends Only On Final Time") != (responseTypeName == "Final Time")),
+        Teuchos::Exceptions::InvalidParameter,
+        std::endl << "Piro::PerformROLTransientAnalysis, ERROR: \"Response Type\" = \"" << responseTypeName <<
+        "\" is inconsistent with \"Response Depends Only On Final Time\" = " <<
+        (rolParams.get<bool>("Response Depends Only On Final Time") ? "true" : "false") << "." << std::endl);
+  }
+  else
+    responseTypeName = rolParams.get<bool>("Response Depends Only On Final Time", true) ? "Final Time" : "Time Integral";
+  const Tempus::AdjointResponseType responseType = Tempus::AdjointSensitivityUtils::parseResponseType(responseTypeName);
+
+  std::vector<double> responseTimes;
+  if (responseType == Tempus::AdjointResponseType::SumOverTimes) {
+    responseTimes = Tempus::AdjointSensitivityUtils::parseTimeList<double>(rolParams.get<string>("Response Time List", ""));
+    TEUCHOS_TEST_FOR_EXCEPTION(responseTimes.empty(), Teuchos::Exceptions::InvalidParameter,
+        std::endl << "Piro::PerformROLTransientAnalysis, ERROR: \"Response Type\" = \"Sum Over Times\" requires " <<
+        "a non-empty \"Response Time List\"." << std::endl);
+  }
+  else if (!rolParams.get<string>("Response Time List", "").empty())
+    *out << "WARNING: Piro::PerformROLTransientAnalysis: \"Response Time List\" is ignored, it is only used with " <<
+            "\"Response Type\" = \"Sum Over Times\"." << std::endl;
+  const double timeTol = 1.0e-9 * std::max(std::abs(t_f - t_0), std::abs(t_f) + 1.0e-6);
 
   if(analysisVerbosity >= 3) {
     *out << "\nPiro PerformAnalysis: ROL options:" << std::endl;
@@ -1066,6 +1093,7 @@ Piro::PerformROLTransientAnalysis(
 
     auto tempus_obj = Teuchos::rcp(new Piro::ThyraProductME_TempusFinalObjective<double>(model, piroTempusSolver,
       Teuchos::null, Teuchos::null, adjointModel, g_index, piroParams, nt, analysisVerbosityLevel, observer));
+    tempus_obj->setResponseType(responseType, responseTimes);
 
     reduced_obj = Teuchos::rcp(new Piro::ThyraProductME_ROL_ObservedObjective<double>(tempus_obj,
       [tempus_obj](const ROL::Vector<double>& z) { return tempus_obj->getFinalState(z); },
@@ -1103,7 +1131,21 @@ Piro::PerformROLTransientAnalysis(
     Teuchos::RCP<Tempus::Integrator<double>> adjoint_integrator = adjointModel.is_null() ? Teuchos::null :
       Tempus::createIntegratorBasic<double>(tempus_params, adjointModel);
 
-    ROL::Ptr<ROL::DynamicObjective<double> > obj_ptr = ROL::makePtr<Piro::ThyraProductME_ROL_DynamicObjective<double>>(model, forward_integrator, adjoint_integrator, adjointModel, g_index, piroParams, numTimeStamps, useFinalTimeStepResponse, true, analysisVerbosityLevel, observer);
+    const bool useFinalTimeStepResponse = (responseType != Tempus::AdjointResponseType::TimeIntegral);
+    auto piro_obj_ptr = ROL::makePtr<Piro::ThyraProductME_ROL_DynamicObjective<double>>(model, forward_integrator, adjoint_integrator, adjointModel, g_index, piroParams, numTimeStamps, useFinalTimeStepResponse, true, analysisVerbosityLevel, observer);
+    if (responseType == Tempus::AdjointResponseType::SumOverTimes) {
+      // The response times must be ends of the time stamps 1,...,nt
+      for (const double t_k : responseTimes) {
+        const long k = std::lround((t_k - t_0)/dt_rol);
+        TEUCHOS_TEST_FOR_EXCEPTION((k < 1) || (k > nt) || (std::abs(t_0 + k*dt_rol - t_k) > timeTol),
+            Teuchos::Exceptions::InvalidParameter,
+            std::endl << "Piro::PerformROLTransientAnalysis, ERROR: the response time " << t_k << " is not supported " <<
+            "when \"Tempus Driver\" is false: the response times must be in (Initial Time, Final Time] = (" << t_0 <<
+            ", " << t_f << "] and multiples of the time step " << dt_rol << " from the initial time." << std::endl);
+      }
+      piro_obj_ptr->setResponseTimes(responseTimes, timeTol);
+    }
+    ROL::Ptr<ROL::DynamicObjective<double> > obj_ptr = piro_obj_ptr;
     auto constr_ptr = ROL::makePtr<Piro::ThyraProductME_ROL_DynamicConstraint<double>>(forward_integrator, adjoint_integrator, adjointModel, piroParams, analysisVerbosityLevel, observer);
 
     // The time steps are solved with the Newton solver of ROL::DynamicConstraint, which reads
@@ -1937,7 +1979,17 @@ Piro::getValidPiroAnalysisROLParameters(int num_parameters)
       "If false, ROL integrates the problem with the Tempus Backward Euler stepper on a uniform time grid, solving each time step with the ROL Newton solver configured by \"ROL Options\"->\"Dynamic Constraint\"->\"Solve\"");
   validPL->set<bool>("Redirect Tempus Output", true, "Whether to redirect Tempus output to file (Tempus driver only)");
   validPL->set<string>("Tempus Output Filename", "log_tempus.txt", "Filename for the Tempus output");
-  validPL->set<bool>("Response Depends Only On Final Time", true, "Whether the response depends only on the solution and parameters at the final time");
+  validPL->set<bool>("Response Depends Only On Final Time", true, "Transient problems only. Whether the response depends only on the solution and parameters at the final time "
+      "(\"Response Type\" = \"Final Time\") or is integrated in time (\"Response Type\" = \"Time Integral\"). Superseded by \"Response Type\"");
+  validPL->set<string>("Response Type", "Final Time", "Transient problems only. Objective in terms of the response g: \"Final Time\" for g(x(T),p,T), "
+      "\"Time Integral\" for the time integral of g(x(t),p,t) (trapezoidal rule over the time steps), or \"Sum Over Times\" for the sum of g(x(t_k),p,t_k) "
+      "over the times t_k of the \"Response Time List\" (e.g., the times of the observations). With the Tempus driver, \"Time Integral\" and "
+      "\"Sum Over Times\" require a response that does not depend on x_dot; for \"Sum Over Times\", the time steps land on the times t_k with "
+      "'Variable' time steps, while with 'Constant' time steps (and without the Tempus driver) the times t_k must be on the time grid. "
+      "Without the Tempus driver, the times t_k must be larger than the initial time. "
+      "Higher-order Tempus steppers need an interpolation (Tempus->Integrator->Solution History->Interpolator->Order) of order at least "
+      "the stepper order minus one to retain their order in the gradient");
+  validPL->set<string>("Response Time List", "", "Transient problems only. Comma-separated list of the times t_k of the \"Sum Over Times\" response");
   validPL->set<bool>("Use NOX Solver", false, "Whether to use NOX for solving the state equation or the native ROL solver (steady problems only)");
 
   validPL->set<double>("Objective Recovery Value", 1.0e10, "Objective value used when the state solver does not converge. If not defined, the objective will be computed using the unconverged state");

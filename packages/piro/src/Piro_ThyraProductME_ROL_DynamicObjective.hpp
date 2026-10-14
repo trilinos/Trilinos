@@ -10,7 +10,9 @@
 #ifndef PIRO_THYRAPRODUCTME_ROL_DYNAMICOBJECTIVE_HPP
 #define PIRO_THYRAPRODUCTME_ROL_DYNAMICOBJECTIVE_HPP
 
+#include <cmath>
 #include <string>
+#include <vector>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -53,16 +55,28 @@ template <typename Real>
  *      \dot{u} = \frac{u_{new}-u_{old}}{dt}.
  * \f]
  *
- * If the response depends only on the final time, the last time stamp contributes
+ * Three types of responses are supported:
+ *
+ * - Final time (onlyFinalTime = true): the last time stamp contributes
  * \f[
  *      G = g(u_{new}, \dot{u}, z, t_{new})
  * \f]
  * and all other time stamps contribute zero.
  *
- * Otherwise the response is integrated in time with the trapezoidal rule
+ * - Time integral (onlyFinalTime = false): the response is integrated in time with
+ * the trapezoidal rule
  * \f[
  *      G = \frac{dt}{2} \left[ g(u_{new}, \dot{u}, z, t_{new}) + g(u_{old}, \dot{u}, z, t_{old}) \right].
  * \f]
+ *
+ * - Sum over times (see setResponseTimes()): the response is the sum of the
+ * responses at the given times t_k, which must be ends of time stamps. A time
+ * stamp ending at t_k contributes
+ * \f[
+ *      G = g(u_{new}, \dot{u}, z, t_k)
+ * \f]
+ * (times the number of occurrences of t_k in the list), all other time stamps
+ * contribute zero. The model is evaluated exactly at the listed time t_k.
  *
  * The gradients are the exact derivatives of G, including the dependence of
  * \f$\dot{u}\f$ on both u_old (factor -1/dt) and u_new (factor 1/dt). Models that
@@ -87,6 +101,13 @@ public:
     Teuchos::RCP<ROL_ObserverBase<Real>> observer = Teuchos::null);
 
   virtual ~ThyraProductME_ROL_DynamicObjective() {}
+
+  /** \brief Use the sum of the responses at the given times as objective.
+   *
+   *  Each time must coincide, up to the tolerance tol, with the end of a time
+   *  stamp (other than time stamp 0, which is not integrated).
+   */
+  void setResponseTimes(const std::vector<Real>& responseTimes, const Real tol);
 
   //! Compute value of objective
   Real value( const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
@@ -136,9 +157,35 @@ public:
   }
 
 private:
+  enum class ResponseType { FinalTime, TimeIntegral, SumOverTimes };
+
+  //! Whether the response of the time stamp is evaluated at the end of the time
+  //! stamp only (final time and sum over times), rather than integrated in time.
+  bool isPointResponse() const {
+    return responseType_ != ResponseType::TimeIntegral;
+  }
+
+  //! Weight of the point response of the time stamp, and time at which the response
+  //! is evaluated. The weight is zero if the time stamp does not contribute.
+  Real pointResponseWeight(const ROL::TimeStamp<Real> &timeStamp, Real &t_response) const {
+    t_response = timeStamp.t.back();
+    if (responseType_ == ResponseType::FinalTime)
+      return ((int) timeStamp.k == Nt_-1) ? Real(1) : Real(0);
+    Real weight(0);
+    if (timeStamp.k == 0) return weight;  // time stamp 0 is not integrated
+    for (const Real t_k : responseTimes_) {
+      if (std::abs(t_k - timeStamp.t.back()) <= responseTimeTol_) {
+        weight += Real(1);
+        t_response = t_k;
+      }
+    }
+    return weight;
+  }
+
   //! Whether the time stamp contributes to the objective.
   bool isActive(const ROL::TimeStamp<Real> &timeStamp) const {
-    return !onlyFinalTime_ || (int) timeStamp.k == Nt_-1;
+    Real t_response;
+    return !isPointResponse() || pointResponseWeight(timeStamp, t_response) != Real(0);
   }
 
   //! Partial derivatives dg/dx and dg/dx_dot (gradient form) at (x, x_dot, p, t).
@@ -156,7 +203,9 @@ private:
   std::string sensitivity_method_;
   const int g_index_;
   int Nt_;
-  const bool onlyFinalTime_;
+  ResponseType responseType_;
+  std::vector<Real> responseTimes_;
+  Real responseTimeTol_;
   const bool useTrapezoidalTimeIntegration_;
   bool supportsDgDxDot_;
   Real objectiveRecoveryValue_;
@@ -192,7 +241,8 @@ ThyraProductME_ROL_DynamicObjective(
   sensitivity_method_("Adjoint"),
   g_index_(g_index),
   Nt_(Nt),
-  onlyFinalTime_(onlyFinalTime),
+  responseType_(onlyFinalTime ? ResponseType::FinalTime : ResponseType::TimeIntegral),
+  responseTimeTol_(0),
   useTrapezoidalTimeIntegration_(useTrapezoidalTimeIntegration),
   supportsDgDxDot_(false),
   optParams_(piroParams.sublist("Optimization Status")),
@@ -203,7 +253,7 @@ ThyraProductME_ROL_DynamicObjective(
 {
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(!onlyFinalTime_ && !useTrapezoidalTimeIntegration_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!onlyFinalTime && !useTrapezoidalTimeIntegration_, std::logic_error,
     std::endl << "Piro::ThyraProductME_ROL_DynamicObjective: time-integrated responses are "
     "only implemented with the trapezoidal rule." << std::endl);
 
@@ -226,6 +276,18 @@ ThyraProductME_ROL_DynamicObjective(
           << " is supported, but not in gradient form (DERIV_MV_GRADIENT_FORM). The dependence "
           << "of the response on x_dot is ignored when computing gradients." << std::endl;
   }
+}
+
+template <typename Real>
+void
+ThyraProductME_ROL_DynamicObjective<Real>::
+setResponseTimes(const std::vector<Real>& responseTimes, const Real tol)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(responseTimes.empty(), Teuchos::Exceptions::InvalidParameter,
+    std::endl << "Piro::ThyraProductME_ROL_DynamicObjective::setResponseTimes: the list of response times is empty." << std::endl);
+  responseType_ = ResponseType::SumOverTimes;
+  responseTimes_ = responseTimes;
+  responseTimeTol_ = tol;
 }
 
 template <typename Real>
@@ -260,12 +322,15 @@ value( const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
 
   RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
-  Real g = value( thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_new);
-
-  if (!onlyFinalTime_) {
-    g += value( thyra_u_old.getVector(), u_dot, thyra_p.getVector(), t_old);
-    g *= dt/2.;
+  if (isPointResponse()) {
+    Real t_response;
+    const Real weight = pointResponseWeight(timeStamp, t_response);
+    return weight * value( thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_response);
   }
+
+  Real g = value( thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_new);
+  g += value( thyra_u_old.getVector(), u_dot, thyra_p.getVector(), t_old);
+  g *= dt/2.;
 
   return g;
 }
@@ -286,8 +351,8 @@ gradient_uo( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
   if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
     *out_ << "Piro::ThyraProductME_ROL_DynamicObjective::gradient_uo " << t_old << " " << t_new << " " << timeStamp.k << " " << Nt_ << std::endl;
 
-  // In the final-time case u_old enters only through u_dot.
-  if(!isActive(timeStamp) || (onlyFinalTime_ && !supportsDgDxDot_)) {
+  // For point responses u_old enters only through u_dot.
+  if(!isActive(timeStamp) || (isPointResponse() && !supportsDgDxDot_)) {
     Thyra::assign(dgduo.ptr(), Teuchos::ScalarTraits<Real>::zero());
     return;
   }
@@ -306,13 +371,17 @@ gradient_uo( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
 
   RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
+  Real t_response;
+  const Real weight = isPointResponse() ? pointResponseWeight(timeStamp, t_response) : one;
+  if (!isPointResponse()) t_response = t_new;
+
   RCP<Thyra::VectorBase<Real> > dgdx_new = dgduo->clone_v();
   RCP<Thyra::VectorBase<Real> > dgdx_dot_new = dgduo->clone_v();
-  evalStateDerivatives(dgdx_new, dgdx_dot_new, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_new);
+  evalStateDerivatives(dgdx_new, dgdx_dot_new, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_response);
 
-  if (onlyFinalTime_) {
-    // G = g(u_new, u_dot)  ==>  dG/du_old = -1/dt dg/dx_dot(new)
-    Thyra::V_StV(dgduo.ptr(), -one/dt, *dgdx_dot_new);
+  if (isPointResponse()) {
+    // G = w g(u_new, u_dot)  ==>  dG/du_old = -w/dt dg/dx_dot(new)
+    Thyra::V_StV(dgduo.ptr(), -weight/dt, *dgdx_dot_new);
   }
   else {
     // G = dt/2 [g(u_new, u_dot) + g(u_old, u_dot)]
@@ -361,13 +430,17 @@ gradient_un( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
 
   RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
+  Real t_response;
+  const Real weight = isPointResponse() ? pointResponseWeight(timeStamp, t_response) : one;
+  if (!isPointResponse()) t_response = t_new;
+
   RCP<Thyra::VectorBase<Real> > dgdx_new = dgdun->clone_v();
   RCP<Thyra::VectorBase<Real> > dgdx_dot_new = dgdun->clone_v();
-  evalStateDerivatives(dgdx_new, dgdx_dot_new, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_new);
+  evalStateDerivatives(dgdx_new, dgdx_dot_new, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_response);
 
-  if (onlyFinalTime_) {
-    // G = g(u_new, u_dot)  ==>  dG/du_new = dg/dx(new) + 1/dt dg/dx_dot(new)
-    Thyra::V_StVpStV(dgdun.ptr(), one, *dgdx_new, one/dt, *dgdx_dot_new);
+  if (isPointResponse()) {
+    // G = w g(u_new, u_dot)  ==>  dG/du_new = w [dg/dx(new) + 1/dt dg/dx_dot(new)]
+    Thyra::V_StVpStV(dgdun.ptr(), weight, *dgdx_new, weight/dt, *dgdx_dot_new);
   }
   else {
     // G = dt/2 [g(u_new, u_dot) + g(u_old, u_dot)]
@@ -416,9 +489,16 @@ gradient_z( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL::
   RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
   RCP<Thyra::VectorBase<Real> > dgdp = thyra_dgdp.getVector();
-  gradient_z( dgdp, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_new);
 
-  if (!onlyFinalTime_) {
+  if (isPointResponse()) {
+    // G = w g(u_new, u_dot)  ==>  dG/dz = w dg/dp(new)
+    Real t_response;
+    const Real weight = pointResponseWeight(timeStamp, t_response);
+    gradient_z( dgdp, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_response);
+    if (weight != Real(1)) Thyra::Vt_S(dgdp.ptr(), weight);
+  }
+  else {
+    gradient_z( dgdp, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_new);
     // G = dt/2 [g(u_new, u_dot) + g(u_old, u_dot)]  ==>  dG/dz = dt/2 [dg/dp(new) + dg/dp(old)]
     RCP<Thyra::VectorBase<Real> > dgdp_old = thyra_dgdp.getVector()->clone_v();
     gradient_z( dgdp_old, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), t_old);
