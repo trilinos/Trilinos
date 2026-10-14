@@ -53,6 +53,9 @@ public:
 					      const panzer::FieldLibrary& field_library,
                                               const Teuchos::ParameterList& user_data) const;
 
+private:
+   bool variable_coefficient_;
+   bool anisotropic_tensor_;
 };
 
 }

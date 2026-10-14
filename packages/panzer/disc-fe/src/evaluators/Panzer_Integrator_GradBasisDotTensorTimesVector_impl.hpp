@@ -179,9 +179,14 @@ namespace panzer
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
 
-    // Initialize the evaluated field.
-    const int numQP(vector_.extent(1)), numDim(vector_.extent(2)),
+    // The vector may have more components than the spatial dimension (see
+    // the Vector Data Layout); the gradient of the basis is zero in those
+    // directions and the tensor only spans the spatial dimension, so only
+    // loop over the spatial dimension.
+    const int numQP(vector_.extent(1)), numSpatialDim(basis_.extent(3)),
               numBases(basis_.extent(1));
+
+    // Initialize the evaluated field.
     if (evalStyle_ == EvaluatorStyle::EVALUATES)
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
         field_(cell, basis) = 0.0;
@@ -193,14 +198,21 @@ namespace panzer
       // integration, looping over the bases.
       for (int qp(0); qp < numQP; ++qp)
       {
-        for (int dim(0); dim < numDim; ++dim)
+        for (int dim(0); dim < numSpatialDim; ++dim)
         {
-          tmp_(cell) = 0.0;
-          for (int dim2(0); dim2 < numDim; ++dim2)
-            tmp_(cell) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
-	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
-	    field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp_(cell);
-	  });
+          // tmp_(cell) is shared by the team, so a single team thread (all of
+          // its vector lanes, to keep hierarchic Fad partitions intact)
+          // computes it, and barriers fence it from the reads.
+          team.team_barrier();
+          if (team.team_rank() == 0) {
+            tmp_(cell) = 0.0;
+            for (int dim2(0); dim2 < numSpatialDim; ++dim2)
+              tmp_(cell) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
+          }
+          team.team_barrier();
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp_(cell);
+          });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     }
@@ -222,7 +234,8 @@ namespace panzer
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
     const int numQP = vector_.extent(1);
-    const int numDim = vector_.extent(2);
+    // Only loop over the spatial dimension; see the non-shared operator.
+    const int numSpatialDim = basis_.extent(3);
     const int numBases = basis_.extent(1);
     const int fadSize = Sacado::dimension_scalar(field_.get_view());
 
@@ -248,14 +261,21 @@ namespace panzer
       // integration, looping over the bases.
       for (int qp(0); qp < numQP; ++qp)
       {
-        for (int dim(0); dim < numDim; ++dim)
+        for (int dim(0); dim < numSpatialDim; ++dim)
         {
-          tmp(cell) = 0.0;
-          for (int dim2(0); dim2 < numDim; ++dim2)
-            tmp(cell) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
-	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
-	    tmp_field(basis) += basis_(cell, basis, qp, dim) * tmp(cell);
-	  });
+          // tmp(0) is shared by the team, so a single team thread (all of its
+          // vector lanes, to keep hierarchic Fad partitions intact) computes
+          // it, and barriers fence it from the reads.
+          team.team_barrier();
+          if (team.team_rank() == 0) {
+            tmp(0) = 0.0;
+            for (int dim2(0); dim2 < numSpatialDim; ++dim2)
+              tmp(0) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
+          }
+          team.team_barrier();
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+            tmp_field(basis) += basis_(cell, basis, qp, dim) * tmp(0);
+          });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     }

@@ -206,28 +206,28 @@ namespace panzer
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.
-    if (NUM_FIELD_MULT == 0)
+    if constexpr (NUM_FIELD_MULT == 0)
     {
       // Loop over the quadrature points, scale the integrand by the
       // multiplier, and then perform the actual integration, looping over the
       // bases.
       for (int qp(0); qp < numQP; ++qp)
       {
-	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
           field_(cell, basis) += basis_(cell, basis, qp) * multiplier_ * scalar_(cell, qp);
-	});
+        });
       } // end loop over the quadrature points
     }
-    else if (NUM_FIELD_MULT == 1)
+    else if constexpr (NUM_FIELD_MULT == 1)
     {
       // Loop over the quadrature points, scale the integrand by the multiplier
       // and the single field multiplier, and then perform the actual
       // integration, looping over the bases.
       for (int qp(0); qp < numQP; ++qp)
       {
-	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
           field_(cell, basis) += basis_(cell, basis, qp) * multiplier_ * scalar_(cell, qp) * kokkosFieldMults_(0)(cell, qp);
-	});
+        });
       } // end loop over the quadrature points
     }
     else
@@ -239,13 +239,19 @@ namespace panzer
       const int numFieldMults(kokkosFieldMults_.extent(0));
       for (int qp(0); qp < numQP; ++qp)
       {
-	team.team_barrier();
-	tmp_(cell) = 1.0;
-        for (int fm(0); fm < numFieldMults; ++fm)
-          tmp_(cell) *= kokkosFieldMults_(fm)(cell, qp);
-	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
-	    field_(cell, basis) += basis_(cell, basis, qp) * multiplier_ * scalar_(cell, qp) * tmp_(cell);
-	  });
+        // tmp_(cell) is shared by the team, so a single team thread (all of
+        // its vector lanes, to keep hierarchic Fad partitions intact) computes
+        // the product, and barriers fence it from the reads.
+        team.team_barrier();
+        if (team.team_rank() == 0) {
+          tmp_(cell) = 1.0;
+          for (int fm(0); fm < numFieldMults; ++fm)
+            tmp_(cell) *= kokkosFieldMults_(fm)(cell, qp);
+        }
+        team.team_barrier();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
+          field_(cell, basis) += basis_(cell, basis, qp) * multiplier_ * scalar_(cell, qp) * tmp_(cell);
+        });
       } // end loop over the quadrature points
     } // end if (NUM_FIELD_MULT == something)
   } // end of operator()
@@ -288,32 +294,28 @@ namespace panzer
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.
-    if (NUM_FIELD_MULT == 0)
+    if constexpr (NUM_FIELD_MULT == 0)
     {
       // Loop over the quadrature points, scale the integrand by the
       // multiplier, and then perform the actual integration, looping over the
       // bases.
       for (int qp(0); qp < numQP; ++qp)
       {
-	team.team_barrier();
-	tmp(0) = multiplier_ * scalar_(cell, qp);
-	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
-	  tmp_field(basis) += basis_(cell, basis, qp) * tmp(0);
-	});
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
+          tmp_field(basis) += basis_(cell, basis, qp) * multiplier_ * scalar_(cell, qp);
+        });
       } // end loop over the quadrature points
     }
-    else if (NUM_FIELD_MULT == 1)
+    else if constexpr (NUM_FIELD_MULT == 1)
     {
       // Loop over the quadrature points, scale the integrand by the multiplier
       // and the single field multiplier, and then perform the actual
       // integration, looping over the bases.
       for (int qp(0); qp < numQP; ++qp)
       {
-	team.team_barrier();
-        tmp(0) = multiplier_ * scalar_(cell, qp) * kokkosFieldMults_(0)(cell, qp);
-	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
-	  tmp_field(basis) += basis_(cell, basis, qp) * tmp(0);
-	});
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
+          tmp_field(basis) += basis_(cell, basis, qp) * multiplier_ * scalar_(cell, qp) * kokkosFieldMults_(0)(cell, qp);
+        });
       } // end loop over the quadrature points
     }
     else
@@ -325,14 +327,19 @@ namespace panzer
       const int numFieldMults = kokkosFieldMults_.extent(0);
       for (int qp(0); qp < numQP; ++qp)
       {
-	team.team_barrier();
-        ScalarT fieldMultsTotal(1); // need shared mem here
-        for (int fm(0); fm < numFieldMults; ++fm)
-          fieldMultsTotal *= kokkosFieldMults_(fm)(cell, qp);
-        tmp(0) = multiplier_ * scalar_(cell, qp) * fieldMultsTotal;
-	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
-	  tmp_field(basis) += basis_(cell, basis, qp) * tmp(0);
-	});
+        // tmp(0) is shared by the team, so a single team thread (all of its
+        // vector lanes, to keep hierarchic Fad partitions intact) computes it,
+        // and barriers fence it from the reads.
+        team.team_barrier();
+        if (team.team_rank() == 0) {
+          tmp(0) = multiplier_ * scalar_(cell, qp);
+          for (int fm(0); fm < numFieldMults; ++fm)
+            tmp(0) *= kokkosFieldMults_(fm)(cell, qp);
+        }
+        team.team_barrier();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),[&] (const int& basis) {
+          tmp_field(basis) += basis_(cell, basis, qp) * tmp(0);
+        });
       } // end loop over the quadrature points
     } // end if (NUM_FIELD_MULT == something)
 

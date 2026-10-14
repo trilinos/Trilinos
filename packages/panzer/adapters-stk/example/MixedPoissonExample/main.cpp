@@ -117,6 +117,8 @@ int main(int argc,char * argv[])
      bool check_order_for_shared_mem = true;
      bool stacked_timer_output = true;
      bool time_monitor_output = false;
+     bool variable_coefficient = false;
+     bool anisotropic_tensor = false;
 
      Teuchos::CommandLineProcessor clp;
      clp.throwExceptions(false);
@@ -136,6 +138,10 @@ int main(int argc,char * argv[])
      clp.setOption("check-order","no-check-order",&check_order_for_shared_mem);
      clp.setOption("stacked-timer-output","no-stacked-timer-output",&stacked_timer_output);
      clp.setOption("time-monitor-output","no-time-monitor-output",&time_monitor_output);
+     clp.setOption("variable-coefficient","no-variable-coefficient",&variable_coefficient,
+                   "Weight the div-div term by k=(1+x)(1+y)(1+z), applied as three field multipliers");
+     clp.setOption("anisotropic-tensor","no-anisotropic-tensor",&anisotropic_tensor,
+                   "Use a constant, full, SPD tensor K in the (K grad phi, grad q) term");
 
      // parse commandline argument
      Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
@@ -208,6 +214,8 @@ int main(int argc,char * argv[])
         testInitialization(hgrad_basis_order,
                            hdiv_basis_order,
                            ipb, eBlockNames, bcs);
+        ipb->sublist("MixedPoisson Physics").set("Variable Coefficient",variable_coefficient);
+        ipb->sublist("MixedPoisson Physics").set("Anisotropic Tensor",anisotropic_tensor);
 
         const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0_0"));
 
@@ -357,6 +365,20 @@ int main(int argc,char * argv[])
      {
         closure_models.sublist("solid").sublist("SOURCE").set<std::string>("Type","SINE SOURCE");
           // SOURCE field is required by the MixedPoissonEquationSet
+
+       if (variable_coefficient) {
+         closure_models.sublist("solid").sublist("SOURCE").set("Weighted",true);
+         const char* names[] = {"COEFF_X","COEFF_Y","COEFF_Z"};
+         for (int d = 0; d < 3; ++d) {
+           closure_models.sublist("solid").sublist(names[d]).set<std::string>("Type","LINEAR COEFFICIENT");
+           closure_models.sublist("solid").sublist(names[d]).set<int>("Direction",d);
+         }
+       }
+
+       if (anisotropic_tensor) {
+         closure_models.sublist("solid").sublist("SOURCE").set("Anisotropic",true);
+         closure_models.sublist("solid").sublist("K_TENSOR").set<std::string>("Type","ANISOTROPIC TENSOR");
+       }
 
        // required for error calculation
        closure_models.sublist("solid").sublist("PHI_ERROR").set<std::string>("Type","ERROR_CALC");

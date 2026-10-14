@@ -16,6 +16,7 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_HierarchicParallelism.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 
 namespace mini_em {
@@ -65,8 +66,11 @@ void TensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData 
     auto temp_betax = betax;
     auto temp_betay = betay;
     auto temp_betaz = betaz;
-    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,conductivity.extent_int(1)});
-    Kokkos::parallel_for("panzer:TensorConductivity 3D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
+    const int num_points = conductivity.extent_int(1);
+    auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
+    Kokkos::parallel_for("panzer:TensorConductivity 3D",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) {
+      const int cell = team.league_rank();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_points), [&] (const int point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
         // const ScalarT& z = coords(cell,point,2);
@@ -82,19 +86,29 @@ void TensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData 
         temp_conductivity(cell,point,2,1) = temp_sigma * (      temp_betaz*temp_betay + temp_betax);
         temp_conductivity(cell,point,2,2) = temp_sigma * (1.0 + temp_betaz*temp_betaz);
       });
+    });
   } else {
+    // In 2D the field lies in the x-y plane, so the conductivity is the
+    // in-plane block of the 3D tensor above, with the same scaling.
     auto temp_conductivity = conductivity;
     auto temp_sigma = sigma;
-    Kokkos::MDRangePolicy<PHX::ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,conductivity.extent_int(1)});
-    Kokkos::parallel_for("panzer:TensorConductivity 2D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
+    auto temp_betax = betax;
+    auto temp_betay = betay;
+    auto temp_betaz = betaz;
+    const int num_points = conductivity.extent_int(1);
+    auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::ExecutionSpace>(workset.num_cells);
+    Kokkos::parallel_for("panzer:TensorConductivity 2D",policy,KOKKOS_LAMBDA (const Kokkos::TeamPolicy<PHX::ExecutionSpace>::member_type& team) {
+      const int cell = team.league_rank();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_points), [&] (const int point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
-        temp_conductivity(cell,point,0,0) = temp_sigma;
-        temp_conductivity(cell,point,0,1) = 0.;
+        temp_conductivity(cell,point,0,0) = temp_sigma * (1.0 + temp_betax*temp_betax);
+        temp_conductivity(cell,point,0,1) = temp_sigma * (      temp_betax*temp_betay - temp_betaz);
 
-        temp_conductivity(cell,point,1,0) = 0.;
-        temp_conductivity(cell,point,1,1) = temp_sigma;
+        temp_conductivity(cell,point,1,0) = temp_sigma * (      temp_betay*temp_betax + temp_betaz);
+        temp_conductivity(cell,point,1,1) = temp_sigma * (1.0 + temp_betay*temp_betay);
       });
+    });
   }
 }
 
