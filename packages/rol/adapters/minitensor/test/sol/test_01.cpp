@@ -8,7 +8,7 @@
 // @HEADER
 
 #include <gtest/gtest.h>
-#include <MiniTensor_TestFunctions.h>
+#include <MiniTensor_FunctionSet.h>
 #include "ROL_MiniTensor_BoundConstraint.hpp"
 #include "ROL_MiniTensor_EqualityConstraint.hpp"
 #include "ROL_MiniTensor_Function.hpp"

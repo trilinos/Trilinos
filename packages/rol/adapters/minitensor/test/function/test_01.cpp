@@ -8,7 +8,7 @@
 // @HEADER
 
 #include <gtest/gtest.h>
-#include <MiniTensor_TestFunctions.h>
+#include <MiniTensor_FunctionSet.h>
 #include "ROL_MiniTensor_BoundConstraint.hpp"
 #include "ROL_MiniTensor_EqualityConstraint.hpp"
 #include "ROL_MiniTensor_Function.hpp"
@@ -139,7 +139,7 @@ TEST(MiniTensor_ROL, Objective)
   error2{1.0};
 
   Real const
-  error3 = symm_check[3];
+  error3 = symm_check[2];
 
   for (minitensor::Index i = 0; i < grad_check.size(); ++i) {
     error1 = std::min(error1, grad_check[i][3]);

@@ -81,7 +81,7 @@ void IndependentFactors<Real>::apply(Vector<Real> &Fx, const Vector<Real> &x, co
 // Compute Fx = F[k]* x
 template<typename Real>
 void IndependentFactors<Real>::applyAdjoint(Vector<Real> &Fx, const Vector<Real> &x, int k) const {
-  apply(Fx,x,getSample(k));
+  applyAdjoint(Fx,x,getSample(k));
 }
 
 // Compute Fx = F[k]* x
