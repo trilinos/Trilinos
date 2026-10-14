@@ -175,9 +175,9 @@ template<typename Scalar>
 Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > 
 Piro::InvertMassMatrixDecorator<Scalar>::create_W () const
 {
-  Teuchos::RCP<const Thyra::LinearOpBase<double> > A = massMatrix; 
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > W = Thyra::linearOpWithSolve(*lowsFactory, A);
-  return W; 
+  // Uninitialized; filled by evalModel (f == null passes W through to the model).
+  // Consistent with get_W_factory() returning model->get_W_factory().
+  return model->create_W();
 }
 
 template<typename Scalar>
@@ -296,7 +296,8 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
     if (calcMassMatrix) {
       if (!lumpMassMatrix) {
         // Create a linear solver based on the forward operator massMatrix
-	lows = this->create_W(); 
+	Teuchos::RCP<const Thyra::LinearOpBase<double> > A = massMatrix;
+        lows = Thyra::linearOpWithSolve(*lowsFactory, A);
       }
       else { // Lump matrix into inverse of diagonal
         Thyra::put_scalar<Scalar>(1.0, invDiag.ptr());

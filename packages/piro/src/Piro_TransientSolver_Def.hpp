@@ -19,6 +19,7 @@
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultModelEvaluatorWithSolveFactory.hpp"
 
 #include <string>
