@@ -10,6 +10,9 @@
 #ifndef Tempus_IntegratorAdjointSensitivity_impl_hpp
 #define Tempus_IntegratorAdjointSensitivity_impl_hpp
 
+#include <algorithm>
+#include <cmath>
+
 #include "Teuchos_ParameterList.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
@@ -33,7 +36,8 @@ IntegratorAdjointSensitivity<Scalar>::IntegratorAdjointSensitivity(
     const Teuchos::RCP<SolutionHistory<Scalar>>& solutionHistory,
     const int p_index, const int g_index, const bool g_depends_on_p,
     const bool f_depends_on_p, const bool ic_depends_on_p,
-    const bool mass_matrix_is_identity)
+    const bool mass_matrix_is_identity, const AdjointResponseType response_type,
+    const std::vector<Scalar>& response_times)
   : model_(model),
     state_integrator_(state_integrator),
     adjoint_model_(adjoint_model),
@@ -46,8 +50,17 @@ IntegratorAdjointSensitivity<Scalar>::IntegratorAdjointSensitivity(
     f_depends_on_p_(f_depends_on_p),
     ic_depends_on_p_(ic_depends_on_p),
     mass_matrix_is_identity_(mass_matrix_is_identity),
+    response_type_(response_type),
+    response_times_(response_times),
     stepMode_(SensitivityStepMode::Forward)
 {
+  std::sort(response_times_.begin(), response_times_.end());
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      response_type_ == AdjointResponseType::SumOverTimes &&
+          response_times_.empty(),
+      std::logic_error,
+      "Error - IntegratorAdjointSensitivity(): the \"Sum Over Times\" "
+      "response requires a non-empty \"Response Time List\".\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
       getStepper()->getUseFSAL(), std::logic_error,
       "Error - IntegratorAdjointSensitivity(): Cannot use FSAL with\n"
@@ -63,6 +76,7 @@ IntegratorAdjointSensitivity<Scalar>::IntegratorAdjointSensitivity()
 {
   state_integrator_   = createIntegratorBasic<Scalar>();
   adjoint_integrator_ = createIntegratorBasic<Scalar>();
+  response_type_      = AdjointResponseType::FinalTime;
   stepMode_           = SensitivityStepMode::Forward;
 }
 
@@ -111,6 +125,12 @@ bool IntegratorAdjointSensitivity<Scalar>::advanceTime(const Scalar timeFinal)
     state_status = state_integrator_->advanceTime(timeFinal);
   }
 
+  // The adjoint problem is not solved if the forward integration failed
+  if (!state_status) {
+    dgdp_ = Teuchos::null;
+    return false;
+  }
+
   // For at least some time-stepping methods, the time of the last time step
   // may not be timeFinal (e.g., it may be greater by at most delta_t).
   // But since the adjoint model requires timeFinal in its formulation, reset
@@ -120,158 +140,155 @@ bool IntegratorAdjointSensitivity<Scalar>::advanceTime(const Scalar timeFinal)
   // Set solution history in adjoint stepper
   adjoint_aux_model_->setForwardSolutionHistory(state_solution_history);
 
-  // Compute dg/dx
   RCP<const VectorSpaceBase<Scalar>> g_space = model_->get_g_space(g_index_);
   RCP<const VectorSpaceBase<Scalar>> x_space = model_->get_x_space();
+  RCP<const VectorSpaceBase<Scalar>> p_space = model_->get_p_space(p_index_);
   const int num_g                            = g_space->dim();
-  RCP<MultiVectorBase<Scalar>> dgdx          = createMembers(x_space, num_g);
   MEB::InArgs<Scalar> inargs                 = model_->getNominalValues();
-  RCP<const SolutionState<Scalar>> state =
-      state_solution_history->getCurrentState();
-  inargs.set_t(state->getTime());
-  inargs.set_x(state->getX());
-  inargs.set_x_dot(state->getXDot());
-  MEB::OutArgs<Scalar> outargs     = model_->createOutArgs();
-  MEB::OutArgs<Scalar> adj_outargs = adjoint_model_->createOutArgs();
-  outargs.set_DgDx(g_index_,
-                   MEB::Derivative<Scalar>(dgdx, MEB::DERIV_MV_GRADIENT_FORM));
-  model_->evalModel(inargs, outargs);
-  outargs.set_DgDx(g_index_, MEB::Derivative<Scalar>());
+  MEB::OutArgs<Scalar> adj_outargs           = adjoint_model_->createOutArgs();
 
-  // Compute ICs == [ (df/dx_dot)^{-T} (dg/dx)^T; 0 ]
-  // For explicit form, we are relying on the user to inform us the
-  // the mass matrix is the identity.  It would be nice to be able to determine
-  // somehow automatically that we are using an explicit stepper.
-  RCP<DPV> adjoint_init = rcp_dynamic_cast<DPV>(
-      Thyra::createMember(adjoint_aux_model_->get_x_space()));
-  RCP<MultiVectorBase<Scalar>> adjoint_init_mv =
-      rcp_dynamic_cast<DMVPV>(adjoint_init->getNonconstVectorBlock(0))
-          ->getNonconstMultiVector();
-  assign(adjoint_init->getNonconstVectorBlock(1).ptr(),
-         Teuchos::ScalarTraits<Scalar>::zero());
-  if (mass_matrix_is_identity_)
-    assign(adjoint_init_mv.ptr(), *dgdx);
-  else {
-    inargs.set_alpha(1.0);
-    inargs.set_beta(0.0);
-    RCP<LinearOpWithSolveBase<Scalar>> W;
-    if (adj_outargs.supports(MEB::OUT_ARG_W)) {
-      // Model supports W
-      W = adjoint_model_->create_W();
-      adj_outargs.set_W(W);
-      adjoint_model_->evalModel(inargs, adj_outargs);
-      adj_outargs.set_W(Teuchos::null);
-    }
-    else {
-      // Otherwise model must support a W_op and W factory
-      RCP<const LinearOpWithSolveFactoryBase<Scalar>> lowsfb =
-          adjoint_model_->get_W_factory();
-      TEUCHOS_TEST_FOR_EXCEPTION(lowsfb == Teuchos::null, std::logic_error,
-                                 "Adjoint ME must support W out-arg or provide "
-                                 "a W_factory for non-identity mass matrix");
+  // The adjoint is integrated in the reversed time tau = t_final + t_init - t
+  // (see AdjointAuxSensitivityModelEvaluator).
+  const Scalar t_init  = state_integrator_->getTimeStepControl()->getInitTime();
+  const Scalar t_final = state_integrator_->getTime();
+  const Scalar time_tol =
+      Scalar(1.0e-9) * std::max(std::abs(t_final - t_init), std::abs(t_final) + Scalar(1.0e-6));
 
-      // Compute W_op (and W_prec if supported)
-      RCP<LinearOpBase<Scalar>> W_op = adjoint_model_->create_W_op();
-      adj_outargs.set_W_op(W_op);
-      RCP<PreconditionerFactoryBase<Scalar>> prec_factory =
-          lowsfb->getPreconditionerFactory();
-      RCP<PreconditionerBase<Scalar>> W_prec;
-      if (prec_factory != Teuchos::null)
-        W_prec = prec_factory->createPrec();
-      else if (adj_outargs.supports(MEB::OUT_ARG_W_prec)) {
-        W_prec = adjoint_model_->create_W_prec();
-        adj_outargs.set_W_prec(W_prec);
-      }
-      adjoint_model_->evalModel(inargs, adj_outargs);
-      adj_outargs.set_W_op(Teuchos::null);
-      if (adj_outargs.supports(MEB::OUT_ARG_W_prec))
-        adj_outargs.set_W_prec(Teuchos::null);
-
-      // Create and initialize W
-      W = lowsfb->createOp();
-      if (W_prec != Teuchos::null) {
-        if (prec_factory != Teuchos::null)
-          prec_factory->initializePrec(
-              Thyra::defaultLinearOpSource<Scalar>(W_op), W_prec.get());
-        Thyra::initializePreconditionedOp<Scalar>(*lowsfb, W_op, W_prec,
-                                                  W.ptr());
-      }
-      else
-        Thyra::initializeOp<Scalar>(*lowsfb, W_op, W.ptr());
-    }
+  // Times at which the response contributes to the adjoint with a jump
+  //   y += df/dx_dot^{-T} * dg/dx^T,
+  // in decreasing order, i.e., in the order of the adjoint integration.
+  // For a "Time Integral" response there are no jumps, the response is a
+  // source term of the adjoint equations.
+  std::vector<Scalar> jump_times;
+  if (response_type_ == AdjointResponseType::FinalTime)
+    jump_times.push_back(t_final);
+  else if (response_type_ == AdjointResponseType::SumOverTimes) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-        W == Teuchos::null, std::logic_error,
-        "A null W has been encountered in "
-        "Tempus::IntegratorAdjointSensitivity::advanceTime!\n");
-    // Initialize adjoint_init_mv to zero before solve for linear solvers that
-    // use what is passed in as the initial guess
-    assign(adjoint_init_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-    W->solve(Thyra::NOTRANS, *dgdx, adjoint_init_mv.ptr());
+        response_times_.front() < t_init - time_tol || response_times_.back() > t_final + time_tol,
+        std::logic_error,
+        "Error - IntegratorAdjointSensitivity::advanceTime(): the response "
+        "times ["
+            << response_times_.front() << ", " << response_times_.back()
+            << "] must be in the time interval [" << t_init << ", " << t_final
+            << "].\n");
+    jump_times.assign(response_times_.rbegin(), response_times_.rend());
   }
 
-  // Run sensitivity integrator and get solution
-  bool sens_status = true;
+  // The adjoint state (y, z) is zero at t_final, before the jumps.
+  RCP<DPV> adjoint_state = rcp_dynamic_cast<DPV>(Thyra::createMember(adjoint_aux_model_->get_x_space()));
+  assign(Teuchos::ptr_implicit_cast<VectorBase<Scalar>>(adjoint_state.ptr()), Teuchos::ScalarTraits<Scalar>::zero());
+  RCP<MultiVectorBase<Scalar>> adjoint_y_mv =
+      rcp_dynamic_cast<DMVPV>(adjoint_state->getNonconstVectorBlock(0))->getNonconstMultiVector();
+
+  // Sum of the dg/dp terms of the jump times, sum_k dg/dp(t_k)^T
+  dgdp_ = createMembers(p_space, num_g);
+  assign(dgdp_.ptr(), Scalar(0.0));
+
+  RCP<MultiVectorBase<Scalar>> dgdx = createMembers(x_space, num_g);
+  RCP<MultiVectorBase<Scalar>> dgdp_k;
+  RCP<MultiVectorBase<Scalar>> jump;
+  RCP<LinearOpWithSolveBase<Scalar>> W;
+
+  // Run the adjoint integration, restarted at each jump time
+  const bool restart_at_jumps =
+      response_type_ == AdjointResponseType::SumOverTimes;
+  adjoint_solution_history_ = Teuchos::null;
+  bool sens_status          = true;
   {
     TEMPUS_FUNC_TIME_MONITOR_DIFF(
         "Tempus::IntegratorAdjointSensitivity::advanceTime::adjoint",
         TEMPUS_AS_AT_ADJ);
     stepMode_ = SensitivityStepMode::Adjoint;
-    const Scalar tinit =
+    const Scalar tau_init =
         adjoint_integrator_->getTimeStepControl()->getInitTime();
-    adjoint_integrator_->initializeSolutionHistory(tinit, adjoint_init);
-    sens_status = adjoint_integrator_->advanceTime(timeFinal);
-  }
-  RCP<const SolutionHistory<Scalar>> adjoint_solution_history =
-      adjoint_integrator_->getSolutionHistory();
+    Scalar tau        = tau_init;
+    int num_segments  = 0;
+    int adjoint_index = -1;  // time step index of the adjoint integration
+    for (std::size_t k = 0; sens_status && k < jump_times.size(); ++k) {
+      const Scalar t_k   = jump_times[k];
+      const Scalar tau_k = t_final + t_init - t_k;
+      if (tau_k > tau + time_tol) {
+        if (restart_at_jumps && num_segments > 0)
+          appendAdjointSolutionHistory(time_tol);
+        sens_status =
+            integrateAdjoint(tau, tau_k, *adjoint_state, adjoint_index);
+        tau = tau_k;
+        ++num_segments;
+        if (!sens_status) break;
+      }
 
-  // Compute dg/dp at final time T
-  RCP<const VectorSpaceBase<Scalar>> p_space = model_->get_p_space(p_index_);
-  dgdp_                                      = createMembers(p_space, num_g);
-  if (g_depends_on_p_) {
-    MEB::DerivativeSupport dgdp_support =
-        outargs.supports(MEB::OUT_ARG_DgDp, g_index_, p_index_);
-    if (dgdp_support.supports(MEB::DERIV_MV_GRADIENT_FORM)) {
-      outargs.set_DgDp(
-          g_index_, p_index_,
-          MEB::Derivative<Scalar>(dgdp_, MEB::DERIV_MV_GRADIENT_FORM));
-      model_->evalModel(inargs, outargs);
+      // Forward state at t_k
+      RCP<const SolutionState<Scalar>> state;
+      if (response_type_ == AdjointResponseType::FinalTime)
+        state = state_solution_history->getCurrentState();
+      else
+        state = findForwardState(*state_solution_history, t_k, time_tol);
+      inargs.set_t(response_type_ == AdjointResponseType::FinalTime
+                       ? state->getTime()
+                       : t_k);
+      inargs.set_x(state->getX());
+      if (inargs.supports(MEB::IN_ARG_x_dot)) inargs.set_x_dot(state->getXDot());
+
+      // Compute dg/dx and the jump df/dx_dot^{-T} * dg/dx^T
+      // For explicit form, we are relying on the user to inform us the
+      // the mass matrix is the identity.  It would be nice to be able to
+      // determine somehow automatically that we are using an explicit stepper.
+      AdjointSensitivityUtils::evalResponseGradientX(
+          *model_, g_index_, inargs, *dgdx,
+          response_type_ != AdjointResponseType::FinalTime,
+          "Tempus::IntegratorAdjointSensitivity::advanceTime");
+      if (mass_matrix_is_identity_)
+        Thyra::update(Scalar(1.0), *dgdx, adjoint_y_mv.ptr());
+      else {
+        // The mass matrix is constant, so its solver is reused for all jumps.
+        if (W == Teuchos::null) W = createAdjointMassMatrixSolver(inargs);
+        if (jump == Teuchos::null) jump = createMembers(x_space, num_g);
+        // Initialize jump to zero before solve for linear solvers that
+        // use what is passed in as the initial guess
+        assign(jump.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+        W->solve(Thyra::NOTRANS, *dgdx, jump.ptr());
+        Thyra::update(Scalar(1.0), *jump, adjoint_y_mv.ptr());
+      }
+
+      // Add dg/dp(t_k)^T
+      if (g_depends_on_p_) {
+        if (dgdp_k == Teuchos::null) dgdp_k = createMembers(p_space, num_g);
+        AdjointSensitivityUtils::evalResponseGradientP(*model_, g_index_, p_index_, inargs, *dgdp_k);
+        Thyra::update(Scalar(1.0), *dgdp_k, dgdp_.ptr());
+      }
+
+      // Store the adjoint state after the jump in the adjoint solution history
+      if (num_segments > 0)
+        assign(adjoint_integrator_->getNonConstSolutionHistory()->getCurrentState()->getX().ptr(),
+               *adjoint_state);
     }
-    else if (dgdp_support.supports(MEB::DERIV_MV_JACOBIAN_FORM)) {
-      const int num_p                         = p_space->dim();
-      RCP<MultiVectorBase<Scalar>> dgdp_trans = createMembers(g_space, num_p);
-      outargs.set_DgDp(
-          g_index_, p_index_,
-          MEB::Derivative<Scalar>(dgdp_trans, MEB::DERIV_MV_JACOBIAN_FORM));
-      model_->evalModel(inargs, outargs);
-      Thyra::DetachedMultiVectorView<Scalar> dgdp_view(*dgdp_);
-      Thyra::DetachedMultiVectorView<Scalar> dgdp_trans_view(*dgdp_trans);
-      for (int i = 0; i < num_p; ++i)
-        for (int j = 0; j < num_g; ++j) dgdp_view(i, j) = dgdp_trans_view(j, i);
+
+    // Integrate to the initial time, unless the last jump is at the initial
+    // time (or the integration failed).
+    if (sens_status && (num_segments == 0 || tau < timeFinal - time_tol)) {
+      if (restart_at_jumps && num_segments > 0)
+        appendAdjointSolutionHistory(time_tol);
+      sens_status =
+          integrateAdjoint(tau, timeFinal, *adjoint_state, adjoint_index);
+      ++num_segments;
     }
-    else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                                 "Invalid dg/dp support");
-    outargs.set_DgDp(g_index_, p_index_, MEB::Derivative<Scalar>());
+    if (restart_at_jumps && num_segments > 0)
+      appendAdjointSolutionHistory(time_tol);
   }
-  else
-    assign(dgdp_.ptr(), Scalar(0.0));
+  RCP<const SolutionHistory<Scalar>> adjoint_solution_history = getSensSolutionHistory();
 
   // Add in initial condition term = (dx/dp^T(0))*(df/dx_dot^T(0))*y(0)
   // If dxdp_init_ is null, assume it is zero
   if (ic_depends_on_p_ && dxdp_init_ != Teuchos::null) {
-    RCP<const SolutionState<Scalar>> adjoint_state =
-        adjoint_solution_history->getCurrentState();
-    RCP<const VectorBase<Scalar>> adjoint_x =
-        rcp_dynamic_cast<const DPV>(adjoint_state->getX())->getVectorBlock(0);
-    RCP<const MultiVectorBase<Scalar>> adjoint_mv =
-        rcp_dynamic_cast<const DMVPV>(adjoint_x)->getMultiVector();
+    RCP<const MultiVectorBase<Scalar>> adjoint_mv = adjoint_y_mv;
     if (mass_matrix_is_identity_)
       dxdp_init_->apply(Thyra::CONJTRANS, *adjoint_mv, dgdp_.ptr(), Scalar(1.0),
                         Scalar(1.0));
     else {
       inargs.set_t(initial_state->getTime());
       inargs.set_x(initial_state->getX());
-      inargs.set_x_dot(initial_state->getXDot());
+      if (inargs.supports(MEB::IN_ARG_x_dot))
+        inargs.set_x_dot(initial_state->getXDot());
       inargs.set_alpha(1.0);
       inargs.set_beta(0.0);
       RCP<LinearOpBase<Scalar>> W_op = adjoint_model_->create_W_op();
@@ -288,14 +305,12 @@ bool IntegratorAdjointSensitivity<Scalar>::advanceTime(const Scalar timeFinal)
 
   // Add in model parameter term = \int_0^T( (df/dp^T(t)*y(t) )dt which
   // is computed during the adjoint integration as an auxiliary integral
-  // (2nd block of the solution vector)
-  if (f_depends_on_p_) {
-    RCP<const SolutionState<Scalar>> adjoint_state =
-        adjoint_solution_history->getCurrentState();
-    RCP<const VectorBase<Scalar>> z =
-        rcp_dynamic_cast<const DPV>(adjoint_state->getX())->getVectorBlock(1);
+  // (2nd block of the solution vector).  For a time-integrated response, the
+  // auxiliary integral also includes -\int_0^T dg/dp^T(t) dt.
+  if (f_depends_on_p_ || (response_type_ == AdjointResponseType::TimeIntegral && g_depends_on_p_)) {
     RCP<const MultiVectorBase<Scalar>> z_mv =
-        rcp_dynamic_cast<const DMVPV>(z)->getMultiVector();
+        rcp_dynamic_cast<const DMVPV>(adjoint_state->getVectorBlock(1))
+            ->getMultiVector();
     Thyra::V_VmV(dgdp_.ptr(), *dgdp_, *z_mv);
   }
 
@@ -305,14 +320,153 @@ bool IntegratorAdjointSensitivity<Scalar>::advanceTime(const Scalar timeFinal)
 }
 
 template <class Scalar>
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar>>
+IntegratorAdjointSensitivity<Scalar>::createAdjointMassMatrixSolver(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) const
+{
+  using Teuchos::RCP;
+  using Thyra::LinearOpBase;
+  using Thyra::LinearOpWithSolveBase;
+  using Thyra::LinearOpWithSolveFactoryBase;
+  using Thyra::PreconditionerBase;
+  using Thyra::PreconditionerFactoryBase;
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar> inargs = inArgs;
+  inargs.set_alpha(1.0);
+  inargs.set_beta(0.0);
+  MEB::OutArgs<Scalar> adj_outargs = adjoint_model_->createOutArgs();
+  RCP<LinearOpWithSolveBase<Scalar>> W;
+  if (adj_outargs.supports(MEB::OUT_ARG_W)) {
+    // Model supports W
+    W = adjoint_model_->create_W();
+    adj_outargs.set_W(W);
+    adjoint_model_->evalModel(inargs, adj_outargs);
+    adj_outargs.set_W(Teuchos::null);
+  }
+  else {
+    // Otherwise model must support a W_op and W factory
+    RCP<const LinearOpWithSolveFactoryBase<Scalar>> lowsfb =
+        adjoint_model_->get_W_factory();
+    TEUCHOS_TEST_FOR_EXCEPTION(lowsfb == Teuchos::null, std::logic_error,
+                               "Adjoint ME must support W out-arg or provide "
+                               "a W_factory for non-identity mass matrix");
+
+    // Compute W_op (and W_prec if supported)
+    RCP<LinearOpBase<Scalar>> W_op = adjoint_model_->create_W_op();
+    adj_outargs.set_W_op(W_op);
+    RCP<PreconditionerFactoryBase<Scalar>> prec_factory =
+        lowsfb->getPreconditionerFactory();
+    RCP<PreconditionerBase<Scalar>> W_prec;
+    if (prec_factory != Teuchos::null)
+      W_prec = prec_factory->createPrec();
+    else if (adj_outargs.supports(MEB::OUT_ARG_W_prec)) {
+      W_prec = adjoint_model_->create_W_prec();
+      adj_outargs.set_W_prec(W_prec);
+    }
+    adjoint_model_->evalModel(inargs, adj_outargs);
+    adj_outargs.set_W_op(Teuchos::null);
+    if (adj_outargs.supports(MEB::OUT_ARG_W_prec))
+      adj_outargs.set_W_prec(Teuchos::null);
+
+    // Create and initialize W
+    W = lowsfb->createOp();
+    if (W_prec != Teuchos::null) {
+      if (prec_factory != Teuchos::null)
+        prec_factory->initializePrec(
+            Thyra::defaultLinearOpSource<Scalar>(W_op), W_prec.get());
+      Thyra::initializePreconditionedOp<Scalar>(*lowsfb, W_op, W_prec,
+                                                W.ptr());
+    }
+    else
+      Thyra::initializeOp<Scalar>(*lowsfb, W_op, W.ptr());
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      W == Teuchos::null, std::logic_error,
+      "A null W has been encountered in "
+      "Tempus::IntegratorAdjointSensitivity::advanceTime!\n");
+  return W;
+}
+
+template <class Scalar>
+Teuchos::RCP<const SolutionState<Scalar>>
+IntegratorAdjointSensitivity<Scalar>::findForwardState(
+    const SolutionHistory<Scalar>& state_solution_history, const Scalar t, const Scalar tol) const
+{
+  Teuchos::RCP<const SolutionState<Scalar>> closest;
+  for (int i = 0; i < state_solution_history.getNumStates(); ++i) {
+    Teuchos::RCP<const SolutionState<Scalar>> state = state_solution_history[i];
+    if (closest == Teuchos::null || std::abs(state->getTime() - t) < std::abs(closest->getTime() - t))
+      closest = state;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      closest == Teuchos::null || std::abs(closest->getTime() - t) > tol,
+      std::logic_error,
+      "Error - IntegratorAdjointSensitivity: no stored time step of the "
+      "forward integration ends at the response time "
+          << t << " (closest stored time = "
+          << (closest == Teuchos::null ? t : closest->getTime())
+          << ").\n"
+             "  With \"Step Type\" = \"Variable\", the time steps land on the "
+             "response times.  With \"Step Type\" = \"Constant\", the response "
+             "times must be on the time grid.  The forward solution history must "
+             "store all time steps (\"Storage Type\" = \"Unlimited\").\n");
+  return closest;
+}
+
+template <class Scalar>
+bool IntegratorAdjointSensitivity<Scalar>::integrateAdjoint(
+    const Scalar tau_begin, const Scalar tau_end,
+    Thyra::VectorBase<Scalar>& adjoint_state, int& index)
+{
+  adjoint_integrator_->initializeSolutionHistory(tau_begin, adjoint_state.clone_v());
+  // Continue the time step index of the previous segment, "Constant" time
+  // steps compute the time from the index.
+  if (index >= 0)
+    adjoint_integrator_->getNonConstSolutionHistory()->getCurrentState()->setIndex(index);
+  // Earlier segments may have reduced the final time of the time step control
+  Teuchos::RCP<TimeStepControl<Scalar>> tsc = adjoint_integrator_->getNonConstTimeStepControl();
+  if (tau_end > tsc->getFinalTime()) tsc->setFinalTime(tau_end);
+  const bool status = adjoint_integrator_->advanceTime(tau_end);
+  Thyra::assign(Teuchos::ptrFromRef(adjoint_state), *(adjoint_integrator_->getX()));
+  index = adjoint_integrator_->getIndex();
+  return status;
+}
+
+template <class Scalar>
+void IntegratorAdjointSensitivity<Scalar>::appendAdjointSolutionHistory(
+    const Scalar tol)
+{
+  Teuchos::RCP<const SolutionHistory<Scalar>> sh = adjoint_integrator_->getSolutionHistory();
+  if (adjoint_solution_history_ == Teuchos::null) {
+    adjoint_solution_history_ = Teuchos::rcp(new SolutionHistory<Scalar>());
+    adjoint_solution_history_->setName("Adjoint Solution History");
+    adjoint_solution_history_->setStorageType(STORAGE_TYPE_UNLIMITED);
+  }
+  for (int i = 0; i < sh->getNumStates(); ++i) {
+    Teuchos::RCP<const SolutionState<Scalar>> state = (*sh)[i];
+    // The first state of a segment is the last state of the previous segment
+    if (adjoint_solution_history_->getNumStates() > 0 &&
+        state->getTime() <= adjoint_solution_history_->maxTime() + tol)
+      continue;
+    adjoint_solution_history_->addState(state->clone());
+  }
+}
+
+template <class Scalar>
 Scalar IntegratorAdjointSensitivity<Scalar>::getTime() const
 {
+  // The combined solution history is empty if the forward integration failed
+  if (solutionHistory_->getNumStates() == 0)
+    return state_integrator_->getTime();
   return solutionHistory_->getCurrentTime();
 }
 
 template <class Scalar>
 int IntegratorAdjointSensitivity<Scalar>::getIndex() const
 {
+  if (solutionHistory_->getNumStates() == 0)
+    return state_integrator_->getIndex();
   return solutionHistory_->getCurrentIndex();
 }
 
@@ -358,6 +512,11 @@ template <class Scalar>
 Teuchos::RCP<const SolutionHistory<Scalar>>
 IntegratorAdjointSensitivity<Scalar>::getSensSolutionHistory() const
 {
+  // For the "Sum Over Times" response, the adjoint integration is restarted at
+  // the response times and the segments are combined in
+  // adjoint_solution_history_.
+  if (adjoint_solution_history_ != Teuchos::null)
+    return adjoint_solution_history_;
   return adjoint_integrator_->getSolutionHistory();
 }
 
@@ -543,10 +702,6 @@ IntegratorAdjointSensitivity<Scalar>::createAdjointModel(
   if (inputPL != Teuchos::null) {
     *spl = inputPL->sublist("Sensitivities");
   }
-  if (spl->isParameter("Response Depends on Parameters"))
-    spl->remove("Response Depends on Parameters");
-  if (spl->isParameter("Residual Depends on Parameters"))
-    spl->remove("Residual Depends on Parameters");
   if (spl->isParameter("IC Depends on Parameters"))
     spl->remove("IC Depends on Parameters");
 
@@ -586,12 +741,34 @@ void IntegratorAdjointSensitivity<Scalar>::buildSolutionHistory(
   int num_states       = state_solution_history->getNumStates();
   const Scalar t_init  = state_integrator_->getTimeStepControl()->getInitTime();
   const Scalar t_final = state_integrator_->getTime();
+  const Scalar time_tol =
+      Scalar(1.0e-9) * std::max(std::abs(t_final - t_init), std::abs(t_final) + Scalar(1.0e-6));
   for (int i = 0; i < num_states; ++i) {
     RCP<const SolutionState<Scalar>> forward_state =
         (*state_solution_history)[i];
-    RCP<const SolutionState<Scalar>> adjoint_state =
-        adjoint_solution_history->findState(t_final + t_init -
-                                            forward_state->getTime());
+    // The adjoint time steps do not coincide with the forward ones when the
+    // time step size varies (e.g., when the forward time steps land on the
+    // times of a "Sum Over Times" response), use interpolation in that case.
+    const Scalar adjoint_time = t_final + t_init - forward_state->getTime();
+    RCP<const SolutionState<Scalar>> adjoint_state;
+    {
+      // Binary search for the first adjoint state with time >= adjoint_time-tol
+      int lo = 0, hi = adjoint_solution_history->getNumStates();
+      while (lo < hi) {
+        const int mid = (lo + hi) / 2;
+        if ((*adjoint_solution_history)[mid]->getTime() <
+            adjoint_time - time_tol)
+          lo = mid + 1;
+        else
+          hi = mid;
+      }
+      if (lo < adjoint_solution_history->getNumStates() &&
+          std::abs((*adjoint_solution_history)[lo]->getTime() -
+                   adjoint_time) <= time_tol)
+        adjoint_state = (*adjoint_solution_history)[lo];
+    }
+    if (adjoint_state == Teuchos::null)
+      adjoint_state = adjoint_solution_history->interpolateState(adjoint_time);
 
     // X
     RCP<DPV> x = Thyra::defaultProductVector(prod_space);
@@ -651,14 +828,27 @@ createIntegratorAdjointSensitivity(
   bool ic_depends_on_p = spl->get<bool>("IC Depends on Parameters", true);
   bool mass_matrix_is_identity =
       spl->get<bool>("Mass Matrix Is Identity", false);
+  const AdjointResponseType response_type =
+      AdjointSensitivityUtils::parseResponseType(
+          spl->get<std::string>("Response Type", "Final Time"));
+  const std::vector<Scalar> response_times =
+      AdjointSensitivityUtils::parseTimeList<Scalar>(
+          spl->get<std::string>("Response Time List", ""));
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      response_type == AdjointResponseType::SumOverTimes &&
+          response_times.empty(),
+      std::logic_error,
+      "Error - createIntegratorAdjointSensitivity(): the \"Sum Over Times\" "
+      "response requires a non-empty \"Response Time List\".\n");
 
   auto state_integrator = createIntegratorBasic<Scalar>(inputPL, model);
 
+  // The forward time steps must end at the response times
+  if (response_type == AdjointResponseType::SumOverTimes)
+    AdjointSensitivityUtils::addResponseTimeEvents(
+        *state_integrator->getNonConstTimeStepControl(), response_times);
+
   // createAdjointModel
-  if (spl->isParameter("Response Depends on Parameters"))
-    spl->remove("Response Depends on Parameters");
-  if (spl->isParameter("Residual Depends on Parameters"))
-    spl->remove("Residual Depends on Parameters");
   if (spl->isParameter("IC Depends on Parameters"))
     spl->remove("IC Depends on Parameters");
 
@@ -691,7 +881,7 @@ createIntegratorAdjointSensitivity(
           model, state_integrator, adjt_model, adjoint_aux_model,
           adjoint_integrator, combined_solution_History, p_index, g_index,
           g_depends_on_p, f_depends_on_p, ic_depends_on_p,
-          mass_matrix_is_identity));
+          mass_matrix_is_identity, response_type, response_times));
 
   return (integrator);
 }
