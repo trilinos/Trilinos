@@ -211,15 +211,18 @@ ProductModelEvaluator<Real>::get_p_names(int l) const
                         "supports only 1 parameter vector.  Supplied index l = " <<
                         l << std::endl);
 
-    Teuchos::RCP<Teuchos::Array<std::string> > p_names =
-        Teuchos::rcp(new Teuchos::Array<std::string>(p_indices_.size()) );
+    // Names of the parameter vectors p_indices_[0], p_indices_[1], ... of the underlying model,
+    // in this order. Parameter vectors without names are skipped.
+    Teuchos::RCP<Teuchos::Array<std::string> > p_names = Teuchos::rcp(new Teuchos::Array<std::string>());
+    bool hasNames = false;
     for (std::size_t i = 0; i < p_indices_.size(); ++i) {
-    std::stringstream ss;
-    ss << "Parameter " << i;
-    const std::string name = ss.str();
-    (*p_names)[i] = name;
+        const auto names_i = thyra_model_->get_p_names(p_indices_[i]);
+        if (Teuchos::nonnull(names_i)) {
+            hasNames = true;
+            p_names->insert(p_names->end(), names_i->begin(), names_i->end());
+        }
     }
-    return thyra_model_->get_p_names(l);
+    return hasNames ? Teuchos::RCP<const Teuchos::Array<std::string> >(p_names) : Teuchos::null;
 }
 
 template <typename Real>

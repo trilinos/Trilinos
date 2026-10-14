@@ -35,6 +35,16 @@ MassSpringDamperModel::MassSpringDamperModel(const Teuchos::RCP<const Teuchos::C
     target_k_ = 1;
     target_m_ = 0.5;
 
+    // Optional settings; the defaults reproduce the original model. A small parameter
+    // penalty and wide bounds make the optimum depend on the state part of the
+    // response, which is needed to test the state derivatives.
+    double p_lo_value = 0.5, p_up_value = 1.5;
+    if (Teuchos::nonnull(problemList)) {
+      scaling_g_p_ = problemList->get<double>("Parameter Penalty Scaling", scaling_g_p_);
+      p_lo_value = problemList->get<double>("Parameter Lower Bound", p_lo_value);
+      p_up_value = problemList->get<double>("Parameter Upper Bound", p_up_value);
+    }
+
     //set up map and initial guess for solution vector
     const int vecLength = 2;
     x_map = rcp(new Tpetra_Map(vecLength, 0, comm, Tpetra::LocallyReplicated));
@@ -64,8 +74,8 @@ MassSpringDamperModel::MassSpringDamperModel(const Teuchos::RCP<const Teuchos::C
     Teuchos::RCP<Tpetra_Vector> p_up = rcp(new Tpetra_Vector(p_map));
     for (int i=0; i<numParameters; i++) {
       p_init->getDataNonConst()[i]= 1.0;
-      p_lo->getDataNonConst()[i]= 0.5;
-      p_up->getDataNonConst()[i]= 1.5;
+      p_lo->getDataNonConst()[i]= p_lo_value;
+      p_up->getDataNonConst()[i]= p_up_value;
     }
 
     p_vec = rcp(new Tpetra_Vector(p_map));
