@@ -291,49 +291,62 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
   const LO interiorNode = interior[2] * fineNodes[0] * fineNodes[1] +
                           interior[1] * fineNodes[0] + interior[0];
 
-  using device_type          = typename Node::device_type;
-  using execution_space      = typename device_type::execution_space;
-  const auto localA          = A.getLocalMatrixDevice();
-  const auto rowLocalMap     = rowMap->getLocalMap();
-  const auto colLocalMap     = colMap->getLocalMap();
-  const size_t maxRowEntries = A.getLocalMaxNumRowEntries();
-  Kokkos::View<LO**, Kokkos::LayoutRight, device_type> ownedColumns(
-      Kokkos::ViewAllocateWithoutInitializing("StructuredRAP: detected stencil columns"),
-      dofsPerNode, maxRowEntries);
-  Kokkos::View<size_t*, device_type> detectedRowLengths(
-      Kokkos::ViewAllocateWithoutInitializing("StructuredRAP: detected stencil row lengths"),
-      dofsPerNode);
-  Kokkos::View<int, device_type> invalidStencil("StructuredRAP: invalid detected stencil");
-  Kokkos::deep_copy(invalidStencil, hasLocalInterior ? 0 : 1);
-
+  const auto localA            = A.getLocalMatrixDevice();
+  const LO invalidLocalOrdinal = Teuchos::OrdinalTraits<LO>::invalid();
+  std::vector<std::vector<LO>> ownedColumns(
+      Teuchos::as<size_t>(dofsPerNode));
+  bool hasCompleteLocalStencil = hasLocalInterior;
   if (hasLocalInterior) {
+    const size_t firstRow     = Teuchos::as<size_t>(interiorNode * dofsPerNode);
+    const auto detectedRowMap = Kokkos::subview(
+        localA.graph.row_map,
+        std::make_pair(firstRow,
+                       firstRow + Teuchos::as<size_t>(dofsPerNode) + 1));
+    const auto detectedRowMapHost = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), detectedRowMap);
+    const size_t firstEntry = detectedRowMapHost(0);
+    const size_t lastEntry =
+        detectedRowMapHost(Teuchos::as<size_t>(dofsPerNode));
+    const auto detectedEntries = Kokkos::subview(
+        localA.graph.entries, std::make_pair(firstEntry, lastEntry));
+    using device_type     = typename Node::device_type;
+    using execution_space = typename device_type::execution_space;
+    Kokkos::View<LO*, device_type> detectedOwnedColumns(
+        Kokkos::ViewAllocateWithoutInitializing(
+            "StructuredRAP: detected owned columns"),
+        lastEntry - firstEntry);
+    const auto rowLocalMap = rowMap->getLocalMap();
+    const auto colLocalMap = colMap->getLocalMap();
     Kokkos::parallel_for(
-        "StructuredRAP: detect fine stencil",
-        Kokkos::RangePolicy<execution_space>(0, dofsPerNode),
-        KOKKOS_LAMBDA(const LO rowDof) {
-          const LO row               = interiorNode * dofsPerNode + rowDof;
-          const size_t begin         = localA.graph.row_map(row);
-          const size_t end           = localA.graph.row_map(row + 1);
-          detectedRowLengths(rowDof) = end - begin;
-          if (begin == end)
-            Kokkos::atomic_exchange(&invalidStencil(), 1);
-          for (size_t entry = begin; entry < end; ++entry) {
-            const GO globalColumn               = colLocalMap.getGlobalElement(localA.graph.entries(entry));
-            const LO ownedColumn                = rowLocalMap.getLocalElement(globalColumn);
-            ownedColumns(rowDof, entry - begin) = ownedColumn;
-            if (ownedColumn == Teuchos::OrdinalTraits<LO>::invalid())
-              Kokkos::atomic_exchange(&invalidStencil(), 1);
-          }
+        "StructuredRAP: map detected stencil columns",
+        Kokkos::RangePolicy<execution_space>(0, lastEntry - firstEntry),
+        KOKKOS_LAMBDA(const size_t entry) {
+          const GO globalColumn =
+              colLocalMap.getGlobalElement(detectedEntries(entry));
+          detectedOwnedColumns(entry) =
+              rowLocalMap.getLocalElement(globalColumn);
         });
-  }
+    const auto detectedOwnedColumnsHost =
+        Kokkos::create_mirror_view_and_copy(
+            Kokkos::HostSpace(), detectedOwnedColumns);
 
-  auto ownedColumnsHost       = Kokkos::create_mirror_view(ownedColumns);
-  auto detectedRowLengthsHost = Kokkos::create_mirror_view(detectedRowLengths);
-  Kokkos::deep_copy(ownedColumnsHost, ownedColumns);
-  Kokkos::deep_copy(detectedRowLengthsHost, detectedRowLengths);
-  int invalidStencilHost = 0;
-  Kokkos::deep_copy(invalidStencilHost, invalidStencil);
-  const bool hasCompleteLocalStencil = invalidStencilHost == 0;
+    for (LO rowDof = 0; rowDof < dofsPerNode; ++rowDof) {
+      const size_t rowBegin = detectedRowMapHost(Teuchos::as<size_t>(rowDof));
+      const size_t rowEnd =
+          detectedRowMapHost(Teuchos::as<size_t>(rowDof) + 1);
+      if (rowBegin == rowEnd)
+        hasCompleteLocalStencil = false;
+      auto& rowColumns = ownedColumns[Teuchos::as<size_t>(rowDof)];
+      rowColumns.reserve(rowEnd - rowBegin);
+      for (size_t entry = rowBegin; entry < rowEnd; ++entry) {
+        const LO ownedColumn =
+            detectedOwnedColumnsHost(entry - firstEntry);
+        rowColumns.push_back(ownedColumn);
+        if (ownedColumn == invalidLocalOrdinal)
+          hasCompleteLocalStencil = false;
+      }
+    }
+  }
 
   const int myRank        = comm->getRank();
   const int numRanks      = comm->getSize();
@@ -352,9 +365,10 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
   // Only the elected rank performs detection
   if (myRank == detectorRank) {
     for (LO rowDof = 0; rowDof < dofsPerNode; ++rowDof) {
-      const size_t rowLength = detectedRowLengthsHost(rowDof);
+      const auto& rowColumns = ownedColumns[Teuchos::as<size_t>(rowDof)];
+      const size_t rowLength = rowColumns.size();
       for (size_t entry = 0; entry < rowLength; ++entry) {
-        const LO ownedColumn = ownedColumnsHost(rowDof, entry);
+        const LO ownedColumn = rowColumns[entry];
         const LO columnNode  = ownedColumn / dofsPerNode;
         const LO columnDof   = ownedColumn % dofsPerNode;
         LO columnX, columnY, columnZ;
