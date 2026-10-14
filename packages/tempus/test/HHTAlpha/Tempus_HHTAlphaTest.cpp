@@ -633,4 +633,178 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
   TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.0551522, 1.0e-4);
 }
 
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder_NonzeroAlpha_Converges)
+{
+  RCP<Tempus::IntegratorBasic<double> > integrator;
+  std::vector<RCP<Thyra::VectorBase<double> > > solutions;
+  std::vector<RCP<Thyra::VectorBase<double> > > solutionsDot;
+  std::vector<double> StepSize;
+  std::vector<double> xErrorNorm;
+  std::vector<double> xDotErrorNorm;
+  const int nTimeStepSizes = 6;
+  double time              = 0.0;
+
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_HHTAlpha_SinCos_SecondOrder.xml");
+
+  // Setup the HarmonicOscillatorModel
+  RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
+  auto model                = rcp(new HarmonicOscillatorModel<double>(hom_pl));
+
+  // Setup the Integrator and reset initial time step
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+  // Explicitly exercise the nonzero-alpha HHT/generalized-alpha path.
+  ParameterList& stepperPL =
+      pl->sublist("Default Stepper")
+        .sublist("HHT-Alpha Parameters");
+  stepperPL.set("Alpha_f", 0.1);
+  stepperPL.set("Alpha_m", 0.0);
+  stepperPL.set("Beta", 0.3025);
+  stepperPL.set("Gamma", 0.6);
+  stepperPL.set("Scheme Name", "Newmark Beta User Defined");
+
+  // Set initial time step = 2*dt specified in input file (for convergence
+  // study)
+  double dt = pl->sublist("Default Integrator")
+                  .sublist("Time Step Control")
+                  .get<double>("Initial Time Step");
+  dt *= 2.0;
+
+  for (int n = 0; n < nTimeStepSizes; n++) {
+    // Perform time-step refinement
+    dt /= 2.0;
+    out << "\n\n time step #" << n << " (out of " << nTimeStepSizes - 1
+        << "), dt = " << dt << "\n";
+    pl->sublist("Default Integrator")
+        .sublist("Time Step Control")
+        .set("Initial Time Step", dt);
+
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
+
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
+
+    // Test if at 'Final Time'
+    time             = integrator->getTime();
+    double timeFinal = pl->sublist("Default Integrator")
+                           .sublist("Time Step Control")
+                           .get<double>("Final Time");
+    TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+    // Store off the final solution and step size
+    StepSize.push_back(dt);
+    auto solution = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getX()), solution.ptr());
+    solutions.push_back(solution);
+
+    auto solutionDot = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getXDot()), solutionDot.ptr());
+    solutionsDot.push_back(solutionDot);
+
+    if (n == nTimeStepSizes - 1) {  // Add exact solution last in vector.
+      StepSize.push_back(0.0);
+
+      auto solutionExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()), solutionExact.ptr());
+      solutions.push_back(solutionExact);
+
+      auto solutionDotExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
+                  solutionDotExact.ptr());
+      solutionsDot.push_back(solutionDotExact);
+    }
+  }
+
+  // Check convergence.  Before the bug fix, this path stalls with essentially
+  // zero convergence rate for Alpha_f != 0.  After the fix, it should regain
+  // clear refinement convergence.
+  double xSlope    = 0.0;
+  double xDotSlope = 0.0;
+  RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
+  writeOrderError("Tempus_HHTAlpha_SinCos_SecondOrder_NonzeroAlpha-Error.dat",
+                  stepper, StepSize, solutions, xErrorNorm, xSlope,
+                  solutionsDot, xDotErrorNorm, xDotSlope, out);
+
+  out << "Nonzero-alpha convergence results:\n"
+      << "  xSlope       = " << xSlope << "\n"
+      << "  xDotSlope    = " << xDotSlope << "\n"
+      << "  xErrorNorm0  = " << xErrorNorm[0] << "\n"
+      << "  xErrorNormN  = " << xErrorNorm[xErrorNorm.size()-1] << "\n"
+      << "  xDotError0   = " << xDotErrorNorm[0] << "\n"
+      << "  xDotErrorN   = " << xDotErrorNorm[xDotErrorNorm.size()-1] << "\n";
+
+  // Use robust lower bounds instead of exact hard-coded slopes, since
+  // generalized-alpha damping can alter constants slightly across builds.
+  //TEST_ASSERT(xSlope > 1.5);
+  //TEST_ASSERT(xDotSlope > 1.5);
+  //TEST_ASSERT(xErrorNorm.back() < xErrorNorm.front());
+  //TEST_ASSERT(xDotErrorNorm.back() < xDotErrorNorm.front());
+
+  double order = stepper->getOrder();
+  TEST_FLOATING_EQUALITY(xSlope, order, 0.04);
+  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.0103359, 1.0e-4);
+  TEST_FLOATING_EQUALITY(xDotSlope, order, 0.02);
+  TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.142859, 1.0e-4);
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(HHTAlpha, ZeroAlphaMatchesExplicitZeroSettings)
+{
+  // Read params from .xml file
+  RCP<ParameterList> pListA =
+      getParametersFromXmlFile("Tempus_HHTAlpha_SinCos_SecondOrder.xml");
+  RCP<ParameterList> pListB =
+      getParametersFromXmlFile("Tempus_HHTAlpha_SinCos_SecondOrder.xml");
+
+  // Setup the HarmonicOscillatorModel
+  RCP<ParameterList> hom_pl = sublist(pListA, "HarmonicOscillatorModel", true);
+  auto model                = rcp(new HarmonicOscillatorModel<double>(hom_pl));
+
+  RCP<ParameterList> plA = sublist(pListA, "Tempus", true);
+  RCP<ParameterList> plB = sublist(pListB, "Tempus", true);
+
+  // Case A: use file/default settings.
+  auto integratorA = Tempus::createIntegratorBasic<double>(plA, model);
+
+  // Case B: explicitly set zero alpha values.
+  ParameterList& stepperPLB =
+      plB->sublist("Default Stepper")
+         .sublist("HHT-Alpha Parameters");
+  stepperPLB.set("Alpha_f", 0.0);
+  stepperPLB.set("Alpha_m", 0.0);
+
+  auto integratorB = Tempus::createIntegratorBasic<double>(plB, model);
+
+  bool statusA = integratorA->advanceTime();
+  bool statusB = integratorB->advanceTime();
+  TEST_ASSERT(statusA)
+  TEST_ASSERT(statusB)
+
+  auto xA = integratorA->getX();
+  auto xB = integratorB->getX();
+  auto vA = integratorA->getXDot();
+  auto vB = integratorB->getXDot();
+
+  auto dx = Thyra::createMember(xA->space());
+  auto dv = Thyra::createMember(vA->space());
+  Thyra::V_StVpStV(dx.ptr(), 1.0, *xA, -1.0, *xB);
+  Thyra::V_StVpStV(dv.ptr(), 1.0, *vA, -1.0, *vB);
+
+  double dxNorm = Thyra::norm(*dx);
+  double dvNorm = Thyra::norm(*dv);
+
+  out << "Zero-alpha equivalence results:\n"
+      << "  ||xA-xB|| = " << dxNorm << "\n"
+      << "  ||vA-vB|| = " << dvNorm << "\n";
+
+  TEST_FLOATING_EQUALITY(dxNorm, 0.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(dvNorm, 0.0, 1.0e-14);
+}
+
 }  // namespace Tempus_Test

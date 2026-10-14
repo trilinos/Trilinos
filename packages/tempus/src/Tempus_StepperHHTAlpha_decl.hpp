@@ -89,7 +89,7 @@ class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar> {
   virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
   virtual Scalar getOrder() const
   {
-    if (gamma_ == 0.5)
+    if (gamma_ == 0.5 + alpha_f_)
       return 2.0;
     else
       return 1.0;
@@ -166,6 +166,14 @@ class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar> {
   void setGamma(Scalar gamma);
   void setAlphaF(Scalar alpha_f);
   void setAlphaM(Scalar alpha_m);
+  virtual std::string getSchemeName() const { return schemeName_; }
+  virtual Scalar getBeta() const { return beta_; }
+  virtual Scalar getGamma() const { return gamma_; }
+  virtual Scalar getAlphaF() const { return alpha_f_; }
+  virtual Scalar getAlphaM() const { return alpha_m_; }
+ 
+  /// Validate final scheme parameters and emit any consistency warnings.
+  void validateSchemeParameters() const;
 
  private:
   Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > stepperHHTAlphaAppAction_;

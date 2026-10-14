@@ -12,6 +12,7 @@
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
+#include "Tempus_NumericalUtils.hpp"
 #include "Tempus_StepperHHTAlphaModifierDefault.hpp"
 
 //#define VERBOSE_DEBUG_OUTPUT
@@ -225,6 +226,69 @@ void StepperHHTAlpha<Scalar>::setSchemeName(std::string schemeName)
   this->isInitialized_ = false;
 }
 
+
+template <class Scalar>
+void StepperHHTAlpha<Scalar>::validateSchemeParameters() const
+{
+  const Scalar gamma_expected = Scalar(0.5) + alpha_f_;
+  const Scalar beta_expected =
+      Scalar(0.25) * std::pow((Scalar(1.0) + alpha_f_), 2);
+
+  const bool gamma_ok = approxEqual(gamma_, gamma_expected);
+  const bool beta_ok  = approxEqual(beta_, beta_expected);
+
+  if (!gamma_ok && !beta_ok) {
+    out_->setOutputToRootOnly(0);
+    *out_ << "\nWARNING: For HHT-Alpha,\n"
+          << "  gamma_ (" << gamma_ << ") != 0.5+alpha_f_ ("
+          << gamma_expected << "),\n"
+          << "     AND/OR\n"
+          << "  beta_ (" << beta_ << ") != 0.25*(1.0+alpha_f_)^2 ("
+          << beta_expected << "),\n"
+          << " thus making the algorithm first-order accurate and/or "
+             "conditionally stable!\n"
+          << " To obtain second-order accuracy, set\n"
+          << "   alpha_f_ = " << alpha_f_ << "\n"
+          << "   gamma_   = " << gamma_expected << "\n"
+          << " To obtain unconditional stability, set\n"
+          << "   beta_    = " << beta_expected << "\n"
+          << " Current values are\n"
+          << "   alpha_f_ = " << alpha_f_ << "\n"
+          << "   gamma_   = " << gamma_ << "\n"
+          << "   beta_    = " << beta_ << "\n"
+          << std::endl;
+  } else if (!gamma_ok) {
+    out_->setOutputToRootOnly(0);
+    *out_ << "\nWARNING: For HHT-Alpha,\n"
+          << "  gamma_ (" << gamma_ << ") != 0.5+alpha_f_ ("
+          << gamma_expected << "),\n"
+          << " thus making the algorithm first-order accurate!\n"
+          << " To obtain second-order accuracy, set\n"
+          << "   alpha_f_ = " << alpha_f_ << "\n"
+          << "   gamma_   = " << gamma_expected << "\n"
+          << " Current values are\n"
+          << "   alpha_f_ = " << alpha_f_ << "\n"
+          << "   gamma_   = " << gamma_ << "\n"
+          << "   beta_    = " << beta_ << "\n"
+          << std::endl;
+  } else if (!beta_ok) {
+    out_->setOutputToRootOnly(0);
+    *out_ << "\nWARNING: For HHT-Alpha,\n"
+          << "  beta_ (" << beta_ << ") != 0.25*(1.0+alpha_f_)^2 ("
+          << beta_expected << "),\n"
+          << " thus making the algorithm conditionally stable!\n"
+          << " To obtain unconditional stability, set\n"
+          << "   alpha_f_ = " << alpha_f_ << "\n"
+          << "   beta_    = " << beta_expected << "\n"
+          << " Current values are\n"
+          << "   alpha_f_ = " << alpha_f_ << "\n"
+          << "   gamma_   = " << gamma_ << "\n"
+          << "   beta_    = " << beta_ << "\n"
+          << std::endl;
+  }
+}
+
+
 template <class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha()
   : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
@@ -371,8 +435,9 @@ void StepperHHTAlpha<Scalar>::takeStep(
     // Get time and dt
     const Scalar time = currentState->getTime();
     const Scalar dt   = workingState->getTimeStep();
-    // Update time
-    Scalar t = time + dt;
+    // HHT/generalized-alpha residual evaluation time.
+    // For alpha_f = 0 this reduces to t_{n+1}.
+    Scalar t_alpha_f = time + (1.0 - alpha_f_) * dt;
 
     // Compute initial acceleration, a_old, using initial displacement (d_old)
     // and initial velocity (v_old) if in 1st time step
@@ -417,18 +482,29 @@ void StepperHHTAlpha<Scalar>::takeStep(
         Thyra::createMember(d_old->space());
     RCP<Thyra::VectorBase<Scalar> > v_pred =
         Thyra::createMember(v_old->space());
+    // Separate alpha_f-blended predictors used only in the residual
+    // evaluation.  The committed state update must use the original,
+    // unblended Newmark predictors.
+    RCP<Thyra::VectorBase<Scalar> > d_pred_alpha_f =
+        Thyra::createMember(d_old->space());
+    RCP<Thyra::VectorBase<Scalar> > v_pred_alpha_f =
+        Thyra::createMember(v_old->space());
 
     // compute displacement and velocity predictors
     predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 
-    // compute second displacement and velocity predictors (those that are
-    // functions of alpha_f)
-    predictDisplacement_alpha_f(*d_pred, *d_old);
-    predictVelocity_alpha_f(*v_pred, *v_old);
+    // Form alpha_f-blended predictors for the residual/equilibrium only:
+    //   d_{n+1-alpha_f} = (1-alpha_f)*d_{n+1}^{pred} + alpha_f*d_n
+    //   v_{n+1-alpha_f} = (1-alpha_f)*v_{n+1}^{pred} + alpha_f*v_n
+    Thyra::copy(*d_pred, d_pred_alpha_f.ptr());
+    Thyra::copy(*v_pred, v_pred_alpha_f.ptr());
+    predictDisplacement_alpha_f(*d_pred_alpha_f, *d_old);
+    predictVelocity_alpha_f(*v_pred_alpha_f, *v_old);
 
-    // inject d_pred, v_pred, a and other relevant data into wrapperModel
-    wrapperModel->initializeNewmark(v_pred, d_pred, dt, t, beta_, gamma_);
+    // Inject blended predictors for residual evaluation at t_{n+1-alpha_f}.
+    wrapperModel->initializeNewmark(
+        v_pred_alpha_f, d_pred_alpha_f, dt, t_alpha_f, beta_, gamma_);
 
     stepperHHTAlphaAppAction_->execute(
         solutionHistory, thisStepper,
@@ -442,10 +518,12 @@ void StepperHHTAlpha<Scalar>::takeStep(
         solutionHistory, thisStepper,
         StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
-    // correct acceleration (function of alpha_m)
+    // Correct acceleration (function of alpha_m)
     correctAcceleration(*a_new, *a_old);
 
-    // correct velocity and displacement
+    // Correct velocity and displacement using the original, unblended
+    // Newmark predictors.  The alpha_f blending is used only in the
+    // residual/equilibrium evaluation above.
     correctVelocity(*v_new, *v_pred, *a_new, dt);
     correctDisplacement(*d_new, *d_pred, *a_new, dt);
 
@@ -566,18 +644,19 @@ Teuchos::RCP<StepperHHTAlpha<Scalar> > createStepperHHTAlpha(
       std::string schemeName = hhtalphaPL.get<std::string>(
           "Scheme Name", "Newmark Beta Average Acceleration");
       stepper->setSchemeName(schemeName);
+      stepper->setAlphaF(hhtalphaPL.get<double>("Alpha_f", 0.0));
+      stepper->setAlphaM(hhtalphaPL.get<double>("Alpha_m", 0.0));
       if (schemeName == "Newmark Beta User Defined") {
         stepper->setBeta(hhtalphaPL.get<double>("Beta", 0.25));
         stepper->setGamma(hhtalphaPL.get<double>("Gamma", 0.5));
       }
-      stepper->setAlphaF(hhtalphaPL.get<double>("Alpha_f", 0.0));
-      stepper->setAlphaM(hhtalphaPL.get<double>("Alpha_m", 0.0));
     }
     else {
       stepper->setSchemeName("Newmark Beta Average Acceleration");
       stepper->setAlphaF(0.0);
       stepper->setAlphaM(0.0);
     }
+    stepper->validateSchemeParameters();
   }
 
   if (model != Teuchos::null) {

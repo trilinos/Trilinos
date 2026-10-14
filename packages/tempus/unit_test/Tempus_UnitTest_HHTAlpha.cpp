@@ -121,6 +121,117 @@ TEUCHOS_UNIT_TEST(HHTAlpha, StepperFactory_Construction)
 
 // ************************************************************
 // ************************************************************
+TEUCHOS_UNIT_TEST(HHTAlpha, StepperGetter_UserDefinedSchemeParameters)
+{
+  auto model = rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
+
+  // Default construction.
+  auto stepper = rcp(new Tempus::StepperHHTAlpha<double>());
+  stepper->setModel(model);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+
+  stepper->setSchemeName("Newmark Beta User Defined");
+  stepper->setBeta(0.3025);
+  stepper->setGamma(0.6);
+  stepper->setAlphaF(0.1);
+  stepper->setAlphaM(0.0);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+
+  TEST_COMPARE(stepper->getSchemeName(), ==, "Newmark Beta User Defined");
+  TEST_FLOATING_EQUALITY(stepper->getBeta(), 0.3025, 1.0e-14);
+  TEST_FLOATING_EQUALITY(stepper->getGamma(), 0.6, 1.0e-14);
+  TEST_FLOATING_EQUALITY(stepper->getAlphaF(), 0.1, 1.0e-14);
+  TEST_FLOATING_EQUALITY(stepper->getAlphaM(), 0.0, 1.0e-14);
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(HHTAlpha, StepperGetter_DefaultSchemeIgnoresUserBetaGamma)
+{
+  auto model = rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
+
+  // Default construction.
+  auto stepper = rcp(new Tempus::StepperHHTAlpha<double>());
+  stepper->setModel(model);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+
+  stepper->setSchemeName("Newmark Beta Average Acceleration");
+  stepper->setBeta(0.3025);    // should be ignored
+  stepper->setGamma(0.6);      // should be ignored
+  stepper->setAlphaF(0.1);
+  stepper->setAlphaM(0.0);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+
+  TEST_COMPARE(stepper->getSchemeName(), ==, "Newmark Beta Average Acceleration");
+  TEST_FLOATING_EQUALITY(stepper->getBeta(), 0.25, 1.0e-14);
+  TEST_FLOATING_EQUALITY(stepper->getGamma(), 0.5, 1.0e-14);
+  TEST_FLOATING_EQUALITY(stepper->getAlphaF(), 0.1, 1.0e-14);
+  TEST_FLOATING_EQUALITY(stepper->getAlphaM(), 0.0, 1.0e-14);
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(HHTAlpha, ValidateSchemeParameters_NoWarningWhenConsistent)
+{
+  auto model = rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
+
+  std::ostringstream oss;
+  auto captured = Teuchos::fancyOStream(Teuchos::rcpFromRef(oss));
+  auto oldOut   = Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::VerboseObjectBase::setDefaultOStream(captured);
+
+  auto stepper = rcp(new Tempus::StepperHHTAlpha<double>());
+  stepper->setModel(model);
+  stepper->setSchemeName("Newmark Beta User Defined");
+  stepper->setAlphaF(0.1);
+  stepper->setAlphaM(0.0);
+  stepper->setGamma(0.6);
+  stepper->setBeta(0.3025);
+  stepper->validateSchemeParameters();
+
+  Teuchos::VerboseObjectBase::setDefaultOStream(oldOut);
+
+  const std::string output = oss.str();
+  TEST_ASSERT(output.find("WARNING: For HHT-Alpha") == std::string::npos);
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(HHTAlpha, ValidateSchemeParameters_WarnsWhenInconsistent)
+{
+  auto model = rcp(new Tempus_Test::HarmonicOscillatorModel<double>());
+
+  std::ostringstream oss;
+  auto captured = Teuchos::fancyOStream(Teuchos::rcpFromRef(oss));
+  auto oldOut   = Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::VerboseObjectBase::setDefaultOStream(captured);
+
+  auto stepper = rcp(new Tempus::StepperHHTAlpha<double>());
+  stepper->setModel(model);
+  stepper->setSchemeName("Newmark Beta User Defined");
+  stepper->setAlphaF(0.1);
+  stepper->setAlphaM(0.0);
+  stepper->setGamma(0.5);
+  stepper->setBeta(0.25);
+  stepper->validateSchemeParameters();
+
+  Teuchos::VerboseObjectBase::setDefaultOStream(oldOut);
+
+  const std::string output = oss.str();
+  TEST_ASSERT(output.find("WARNING: For HHT-Alpha") != std::string::npos);
+  TEST_ASSERT(output.find("gamma_ (0.5)") != std::string::npos);
+  TEST_ASSERT(output.find("beta_ (0.25)") != std::string::npos);
+  TEST_ASSERT(output.find("0.5+alpha_f_ (0.6)") != std::string::npos);
+  TEST_ASSERT(output.find("0.25*(1.0+alpha_f_)^2 (0.3025)") !=
+              std::string::npos);
+}
+
+// ************************************************************
+// ************************************************************
 class StepperHHTAlphaModifierTest
   : virtual public Tempus::StepperHHTAlphaModifierBase<double> {
  public:
