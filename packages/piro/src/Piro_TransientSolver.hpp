@@ -78,11 +78,18 @@ public:
   void setPiroTempusIntegrator(Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator); 
   //@}
   
-  /** \brief . */
+  /** \brief Set the parameter for which Tempus computes sensitivities.
+   *
+   * DgDp is supported only for this parameter, hence OutArgs created before
+   * calling this function cannot be passed to evalModel(). */
   void resetSensitivityParamIndex(const int sens_param_index);
   //@}
 
-  /** \brief . */
+  /** \brief Set the response for which Tempus computes adjoint sensitivities.
+   *
+   * With adjoint sensitivities, DgDp is supported only for this response,
+   * hence OutArgs created before calling this function cannot be passed to
+   * evalModel(). */
   void resetResponseFnIndex(const int response_fn_index);
   //@}
 

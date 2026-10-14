@@ -39,14 +39,17 @@ Piro::TransientSolver<Scalar>::TransientSolver(
   num_g_(model->Ng()),
   sensitivityMethod_(NONE)
 {
+  this->setSensitivityMethod(appParams->get("Sensitivity Method", "None"));
+
+  // Response and parameter for which Tempus computes sensitivities (default 0)
   Teuchos::RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
   if (tempusPL->isSublist("Sensitivities")){
     Teuchos::ParameterList& tempusSensPL = tempusPL->sublist("Sensitivities", true);
-    if (sensitivityMethod_ != ADJOINT) {
-      response_fn_index_ = tempusSensPL.get<int>("Response Function Index", 0);
+    if (tempusSensPL.isParameter("Response Function Index")) {
+      response_fn_index_ = tempusSensPL.get<int>("Response Function Index");
     }
-    if (sensitivityMethod_ != NONE) {
-      sens_param_index_ = tempusSensPL.get<int>("Sensitivity Parameter Index", 0);
+    if (tempusSensPL.isParameter("Sensitivity Parameter Index")) {
+      sens_param_index_ = tempusSensPL.get<int>("Sensitivity Parameter Index");
     }
   }
 }
@@ -94,12 +97,14 @@ template<typename Scalar>
 void Piro::TransientSolver<Scalar>::resetSensitivityParamIndex(const int sens_param_index)
 {
   sens_param_index_ = sens_param_index; 
+  this->resetDefaultBase();
 }
 
 template<typename Scalar>
 void Piro::TransientSolver<Scalar>::resetResponseFnIndex(const int response_fn_index)
 {
   response_fn_index_ = response_fn_index;  
+  this->resetDefaultBase();
 }
 
 template<typename Scalar>
@@ -171,10 +176,15 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
 
   outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_f, modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_f));
 
-  // Sensitivity support (Forward approach only, for now)
+  // Sensitivity support
   // Jacobian solver required for all sensitivities
+  // Tempus computes sensitivities only with respect to parameter sens_param_index_ and, for
+  // adjoint sensitivities, only of response response_fn_index_. An index equal to -1 means
+  // that it has not been specified yet: all the parameters (responses) are then supported.
   if (modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W)) {
     for (int l = 0; l < num_p_; ++l) {
+      if ((sensitivityMethod_ != NONE) && (sens_param_index_ >= 0) && (l != sens_param_index_))
+        continue;
       // Solution sensitivities: DxDp(l)
       // DfDp(l) required
       const Thyra::ModelEvaluatorBase::DerivativeSupport dfdp_support =
@@ -210,6 +220,8 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
       // DxDp(l) required
       if (dxdp_linOpSupport || dxdp_mvJacobSupport || dxdp_mvGradSupport) {
         for (int j = 0; j < num_g_; ++j) {
+          if ((sensitivityMethod_ == ADJOINT) && (response_fn_index_ >= 0) && (j != response_fn_index_))
+            continue;
           // DgDx(j) required
           const Thyra::ModelEvaluatorBase::DerivativeSupport dgdx_support =
               modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, j);
@@ -317,6 +329,7 @@ Piro::TransientSolver<Scalar>::setSensitivityMethod(const std::string& sensitivi
         "\n Error! Piro::TransientSolver: invalid Sensitivity Method = " << sensitivity_method_string << "! \n" 
         << " Valid options for Sensitivity Method are 'None', 'Forward' and 'Adjoint'.\n");
   }
+  this->resetDefaultBase();
 }
 
 template <typename Scalar>
@@ -491,6 +504,20 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
               "\n Error! Piro::TransientSolver: DxDp returned by Tempus::IntegratorForwardSensitivity::getDxDp() routine is null!\n"); 
         } 
         const int l = sens_param_index_; 
+
+        // Solution sensitivities DxDp, i.e. DgDp(num_g_, l)
+        if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g_, l).none()) {
+          const Thyra::ModelEvaluatorBase::Derivative<Scalar> dxdp_deriv = outArgs.get_DgDp(num_g_, l);
+          if (!dxdp_deriv.isEmpty()) {
+            const RCP<Thyra::MultiVectorBase<Scalar> > dxdp_out = dxdp_deriv.getMultiVector();
+            TEUCHOS_TEST_FOR_EXCEPTION(
+                Teuchos::is_null(dxdp_out) || (dxdp_deriv.getMultiVectorOrientation() != Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM),
+                Teuchos::Exceptions::InvalidParameter,
+                "\n Error! Piro::TransientSolver: with forward sensitivities DxDp is only supported as a DERIV_MV_JACOBIAN_FORM multivector!\n");
+            Thyra::assign(dxdp_out.ptr(), *dxdp_mv);
+          }
+        }
+
         for (int j = 0; j < num_g_; ++j) {
           //Get DgDp and DgDx 
           const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
@@ -549,10 +576,10 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
       }
     case ADJOINT: //adjoint sensitivities
       const int l = sens_param_index_; 
-      //Get DgDp from outArgs and set it based on adjoint integrator from Tempus 
-      //Note that one could return DgDp for a single parameter and response by setting
-      //const int j = response_fn_index_, but this is not done now.
+      //Get DgDp from outArgs and set it based on adjoint integrator from Tempus.
+      //Tempus computes DgDp only for response response_fn_index_ and parameter sens_param_index_.
       for (int j = 0; j < num_g_; ++j) {
+        if ((response_fn_index_ >= 0) && (j != response_fn_index_)) continue;
         const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
            outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
         if (!dgdp_support.none()) {
