@@ -57,9 +57,9 @@ class DebugManager
      * in the destructor.
      */
     DebugManager ( int rank, bool doPrinting, std::ofstream &debugOs, 
-      MessageOutputLevel debugLevel) : myPID_(rank), debugLevel_(debugLevel),
+      MessageOutputLevel debugLevel, bool ownsFileOS = false) : myPID_(rank), debugLevel_(debugLevel),
         myOS_(static_cast<std::ostream *>(&debugOs)), fileOS_(&debugOs), 
-        iPrint_(doPrinting) {}
+        iPrint_(doPrinting), ownsFileOS_(ownsFileOS) {}
 
     /*! \brief Constructor for output to an iostream.
      *   \param rank  the MPI rank of this process.
@@ -70,15 +70,18 @@ class DebugManager
      */
     DebugManager ( int rank, bool doPrinting, std::ostream &debugOs, 
       MessageOutputLevel debugLevel) : myPID_(rank), debugLevel_(debugLevel),
-        myOS_(&debugOs), fileOS_(NULL), iPrint_(doPrinting) {}
+        myOS_(&debugOs), fileOS_(NULL), iPrint_(doPrinting), ownsFileOS_(false) {}
 
     /*! \brief Destructor
      */
     virtual ~DebugManager()
     {
       myOS_->flush();
-      if (fileOS_)
+      if (fileOS_) {
         fileOS_->close();
+        if (ownsFileOS_)
+          delete fileOS_;
+      }
     }
 
     /*! \brief Return the output stream for debug/status messages.
@@ -157,6 +160,7 @@ class DebugManager
     std::ostream *myOS_;
     std::ofstream *fileOS_;
     bool iPrint_;
+    bool ownsFileOS_;
 };
 
 } //namespace Zoltan2
