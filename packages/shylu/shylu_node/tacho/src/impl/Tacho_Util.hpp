@@ -124,18 +124,29 @@ enum : int { MaxDependenceSize = 4, ThresholdSolvePhaseUsingBlas3 = 12, CudaVect
 ///
 /// util
 ///
-template <typename Ta, typename Tb> KOKKOS_FORCEINLINE_FUNCTION static Ta min(const Ta a, const Tb b) {
+template <typename Ta, typename Tb>
+KOKKOS_FORCEINLINE_FUNCTION static Ta min(const Ta a, const Tb b) {
   return (a < static_cast<Ta>(b) ? a : static_cast<Ta>(b));
 }
 
-template <typename Ta, typename Tb> KOKKOS_FORCEINLINE_FUNCTION static Ta max(const Ta a, const Tb b) {
+template <typename Ta, typename Tb>
+KOKKOS_FORCEINLINE_FUNCTION static Ta max(const Ta a, const Tb b) {
   return (a > static_cast<Ta>(b) ? a : static_cast<Ta>(b));
 }
 
-template <typename Ta, typename Tb> KOKKOS_FORCEINLINE_FUNCTION static void swap(Ta &a, Tb &b) {
+template <typename Ta, typename Tb>
+KOKKOS_FORCEINLINE_FUNCTION static void swap(Ta &a, Tb &b) {
   Ta c(a);
   a = static_cast<Ta>(b);
   b = static_cast<Tb>(c);
+}
+
+// to avoid scope erasure on intel
+template <typename T, typename ordinal_type>
+KOKKOS_FORCEINLINE_FUNCTION static void swap_i(T *p, ordinal_type i, ordinal_type j) {
+  T c(p[i]);
+  p[i] = p[j];
+  p[j] = c;
 }
 
 KOKKOS_FORCEINLINE_FUNCTION

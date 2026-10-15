@@ -142,7 +142,7 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
           /// apply pivots to perm vector
           if (fpiv[i]) {
             const ordinal_type pidx = i + fpiv[i];
-            swap(perm[i], perm[pidx]);
+            swap_i(perm, i, pidx);
           }
         }
         for (ordinal_type i = 0; i < m; ++i)

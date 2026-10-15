@@ -123,7 +123,7 @@ template <> struct LDL<Uplo::Lower, Algo::Internal> {
           if (single) {
             if (fpiv[i]) {
               const ordinal_type pidx = i + fpiv[i];
-              swap(perm[i], perm[pidx]);
+              swap_i(perm, i, pidx);
             }
           }
         }
