@@ -11,6 +11,10 @@
 
 #include <stdlib.h>
 
+/* For TRILINOSSS_LIB_DLL_EXPORT: these globals are dllexport'd from trilinosss.dll
+ * and dllimport'd by consumers (e.g. Amesos2/KLU2) on Windows shared builds. */
+#include "trilinos_UFconfig.h"
+
 #ifdef MATLAB_MEX_FILE
 #include "mex.h"
 #include "matrix.h"
@@ -42,23 +46,23 @@
 #ifndef NMALLOC
 #ifdef MATLAB_MEX_FILE
 /* MATLAB mexFunction: */
-void *(*trilinos_amd_malloc) (size_t) = mxMalloc ;
-void (*trilinos_amd_free) (void *) = mxFree ;
-void *(*trilinos_amd_realloc) (void *, size_t) = mxRealloc ;
-void *(*trilinos_amd_calloc) (size_t, size_t) = mxCalloc ;
+TRILINOSSS_LIB_DLL_EXPORT void *(*trilinos_amd_malloc) (size_t) = mxMalloc ;
+TRILINOSSS_LIB_DLL_EXPORT void (*trilinos_amd_free) (void *) = mxFree ;
+TRILINOSSS_LIB_DLL_EXPORT void *(*trilinos_amd_realloc) (void *, size_t) = mxRealloc ;
+TRILINOSSS_LIB_DLL_EXPORT void *(*trilinos_amd_calloc) (size_t, size_t) = mxCalloc ;
 #else
 /* standard ANSI-C: */
-void *(*trilinos_amd_malloc) (size_t) = malloc ;
-void (*trilinos_amd_free) (void *) = free ;
-void *(*trilinos_amd_realloc) (void *, size_t) = realloc ;
-void *(*trilinos_amd_calloc) (size_t, size_t) = calloc ;
+TRILINOSSS_LIB_DLL_EXPORT void *(*trilinos_amd_malloc) (size_t) = malloc ;
+TRILINOSSS_LIB_DLL_EXPORT void (*trilinos_amd_free) (void *) = free ;
+TRILINOSSS_LIB_DLL_EXPORT void *(*trilinos_amd_realloc) (void *, size_t) = realloc ;
+TRILINOSSS_LIB_DLL_EXPORT void *(*trilinos_amd_calloc) (size_t, size_t) = calloc ;
 #endif
 #else
 /* no memory manager defined at compile-time; you MUST define one at run-time */
-void *(*trilinos_amd_malloc) (size_t) = NULL ;
-void (*trilinos_amd_free) (void *) = NULL ;
-void *(*trilinos_amd_realloc) (void *, size_t) = NULL ;
-void *(*trilinos_amd_calloc) (size_t, size_t) = NULL ;
+TRILINOSSS_LIB_DLL_EXPORT void *(*trilinos_amd_malloc) (size_t) = NULL ;
+TRILINOSSS_LIB_DLL_EXPORT void (*trilinos_amd_free) (void *) = NULL ;
+TRILINOSSS_LIB_DLL_EXPORT void *(*trilinos_amd_realloc) (void *, size_t) = NULL ;
+TRILINOSSS_LIB_DLL_EXPORT void *(*trilinos_amd_calloc) (size_t, size_t) = NULL ;
 #endif
 
 /* ========================================================================= */
@@ -74,11 +78,11 @@ void *(*trilinos_amd_calloc) (size_t, size_t) = NULL ;
 
 #ifndef NPRINT
 #ifdef MATLAB_MEX_FILE
-int (*trilinos_amd_printf) (const char *, ...) = mexPrintf ;
+TRILINOSSS_LIB_DLL_EXPORT int (*trilinos_amd_printf) (const char *, ...) = mexPrintf ;
 #else
 #include <stdio.h>
-int (*trilinos_amd_printf) (const char *, ...) = printf ;
+TRILINOSSS_LIB_DLL_EXPORT int (*trilinos_amd_printf) (const char *, ...) = printf ;
 #endif
 #else
-int (*trilinos_amd_printf) (const char *, ...) = NULL ;
+TRILINOSSS_LIB_DLL_EXPORT int (*trilinos_amd_printf) (const char *, ...) = NULL ;
 #endif

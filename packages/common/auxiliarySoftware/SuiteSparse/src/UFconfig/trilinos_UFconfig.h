@@ -43,6 +43,12 @@ extern "C" {
 
 #include <limits.h>
 
+/* Windows shared-build DATA-symbol import/export annotation (TRILINOSSS_LIB_DLL_EXPORT).
+ * Included here since every SuiteSparse header in this package pulls in UFconfig.h;
+ * see the EXTERN macro in trilinos_amd.h / trilinos_camd.h / trilinos_ccolamd.h /
+ * trilinos_colamd.h / amesos_cholmod_internal.h and their *_internal.h counterparts. */
+#include "TrilinosSS_DLLExportMacro.h"
+
 /* ========================================================================== */
 /* === UF_long ============================================================== */
 /* ========================================================================== */

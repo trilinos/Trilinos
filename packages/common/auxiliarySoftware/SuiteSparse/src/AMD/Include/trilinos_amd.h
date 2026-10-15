@@ -312,7 +312,10 @@ UF_long trilinos_amd_l_valid
  * that AMD uses. */
 
 #ifndef EXTERN
-#define EXTERN extern
+/* TRILINOSSS_LIB_DLL_EXPORT: dllexport when building trilinosss.dll, dllimport
+ * for consumers (e.g. Amesos2/KLU2) - without it, Windows shared builds fail
+ * with LNK2019 on these function-pointer DATA symbols (see trilinos_UFconfig.h). */
+#define EXTERN extern TRILINOSSS_LIB_DLL_EXPORT
 #endif
 
 EXTERN void *(*trilinos_amd_malloc) (size_t) ;		    /* pointer to malloc */
