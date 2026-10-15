@@ -67,6 +67,7 @@ getQuadPoints(ordinal_type quad_order,
     num_points = 1;
   else {
     ordinal_type l = std::ceil(std::log((quad_order+1.0)/3.0)/std::log(2.0));
+    if (l < ordinal_type(1)) l = ordinal_type(1);
     num_points = (1 << (l+1)) - 1; // std::pow(2,l+1)-1;
   }
   

@@ -368,11 +368,11 @@ getQuadPoints(ordinal_type quad_order,
     value_type max_b = 0.0;
     for (ordinal_type n = 0; n<num_points; n++) {
       if (std::abs(a[n]) > max_a)
-        max_a = a[n];
+        max_a = std::abs(a[n]);
     }
     for (ordinal_type n = 1; n<num_points; n++) {
       if (std::abs(b[n]) > max_b)
-        max_b = b[n];
+        max_b = std::abs(b[n]);
     }
     value_type shift = 1.0 + max_a + 2.0*max_b;
 

@@ -120,6 +120,12 @@ namespace Stokhos {
 	// Compute (u_i,u_i)
 	nrm_sqrd[i] = vs.inner_product(u1, u1);
 
+	if (nrm_sqrd[i] < 1e-14) {
+	  alpha[i] = value_type(0);
+	  if (i > 0) beta[i] = value_type(0);
+	  break;
+	}
+
 	// Compute v = A*u_i
         A.apply(u1, v);
 
@@ -181,6 +187,10 @@ namespace Stokhos {
 
 	// Compute (u_i,u_i)
 	beta[i] = std::sqrt(vs.inner_product(u1, u1));
+	if (beta[i] < 1e-14) {
+	  alpha[i] = value_type(0);
+	  break;
+	}
 	u1.scale(1.0/beta[i]);
 	nrm_sqrd[i] = value_type(1.0);
 
