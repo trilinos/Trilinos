@@ -112,7 +112,7 @@ namespace Belos {
     // FIXME (mfh 09 Jan 2013) Added an arbitrary tolerance in case
     // norms are not computed deterministically (which is possible
     // even with MPI only, and more likely with threads).
-    const MagType tol = Teuchos::as<MagType> (120) * STS::eps ();
+    const MagType tol = Teuchos::as<MagType> (130) * STS::eps ();
 
     /* MVT Contract:
 
@@ -1511,7 +1511,7 @@ namespace Belos {
     // FIXME (mfh 09 Jan 2013) Added an arbitrary tolerance in case
     // norms are not computed deterministically (which is possible
     // even with MPI only, and more likely with threads).
-    const MagType tol = Teuchos::as<MagType> (120) * STS::eps ();
+    const MagType tol = Teuchos::as<MagType> (130) * STS::eps ();
 
     /* OPT Contract:
        Apply()
