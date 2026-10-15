@@ -57,7 +57,7 @@ void makeDebugManager(int rank, bool iPrint,
         throw std::runtime_error(e.what());
       }
     }
-    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, *dbgFile, lvl));
+    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, *dbgFile, lvl, true));
     return;
   }
 
