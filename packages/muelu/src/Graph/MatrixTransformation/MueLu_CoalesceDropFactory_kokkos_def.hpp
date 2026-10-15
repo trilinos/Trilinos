@@ -512,6 +512,7 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
       runBoundaryFunctors(lclA, boundaryNodes, dirichlet_detection, apply_rowsum);
     }
   }
+  boundary_nodes_type boundaryNodesColMap = Utilities::DetectDirichletCols(*A, boundaryNodes);
   // In what follows, boundaryNodes can still still get modified if aggregationMayCreateDirichlet == true.
   // Otherwise we're now done with it now.
 
@@ -549,40 +550,35 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
     if (threshold != zero) {
       if ((socUsesMatrix == "A") || (socUsesMatrix == "MinvA")) {
         if (socUsesMeasure == "unscaled") {
-          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
-                                                                                                                              aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold,
+                                                                                                                              aggregationMayCreateDirichlet, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
-                                                                                                                                         aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold,
+                                                                                                                                         aggregationMayCreateDirichlet, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
-                                                                                                                                       aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold,
+                                                                                                                                       aggregationMayCreateDirichlet, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
-                                                                                                                                               aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A_drop, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold,
+                                                                                                                                               aggregationMayCreateDirichlet, useBlocking, currentLevel, *this);
         }
       } else if (socUsesMatrix == "distance laplacian") {
         auto coords = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
         if (socUsesMeasure == "unscaled") {
-          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         }
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
 
-      if (symmetrizeDroppedGraph != "no symmetrization") {
-        auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(*A, boundaryNodes, results);
-        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_boundaries);
-      } else {
-        auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, no_op);
-      }
+      auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(*A, boundaryNodes, boundaryNodesColMap, results);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_boundaries);
     }
 
     // 3 symmetrize possibilities:
@@ -953,6 +949,7 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
   auto results = results_view_type("results", lclA.nnz());  // initialized to UNDECIDED
 
   RCP<Matrix> mergedA;
+  boundary_nodes_type boundaryNodesColMap;
   {
     SubFactoryMonitor mDropping(*this, "Dropping decisions", currentLevel);
 
@@ -977,19 +974,20 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
       auto fillFunctor = MatrixConstruction::MergeFillFunctor<local_matrix_type>(lclA, blkSize, colTranslation, lclMergedA);
       Kokkos::parallel_for("MueLu::CoalesceDrop::MergeFill", range, fillFunctor);
 
-      mergedA = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclMergedA, uniqueMap, nonUniqueMap, uniqueMap, uniqueMap);
+      mergedA             = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclMergedA, uniqueMap, nonUniqueMap, uniqueMap, uniqueMap);
+      boundaryNodesColMap = Utilities::DetectDirichletCols(*mergedA, boundaryNodes);
     }
 
     if (threshold != zero) {
       if (socUsesMatrix == "A") {
         if (socUsesMeasure == "unscaled") {
-          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, currentLevel, *this);
         }
       } else if (socUsesMatrix == "distance laplacian") {
         auto coords = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
@@ -1020,13 +1018,13 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
         }
 
         if (socUsesMeasure == "unscaled") {
-          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         }
       }
     } else {
