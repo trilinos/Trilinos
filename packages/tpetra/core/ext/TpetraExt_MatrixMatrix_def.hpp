@@ -1208,6 +1208,9 @@ void kokkos_kernels_mult_A_B_newmatrix(
   } else
 #endif
   {
+    if (!Aview.origMatrix->getCrsGraph()->isSorted()) {
+      backend_type::pre_spgemm(Amat);
+    }
     backend_type::pre_spgemm(Bmerged);
 
     const std::string coreLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Core";
@@ -1568,11 +1571,21 @@ void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>:
     myalg = params->get(genericAlg, myalg);
   KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
-  // decide whether to use integer-typed row pointers for this spgemm
+  // Decide whether to use integer-typed row pointers for this spgemm, in order to allow a TPL to be used in the symbolic phase.
+  // Note: until KokkosKernels 5.3, if spgemm_symbolic uses a TPL but A or B is unsorted, an exception is thrown in
+  // debug mode. To avoid this exception, we only enable the use of a TPL here when both inputs are known to be sorted.
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
+#if KOKKOSKERNELS_VERSION >= 50299
   const bool useIntRowptrs =
       irph.shouldUseIntRowptrs() &&
       CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->shouldUseIntRowptrs();
+#else
+  const bool useIntRowptrs =
+      irph.shouldUseIntRowptrs() &&
+      CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->shouldUseIntRowptrs() &&
+      KokkosSparse::isCrsGraphSorted(Amat.graph.row_map, Amat.graph.entries) &&
+      KokkosSparse::isCrsGraphSorted(Bmerged.graph.row_map, Bmerged.graph.entries);
+#endif
 
   const Scalar jacobiOmega = omega * Teuchos::ScalarTraits<Scalar>::one();
 

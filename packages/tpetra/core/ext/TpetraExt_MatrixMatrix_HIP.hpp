@@ -22,7 +22,20 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosHIPWrapperNode> {
   static std::string algorithm_label() { return "HIP"; }
 
   template <class MatrixType>
-  static void pre_spgemm(MatrixType&) {}
+  static void pre_spgemm(MatrixType& Bmerged) {
+#if KOKKOSKERNELS_VERSION >= 50299
+    (void)Bmerged;
+#elif defined(KOKKOS_ENABLE_HIP) && defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+    using device_t = typename MatrixType::device_type;
+    if constexpr (std::is_same_v<typename device_t::execution_space, Kokkos::HIP>) {
+      if (!KokkosSparse::isCrsGraphSorted(Bmerged.graph.row_map, Bmerged.graph.entries)) {
+        Import_Util::sortCrsMatrix(Bmerged);
+      }
+    }
+#else
+    (void)Bmerged;
+#endif
+  }
 };
 
 /*********************************************************************************************************/

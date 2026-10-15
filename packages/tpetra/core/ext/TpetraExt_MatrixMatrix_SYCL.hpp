@@ -22,7 +22,9 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosSYCLWrapperNode> {
   static std::string algorithm_label() { return "SYCL"; }
 
   template <class MatrixType>
-  static void pre_spgemm(MatrixType&) {}
+  static void pre_spgemm(MatrixType&) {
+    // Note BMK: KokkosKernels as of 5.2.2 does not have oneAPI spgemm wrappers for SYCL
+  }
 };
 
 /*********************************************************************************************************/
