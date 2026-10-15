@@ -6,6 +6,8 @@
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_Error.hpp"
 
+#include <bit>  // std::bit_floor
+
 namespace KokkosBatched {
 /********************* BEGIN functor-level routines *********************/
 /********************* END   functor-level routines *********************/

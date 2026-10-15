@@ -165,10 +165,21 @@ private:
               stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(m_bulkData, element, local_side);
 
               if(m_bulkData.is_valid(side)) {
-                // Update shared info for existing side that can't be removed
-                int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
-                int owning_proc = std::min(other_proc, m_bulkData.parallel_rank());
-                shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
+                // Update shared info for existing side that can't be removed.
+                // Record the complete co-sharer set (the side may be shared by
+                // more than two procs) with a globally consistent owner.
+                std::vector<int> sharingProcs;
+                impl::get_remote_procs_sharing_side(m_bulkData, element, local_side, sharingProcs);
+                if(sharingProcs.empty()) {
+                  sharingProcs.push_back(parallel_edge_info.get_proc_rank_of_neighbor());
+                }
+                int owning_proc = m_bulkData.parallel_rank();
+                for(int sp : sharingProcs) {
+                  owning_proc = std::min(owning_proc, sp);
+                }
+                for(int sp : sharingProcs) {
+                  shared_modified.push_back(stk::mesh::sharing_info(side, sp, owning_proc));
+                }
               } else {
                 // Create the side since it is meant to exist
                 impl::add_side_into_exposed_boundary(m_bulkData,
@@ -344,10 +355,23 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                         if(!impl::remove_side_from_death_boundary(bulkData, this_element, active, deletedEntities, side_id, remoteActiveSelector)) {
                           stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, this_element, side_id);
                           if(bulkData.is_valid(side)) {
-                            // Update shared info for existing side that can't be removed
-                            int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
-                            int owning_proc = std::min(other_proc, bulkData.parallel_rank());
-                            shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
+                            // Update shared info for existing side that can't be removed.
+                            // The side may be shared by more than two procs (e.g. an
+                            // exposed edge where several shell blocks meet), so record
+                            // the complete co-sharer set rather than the single pairwise
+                            // neighbor, and choose the owner as the global minimum proc.
+                            std::vector<int> sharingProcs;
+                            impl::get_remote_procs_sharing_side(bulkData, this_element, side_id, sharingProcs);
+                            if(sharingProcs.empty()) {
+                              sharingProcs.push_back(parallel_edge_info.get_proc_rank_of_neighbor());
+                            }
+                            int owning_proc = bulkData.parallel_rank();
+                            for(int sp : sharingProcs) {
+                              owning_proc = std::min(owning_proc, sp);
+                            }
+                            for(int sp : sharingProcs) {
+                              shared_modified.push_back(stk::mesh::sharing_info(side, sp, owning_proc));
+                            }
                           } else {
                             // Create the side since it is meant to exist
                             impl::add_side_into_exposed_boundary(bulkData, parallel_edge_info, this_element, remote_id_side_pair.side, parts_for_creating_side,

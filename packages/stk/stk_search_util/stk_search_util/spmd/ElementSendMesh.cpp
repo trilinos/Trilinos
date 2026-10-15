@@ -307,8 +307,7 @@ double ElementSendMesh::get_closest_geometric_distance_squared(const EntityKey& 
     else {
       stk::search::project_to_entity(data, e, projectionResult);
     }
-    STK_ThrowRequire(projectionResult.doneProjection);
-    return projectionResult.geometricDistanceSquared;
+    return projectionResult.doneProjection ? projectionResult.geometricDistanceSquared : std::numeric_limits<double>::max();
   }
 
   return distance_squared_from_nearest_entity_node(*m_bulk, e, m_cachedCoordinateFieldData, toCoords);

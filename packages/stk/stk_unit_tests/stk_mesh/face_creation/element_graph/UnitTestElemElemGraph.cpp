@@ -725,24 +725,6 @@ void test_parallel_graph_info(const stk::mesh::Graph& graph, const ParallelInfoF
   ASSERT_TRUE(did_find);
 }
 
-template<class T>
-void print_graph(const std::string &title, int proc_id, T& elem_graph)
-{
-  std::ostringstream os;
-
-  os << title << " for processor " << proc_id << std::endl;
-  for (size_t i=0;i<elem_graph.size();++i)
-  {
-    os << "Element " << i << "::\t";
-    for (size_t j=0;j<elem_graph[i].size();++j)
-    {
-      os << elem_graph[i][j] << "\t";
-    }
-    os << std::endl;
-  }
-  std::cerr << os.str();
-}
-
 //BeginDocExample1
 
 stk::mesh::EntityVector get_killed_elements(stk::mesh::BulkData& bulkData, const int killValue, const stk::mesh::Part& active)
@@ -2274,14 +2256,18 @@ TEST( ElementGraph, OneHex )
     stk::mesh::BulkData& bulk = *bulkPtr;
     stk::io::fill_mesh("generated:1x1x1", bulk);
 
+#ifndef NDEBUG
     bulk.get_face_adjacent_element_graph().write_graph(std::cerr, "Before");
+#endif
 
     bulk.modification_begin();
     stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK,1);
     bulk.destroy_entity(elem1);
     bulk.modification_end();
 
+#ifndef NDEBUG
     bulk.get_face_adjacent_element_graph().write_graph(std::cerr, "After");
+#endif
     EXPECT_EQ(0u, bulk.get_face_adjacent_element_graph().size());
   }
 }
@@ -3794,7 +3780,9 @@ TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
     EXPECT_EQ(1u, elemElemGraph.num_edges());
     EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
   }
+#ifndef NDEBUG
   elemElemGraph.write_graph(std::cerr);
+#endif
 }
 
 TEST( ElementGraph, Hex0Shell1Hex2Parallel )
@@ -4620,35 +4608,10 @@ TEST(TestAuraHex, TestKeyHoleSimilarProblemBInParallel)
     bulkData.change_entity_owner(elementProcChanges);
   }
 
-{
-stk::parallel_machine_barrier(bulkData.parallel());
-std::ostringstream os;
-os<<"P"<<bulkData.parallel_rank()<<" ****************** about to do test mod"<<std::endl;
-stk::mesh::EntityVector elems;
-stk::mesh::get_entities(bulkData, stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part(), elems);
-for(stk::mesh::Entity elem : elems) {
-os<<bulkData.entity_key(elem)<<" nodes: ";
-const stk::mesh::Entity* nodes = bulkData.begin_nodes(elem);
-for(int i=0; i<8; ++i) os<<bulkData.identifier(nodes[i])<<" o="<<bulkData.parallel_owner_rank(nodes[i])<<",s="<<bulkData.bucket(nodes[i]).shared()<<",a="<<bulkData.bucket(nodes[i]).in_aura()<<"; ";
-os<<std::endl;
-}
-std::cerr<<os.str();
-stk::parallel_machine_barrier(bulkData.parallel());
-}
   bulkData.modification_begin();
   if (procRank == 1) {
     stk::mesh::Entity elem5 = bulkData.get_entity(stk::topology::ELEM_RANK,5);
     ASSERT_TRUE(bulkData.parallel_owner_rank(elem5)==1);
-{
-std::ostringstream os;
-os<<"P"<<bulkData.parallel_rank()<<" elem5 nodes: ";
-const stk::mesh::Entity* nodes = bulkData.begin_nodes(elem5);
-for(int i=0; i<8; ++i) {
-os<<bulkData.identifier(nodes[i])<<" o="<<bulkData.parallel_owner_rank(nodes[i])<<",s="<<bulkData.bucket(nodes[i]).shared()<<",a="<<bulkData.bucket(nodes[i]).in_aura()<<"; ";
-}
-os<<std::endl;
-std::cerr<<os.str();
-}
     EXPECT_TRUE(bulkData.destroy_entity(elem5));
   }
   bulkData.modification_end();
@@ -4690,13 +4653,6 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
   }
 
   bulkData.change_entity_owner(elementProcChanges);
-{
-stk::parallel_machine_barrier(bulkData.parallel());
-std::ostringstream os;
-os<<"P"<<bulkData.parallel_rank()<<" about to do test mod"<<std::endl;
-std::cerr<<os.str();
-stk::parallel_machine_barrier(bulkData.parallel());
-}
   bulkData.modification_begin();
   if (procRank == 1) {
     stk::mesh::Entity local_element5 = bulkData.get_entity(stk::topology::ELEM_RANK,5);

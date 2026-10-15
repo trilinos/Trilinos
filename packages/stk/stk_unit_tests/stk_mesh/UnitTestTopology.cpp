@@ -512,9 +512,6 @@ TEST (stkTopologyFunctions, use_permutations_Hex_2x1x1)
         }
       }
     }
-    std::ostringstream msg_buff;
-    msg_buff << "P" << mesh.parallel_rank() << ": knows " << num_elems << " elements" << std::endl;
-    std::cout << msg_buff.str();
     EXPECT_EQ(innermost_hits, num_elems * 24);
 
     if (num_elems > 0)

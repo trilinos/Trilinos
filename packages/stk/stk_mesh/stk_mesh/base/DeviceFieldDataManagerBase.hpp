@@ -78,6 +78,8 @@ public:
 
   virtual void set_device_field_meta_data(FieldDataBase& fieldDataBase) = 0;
 
+  virtual void grow_bucket(EntityRank rank, unsigned bucketId, unsigned newBucketCapacity) = 0;
+
   virtual void add_new_bucket(EntityRank rank,
                               unsigned bucketSize,
                               unsigned bucketCapacity,

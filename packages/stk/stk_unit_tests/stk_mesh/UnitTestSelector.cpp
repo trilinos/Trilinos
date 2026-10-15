@@ -485,7 +485,6 @@ TEST(Verify, usingPartVectorToSelectUnion)
 
   std::ostringstream msg;
   msg << selector;
-  std::cout << "msg.str() = " << msg.str() << std::endl;
   EXPECT_EQ( "(PartA | PartB | PartC)", msg.str() );
 }
 
@@ -635,7 +634,6 @@ TEST(Verify, selectorContainsPart)
   stk::mesh::Part & partC = fix.m_partC;
   stk::mesh::Part & partD = fix.m_partD;
   stk::mesh::Selector selector = partA | partB | (!partC) | partD;
-  std::cout << "select_part selector = " << selector << std::endl;
   EXPECT_TRUE(selector(partA));
   EXPECT_TRUE(selector(partB));
   EXPECT_FALSE(selector(partC));
@@ -664,7 +662,6 @@ TEST(Verify, printingOfSelectorUnion)
   stk::mesh::Part & partC = fix.m_partC ;
   stk::mesh::Part & partD = fix.m_partD ;
   stk::mesh::Selector selector = partA | partB | partC | partD;
-  std::cout << "A|B|C|D = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
   EXPECT_EQ( "(PartA | PartB | PartC | PartD)" , msg.str() );
@@ -679,7 +676,6 @@ TEST(Verify, printingOfSelectorIntersection)
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
   stk::mesh::Selector selector = partA & partB & partC;
-  std::cout << "A&B&C = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
   EXPECT_TRUE( msg.str() == "(PartA & PartB & PartC)" );
@@ -695,7 +691,6 @@ TEST(Verify, printingOfGeneralSelector)
   stk::mesh::Part & partC = fix.m_partC ;
   stk::mesh::Part & partD = fix.m_partD ;
   stk::mesh::Selector selector =  partA | ( (!((partA & partB) | partC))  & ((!partD) | partB));
-  std::cout << "complicated selector = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
   EXPECT_EQ( "(PartA | (!(((PartA & PartB) | PartC)) & (!(PartD) | PartB)))" , msg.str() );

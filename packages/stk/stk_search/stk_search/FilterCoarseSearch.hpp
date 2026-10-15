@@ -51,6 +51,7 @@
 #include "stk_search/DistanceComparison.hpp"
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include "stk_util/environment/RuntimeWarning.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 
@@ -199,6 +200,7 @@ struct FilterCoarseSearchStats
 {
   unsigned numEntitiesWithinTolerance{0};
   unsigned numEntitiesOutsideTolerance{0};
+  unsigned numGeometricDistanceFailures{0};
 
   double longestParametricExtrapolation{0.0};
   double longestGeometricExtrapolation{0.0};
@@ -282,7 +284,8 @@ template <class SENDMESH>
 void set_geometric_info(SENDMESH& sendMesh,
                         const typename SENDMESH::EntityKey sendEntity, const std::vector<double>& tocoords,
                         const double searchToleranceSquared, const bool useCentroidForGeometricProximity,
-                        double& geometricDistanceSquared, bool& isWithinGeometricTolerance)
+                        double& geometricDistanceSquared, bool& isWithinGeometricTolerance,
+                        bool& hasError)
 {
   if(!isWithinGeometricTolerance) {
 
@@ -291,6 +294,10 @@ void set_geometric_info(SENDMESH& sendMesh,
     }
     else {
       geometricDistanceSquared = sendMesh.get_closest_geometric_distance_squared(sendEntity, tocoords);
+
+      if( geometricDistanceSquared == std::numeric_limits<double>::max() ) {
+        hasError = true;
+      }
     }
 
     isWithinGeometricTolerance = geometricDistanceSquared <= searchToleranceSquared;
@@ -339,11 +346,15 @@ FilterCoarseSearchStats filter_coarse_search_by_range(FilterCoarseSearchProcRela
     std::pair<const_iterator, const_iterator> keys = std::make_pair(current_key, next_key);
     bestCandidate.nearest = keys.second;
 
-    for(const_iterator ii = keys.first; ii != keys.second; ++ii) {
+    const_iterator ii = keys.first;
+    bool forceUseCentroid = false;
+
+    while(ii != keys.second) {
       const typename SENDMESH::EntityKey sendEntity = ii->second.id();
       sendMesh.find_parametric_coords(sendEntity, tocoords, parametricCoords, parametricDistance, isWithinParametricTolerance);
 
       if(parametricDistance == std::numeric_limits<double>::max()) {
+        ++ii;
         continue;
       }
 
@@ -364,10 +375,28 @@ FilterCoarseSearchStats filter_coarse_search_by_range(FilterCoarseSearchProcRela
         accept = parametricDistance < bestCandidate.parametricDistance;
       }
       else {
-        set_geometric_info<SENDMESH>(sendMesh, sendEntity, tocoords, searchToleranceSquared,
-                                     useCentroidForGeometricProximity,
-                                     geometricDistanceSquared,
-                                     isWithinGeometricTolerance);
+        bool hasGeometricDistanceError = false;
+        const bool useCentroid = useCentroidForGeometricProximity || forceUseCentroid;
+
+        set_geometric_info<SENDMESH>(
+          sendMesh, sendEntity, tocoords, searchToleranceSquared,
+          useCentroid,
+          geometricDistanceSquared,
+          isWithinGeometricTolerance,
+          hasGeometricDistanceError
+        );
+
+        if( hasGeometricDistanceError && !useCentroid ) {
+          // reset search info and start over using centroids if it failed 
+          // and we weren't using centroids already
+          ii = keys.first;
+          forceUseCentroid = true;
+
+          bestCandidate = FilterResult<SENDMESH, RECVMESH>();
+          bestCandidate.nearest = keys.second;
+
+          continue;
+        }
 
         accept = geometricDistanceSquared < bestCandidate.geometricDistanceSquared;
       }
@@ -378,6 +407,12 @@ FilterCoarseSearchStats filter_coarse_search_by_range(FilterCoarseSearchProcRela
                                              geometricDistanceSquared, isWithinGeometricTolerance,
                                              ii, bestCandidate);
       }
+
+      ++ii;
+    }
+
+    if( forceUseCentroid ) {
+      stats.numGeometricDistanceFailures++;
     }
 
     bool ignoredNearest = false;
@@ -495,6 +530,14 @@ void filter_coarse_search(const std::string& name,
 
   stats.numEntitiesWithinTolerance = stk::get_global_sum(sendMesh.comm(), stats.numEntitiesWithinTolerance);
   stats.numEntitiesOutsideTolerance = stk::get_global_sum(sendMesh.comm(), stats.numEntitiesOutsideTolerance);
+  stats.numGeometricDistanceFailures = stk::get_global_sum(sendMesh.comm(), stats.numGeometricDistanceFailures);
+
+  if(stats.numGeometricDistanceFailures) {
+    stk::RuntimeWarningP0() 
+      << "The geometric distance search failed for " 
+      << stats.numGeometricDistanceFailures 
+      << " entities and fell back to a centroid distance search\n";
+  }
 
   if(stats.numEntitiesOutsideTolerance) {
 

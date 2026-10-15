@@ -1,5 +1,3 @@
-
-
 // Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
 // Solutions of Sandia, LLC (NTESS). Under the terms of Contract
 // DE-NA0003525 with NTESS, the U.S. Government retains certain rights
@@ -46,10 +44,12 @@
 #include "Ioss_NodeBlock.h"             // for NodeBlock
 #include "Ioss_Region.h"                // for Region, NodeBlockContainer
 #include "Ioss_Utils.h"                 // for Utils
+#include "Ioss_SerializeIO.h"
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_io/WriteMesh.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/BuildMesh.hpp"
+#include "stk_unit_test_utils/CorruptRestart.hpp"
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stddef.h>
@@ -61,7 +61,7 @@
 
 namespace {
 
-void test_read_corrupt_restart(MPI_Comm communicator, const std::string& fileName,
+void test_read_corrupt_restart(stk::ParallelMachine communicator, const std::string& fileName,
                                const std::string& fieldName, double expectedMaxTime, double restartTime)
 {
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::unit_test_util::build_mesh(communicator);
@@ -98,58 +98,9 @@ void test_read_corrupt_restart(MPI_Comm communicator, const std::string& fileNam
   }
 }
 
-std::string get_corrupt_restart_mesh_filename(MPI_Comm communicator)
-{
-  std::ostringstream oss;
-  oss << "generated:1x1x";
-  oss << stk::parallel_machine_size(communicator);
-  return oss.str();
-}
-
-void create_corrupt_restart(MPI_Comm communicator,
-                            const std::string& restartFilename,
-                            const std::string& internalClientFieldName,
-                            const int nSteps, const int skipStep)
-{
-  std::string parallelFilename;
-
-  stk::io::StkMeshIoBroker stkIo(communicator);
-  const std::string exodusFileName = get_corrupt_restart_mesh_filename(communicator);
-  size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-  stkIo.set_active_mesh(index);
-  stkIo.create_input_mesh();
-
-  stk::mesh::MetaData &stkMeshMetaData = stkIo.meta_data();
-  const int numberOfStates = 2;
-  stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<double>(stk::topology::NODE_RANK,
-                                                                           internalClientFieldName,
-                                                                           numberOfStates);
-
-  stk::mesh::put_field_on_mesh(field0, stkMeshMetaData.universal_part(), nullptr);
-
-  stkIo.populate_bulk_data();
-
-  stkIo.property_add(Ioss::Property("FLUSH_INTERVAL", 1));
-  size_t fileIndex = stkIo.create_output_mesh(restartFilename, stk::io::WRITE_RESTART);
-  stkIo.add_field(fileIndex, field0);
-
-  std::shared_ptr<Ioss::Region> region = stkIo.get_output_ioss_region(fileIndex);
-
-  for(int i=0; i<=nSteps; i++) {
-    if(stk::parallel_machine_rank(communicator) == 1 && (i == skipStep)) {
-      continue;
-    }
-
-    double time = i;
-    stkIo.begin_output_step(fileIndex, time);
-    stkIo.write_defined_output_fields(fileIndex);
-    stkIo.end_output_step(fileIndex);
-  }
-}
-
 TEST(StkIO, CorruptRestart)
 {
-  MPI_Comm communicator = MPI_COMM_WORLD;
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(communicator) == 1) { GTEST_SKIP(); }
 
 #ifndef NDEBUG
@@ -169,7 +120,7 @@ TEST(StkIO, CorruptRestart)
   if(stk::parallel_machine_rank(communicator) == 0) {
     std::cout << "Creating corrupt restart files" << std::endl;
   }
-  create_corrupt_restart(communicator, restartFilename, internalClientFieldName, nSteps, skipStep);
+  stk::unit_test_util::create_corrupt_restart(communicator, restartFilename, internalClientFieldName, nSteps, skipStep);
 
   if(stk::parallel_machine_rank(communicator) == 0) {
     std::cout << "Testing corrupt restart" << std::endl;

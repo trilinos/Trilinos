@@ -16,6 +16,7 @@
 namespace stk {
 namespace tools {
 
+namespace impl {
 bool part_selects_entities_globally(stk::mesh::BulkData & bulk, stk::mesh::Part & part)
 {
   stk::mesh::BucketVector const & buckets = bulk.get_buckets(part.primary_entity_rank(), part);
@@ -33,6 +34,7 @@ void remove_io_attribute_from_empty_parts(stk::mesh::BulkData & bulk)
       }
     }
   }
+}
 }
 
 std::vector<std::string> GetEntityNamesFromIDs(const stk::mesh::BulkData & meshBulk, stk::topology::rank_t  stkTop, const std::vector<int> & theIDs)
@@ -130,7 +132,7 @@ void extract_blocks_and_ns_from_file(const std::string &inFile,
   else // if user only asks for blocks, use extract_blocks, which completely deletes all other blocks and associated nodes
   {
     extract_blocks(*inBulk, *outBulk, blockNames);
-    remove_io_attribute_from_empty_parts(*outBulk);
+    impl::remove_io_attribute_from_empty_parts(*outBulk);
   }
 
   stk::io::StkMeshIoBroker stkOutput;
