@@ -22,13 +22,13 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
   static std::string algorithm_label() { return "Cuda"; }
 
   template <class MatrixType>
-  static void pre_spgemm(MatrixType& Bmerged) {
+  static void pre_spgemm(MatrixType& Bmerged, bool knownUnsorted) {
 #if KOKKOSKERNELS_VERSION >= 50299
     (void)Bmerged;
 #elif defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && ((CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040))
     using device_t = typename MatrixType::device_type;
     if constexpr (std::is_same_v<typename device_t::execution_space, Kokkos::Cuda>) {
-      if (!KokkosSparse::isCrsGraphSorted(Bmerged.graph.row_map, Bmerged.graph.entries)) {
+      if (knownUnsorted || !KokkosSparse::isCrsGraphSorted(Bmerged.graph.row_map, Bmerged.graph.entries)) {
         Import_Util::sortCrsMatrix(Bmerged);
       }
     }
