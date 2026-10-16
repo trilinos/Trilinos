@@ -3617,12 +3617,6 @@ void BulkData::modification_end_for_sync_to_host(ModEndOptimizationFlag opt)
   }
 
   notify_finished_mod_end();
-
-  if(parallel_size() > 1)
-  {
-    STK_ThrowRequireMsg(false, "parallel mesh sync to host not supported");
-    check_mesh_consistency();
-  }
 }
 
 void BulkData::update_comm_list_based_on_changes_in_comm_map()

@@ -684,7 +684,7 @@ namespace Intrepid2 {
           output(1, 2) = -2.0;
           output(1, 3) =  0.0;
           output(1, 4) =  0.0;
-          output(1, 5) = -1.0;
+          output(1, 5) =  1.0;
           output(1, 6) =  0.0;
           output(1, 7) =  0.0;
           output(1, 8) =  0.0;
@@ -698,7 +698,7 @@ namespace Intrepid2 {
           output(2, 5) =  0.0;
           output(2, 6) =  0.0;
           output(2, 7) = -2.0;
-          output(2, 8) = -1.0;
+          output(2, 8) =  1.0;
           output(2, 9) =  0.0;  
           
           output(3, 0) =  0.0;

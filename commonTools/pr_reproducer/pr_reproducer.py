@@ -39,7 +39,9 @@ parser.add_argument("--build", help="PR build that should be reproduced. Allows 
 parser.add_argument("--debug", action="store_true", help="debug mode")
 parser.add_argument("--remote", default="origin", help="Name of the remote that points to the main Trilinos repository")
 parser.add_argument("--container-engine", choices=["docker", "podman"], default="podman",
-                    help="Container engine to use (default: podman).")
+		     help="Container engine to use (default: podman).")
+parser.add_argument("--container-image", default=None, help="Override container image")
+parser.add_argument("--container-tag", default=None, help="Override container tag")
 args = parser.parse_args()
 remote = args.remote
 container_engine = args.container_engine
@@ -147,8 +149,14 @@ else:
     pr_build = questionary.select("Which PR build do you want to reproduce (Github build name / CDash build name)?", choices=[questionary.Choice(key+" / "+pr_builds[key]["dashboard_build_name"], key) for key in pr_builds]).ask()
 logger.debug(f"pr_build = {pr_build}")
 
-image = pr_builds[pr_build]["image"]
-tag = pr_builds[pr_build]["tag"]
+if args.container_image:
+    image = args.container_image
+else:
+    image = pr_builds[pr_build]["image"]
+if args.container_tag:
+    tag = args.container_tag
+else:
+    tag = pr_builds[pr_build]["tag"]
 dashboard_build_name = pr_builds[pr_build]["dashboard_build_name"]
 genconfig_build_id = pr_builds[pr_build]["genconfig_build_id"]
 cmake_extra_args = pr_builds[pr_build]["cmake_extra_args"]

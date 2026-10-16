@@ -1,5 +1,14 @@
 # CHANGELOG
 
+5.33.1   (STK_VERSION 5330100) 10/15/2026
+  stk_search: added backward compatibility with OpenMP 4.x - the functions
+              called were deprecated in OpenMP 5
+
+5.31.6   (STK_VERSION 5310600) 10/14/2026
+  stk_mesh: add parallel consistency check for spatial dimensions
+  stk_search_util: fix ASAN issue (array-bounds when using shell topology)
+                   in MasterElementProviderIntrepid2::evaluate_field
+
 5.31.4    (STK_VERSION 5310400) 10/1/2026
   stk_mesh: various developments in DeviceMesh (GPU support) including
             fixing compile-warnings for AMD/HIP/ROCm
@@ -25,7 +34,7 @@
 
 5.31.2    (STK_VERSION 5310200)
   stk_mesh:     improve behavior of for_each_entity_run when OpenMP is enabled
-  stk_transfer: enable transfers between 2D and 3D mesh, as well as 
+  stk_transfer: enable transfers between 2D and 3D mesh, as well as
                 axisymmetric transfers
   stk_mesh:     make field_blas functions work on Rocm when unified memory is
                 enabled
@@ -43,9 +52,8 @@
                 by the user mesh wrappers.  Makes stk_transfer
                 usable for adaptive mesh refinement.
   stk_mesh:     reduce size of FieldData objects and improve the
-                performance of creating them         
-  
- 
+                performance of creating them
+
 5.27.4    (STK_VERSION 5270400)  1/6/26
   stk_mesh: parallel_sum/min/max and '_including_ghosts' versions
             now use single consolidated code-path for both CPU and

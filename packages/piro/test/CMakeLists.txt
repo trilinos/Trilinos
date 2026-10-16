@@ -309,6 +309,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml
         input_Solve_NOX_AdjointSensitivities_ExplicitAdjointME_Thyra.xml
         input_Analysis_HDSA.xml
+        input_Analysis_HDSA_continuation.xml
+        input_Analysis_HDSA_OED.xml
         input_Analysis_ROL_Tempus_Transient_MSD.xml
         input_Analysis_ROL_ReducedSpace_LineSearch.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_AdjointSensitivities_CheckGradients.xml

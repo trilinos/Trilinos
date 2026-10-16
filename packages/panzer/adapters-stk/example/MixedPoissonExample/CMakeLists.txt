@@ -72,6 +72,61 @@ FOREACH( ORDER 1 2 3)
 
 ENDFOREACH()
 
+## Variable coefficient and anisotropic tensor variants, basis order 2.
+## VarCoeff weights the div-div term by three field multipliers, which
+## exercises the multi-field-multiplier path of
+## Integrator_DivBasisTimesScalar. Tensor uses a full SPD tensor in the
+## (K grad phi, grad q) term, which exercises
+## Integrator_GradBasisDotTensorTimesVector. Both AD kernels are tested.
+## One order is enough to check the operators; order 2 converges at the
+## full rate on these meshes and still allows shared memory for AD.
+SET(ORDER 2)
+FOREACH( VARIANT VarCoeff Tensor)
+  IF (VARIANT STREQUAL "VarCoeff")
+    SET(VARIANT_ARGS "--variable-coefficient")
+  ELSE ()
+    SET(VARIANT_ARGS "--anisotropic-tensor")
+  ENDIF ()
+  STRING(TOLOWER ${VARIANT} VARIANT_LC)
+
+  FOREACH( AD_MEM shared no-shared)
+    IF (AD_MEM STREQUAL "shared")
+      SET(AD_MEM_ARGS "--use-shared-mem-for-ad")
+    ELSE ()
+      SET(AD_MEM_ARGS "--no-use-shared-mem-for-ad")
+    ENDIF ()
+
+    TRIBITS_ADD_ADVANCED_TEST(
+      MixedPoissonExample-${VARIANT}-ConvTest-Hex-Order-${ORDER}-${AD_MEM}
+      EXCLUDE_IF_NOT_TRUE ${PARENT_PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS
+      TEST_0 EXEC MixedPoissonExample
+        ARGS --x-elements=3 --y-elements=3 --z-elements=3 --hgrad-basis-order=${ORDER} --hdiv-basis-order=${ORDER} ${VARIANT_ARGS} ${AD_MEM_ARGS} --output-filename="${VARIANT_LC}-${ORDER}-${AD_MEM}-"
+        PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
+        NUM_MPI_PROCS 3
+        OUTPUT_FILE MPE-${VARIANT}-ConvTest-Hex-p${ORDER}-${AD_MEM}-03
+      TEST_1 EXEC MixedPoissonExample
+        ARGS --x-elements=6 --y-elements=6 --z-elements=6 --hgrad-basis-order=${ORDER} --hdiv-basis-order=${ORDER} ${VARIANT_ARGS} ${AD_MEM_ARGS} --output-filename="${VARIANT_LC}-${ORDER}-${AD_MEM}-"
+        PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
+        NUM_MPI_PROCS 4
+        OUTPUT_FILE MPE-${VARIANT}-ConvTest-Hex-p${ORDER}-${AD_MEM}-06
+      TEST_2 EXEC MixedPoissonExample
+        ARGS --x-elements=12 --y-elements=12 --z-elements=12 --hgrad-basis-order=${ORDER} --hdiv-basis-order=${ORDER} ${VARIANT_ARGS} ${AD_MEM_ARGS} --output-filename="${VARIANT_LC}-${ORDER}-${AD_MEM}-"
+        PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
+        NUM_MPI_PROCS 4
+        OUTPUT_FILE MPE-${VARIANT}-ConvTest-Hex-p${ORDER}-${AD_MEM}-12
+      TEST_3 CMND python3
+        ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
+           ${ORDER}
+           MPE-${VARIANT}-ConvTest-Hex-p${ORDER}-${AD_MEM}-
+           3
+           6
+           12
+        PASS_REGULAR_EXPRESSION "Test Passed"
+      COMM mpi
+    )
+  ENDFOREACH()
+ENDFOREACH()
+
 ## Multiblock basis order 1
 FOREACH( ORDER 1)
   SET(HDIV_ORDER ${ORDER})

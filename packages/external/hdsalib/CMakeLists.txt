@@ -16,7 +16,7 @@ if(${PROJECT_NAME}_ENABLE_HdsaLib)
     message(STATUS "Downloading the HdsaLib package with FetchContent.")
     fetchcontent_declare(HdsaLib_repo
       GIT_REPOSITORY https://github.com/sandialabs/HdsaLib
-      GIT_TAG master
+      GIT_TAG e473bb99e0f695ffd537c2b07d8625ce6c8f00e4
     )
     fetchcontent_populate(HdsaLib_repo)
     fetchcontent_getproperties(HdsaLib_repo SOURCE_DIR HDSALIB_REPO_SOURCE_DIR)

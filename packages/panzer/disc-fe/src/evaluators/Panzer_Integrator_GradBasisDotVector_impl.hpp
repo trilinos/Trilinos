@@ -196,16 +196,20 @@ namespace panzer
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
 
-    // Initialize the evaluated field.
-    const int numQP(vector_.extent(1)), numDim(vector_.extent(2)),
+    // The vector may have more components than the spatial dimension (see
+    // the Vector Data Layout); the gradient of the basis is zero in those
+    // directions, so only loop over the spatial dimension.
+    const int numQP(vector_.extent(1)), numSpatialDim(basis_.extent(3)),
               numBases(basis_.extent(1));
+
+    // Initialize the evaluated field.
     if (evalStyle_ == EvaluatorStyle::EVALUATES)
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
         field_(cell, basis) = 0.0;
       });
 
     for (int qp(0); qp < numQP; ++qp) {
-      for (int dim(0); dim < numDim; ++dim) {
+      for (int dim(0); dim < numSpatialDim; ++dim) {
         if constexpr (NUM_FIELD_MULT == 0) {
 	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
 	    field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim);
@@ -253,7 +257,8 @@ namespace panzer
     using panzer::EvaluatorStyle;
     const int cell = team.league_rank();
     const int numQP = vector_.extent(1);
-    const int numDim = vector_.extent(2);
+    // Only loop over the spatial dimension; see the non-shared operator.
+    const int numSpatialDim = basis_.extent(3);
     const int numBases = basis_.extent(1);
     const int fadSize = Sacado::dimension_scalar(field_.get_view());
 
@@ -273,7 +278,7 @@ namespace panzer
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.
     for (int qp(0); qp < numQP; ++qp) {
-      for (int dim(0); dim < numDim; ++dim) {
+      for (int dim(0); dim < numSpatialDim; ++dim) {
         if constexpr (NUM_FIELD_MULT == 0) {
 	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
 	    tmp_field(basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim);

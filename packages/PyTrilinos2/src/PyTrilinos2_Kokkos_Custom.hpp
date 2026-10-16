@@ -44,9 +44,9 @@ template <class T>
 torch::Tensor view_as_torch(T kokkos_array) {
   torch::Tensor result;
   if constexpr (T::rank == 1)
-    result = torch::from_blob(kokkos_array.data(), {kokkos_array.extent(0)}, {kokkos_array.stride(0)}, torch::CppTypeToScalarType<typename T::value_type>::value);
+    result = torch::from_blob(kokkos_array.data(), {kokkos_array.extent_int(0)}, {kokkos_array.stride(0)}, torch::CppTypeToScalarType<typename T::value_type>::value);
   else if constexpr (T::rank == 2)
-    result = torch::from_blob(kokkos_array.data(), {kokkos_array.extent(0), kokkos_array.extent(1)}, {kokkos_array.stride(0), kokkos_array.stride(1)}, torch::CppTypeToScalarType<typename T::value_type>::value);
+    result = torch::from_blob(kokkos_array.data(), {kokkos_array.extent_int(0), kokkos_array.extent_int(1)}, {kokkos_array.stride(0), static_cast<long>(kokkos_array.stride(1))}, torch::CppTypeToScalarType<typename T::value_type>::value);
   return result;
 }
 

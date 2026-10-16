@@ -1245,18 +1245,18 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
 }  // namespace Details
 }  // namespace Tpetra
 
-// Macro that explicitly instantiates FixedHashTable for the given
-// local ordinal (LO), global ordinal (GO), and Kokkos device (NODE::device_type)
-// types.  Note that FixedHashTable's first two template parameters
+// Macros that explicitly instantiate FixedHashTable for instantiated
+// global ordinal (GO) and Node types, plus all host execution spaces
+// enabled in Kokkos. We also instantiate these for GO=int always, even
+// when Tpetra_INST_INT_INT is OFF.
+// Note that FixedHashTable's first two template parameters
 // occur in the opposite order of most Tpetra classes.  This is
 // because FixedHashTable performs global-to-local lookup, and the
 // convention in templated C++ lookup tables (such as std::map) is
 // <KeyType, ValueType>.
 //
 // This macro must be explanded within the Tpetra::Details namespace.
-// Moreover, we need (GO,LO,Host) and (LO,LO,Host)
-#if defined(HAVE_TPETRA_INST_SERIAL)
-#if defined(HAVE_TPETRA_INST_INT_INT)
+#ifdef HAVE_TPETRA_INST_INT_INT
 #define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE) \
   template class Details::FixedHashTable<GO, LO, typename NODE::device_type>;
 #else
@@ -1264,28 +1264,51 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
   template class Details::FixedHashTable<GO, LO, typename NODE::device_type>; \
   template class Details::FixedHashTable<LO, LO, typename NODE::device_type>;
 #endif
-#elif defined(HAVE_TPETRA_INST_OPENMP)
-#if defined(HAVE_TPETRA_INST_INT_INT)
-#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE)                   \
-  template class Details::FixedHashTable<GO, LO, typename NODE::device_type>; \
-  template class Details::FixedHashTable<GO, LO, Kokkos::HostSpace::device_type>;
+
+// FixedHashTable tests explicitly use every host backend enabled in Kokkos.
+#ifdef KOKKOS_ENABLE_SERIAL
+#ifdef HAVE_TPETRA_INST_INT_INT
+#define TPETRA_DETAILS_FIXEDHASHTABLE_SERIAL_INSTANT(GO) \
+  template class Details::FixedHashTable<GO, int, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>>;
 #else
-#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE)                                          \
-  template class Details::FixedHashTable<GO, LO, typename NODE::device_type>;                        \
-  template class Details::FixedHashTable<LO, LO, typename NODE::device_type>;                        \
-  template class Details::FixedHashTable<GO, LO, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>>; \
-  template class Details::FixedHashTable<LO, LO, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>>;
+#define TPETRA_DETAILS_FIXEDHASHTABLE_SERIAL_INSTANT(GO)                                              \
+  template class Details::FixedHashTable<GO, int, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>>; \
+  template class Details::FixedHashTable<int, int, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>>;
 #endif
 #else
-#if defined(HAVE_TPETRA_INST_INT_INT)
-#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE)                   \
-  template class Details::FixedHashTable<GO, LO, typename NODE::device_type>; \
-  template class Details::FixedHashTable<GO, LO, Kokkos::HostSpace::device_type>;
+#define TPETRA_DETAILS_FIXEDHASHTABLE_SERIAL_INSTANT(GO)
+#endif
+
+#ifdef KOKKOS_ENABLE_OPENMP
+#ifdef HAVE_TPETRA_INST_INT_INT
+#define TPETRA_DETAILS_FIXEDHASHTABLE_OPENMP_INSTANT(GO) \
+  template class Details::FixedHashTable<GO, int, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>>;
 #else
-#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE)                       \
-  template class Details::FixedHashTable<GO, LO, typename NODE::device_type>;     \
-  template class Details::FixedHashTable<GO, LO, Kokkos::HostSpace::device_type>; \
-  template class Details::FixedHashTable<LO, LO, Kokkos::HostSpace::device_type>;
+#define TPETRA_DETAILS_FIXEDHASHTABLE_OPENMP_INSTANT(GO)                                              \
+  template class Details::FixedHashTable<GO, int, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>>; \
+  template class Details::FixedHashTable<int, int, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>>;
 #endif
+#else
+#define TPETRA_DETAILS_FIXEDHASHTABLE_OPENMP_INSTANT(GO)
 #endif
+
+#ifdef KOKKOS_ENABLE_THREADS
+#ifdef HAVE_TPETRA_INST_INT_INT
+#define TPETRA_DETAILS_FIXEDHASHTABLE_THREADS_INSTANT(GO) \
+  template class Details::FixedHashTable<GO, int, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>>;
+#else
+#define TPETRA_DETAILS_FIXEDHASHTABLE_THREADS_INSTANT(GO)                                              \
+  template class Details::FixedHashTable<GO, int, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>>; \
+  template class Details::FixedHashTable<int, int, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>>;
+#endif
+#else
+#define TPETRA_DETAILS_FIXEDHASHTABLE_THREADS_INSTANT(GO)
+#endif
+
+// This macro instantiates for all the enabled host backends.
+#define TPETRA_DETAILS_FIXEDHASHTABLE_HOST_INSTANT(GO) \
+  TPETRA_DETAILS_FIXEDHASHTABLE_SERIAL_INSTANT(GO)     \
+  TPETRA_DETAILS_FIXEDHASHTABLE_OPENMP_INSTANT(GO)     \
+  TPETRA_DETAILS_FIXEDHASHTABLE_THREADS_INSTANT(GO)
+
 #endif

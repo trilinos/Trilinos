@@ -184,26 +184,26 @@ namespace
     const int maxSpaceDim = 4;
     const int minDegree = 2;
     const int maxDegree = 4;
-    
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
-    
+
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+
     const double relTol=1e-13;
     const double absTol=1e-13;
-    
+
     using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
     using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
-    
+
     const bool compareWithGetValuesViewPath = false; // Serendipity basis does not support the View path -- particularly for high order in high dimensions, this would imply some large allocations.
-    
+
     for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
     {
       out << "** polyDegree " << polyDegree << " **\n";
       for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
       {
         out << "** spaceDim " << spaceDim << " **\n";
-        auto hierarchicalBasis = getHypercubeBasis_HVOL<BasisFamily>(polyDegree, spaceDim);
+        auto hierarchicalBasis = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
         auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(hierarchicalBasis));
-        
+
         BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*serendipityBasis, *hierarchicalBasis, serendipityBasis->ordinalMap(),
                                                                              opsToTest, relTol, absTol, out, success, compareWithGetValuesViewPath);
       }

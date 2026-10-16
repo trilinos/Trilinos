@@ -24,35 +24,6 @@ TRIBITS_ADD_ADVANCED_TEST( get-changed-trilinos-packages-helpers-unit-tests
   )
 
 
-TRIBITS_ADD_ADVANCED_TEST( clean_all_jobs_UnitTests
-  OVERALL_WORKING_DIRECTORY TEST_NAME
-  OVERALL_NUM_MPI_PROCS 1
-  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-  TEST_0 CMND ${Python3_EXECUTABLE}
-    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/clean_workspace/unittests/test_clean_all_jobs.py -v
-    PASS_REGULAR_EXPRESSION "OK"
-  )
-
-
-TRIBITS_ADD_ADVANCED_TEST( clean_sentinel_UnitTests
-  OVERALL_WORKING_DIRECTORY TEST_NAME
-  OVERALL_NUM_MPI_PROCS 1
-  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-  TEST_0 CMND ${Python3_EXECUTABLE}
-    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/clean_workspace/unittests/test_clean_sentinel.py -v
-    PASS_REGULAR_EXPRESSION "OK"
-  )
-
-
-TRIBITS_ADD_ADVANCED_TEST( clean_workspace_UnitTests
-  OVERALL_WORKING_DIRECTORY TEST_NAME
-  OVERALL_NUM_MPI_PROCS 1
-  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-  TEST_0 CMND ${Python3_EXECUTABLE}
-    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/clean_workspace/unittests/test_clean_workspace.py -v
-    PASS_REGULAR_EXPRESSION "OK"
-  )
-
 # Run the discoverable unit tests under the packages/framework/pr_tools directory tree
 TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriver_UnitTests
     OVERALL_WORKING_DIRECTORY TEST_NAME

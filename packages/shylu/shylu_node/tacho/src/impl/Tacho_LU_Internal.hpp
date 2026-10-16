@@ -78,7 +78,7 @@ template <> struct LU<Algo::Internal> {
           /// apply pivots to perm vector
           if (fpiv[i]) {
             const ordinal_type pidx = i + fpiv[i];
-            swap(perm[i], perm[pidx]);
+            swap_i(perm, i, pidx);
           }
         }
       });

@@ -598,9 +598,9 @@ namespace Intrepid2 {
         for (ordinal_type i = 0; i < np; ++i) 
           polyd(i) = 0.5*(alpha + beta + two);
     } else {
-      INTREPID2_TEST_FOR_ABORT(polyd.data() && !polyd.data() , 
-                               ">>> ERROR (Polylib::Serial::JacobiPolynomial): polyi view needed to compute polyd view.");
-      if(!polyi.data()) return;
+      // as for n = 0 and n = 1, either output view may be null: the recurrence below
+      // only uses local variables, so the derivative can be computed without polyi
+      if (!polyi.data() && !polyd.data()) return;
 
       constexpr ordinal_type maxOrder = 2*MaxPolylibPoint-1;
 
@@ -639,9 +639,12 @@ namespace Intrepid2 {
           polyn0 = (a2[k] + a3[k]*z_i)*polyn1 - a4[k]*polyn2;
         }
         if (polyd.data()) {
-          polyd(i)  = (ad1- ad2*z_i)*polyn0 + ad3*polyn1 / (one - z_i*z_i);
+          // (2n+a+b)(1-z^2) P_n' = n[a-b-(2n+a+b)z] P_n + 2(n+a)(n+b) P_{n-1}
+          polyd(i)  = ((ad1 - ad2*z_i)*polyn0 + ad3*polyn1) / (one - z_i*z_i);
         }
-        polyi(i) = polyn0;
+        if (polyi.data()) {
+          polyi(i) = polyn0;
+        }
       }
     }
   }
@@ -714,6 +717,7 @@ namespace Intrepid2 {
       if (k) 
         r(0) = 0.5*(r(0) + rlast);
 
+      value_type delr = 0;
       for (ordinal_type j = 1; j < MaxPolylibIteration; ++j) {
         JacobiPolynomial(1, r, poly, pder, n, alpha, beta);
 
@@ -721,12 +725,14 @@ namespace Intrepid2 {
         for (ordinal_type i = 0; i < k; ++i) 
           sum += one/(r(0) - z(i));
 
-        const value_type delr = -poly(0) / (pder(0) - sum * poly(0));
+        delr = -poly(0) / (pder(0) - sum * poly(0));
         r(0) += delr;
 
         if( Util<value_type>::abs(delr) < tol ) 
           break;
       }
+      INTREPID2_TEST_FOR_ABORT(Util<value_type>::abs(delr) >= tol,
+        ">>> ERROR (Polylib::Serial::JacobiZerosPolyDeflation): Newton iteration failed to converge");
       z(k)  = r(0);
       rlast = r(0);
     }

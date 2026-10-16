@@ -15,7 +15,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  IntegratorScalar 
+  CrossProduct
+  SOURCES
+     cross_product.cpp
+     ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  IntegratorScalar
   SOURCES 
      integrator_scalar.cpp 
      ${UNIT_TEST_DRIVER}

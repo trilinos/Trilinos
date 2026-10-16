@@ -917,6 +917,7 @@ void AdapterFactory::InitializeVectorData(const RCP<T> &data,
   //  }
   
   //  printf("clean up coordarr and tpetravectors...\n\n\n");
+  // delete [] coordarr; // coordarr memory must stay alive as coords point into it
   delete [] petravectors;
 }
 

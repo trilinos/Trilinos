@@ -579,7 +579,6 @@ TEST(MasterElementProviderIntrepid2Test, EvaluateField_Throws)
   EXPECT_ANY_THROW(masterElemProvider->evaluate_field(meTopo, paramCoords, numFieldComponents, fieldDataTooSmall, result));
   EXPECT_ANY_THROW(masterElemProvider->evaluate_field(meTopo, paramCoordsTooSmall, numFieldComponents, fieldData, result));
   EXPECT_NO_THROW(masterElemProvider->evaluate_field(meTopo, paramCoords, numFieldComponents, fieldData, result));
-
 }
 
 TEST(MasterElementProviderIntrepid2Test, EvaluateField_LargerInputs)

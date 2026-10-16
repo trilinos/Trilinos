@@ -65,7 +65,8 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
       "Error returned from Zoltan_Clean_String; No method set.");
     goto End;
   }
-  strcpy(zz->LB.Method_Name, method_upper);
+  strncpy(zz->LB.Method_Name, method_upper, sizeof(zz->LB.Method_Name)-1);
+  zz->LB.Method_Name[sizeof(zz->LB.Method_Name)-1] = '\0';
 
   if (strcmp(method_upper, "BLOCK") == 0) {
     zz->LB.Method = BLOCK;
@@ -239,7 +240,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
    */
 
   else {  
-    sprintf(msg, "Invalid LB method specified:  %s\n", method_name);
+    snprintf(msg, sizeof(msg), "Invalid LB method specified:  %s\n", method_name);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     error = ZOLTAN_FATAL;
     goto End;

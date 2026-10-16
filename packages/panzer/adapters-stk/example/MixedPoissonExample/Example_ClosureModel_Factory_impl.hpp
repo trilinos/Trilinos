@@ -28,6 +28,8 @@
 
 #include "Example_SineSource.hpp"
 #include "Example_SineSolution.hpp"
+#include "Example_LinearCoefficient.hpp"
+#include "Example_AnisotropicTensor.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -121,8 +123,24 @@ buildClosureModels(const std::string& model_id,
       std::string type = plist.get<std::string>("Type");
       if(type=="SINE SOURCE") {
        RCP< Evaluator<panzer::Traits> > e = 
-         rcp(new Example::SineSource<EvalT,panzer::Traits>(key,*ir));
+         rcp(new Example::SineSource<EvalT,panzer::Traits>(key,*ir,
+                                                            plist.isType<bool>("Weighted") && plist.get<bool>("Weighted"),
+                                                            plist.isType<bool>("Anisotropic") && plist.get<bool>("Anisotropic")));
        evaluators->push_back(e);
+
+        found = true;
+      }
+      else if(type=="ANISOTROPIC TENSOR") {
+        RCP< Evaluator<panzer::Traits> > e =
+          rcp(new Example::AnisotropicTensor<EvalT,panzer::Traits>(key,*ir));
+        evaluators->push_back(e);
+
+        found = true;
+      }
+      else if(type=="LINEAR COEFFICIENT") {
+        RCP< Evaluator<panzer::Traits> > e =
+          rcp(new Example::LinearCoefficient<EvalT,panzer::Traits>(key,*ir,plist.get<int>("Direction")));
+        evaluators->push_back(e);
 
         found = true;
       }

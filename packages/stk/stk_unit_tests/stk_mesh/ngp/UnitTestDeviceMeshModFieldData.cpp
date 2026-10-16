@@ -635,6 +635,11 @@ TEST_F(DeviceMeshModFieldTester, check_device_field_initialized_when_entity_crea
 
 TEST_F(DeviceMeshModFieldTester, check_field_grow_on_move_is_rejected)
 {
+  // On device builds, this test triggers a device assertion, which cannot be reliably caught using C++ execption handling
+#ifdef STK_ENABLE_GPU
+  GTEST_SKIP();
+#endif
+
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 1) { GTEST_SKIP(); }
 
   meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
@@ -660,6 +665,11 @@ TEST_F(DeviceMeshModFieldTester, check_field_grow_on_move_is_rejected)
 // destination (copy 0, component 2), since components are the inner extent.
 TEST_F(DeviceMeshModFieldTester, check_field_grow_on_move_is_rejected_with_multiple_copies)
 {
+  // On device builds, this test triggers a device assertion, which cannot be reliably caught using C++ execption handling
+#ifdef STK_ENABLE_GPU
+  GTEST_SKIP();
+#endif
+
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 1) { GTEST_SKIP(); }
 
   meta.declare_part_with_topology("block_1", stk::topology::HEX_8);

@@ -414,6 +414,26 @@ TEST(UnitTestMetaData, ConsistentParallelDebugCheck)
   EXPECT_ANY_THROW(stk::mesh::verify_parallel_consistency(meta, comm));
 }
 
+TEST(UnitTestMetaData, ConsistentParallelDebugCheck_InconsistentSpatialDims)
+{
+  MPI_Comm comm = stk::parallel_machine_world();
+  if (stk::parallel_machine_size(comm) != 2) { GTEST_SKIP(); }
+
+  const int myProc = stk::parallel_machine_rank(comm);
+
+  stk::mesh::MeshBuilder builder(comm);
+  std::shared_ptr<stk::mesh::BulkData> bulk;
+  if (myProc == 0) {
+    bulk = builder.set_spatial_dimension(3).create();
+  }
+  else {
+    bulk = builder.create();
+  }
+
+  EXPECT_ANY_THROW(bulk->modification_begin());
+  EXPECT_NO_THROW(bulk->modification_end());
+}
+
 #define STK_EXPECT_THROW_MSG(runit, myProc, msgProc, goldMsg) \
 { \
   bool threw = false; \
