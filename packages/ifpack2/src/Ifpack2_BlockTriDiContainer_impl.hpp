@@ -4472,7 +4472,7 @@ struct SolveTridiags {
 
   template <int B, int ScratchLevel>
   struct SingleVectorFunctor {
-SingleVectorFunctor(const SolveTridiags<MatrixType> &solve)
+    SingleVectorFunctor(const SolveTridiags<MatrixType> &solve)
       : packptr(solve.packptr)
       , part2packrowidx0(solve.part2packrowidx0)
       , pack_td_ptr(solve.pack_td_ptr)
@@ -4704,11 +4704,11 @@ SingleVectorFunctor(const SolveTridiags<MatrixType> &solve)
           Kokkos::extents<uint32_t, Kokkos::dynamic_extent, Kokkos::dynamic_extent>,
           Kokkos::layout_right,
           Kokkos::Experimental::Accessor<internal_vector_type,
-                                           typename execution_space::scratch_memory_space,
-                                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
+                                         typename execution_space::scratch_memory_space,
+                                         Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
 #else
       using WW_u32_view_type = Kokkos::View<
-          internal_vector_type**,
+          internal_vector_type **,
           Kokkos::LayoutRight,
           typename execution_space::scratch_memory_space,
           Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
