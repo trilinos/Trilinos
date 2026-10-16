@@ -118,10 +118,10 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::StructuredRAPFa
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
-  // If no triple product is prescribed, use Xpetra implementation by default
+  // If no triple product implementation is prescribed, use the structured kernel by default.
   validParamList->set<std::string>(
-      "rap: triple product implementation", "xpetra",
-      "Implementation used with a prebuilt coarse graph: xpetra or structured.");
+      "rap: triple product implementation", "structured",
+      "Implementation used with a prebuilt coarse graph: unstructured or structured.");
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("rap: triple product");         // in the long term this has to be the only option for multiplication
@@ -1152,11 +1152,11 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
     const std::string tripleProductImplementation =
         pL.get<std::string>("rap: triple product implementation");
     TEUCHOS_TEST_FOR_EXCEPTION(
-        tripleProductImplementation != "xpetra" && tripleProductImplementation != "structured",
+        tripleProductImplementation != "unstructured" && tripleProductImplementation != "structured",
         Exceptions::RuntimeError,
         "StructuredRAPFactory: unknown value \"" << tripleProductImplementation
                                                  << "\" for \"rap: triple product implementation\". "
-                                                    "Valid values are \"xpetra\" and \"structured\".");
+                                                    "Valid values are \"unstructured\" and \"structured\".");
 
     const RCP<const FactoryBase> coarseDimensionsFactory =
         GetStructuredMetadataFactory("lCoarseNodesPerDim");
@@ -1255,7 +1255,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
       RAPparams->set("compute global constants: temporaries", RAPparams->get("compute global constants: temporaries", false));
       RAPparams->set("compute global constants", true);
 
-      if (tripleProductImplementation == "xpetra") {
+      if (tripleProductImplementation == "unstructured") {
         SubFactoryMonitor m2(*this, "MxMxM: Xpetra P^T x A x P (implicit)", coarseLevel);
         Xpetra::TripleMatrixMultiply<SC, LO, GO, NO>::
             MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
