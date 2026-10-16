@@ -52,7 +52,6 @@
 #include "Ifpack2_BlockHelper.hpp"
 #include "Ifpack2_BlockComputeResidualVector.hpp"
 #include "Ifpack2_BlockComputeResidualAndSolve.hpp"
-#include "Ifpack2_Details_LightweightView.hpp"
 
 // need to interface this into cmake variable (or only use this flag when it is necessary)
 // #define IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
@@ -133,6 +132,61 @@ using Scratch = Kokkos::View<typename ViewType::data_type,
                              typename ViewType::array_layout,
                              typename ViewType::execution_space::scratch_memory_space,
                              MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged>>;
+
+// ------------------------------------------------------------------
+// LightweightView replacement: Views with uint32_t index_type for
+// SingleVectorFunctor members. When KOKKOS_ENABLE_IMPL_MDSPAN is
+// defined, we create a new View type with uint32_t extents (preserving
+// element type, layout, and accessor from the source view). Otherwise,
+// we fall back to the plain unmanaged View (which uses the default
+// 64-bit index type).
+//
+// The functor body uses only data(), extent(), stride(), and operator(),
+// which are compatible with both types.
+// ------------------------------------------------------------------
+
+// Select the appropriate namespace for mdspan-related declarations.
+// In Kokkos < 5.3.0 (version < 50299), certain declarations live in
+// Kokkos::Experimental. In later versions they are promoted to the
+// top-level Kokkos namespace.
+#if (KOKKOS_VERSION >= 50299)
+namespace KokkosExperimental = Kokkos;
+#else
+namespace KokkosExperimental = Kokkos::Experimental;
+#endif
+
+#ifdef KOKKOS_ENABLE_IMPL_MDSPAN
+template <class OrigExtents, class NewIndexType, class Seq>
+struct ReplaceExtentsIndexType;
+
+template <class OrigExtents, class NewIndexType, size_t... Is>
+struct ReplaceExtentsIndexType<OrigExtents, NewIndexType,
+                               std::index_sequence<Is...>> {
+  using type = Kokkos::extents<NewIndexType, OrigExtents::static_extent(Is)...>;
+};
+
+template <class OrigExtents, class NewIndexType>
+using ReplaceExtentsIndexType_t = typename ReplaceExtentsIndexType<
+    OrigExtents, NewIndexType,
+    std::make_index_sequence<OrigExtents::rank()>>::type;
+
+template <class ViewT, class NewIndexType>
+using ViewWithIndexType_t = Kokkos::View<
+    typename ViewT::element_type,
+    ReplaceExtentsIndexType_t<typename ViewT::extents_type, NewIndexType>,
+    typename ViewT::layout_type,
+    typename ViewT::accessor_type>;
+
+template <typename ViewT>
+using Uint32IndexedView       = ViewWithIndexType_t<ViewT, uint32_t>;
+template <typename ViewT>
+using Uint32IndexedConstView  = ViewWithIndexType_t<ViewT, uint32_t>;
+#else
+template <typename ViewT>
+using Uint32IndexedView       = ViewT;
+template <typename ViewT>
+using Uint32IndexedConstView  = ViewT;
+#endif
 
 ///
 /// block tridiag scalar type
@@ -4474,30 +4528,45 @@ struct SolveTridiags {
   template <int B, int ScratchLevel>
   struct SingleVectorFunctor {
     SingleVectorFunctor(const SolveTridiags<MatrixType> &solve)
-      : packptr(Ifpack2::Details::view_to_const_lightweight(solve.packptr))
-      , part2packrowidx0(Ifpack2::Details::view_to_const_lightweight(solve.part2packrowidx0))
-      , pack_td_ptr(Ifpack2::Details::view_to_const_lightweight(solve.pack_td_ptr))
-      , partptr(Ifpack2::Details::view_to_const_lightweight(solve.partptr))
-      , D_internal_vector_values(Ifpack2::Details::view_to_const_lightweight(solve.D_internal_vector_values))
-      , lclrow(Ifpack2::Details::view_to_const_lightweight(solve.lclrow))
-      , X_internal_vector_values(Ifpack2::Details::view_to_lightweight(solve.X_internal_vector_values))
-      , Y_scalar_multivector(Ifpack2::Details::view_to_lightweight(solve.Y_scalar_multivector))
-      , Z_scalar_vector(Ifpack2::Details::view_to_lightweight(solve.Z_scalar_vector))
+      // Construct uint32_t-indexed Views from the source views' data pointers
+      // and extents. This preserves the same memory layout while using 32-bit
+      // indices for better device performance. Using data()+extents() avoids
+      // accessor-incompatibility issues (e.g., Atomic trait stripping for
+      // Z_scalar_vector).
+      : packptr(solve.packptr.data(), solve.packptr.extent(0))
+      , part2packrowidx0(solve.part2packrowidx0.data(), solve.part2packrowidx0.extent(0))
+      , pack_td_ptr(solve.pack_td_ptr.data(), solve.pack_td_ptr.extent(0), solve.pack_td_ptr.extent(1))
+      , partptr(solve.partptr.data(), solve.partptr.extent(0))
+      , D_internal_vector_values(solve.D_internal_vector_values.data(),
+                                  solve.D_internal_vector_values.extent(0),
+                                  solve.D_internal_vector_values.extent(1),
+                                  solve.D_internal_vector_values.extent(2),
+                                  solve.D_internal_vector_values.extent(3))
+      , lclrow(solve.lclrow.data(), solve.lclrow.extent(0))
+      , X_internal_vector_values(solve.X_internal_vector_values.data(),
+                                  solve.X_internal_vector_values.extent(0),
+                                  solve.X_internal_vector_values.extent(1),
+                                  solve.X_internal_vector_values.extent(2),
+                                  solve.X_internal_vector_values.extent(3))
+      , Y_scalar_multivector(solve.Y_scalar_multivector.data(),
+                              solve.Y_scalar_multivector.extent(0),
+                              solve.Y_scalar_multivector.extent(1))
+      , Z_scalar_vector(solve.Z_scalar_vector.data(), solve.Z_scalar_vector.extent(0))
       , df(solve.df)
       , vector_loop_size(solve.vector_loop_size) {}
 
-    // LightweightView members use 32-bit indices/strides to avoid the
-    // performance regression caused by the 64-bit mdspan-based Kokkos::View
-    // (Kokkos 5.0.0), without depending on mdspan being available.
-    Details::ConstLightweightView_t<local_ordinal_type_1d_view> packptr;
-    Details::ConstLightweightView_t<local_ordinal_type_1d_view> part2packrowidx0;
-    Details::ConstLightweightView_t<size_type_2d_view> pack_td_ptr;
-    Details::ConstLightweightView_t<local_ordinal_type_1d_view> partptr;
-    Details::ConstLightweightView_t<internal_vector_type_4d_view> D_internal_vector_values;
-    Details::ConstLightweightView_t<local_ordinal_type_1d_view> lclrow;
-    Details::LightweightView_t<internal_vector_type_4d_view> X_internal_vector_values;
-    Details::LightweightView_t<impl_scalar_type_2d_view_tpetra> Y_scalar_multivector;
-    Details::LightweightView_t<impl_scalar_type_1d_view> Z_scalar_vector;
+    // Members use uint32_t-indexed Views when mdspan is enabled, or plain
+    // unmanaged Views otherwise. Both types support data(), extent(), stride(),
+    // and operator(), so the functor body is identical in either case.
+    Uint32IndexedConstView<ConstUnmanaged<local_ordinal_type_1d_view>> packptr;
+    Uint32IndexedConstView<ConstUnmanaged<local_ordinal_type_1d_view>> part2packrowidx0;
+    Uint32IndexedConstView<ConstUnmanaged<size_type_2d_view>> pack_td_ptr;
+    Uint32IndexedConstView<ConstUnmanaged<local_ordinal_type_1d_view>> partptr;
+    Uint32IndexedConstView<ConstUnmanaged<internal_vector_type_4d_view>> D_internal_vector_values;
+    Uint32IndexedConstView<ConstUnmanaged<local_ordinal_type_1d_view>> lclrow;
+    Uint32IndexedView<Unmanaged<internal_vector_type_4d_view>> X_internal_vector_values;
+    Uint32IndexedView<Unmanaged<impl_scalar_type_2d_view_tpetra>> Y_scalar_multivector;
+    Uint32IndexedView<Unmanaged<impl_scalar_type_1d_view>> Z_scalar_vector;
     const impl_scalar_type df;
     const local_ordinal_type vector_loop_size;
 
@@ -4694,14 +4763,26 @@ struct SolveTridiags {
       const local_ordinal_type r0        = pri0;
       const local_ordinal_type nrows     = partptr(partidx + 1) - partptr(partidx);
       const local_ordinal_type blocksize = (B == 0 ? D_internal_vector_values.extent(1) : B);
-      // Raw scratch allocation wrapped in a 32-bit-indexed LightweightView
+      // Raw scratch allocation wrapped in a 32-bit-indexed View
       // (LayoutRight, extents blocksize x vector_loop_size) instead of a Kokkos
       // scratch View, to keep indices/strides 32-bit for the single-vector
       // solve. The middle dimension (num_vectors == 1 here) is elided since we
       // specialize for the single-vector case.
-      using WW_u32_view_type =
-          Ifpack2::Details::LightweightView<internal_vector_type, 2,
-                                            Kokkos::LayoutRight>;
+#ifdef KOKKOS_ENABLE_IMPL_MDSPAN
+      using WW_u32_view_type = Kokkos::View<
+          internal_vector_type,
+          Kokkos::extents<uint32_t, Kokkos::dynamic_extent, Kokkos::dynamic_extent>,
+          Kokkos::layout_right,
+          KokkosExperimental::Accessor<internal_vector_type,
+                                          typename execution_space::scratch_memory_space,
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>>;
+#else
+      using WW_u32_view_type = Kokkos::View<
+          internal_vector_type**,
+          Kokkos::LayoutRight,
+          typename execution_space::scratch_memory_space,
+          Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+#endif
       constexpr size_t WW_alignment =
           Kokkos::max({sizeof(internal_vector_type), alignof(internal_vector_type),
                        static_cast<size_t>(execution_space::scratch_memory_space::ALIGN)});
