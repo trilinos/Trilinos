@@ -61,6 +61,45 @@ using Scratch = Kokkos::View<typename ViewType::data_type,
                              typename ViewType::execution_space::scratch_memory_space,
                              MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
 
+// Uint32IndexedView and Uint32IndexedConstView: if mdspan is available, these
+// are versions of unmanaged view with uint32_t as the index_type.
+// Otherwise, they are default unmanaged Views (with 64-bit indexing).
+//
+// mdspan was controlled by KOKKOS_ENABLE_IMPL_MDSPAN before 5.3,
+// but after 5.3 is always available.
+#if defined(KOKKOS_ENABLE_IMPL_MDSPAN) || (KOKKOS_VERSION >= 50299)
+template <class OrigExtents, class NewIndexType, class Seq>
+struct ReplaceExtentsIndexType;
+
+template <class OrigExtents, class NewIndexType, size_t... Is>
+struct ReplaceExtentsIndexType<OrigExtents, NewIndexType,
+                               std::index_sequence<Is...>> {
+  using type = Kokkos::extents<NewIndexType, OrigExtents::static_extent(Is)...>;
+};
+
+template <class OrigExtents, class NewIndexType>
+using ReplaceExtentsIndexType_t = typename ReplaceExtentsIndexType<
+    OrigExtents, NewIndexType,
+    std::make_index_sequence<OrigExtents::rank()>>::type;
+
+template <class ViewT, class NewIndexType>
+using ViewWithIndexType_t = Kokkos::View<
+    typename ViewT::element_type,
+    ReplaceExtentsIndexType_t<typename ViewT::extents_type, NewIndexType>,
+    typename ViewT::layout_type,
+    typename ViewT::accessor_type>;
+
+template <typename ViewT>
+using Uint32IndexedView      = ViewWithIndexType_t<Unmanaged<ViewT>, uint32_t>;
+template <typename ViewT>
+using Uint32IndexedConstView = ViewWithIndexType_t<ConstUnmanaged<ViewT>, uint32_t>;
+#else
+template <typename ViewT>
+using Uint32IndexedView      = Unmanaged<ViewT>;
+template <typename ViewT>
+using Uint32IndexedConstView = ConstUnmanaged<ViewT>;
+#endif
+
 ///
 /// tpetra little block index
 ///
