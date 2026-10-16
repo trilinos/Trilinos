@@ -815,14 +815,6 @@ class StructuredRAPKernel {
           "StructuredRAP: constant stencil P^T A P",
           policy,
           KOKKOS_LAMBDA(const size_t coarseNodeIndex) {
-            const SC* KOKKOS_RESTRICT aValues = localA.values.data();
-            SC* KOKKOS_RESTRICT acValues      = localAc.values.data();
-            const size_t* KOKKOS_RESTRICT fineNodeOffsets =
-                reverseFineNodeOffsets.data();
-            const size_t* KOKKOS_RESTRICT aRowEntryOffsets =
-                reverseARowEntryOffsets.data();
-            const size_t* KOKKOS_RESTRICT directAValueOffsets =
-                reverseDirectAValueOffsets.data();
             const LO coarseNode         = static_cast<LO>(coarseNodeIndex);
             const LO coarseX            = coarseNode % localCoarseNodes[0];
             const LO coarseYZ           = coarseNode / localCoarseNodes[0];
@@ -871,42 +863,57 @@ class StructuredRAPKernel {
                 size_t contribution = contributionBegin;
                 if (useDirectOffsets) {
                   for (; contribution + 3 < contributionEnd; contribution += 4) {
-                    sum0 += aValues[firstAValue + directAValueOffsets[contribution]];
-                    sum1 += aValues[firstAValue + directAValueOffsets[contribution + 1]];
-                    sum2 += aValues[firstAValue + directAValueOffsets[contribution + 2]];
-                    sum3 += aValues[firstAValue + directAValueOffsets[contribution + 3]];
+                    sum0 += localA.values(
+                        firstAValue + reverseDirectAValueOffsets(contribution));
+                    sum1 += localA.values(
+                        firstAValue + reverseDirectAValueOffsets(contribution + 1));
+                    sum2 += localA.values(
+                        firstAValue + reverseDirectAValueOffsets(contribution + 2));
+                    sum3 += localA.values(
+                        firstAValue + reverseDirectAValueOffsets(contribution + 3));
                   }
                   SC sum = (sum0 + sum1) + (sum2 + sum3);
                   for (; contribution < contributionEnd; ++contribution)
-                    sum += aValues[firstAValue + directAValueOffsets[contribution]];
-                  acValues[acRowBegin + acOffset] = sum;
+                    sum += localA.values(
+                        firstAValue + reverseDirectAValueOffsets(contribution));
+                  localAc.values(acRowBegin + acOffset) = sum;
                 } else {
                   for (; contribution + 3 < contributionEnd; contribution += 4) {
                     const size_t aRow0 =
-                        (firstFineNode + fineNodeOffsets[contribution]) * numDofs + rowDof;
+                        (firstFineNode + reverseFineNodeOffsets(contribution)) *
+                            numDofs +
+                        rowDof;
                     const size_t aRow1 =
-                        (firstFineNode + fineNodeOffsets[contribution + 1]) * numDofs + rowDof;
+                        (firstFineNode + reverseFineNodeOffsets(contribution + 1)) *
+                            numDofs +
+                        rowDof;
                     const size_t aRow2 =
-                        (firstFineNode + fineNodeOffsets[contribution + 2]) * numDofs + rowDof;
+                        (firstFineNode + reverseFineNodeOffsets(contribution + 2)) *
+                            numDofs +
+                        rowDof;
                     const size_t aRow3 =
-                        (firstFineNode + fineNodeOffsets[contribution + 3]) * numDofs + rowDof;
-                    sum0 += aValues[localA.graph.row_map(aRow0) +
-                                    aRowEntryOffsets[contribution]];
-                    sum1 += aValues[localA.graph.row_map(aRow1) +
-                                    aRowEntryOffsets[contribution + 1]];
-                    sum2 += aValues[localA.graph.row_map(aRow2) +
-                                    aRowEntryOffsets[contribution + 2]];
-                    sum3 += aValues[localA.graph.row_map(aRow3) +
-                                    aRowEntryOffsets[contribution + 3]];
+                        (firstFineNode + reverseFineNodeOffsets(contribution + 3)) *
+                            numDofs +
+                        rowDof;
+                    sum0 += localA.values(localA.graph.row_map(aRow0) +
+                                          reverseARowEntryOffsets(contribution));
+                    sum1 += localA.values(localA.graph.row_map(aRow1) +
+                                          reverseARowEntryOffsets(contribution + 1));
+                    sum2 += localA.values(localA.graph.row_map(aRow2) +
+                                          reverseARowEntryOffsets(contribution + 2));
+                    sum3 += localA.values(localA.graph.row_map(aRow3) +
+                                          reverseARowEntryOffsets(contribution + 3));
                   }
                   SC sum = (sum0 + sum1) + (sum2 + sum3);
                   for (; contribution < contributionEnd; ++contribution) {
                     const size_t aRow =
-                        (firstFineNode + fineNodeOffsets[contribution]) * numDofs + rowDof;
-                    sum += aValues[localA.graph.row_map(aRow) +
-                                   aRowEntryOffsets[contribution]];
+                        (firstFineNode + reverseFineNodeOffsets(contribution)) *
+                            numDofs +
+                        rowDof;
+                    sum += localA.values(localA.graph.row_map(aRow) +
+                                         reverseARowEntryOffsets(contribution));
                   }
-                  acValues[acRowBegin + acOffset] = sum;
+                  localAc.values(acRowBegin + acOffset) = sum;
                 }
               }
             }
