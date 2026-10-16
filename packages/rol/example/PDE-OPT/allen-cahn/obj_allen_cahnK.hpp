@@ -77,7 +77,7 @@ public:
   void gradient_1(scalar_view & grad,
                   const scalar_view u_coeff,
                   const scalar_view z_coeff = scalar_view(),
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) override {
     // Get relevant dimensions
     int c = u_coeff.extent_int(0);
     int p = fe_->cubPts().extent_int(1);

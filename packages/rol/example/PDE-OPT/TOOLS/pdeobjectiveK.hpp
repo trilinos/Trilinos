@@ -82,7 +82,7 @@ public:
     obj_ = obj_vec_[0];
   }
 
-  void setParameter(const std::vector<Real> &param) {
+  void setParameter(const std::vector<Real> &param) override {
     ROL::Objective_SimOpt<Real>::setParameter(param);
     obj_->setParameter(param);
   }

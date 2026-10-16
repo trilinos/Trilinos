@@ -499,7 +499,7 @@ public:
     FieldUtils::combineFieldCoeff<Real>(riesz, J, fieldInfo_, fieldInfo_);
   }
 
-  void RieszMap_2(scalar_view & riesz) {
+  void RieszMap_2(scalar_view & riesz) override {
     //throw Exception::NotImplemented(">>> (PDE_TopoOpt::RieszMap_2): Not implemented.");
 
     // Retrieve dimensions.
