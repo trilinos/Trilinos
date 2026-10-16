@@ -17,6 +17,7 @@
 */
 
 #include "Teuchos_Array.hpp"
+#include <limits>
 
 
 namespace Teuchos{
@@ -304,9 +305,12 @@ TwoDArray<T> TwoDArray<T>::fromString(const std::string& string_in){
   Array<T> array = fromStringToArray<T>(curString);
 
   // Check for overflow in numRows*numCols
-  TEUCHOS_TEST_FOR_EXCEPTION(numRows != 0 && numCols > (typename Array<T>::size_type)(-1) / numRows,
+  const size_t maxSize =
+    static_cast<size_t>(std::numeric_limits<typename Array<T>::size_type>::max());
+  TEUCHOS_TEST_FOR_EXCEPTION(numRows != 0 && numCols > maxSize / numRows,
     InvalidArrayStringRepresentation,
-    "Error: TwoDArray dimensions " << numRows << "x" << numCols << " overflow size_t."
+    "Error: TwoDArray dimensions " << numRows << "x" << numCols
+    << " exceed the maximum array size of " << maxSize << "."
   )
   typename Array<T>::size_type expectedSize = numRows * numCols;
   TEUCHOS_TEST_FOR_EXCEPTION(array.size() != expectedSize,
