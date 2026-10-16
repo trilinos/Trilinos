@@ -112,11 +112,13 @@ struct CommBufferMemorySpace<Kokkos::SYCL> {
 };
 #endif
 
-// FIXME_NEXTSILICON: this is different han the above (shared vs device-only)
+// NextSilicon::memory_space is NextSiliconSharedSpace only if Kokkos was built
+// with Kokkos_ENABLE_IMPL_NEXTSILICON_UNIFIED_MEMORY, otherwise it is the
+// device-only NextSiliconSpace.
 #ifdef KOKKOS_ENABLE_NEXTSILICON
 template <>
 struct CommBufferMemorySpace<Kokkos::Experimental::NextSilicon> {
-  using type = Kokkos::Experimental::NextSiliconSharedSpace;
+  using type = typename Kokkos::Experimental::NextSilicon::memory_space;
 };
 #endif
 
