@@ -98,7 +98,7 @@ public:
       con_->summarize(stream,bman);
     }
   }
-  virtual void reset() {
+  virtual void reset() override {
     if (obj_!=nullPtr) obj_->reset();
     if (con_!=nullPtr) con_->reset();
   }

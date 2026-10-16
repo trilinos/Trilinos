@@ -45,7 +45,7 @@ public:
                     const ROL::Ptr<Assembler_type> &assembler)
     : qoi_(qoi), assembler_(assembler) {}
 
-  void setParameter(const std::vector<Real> &param) {
+  void setParameter(const std::vector<Real> &param) override {
     ROL::Objective_SimOpt<Real>::setParameter(param);
     qoi_->setParameter(param);
   }
@@ -587,7 +587,7 @@ public:
                        const ROL::Ptr<Assembler_type> &assembler)
     : qoi_(qoi), assembler_(assembler) {}
 
-  void setParameter(const std::vector<Real> &param) {
+  void setParameter(const std::vector<Real> &param) override {
     ROL::Objective<Real>::setParameter(param);
     qoi_->setParameter(param);
   }

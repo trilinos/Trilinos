@@ -47,7 +47,7 @@ public:
     assemble();
   }
 
-  void update( const ROL::Vector<Real> &z, bool flag = true, int iter = -1 ) {
+  void update( const ROL::Vector<Real> &z, bool flag = true, int iter = -1 ) override {
     nupda_++;
   }
 

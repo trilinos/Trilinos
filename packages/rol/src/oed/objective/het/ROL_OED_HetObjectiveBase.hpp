@@ -94,7 +94,7 @@ public:
   void setParameter( const std::vector<Real> &param ) override;
 
   virtual void summarize(std::ostream &stream,
-                   const Ptr<BatchManager<Real>> &bman = nullPtr) const {
+                   const Ptr<BatchManager<Real>> &bman = nullPtr) const override {
     if (obj_!=nullPtr) {
       obj_->summarize(stream,bman);
       stream << std::string(80,'-') << std::endl;
@@ -104,7 +104,7 @@ public:
       con_->summarize(stream,bman);
     }
   }
-  virtual void reset() {
+  virtual void reset() override {
     if (obj_!=nullPtr) obj_->reset();
     if (con_!=nullPtr) con_->reset();
   }

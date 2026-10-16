@@ -149,7 +149,7 @@ public:
     for (unsigned i=0; i<nobs; ++i)
       X_[i] = GreedyObjective<Real>::factors->createParameterVector(true);
   }
-  void update(const Vector<Real>& x, int iter=-1) {
+  void update(const Vector<Real>& x, int iter=-1) override {
     GreedyObjective<Real>::update(x,iter);
     GreedyObjective<Real>::cov->applyInverse(*uvec_,*c_,x);
   }
