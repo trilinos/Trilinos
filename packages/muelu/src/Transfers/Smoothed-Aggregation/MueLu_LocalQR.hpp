@@ -145,6 +145,23 @@ class LocalQRDecompFunctor {
             coarseNS(offset + k, j) = (k <= j) ? r(k, j) : zero;
         }
 
+        // Process each row in the local Q factor and fill helper arrays to assemble P
+        for (int j = 0; j < m; j++) {
+          LO localRow     = agg2RowMapLO(aggRows(agg) + j);
+          size_t rowStart = rowsAux(localRow);
+          size_t lnnz     = 0;
+          for (int k = 0; k < n; k++) {
+            // skip zeros
+            if (q(j, k) != zero) {
+              colsAux(rowStart + lnnz) = offset + k;
+              valsAux(rowStart + lnnz) = q(j, k);
+              lnnz++;
+            }
+          }
+          rows(localRow + 1) = lnnz;
+          nnz += lnnz;
+        }
+
       } else {
         // Special handling for m < n (i.e. single node aggregates in structural mechanics)
 
@@ -184,26 +201,17 @@ class LocalQRDecompFunctor {
               coarseNS(offset + k, j) = (k == j ? one : zero);
 
         // Q = I (rectangular)
-        for (int i = 0; i < m; i++)
-          for (int j = 0; j < n; j++)
-            q(i, j) = (j == i ? one : zero);
-      }
+        // no need to actually fill q
 
-      // Process each row in the local Q factor and fill helper arrays to assemble P
-      for (int j = 0; j < m; j++) {
-        LO localRow     = agg2RowMapLO(aggRows(agg) + j);
-        size_t rowStart = rowsAux(localRow);
-        size_t lnnz     = 0;
-        for (int k = 0; k < n; k++) {
-          // skip zeros
-          if (q(j, k) != zero) {
-            colsAux(rowStart + lnnz) = offset + k;
-            valsAux(rowStart + lnnz) = q(j, k);
-            lnnz++;
-          }
+        // Process each row in the local Q factor and fill helper arrays to assemble P
+        for (int j = 0; j < m; j++) {
+          LO localRow        = agg2RowMapLO(aggRows(agg) + j);
+          size_t rowStart    = rowsAux(localRow);
+          colsAux(rowStart)  = offset + j;
+          valsAux(rowStart)  = one;
+          rows(localRow + 1) = 1;
+          nnz += 1;
         }
-        rows(localRow + 1) = lnnz;
-        nnz += lnnz;
       }
     } else {
       /////////////////////////////
