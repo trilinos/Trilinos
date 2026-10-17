@@ -29,15 +29,12 @@ struct abs_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                         \
-  template <>                                                                                                         \
-  struct abs_eti_spec_avail<                                                                                          \
-      EXEC_SPACE,                                                                                                     \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      1> {                                                                                                            \
-    enum : bool { value = true };                                                                                     \
+#define KOKKOSBLAS1_ABS_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE)                                     \
+  template <>                                                                                          \
+  struct abs_eti_spec_avail<                                                                           \
+      EXEC_SPACE, Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1> {  \
+    enum : bool { value = true };                                                                      \
   };
 
 //
@@ -47,15 +44,12 @@ struct abs_eti_spec_avail {
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ABS_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                       \
-  template <>                                                                                                          \
-  struct abs_eti_spec_avail<                                                                                           \
-      EXEC_SPACE,                                                                                                      \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      2> {                                                                                                             \
-    enum : bool { value = true };                                                                                      \
+#define KOKKOSBLAS1_ABS_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE)                                   \
+  template <>                                                                                           \
+  struct abs_eti_spec_avail<                                                                            \
+      EXEC_SPACE, Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2> {  \
+    enum : bool { value = true };                                                                       \
   };
 
 // Include the actual specialization declarations
@@ -138,7 +132,7 @@ struct Abs<execution_space, RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
     if (KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
       printf("KokkosBlas1::abs<> ETI specialization for < %s , %s >\n", typeid(RMV).name(), typeid(XMV).name());
     else {
-      printf("KokkosBlas1::asb<> non-ETI specialization for < %s , %s >\n", typeid(RMV).name(), typeid(XMV).name());
+      printf("KokkosBlas1::abs<> non-ETI specialization for < %s , %s >\n", typeid(RMV).name(), typeid(XMV).name());
     }
 #endif
 
@@ -166,26 +160,20 @@ struct Abs<execution_space, RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ABS_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                          \
-  extern template struct Abs<                                                                                         \
-      EXEC_SPACE,                                                                                                     \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      1, false, true>;
+#define KOKKOSBLAS1_ABS_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE)                                      \
+  extern template struct Abs<                                                                          \
+      EXEC_SPACE, Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, false, true>;
 
 //
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Abs for rank == 2.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_ABS_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                          \
-  template struct Abs<                                                                                                \
-      EXEC_SPACE,                                                                                                     \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      1, false, true>;
+#define KOKKOSBLAS1_ABS_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE)                                                      \
+  template struct Abs<EXEC_SPACE, Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+                      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1,    \
+                      false, true>;
 
 //
 // Macro for declaration of full specialization of
@@ -194,26 +182,20 @@ struct Abs<execution_space, RMV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ABS_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                        \
-  extern template struct Abs<                                                                                          \
-      EXEC_SPACE,                                                                                                      \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      2, false, true>;
+#define KOKKOSBLAS1_ABS_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE)                                    \
+  extern template struct Abs<                                                                           \
+      EXEC_SPACE, Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2, false, true>;
 
 //
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Abs for rank == 2.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_ABS_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                        \
-  template struct Abs<                                                                                                 \
-      EXEC_SPACE,                                                                                                      \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      2, false, true>;
+#define KOKKOSBLAS1_ABS_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE)                                    \
+  template struct Abs<                                                                                  \
+      EXEC_SPACE, Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2, false, true>;
 
 #include <KokkosBlas1_abs_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosBlas1_abs_eti_spec_decl.hpp>

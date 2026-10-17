@@ -52,10 +52,10 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 
   using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
                                         typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-                                        typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                                        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using YVector_Internal = Kokkos::View<typename YVector::const_value_type*,
                                         typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
-                                        typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                                        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   using dot_type =
       typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type;
@@ -184,48 +184,64 @@ void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
 
   // Regardless of ranks of X and Y, their numbers of rows must match.
   bool dimsMatch = true;
-  if (X.extent(0) != Y.extent(0)) {
-    dimsMatch = false;
-  } else if (X.extent(1) != Y.extent(1) && X.extent(1) != 1 && Y.extent(1) != 1) {
-    // Numbers of columns don't match, and neither X nor Y have one column.
-    dimsMatch = false;
-  }
-  const auto maxNumCols = X.extent(1) > Y.extent(1) ? X.extent(1) : Y.extent(1);
-  if (RV::rank == 1 && R.extent(0) != maxNumCols) {
-    dimsMatch = false;
-  }
-
-  if (!dimsMatch) {
-    std::ostringstream os;
-    os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
-    if (RV::rank == 1) {
-      os << "R: " << R.extent(0) << " x " << X.extent(1) << ", ";
+  if constexpr (XMV::rank == 2 && YMV::rank == 2) {
+    if (X.extent(0) != Y.extent(0)) {
+      dimsMatch = false;
+    } else if (X.extent(1) != Y.extent(1) && X.extent(1) != 1 && Y.extent(1) != 1) {
+      // Numbers of columns don't match, and neither X nor Y have one column.
+      dimsMatch = false;
     }
-    os << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+    if constexpr (RV::rank == 1) {
+      const auto maxNumCols = X.extent(1) > Y.extent(1) ? X.extent(1) : Y.extent(1);
+      if (R.extent(0) != maxNumCols) {
+        dimsMatch = false;
+      }
+      if (!dimsMatch) {
+        std::ostringstream os;
+        os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
+        os << "R: " << R.extent(0) << " x " << X.extent(1) << ", ";
+        os << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else {
+      if (!dimsMatch) {
+        std::ostringstream os;
+        os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
+        os << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    }
+  } else {
+    if (X.extent(0) != Y.extent(0)) {
+      dimsMatch = false;
+    }
+    if (!dimsMatch) {
+      std::ostringstream os;
+      os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
+      os << "X: " << X.extent(0) << ", Y: " << Y.extent(0);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   // Create unmanaged versions of the input Views.
   using UnifiedXLayout  = typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
   using UnifiedRVLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<RV, UnifiedXLayout>::array_layout;
+  using UnifiedRVDevice =
+      std::conditional_t<Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename RV::memory_space>::assignable,
+                         Kokkos::HostSpace, execution_space>;
 
-  typedef Kokkos::View<typename std::conditional<RV::rank == 0, typename RV::non_const_value_type,
-                                                 typename RV::non_const_value_type*>::type,
-                       UnifiedRVLayout, typename RV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      RV_Internal;
-  typedef Kokkos::View<typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
-                                                 typename XMV::const_value_type**>::type,
-                       UnifiedXLayout, typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      XMV_Internal;
-  typedef Kokkos::View<typename std::conditional<YMV::rank == 1, typename YMV::const_value_type*,
-                                                 typename YMV::const_value_type**>::type,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout, typename YMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      YMV_Internal;
+  using RV_Internal  = Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, UnifiedRVDevice,
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using YMV_Internal =
+      Kokkos::View<typename YMV::const_data_type,
+                   typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YMV, UnifiedXLayout>::array_layout,
+                   execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  RV_Internal R_internal  = R;
-  XMV_Internal X_internal = X;
-  YMV_Internal Y_internal = Y;
+  RV_Internal R_internal  = KokkosKernels::Impl::unificationCast<RV_Internal>(R);
+  XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);
+  YMV_Internal Y_internal = KokkosKernels::Impl::unificationCast<YMV_Internal>(Y);
 
   Impl::Dot<execution_space, RV_Internal, XMV_Internal, YMV_Internal>::dot(space, R_internal, X_internal, Y_internal);
 }

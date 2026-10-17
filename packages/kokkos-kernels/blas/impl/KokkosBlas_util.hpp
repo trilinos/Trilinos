@@ -65,6 +65,7 @@ struct Trans {
   struct Transpose {};
   struct NoTranspose {};
   struct ConjTranspose {};
+  struct ConjNoTranspose {};
 };
 
 template <class T>
@@ -78,6 +79,9 @@ struct is_trans<Trans::NoTranspose> : std::true_type {};
 
 template <>
 struct is_trans<Trans::ConjTranspose> : std::true_type {};
+
+template <>
+struct is_trans<Trans::ConjNoTranspose> : std::true_type {};
 
 template <class T>
 static constexpr bool is_trans_v = is_trans<T>::value;

@@ -87,9 +87,13 @@ inline rocsparse_operation mode_kk_to_rocsparse(const char kk_mode[]) {
 
 template <typename index_type>
 inline rocsparse_indextype rocsparse_index_type() {
+#if defined(HIP_VERSION) && HIP_VERSION <= 70140000
   if (std::is_same<index_type, uint16_t>::value) {
     return rocsparse_indextype_u16;
   } else if (std::is_same<index_type, int32_t>::value) {
+#else
+  if (std::is_same<index_type, int32_t>::value) {
+#endif
     return rocsparse_indextype_i32;
   } else if (std::is_same<index_type, int64_t>::value) {
     return rocsparse_indextype_i64;

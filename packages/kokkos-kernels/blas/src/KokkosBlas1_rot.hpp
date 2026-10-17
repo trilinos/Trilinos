@@ -63,26 +63,24 @@ void rot(execution_space const& space, VectorView const& X, VectorView const& Y,
 
   using VectorView_Internal = Kokkos::View<typename VectorView::non_const_value_type*,
                                            typename KokkosKernels::Impl::GetUnifiedLayout<VectorView>::array_layout,
-                                           Kokkos::Device<execution_space, typename VectorView::memory_space>,
-                                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                                           execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   using MagnitudeView_Internal = Kokkos::View<typename MagnitudeView::non_const_value_type,
                                               typename KokkosKernels::Impl::GetUnifiedLayout<ScalarView>::array_layout,
-                                              Kokkos::Device<execution_space, typename ScalarView::memory_space>,
-                                              Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                                              execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   using ScalarView_Internal = Kokkos::View<typename ScalarView::non_const_value_type,
                                            typename KokkosKernels::Impl::GetUnifiedLayout<ScalarView>::array_layout,
-                                           Kokkos::Device<execution_space, typename ScalarView::memory_space>,
-                                           Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                                           execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  VectorView_Internal X_(X), Y_(Y);
-  MagnitudeView_Internal c_(c);
-  ScalarView_Internal s_(s);
+  VectorView_Internal X_internal    = KokkosKernels::Impl::unificationCast<VectorView_Internal>(X);
+  VectorView_Internal Y_internal    = KokkosKernels::Impl::unificationCast<VectorView_Internal>(Y);
+  MagnitudeView_Internal c_internal = KokkosKernels::Impl::unificationCast<MagnitudeView_Internal>(c);
+  ScalarView_Internal s_internal    = KokkosKernels::Impl::unificationCast<ScalarView_Internal>(s);
 
   Kokkos::Profiling::pushRegion("KokkosBlas::rot");
-  Impl::Rot<execution_space, VectorView_Internal, MagnitudeView_Internal, ScalarView_Internal>::rot(space, X_, Y_, c_,
-                                                                                                    s_);
+  Impl::Rot<execution_space, VectorView_Internal, MagnitudeView_Internal, ScalarView_Internal>::rot(
+      space, X_internal, Y_internal, c_internal, s_internal);
   Kokkos::Profiling::popRegion();
 }
 
