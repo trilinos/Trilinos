@@ -90,6 +90,15 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
     out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
   }
 
+  // DEBUG: Add another debug stream
+  RCP<Teuchos::FancyOStream> out;
+  if (const char* dbg = std::getenv("MUELU_PAIRWISEAGGREGATION_DEBUG2")) {
+    out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setShowAllFrontMatter(false).setShowProcRank(true);
+  } else {
+    out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+  }
+
   const ParameterList& pL = GetParameterList();
 
   const MT kappa = static_cast<MT>(pL.get<double>("aggregation: Dirichlet threshold"));
