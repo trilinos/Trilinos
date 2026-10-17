@@ -4,11 +4,14 @@
 #include <vector>
 #include <Akri_Edge.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include "Akri_EntityIdPool.hpp"
+#include <Akri_EntityIdPool.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/EntityValues.hpp>
+#include <stk_mesh/base/BucketValues.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_math/StkVector.hpp>
-#include "Akri_NodeRefiner.hpp"
-#include "stk_util/diag/Timer.hpp"
+#include <Akri_NodeRefiner.hpp>
+#include <stk_util/diag/Timer.hpp>
 
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { struct topology; }
@@ -114,7 +117,7 @@ public:
 
   std::array<stk::mesh::EntityId,2> get_edge_parent_node_ids(const stk::mesh::Entity edgeNode) const;
   std::array<stk::mesh::Entity,2> get_edge_parent_nodes(const stk::mesh::Entity edgeNode) const;
-  std::tuple<const uint64_t *,unsigned> get_child_ids_and_num_children_when_fully_refined(const stk::mesh::Entity elem) const;
+  std::tuple<stk::mesh::EntityValues<const uint64_t, stk::ngp::HostSpace>,unsigned> get_child_ids_and_num_children_when_fully_refined(const stk::mesh::Entity elem) const;
   unsigned get_num_children(const stk::mesh::Entity elem) const;
   unsigned get_num_children_when_fully_refined(const stk::mesh::Entity elem) const;
   void fill_children(const stk::mesh::Entity elem, std::vector<stk::mesh::Entity> & children) const;
@@ -134,6 +137,9 @@ public:
   bool do_refinement(const EdgeMarkerInterface & edgeMarker);
   bool do_uniform_refinement(const int numUniformRefinementLevels);
   void delete_parent_elements(); // Only leafs will remain
+
+  size_t num_newly_refined_nodes() const;
+  void for_each_newly_refined_node(const UnaryForChildNodeAndParents & unary) const;
 
   void restore_after_restart();
   void parallel_sync_child_element_ids_fields();
@@ -167,8 +173,8 @@ private:
   stk::mesh::Field<uint64_t> & get_child_element_ids_field(const unsigned numChildWhenFullyRefined) const;
 
   void set_parent_id(const stk::mesh::Entity elem, const stk::mesh::EntityId parentElemId) const;
-  stk::mesh::EntityId * get_child_element_ids(const unsigned numChildWhenFullyRefined, const stk::mesh::Entity parent) const;
-  stk::mesh::EntityId * get_child_element_ids(const unsigned numChildWhenFullyRefined, const stk::mesh::Bucket & bucket) const;
+  stk::mesh::Field<uint64_t> & get_child_element_ids_field_with_data(const unsigned numChildWhenFullyRefined, const stk::mesh::Entity parent) const;
+  stk::mesh::Field<uint64_t> & get_child_element_ids_field_with_data(const unsigned numChildWhenFullyRefined, const stk::mesh::Bucket & bucket) const;
   stk::math::Vector3d get_coordinates(const stk::mesh::Entity node, const int dim=3) const;
 
   bool does_mesh_have_only_vertex_elements() const;

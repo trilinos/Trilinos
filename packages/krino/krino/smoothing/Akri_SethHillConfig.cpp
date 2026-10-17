@@ -10,7 +10,10 @@
 
 #include <Teuchos_YamlParameterListCoreHelpers.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <algorithm>
 #include <fstream>
+#include <iostream>
+#include <map>
 
 namespace krino {
 

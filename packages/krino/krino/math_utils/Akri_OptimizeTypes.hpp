@@ -22,6 +22,25 @@ using OptimizerFunction = std::function<void(const ObjectiveInterface &objFn, Di
 class Objective3DInterface;
 using Optimizer3DFunction = std::function<void(const Objective3DInterface &objFn, stk::math::Vector3d &x)>;
 
+template <typename T>
+struct OptimizerFunctionTraits;
+
+template <typename Objective, typename VEC>
+struct OptimizerFunctionTraits<std::function<void(const Objective &, VEC &)>>
+{
+  using objective_type = Objective;
+  using vector_type = VEC;
+};
+
+namespace OptimizationDefaults {
+  inline const double stepTol = 1.e-6;
+  inline const double gradTol = 1.e-6;
+  inline const double objectiveScale = 1.0;
+  inline const unsigned maxIter = 200;
+  inline const unsigned maxLevelsBFGS = 10;
+  inline const bool doOutput = false;
+}
+
 struct SolverConfig
 {
   // Time stepping

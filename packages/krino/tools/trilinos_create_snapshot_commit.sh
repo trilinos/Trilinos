@@ -47,7 +47,7 @@ exe cd $SIERRA
 verify_clean_repo $SIERRA
 verify_no_local_commits $SIERRA_BRANCH
 exe git checkout $SIERRA_BRANCH
-exe repo sync
+exe git pull
 STK_VERSION_STRING=$(./stk/stk_util/stk_util/registry/stk_version_gen.sh)
 
 exe cd $TRILINOS

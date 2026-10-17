@@ -4,21 +4,18 @@ trilinos_src_dir=${TRILINOS_DIR:-${PWD}/../Trilinos}
 build_dir=${BUILD_DIR:-${PWD}}
 build_type=${CMAKE_BUILD_TYPE:-release}
 trilinos_install_dir=${TRILINOS_INSTALL_DIR:-${PWD}/../trilinos_install}
-
 yaml_install_dir=${YAML_INSTALL_DIR:-${build_dir}/../../yaml/yaml_install}
-
-enable_yaml=OFF
-if [ -d ${yaml_install_dir} ]; then
-  enable_yaml=ON
-fi
+enable_pykrino=${ENABLE_PYKRINO:-OFF}
+enable_yaml=${ENABLE_YAML:-OFF}
 
 printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
 printf "BUILD_DIR=${build_dir}\n";
 printf "CMAKE_BUILD_TYPE=${build_type}\n";
 printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
 printf "YAML_INSTALL_DIR=${yaml_install_dir}\n";
-printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_krino'\n\n";
+printf "ENABLE_PYKRONO=${enable_pykrino}\n";
 printf "ENABLE_YAML=${enable_yaml}\n";
+printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_krino'\n\n";
 
 if [ ! -d ${trilinos_src_dir}/packages/krino ] && [ ! -L ${trilinos_src_dir}/packages/krino ]; then
   echo "Trilinos dir (${trilinos_src_dir}) doesn't have packages/krino directory. If using a Sierra project, make a soft-link to Sierra's krino directory.";
@@ -33,24 +30,43 @@ cd ${build_dir}
 # Cleanup old cache before we configure
 rm -rf CMakeFiles CMakeCache.txt
 
-cmake \
--DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
--DCMAKE_BUILD_TYPE=${build_type^^} \
--DCMAKE_CXX_STANDARD:STRING=20 \
--DBUILD_SHARED_LIBS=OFF \
--DTrilinos_ENABLE_TESTS:BOOL=ON \
--DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
--DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
--DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
--DTPL_ENABLE_MPI:BOOL=ON \
--DTrilinos_ENABLE_Krino:BOOL=ON \
--DTPL_ENABLE_yamlcpp=${enable_yaml} \
--Dyamlcpp_INCLUDE_DIRS=${yaml_install_dir}/include \
--Dyamlcpp_LIBRARY_DIRS=${yaml_install_dir}/lib \
--DTPL_ENABLE_Netcdf:BOOL=ON \
--DTPL_ENABLE_HDF5:BOOL=ON \
--DTPL_HDF5_LIBRARIES="-lhdf5" \
--DTPL_ENABLE_gtest:BOOL=ON \
--DGTest_DIR=/fgs/william/googletest/install_gcc-12.3.0/lib64/cmake/GTest \
-${trilinos_src_dir}/
+cmake_args=(
+  -DCMAKE_INSTALL_PREFIX="$trilinos_install_dir"
+  -DCMAKE_BUILD_TYPE="${build_type^^}"
+  -DCMAKE_CXX_STANDARD:STRING=20
+  -DBUILD_SHARED_LIBS=OFF
 
+  -DTrilinos_ENABLE_TESTS:BOOL=ON
+  -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF
+  -DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF
+  -DTrilinos_ASSERT_DEFINED_DEPENDENCIES=OFF
+  -DTrilinos_ENABLE_Krino:BOOL=ON
+
+  -DTPL_ENABLE_MPI:BOOL=ON 
+  -DTPL_ENABLE_Pnetcdf:BOOL=ON 
+  -DTPL_ENABLE_Netcdf:BOOL=ON 
+  
+  -DTPL_ENABLE_HDF5:BOOL=ON 
+  -DHDF5_INCLUDE_DIRS:PATH="${HDF5_ROOT}/include" 
+  -DHDF5_LIBRARY_DIRS:PATH="${HDF5_ROOT}/lib" 
+  
+  -DTPL_ENABLE_gtest:BOOL=ON
+  -DGTest_DIR=/fgs/william/googletest/install_gcc-12.3.0/lib64/cmake/GTest 
+)
+
+if [[ "$enable_yaml" == "ON" ]]; then
+  cmake_args+=(
+    -DTPL_ENABLE_yamlcpp=${enable_yaml} 
+    -Dyamlcpp_INCLUDE_DIRS=${yaml_install_dir}/include 
+    -Dyamlcpp_LIBRARY_DIRS=${yaml_install_dir}/lib 
+  )
+fi
+if [[ "$enable_pykrino" == "ON" ]]; then
+  cmake_args+=(
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    -DKrino_ENABLE_PyKrino:BOOL=ON 
+    -Dpybind11_DIR=/home/drnoble/.local/lib/python3.12/site-packages/pybind11/share/cmake/pybind11 
+  )
+fi
+
+cmake "${cmake_args[@]}" "${trilinos_src_dir}/"

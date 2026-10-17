@@ -12,8 +12,7 @@ TRIBITS_ADD_LIBRARY(
   krino_rebalance_utils_lib
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS krino_lib)
+  DEPLIBS krino_decomp_lib)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_rebalance_utils_lib)
-   

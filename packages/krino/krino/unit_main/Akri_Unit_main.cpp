@@ -14,11 +14,24 @@
 #include <stk_unit_test_utils/CommandLineArgs.hpp>
 #include <stk_util/diag/WriterRegistry.hpp>
 #include <Akri_DiagWriter.hpp>
+#include <Ioss_Initializer.h>
+#include <Ioss_ConcreteVariableType.h>
 #include <mpi.h>
 
 int main(int argc, char **argv)
 {
     sierra::Env::set_mpi_communicator( stk::initialize(&argc, &argv) );
+
+    // Populate the Ioss element-topology and variable-type registries.  krino
+    // maps stk topologies to Ioss names (stk::io::map_stk_topology_to_ioss ->
+    // Ioss::ElementTopology::factory) while building decomposed sideblock part
+    // names; with an empty registry every topology maps to "invalid" and the
+    // factory throws "The topology type 'invalid' is not supported."  In
+    // production this registration happens in StkMeshIoBroker's constructor;
+    // the dispersed per-library test executables do not all link that path, so
+    // register the topologies here for every krino unit-test binary.
+    Ioss::StorageInitializer initialize_storage;
+    Ioss::Initializer        initialize_topologies;
 
     sierra::Diag::registerWriter("krinolog", krinolog, krino::theDiagWriterParser());
     stk::EnvData::instance().m_outputP0 = &sierra::out();

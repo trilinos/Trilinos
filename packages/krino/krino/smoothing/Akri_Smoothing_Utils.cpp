@@ -102,27 +102,31 @@ DistributedVector gather_node_coordinates(const stk::mesh::BulkData &mesh,
 {
   const unsigned dim = coordsField.dim();
   DistributedVector nodesCoords(mesh.parallel(), dim*nodes.size(), dim*nodes.local_size());
+  auto coordsData = coordsField.data<double>();
   for (unsigned i=0; i<nodes.size(); ++i)
   {
     const stk::mesh::Entity node = nodes[i];
-    const double * nodeCoordData = get_field_data(mesh, coordsField, node);
+    auto nodeCoordData = coordsData.entity_values(node);
     for (unsigned j=0; j<dim; ++j)
-      nodesCoords[dim*i+j] = nodeCoordData[j];
+      nodesCoords[dim*i+j] = nodeCoordData(stk::mesh::ComponentIdx(j));
   }
   return nodesCoords;
 }
 
-void set_node_coordinates(const stk::mesh::BulkData &mesh,
+void set_node_coordinates(const stk::mesh::BulkData & mesh,
     const CoordinatesFieldRef coordsField,
     const DistributedEntityVector & nodes,
     const DistributedVector & nodesCoords)
 {
   const unsigned dim = coordsField.dim();
-  for (unsigned i=0; i<nodes.local_size(); ++i)
   {
-    double * nodeCoordData = get_field_data(mesh, coordsField, nodes[i]);
-    for (unsigned j=0; j<dim; ++j)
-      nodeCoordData[j] = nodesCoords[dim*i+j];
+    auto coordsData = coordsField.data<double, stk::mesh::ReadWrite>();
+    for (unsigned i = 0; i < nodes.local_size(); ++i)
+    {
+      auto nodeCoordData = coordsData.entity_values(nodes[i]);
+      for (unsigned j = 0; j < dim; ++j)
+        nodeCoordData(stk::mesh::ComponentIdx(j)) = nodesCoords[dim * i + j];
+    }
   }
   parallel_sync_fields(mesh, {&coordsField.field()});
 }

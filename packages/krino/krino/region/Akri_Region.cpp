@@ -12,14 +12,12 @@
 #include <Akri_CDMesh.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_FieldRef.hpp>
-#include <Akri_AdaptivityHelpers.hpp>
+#include <Akri_RefinementDrivers.hpp>
 #include <Akri_BoundingBoxMesh.hpp>
 #include <Akri_MeshInputOptions.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/MeshBuilder.hpp>
 #include <Akri_LevelSet.hpp>
 #include <Akri_CreateInterfaceGeometry.hpp>
 #include <Akri_MeshHelpers.hpp>
@@ -37,6 +35,7 @@
 #include <Akri_CDMesh_Refinement.hpp>
 #include <Akri_MeshFromFile.hpp>
 #include <Akri_OutputUtils.hpp>
+#include <Akri_PlaneMeshExtent.hpp>
 #include <Akri_PostProcess.hpp>
 #include <Akri_RefinementManager.hpp>
 #include <Akri_Surface_Manager.hpp>
@@ -163,6 +162,9 @@ void Region::commit()
   }
 
   activate_all_entities(mesh_bulk_data(), active_part);
+
+  // Before any refinement or decomposition, so these planes are placed from the input mesh.
+  set_plane_offsets_from_mesh_extent(mesh_bulk_data());
 
   LevelSet::post_commit_setup(meta);
 }

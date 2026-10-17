@@ -12,7 +12,7 @@ TRIBITS_ADD_LIBRARY(
   krino_region_lib
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS krino_lib)
+  DEPLIBS krino_decomp_lib krino_post_process_lib)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_region_lib)

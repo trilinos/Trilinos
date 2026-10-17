@@ -9,6 +9,7 @@
 #ifndef Akri_Surface_Parser_h
 #define Akri_Surface_Parser_h
 #include <functional>
+#include <memory>
 
 namespace stk { namespace diag { class Timer; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -17,7 +18,7 @@ namespace krino { class Surface; }
 
 namespace krino {
 namespace Surface_Parser {
-  Surface * parse(const Parser::Node & parserNode, const stk::mesh::MetaData & meta, const stk::diag::Timer &parentTimer);
+  std::shared_ptr<Surface> parse(const Parser::Node & parserNode, const stk::mesh::MetaData & meta, const stk::diag::Timer &parentTimer);
 }
 }
 

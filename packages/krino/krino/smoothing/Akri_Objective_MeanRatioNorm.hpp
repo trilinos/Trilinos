@@ -9,7 +9,6 @@
 #ifndef KRINO_KRINO_SMOOTHING_AKRI_OBJECTIVE_MEANRATIONORM_HPP_
 #define KRINO_KRINO_SMOOTHING_AKRI_OBJECTIVE_MEANRATIONORM_HPP_
 
-#include <array>
 #include <Akri_Objective_Mesh.hpp>
 
 namespace krino {

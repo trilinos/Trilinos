@@ -11,7 +11,6 @@
 
 #include <stk_math/StkVector.hpp>
 #include <cmath>
-#include <iostream>
 #include <array>
 
 namespace krino {

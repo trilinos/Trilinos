@@ -9,7 +9,6 @@
 #ifndef KRINO_INCLUDE_AKRI_MATHUTIL_H_
 #define KRINO_INCLUDE_AKRI_MATHUTIL_H_
 #include <stk_math/StkVector.hpp>
-#include <vector>
 #include <functional>
 
 namespace krino {

@@ -9,7 +9,6 @@
 #include <Akri_LevelSet_Parser.hpp>
 
 #include <Akri_AuxMetaData.hpp>
-#include <Akri_DiagWriter.hpp>
 #include <Akri_IC_Parser.hpp>
 #include <Akri_IO_Helpers.hpp>
 #include <Akri_LevelSet.hpp>
@@ -21,6 +20,9 @@
 #include <stk_util/environment/RuntimeDoomed.hpp>
 #include <stk_util/environment/RuntimeWarning.hpp>
 #include <Akri_BoundingSurface.hpp>
+#include <Akri_CSG_Parser.hpp>
+#include <Akri_CSG_Tree.hpp>
+#include <Akri_IC_Alg.hpp>
 #include <Akri_Surface_Parser.hpp>
 #include <Akri_Surface_Manager.hpp>
 
@@ -45,6 +47,67 @@ register_blocks_for_bounding_surface(Surface_Manager & surfaceManager, Phase_Sup
   phaseSupport.register_blocks_for_surface(surfaceManager.get_identifier(boundingSurfaceName));
 }
 
+size_t num_decimal_digits(int value)
+{
+  return std::to_string(value).size();
+}
+
+}
+
+std::string parse_level_set_or_bounding_surface_name(const Parser::Node & surfaceNode)
+{
+  const Parser::Node nameNode = surfaceNode.get_if_present("name");
+  if (!nameNode)
+    return std::string();
+
+  if (!nameNode.is_map())
+  {
+    std::string name;
+    surfaceNode.get_if_present("name", name);
+    return name;
+  }
+
+  const auto oldDoomedCount = stk::get_doomed_count();
+
+  std::string prefix;
+  if (!nameNode.get_if_present("prefix", prefix) || prefix.empty())
+    stk::RuntimeDoomedAdHoc() << "Missing prefix for a name given by prefix and index.\n";
+
+  int index = -1;
+  if (!nameNode.get_if_present("index", index))
+    stk::RuntimeDoomedAdHoc() << "Missing index for a name given by prefix and index.\n";
+  else if (index < 0)
+    stk::RuntimeDoomedAdHoc() << "The index " << index << " of the name with prefix " << prefix << " must not be negative.\n";
+
+  int digits = 0;
+  int maxIndex = -1;
+  const bool hasDigits = nameNode.get_if_present("digits", digits);
+  const bool hasMaxIndex = nameNode.get_if_present("max_index", maxIndex);
+  size_t width = 0;
+  if (hasDigits == hasMaxIndex)
+  {
+    stk::RuntimeDoomedAdHoc() << "A name given by prefix and index needs exactly one of digits or max_index.\n";
+  }
+  else if (hasDigits)
+  {
+    if (digits < 1)
+      stk::RuntimeDoomedAdHoc() << "The digits " << digits << " of the name with prefix " << prefix << " must be positive.\n";
+    else if (index >= 0 && num_decimal_digits(index) > size_t(digits))
+      stk::RuntimeDoomedAdHoc() << "The index " << index << " of the name with prefix " << prefix << " has more than " << digits << " digits.\n";
+    width = digits;
+  }
+  else
+  {
+    if (index >= 0 && index > maxIndex)
+      stk::RuntimeDoomedAdHoc() << "The index " << index << " of the name with prefix " << prefix << " is greater than its max_index " << maxIndex << ".\n";
+    width = (maxIndex >= 0) ? num_decimal_digits(maxIndex) : 0;
+  }
+
+  if (stk::get_doomed_count() > oldDoomedCount)
+    return std::string();
+
+  const std::string indexString = std::to_string(index);
+  return prefix + std::string(width - indexString.size(), '0') + indexString;
 }
 
 void
@@ -57,8 +120,7 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
     Phase_Support & phaseSupport = Phase_Support::get(meta);
     for ( auto && ls_node : ls_nodes )
     {
-      std::string ls_name;
-      ls_node.get_if_present("name", ls_name);
+      const std::string ls_name = parse_level_set_or_bounding_surface_name(ls_node);
       if (ls_name.empty())
       {
         stk::RuntimeDoomedAdHoc() << "Blank or missing levelset name.\n";
@@ -181,7 +243,16 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
           "Please specify surfaces for compute surface distance.");
       }
 
-      IC_Parser::parse(ls_node, ls);
+      CSGTree csgTree = CSG_Parser::parse_CSG_tree(ls_node, ls.meta(), ls.get_timer());
+      if (!csgTree.empty())
+      {
+        ls.get_IC_alg().set_csg(csgTree);
+      }
+      else
+      {
+        IC_Parser::parse(ls_node, ls);
+        ls.get_IC_alg().set_simple_union();
+      }
 
       register_blocks_for_level_set(surfaceManager, phaseSupport, ls);
     }
@@ -198,14 +269,13 @@ BoundingSurface_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaD
     Phase_Support & phaseSupport = Phase_Support::get(meta);
     for ( auto && boundingSurfaceNode : boundingSurfaceNodes )
     {
-      std::string boundingSurfaceName;
-      boundingSurfaceNode.get_if_present("name", boundingSurfaceName);
+      const std::string boundingSurfaceName = parse_level_set_or_bounding_surface_name(boundingSurfaceNode);
       if (boundingSurfaceName.empty())
       {
         stk::RuntimeDoomedAdHoc() << "Blank or missing bounding surface name.\n";
       }
 
-      Surface * surface = Surface_Parser::parse(boundingSurfaceNode, meta, parentTimer);
+      std::shared_ptr<Surface> surface = Surface_Parser::parse(boundingSurfaceNode, meta, parentTimer);
       BoundingSurface::build(meta, boundingSurfaceName, surface);
 
       register_blocks_for_bounding_surface(surfaceManager, phaseSupport, boundingSurfaceName);

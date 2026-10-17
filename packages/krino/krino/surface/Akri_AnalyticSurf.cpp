@@ -9,6 +9,7 @@
 #include <Akri_AnalyticSurf.hpp>
 #include <Akri_Transformation.hpp>
 #include <Akri_IntersectionUtils.hpp>
+#include <Akri_Triangle.hpp>
 #include <Akri_ML_Models.hpp>
 
 #include <cmath>
@@ -198,6 +199,13 @@ Sphere::point_signed_distance(const stk::math::Vector3d &x) const
   return (myDistSign*((x-myCenter).length() - myRadius));
 }
 
+std::string Sphere::output() const
+{
+  std::ostringstream os;
+  os << "Sphere: center=(" << myCenter[0] << " " << myCenter[1] << " " << myCenter[2] << "), radius=" << myRadius << ", sign=" << myDistSign;
+  return os.str();
+}
+
 Ellipsoid::Ellipsoid(
       const std::vector<double> & center,
       const std::vector<double> & semiAxes,
@@ -207,13 +215,16 @@ Ellipsoid::Ellipsoid(
   mySign(sign)
 {
   STK_ThrowAssert(center.size() == 3 && semiAxes.size() == 3);
-  mySemiAxesNorm = 0.0;
+  double sumSquaredSemiAxes = 0.0;
   for(unsigned i = 0; i < 3; ++i) {
     myCenter[i] = center[i];
     mySemiAxes[i] = semiAxes[i];
-    mySemiAxesNorm += mySemiAxes[i]*mySemiAxes[i];
+    sumSquaredSemiAxes += mySemiAxes[i]*mySemiAxes[i];
   }
-  mySemiAxesNorm = std::sqrt(mySemiAxesNorm);
+  // Root-mean-square semi-axis, used as the distance scale so that the result
+  // is the exact signed distance when the ellipsoid is a sphere (all semi-axes
+  // equal); for a general ellipsoid it remains an approximate distance.
+  myCharacteristicRadius = std::sqrt(sumSquaredSemiAxes/3.0);
 
   if (!rotationVec.empty())
   {
@@ -257,11 +268,11 @@ Ellipsoid::point_signed_distance(const stk::math::Vector3d &x) const
   stk::math::Vector3d delta = x-myCenter;
   if (myRotation)
     delta = myRotation->rotate_3d_vector(delta);
-  // Not an exact distance except in the case of a sphere
+  // Exact signed distance for a sphere; an approximate distance otherwise.
   const double dx = delta[0]/mySemiAxes[0];
   const double dy = delta[1]/mySemiAxes[1];
   const double dz = delta[2]/mySemiAxes[2];
-  return mySign*(mySemiAxesNorm*std::sqrt(dx*dx+dy*dy+dz*dz)-mySemiAxesNorm);
+  return mySign*myCharacteristicRadius*(std::sqrt(dx*dx+dy*dy+dz*dz)-1.0);
 }
 
 Cuboid::Cuboid(const stk::math::Vector3d & center,
@@ -357,7 +368,6 @@ void Cuboid::fill_tetrahedon_intersection_parametric_coordinates(const std::arra
   }
 }
 
-
 Plane::Plane(const stk::math::Vector3d & normal,
     const double offset,
     const double multiplier)
@@ -369,9 +379,40 @@ Plane::Plane(const stk::math::Vector3d & normal,
   myNormal.unitize();
 }
 
+Plane::Plane(const stk::math::Vector3d & normal,
+    const stk::math::Vector3d & point,
+    const double multiplier)
+  : SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign(),
+    myMultiplier(multiplier),
+    myNormal(normal),
+    myOffset(0.0)
+{
+  myNormal.unitize();
+  myOffset = -Dot(myNormal, point);
+}
+
+std::shared_ptr<Plane>
+Plane::at_fraction_of_extent(const stk::math::Vector3d & normal,
+    const double fractionOfExtent,
+    const double multiplier)
+{
+  auto plane = std::make_shared<Plane>(normal, 0., multiplier);
+  plane->myNeedsOffsetFromExtent = true;
+  plane->myFractionOfExtent = fractionOfExtent;
+  return plane;
+}
+
+void
+Plane::set_offset_from_extent(const double minDot, const double maxDot)
+{
+  myOffset = -(minDot + myFractionOfExtent*(maxDot - minDot));
+  myNeedsOffsetFromExtent = false;
+}
+
 double
 Plane::point_signed_distance(const stk::math::Vector3d &x) const
 {
+  STK_ThrowAssertMsg(!myNeedsOffsetFromExtent, "Plane at a fraction of the mesh extent used before its offset was set from the mesh.");
   return myMultiplier*(Dot(myNormal, x) + myOffset);
 }
 
