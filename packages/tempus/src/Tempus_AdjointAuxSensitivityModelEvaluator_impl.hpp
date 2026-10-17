@@ -396,42 +396,9 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::evalModelImpl(
         rcp_dynamic_cast<DMVPV>(adjoint_g, true)->getNonconstMultiVector();
 
     if (f_depends_on_p_) {
-      MEB::OutArgs<Scalar> me_outArgs2 = model_->createOutArgs();
-      MEB::DerivativeSupport dfdp_support =
-          me_outArgs2.supports(MEB::OUT_ARG_DfDp, p_index_);
-      Thyra::EOpTransp trans = Thyra::CONJTRANS;
-      if (dfdp_support.supports(MEB::DERIV_LINEAR_OP)) {
-        if (my_dfdp_op_ == Teuchos::null)
-          my_dfdp_op_ = model_->create_DfDp_op(p_index_);
-        me_outArgs2.set_DfDp(p_index_, MEB::Derivative<Scalar>(my_dfdp_op_));
-        trans = Thyra::CONJTRANS;
-      }
-      else if (dfdp_support.supports(MEB::DERIV_MV_JACOBIAN_FORM)) {
-        if (my_dfdp_mv_ == Teuchos::null)
-          my_dfdp_mv_ = createMembers(model_->get_f_space(),
-                                      model_->get_p_space(p_index_)->dim());
-        me_outArgs2.set_DfDp(
-            p_index_,
-            MEB::Derivative<Scalar>(my_dfdp_mv_, MEB::DERIV_MV_JACOBIAN_FORM));
-        my_dfdp_op_ = my_dfdp_mv_;
-        trans       = Thyra::CONJTRANS;
-      }
-      else if (dfdp_support.supports(MEB::DERIV_MV_GRADIENT_FORM)) {
-        if (my_dfdp_mv_ == Teuchos::null)
-          my_dfdp_mv_ = createMembers(model_->get_p_space(p_index_),
-                                      model_->get_f_space()->dim());
-        me_outArgs2.set_DfDp(
-            p_index_,
-            MEB::Derivative<Scalar>(my_dfdp_mv_, MEB::DERIV_MV_GRADIENT_FORM));
-        my_dfdp_op_ = my_dfdp_mv_;
-        trans       = Thyra::CONJ;
-      }
-      else
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                                   "Invalid df/dp support");
-      model_->evalModel(me_inArgs, me_outArgs2);
-      my_dfdp_op_->apply(trans, *adjoint_x_mv, adjoint_g_mv.ptr(), Scalar(1.0),
-                         Scalar(0.0));
+      AdjointSensitivityUtils::applyDfDpTranspose(
+          *model_, p_index_, me_inArgs, *adjoint_x_mv, *adjoint_g_mv,
+          Scalar(1.0), Scalar(0.0), my_dfdp_op_, my_dfdp_mv_);
     }
     else
       Thyra::assign(adjoint_g_mv.ptr(), Scalar(0.0));
