@@ -787,6 +787,67 @@ TEST(MiniTensor, KroneckerProduct)
   ASSERT_LE(error, machine_epsilon<Real>());
 }
 
+TEST(MiniTensor, KroneckerProductRotation)
+{
+  // A general rotation, so that R and its transpose differ
+  Real const
+  angle = 0.7;
+
+  Vector<Real> axis(1.0, 2.0, 3.0);
+
+  axis = unit(axis);
+
+  Tensor<Real> const W = skew(axis);
+
+  Tensor<Real> const R =
+      eye<Real>(3) + std::sin(angle) * W + (1.0 - std::cos(angle)) * W * W;
+
+  Vector<Real> const a(1.0, -2.0, 0.5);
+  Vector<Real> const b(0.3, 0.8, -1.1);
+  Vector<Real> const c(-0.7, 0.2, 1.4);
+  Vector<Real> const d(0.9, -0.4, 0.6);
+
+  // B = a x b x c x d
+  auto const tetrad = [](Vector<Real> const & p, Vector<Real> const & q,
+      Vector<Real> const & r, Vector<Real> const & s)
+  {
+    Tensor4<Real> T(3);
+    for (Index i = 0; i < 3; ++i) {
+      for (Index j = 0; j < 3; ++j) {
+        for (Index k = 0; k < 3; ++k) {
+          for (Index l = 0; l < 3; ++l) {
+            T(i, j, k, l) = p(i) * q(j) * r(k) * s(l);
+          }
+        }
+      }
+    }
+    return T;
+  };
+
+  Tensor4<Real> const B = tetrad(a, b, c, d);
+
+  Real const tol = 100.0 * machine_epsilon<Real>();
+
+  // kronecker(transpose(R), B) rotates B by R
+  Tensor4<Real> const rotated = tetrad(R * a, R * b, R * c, R * d);
+
+  Real const error_rotated =
+      norm_f(kronecker(transpose(R), B) - rotated) / norm_f(rotated);
+
+  ASSERT_LE(error_rotated, tol);
+
+  // kronecker(R, B) gives the components of B in the basis formed by the
+  // columns of R, i.e. B rotated by transpose(R)
+  Tensor4<Real> const components =
+      tetrad(transpose(R) * a, transpose(R) * b, transpose(R) * c,
+          transpose(R) * d);
+
+  Real const error_components =
+      norm_f(kronecker(R, B) - components) / norm_f(components);
+
+  ASSERT_LE(error_components, tol);
+}
+
 TEST(MiniTensor, TemplateMetaProgramming)
 {
   {

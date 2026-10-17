@@ -46,10 +46,10 @@ public:
   void gradient( Vector<Real> &g, const Vector<Real> &z, Real &tol ) override;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &z, Real &tol ) override;
   void summarize(std::ostream &stream,
-           const Ptr<BatchManager<Real>> &bman = nullPtr) const {
+           const Ptr<BatchManager<Real>> &bman = nullPtr) const override {
     obj_->summarize(stream,bman);
   }
-  void reset() {
+  void reset() override {
     obj_->reset();
   }
 };

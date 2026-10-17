@@ -103,6 +103,7 @@ public:
 
 private:
   AdapterWithOptionalCoordinateAdapter adaptersSet;
+  std::vector<void*> ownedCoordArrays;
 
   /*! \brief Method to choose and call the correct constructor
    *   for a BasicIdentifierAdapter from a UserInputForTests input file.
@@ -232,6 +233,9 @@ AdapterFactory::~AdapterFactory() {
 
   if( adaptersSet.coordinate.adapter ) {
     delete adaptersSet.coordinate.adapter;
+  }
+  for (void* ptr : ownedCoordArrays) {
+    delete[] static_cast<zscalar_t*>(ptr);
   }
 }
 
@@ -867,6 +871,7 @@ void AdapterFactory::InitializeVectorData(const RCP<T> &data,
   
   size_t idx = 0;
   zscalar_t *coordarr = new zscalar_t[vecsize];
+  ownedCoordArrays.push_back(coordarr);
   
   if(stride == 1 || stride != (int)nvecs)
   {

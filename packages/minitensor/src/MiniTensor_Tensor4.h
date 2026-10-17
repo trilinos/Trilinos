@@ -620,10 +620,15 @@ Tensor4<typename Promote<S, T>::type, N>
 odot(Tensor<S, N> const & A, Tensor<T, N> const & B);
 
 ///
-/// 4th-order input
-/// \param A 4th-order tensor
-/// \param B 2nd-order tensor
-/// \return \f$ C'_{i'j'k'l'} = A_{i'i} A_{j'j} A_{k'k} A_{l'l} B_{ijkl} \f$
+/// Change of basis of a 4th-order tensor
+/// \param A 2nd-order tensor, the direction cosine matrix
+/// \param B 4th-order tensor
+/// \return \f$ C_{ijkl} = A_{pi} A_{qj} A_{mk} A_{nl} B_{pqmn} \f$
+///
+/// The first index of A is contracted with B. If the columns of a rotation
+/// R are the rotated basis vectors, then kronecker(R, B) gives the components
+/// of B in the rotated basis, and kronecker(transpose(R), B) gives B rotated
+/// by R, that is \f$ R_{ip} R_{jq} R_{km} R_{ln} B_{pqmn} \f$.
 ///
 template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
@@ -2036,7 +2041,7 @@ odot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 }
 
 //
-// \return \f$ C'_{i'j'k'l'} = Q_{i'i} Q_{j'j} Q_{k'k} Q_{l'l} C_{ijkl}  \f$
+// \return \f$ C_{ijkl} = A_{pi} A_{qj} A_{mk} A_{nl} B_{pqmn} \f$
 //
 template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION

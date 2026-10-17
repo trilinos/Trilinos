@@ -694,6 +694,10 @@ int main(int narg, char *arg[])
               << "   avg = " << totWgt / numGlobalParts
               << std::endl << std::endl << std::endl;
 
+  free(exportGlobalGids);
+  free(exportLocalGids);
+  free(exportProcs);
+  free(exportToPart);
   delete [] sumWgtPerPart;
   delete [] gsumWgtPerPart;
 

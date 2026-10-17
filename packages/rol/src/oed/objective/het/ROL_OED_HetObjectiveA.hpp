@@ -48,7 +48,7 @@ public:
   void gradient( Vector<Real> &g, const Vector<Real> &z, Real &tol ) override;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &z, Real &tol ) override;
   void summarize(std::ostream &stream,
-           const Ptr<BatchManager<Real>> &bman = nullPtr) const {
+           const Ptr<BatchManager<Real>> &bman = nullPtr) const override {
     if (M0_ != nullPtr) {
       stream << std::string(80,'-') << std::endl;
       M0_->summarize(stream,bman);
@@ -62,7 +62,7 @@ public:
       ts_->summarize(stream,bman);
     }
   }
-  void reset() {
+  void reset() override {
     M0_->reset();
     M1_->reset();
     ts_->reset();

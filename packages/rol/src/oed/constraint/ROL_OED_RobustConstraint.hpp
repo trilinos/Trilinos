@@ -89,7 +89,7 @@ public:
     }
   }
 
-  void setParameter(const std::vector<Real> &param) {
+  void setParameter(const std::vector<Real> &param) override {
     Constraint<Real>::setParameter(param);
     for (unsigned i = 0u; i < objVec_->numObjectives(); ++i)
       objVec_->getObjective(i)->setParameter(param);
