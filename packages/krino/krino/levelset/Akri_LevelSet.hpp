@@ -1,0 +1,296 @@
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+#ifndef KRINO_KRINO_LEVELSET_AKRI_LEVELSET_HPP_
+#define KRINO_KRINO_LEVELSET_AKRI_LEVELSET_HPP_
+
+/**
+
+  Create one of these for every interface you want to capture.
+
+ */
+#include <stk_util/diag/Timer.hpp>
+
+#include <Akri_BoundingBox.hpp>
+#include <Akri_FieldRef.hpp>
+#include <Akri_DiagWriter.hpp>
+#include <Akri_Surface_Identifier.hpp>
+#include <stk_math/StkVector.hpp>
+#include <Akri_SemiLagrangian.hpp>
+
+#include <map>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+#include <cmath>
+
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace sierra { namespace Sctl { class Event; } }
+namespace krino { class AuxMetaData; }
+namespace krino { class FacetedSurfaceBase; }
+namespace krino { class IC_Alg; }
+namespace krino { class ParallelErrorMessage; }
+namespace krino { class ContourElement; }
+namespace krino { class String_Function_Expression; }
+
+namespace krino {
+
+enum Redistance_Method
+{
+  CLOSEST_POINT=0,
+  FAST_MARCHING,
+  FAST_ITERATIVE,
+  MAX_REDISTANCE_METHOD_TYPE
+};
+
+enum SemiLagrangianAlgorithm
+{
+  NON_ADAPTIVE_SINGLE_STEP=0,
+  ADAPTIVE_SINGLE_STEP,
+  ADAPTIVE_PREDICTOR_CORRECTOR,
+  MAX_SEMILAGRANGIAN_ALGORITM_TYPE
+};
+
+class LevelSet {
+friend class LevelSet_Size;
+public:
+  stk::mesh::MetaData & meta();
+  const stk::mesh::MetaData & meta() const;
+  stk::mesh::BulkData & mesh();
+  const stk::mesh::BulkData & mesh() const;
+  AuxMetaData & aux_meta();
+  const AuxMetaData & aux_meta() const;
+
+  const std::string & name() const { return my_name; }
+  Surface_Identifier get_identifier() const {return my_identifier; }
+  stk::diag::Timer & get_timer() const { return my_timer; }
+  stk::diag::Timer & get_parent_timer() const { return my_parent_timer; }
+
+  static void set_flag_is_transient(stk::mesh::MetaData & meta);
+  void set_flag_is_transient() { myIsTransient = true; }
+  bool is_transient() const { return myIsTransient; }
+
+  // finalize setup
+  static void setup(stk::mesh::MetaData & meta);
+  static void post_commit_setup(stk::mesh::MetaData & meta);
+  void setup();
+
+  void advance_semilagrangian_using_velocity_string_expression(const double timeN, const double timeNP1);
+  void advance_semilagrangian(const FieldRef coordsField, const double timeN, const double timeNp1, const BoundingBox & paddedNodeBBox, const ExtensionVelocityFunction & extVBuilder);
+  void advance_semilagrangian_using_interface_velocity(const FieldRef interfaceCoordsField, const FieldRef evaluationCoordsField, const double timeN, const double timeNp1, const FieldRef interfaceVelocity);
+
+  double compute_average_edge_length() const;
+
+  void compute_levelset_sizes( double & area, double & negVol, double & posVol, const FieldRef isovar, const double isoval ) const;
+  void compute_sizes( double & area, double & neg_vol, double & pos_vol, const double distance = 0.0 ) const;
+
+  double CDFEM_gradient_magnitude_error();
+  double gradient_magnitude_error();
+  void compute_continuous_gradient() const;
+
+  void increment_distance(const double increment, const bool enforce_sign = false, const double & signChangePurtubationTol = 0.5);
+
+  void write_facets();
+
+  bool remove_wall_features() const;
+  bool simple_remove_wall_features() const;
+  bool elem_has_field_data(const FieldRef &myField, const stk::mesh::Entity &elem) const;
+
+  //--------------------------------------------------------------------------------
+  // queries
+  //--------------------------------------------------------------------------------
+
+  void set_interface_velocity( const std::vector<std::string> & interfaceVelocity );
+  const std::vector<String_Function_Expression> & get_interface_velocity() const { return myInterfaceVelocity; }
+
+  const FieldRef & get_coordinates_field() const { return my_coordinates_field; }
+
+  const std::string & get_isovar_field_name() const { return myIsovarFieldName; }
+
+  const std::string & get_composite_name() const { return my_composite_name; }
+  void set_composite_name( const std::string & composite_name ) {
+    my_composite_name = composite_name;
+    std::transform(my_composite_name.begin(), my_composite_name.end(), my_composite_name.begin(), ::toupper);
+  }
+
+  const FieldRef & get_isovar_field() const { return my_isovar_field; }
+  void set_isovar_field( const FieldRef & ref ) { my_isovar_field = ref; }
+
+  double get_time_of_arrival_speed(stk::mesh::Entity elem, ParallelErrorMessage& err) const;
+
+  void set_levelset_field_name(const std::string & isovarFieldName) { myIsovarFieldName = isovarFieldName; my_threshold = 0.; trackIsoSurface = false; }
+  void set_tracked_isovar(const std::string & isovarFieldName, const double isoval) { myIsovarFieldName = isovarFieldName; my_threshold = isoval; trackIsoSurface = true; }
+  const double & get_isoval() const { return my_threshold; }
+
+  bool get_reinitialize_every_step() const { return my_needs_reinitialize_every_step; }
+  // Reinitializing every step must re-evaluate against the IC surfaces, which
+  // clear_initialization_data() would otherwise destroy; keep them alive.
+  void set_reinitialize_every_step() { set_keep_IC_surfaces(); my_needs_reinitialize_every_step = true; }
+
+  Redistance_Method get_redistance_method() const { return my_redistance_method; }
+  void set_redistance_method( const Redistance_Method type ) { my_redistance_method = type; }
+  SemiLagrangianAlgorithm get_semilagrangian_algorithm() const { return mySemiLagrangianAlg; }
+  void set_semilagrangian_algorithm( const SemiLagrangianAlgorithm type ) { mySemiLagrangianAlg = type; }
+  void set_time_of_arrival_element_speed_field_name( const std::string & time_of_arrival_speed_field_name) { my_time_of_arrival_element_speed_field_name = time_of_arrival_speed_field_name; }
+  FieldRef get_time_of_arrival_element_speed_field() const {return myTimeOfArrivalElementSpeedField;}
+  void set_time_of_arrival_block_speed(const std::string & blockName, const double blockSpeed);
+
+  FacetedSurfaceBase & get_facets() { return *facets; }
+  const FacetedSurfaceBase & get_facets() const { return *facets; }
+
+  void narrow_band_multiplier( double multiplier ) { my_narrow_band_multiplier = multiplier; }
+  const double & narrow_band_size() const { return my_narrow_band_size; }
+  void narrow_band_size( double size ) { my_narrow_band_size = size; } // publicly deprecated, make private
+
+  void max_feature_size( double size ) { my_max_feature_size= size; }
+  void use_simple_remove_feature( bool is_simple ) {my_use_simple_remove_feature = is_simple; }
+
+  double max_feature_size() { return my_max_feature_size; }
+  bool use_simple_remove_feature() { return my_use_simple_remove_feature; }
+
+  void set_surface_parts_vector();
+
+  void set_ic_offset (const double offset) {
+    my_ic_offset = offset;
+  }
+  void set_ic_scale (const double scale) {
+    my_ic_scale = scale;
+  }
+  void perform_initial_redistance(const bool flag) {
+    my_perform_initial_redistance = flag;
+  }
+
+  void set_keep_IC_surfaces() { my_keep_IC_surfaces = true; }
+  bool get_keep_IC_surfaces() const { return my_keep_IC_surfaces; }
+
+  const std::vector<stk::mesh::Part *> & get_compute_surface_distance_parts() const { return my_compute_surface_distance_parts; }
+  std::vector<stk::mesh::Part *> & get_compute_surface_distance_parts() { return my_compute_surface_distance_parts; }
+  void compute_surface_distance(const double narrowBandSize=0.0, const double farFieldValue=0.0);
+
+  static void initialize(stk::mesh::MetaData & meta);
+  void initialize(const double time = 0.0);
+  bool can_create_adaptive_initial_facets_from_initial_surfaces_because_initial_distance_is_solely_from_initial_surfaces() const;
+  static void build_initial_facets(stk::mesh::MetaData & meta);
+  void build_initial_facets(const double time);
+  static void clear_initialization_data(stk::mesh::MetaData & meta);
+
+  void clear_initialization_data();
+  void redistance();
+  void redistance(const stk::mesh::Selector & selector);
+  void fast_methods_redistance(const stk::mesh::Selector & selector, const bool compute_time_of_arrival = false);
+  void interface_conforming_redistance();
+  void fast_marching_interface_conforming_redistance_using_existing_facets();
+  static void extend_interface_velocity_using_closest_point_projection(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const FieldRef interfaceVelocity, const FieldRef extendedVelocity, const Surface_Identifier lsIdentifier);
+
+  std::pair<double,double> get_conserved_negative_volume_and_time() const;
+  void set_conserved_negative_volume_and_time(const double vol, const double time);
+
+  double get_conserved_negative_volume() const { return myConservedNegVolume; }
+  void set_initial_volume(const double v) { myConservedNegVolume = v; }
+  double constrained_redistance(const bool use_initial_vol = false, const double & signChangePurtubationTol = 0.5);
+  void locally_conserved_redistance();
+
+  double find_redistance_correction( const double start_area,
+				   const double start_neg_vol,
+				   const double start_pos_vol,
+				   const int max_iterations = 100,
+				   const double tol = 1.e-6 );
+
+  bool has_IC_surfaces();
+  BoundingBox get_IC_surface_bounding_box();
+  IC_Alg& get_IC_alg();
+
+  static LevelSet & build(stk::mesh::MetaData & in_meta, const std::string & ls_name, const stk::diag::Timer & parent_timer);
+
+  virtual ~LevelSet();
+
+private:
+  LevelSet(stk::mesh::MetaData & in_meta, const std::string & in_name, const stk::diag::Timer & parent_timer);
+  void redistance_using_existing_facets(const stk::mesh::Selector & volumeSelector, const double elementLengthScale);
+
+  void register_fields();
+  void register_nodal_levelset_field_and_set_ref();
+
+  stk::mesh::MetaData & my_meta;
+  AuxMetaData & my_aux_meta;
+  const Surface_Identifier my_identifier;
+  const std::string my_name;
+  mutable stk::diag::Timer my_parent_timer;
+  mutable stk::diag::Timer my_timer;
+  mutable stk::diag::Timer my_redistance_timer;
+
+public:
+  const unsigned spatial_dimension;
+
+private:
+
+  FieldRef my_coordinates_field;
+  FieldRef my_isovar_field;
+  FieldRef myTimeOfArrivalElementSpeedField;
+  FieldRef myDistanceCorrectionNumerator;
+  FieldRef myDistanceCorrectionDenominator;
+
+  std::string myIsovarFieldName;
+
+  std::string my_composite_name;
+
+  double my_narrow_band_multiplier;
+  double my_narrow_band_size;
+
+  double my_max_feature_size;
+  bool my_use_simple_remove_feature = false;
+
+
+  double my_ic_offset;
+  double my_ic_scale;
+  bool my_perform_initial_redistance;
+  bool my_keep_IC_surfaces;
+
+  double my_threshold;
+  Redistance_Method my_redistance_method;
+  SemiLagrangianAlgorithm mySemiLagrangianAlg{NON_ADAPTIVE_SINGLE_STEP};
+  std::string my_time_of_arrival_element_speed_field_name;
+  std::map<std::string, double> myTimeOfArrivalBlockSpeedsByName;
+  std::vector<double> myTimeOfArrivalBlockSpeeds;
+
+  std::unique_ptr<IC_Alg> my_IC_alg;
+
+    // vector of current facets
+  std::unique_ptr<FacetedSurfaceBase> facets;
+
+  std::vector<String_Function_Expression> myInterfaceVelocity;
+
+  bool trackIsoSurface;
+  bool myIsTransient = false;
+
+  // used to increment file name for facet exoii database hack
+  int my_facetFileIndex{0};
+
+  double myConservedNegVolume{0.0};
+  double myConservedNegVolumeTime{0.0};
+
+  bool my_needs_reinitialize_every_step;
+
+  std::vector<stk::mesh::Part *> my_compute_surface_distance_parts;
+  std::vector<stk::mesh::Part *> my_surface_parts;
+
+
+  void set_distance(const double & distance)  const;
+  void scale_distance(const double scale)  const;
+  void negate_distance()  const;
+
+  bool compute_time_of_arrival() const { return !my_time_of_arrival_element_speed_field_name.empty() || !myTimeOfArrivalBlockSpeeds.empty(); }
+};
+
+std::string print_sizes(const LevelSet & ls);
+
+} // namespace krino
+
+#endif // KRINO_KRINO_LEVELSET_AKRI_LEVELSET_HPP_

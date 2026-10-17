@@ -11,7 +11,8 @@
 
 namespace krino {
 
-// Note:  Seems pretty strange, but the boost::toms748_solve in find_root appears to do better on the interval -1->1 than from 0->1
+// The edge is parametrized on [-1, 1] rather than [0, 1]: toms748, the previous root finder, did
+// better on the symmetric interval.
 
 static std::function<double(const double)> build_edge_distance_function(const Surface & surface, const stk::math::Vector3d &pt0, const stk::math::Vector3d &pt1)
 {

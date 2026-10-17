@@ -30,12 +30,15 @@ double mean_ratio_element_quality(const stk::mesh::BulkData & mesh, const Coordi
   const StkMeshEntities elemNodes{mesh.begin_nodes(elem), mesh.end_nodes(elem)};
   std::vector<stk::math::Vector3d> nodeLocations;
   nodeLocations.reserve(elemNodes.size());
+  auto coordsData = coordsField.data<double>();
   for (auto elemNode : elemNodes)
   {
     if (elemNode == node)
       nodeLocations.push_back(nodeLocation);
     else
-      nodeLocations.emplace_back(field_data<double>(coordsField, elemNode), coordsField.dim());
+    {
+      nodeLocations.emplace_back(coordsData.entity_values(elemNode), coordsField.dim());
+    }
   }
   return qualityMetric.get_element_quality_metric(coordsField.dim(), nodeLocations);
 }

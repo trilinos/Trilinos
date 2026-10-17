@@ -18,6 +18,7 @@ namespace krino {
 
 template<class REAL, unsigned DIM>
 class BoundingBox_T {
+  static_assert(DIM > 0 && DIM <= 3, "BoundingBox_T only supports DIM = 1, 2, or 3.");
 
 public:
   typedef REAL Real;
@@ -59,8 +60,9 @@ public:
 
   bool valid() const
   {
-    bool is_not_valid = (min[0]>max[0]);
-    return !is_not_valid;
+    for (unsigned i = 0; i < DIM; ++i)
+      if (min[i] > max[i]) return false;
+    return true;
   }
   
   bool intersects( const BoundingBox_T<REAL,DIM> & bbox ) const;
@@ -68,18 +70,29 @@ public:
   
   unsigned max_span_direction() const;
 
-  VecType center() const { return Real(0.5)*(min+max); }
+  VecType center() const
+  {
+    VecType result = VecType::ZERO;
+    for (unsigned i = 0; i < DIM; ++i)
+      result[i] = 0.5 * (min[i] + max[i]);
+    return result;
+  }
   
   void clear() {
     min = VecType(std::numeric_limits<Real>::max(),std::numeric_limits<Real>::max(),std::numeric_limits<Real>::max());
     max = VecType(-std::numeric_limits<Real>::max(),-std::numeric_limits<Real>::max(),-std::numeric_limits<Real>::max());
   }
 
+  // Construct from any contiguous point type exposing data() and size(): this
+  // covers stk::math::Vec (dimension()==size()) as well as std::array and
+  // std::vector, so external callers can build a box straight from a
+  // std::array<double,3>.  size() is used rather than dimension() precisely so
+  // the standard containers, which have no dimension(), are accepted.
   template<class VECTYPE>
   BoundingBox_T( const VECTYPE & pt_min,
 	       const VECTYPE & pt_max )
-  : min(pt_min[0], pt_min[1], pt_min[2]),
-    max(pt_max[0], pt_max[1], pt_max[2]) {}
+  : min(pt_min.data(), pt_min.size()),
+    max(pt_max.data(), pt_max.size()) {}
 
   BoundingBox_T()
   : min(std::numeric_limits<Real>::max(),std::numeric_limits<Real>::max(),std::numeric_limits<Real>::max()),
@@ -177,12 +190,11 @@ BoundingBox_T<REAL,DIM>::pad( const Real & dist )
 {
   if (!valid()) return;
 
-  VecType extension;
-  for (unsigned i = 0; i < DIM; i++ )
-    extension[i] = dist;
-
-  min -= extension;
-  max += extension;
+  for (unsigned i = 0; i < DIM; ++i)
+  {
+    min[i] -= dist;
+    max[i] += dist;
+  }
 }
 
 template<class REAL, unsigned DIM>
@@ -192,11 +204,13 @@ BoundingBox_T<REAL,DIM>::scale( const Real & scale_factor )
   if (!valid()) return;
 
   Real fraction = 0.5 * ( scale_factor - 1. );
-  VecType extension;
-  for (unsigned i = 0; i < DIM; i++ )
-    extension[i] = fraction * ( max[i] - min[i] );
-  min -= extension;
-  max += extension;
+
+  for (unsigned i = 0; i < DIM; ++i)
+  {
+    const Real extension = fraction * (max[i] - min[i]);
+    min[i] -= extension;
+    max[i] += extension;
+  }
 }
 
 template<class REAL, unsigned DIM>

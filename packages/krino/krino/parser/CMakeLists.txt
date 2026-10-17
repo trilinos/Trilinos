@@ -12,7 +12,7 @@ TRIBITS_ADD_LIBRARY(
   krino_parser_lib
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS krino_lib krino_region_lib)
+  DEPLIBS krino_region_lib krino_decomp_lib krino_post_process_lib krino_surface_lib krino_mesh_surface_lib)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_parser_lib)

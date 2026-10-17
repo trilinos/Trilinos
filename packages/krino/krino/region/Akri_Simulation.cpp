@@ -26,10 +26,13 @@ namespace krino{
 
 Simulation::Simulation(const std::string & in_name)
   : my_name(in_name),
-    my_timer("krino", sierra::Diag::sierraTimer()),
+    myTimer("krino", sierra::Diag::sierraTimer()),
+    myParseTimer("parse", myTimer),
+    myExecuteTimer("execute", myTimer),
     my_is_transient(false),
     my_stop_time(0.0),
     my_step_count(0),
+    my_old_time(0.0),
     my_current_time(0.0),
     my_time_step_size(0.0)
 {
@@ -53,7 +56,7 @@ void Simulation::commit()
 
 void Simulation::execute()
 {
-  stk::diag::TimeBlock timer__(my_timer);
+  stk::diag::TimeBlock timer__(myExecuteTimer);
 
   //=====================================
   // start-up procedure

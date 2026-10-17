@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# gcc 12.3 stack: the RHEL8 python modules with numpy/mpi4py are gcc 12.3 builds
+module load aue/gcc/12.3.0
+module load aue/openmpi/4.1.6-gcc-12.3.0
+
+module load aue/cmake/3.31.6
+
+module load aue/boost/1.85.0-gcc-12.3.0-openmpi-4.1.6
+module load aue/metis/5.1.0-gcc-12.3.0
+module load aue/netlib-lapack/3.11.0-gcc-12.3.0
+
+module load aue/hdf5/1.14.3-gcc-12.3.0-openmpi-4.1.6
+module load aue/parmetis/4.0.3-gcc-12.3.0-openmpi-4.1.6
+module load aue/parallel-netcdf/1.12.3-gcc-12.3.0-openmpi-4.1.6
+module load aue/netcdf-c/4.9.2-gcc-12.3.0-openmpi-4.1.6
+
+# for pykrino
+module load aue/python/3.12.4
+
+# Define HDF5_ROOT for CMake using the loaded HDF5 module
+export HDF5_ROOT="$(dirname "$(dirname "$(which h5pcc)")")"
+
+export LD_LIBRARY_PATH=$LIBRARY_PATH:$LD_LIBRARY_PATH

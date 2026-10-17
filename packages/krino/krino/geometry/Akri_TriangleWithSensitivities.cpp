@@ -6,7 +6,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include "Sacado.hpp"
+#include <Sacado.hpp>
 
 #include <Akri_TriangleWithSensitivities.hpp>
 #include <Akri_Triangle.hpp>

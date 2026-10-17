@@ -9,8 +9,6 @@
 #ifndef Akri_Triangle_h
 #define Akri_Triangle_h
 
-#include <iostream>
-#include <assert.h>
 #include <cmath>
 #include <array>
 #include <tuple>

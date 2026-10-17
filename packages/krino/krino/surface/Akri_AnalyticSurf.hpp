@@ -13,6 +13,8 @@
 #include <Akri_Faceted_Surface.hpp>
 #include <Akri_Transformation.hpp>
 
+#include <memory>
+
 #include <stk_math/StkVector.hpp>
 #include <Akri_String_Function_Expression.hpp>
 #include <Akri_ML_Models.hpp>
@@ -76,6 +78,7 @@ public:
   virtual stk::math::Vector3d closest_point_normal(const stk::math::Vector3d &x) const override;
   void insert_into(BoundingBox & bbox) const override;
   bool does_intersect(const BoundingBox & bbox) const override;
+  std::string output() const override;
 
 private:
   int myDistSign;
@@ -108,7 +111,7 @@ private:
   stk::math::Vector3d myCenter;
 
   stk::math::Vector3d mySemiAxes;
-  double mySemiAxesNorm;
+  double myCharacteristicRadius;
   std::unique_ptr<Quaternion> myRotation;
   BoundingBox myBoundingBox;
 };
@@ -155,8 +158,24 @@ public:
   Plane(const stk::math::Vector3d & normal,
     const double offset,
     const double multiplier);
+  Plane(const stk::math::Vector3d & normal,
+      const stk::math::Vector3d & point,
+      const double multiplier);
+  // Plane placed at a fraction of the extent of the mesh along its normal, which is not known until
+  // the mesh is read: its offset is set later by set_offset_from_extent().
+  static std::shared_ptr<Plane> at_fraction_of_extent(const stk::math::Vector3d & normal,
+      const double fractionOfExtent,
+      const double multiplier);
 
   virtual ~Plane() {}
+
+  const stk::math::Vector3d & normal() const { return myNormal; }
+  bool needs_offset_from_extent() const { return myNeedsOffsetFromExtent; }
+  double fraction_of_extent() const { return myFractionOfExtent; }
+  // Set the offset so the plane is at fraction_of_extent() between minDot and maxDot, the minimum and
+  // maximum of normal().x over the mesh.
+  void set_offset_from_extent(const double minDot, const double maxDot);
+  double offset() const { return myOffset; }
 
   virtual Surface_Type type() const override { return PLANE; }
   virtual size_t storage_size() const override { return sizeof(Plane); }
@@ -170,6 +189,8 @@ private:
 
   stk::math::Vector3d myNormal;       //unit normal to plane
   double myOffset;       //eq of plane is 0 = offset + normal \dot x
+  bool myNeedsOffsetFromExtent{false};
+  double myFractionOfExtent{0.};
 };
 
 class Point: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {

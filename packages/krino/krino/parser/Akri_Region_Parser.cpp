@@ -9,17 +9,26 @@
 #include <Akri_Region_Parser.hpp>
 
 #include <Akri_CDFEM_Options_Parser.hpp>
-#include <Akri_DiagWriter.hpp>
+#include <Akri_CSG_Surface.hpp>
+#include <Akri_Faceted_Surface.hpp>
+#include <Akri_IC_Alg.hpp>
 #include <Akri_IO_Helpers.hpp>
+#include <Akri_LevelSet.hpp>
 #include <Akri_LevelSet_Parser.hpp>
+#include <Akri_MeshInputOptions.hpp>
+#include <Akri_PhaseInput.hpp>
+#include <Akri_Phase_Parser.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_RefinementSupport.hpp>
 #include <Akri_Region.hpp>
 #include <Akri_ResultsOutput_Parser.hpp>
 #include <Akri_Surface_Manager.hpp>
-#include "Akri_Parser.hpp"
+#include <Akri_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
+
+#include <string>
+#include <vector>
 
 namespace krino {
 
@@ -45,6 +54,49 @@ static void parse_postprocessors(const Parser::Node & regionNode, PostProcessors
       postprocessors.add_scalar_postprocesor(fieldName, analyticalExpr);
     }
   }
+}
+
+// When a generated mesh has an explicit domain and a faceted IC surface has the watertight
+// check enabled without its own watertight bounding box, restrict the check to the meshed
+// domain: non-watertight edges outside it cannot affect the computed distance field.
+// Names of the level sets and bounding surfaces of a region, from its input, before they are parsed.
+static std::vector<std::string> get_level_set_and_bounding_surface_names(const Parser::Node & region_node)
+{
+  std::vector<std::string> names;
+  for (const auto surfacesKey : {"level_set_interfaces", "bounding_surfaces"})
+  {
+    const auto surfaceNodes = region_node.get_sequence_if_present(surfacesKey);
+    if (!surfaceNodes)
+      continue;
+    for (auto && surfaceNode : surfaceNodes)
+    {
+      const auto name = parse_level_set_or_bounding_surface_name(surfaceNode);
+      if (!name.empty())
+        names.push_back(name);
+    }
+  }
+  return names;
+}
+
+static void default_watertight_bounding_boxes_from_explicit_domain(const std::string & fem_model_name, stk::mesh::MetaData & meta)
+{
+  const MeshInputOptions * options = MeshInputOptions::get(fem_model_name);
+  if (!options || options->get_generated_mesh_domain_type() != MeshInputOptions::GENERATED_MESH_FOR_SPECIFIED_DOMAIN)
+    return;
+
+  const std::vector<double> & domain = options->get_generated_mesh_domain();
+  BoundingBox domainBox;
+  if (domain.size() == 6)
+    domainBox = BoundingBox(stk::math::Vector3d(domain[0],domain[1],domain[2]), stk::math::Vector3d(domain[3],domain[4],domain[5]));
+  else if (domain.size() == 4)
+    domainBox = BoundingBox(stk::math::Vector3d(domain[0],domain[1],0.), stk::math::Vector3d(domain[2],domain[3],0.));
+  else
+    return;
+
+  const Surface_Manager & surfaceManager = Surface_Manager::get(meta);
+  for (auto && ls : surfaceManager.get_levelsets())
+    if (ls->has_IC_surfaces())
+      default_watertight_bounding_box_from_domain(ls->get_IC_alg().get_initialization_surface().get_subsurfaces(), domainBox);
 }
 
 void
@@ -165,9 +217,15 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
     parse_postprocessors(region_node, region->get_postprocessors());
 
     const stk::diag::Timer & regionTimer = region->getRegionTimer();
-    Phase_Support::associate_FEModel_and_metadata(fem_model_name, meta);
-    Surface_Manager::associate_FEModel_and_metadata(fem_model_name, meta);
     Phase_Support & phase_support = krino::Phase_Support::get(meta);
+    if (const MeshInputOptions * options = MeshInputOptions::get(fem_model_name))
+    {
+      // Expand a copy, so a model used by several regions is expanded for each region's surfaces.
+      auto phaseInput = options->get_phase_input();
+      Phase_Parser::expand_generated_subdomains(phaseInput, get_level_set_and_bounding_surface_names(region_node));
+      Surface_Manager::get(meta).set_surface_names(phaseInput.surfaceNames);
+      phase_support.set_phase_input(phaseInput);
+    }
     phase_support.determine_block_phases();
 
     const Block_Surface_Connectivity block_surf_info(meta);
@@ -175,6 +233,7 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
     phase_support.setup_phases();
 
     LevelSet_Parser::parse(region_node, meta, regionTimer);
+    default_watertight_bounding_boxes_from_explicit_domain(fem_model_name, meta);
     BoundingSurface_Parser::parse(region_node, meta, regionTimer);
     CDFEM_Options_Parser::parse(region_node, meta);
     ResultsOutput_Parser::parse(region_node, *region);

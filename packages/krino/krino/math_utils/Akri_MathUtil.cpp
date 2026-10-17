@@ -9,9 +9,10 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MathUtil.hpp>
 #include <stk_math/StkVector.hpp>
-#include <boost/cstdint.hpp>
-#include <boost/math/tools/toms748_solve.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include <algorithm>
+#include <cmath>
+#include <tuple>
 #include <vector>
 
 namespace krino {
@@ -95,6 +96,93 @@ double compute_linear_root(const std::function<double(const double)> & f,
   return xa - xDiff*fa/fDiff;
 }
 
+// Brent's method: shrinks the bracket [a, b] of a root of f (f(a) = fa, f(b) = fb, fa fb <= 0) by
+// inverse quadratic interpolation or secant steps, falling back to bisection when those do not
+// shrink it fast enough.  Returns whether the bracket width reached xTol within maxIters
+// iterations, and the final bracket (ordered).
+static std::tuple<bool, double, double>
+shrink_bracket_by_brents_method(const std::function<double(const double)> & f,
+    double a,
+    double b,
+    double fa,
+    double fb,
+    const unsigned maxIters,
+    const double xTol)
+{
+  if (fa == 0.) return {true, a, a};
+  if (fb == 0.) return {true, b, b};
+
+  double c = a, fc = fa;   // contrapoint: [b, c] brackets the root
+  double d = b - a, e = d; // last and second to last steps
+  for (unsigned iter = 0; iter < maxIters; ++iter)
+  {
+    if ((fb > 0.) == (fc > 0.))
+    {
+      c = a;
+      fc = fa;
+      d = b - a;
+      e = d;
+    }
+    if (std::abs(fc) < std::abs(fb))
+    {
+      a = b;
+      fa = fb;
+      b = c;
+      fb = fc;
+      c = a;
+      fc = fa;
+    }
+
+    const double halfWidth = 0.5 * (c - b);
+    if (std::abs(c - b) <= xTol || fb == 0.) return {true, std::min(b, c), std::max(b, c)};
+
+    const double minStep = 0.5 * xTol;
+    if (std::abs(e) >= minStep && std::abs(fa) > std::abs(fb))
+    {
+      // Interpolate: secant if only two distinct points, inverse quadratic otherwise.
+      double p, q;
+      const double s = fb / fa;
+      if (a == c)
+      {
+        p = 2. * halfWidth * s;
+        q = 1. - s;
+      }
+      else
+      {
+        const double r = fb / fc;
+        const double t = fa / fc;
+        p = s * (2. * halfWidth * t * (t - r) - (b - a) * (r - 1.));
+        q = (t - 1.) * (r - 1.) * (s - 1.);
+      }
+      if (p > 0.)
+        q = -q;
+      else
+        p = -p;
+      if (2. * p < std::min(3. * halfWidth * q - std::abs(minStep * q), std::abs(e * q)))
+      {
+        e = d;
+        d = p / q;
+      }
+      else
+      {
+        d = halfWidth;
+        e = d;
+      }
+    }
+    else
+    {
+      d = halfWidth;
+      e = d;
+    }
+
+    a = b;
+    fa = fb;
+    b += (std::abs(d) > minStep) ? d : ((halfWidth > 0.) ? minStep : -minStep);
+    fb = f(b);
+  }
+  return {false, std::min(b, c), std::max(b, c)};
+}
+
 std::pair<bool, double> find_root( const std::function<double(const double)> & f,
     const double xa,
     const double xb,
@@ -103,12 +191,8 @@ std::pair<bool, double> find_root( const std::function<double(const double)> & f
     const unsigned maxIters,
     const double xTol)
 {
-  // Note:  Seems pretty strange, but the boost::toms748_solve appears to do better on the interval -1->1 than from 0->1
-  boost::uintmax_t iterCount = maxIters;
-  auto tol_function = [&xTol](const double a, const double b) { return std::abs(b-a) <= xTol; };
-  auto result = boost::math::tools::toms748_solve(f, xa, xb, fa, fb, tol_function, iterCount);
-  const bool success = iterCount < maxIters;
-  return {success, compute_linear_root(f, result.first, result.second)};
+  const auto [success, a, b] = shrink_bracket_by_brents_method(f, xa, xb, fa, fb, maxIters, xTol);
+  return {success, compute_linear_root(f, a, b)};
 }
 
 std::pair<bool, double>

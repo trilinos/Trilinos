@@ -10,13 +10,12 @@
 
 #include <Akri_AnalyticSurf.hpp>
 #include <Akri_AuxMetaData.hpp>
-#include <Akri_DiagWriter.hpp>
 #include <Akri_IC_Alg.hpp>
 #include <Akri_LevelSet.hpp>
 #include <Akri_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
-#include "Akri_Surface_Parser.hpp"
+#include <Akri_Surface_Parser.hpp>
 
 namespace krino {
 
@@ -89,9 +88,9 @@ parse_composition_method(const Parser::Node & ic_node, IC_Alg& ic_alg)
   std::transform(composition_method.begin(), composition_method.end(), composition_method.begin(), ::toupper);
 
   if (composition_method == "MINIMUM_SIGNED_DISTANCE")
-    ic_alg.set_composition_method(Composite_Surface::MINIMUM_SIGNED_DISTANCE);
+    ic_alg.set_composition_method(CompositionMethod::MINIMUM_SIGNED_DISTANCE);
   else if (composition_method == "MAXIMUM_SIGNED_DISTANCE")
-    ic_alg.set_composition_method(Composite_Surface::MAXIMUM_SIGNED_DISTANCE);
+    ic_alg.set_composition_method(CompositionMethod::MAXIMUM_SIGNED_DISTANCE);
   else
     stk::RuntimeDoomedAdHoc() << "Unrecognized composition_method: " << composition_method;
 }
@@ -99,8 +98,8 @@ parse_composition_method(const Parser::Node & ic_node, IC_Alg& ic_alg)
 void
 parse_IC(const Parser::Node & ic_node, LevelSet &ls)
 {
-  Surface * parsedSurface = Surface_Parser::parse(ic_node, ls.meta(), ls.get_timer());
-  if (nullptr != parsedSurface)
+  std::shared_ptr<Surface> parsedSurface = Surface_Parser::parse(ic_node, ls.meta(), ls.get_timer());
+  if (parsedSurface)
   {
     ls.get_IC_alg().addSurface(parsedSurface);
   }

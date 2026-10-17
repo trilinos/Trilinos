@@ -8,7 +8,6 @@
 
 #include <Akri_Simulation_Parser.hpp>
 
-#include <Akri_DiagWriter.hpp>
 #include <Akri_Simulation.hpp>
 #include <Akri_Region_Parser.hpp>
 #include <Akri_Parser.hpp>
@@ -20,6 +19,8 @@ namespace krino {
 void
 Simulation_Parser::parse(Simulation & simulation, const Parser::Node & node)
 {
+  stk::diag::TimeBlock timer__(simulation.get_parse_timer());
+
   const Parser::Node sim_node = node.get_map_if_present("simulation");
   if ( sim_node )
   {

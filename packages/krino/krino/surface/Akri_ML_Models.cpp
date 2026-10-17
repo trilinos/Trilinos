@@ -1,15 +1,18 @@
 #include <Akri_ML_Models.hpp>
 
 #include <stdexcept>
+#include <vector>
+#include <utility>
+#include <typeinfo>
+#include <array>
 #include <Akri_config.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
-#include "Sacado.hpp"
+#include <Sacado.hpp>
 
 #ifdef KRINO_HAVE_POCKET_TENSOR
-#include "pt_model.h"
-#include "pt_tensor.h"
-#include "pt_dispatcher.h"
+#include <pt_model_spec_predictor.h>
+#include <pt_tensor.h>
 #define POCKET_TENSOR_SUPPORTS_FAD 0
 #endif
 
@@ -46,37 +49,63 @@ template<typename DATATYPE>
 class PocketTensorInterface : public MLModelInterface
 {
 public:
-  PocketTensorInterface(std::unique_ptr<pt::Model<DATATYPE>> ptModel) : myPtModel(std::move(ptModel)) {}
+  using Predictor = pt::ModelSpecPredictor<DATATYPE>;
+  explicit PocketTensorInterface(Predictor ptModel) : myPtModel(std::move(ptModel)) {}
+
   ~PocketTensorInterface() = default;
 
   static std::unique_ptr<PocketTensorInterface<DATATYPE>> create(const std::string & modelBaseName)
   {
-    const std::string & modelFileName = modelBaseName + ".model";
-    std::unique_ptr<pt::Model<DATATYPE>> ptModel = pt::Model<DATATYPE>::create(modelFileName);
-    if (ptModel == nullptr)
-      throw std::runtime_error("Model file '" + modelFileName + "' not found");
-    return std::make_unique<PocketTensorInterface<DATATYPE>>(std::move(ptModel));
+    const std::string modelFileName = modelBaseName + ".model";
+    try {
+      Predictor ptModel = Predictor::create(modelFileName);
+      return std::make_unique<PocketTensorInterface<DATATYPE>>(std::move(ptModel));
+    }
+    catch (const std::exception & e) {
+      throw std::runtime_error("Failed to load ML model file '" + modelFileName + "': " + e.what());
+    }
   }
+
   void evaluate(const size_t dimX, const DATATYPE * x, const size_t dimY, DATATYPE * y) const
   {
+    const int expectedInputFeatures = myPtModel.numInputFeatures();
+
+    if (expectedInputFeatures >= 0 && dimX != static_cast<size_t>(expectedInputFeatures)) {
+      throw std::runtime_error(
+          "Model input size does not match. Expected " +
+          std::to_string(expectedInputFeatures) +
+          ", received " +
+          std::to_string(dimX) + ".");
+    }
+
     pt::Tensor<DATATYPE> in{dimX};
-    for (size_t i=0; i<dimX; ++i)
+    for (size_t i = 0; i < dimX; ++i) {
       in(i) = x[i];
+    }
 
     pt::Tensor<DATATYPE> out;
-    const bool success = myPtModel->predict(mySerialDispatcher, in, out);
+    const bool success = myPtModel.predict(std::move(in), out);
 
-    if (!success)
+    if (!success) {
       throw std::runtime_error("Model evaluation failed.");
-    if (out.getSize() != dimY)
-      throw std::runtime_error("Model prediction size does not match.");
+    }
 
-    for (size_t i=0; i<dimY; ++i)
-      y[i] = out(i);
+    if (out.getSize() != dimY) {
+      throw std::runtime_error(
+          "Model prediction size does not match. Expected " +
+          std::to_string(dimY) +
+          ", received " +
+          std::to_string(out.getSize()) + ".");
+    }
+
+    const auto & outData = out.getData();
+    for (size_t i = 0; i < dimY; ++i) {
+      y[i] = outData[i];
+    }
   }
+
 private:
-  std::unique_ptr<pt::Model<DATATYPE>> myPtModel;
-  mutable pt::Dispatcher mySerialDispatcher{1}; // mutable to satisfy predict method that takes non-const Dispatcher&
+  Predictor myPtModel;
 };
 #else
 template<typename DATATYPE>
@@ -140,17 +169,19 @@ void ML_Model_with_Gradient<NUMVAR>::evaluate(const size_t dimX, const double * 
   STK_ThrowAssert(dimX == NUMVAR);
 
   std::array<FADType,NUMVAR> xFAD;
-  for (size_t i=0; i<NUMVAR; ++i)
+  for (size_t i = 0; i < NUMVAR; ++i) {
     xFAD[i] = FADType(NUMVAR, i, x[i]);
+  }
 
-  FADType yFAD;
-  model->evaluate(dimX, xFAD.data(), dimY, &yFAD);
+  std::vector<FADType> yFAD(dimY);
+  model->evaluate(dimX, xFAD.data(), dimY, yFAD.data());
 
-  for (size_t j=0; j<dimY; ++j)
-  {
-    y[j] = yFAD.val();
-    for (size_t i=0; i<NUMVAR; ++i)
-      dydx[j*NUMVAR+i] = yFAD.dx(i);
+  for (size_t j = 0; j < dimY; ++j) {
+    y[j] = yFAD[j].val();
+
+    for (size_t i = 0; i < NUMVAR; ++i) {
+      dydx[j * NUMVAR + i] = yFAD[j].dx(i);
+    }
   }
 }
 
