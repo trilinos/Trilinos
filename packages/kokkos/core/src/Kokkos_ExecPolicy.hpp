@@ -77,9 +77,7 @@ class ImplRangePolicy<ExecSpace, Properties...>
   using member_type      = typename traits::index_type;
   using index_type       = typename traits::index_type;
 
-  KOKKOS_INLINE_FUNCTION const typename traits::execution_space& space() const {
-    return m_space;
-  }
+  const typename traits::execution_space& space() const { return m_space; }
   KOKKOS_INLINE_FUNCTION member_type begin() const { return m_begin; }
   KOKKOS_INLINE_FUNCTION member_type end() const { return m_end; }
 
@@ -691,7 +689,7 @@ class TeamPolicy
                         validate_team_size_argument(team_size), Kokkos::AUTO) {}
 
   template <class... OtherProperties>
-  TeamPolicy(const TeamPolicy<OtherProperties...> p) : internal_policy(p) {
+  TeamPolicy(const TeamPolicy<OtherProperties...>& p) : internal_policy(p) {
     // Cannot call converting constructor in the member initializer list because
     // it is not a direct base.
     internal_policy::traits::operator=(p);

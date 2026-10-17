@@ -157,12 +157,11 @@ void test_rcb(lno_t ndim, lno_t np) {
   auto h_reverse_perm_rcb = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), reverse_perm_rcb);
   auto h_coordinates_perm = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), coordinates);
 
-  // Output permutation and reverse permutation should be different
-  bool dif_flag = false;
   for (lno_t i = 0; i < n_coordinates; i++) {
-    if (h_perm_rcb(i) != h_reverse_perm_rcb(i)) dif_flag = true;
+    auto perm_i      = h_perm_rcb(i);
+    auto recovered_i = h_reverse_perm_rcb(perm_i);
+    ASSERT_EQ(i, recovered_i);
   }
-  ASSERT_TRUE(dif_flag);
 
   for (lno_t i = 0; i < n_coordinates; i++) {
     for (lno_t j = 0; j < ndim; j++) {
@@ -174,16 +173,6 @@ void test_rcb(lno_t ndim, lno_t np) {
     for (lno_t j = 0; j < ndim; j++) {
       ASSERT_EQ(h_coordinates_perm(i, j), h_coordinates(h_reverse_perm_rcb(i), j));
     }
-  }
-
-  // Run RCB on RCB-reordered coordinates. Output permutation and reverse permutation are supposed to be identical
-  KokkosGraph::Experimental::recursive_coordinate_bisection(coordinates, perm_rcb, reverse_perm_rcb, n_levels);
-
-  Kokkos::deep_copy(h_perm_rcb, perm_rcb);
-  Kokkos::deep_copy(h_reverse_perm_rcb, reverse_perm_rcb);
-
-  for (lno_t i = 0; i < n_coordinates; i++) {
-    ASSERT_EQ(h_perm_rcb(i), h_reverse_perm_rcb(i));
   }
 }
 

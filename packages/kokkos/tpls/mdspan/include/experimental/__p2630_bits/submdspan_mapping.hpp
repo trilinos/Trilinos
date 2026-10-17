@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #pragma once
 
@@ -102,14 +89,28 @@ MDSPAN_INLINE_FUNCTION constexpr auto construct_sub_strides(
 }
 
 template<class SliceSpecifier, class IndexType>
-struct is_range_slice {
-  constexpr static bool value =
-    std::is_same_v<SliceSpecifier, full_extent_t> ||
-    index_pair_like<SliceSpecifier, IndexType>::value;
-};
+constexpr bool is_range_like_slice_v = false;
 
-template<class SliceSpecifier, class IndexType>
-constexpr bool is_range_slice_v = is_range_slice<SliceSpecifier, IndexType>::value;
+template<class IndexType>
+constexpr bool is_range_like_slice_v<full_extent_t, IndexType> = true;
+
+template<class OffsetType, class ExtentType, auto Stride, class IndexType>
+constexpr bool is_range_like_slice_v<
+    extent_slice<
+      OffsetType,
+      ExtentType,
+      constant_wrapper<Stride>>,
+    IndexType
+  > = (constant_wrapper<Stride>::value == IndexType(1));
+
+template<class FirstType, class LastType, auto Stride, class IndexType>
+constexpr bool is_range_like_slice_v<
+    range_slice<
+      FirstType,
+      LastType,
+      constant_wrapper<Stride>>,
+    IndexType
+  > = (constant_wrapper<Stride>::value == IndexType(1));
 
 template<class SliceSpecifier, class IndexType>
 struct is_index_slice {
@@ -153,13 +154,13 @@ struct deduce_layout_left_submapping<
       return true;
     // Use layout_left for rank 1 result if leftmost slice specifier is range like
     } else if constexpr (SubRank == 1) {
-      return ((Idx > 0 || is_range_slice_v<SliceSpecifiers, IndexType>)&&...);
+      return ((Idx > 0 || is_range_like_slice_v<SliceSpecifiers, IndexType>)&&...);
     } else {
       // Preserve if leftmost SubRank-1 slices are full_extent_t and
       // the slice at idx Subrank - 1 is a range and
       // for idx > SubRank the slice is an index
       return ((((Idx <  SubRank - 1) && std::is_same_v<SliceSpecifiers, full_extent_t>) ||
-               ((Idx == SubRank - 1) && is_range_slice_v<SliceSpecifiers, IndexType>) ||
+               ((Idx == SubRank - 1) && is_range_like_slice_v<SliceSpecifiers, IndexType>) ||
                ((Idx >  SubRank - 1) && is_index_slice_v<SliceSpecifiers, IndexType>)) && ...);
     }
 #if defined(__NVCC__) && !defined(__CUDA_ARCH__) && defined(__GNUC__)
@@ -180,10 +181,10 @@ struct deduce_layout_left_submapping<
     // then another range slice
     // then more index slices
     // e.g. R I I I F F F R I I for obtaining a rank-5 from a rank-10
-    return ((((Idx == 0)                                       && is_range_slice_v<SliceSpecifiers, IndexType>) ||
+    return ((((Idx == 0)                                       && is_range_like_slice_v<SliceSpecifiers, IndexType>) ||
              ((Idx > 0 && Idx <= gap_len)                     && is_index_slice_v<SliceSpecifiers, IndexType>) ||
              ((Idx > gap_len && Idx < gap_len + SubRank - 1) && std::is_same_v<SliceSpecifiers, full_extent_t>) ||
-             ((Idx == gap_len + SubRank - 1)                  && is_range_slice_v<SliceSpecifiers, IndexType>) ||
+             ((Idx == gap_len + SubRank - 1)                  && is_range_like_slice_v<SliceSpecifiers, IndexType>) ||
              ((Idx >  gap_len + SubRank - 1)                  && is_index_slice_v<SliceSpecifiers, IndexType>)) && ... );
   }
 };
@@ -208,6 +209,9 @@ template <class... SliceSpecifiers>
 MDSPAN_INLINE_FUNCTION constexpr auto
 layout_left::mapping<Extents>::submdspan_mapping_impl(
     SliceSpecifiers... slices) const {
+
+  // Implements mandate check
+  detail::check_submdspan_slice_mandates<Extents>(std::make_index_sequence<Extents::rank()>(), slices...);
 
   // compute sub extents
   using src_ext_t = Extents;
@@ -235,7 +239,7 @@ layout_left::mapping<Extents>::submdspan_mapping_impl(
                                                    offset};
   } else if constexpr (deduce_layout::layout_left_padded_value()) {
     constexpr size_t S_static = MDSPAN_IMPL_STANDARD_NAMESPACE::detail::compute_s_static_layout_left<Extents, deduce_layout::gap_len, Extents::static_extent(0)>(std::make_index_sequence<Extents::rank()>());
-    using dst_mapping_t = typename MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_left_padded<S_static>::template mapping<dst_ext_t>;
+    using dst_mapping_t = typename layout_left_padded<S_static>::template mapping<dst_ext_t>;
     return submdspan_mapping_result<dst_mapping_t>{
         dst_mapping_t(dst_ext, stride(1 + deduce_layout::gap_len)), offset};
   } else {
@@ -244,7 +248,7 @@ layout_left::mapping<Extents>::submdspan_mapping_impl(
     auto inv_map = detail::inv_map_rank(std::integral_constant<size_t, 0>(),
                                         std::index_sequence<>(), slices...);
     return submdspan_mapping_result<dst_mapping_t> {
-      dst_mapping_t(mdspan_non_standard, dst_ext,
+      dst_mapping_t(mdspan_non_standard_tag(), dst_ext,
                     detail::construct_sub_strides(
                         *this, inv_map,
 // HIP needs deduction guides to have markups so we need to be explicit
@@ -269,8 +273,11 @@ template <size_t PaddingValue>
 template <class Extents>
 template <class... SliceSpecifiers>
 MDSPAN_INLINE_FUNCTION constexpr auto
-MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_left_padded<PaddingValue>::mapping<Extents>::submdspan_mapping_impl(
+layout_left_padded<PaddingValue>::mapping<Extents>::submdspan_mapping_impl(
     SliceSpecifiers... slices) const {
+
+  // Implements mandate check
+  detail::check_submdspan_slice_mandates<Extents>(std::make_index_sequence<Extents::rank()>(), slices...);
 
   // compute sub extents
   using src_ext_t = Extents;
@@ -278,7 +285,7 @@ MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_left_padded<PaddingValue>::mapping<Extent
   using dst_ext_t = decltype(dst_ext);
 
   if constexpr (Extents::rank() == 0) { // rank-0 case
-    using dst_mapping_t = typename MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_left_padded<PaddingValue>::template mapping<Extents>;
+    using dst_mapping_t = typename layout_left_padded<PaddingValue>::template mapping<Extents>;
     return submdspan_mapping_result<dst_mapping_t>{*this, 0};
   } else {
     const bool out_of_bounds =
@@ -314,7 +321,7 @@ MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_left_padded<PaddingValue>::mapping<Extent
         return submdspan_mapping_result<dst_mapping_t>{dst_mapping_t{dst_ext}, offset};
       } else if constexpr (deduce_layout::layout_left_padded_value()) { // can keep layout_left_padded
         constexpr size_t S_static = MDSPAN_IMPL_STANDARD_NAMESPACE::detail::compute_s_static_layout_left<Extents, deduce_layout::gap_len, static_padding_stride>(std::make_index_sequence<Extents::rank()>());
-        using dst_mapping_t = typename MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_left_padded<S_static>::template mapping<dst_ext_t>;
+        using dst_mapping_t = typename layout_left_padded<S_static>::template mapping<dst_ext_t>;
         return submdspan_mapping_result<dst_mapping_t>{
         dst_mapping_t(dst_ext, stride(1 + deduce_layout::gap_len)), offset};
       } else { // layout_stride
@@ -322,7 +329,7 @@ MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_left_padded<PaddingValue>::mapping<Extent
                                         std::index_sequence<>(), slices...);
       using dst_mapping_t = typename layout_stride::template mapping<dst_ext_t>;
     return submdspan_mapping_result<dst_mapping_t> {
-      dst_mapping_t(mdspan_non_standard, dst_ext,
+      dst_mapping_t(mdspan_non_standard_tag(), dst_ext,
                     MDSPAN_IMPL_STANDARD_NAMESPACE::detail::construct_sub_strides(
                         *this, inv_map,
 // HIP needs deduction guides to have markups so we need to be explicit
@@ -381,13 +388,13 @@ struct deduce_layout_right_submapping<
       return true;
     // Use layout_right for rank 1 result if rightmost slice specifier is range like
     } else if constexpr (SubRank == 1) {
-      return ((Idx < Rank - 1 || is_range_slice_v<SliceSpecifiers, IndexType>)&&...);
+      return ((Idx < Rank - 1 || is_range_like_slice_v<SliceSpecifiers, IndexType>)&&...);
     } else {
       // Preserve if rightmost SubRank-1 slices are full_extent_t and
       // the slice at idx Rank-Subrank is a range and
       // for idx < Rank - SubRank the slice is an index
       return ((((Idx >= Rank - SubRank) && std::is_same_v<SliceSpecifiers, full_extent_t>) ||
-               ((Idx == Rank - SubRank) && is_range_slice_v<SliceSpecifiers, IndexType>) ||
+               ((Idx == Rank - SubRank) && is_range_like_slice_v<SliceSpecifiers, IndexType>) ||
                ((Idx <  Rank - SubRank) && is_index_slice_v<SliceSpecifiers, IndexType>)) && ...);
     }
 #if defined(__NVCC__) && !defined(__CUDA_ARCH__) && defined(__GNUC__)
@@ -408,10 +415,10 @@ struct deduce_layout_right_submapping<
     // then another range slice
     // then more index slices
     // e.g. I I R F F F I I I R for obtaining a rank-5 from a rank-10
-    return ((((Idx == Rank - 1)                                               && is_range_slice_v<SliceSpecifiers, IndexType>) ||
+    return ((((Idx == Rank - 1)                                               && is_range_like_slice_v<SliceSpecifiers, IndexType>) ||
              ((Idx >= Rank - gap_len - 1 && Idx < Rank - 1)                  && is_index_slice_v<SliceSpecifiers, IndexType>) ||
              ((Idx >  Rank - gap_len - SubRank && Idx < Rank - gap_len - 1) && std::is_same_v<SliceSpecifiers, full_extent_t>) ||
-             ((Idx == Rank - gap_len - SubRank)                              && is_range_slice_v<SliceSpecifiers, IndexType>) ||
+             ((Idx == Rank - gap_len - SubRank)                              && is_range_like_slice_v<SliceSpecifiers, IndexType>) ||
              ((Idx <  Rank - gap_len - SubRank)                              && is_index_slice_v<SliceSpecifiers, IndexType>)) && ... );
   }
 };
@@ -424,7 +431,10 @@ compute_s_static_layout_right (std::index_sequence<Idx...>) {
   // Neither StaticStride nor any of the provided extents can be zero.
   // StaticStride can never be zero, the static_extents we are looking at are associated with
   // integral slice specifiers - which wouldn't be valid for zero extent
-    size_t val = ((Idx >= Extents::rank() - 1 - NumGaps && Idx < Extents::rank() - 1 ? (Extents::static_extent(Idx) == dynamic_extent?0:Extents::static_extent(Idx)) : 1) * ... * (StaticStride == dynamic_extent?0:StaticStride));
+  // Note the condition was originally written as Idx >= Extents::rank() - 1 - NumGaps && Idx < Extents::rank() - 1
+  // But that triggered CodeQL warnings.
+    size_t val = ((Idx + 1 + NumGaps >= Extents::rank() && Idx + 1 < Extents::rank() ?
+       (Extents::static_extent(Idx) == dynamic_extent?0:Extents::static_extent(Idx)) : 1) * ... * (StaticStride == dynamic_extent?0:StaticStride));
     return val == 0?dynamic_extent:val;
   }
 
@@ -436,6 +446,9 @@ template <class... SliceSpecifiers>
 MDSPAN_INLINE_FUNCTION constexpr auto
 layout_right::mapping<Extents>::submdspan_mapping_impl(
     SliceSpecifiers... slices) const {
+
+  // Implements mandate check
+  detail::check_submdspan_slice_mandates<Extents>(std::make_index_sequence<Extents::rank()>(), slices...);
 
   // compute sub extents
   using src_ext_t = Extents;
@@ -463,7 +476,7 @@ layout_right::mapping<Extents>::submdspan_mapping_impl(
                                                    offset};
   } else if constexpr (deduce_layout::layout_right_padded_value()) {
     constexpr size_t S_static = MDSPAN_IMPL_STANDARD_NAMESPACE::detail::compute_s_static_layout_left<Extents, deduce_layout::gap_len, Extents::static_extent(Extents::rank() - 1)>(std::make_index_sequence<Extents::rank()>());
-    using dst_mapping_t = typename MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_right_padded<S_static>::template mapping<dst_ext_t>;
+    using dst_mapping_t = typename layout_right_padded<S_static>::template mapping<dst_ext_t>;
     return submdspan_mapping_result<dst_mapping_t>{
         dst_mapping_t(dst_ext,
                       stride(src_ext_t::rank() - 2 - deduce_layout::gap_len)),
@@ -474,7 +487,7 @@ layout_right::mapping<Extents>::submdspan_mapping_impl(
     auto inv_map = detail::inv_map_rank(std::integral_constant<size_t, 0>(),
                                         std::index_sequence<>(), slices...);
     return submdspan_mapping_result<dst_mapping_t> {
-      dst_mapping_t(mdspan_non_standard, dst_ext,
+      dst_mapping_t(mdspan_non_standard_tag(), dst_ext,
                     detail::construct_sub_strides(
                         *this, inv_map,
 // HIP needs deduction guides to have markups so we need to be explicit
@@ -499,8 +512,11 @@ template <size_t PaddingValue>
 template <class Extents>
 template <class... SliceSpecifiers>
 MDSPAN_INLINE_FUNCTION constexpr auto
-MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_right_padded<PaddingValue>::mapping<Extents>::submdspan_mapping_impl(
+layout_right_padded<PaddingValue>::mapping<Extents>::submdspan_mapping_impl(
     SliceSpecifiers... slices) const {
+
+  // Implements mandate check
+  detail::check_submdspan_slice_mandates<Extents>(std::make_index_sequence<Extents::rank()>(), slices...);
 
   // compute sub extents
   using src_ext_t = Extents;
@@ -508,7 +524,7 @@ MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_right_padded<PaddingValue>::mapping<Exten
   using dst_ext_t = decltype(dst_ext);
 
   if constexpr (Extents::rank() == 0) { // rank-0 case
-    using dst_mapping_t = typename MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_right_padded<PaddingValue>::template mapping<Extents>;
+    using dst_mapping_t = typename layout_right_padded<PaddingValue>::template mapping<Extents>;
     return submdspan_mapping_result<dst_mapping_t>{*this, 0};
   } else {
     // Figure out if any slice's lower bound equals the corresponding extent.
@@ -536,7 +552,7 @@ MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_right_padded<PaddingValue>::mapping<Exten
         return submdspan_mapping_result<dst_mapping_t>{dst_mapping_t{dst_ext}, offset};
       } else if constexpr (deduce_layout::layout_right_padded_value()) { // can keep layout_right_padded
         constexpr size_t S_static = MDSPAN_IMPL_STANDARD_NAMESPACE::detail::compute_s_static_layout_right<Extents, deduce_layout::gap_len, static_padding_stride>(std::make_index_sequence<Extents::rank()>());
-        using dst_mapping_t = typename MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_right_padded<S_static>::template mapping<dst_ext_t>;
+        using dst_mapping_t = typename layout_right_padded<S_static>::template mapping<dst_ext_t>;
         return submdspan_mapping_result<dst_mapping_t>{
         dst_mapping_t(dst_ext, stride(Extents::rank() - 2 - deduce_layout::gap_len)), offset};
       } else { // layout_stride
@@ -544,7 +560,7 @@ MDSPAN_IMPL_PROPOSED_NAMESPACE::layout_right_padded<PaddingValue>::mapping<Exten
                                         std::index_sequence<>(), slices...);
       using dst_mapping_t = typename layout_stride::template mapping<dst_ext_t>;
     return submdspan_mapping_result<dst_mapping_t> {
-      dst_mapping_t(mdspan_non_standard, dst_ext,
+      dst_mapping_t(mdspan_non_standard_tag(), dst_ext,
                     MDSPAN_IMPL_STANDARD_NAMESPACE::detail::construct_sub_strides(
                         *this, inv_map,
 // HIP needs deduction guides to have markups so we need to be explicit
@@ -577,6 +593,10 @@ template <class... SliceSpecifiers>
 MDSPAN_INLINE_FUNCTION constexpr auto
 layout_stride::mapping<Extents>::submdspan_mapping_impl(
     SliceSpecifiers... slices) const {
+
+  // Implements mandate check
+  detail::check_submdspan_slice_mandates<Extents>(std::make_index_sequence<Extents::rank()>(), slices...);
+
   auto dst_ext = submdspan_extents(extents(), slices...);
   using dst_ext_t = decltype(dst_ext);
   auto inv_map = detail::inv_map_rank(std::integral_constant<size_t, 0>(),
@@ -592,7 +612,7 @@ layout_stride::mapping<Extents>::submdspan_mapping_impl(
                     : this->operator()(detail::first_of(slices)...));
 
   return submdspan_mapping_result<dst_mapping_t> {
-    dst_mapping_t(mdspan_non_standard, dst_ext,
+    dst_mapping_t(mdspan_non_standard_tag(), dst_ext,
                   detail::construct_sub_strides(
                       *this, inv_map,
 // HIP needs deduction guides to have markups so we need to be explicit

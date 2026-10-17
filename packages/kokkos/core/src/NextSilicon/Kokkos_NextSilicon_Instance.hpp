@@ -5,6 +5,7 @@
 #define KOKKOS_NEXTSILICON_INSTANCE_HPP
 
 #include <impl/Kokkos_HostSharedPtr.hpp>
+#include <impl/Kokkos_SharedAlloc.hpp>
 
 #include <cstdint>
 #include <cstddef>
@@ -19,9 +20,11 @@
 namespace Kokkos::Experimental::Impl {
 
 class NextSiliconInternal {
-  Impl::NextSiliconHeapBuffer functorBuffer_;
-  ::Kokkos::Impl::PageAlignedData<std::mutex,
-                                  ::Kokkos::Impl::PageLocation::Device>
+  Impl::NextSiliconHeapBuffer m_functor_buffer;
+  Impl::NextSiliconHeapBuffer m_league_scratch_buffer;
+  Impl::NextSiliconHeapBuffer m_reduce_partial_buffer;
+  ::Kokkos::Impl::PageAlignedData<std::recursive_mutex,
+                                  ::Kokkos::Impl::PageLocation::Host>
       device_mutex_;
 
   NextSiliconInternal(const NextSiliconInternal&)            = delete;
@@ -44,9 +47,15 @@ class NextSiliconInternal {
     auto deleter        = [](Driver* const p) {
       if (p) p->~Driver();
     };
+    // Copy the functor with tracking disabled, as Kokkos::parallel_* do
+    [[maybe_unused]] auto guard =
+        Kokkos::Impl::SharedAllocationDisableTrackingGuard{};
     return std::unique_ptr<Driver, decltype(deleter)>(
         new (buffer) Driver(driver), deleter);
   }
+
+  std::byte* resize_league_scratch_buffer(size_t requested);
+  std::byte* resize_reduce_partial_buffer(size_t requested);
 
   void print_configuration(std::ostream& os) const;
 
@@ -54,7 +63,12 @@ class NextSiliconInternal {
 
   uint32_t instance_id() const noexcept;
 
-  [[nodiscard]] std::lock_guard<std::mutex> lock_device();
+  [[nodiscard]] auto lock_device() {
+    KOKKOS_IF_ON_DEVICE(
+        (KOKKOS_ASSERT(false &&
+                       "lock_device should never be called on device");))
+    return std::lock_guard<std::recursive_mutex>(this->device_mutex_);
+  }
 };
 
 }  // namespace Kokkos::Experimental::Impl

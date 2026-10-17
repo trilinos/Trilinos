@@ -104,7 +104,6 @@ TEST(TEST_CATEGORY_DEATH, md_range_policy_bounds_unsafe_narrowing_conversions) {
       "original value.\n";
   std::string expected = std::regex_replace(msg, std::regex("\\(|\\)"), "\\$&");
 
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   ASSERT_DEATH({ (void)Rank1Policy({-1}, {2}); }, expected);
   ASSERT_DEATH({ (void)Rank2Policy({-1, 0}, {2, 3}); }, expected);
 }
@@ -112,8 +111,6 @@ TEST(TEST_CATEGORY_DEATH, md_range_policy_bounds_unsafe_narrowing_conversions) {
 TEST(TEST_CATEGORY_DEATH, md_range_policy_invalid_bounds) {
   using Rank1Policy = Kokkos::MDRangePolicy<TEST_EXECSPACE, Kokkos::Rank<1>>;
   using Rank2Policy = Kokkos::MDRangePolicy<TEST_EXECSPACE, Kokkos::Rank<2>>;
-
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
   auto rank2_dim0 =
       (Rank2Policy::inner_direction == Kokkos::Iterate::Right) ? 1 : 0;
@@ -156,7 +153,6 @@ TEST(TEST_CATEGORY_DEATH, md_range_policy_tile_dims_exceed_launch_bounds) {
       "LaunchBounds (32) - choose smaller tile dims\n";
 
   std::string expected = std::regex_replace(msg, std::regex("\\(|\\)"), "\\$&");
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
   using Policy = Kokkos::MDRangePolicy<TEST_EXECSPACE, Kokkos::Rank<2>,
                                        Kokkos::LaunchBounds<32>>;
@@ -187,7 +183,7 @@ void test_get_tile_size() {
   {
     Policy policy_default(lower, upper);
     auto rec_tile_sizes      = policy_default.tile_size_recommended();
-    auto internal_tile_sizes = policy_default.m_tile;
+    auto internal_tile_sizes = policy_default.tile_size();
 
     for (std::size_t i = 0; i < Rank; ++i) {
       EXPECT_EQ(rec_tile_sizes[i], internal_tile_sizes[i])
@@ -246,7 +242,7 @@ void test_default_tiles_respect_launch_bounds() {
 
   policy_t policy_with_default_tile(lower, upper);
 
-  EXPECT_LE(policy_with_default_tile.m_prod_tile_dims,
+  EXPECT_LE(policy_with_default_tile.impl_prod_tile_dims(),
             static_cast<index_type>(MaxTperB))
       << " for Rank-" << Rank << " with LaunchBounds<" << MaxTperB << ">"
       << " and InnerDirection "
@@ -296,6 +292,45 @@ TEST(TEST_CATEGORY, md_range_policy_default_space) {
   ASSERT_EQ(defaulted.space(), TEST_EXECSPACE{});
 }
 
+// Test public accessors
+TEST(TEST_CATEGORY, md_range_policy_accessors) {
+  using policy_2d     = Kokkos::MDRangePolicy<TEST_EXECSPACE, Kokkos::Rank<2>>;
+  using point_type_2d = typename policy_2d::point_type;
+  using tile_type_2d  = typename policy_2d::tile_type;
+  const point_type_2d lower_2d = {-1, +1};
+  const point_type_2d upper_2d = {24, 25};
+  const tile_type_2d tile_2d   = {10, 5};
+
+  policy_2d policy_2d_test{lower_2d, upper_2d, tile_2d};
+
+  // Resizing tiles
+  const tile_type_2d new_tile_2d = {4, 8};
+  policy_2d_test.impl_change_tile_size(new_tile_2d);
+  ASSERT_EQ(policy_2d_test.lower(), lower_2d);
+  ASSERT_EQ(policy_2d_test.upper(), upper_2d);
+  ASSERT_EQ(policy_2d_test.tile_size(), new_tile_2d);
+
+  // Converting constructor
+  struct dummy_worktag {};
+  using policy_2d_with_worktag =
+      Kokkos::MDRangePolicy<TEST_EXECSPACE, Kokkos::Rank<2>, dummy_worktag>;
+  policy_2d_with_worktag converted_policy(policy_2d_test);
+
+  ASSERT_EQ(converted_policy.lower(), lower_2d);
+  ASSERT_EQ(converted_policy.upper(), upper_2d);
+  ASSERT_EQ(converted_policy.tile_size(), new_tile_2d);
+  ASSERT_EQ(converted_policy.impl_tile_end(), policy_2d_test.impl_tile_end());
+  ASSERT_EQ(converted_policy.impl_num_tiles(), policy_2d_test.impl_num_tiles());
+  ASSERT_EQ(converted_policy.impl_prod_tile_dims(),
+            policy_2d_test.impl_prod_tile_dims());
+  ASSERT_EQ(converted_policy.impl_tune_tile_size(),
+            policy_2d_test.impl_tune_tile_size());
+  ASSERT_EQ(converted_policy.max_total_tile_size(),
+            policy_2d_test.max_total_tile_size());
+  ASSERT_EQ(converted_policy.impl_max_threads_dimensions(),
+            policy_2d_test.impl_max_threads_dimensions());
+}
+
 // The execution space instance can be updated.
 TEST(TEST_CATEGORY, md_range_policy_impl_set_space) {
   using policy_t = Kokkos::MDRangePolicy<TEST_EXECSPACE, Kokkos::Rank<2>>;
@@ -308,8 +343,8 @@ TEST(TEST_CATEGORY, md_range_policy_impl_set_space) {
 
   const policy_t policy_new(Kokkos::Impl::PolicyUpdate{}, policy_old, exec_new);
   ASSERT_EQ(policy_new.space(), exec_new);
-  ASSERT_EQ(policy_new.m_lower, (typename policy_t::point_type{42, 47}));
-  ASSERT_EQ(policy_new.m_upper, (typename policy_t::point_type{666, 999}));
+  ASSERT_EQ(policy_new.lower(), (typename policy_t::point_type{42, 47}));
+  ASSERT_EQ(policy_new.upper(), (typename policy_t::point_type{666, 999}));
 }
 
 }  // namespace

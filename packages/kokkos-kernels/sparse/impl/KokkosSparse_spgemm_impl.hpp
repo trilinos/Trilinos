@@ -479,7 +479,11 @@ class KokkosSPGEMM {
   static inline SPGEMMAlgorithm select_algorithm(HandleType *handle) {
     auto sh          = handle->get_spgemm_handle();
     auto handle_algo = sh->get_algorithm_type();
-    if (handle_algo == SPGEMM_DEFAULT) {
+    // If a non-native (TPL) algorithm is selected but we have reached the native
+    // implementation, then this is a runtime fallback (e.g. the inputs are
+    // unsorted but the TPL requires sorted inputs). In that case, use the
+    // default native algorithm for this execution space.
+    if (handle_algo == SPGEMM_DEFAULT || !KokkosSparse::Impl::is_spgemm_algorithm_native(handle_algo)) {
       return sh->get_default_native_algorithm();
     }
     return handle_algo;
