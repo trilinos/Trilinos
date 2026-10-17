@@ -91,7 +91,7 @@ template <typename T>
 constexpr hpx_range<T> get_chunk_range(const T i_chunk, const T offset,
                                        const T chunk_size, const T max) {
   const T begin = offset + i_chunk * chunk_size;
-  const T end   = (std::min)(begin + chunk_size, max);
+  const T end   = std::min(static_cast<T>(begin + chunk_size), max);
   return {begin, end};
 }
 
@@ -147,6 +147,7 @@ class HPX {
           name,
           Kokkos::Tools::Experimental::Impl::DirectFenceIDHandle{m_instance_id},
           [&]() {
+            if (hpx::get_runtime_ptr() == nullptr) return;
             auto &s = m_sender;
             hpx::this_thread::experimental::sync_wait(std::move(s));
             s = hpx::execution::experimental::unique_any_sender<>(
@@ -186,8 +187,12 @@ class HPX {
 
 #pragma GCC diagnostic pop
 
-  ~HPX() {
-    Kokkos::Impl::check_execution_space_destructor_precondition(name());
+  // Must be __host__ __device__ for the implicitly defined
+  // ~RangePolicy<ExecSpace>(); see the comment on ~Cuda() in
+  // Cuda/Kokkos_Cuda.hpp.
+  KOKKOS_FUNCTION ~HPX() {
+    KOKKOS_IF_ON_HOST(
+        (Kokkos::Impl::check_execution_space_destructor_precondition(name());))
   }
   explicit HPX(instance_mode mode)
       : m_instance_data(
@@ -792,6 +797,14 @@ class TeamPolicyInternal<Kokkos::Experimental::HPX, Properties...>
            team_size_ * m_thread_scratch_size[level];
   }
 
+  size_t team_scratch_size(int level) const {
+    return m_team_scratch_size[level];
+  }
+
+  size_t thread_scratch_size(int level) const {
+    return m_thread_scratch_size[level];
+  }
+
   inline static int scratch_size_max(int level) {
     return (level == 0 ? 1024 * 32 :  // Roughly L1 size
                 20 * 1024 * 1024);    // Limit to keep compatibility with CUDA
@@ -995,14 +1008,15 @@ class ParallelFor<FunctorType, Kokkos::MDRangePolicy<Traits...>,
   void execute() const {
     const Member num_chunks =
         get_num_chunks(m_policy.begin(), m_policy.chunk_size(), m_policy.end());
-    m_iter.m_rp.space().impl_bulk_plain(
+    m_policy.space().impl_bulk_plain(
         false, is_light_weight_policy<MDRangePolicy>(), *this, num_chunks,
         hpx::threads::thread_stacksize::nostack);
   }
 
   inline ParallelFor(const FunctorType &arg_functor, MDRangePolicy arg_policy)
       : m_iter(arg_policy, arg_functor),
-        m_policy(Policy(0, arg_policy.m_num_tiles).set_chunk_size(1)) {}
+        m_policy(Policy(arg_policy.space(), 0, arg_policy.impl_num_tiles())
+                     .set_chunk_size(1)) {}
   template <typename Policy, typename Functor>
   static int max_tile_size_product(const Policy &, const Functor &) {
     /**
@@ -1116,8 +1130,8 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
         m_result_ptr(arg_view.data()),
         m_force_synchronous(!arg_view.impl_track().has_record()) {
     static_assert(
-        Kokkos::Impl::MemorySpaceAccess<typename ViewType::memory_space,
-                                        Kokkos::HostSpace>::accessible,
+        Kokkos::Impl::MemorySpaceAccess<
+            Kokkos::HostSpace, typename ViewType::memory_space>::accessible,
         "HPX reduce result must be a View accessible from HostSpace");
   }
 };
@@ -1152,7 +1166,7 @@ class ParallelReduce<CombinedFunctorReducerType,
     const std::size_t value_size = reducer.value_size();
     const int num_worker_threads = m_policy.space().concurrency();
 
-    hpx_thread_buffer &buffer = m_iter.m_rp.space().impl_get_buffer();
+    hpx_thread_buffer &buffer = m_policy.space().impl_get_buffer();
     buffer.resize(num_worker_threads, value_size);
 
     for (int t = 0; t < num_worker_threads; ++t) {
@@ -1161,7 +1175,7 @@ class ParallelReduce<CombinedFunctorReducerType,
   }
 
   void execute_range(const Member i_chunk) const {
-    hpx_thread_buffer &buffer = m_iter.m_rp.space().impl_get_buffer();
+    hpx_thread_buffer &buffer = m_policy.space().impl_get_buffer();
     reference_type update =
         ReducerType::reference(reinterpret_cast<pointer_type>(
             buffer.get(Kokkos::Experimental::HPX::impl_hardware_thread_id())));
@@ -1173,7 +1187,7 @@ class ParallelReduce<CombinedFunctorReducerType,
   }
 
   void finalize() const {
-    hpx_thread_buffer &buffer    = m_iter.m_rp.space().impl_get_buffer();
+    hpx_thread_buffer &buffer    = m_policy.space().impl_get_buffer();
     ReducerType reducer          = m_iter.m_func.get_reducer();
     const int num_worker_threads = m_policy.space().concurrency();
     for (int i = 1; i < num_worker_threads; ++i) {
@@ -1198,7 +1212,7 @@ class ParallelReduce<CombinedFunctorReducerType,
   void execute() const {
     const Member num_chunks =
         get_num_chunks(m_policy.begin(), m_policy.chunk_size(), m_policy.end());
-    m_iter.m_rp.space().impl_bulk_setup_finalize(
+    m_policy.space().impl_bulk_setup_finalize(
         m_force_synchronous, is_light_weight_policy<MDRangePolicy>(), *this,
         num_chunks, hpx::threads::thread_stacksize::nostack);
   }
@@ -1207,12 +1221,13 @@ class ParallelReduce<CombinedFunctorReducerType,
   inline ParallelReduce(const CombinedFunctorReducerType &arg_functor_reducer,
                         MDRangePolicy arg_policy, const ViewType &arg_view)
       : m_iter(arg_policy, arg_functor_reducer),
-        m_policy(Policy(0, arg_policy.m_num_tiles).set_chunk_size(1)),
+        m_policy(Policy(arg_policy.space(), 0, arg_policy.impl_num_tiles())
+                     .set_chunk_size(1)),
         m_result_ptr(arg_view.data()),
         m_force_synchronous(!arg_view.impl_track().has_record()) {
     static_assert(
-        Kokkos::Impl::MemorySpaceAccess<typename ViewType::memory_space,
-                                        Kokkos::HostSpace>::accessible,
+        Kokkos::Impl::MemorySpaceAccess<
+            Kokkos::HostSpace, typename ViewType::memory_space>::accessible,
         "HPX reduce result must be a View accessible from HostSpace");
   }
 
@@ -1445,8 +1460,8 @@ class ParallelScanWithTotal<FunctorType, Kokkos::RangePolicy<Traits...>,
         m_policy(arg_policy),
         m_result_ptr(arg_result_view.data()) {
     static_assert(
-        Kokkos::Impl::MemorySpaceAccess<typename ViewType::memory_space,
-                                        Kokkos::HostSpace>::accessible,
+        Kokkos::Impl::MemorySpaceAccess<
+            Kokkos::HostSpace, typename ViewType::memory_space>::accessible,
         "Kokkos::HPX parallel_scan result must be host-accessible!");
   }
 };
@@ -1666,8 +1681,8 @@ class ParallelReduce<CombinedFunctorReducerType,
                      m_functor_reducer.get_functor(), arg_policy.team_size())),
         m_force_synchronous(!arg_result.impl_track().has_record()) {
     static_assert(
-        Kokkos::Impl::MemorySpaceAccess<typename ViewType::memory_space,
-                                        Kokkos::HostSpace>::accessible,
+        Kokkos::Impl::MemorySpaceAccess<
+            Kokkos::HostSpace, typename ViewType::memory_space>::accessible,
         "HPX reduce result must be a View accessible from HostSpace");
     if ((arg_policy.scratch_size(0) +
          FunctorTeamShmemSize<FunctorType>::value(

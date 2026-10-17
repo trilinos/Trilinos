@@ -1,25 +1,14 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #pragma once
 
 #include <complex>
 
+#include "constant_wrapper.hpp"
 #include "strided_slice.hpp"
 #include "../__p0009_bits/utility.hpp"
+#include "submdspan_canonicalize_slices.hpp"
 
 namespace MDSPAN_IMPL_STANDARD_NAMESPACE {
 namespace detail {
@@ -47,44 +36,6 @@ constexpr auto inv_map_rank(std::integral_constant<size_t, Counter>, std::index_
                                      slices...);
 }
 
-// Helper for identifying strided_slice
-template <class T> struct is_strided_slice : std::false_type {};
-
-template <class OffsetType, class ExtentType, class StrideType>
-struct is_strided_slice<
-    strided_slice<OffsetType, ExtentType, StrideType>> : std::true_type {};
-
-// Helper for identifying valid pair like things
-template <class T, class IndexType> struct index_pair_like : std::false_type {};
-
-template <class IdxT1, class IdxT2, class IndexType>
-struct index_pair_like<std::pair<IdxT1, IdxT2>, IndexType> {
-  static constexpr bool value = std::is_convertible_v<IdxT1, IndexType> &&
-                                std::is_convertible_v<IdxT2, IndexType>;
-};
-
-template <class IdxT1, class IdxT2, class IndexType>
-struct index_pair_like<std::tuple<IdxT1, IdxT2>, IndexType> {
-  static constexpr bool value = std::is_convertible_v<IdxT1, IndexType> &&
-                                std::is_convertible_v<IdxT2, IndexType>;
-};
-
-template <class IdxT1, class IdxT2, class IndexType>
-struct index_pair_like<tuple<IdxT1, IdxT2>, IndexType> {
-  static constexpr bool value = std::is_convertible_v<IdxT1, IndexType> &&
-                                std::is_convertible_v<IdxT2, IndexType>;
-};
-
-template <class IdxT, class IndexType>
-struct index_pair_like<std::complex<IdxT>, IndexType> {
-  static constexpr bool value = std::is_convertible_v<IdxT, IndexType>;
-};
-
-template <class IdxT, class IndexType>
-struct index_pair_like<std::array<IdxT, 2>, IndexType> {
-  static constexpr bool value = std::is_convertible_v<IdxT, IndexType>;
-};
-
 // first_of(slice): getting begin of slice specifier range
 MDSPAN_TEMPLATE_REQUIRES(
   class Integral,
@@ -97,8 +48,8 @@ constexpr Integral first_of(const Integral &i) {
 
 template<class Integral, Integral v>
 MDSPAN_INLINE_FUNCTION
-constexpr Integral first_of(const std::integral_constant<Integral, v>&) {
-  return integral_constant<Integral, v>();
+constexpr auto first_of(const constant_wrapper<v, Integral>&) {
+  return constant_wrapper<v, Integral>();
 }
 
 MDSPAN_INLINE_FUNCTION
@@ -107,42 +58,10 @@ first_of(const ::MDSPAN_IMPL_STANDARD_NAMESPACE::full_extent_t &) {
   return integral_constant<size_t, 0>();
 }
 
-MDSPAN_TEMPLATE_REQUIRES(
-  class Slice,
-  /* requires */(index_pair_like<Slice, size_t>::value)
-)
-MDSPAN_INLINE_FUNCTION
-constexpr auto first_of(const Slice &i) {
-  return get<0>(i);
-}
-
-MDSPAN_TEMPLATE_REQUIRES(
-  class IdxT1, class IdxT2,
-  /* requires */ (index_pair_like<std::tuple<IdxT1, IdxT2>, size_t>::value)
-  )
-constexpr auto first_of(const std::tuple<IdxT1, IdxT2>& i) {
-  return get<0>(i);
-}
-
-MDSPAN_TEMPLATE_REQUIRES(
-  class IdxT1, class IdxT2,
-  /* requires */ (index_pair_like<std::pair<IdxT1, IdxT2>, size_t>::value)
-  )
-MDSPAN_INLINE_FUNCTION
-constexpr auto first_of(const std::pair<IdxT1, IdxT2>& i) {
-  return i.first;
-}
-
-template<class T>
-MDSPAN_INLINE_FUNCTION
-constexpr auto first_of(const std::complex<T> &i) {
-  return i.real();
-}
-
 template <class OffsetType, class ExtentType, class StrideType>
 MDSPAN_INLINE_FUNCTION
 constexpr OffsetType
-first_of(const strided_slice<OffsetType, ExtentType, StrideType> &r) {
+first_of(const extent_slice<OffsetType, ExtentType, StrideType> &r) {
   return r.offset;
 }
 
@@ -158,39 +77,6 @@ MDSPAN_INLINE_FUNCTION
 constexpr Integral
     last_of(std::integral_constant<size_t, k>, const Extents &, const Integral &i) {
   return i;
-}
-
-MDSPAN_TEMPLATE_REQUIRES(
-  size_t k, class Extents, class Slice,
-  /* requires */(index_pair_like<Slice, size_t>::value)
-)
-MDSPAN_INLINE_FUNCTION
-constexpr auto last_of(std::integral_constant<size_t, k>, const Extents &,
-                       const Slice &i) {
-  return get<1>(i);
-}
-
-MDSPAN_TEMPLATE_REQUIRES(
-  size_t k, class Extents, class IdxT1, class IdxT2,
-  /* requires */ (index_pair_like<std::tuple<IdxT1, IdxT2>, size_t>::value)
-  )
-constexpr auto last_of(std::integral_constant<size_t, k>, const Extents &, const std::tuple<IdxT1, IdxT2>& i) {
-  return get<1>(i);
-}
-
-MDSPAN_TEMPLATE_REQUIRES(
-  size_t k, class Extents, class IdxT1, class IdxT2,
-  /* requires */ (index_pair_like<std::pair<IdxT1, IdxT2>, size_t>::value)
-  )
-MDSPAN_INLINE_FUNCTION
-constexpr auto last_of(std::integral_constant<size_t, k>, const Extents &, const std::pair<IdxT1, IdxT2>& i) {
-  return i.second;
-}
-
-template<size_t k, class Extents, class T>
-MDSPAN_INLINE_FUNCTION
-constexpr auto last_of(std::integral_constant<size_t, k>, const Extents &, const std::complex<T> &i) {
-  return i.imag();
 }
 
 // Suppress spurious warning with NVCC about no return statement.
@@ -219,7 +105,7 @@ constexpr auto last_of(std::integral_constant<size_t, k>, const Extents &ext,
   if constexpr (Extents::static_extent(k) == dynamic_extent) {
     return ext.extent(k);
   } else {
-    return integral_constant<size_t, Extents::static_extent(k)>();
+    return constant_wrapper<Extents::static_extent(k), size_t>();
   }
 #if defined(__NVCC__) && !defined(__CUDA_ARCH__) && defined(__GNUC__)
   // Even with CUDA_ARCH protection this thing warns about calling host function
@@ -243,7 +129,7 @@ template <size_t k, class Extents, class OffsetType, class ExtentType,
 MDSPAN_INLINE_FUNCTION
 constexpr OffsetType
 last_of(std::integral_constant<size_t, k>, const Extents &,
-        const strided_slice<OffsetType, ExtentType, StrideType> &r) {
+        const extent_slice<OffsetType, ExtentType, StrideType> &r) {
   return r.extent;
 }
 
@@ -257,38 +143,8 @@ constexpr auto stride_of(const T &) {
 template <class OffsetType, class ExtentType, class StrideType>
 MDSPAN_INLINE_FUNCTION
 constexpr auto
-stride_of(const strided_slice<OffsetType, ExtentType, StrideType> &r) {
+stride_of(const extent_slice<OffsetType, ExtentType, StrideType> &r) {
   return r.stride;
-}
-
-// divide which can deal with integral constant preservation
-template <class IndexT, class T0, class T1>
-MDSPAN_INLINE_FUNCTION
-constexpr auto divide(const T0 &v0, const T1 &v1) {
-  return IndexT(v0) / IndexT(v1);
-}
-
-template <class IndexT, class T0, T0 v0, class T1, T1 v1>
-MDSPAN_INLINE_FUNCTION
-constexpr auto divide(const std::integral_constant<T0, v0> &,
-                      const std::integral_constant<T1, v1> &) {
-  // cutting short division by zero
-  // this is used for strided_slice with zero extent/stride
-  return integral_constant<IndexT, v0 == 0 ? 0 : v0 / v1>();
-}
-
-// multiply which can deal with integral constant preservation
-template <class IndexT, class T0, class T1>
-MDSPAN_INLINE_FUNCTION
-constexpr auto multiply(const T0 &v0, const T1 &v1) {
-  return IndexT(v0) * IndexT(v1);
-}
-
-template <class IndexT, class T0, T0 v0, class T1, T1 v1>
-MDSPAN_INLINE_FUNCTION
-constexpr auto multiply(const std::integral_constant<T0, v0> &,
-                        const std::integral_constant<T1, v1> &) {
-  return integral_constant<IndexT, v0 * v1>();
 }
 
 // compute new static extent from range, preserving static knowledge
@@ -310,20 +166,20 @@ struct StaticExtentFromRange<integral_constant<Integral0, val0>,
 
 // compute new static extent from strided_slice, preserving static
 // knowledge
-template <class Arg0, class Arg1> struct StaticExtentFromStridedRange {
+template <class ExtentType, class StrideType> struct StaticExtentFromStridedRange {
   constexpr static size_t value = dynamic_extent;
 };
 
-template <class Integral0, Integral0 val0, class Integral1, Integral1 val1>
-struct StaticExtentFromStridedRange<std::integral_constant<Integral0, val0>,
-                                    std::integral_constant<Integral1, val1>> {
-  constexpr static size_t value = val0 > 0 ? 1 + (val0 - 1) / val1 : 0;
+template <class ExtentType, ExtentType Extent, class StrideType, StrideType Stride>
+struct StaticExtentFromStridedRange<std::integral_constant<ExtentType, Extent>,
+                                    std::integral_constant<StrideType, Stride>> {
+  constexpr static size_t value = Extent;
 };
 
-template <class Integral0, Integral0 val0, class Integral1, Integral1 val1>
-struct StaticExtentFromStridedRange<integral_constant<Integral0, val0>,
-                                    integral_constant<Integral1, val1>> {
-  constexpr static size_t value = val0 > 0 ? 1 + (val0 - 1) / val1 : 0;
+template <class ExtentType, ExtentType Extent, class StrideType, StrideType Stride>
+struct StaticExtentFromStridedRange<integral_constant<ExtentType, Extent>,
+                                    integral_constant<StrideType, Stride>> {
+  constexpr static size_t value = Extent;
 };
 
 // creates new extents through recursive calls to next_extent member function
@@ -333,7 +189,7 @@ struct extents_constructor {
   MDSPAN_TEMPLATE_REQUIRES(
     class Slice, class... SlicesAndExtents,
     /* requires */(!std::is_convertible_v<Slice, size_t> &&
-                   !is_strided_slice<Slice>::value)
+                   !is_extent_slice<Slice>::value)
   )
   MDSPAN_INLINE_FUNCTION
   constexpr static auto next_extent(const Extents &ext, const Slice &sl,
@@ -370,7 +226,7 @@ struct extents_constructor {
   MDSPAN_INLINE_FUNCTION
   constexpr static auto
   next_extent(const Extents &ext,
-              const strided_slice<OffsetType, ExtentType, StrideType> &r,
+              const extent_slice<OffsetType, ExtentType, StrideType> &r,
               SlicesAndExtents... slices_and_extents) {
     using index_t = typename Extents::index_type;
     using new_static_extent_t =
@@ -380,7 +236,7 @@ struct extents_constructor {
           extents_constructor<K - 1, Extents, NewExtents..., dynamic_extent>;
       return next_t::next_extent(
           ext, slices_and_extents...,
-          r.extent > 0 ? 1 + divide<index_t>(r.extent - 1, r.stride) : 0);
+          r.extent);
     } else {
       constexpr size_t new_static_extent = new_static_extent_t::value;
       using next_t =
@@ -413,6 +269,6 @@ constexpr auto submdspan_extents(const extents<IndexType, Extents...> &src_exts,
 
   using ext_t = extents<IndexType, Extents...>;
   return detail::extents_constructor<ext_t::rank(), ext_t>::next_extent(
-      src_exts, slices...);
+      src_exts, detail::canonical_slice<IndexType>(slices)...);
 }
 } // namespace MDSPAN_IMPL_STANDARD_NAMESPACE
