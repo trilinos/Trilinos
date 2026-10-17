@@ -37,7 +37,9 @@ IntegratorAdjointSensitivity<Scalar>::IntegratorAdjointSensitivity(
     const int p_index, const int g_index, const bool g_depends_on_p,
     const bool f_depends_on_p, const bool ic_depends_on_p,
     const bool mass_matrix_is_identity, const AdjointResponseType response_type,
-    const std::vector<Scalar>& response_times)
+    const std::vector<Scalar>& response_times,
+    const Teuchos::RCP<const DAEStructure<Scalar>>& dae_structure,
+    const Teuchos::RCP<const Teuchos::ParameterList>& dae_jump_solver_pl)
   : model_(model),
     state_integrator_(state_integrator),
     adjoint_model_(adjoint_model),
@@ -52,7 +54,8 @@ IntegratorAdjointSensitivity<Scalar>::IntegratorAdjointSensitivity(
     mass_matrix_is_identity_(mass_matrix_is_identity),
     response_type_(response_type),
     response_times_(response_times),
-    stepMode_(SensitivityStepMode::Forward)
+    stepMode_(SensitivityStepMode::Forward),
+    dae_structure_(dae_structure)
 {
   std::sort(response_times_.begin(), response_times_.end());
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -61,6 +64,14 @@ IntegratorAdjointSensitivity<Scalar>::IntegratorAdjointSensitivity(
       std::logic_error,
       "Error - IntegratorAdjointSensitivity(): the \"Sum Over Times\" "
       "response requires a non-empty \"Response Time List\".\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      dae_structure_ != Teuchos::null && mass_matrix_is_identity_,
+      std::logic_error,
+      "Error - IntegratorAdjointSensitivity(): \""
+          << DAEStructure<Scalar>::algebraicMaskName()
+          << "\" cannot be used with \"Mass Matrix Is Identity\" = true.\n");
+  if (dae_structure_ != Teuchos::null)
+    dae_jump_solver_ = Teuchos::rcp(new AdjointDAEJumpSolver<Scalar>(dae_structure_, dae_jump_solver_pl));
   TEUCHOS_TEST_FOR_EXCEPTION(
       getStepper()->getUseFSAL(), std::logic_error,
       "Error - IntegratorAdjointSensitivity(): Cannot use FSAL with\n"
@@ -174,6 +185,18 @@ bool IntegratorAdjointSensitivity<Scalar>::advanceTime(const Scalar timeFinal)
     jump_times.assign(response_times_.rbegin(), response_times_.rend());
   }
 
+  // For an index-1 DAE, check that the rows of the algebraic equations of the
+  // mass matrix are zero (see the class description)
+  if (dae_structure_ != Teuchos::null) {
+    RCP<const SolutionState<Scalar>> final_state = state_solution_history->getCurrentState();
+    MEB::InArgs<Scalar> check_inargs             = model_->getNominalValues();
+    check_inargs.set_t(final_state->getTime());
+    check_inargs.set_x(final_state->getX());
+    if (check_inargs.supports(MEB::IN_ARG_x_dot))
+      check_inargs.set_x_dot(final_state->getXDot());
+    dae_structure_->checkMassMatrix(*model_, check_inargs, "Tempus::IntegratorAdjointSensitivity::advanceTime");
+  }
+
   // The adjoint state (y, z) is zero at t_final, before the jumps.
   RCP<DPV> adjoint_state = rcp_dynamic_cast<DPV>(Thyra::createMember(adjoint_aux_model_->get_x_space()));
   assign(Teuchos::ptr_implicit_cast<VectorBase<Scalar>>(adjoint_state.ptr()), Teuchos::ScalarTraits<Scalar>::zero());
@@ -187,6 +210,8 @@ bool IntegratorAdjointSensitivity<Scalar>::advanceTime(const Scalar timeFinal)
   RCP<MultiVectorBase<Scalar>> dgdx = createMembers(x_space, num_g);
   RCP<MultiVectorBase<Scalar>> dgdp_k;
   RCP<MultiVectorBase<Scalar>> jump;
+  RCP<MultiVectorBase<Scalar>> dae_jump;
+  RCP<MultiVectorBase<Scalar>> algebraic_jump;
   RCP<LinearOpWithSolveBase<Scalar>> W;
 
   // Run the adjoint integration, restarted at each jump time
@@ -229,7 +254,7 @@ bool IntegratorAdjointSensitivity<Scalar>::advanceTime(const Scalar timeFinal)
       inargs.set_x(state->getX());
       if (inargs.supports(MEB::IN_ARG_x_dot)) inargs.set_x_dot(state->getXDot());
 
-      // Compute dg/dx and the jump df/dx_dot^{-T} * dg/dx^T
+      // Compute dg/dx and the jump of the adjoint.
       // For explicit form, we are relying on the user to inform us the
       // the mass matrix is the identity.  It would be nice to be able to
       // determine somehow automatically that we are using an explicit stepper.
@@ -239,8 +264,9 @@ bool IntegratorAdjointSensitivity<Scalar>::advanceTime(const Scalar timeFinal)
           "Tempus::IntegratorAdjointSensitivity::advanceTime");
       if (mass_matrix_is_identity_)
         Thyra::update(Scalar(1.0), *dgdx, adjoint_y_mv.ptr());
-      else {
-        // The mass matrix is constant, so its solver is reused for all jumps.
+      else if (dae_structure_ == Teuchos::null) {
+        // ODE: jump df/dx_dot^{-T} * dg/dx^T.  The mass matrix is constant, so
+        // its solver is reused for all jumps.
         if (W == Teuchos::null) W = createAdjointMassMatrixSolver(inargs);
         if (jump == Teuchos::null) jump = createMembers(x_space, num_g);
         // Initialize jump to zero before solve for linear solvers that
@@ -248,6 +274,30 @@ bool IntegratorAdjointSensitivity<Scalar>::advanceTime(const Scalar timeFinal)
         assign(jump.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         W->solve(Thyra::NOTRANS, *dgdx, jump.ptr());
         Thyra::update(Scalar(1.0), *jump, adjoint_y_mv.ptr());
+      }
+      else {
+        // Index-1 DAE: C^T z = dg/dx^T, with C = P_a df/dx + P_d df/dx_dot at
+        // the state at t_k (see the class description).
+        if (dae_jump == Teuchos::null)
+          dae_jump = createMembers(model_->get_f_space(), num_g);
+        if (!dae_jump_solver_->solve(*adjoint_model_, inargs, state->getTimeStep(), *dgdx, *dae_jump)) {
+          sens_status = false;
+          break;
+        }
+        // The algebraic components of z add -df/dp^T (P_a z) to the sensitivity
+        if (f_depends_on_p_) {
+          if (algebraic_jump == Teuchos::null)
+            algebraic_jump = createMembers(model_->get_f_space(), num_g);
+          assign(algebraic_jump.ptr(), *dae_jump);
+          dae_structure_->zeroDifferentialComponents(*algebraic_jump);
+          AdjointSensitivityUtils::applyDfDpTranspose(
+              *model_, p_index_, inargs, *algebraic_jump, *dgdp_, Scalar(-1.0),
+              Scalar(1.0), dfdp_op_, dfdp_mv_);
+        }
+        // The differential components of z are the jump of the adjoint (the
+        // algebraic adjoint unknowns are determined by the adjoint equations)
+        dae_structure_->zeroAlgebraicComponents(*dae_jump);
+        Thyra::update(Scalar(1.0), *dae_jump, adjoint_y_mv.ptr());
       }
 
       // Add dg/dp(t_k)^T
@@ -324,68 +374,8 @@ Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar>>
 IntegratorAdjointSensitivity<Scalar>::createAdjointMassMatrixSolver(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) const
 {
-  using Teuchos::RCP;
-  using Thyra::LinearOpBase;
-  using Thyra::LinearOpWithSolveBase;
-  using Thyra::LinearOpWithSolveFactoryBase;
-  using Thyra::PreconditionerBase;
-  using Thyra::PreconditionerFactoryBase;
-  typedef Thyra::ModelEvaluatorBase MEB;
-
-  MEB::InArgs<Scalar> inargs = inArgs;
-  inargs.set_alpha(1.0);
-  inargs.set_beta(0.0);
-  MEB::OutArgs<Scalar> adj_outargs = adjoint_model_->createOutArgs();
-  RCP<LinearOpWithSolveBase<Scalar>> W;
-  if (adj_outargs.supports(MEB::OUT_ARG_W)) {
-    // Model supports W
-    W = adjoint_model_->create_W();
-    adj_outargs.set_W(W);
-    adjoint_model_->evalModel(inargs, adj_outargs);
-    adj_outargs.set_W(Teuchos::null);
-  }
-  else {
-    // Otherwise model must support a W_op and W factory
-    RCP<const LinearOpWithSolveFactoryBase<Scalar>> lowsfb =
-        adjoint_model_->get_W_factory();
-    TEUCHOS_TEST_FOR_EXCEPTION(lowsfb == Teuchos::null, std::logic_error,
-                               "Adjoint ME must support W out-arg or provide "
-                               "a W_factory for non-identity mass matrix");
-
-    // Compute W_op (and W_prec if supported)
-    RCP<LinearOpBase<Scalar>> W_op = adjoint_model_->create_W_op();
-    adj_outargs.set_W_op(W_op);
-    RCP<PreconditionerFactoryBase<Scalar>> prec_factory =
-        lowsfb->getPreconditionerFactory();
-    RCP<PreconditionerBase<Scalar>> W_prec;
-    if (prec_factory != Teuchos::null)
-      W_prec = prec_factory->createPrec();
-    else if (adj_outargs.supports(MEB::OUT_ARG_W_prec)) {
-      W_prec = adjoint_model_->create_W_prec();
-      adj_outargs.set_W_prec(W_prec);
-    }
-    adjoint_model_->evalModel(inargs, adj_outargs);
-    adj_outargs.set_W_op(Teuchos::null);
-    if (adj_outargs.supports(MEB::OUT_ARG_W_prec))
-      adj_outargs.set_W_prec(Teuchos::null);
-
-    // Create and initialize W
-    W = lowsfb->createOp();
-    if (W_prec != Teuchos::null) {
-      if (prec_factory != Teuchos::null)
-        prec_factory->initializePrec(
-            Thyra::defaultLinearOpSource<Scalar>(W_op), W_prec.get());
-      Thyra::initializePreconditionedOp<Scalar>(*lowsfb, W_op, W_prec,
-                                                W.ptr());
-    }
-    else
-      Thyra::initializeOp<Scalar>(*lowsfb, W_op, W.ptr());
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      W == Teuchos::null, std::logic_error,
-      "A null W has been encountered in "
-      "Tempus::IntegratorAdjointSensitivity::advanceTime!\n");
-  return W;
+  return AdjointSensitivityUtils::createAdjointLinearOpWithSolve(
+      *adjoint_model_, inArgs, Scalar(1.0), Scalar(0.0));
 }
 
 template <class Scalar>
@@ -704,6 +694,8 @@ IntegratorAdjointSensitivity<Scalar>::createAdjointModel(
   }
   if (spl->isParameter("IC Depends on Parameters"))
     spl->remove("IC Depends on Parameters");
+  spl->remove(DAEStructure<Scalar>::algebraicMaskName(), false);
+  spl->remove(AdjointDAEJumpSolver<Scalar>::sublistName(), false);
 
   const Scalar tinit  = state_integrator_->getTimeStepControl()->getInitTime();
   const Scalar tfinal = state_integrator_->getTimeStepControl()->getFinalTime();
@@ -828,6 +820,10 @@ createIntegratorAdjointSensitivity(
   bool ic_depends_on_p = spl->get<bool>("IC Depends on Parameters", true);
   bool mass_matrix_is_identity =
       spl->get<bool>("Mass Matrix Is Identity", false);
+  const Teuchos::RCP<const DAEStructure<Scalar>> dae_structure = getDAEStructure<Scalar>(*spl);
+  Teuchos::RCP<const Teuchos::ParameterList> dae_jump_solver_pl;
+  if (spl->isSublist(AdjointDAEJumpSolver<Scalar>::sublistName()))
+    dae_jump_solver_pl = Teuchos::rcp(new Teuchos::ParameterList(spl->sublist(AdjointDAEJumpSolver<Scalar>::sublistName())));
   const AdjointResponseType response_type =
       AdjointSensitivityUtils::parseResponseType(
           spl->get<std::string>("Response Type", "Final Time"));
@@ -851,6 +847,9 @@ createIntegratorAdjointSensitivity(
   // createAdjointModel
   if (spl->isParameter("IC Depends on Parameters"))
     spl->remove("IC Depends on Parameters");
+  // The DAE structure is used by the integrator, not by the adjoint model
+  spl->remove(DAEStructure<Scalar>::algebraicMaskName(), false);
+  spl->remove(AdjointDAEJumpSolver<Scalar>::sublistName(), false);
 
   const Scalar tinit  = state_integrator->getTimeStepControl()->getInitTime();
   const Scalar tfinal = state_integrator->getTimeStepControl()->getFinalTime();
@@ -881,7 +880,8 @@ createIntegratorAdjointSensitivity(
           model, state_integrator, adjt_model, adjoint_aux_model,
           adjoint_integrator, combined_solution_History, p_index, g_index,
           g_depends_on_p, f_depends_on_p, ic_depends_on_p,
-          mass_matrix_is_identity, response_type, response_times));
+          mass_matrix_is_identity, response_type, response_times,
+          dae_structure, dae_jump_solver_pl));
 
   return (integrator);
 }

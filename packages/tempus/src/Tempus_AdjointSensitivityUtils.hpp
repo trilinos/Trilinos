@@ -16,12 +16,18 @@
 #include <vector>
 
 #include "Teuchos_Array.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_DefaultLinearOpSource.hpp"
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_PreconditionerFactoryBase.hpp"
 
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_TimeEventList.hpp"
@@ -177,6 +183,120 @@ void evalResponseGradientP(const Thyra::ModelEvaluator<Scalar>& model,
   }
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid dg/dp support");
+}
+
+/** \brief Compute y = alpha * df/dp^T * v + beta * y.
+ *
+ *  v is a multivector in the residual (f) space and y a multivector in the
+ *  space of parameter p_index, with the same number of columns.  df/dp is
+ *  evaluated at inArgs in the form supported by the model (linear operator,
+ *  Jacobian or gradient multivector).  dfdp_op and dfdp_mv cache the
+ *  derivative objects between calls (pass null RCPs on the first call).
+ */
+template <class Scalar>
+void applyDfDpTranspose(const Thyra::ModelEvaluator<Scalar>& model,
+                        const int p_index,
+                        const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+                        const Thyra::MultiVectorBase<Scalar>& v,
+                        Thyra::MultiVectorBase<Scalar>& y, const Scalar alpha,
+                        const Scalar beta,
+                        Teuchos::RCP<Thyra::LinearOpBase<Scalar>>& dfdp_op,
+                        Teuchos::RCP<Thyra::MultiVectorBase<Scalar>>& dfdp_mv)
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs        = model.createOutArgs();
+  MEB::DerivativeSupport dfdp_support = outArgs.supports(MEB::OUT_ARG_DfDp, p_index);
+  Thyra::EOpTransp trans              = Thyra::CONJTRANS;
+  if (dfdp_support.supports(MEB::DERIV_LINEAR_OP)) {
+    if (dfdp_op == Teuchos::null) dfdp_op = model.create_DfDp_op(p_index);
+    outArgs.set_DfDp(p_index, MEB::Derivative<Scalar>(dfdp_op));
+  }
+  else if (dfdp_support.supports(MEB::DERIV_MV_JACOBIAN_FORM)) {
+    if (dfdp_mv == Teuchos::null)
+      dfdp_mv = Thyra::createMembers(model.get_f_space(), model.get_p_space(p_index)->dim());
+    outArgs.set_DfDp(p_index, MEB::Derivative<Scalar>(dfdp_mv, MEB::DERIV_MV_JACOBIAN_FORM));
+    dfdp_op = dfdp_mv;
+  }
+  else if (dfdp_support.supports(MEB::DERIV_MV_GRADIENT_FORM)) {
+    if (dfdp_mv == Teuchos::null)
+      dfdp_mv = Thyra::createMembers(model.get_p_space(p_index), model.get_f_space()->dim());
+    outArgs.set_DfDp(p_index, MEB::Derivative<Scalar>(dfdp_mv, MEB::DERIV_MV_GRADIENT_FORM));
+    dfdp_op = dfdp_mv;
+    trans   = Thyra::CONJ;
+  }
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid df/dp support");
+  model.evalModel(inArgs, outArgs);
+  dfdp_op->apply(trans, v, Teuchos::ptrFromRef(y), alpha, beta);
+}
+
+/** \brief Create a solver for the adjoint model's W = (alpha*df/dx_dot + beta*df/dx)^T at inArgs.
+ *
+ *  Uses the W out-arg of the adjoint model if supported, otherwise its W_op,
+ *  its W_factory, and the preconditioner of the W_factory (or of the model).
+ */
+template <class Scalar>
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar>>
+createAdjointLinearOpWithSolve(
+    const Thyra::ModelEvaluator<Scalar>& adjoint_model,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs, const Scalar alpha,
+    const Scalar beta)
+{
+  using Teuchos::RCP;
+  using Thyra::LinearOpBase;
+  using Thyra::LinearOpWithSolveBase;
+  using Thyra::LinearOpWithSolveFactoryBase;
+  using Thyra::PreconditionerBase;
+  using Thyra::PreconditionerFactoryBase;
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar> inargs = inArgs;
+  inargs.set_alpha(alpha);
+  inargs.set_beta(beta);
+  MEB::OutArgs<Scalar> adj_outargs = adjoint_model.createOutArgs();
+  RCP<LinearOpWithSolveBase<Scalar>> W;
+  if (adj_outargs.supports(MEB::OUT_ARG_W)) {
+    // Model supports W
+    W = adjoint_model.create_W();
+    adj_outargs.set_W(W);
+    adjoint_model.evalModel(inargs, adj_outargs);
+  }
+  else {
+    // Otherwise model must support a W_op and W factory
+    RCP<const LinearOpWithSolveFactoryBase<Scalar>> lowsfb =
+        adjoint_model.get_W_factory();
+    TEUCHOS_TEST_FOR_EXCEPTION(lowsfb == Teuchos::null, std::logic_error,
+                               "Adjoint ME must support W out-arg or provide "
+                               "a W_factory for non-identity mass matrix");
+
+    // Compute W_op (and W_prec if supported)
+    RCP<LinearOpBase<Scalar>> W_op = adjoint_model.create_W_op();
+    adj_outargs.set_W_op(W_op);
+    RCP<PreconditionerFactoryBase<Scalar>> prec_factory = lowsfb->getPreconditionerFactory();
+    RCP<PreconditionerBase<Scalar>> W_prec;
+    if (prec_factory != Teuchos::null)
+      W_prec = prec_factory->createPrec();
+    else if (adj_outargs.supports(MEB::OUT_ARG_W_prec)) {
+      W_prec = adjoint_model.create_W_prec();
+      adj_outargs.set_W_prec(W_prec);
+    }
+    adjoint_model.evalModel(inargs, adj_outargs);
+
+    // Create and initialize W
+    W = lowsfb->createOp();
+    if (W_prec != Teuchos::null) {
+      if (prec_factory != Teuchos::null)
+        prec_factory->initializePrec(Thyra::defaultLinearOpSource<Scalar>(W_op), W_prec.get());
+      Thyra::initializePreconditionedOp<Scalar>(*lowsfb, W_op, W_prec, W.ptr());
+    }
+    else
+      Thyra::initializeOp<Scalar>(*lowsfb, W_op, W.ptr());
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      W == Teuchos::null, std::logic_error,
+      "A null W has been encountered in "
+      "Tempus::AdjointSensitivityUtils::createAdjointLinearOpWithSolve!\n");
+  return W;
 }
 
 /** \brief Add the response times to the time step control as time events on
