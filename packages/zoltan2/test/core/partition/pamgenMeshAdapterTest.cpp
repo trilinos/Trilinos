@@ -259,7 +259,7 @@ int main(int narg, char *arg[]) {
     problem.printTimers();
   }
 
-  // delete ia; // ia is used by problem/metric, do not delete
+  delete ia;
 
   // delete mesh
   if (me == 0) std::cout << "Deleting the mesh ... \n\n";

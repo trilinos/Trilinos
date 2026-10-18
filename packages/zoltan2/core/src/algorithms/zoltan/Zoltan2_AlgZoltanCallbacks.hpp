@@ -99,11 +99,15 @@ static void zoltanParts(void *data, int /* nGidEnt */, int nLidEnt, int nObj,
   *ierr = ZOLTAN_OK;
   const typename Adapter::part_t *myparts;
   adp->getPartsView(myparts);
+  size_t numIds = adp->getLocalNumIDs();
+
   // User parts from input adapter
   for (int i = 0; i < nObj; i++) {
     lno_t lidx;
-    TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
-    parts[i] = int(myparts[lidx]);
+    if (lids && (static_cast<size_t>(i*nLidEnt)<numIds)) {
+      TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
+      parts[i] = int(myparts[lidx]);
+    }
   }
 }
 
@@ -127,6 +131,7 @@ static void zoltanGeom(void *data, int /* nGidEnt */, int nLidEnt, int nObj,
   typedef typename Adapter::lno_t lno_t;
   const Adapter *adp = static_cast<Adapter *>(data);
   *ierr = ZOLTAN_OK;
+  size_t numIds = adp->getLocalNumIDs();
 
   for (int d = 0; d < nDim; d++) {
     const typename Adapter::scalar_t *mycoords;
@@ -134,8 +139,10 @@ static void zoltanGeom(void *data, int /* nGidEnt */, int nLidEnt, int nObj,
     adp->getCoordinatesView(mycoords, mystride, d);
     for (int i = 0; i < nObj; i++) {
       lno_t lidx;
-      TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
-      coords[i*nDim+d] = double(mycoords[lidx*mystride]);
+      if (lids && (static_cast<size_t>(i*nLidEnt)<numIds)) {
+        TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
+        coords[i*nDim+d] = double(mycoords[lidx*mystride]);
+      }
     }
   }
 }
