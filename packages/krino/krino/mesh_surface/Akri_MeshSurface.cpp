@@ -704,6 +704,15 @@ BoundingBox STLSurface::get_binary_facet_bounding_box(const unsigned numFacets)
   return bbox;
 }
 
+static void
+check_exodus_surface_counts(const std::string & filename, const int numDim, const int numNodes)
+{
+  STK_ThrowRequireMsg(3 == numDim,
+      "Exodus surface " << filename << " must be 3D, but has dimension " << numDim << ".");
+  STK_ThrowRequireMsg(numNodes >= 0,
+      "Exodus surface " << filename << " has an invalid node count " << numNodes << ".");
+}
+
 EXOSurface::EXOSurface(const stk::diag::Timer &parent_timer,
     const std::string & filename,
     const int sign,
@@ -735,10 +744,10 @@ EXOSurface::get_bounding_box()
     int num_dim   = io->get_property("spatial_dimension").get_int();
     int num_nodes = io->get_property("node_count").get_int();
 
-    STK_ThrowAssert( 3 == num_dim );
+    check_exodus_surface_counts(my_filename, num_dim, num_nodes);
 
     /* generate coordinates */
-    xyz.resize(num_nodes*num_dim);
+    xyz.resize(size_t(num_nodes) * num_dim);
 
     Ioss::NodeBlock *nb = io->get_node_blocks()[0];
     nb->get_field_data("mesh_model_coordinates", xyz);
@@ -785,10 +794,10 @@ EXOSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
         << ", num elems = " << num_elem
         << ", num elem blks = " << num_elem_blk << std::endl;
 
-    STK_ThrowAssert( 3 == num_dim );
+    check_exodus_surface_counts(my_filename, num_dim, num_nodes);
 
     /* generate coordinates */
-    xyz.resize(num_nodes*num_dim);
+    xyz.resize(size_t(num_nodes) * num_dim);
     nmap.resize(num_nodes);
 
     Ioss::NodeBlock *nb = io->get_node_blocks()[0];
@@ -817,9 +826,15 @@ EXOSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
         << " with name " << eb_name << "..." << std::endl;
 
       int nodes_per_elem_in_blk = eb->get_property("topology_node_count").get_int();
-      STK_ThrowAssert( nodes_per_elem_in_blk == nodes_per_elem );
+      STK_ThrowRequireMsg(nodes_per_elem_in_blk == nodes_per_elem,
+          "Exodus surface " << my_filename << " block " << eb_name << " has "
+                            << nodes_per_elem_in_blk << " nodes per element; expected "
+                            << nodes_per_elem << ".");
+      STK_ThrowRequireMsg(num_elem_in_blk >= 0,
+          "Exodus surface " << my_filename << " block " << eb_name
+                            << " has an invalid element count " << num_elem_in_blk << ".");
 
-      conn.resize(num_elem_in_blk*nodes_per_elem_in_blk);
+      conn.resize(size_t(num_elem_in_blk) * nodes_per_elem_in_blk);
 
       krinolog
         << "  num elem in blk = " << num_elem_in_blk

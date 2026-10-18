@@ -111,11 +111,11 @@ ParametricElementIntrepid::ParametricElementIntrepid(stk::topology topology)
   m_numElemDims  = intrepidCubature->getDimension();
 
   // Allocate reference data
-  m_shapeFuncs.resize(m_numIntgPts*m_numNodes);
-  m_pointGrads.resize(m_numIntgPts*m_numNodes*m_numElemDims );
-  m_refPoints.resize(m_numIntgPts*m_numElemDims);
+  m_shapeFuncs.resize(size_t(m_numIntgPts) * m_numNodes);
+  m_pointGrads.resize(size_t(m_numIntgPts) * m_numNodes * m_numElemDims);
+  m_refPoints.resize(size_t(m_numIntgPts) * m_numElemDims);
   m_refWeights.resize(m_numIntgPts);
-  m_refCoords.resize(m_numNodes*m_numElemDims);
+  m_refCoords.resize(size_t(m_numNodes) * m_numElemDims);
   m_refVolume = parametric_volume_for_topology(topology);
 
   Kokkos::DynRankView<double, ExecutionSpace> refPoints(m_refPoints.data(), m_numIntgPts, m_numElemDims);

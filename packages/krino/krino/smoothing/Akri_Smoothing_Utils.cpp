@@ -26,7 +26,7 @@ void fill_elem_node_locations(const unsigned spatialDim, const DistributedVector
   elemNodeLocs.resize(elemNodes.size());
   unsigned i=0;
   for (auto elemNode : elemNodes)
-    elemNodeLocs[i++] = &nodeLocs[spatialDim*elemNode];
+    elemNodeLocs[i++] = &nodeLocs[size_t(spatialDim) * elemNode];
 }
 
 void fill_elem_node_locations(const unsigned spatialDim, const DistributedVector& nodeLocs, const MeshElemNodeIndices & meshElemNodeIndices, const unsigned elemIndex, std::vector<const double*> & elemNodeLocs)

@@ -51,7 +51,7 @@ public:
 
     unsigned nnodes = mesh.num_nodes(element);
     STK_ThrowRequire(nnodes == parametricElem.num_nodes());
-    std::vector<double> coord(dim * nnodes);
+    std::vector<double> coord(size_t(dim) * nnodes);
     auto coordData = krino::FieldRef(*mesh.mesh_meta_data().coordinate_field()).data<double>();
     for(unsigned n=0; n<mesh.num_nodes(element); n++)
     {

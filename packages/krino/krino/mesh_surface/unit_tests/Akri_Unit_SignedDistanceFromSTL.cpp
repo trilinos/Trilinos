@@ -1,6 +1,7 @@
 #include <Akri_BoundingBox.hpp>
 #include <Akri_MeshSurface.hpp>
 #include <Akri_OutputUtils.hpp>
+#include <Akri_ScopedTestFile.hpp>
 #include <gtest/gtest.h>
 #include <Akri_Unit_CreateFacetedSphere.hpp>
 
@@ -61,10 +62,10 @@ TEST(ComputeDistanceToSTL, randomQueryPointsBothInsideAndOutsideSphereInSerial_g
 
   const double radius = 0.75;
   const double meshSize = 0.15;
-  const std::string filename = "sphere.stl";
-  krino::write_stl_for_sphere(filename, radius, meshSize, comm);
+  const krino::ScopedTestFile stlFile("sphere.stl", comm);
+  krino::write_stl_for_sphere(stlFile.name(), radius, meshSize, comm);
 
-  krino::STLSurface distanceSurface(filename);
+  krino::STLSurface distanceSurface(stlFile.name());
 
   krino::BoundingBox boundingBox = distanceSurface.get_bounding_box();
   boundingBox.scale(2.0);

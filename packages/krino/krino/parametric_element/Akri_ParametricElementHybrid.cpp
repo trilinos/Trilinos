@@ -93,11 +93,11 @@ ParametricElementHybrid::ParametricElementHybrid(stk::topology topology)
   m_numElemDims  = intrepid2Cubature->getDimension();
 
   // Allocate reference data
-  m_shapeFuncs.resize(m_numIntgPts*m_numNodes);
-  m_pointGrads.resize(m_numIntgPts*m_numNodes*m_numElemDims );
-  m_refPoints.resize(m_numIntgPts*m_numElemDims);
+  m_shapeFuncs.resize(size_t(m_numIntgPts) * m_numNodes);
+  m_pointGrads.resize(size_t(m_numIntgPts) * m_numNodes * m_numElemDims);
+  m_refPoints.resize(size_t(m_numIntgPts) * m_numElemDims);
   m_refWeights.resize(m_numIntgPts);
-  m_refCoords.resize(m_numNodes*m_numElemDims);
+  m_refCoords.resize(size_t(m_numNodes) * m_numElemDims);
   m_refVolume = m_Basis->parametric_volume();
 
   Kokkos::DynRankView<double, ExecutionSpace> refPoints(m_refPoints.data(), m_numIntgPts, m_numElemDims);

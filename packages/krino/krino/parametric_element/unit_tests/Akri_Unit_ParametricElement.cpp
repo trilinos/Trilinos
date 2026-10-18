@@ -41,7 +41,7 @@ const double cubatureTol = 1.e-6;
 std::vector<double> pack_single_element_coords(const std::vector<std::array<double,3>> & nodeLocs, const int numCoordDims)
 {
   const int npe = static_cast<int>(nodeLocs.size());
-  std::vector<double> coords(numCoordDims * npe, 0.);
+  std::vector<double> coords(size_t(numCoordDims) * npe, 0.);
   for (int n = 0; n < npe; ++n)
     for (int d = 0; d < numCoordDims; ++d)
       coords[d + numCoordDims * n] = nodeLocs[n][d];
@@ -166,7 +166,7 @@ TEST(ParametricElement, shapeFunctionsPartitionUnityAndAreKroneckerDeltaAtNodes)
 
     // Evaluate the npe shape functions at all npe nodal parametric coords in
     // one call; result is laid out result[node_of_eval*npe + basis].
-    std::vector<double> shape(npe * npe, 0.);
+    std::vector<double> shape(size_t(npe) * npe, 0.);
     pe.shape_fcn(npe, refCoords, shape.data());
 
     for (int evalNode = 0; evalNode < npe; ++evalNode)
@@ -382,13 +382,13 @@ TEST(ParametricElement, scalarGradientRecoversLinearFieldGradient)
   // derivative operators (isoparametric).
   const double * deriv = pe.shape_fcn_deriv();
 
-  std::vector<double> gradop(dim * npe * 1 * nint, 0.);
+  std::vector<double> gradop(size_t(dim) * npe * 1 * nint, 0.);
   std::vector<double> detJ(nint, 0.);
   double error = -1.;
   pe.gradient_operator(dim, nint, npe, deriv, npe, deriv, 1, coords.data(), gradop.data(), detJ.data(), &error);
   EXPECT_NEAR(0., error, exactTol);
 
-  std::vector<double> grad(dim * nint, 0.);
+  std::vector<double> grad(size_t(dim) * nint, 0.);
   pe.scalar_gradient(nint, 1, gradop.data(), detJ.data(), sfield.data(), grad.data());
 
   const double gold[3] = {a, b, c};

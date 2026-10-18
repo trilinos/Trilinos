@@ -105,7 +105,9 @@ double IsotropicSizeFunctionMeshSizeMetric::compute_relative_edge_length(const s
 ConstantMetricTensorMeshSizeMetric::ConstantMetricTensorMeshSizeMetric(const unsigned spatialDim, const std::vector<double> & metric)
 : mySpatialDim(spatialDim), myMetric(metric)
 {
-  STK_ThrowRequireMsg(metric.size() == spatialDim*spatialDim, "A " << spatialDim << "D metric tensor must have " << spatialDim*spatialDim << " components.");
+  STK_ThrowRequireMsg(metric.size() == size_t(spatialDim) * spatialDim,
+      "A " << spatialDim << "D metric tensor must have " << size_t(spatialDim) * spatialDim
+           << " components.");
   STK_ThrowRequireMsg(metric::is_symmetric_positive_definite_metric(spatialDim, metric.data()), "The metric tensor must be symmetric positive definite.");
 }
 
@@ -167,7 +169,7 @@ MetricTensorFunctionMeshSizeMetric::MetricTensorFunctionMeshSizeMetric(const stk
 
 std::vector<double> MetricTensorFunctionMeshSizeMetric::get_metric(const stk::mesh::Entity node) const
 {
-  std::vector<double> metric(mySpatialDim*mySpatialDim);
+  std::vector<double> metric(size_t(mySpatialDim) * mySpatialDim);
   myMetric(get_vector_field(myMesh, myCoordsField, node, mySpatialDim), metric.data());
   return metric;
 }
