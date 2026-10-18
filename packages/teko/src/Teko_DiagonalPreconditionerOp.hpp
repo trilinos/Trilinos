@@ -38,7 +38,7 @@ class DiagonalPreconditionerOp : public ImplicitLinearOp {
    *
    * The <code>apply</code> function takes one vector as input
    * and applies a linear preconditioner. The result
-   * is returned in \f$y\f$. If this operator is reprsented as \f$M\f$ then
+   * is returned in \f$y\f$. If this operator is represented as \f$M\f$ then
    * \f$ y = \alpha M x + \beta y \f$
    *
    * @param[in]     x
@@ -46,10 +46,10 @@ class DiagonalPreconditionerOp : public ImplicitLinearOp {
    * @param[in]     alpha (default=1)
    * @param[in]     beta  (default=0)
    */
-  virtual void implicitApply(const MultiVector &x, MultiVector &y, const double alpha = 1.0,
+  virtual void implicitApply(const MultiVector& x, MultiVector& y, const double alpha = 1.0,
                              const double beta = 0.0) const;
 
-  virtual void describe(Teuchos::FancyOStream &out_arg,
+  virtual void describe(Teuchos::FancyOStream& out_arg,
                         const Teuchos::EVerbosityLevel verbLevel) const;
 
   Teuchos::RCP<Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT>> get_BDP() const {
