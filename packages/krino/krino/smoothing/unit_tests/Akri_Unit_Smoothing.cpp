@@ -1210,7 +1210,8 @@ public:
   }
 
   // Objective of the one element of the mesh, computed directly from its metric mapping.
-  double compute_element_objective(const KinematicElementObjective & elemObj, const Tensor & metricMapping)
+  double compute_element_objective(
+      const KinematicElementObjective & elementObjective, const Tensor & metricMapping)
   {
     const std::vector<double> metricMapData = get_element_metric_mapping_data(metricMapping);
     std::vector<const double *> nodeCoords;
@@ -1219,7 +1220,8 @@ public:
       coords.push_back(get_vector_field(mMesh, get_coordinates_field(), get_assigned_node_for_index(n), DIM));
     for (auto & c : coords)
       nodeCoords.push_back(c.data());
-    return elemObj.compute_element_objective(DIM, DIM+1, metricMapData.data(), nodeCoords.data());
+    return elementObjective.compute_element_objective(
+        DIM, DIM + 1, metricMapData.data(), nodeCoords.data());
   }
 
 protected:

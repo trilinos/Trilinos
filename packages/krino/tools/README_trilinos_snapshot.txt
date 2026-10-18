@@ -15,6 +15,16 @@ cd
 If more iterations are needed, make changes in sierra, merge them and rerun
 /fgs/drnoble/projects/code_votd/krino/tools/trilinos_create_snapshot_commit.sh
 
+trilinos_create_snapshot_commit.sh checks out sierra master, requires it to be clean with no
+local commits, and fast-forwards it to origin/master, so push any sierra changes first.  It
+copies only the files git tracks in sierra krino (not ignored build or editor files), and removes
+krino_sierra, Jamfile, .clang-format and AGENTS.md, which are not part of the Trilinos package.
+
+Snapshot PRs are squash-merged, so the krino-snapshot branch is not kept between snapshots:
+trilinos_prepare_snapshot_branch.sh resets it to upstream develop and force-pushes it to the fork
+(whether or not GitHub deleted the fork's branch after the last merge).  Within one snapshot,
+each rerun of trilinos_create_snapshot_commit.sh adds a commit and updates the open PR.
+
 The Trilinos repository in /fgs/drnoble/projects/Trilinos was created off
 of a clone of Trilinos using the commands:
 

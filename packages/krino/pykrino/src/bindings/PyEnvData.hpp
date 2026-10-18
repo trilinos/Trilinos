@@ -17,7 +17,7 @@ namespace pykrino {
 // Process-wide setup needed before building any STK mesh: Kokkos and the stk::EnvData communicator
 // (a duplicate of comm).  MPI must already be initialized (pykrino imports mpi4py, which does it).
 // Later calls are no-ops until finalize.  Mesh constructors call this, so users need not.
-void ensure_initialized(MPI_Comm comm = MPI_COMM_WORLD);
+void ensure_initialized(MPI_Comm comm = stk::parallel_machine_world());
 // ensure_initialized, then the communicator to build meshes on.
 MPI_Comm get_initialized_comm();
 
