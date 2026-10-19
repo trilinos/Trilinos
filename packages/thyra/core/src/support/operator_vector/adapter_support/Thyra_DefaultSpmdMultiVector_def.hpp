@@ -95,12 +95,6 @@ copyBackSpmdMultiVectorEntries(
 //
 
 
-#ifdef THYRA_DEBUG
-template<class Scalar>
-int DefaultSpmdMultiVector<Scalar>::numSkipCopyBack(0);
-#endif
-
-
 // Constructors/initializers/accessors
 
 
