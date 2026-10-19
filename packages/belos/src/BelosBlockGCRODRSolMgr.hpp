@@ -154,7 +154,7 @@ public:
   //@{
 
   //! A description of the Block GCRODR solver manager.
-  std::string description() const;
+  std::string description() const override;
 
   //@}
 
@@ -163,26 +163,26 @@ public:
   //@{
 
   //! Get current linear problem being solved for in this object.
-  const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const {
+  const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const override {
     return *problem_;
   }
 
   //! Get a parameter list containing the valid parameters for this object.
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
   //! Get a parameter list containing the current parameters for this object.
-  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override { return params_; }
 
   //! Get the residual for the most recent call to solve().
-  MagnitudeType achievedTol() const {
+  MagnitudeType achievedTol() const override {
     return achievedTol_;
   }
 
   //! Get the iteration count for the most recent call to \c solve().
-  int getNumIters() const { return numIters_; }
+  int getNumIters() const override { return numIters_; }
 
   //! Whether a loss of accuracy was detected during the most recent solve.
-  bool isLOADetected() const { return loaDetected_; }
+  bool isLOADetected() const override { return loaDetected_; }
 
   //@}
 
@@ -190,7 +190,7 @@ public:
   //@{
 
   /// \brief Set the linear problem to solve on the next call to \c solve().
-  void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >& problem) {
+  void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >& problem) override {
     TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
       "Belos::BlockGCRODRSolMgr::setProblem: The input LinearProblem cannot be null.");
 
@@ -209,7 +209,7 @@ public:
   }
 
   //! Set the parameters the solver should use to solve the linear problem.
-  void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+  void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
   //! Set a debug status test, OR-combined into the top-level status test.
   void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& debugStatusTest ) override {
@@ -230,7 +230,7 @@ public:
    * for the next call to solve by resetting certain elements of the
    * iterative solver strategy.
    */
-  void reset (const ResetType type) {
+  void reset (const ResetType type) override {
     if ((type & Belos::Problem) && ! problem_.is_null ())
       problem_->setProblem();
     else if (type & Belos::RecycleSubspace)
@@ -260,7 +260,7 @@ public:
   // \returns ::ReturnType specifying:
   /// - ::Converged: the linear problem was solved to the specification required by the solver manager.
   /// - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
-  ReturnType solve();
+  ReturnType solve() override;
 
   //@}
 

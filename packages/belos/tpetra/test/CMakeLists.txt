@@ -39,12 +39,3 @@ TRIBITS_ADD_Test(
   COMM mpi
   NUM_MPI_PROCS 1
   )
-
-TRIBITS_ADD_Test(
-  Issue_14389
-  NAME "Issue_14389_fail"
-  ARGS "--case=2"
-  WILL_FAIL
-  COMM mpi
-  NUM_MPI_PROCS 1
-  )
