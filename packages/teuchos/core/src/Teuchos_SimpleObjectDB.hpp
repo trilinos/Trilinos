@@ -245,7 +245,11 @@ template <class T>
 RCP<T> SimpleObjectDB<T>::removeNonconstObj(const int index)
 {
   validateIndex(index);
+#ifdef TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+  const RCP<T> obj = tableOfObjects_.at(index).getNonconstObj();
+#else
   const RCP<T> obj = tableOfObjects_[index].getNonconstObj();
+#endif
   removeObjImpl(index);
   return obj;
 }
@@ -255,7 +259,11 @@ template <class T>
 RCP<const T> SimpleObjectDB<T>::removeConstObj(const int index)
 {
   validateIndex(index);
+#ifdef TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+  const RCP<const T> obj = tableOfObjects_.at(index).getConstObj();
+#else
   const RCP<const T> obj = tableOfObjects_[index].getConstObj();
+#endif
   removeObjImpl(index);
   return obj;
 }
@@ -266,7 +274,11 @@ int SimpleObjectDB<T>::removeRCP(int &index)
 {
   const int index_in = index;
   validateIndex(index);
+#ifdef TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+  const int cnt = tableOfObjects_.at(index_in).count();
+#else
   const int cnt = tableOfObjects_[index_in].count();
+#endif
   removeObjImpl(index_in);
   index = -1;
   return (cnt - 1);
@@ -342,7 +354,11 @@ void SimpleObjectDB<T>::validateIndex(const int index) const
     RangeError,
     "Error, the object index = " << index << " falls outside of the range"
     << " of valid objects [0,"<<tableOfObjects_.size()<<"]");
+#ifdef TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+  const RCP<const T> &obj = tableOfObjects_.at(index).getConstObj();
+#else
   const RCP<const T> &obj = tableOfObjects_[index].getConstObj();
+#endif
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError,
     "Error, the object at index "<<index<<" of type "
     <<TypeNameTraits<T>::name()<<" has already been deleted!");
@@ -360,7 +376,11 @@ int SimpleObjectDB<T>::storeObjectImpl(const RCP<T2> & robj)
   if (freedIndices_.size() != 0) {
     index = freedIndices_.back();
     freedIndices_.pop_back();
+#ifdef TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+    tableOfObjects_.at(index).initialize(robj);
+#else
     tableOfObjects_[index].initialize(robj);
+#endif
   } else {
     tableOfObjects_.push_back(robj);
     index = tableOfObjects_.size() - 1;
@@ -373,7 +393,11 @@ int SimpleObjectDB<T>::storeObjectImpl(const RCP<T2> & robj)
 template <class T>
 void SimpleObjectDB<T>::removeObjImpl(const int index)
 {
+#ifdef TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+  tableOfObjects_.at(index) = null;
+#else
   tableOfObjects_[index] = null;
+#endif
   freedIndices_.push_back(index);
 }
 
