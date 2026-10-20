@@ -35,8 +35,8 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>
 #endif
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class TheNode>
-  static void pre_spgemm(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, TheNode>& A) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  static void pre_spgemm(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& A) {
 #if KOKKOSKERNELS_VERSION >= 50299
     (void)A;
 #elif defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
