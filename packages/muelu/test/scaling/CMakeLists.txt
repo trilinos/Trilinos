@@ -352,7 +352,11 @@ TRIBITS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "Belos converged|Skipping test"
 )
 
-IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND ${PACKAGE_NAME}_ENABLE_Teko)
+IF(${PACKAGE_NAME}_ENABLE_Stratimikos
+   AND ${PACKAGE_NAME}_ENABLE_Thyra
+   AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
+   AND ${PACKAGE_NAME}_ENABLE_Teko
+)
   TRIBITS_ADD_TEST(
     MultiphysicsDriver
     NAME "MultiphysicsTestTekoBlockAMG"

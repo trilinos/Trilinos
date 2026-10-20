@@ -84,14 +84,8 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
   )
 
   IF(${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
-    APPEND_SET(
-      HEADERS
-      ${DIR}/MueLu_TekoMultiPhysBlockPreconditionerFactory.hpp
-    )
-    APPEND_SET(
-      SOURCES
-      ${DIR}/MueLu_TekoMultiPhysBlockPreconditionerFactory.cpp
-    )
+    APPEND_SET(HEADERS ${DIR}/MueLu_TekoMultiPhysBlockPreconditionerFactory.hpp)
+    APPEND_SET(SOURCES ${DIR}/MueLu_TekoMultiPhysBlockPreconditionerFactory.cpp)
   ENDIF()
 
   # Tpetra specific extensions
