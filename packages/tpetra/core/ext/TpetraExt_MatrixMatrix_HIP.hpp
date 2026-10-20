@@ -37,8 +37,8 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosHIPWrapperNode> {
 #endif
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class TheNode>
-  static void pre_spgemm(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, TheNode>& A) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  static void pre_spgemm(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode>& A) {
 #if KOKKOSKERNELS_VERSION >= 50299
     (void)A;
 #elif defined(KOKKOS_ENABLE_HIP) && defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)

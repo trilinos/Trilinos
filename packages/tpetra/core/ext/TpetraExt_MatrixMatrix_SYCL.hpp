@@ -23,13 +23,14 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosSYCLWrapperNode> {
 
   template <class MatrixType>
   static void pre_spgemm(MatrixType&) {
-    // Note BMK: KokkosKernels as of 5.2.2 does not have oneAPI spgemm wrappers for SYCL
+    // Note BMK: KokkosKernels as of 5.2.2 does not have oneAPI spgemm wrappers
+    // for SYCL, so no sorting is needed here
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class TheNode>
-  static void pre_spgemm(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, TheNode>& A) {
-    // Note BMK: KokkosKernels as of 5.2.2 does not have oneAPI spgemm wrappers for SYCL
-    (void)A;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  static void pre_spgemm(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSYCLWrapperNode>&) {
+    // Note BMK: KokkosKernels as of 5.2.2 does not have oneAPI spgemm wrappers
+    // for SYCL, so no sorting is needed here
   }
 };
 
