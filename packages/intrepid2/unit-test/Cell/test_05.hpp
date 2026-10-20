@@ -456,7 +456,7 @@ namespace Intrepid2 {
 
           // 63. Point dimension does not match cell topology
           points = DynRankView("points", D+1);
-          INTREPID2_TEST_ERROR_EXPECTED( ct::checkPointInclusion(points, cell ) );
+          INTREPID2_TEST_ERROR_EXPECTED( ct::checkPointwiseInclusion(points, cell ) );
 
           // // 64. Invalid cell topology
           // CellTopology pentagon_5(shards::getCellTopologyData<shards::Pentagon<> >() );
