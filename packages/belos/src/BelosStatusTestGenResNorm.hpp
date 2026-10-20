@@ -564,7 +564,7 @@ void StatusTestGenResNorm<ScalarType,MV,OP,DM>::print(std::ostream& os, int inde
     os << std::endl;
     if(showMaxResNormOnly_ && curBlksz_ > 1) {
       const MagnitudeType maxRelRes = *std::max_element(
-        testvector_.begin()+curLSIdx_[0],testvector_.begin()+curLSIdx_[curBlksz_-1]
+        testvector_.begin()+curLSIdx_[0],testvector_.begin()+curLSIdx_[curBlksz_-1]+1
         );
       for (int j = 0; j < indent + 13; j ++)
         os << ' ';
