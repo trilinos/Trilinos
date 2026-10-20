@@ -661,6 +661,11 @@ checkStatus (Iteration<ScalarType,MV,OP,DM>* iSolver)
         have2++; // This right-hand side has converged.
       }
       else {
+        // Check for NaN in explicit residual norm
+        if (STM::isnaninf(tmp_testvector[i])) {
+          status_ = Failed;
+          TEUCHOS_TEST_FOR_EXCEPTION(true, StatusTestNaNError, "Belos::StatusTestImpResNorm::checkStatus(): One or more of the current explicit residual norms is NaN.");
+        }
         // Absolute difference between the current explicit and
         // implicit residual norm.
         const MagnitudeType diff = STM::magnitude (testvector_[ind_[i]] - tmp_testvector[i]);
@@ -729,7 +734,7 @@ void StatusTestImpResNorm<ScalarType,MV,OP,DM>::print(std::ostream& os, int inde
     os << std::endl;
     if(showMaxResNormOnly_ && curBlksz_ > 1) {
       const MagnitudeType maxRelRes = *std::max_element(
-        testvector_.begin()+curLSIdx_[0],testvector_.begin()+curLSIdx_[curBlksz_-1]
+        testvector_.begin()+curLSIdx_[0],testvector_.begin()+curLSIdx_[curBlksz_-1]+1
         );
       for (int j = 0; j < indent + 13; j ++)
         os << ' ';
