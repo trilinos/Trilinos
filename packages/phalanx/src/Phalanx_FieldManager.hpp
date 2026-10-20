@@ -44,7 +44,9 @@ namespace PHX {
 
   public:
 
+#ifndef PHALANX_HIDE_DEPRECATED_CODE
     typedef typename PHX::EvaluationContainer_TemplateManager<Traits>::iterator iterator;
+#endif
 
     FieldManager();
 
@@ -60,8 +62,11 @@ namespace PHX {
     template<typename EvalT>
     void registerEvaluator(const Teuchos::RCP< PHX::Evaluator<Traits> >& e);
 
+#ifndef PHALANX_HIDE_DEPRECATED_CODE
+    PHALANX_DEPRECATED_MSG("Use the methods templated on the evaluation type, in a PHX::mpl::for_each_type loop.")
     void registerEvaluator(typename PHX::FieldManager<Traits>::iterator it,
 			   const Teuchos::RCP< PHX::Evaluator<Traits> >& e);
+#endif
 
     template<typename EvalT, typename DataT,typename...Props>
     void getFieldData(PHX::MDField<DataT,Props...>& f);
@@ -269,11 +274,15 @@ namespace PHX {
     template<typename EvalT>
     const PHX::DagManager<Traits>& getDagManager() const;
 
+#ifndef PHALANX_HIDE_DEPRECATED_CODE
     //! Return iterator to first EvaluationContainer
+    PHALANX_DEPRECATED_MSG("Use the methods templated on the evaluation type, in a PHX::mpl::for_each_type loop.")
     typename FieldManager::iterator begin();
 
     //! Return iterator to last EvaluationContainer
+    PHALANX_DEPRECATED_MSG("Use the methods templated on the evaluation type, in a PHX::mpl::for_each_type loop.")
     typename FieldManager::iterator end();
+#endif
 
     //! Writes graphviz dot file for the evaluation type
     template<typename EvalT>

@@ -9,3 +9,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  template_manager_common_api
+  SOURCES TemplateManagerCommonApiTest.cpp
+  TESTONLYLIBS phalanx_unit_test_main
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+)

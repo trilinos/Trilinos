@@ -176,8 +176,8 @@ namespace panzer {
     input.alpha = 0.0;
     input.beta = 1.0;
 
-    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Residual>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
   }
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
@@ -443,7 +443,7 @@ namespace panzer {
     input.alpha = 0.0;
     input.beta = 1.0;
 
-    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Residual>()->evaluate(input);
     const Epetra_Vector & f = *eGlobal->get_f();
 
     std::vector<panzer::GlobalOrdinal> GIDs;
@@ -467,7 +467,7 @@ namespace panzer {
     else
        TEUCHOS_ASSERT(false);
 
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
 
     const Epetra_CrsMatrix & A = *eGlobal->get_A();
 

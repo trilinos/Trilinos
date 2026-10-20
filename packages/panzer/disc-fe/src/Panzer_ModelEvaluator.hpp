@@ -114,7 +114,7 @@ public:
   template<typename EvalT>
   void disableEvaluationType()
   {
-    ae_tm_.template disableType<EvalT>();
+    ae_tm_.template disable<EvalT>();
     constexpr std::size_t idx = PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>;
     active_evaluation_types_[idx] = false;
   }

@@ -1590,7 +1590,7 @@ namespace panzer_stk {
 
     template<typename EvalT>
     void operator()() const {
-      auto factory = user_cm_factory_.getAsObject<EvalT>();
+      auto factory = user_cm_factory_.get<EvalT>();
       panzer_stk::STKMeshAccessor* mesh_accessor = nullptr;
       mesh_accessor = dynamic_cast<panzer_stk::STKMeshAccessor*>(factory.get());
       if (mesh_accessor) {

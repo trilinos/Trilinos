@@ -68,11 +68,10 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     setupData.worksets_ = wkstContainer.getWorksets(wd);
     setupData.orientations_ = wkstContainer.getOrientations();
 
-    int i=0;
-    for (auto eval_type=fm->begin(); eval_type != fm->end(); ++eval_type,++i) {
-      if (active_evaluation_types[i])
-        eval_type->postRegistrationSetup(setupData,*fm,false,false,nullptr);
-    }
+    PHX::mpl::for_each_type<panzer::Traits::EvalTypes>([&]<typename EvalT>() {
+      if (active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>])
+        fm->postRegistrationSetupForType<EvalT>(setupData,false,false,nullptr);
+    });
 
     phx_ic_field_managers[blockId] = fm;
 
@@ -133,11 +132,10 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     setupData.worksets_ = wkstContainer.getWorksets(wd);
     setupData.orientations_ = wkstContainer.getOrientations();
 
-    int i=0;
-    for (auto eval_type=fm->begin(); eval_type != fm->end(); ++eval_type,++i) {
-      if (active_evaluation_types[i])
-        eval_type->postRegistrationSetup(setupData,*fm,false,false,nullptr);
-    }
+    PHX::mpl::for_each_type<panzer::Traits::EvalTypes>([&]<typename EvalT>() {
+      if (active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>])
+        fm->postRegistrationSetupForType<EvalT>(setupData,false,false,nullptr);
+    });
 
     phx_ic_field_managers[blockId] = fm;
 

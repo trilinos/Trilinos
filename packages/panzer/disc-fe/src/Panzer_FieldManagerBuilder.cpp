@@ -270,19 +270,17 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
             bcstm = bc_factory.buildBCStrategy(*bc, side_pb->globalData());
 
           // Iterate over evaluation types
-          int i=0;
-          for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator
-                 bcs_type = bcstm->begin(); bcs_type != bcstm->end(); ++bcs_type,++i) {
-            if (active_evaluation_types_[i]) {
-              bcs_type->setDetailsIndex(block_id_index);
+          bcstm->forEach([&]<typename EvalT>(panzer::BCStrategy<EvalT>& bcs_type) {
+            if (active_evaluation_types_[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
+              bcs_type.setDetailsIndex(block_id_index);
               side_pb->setDetailsIndex(block_id_index);
-              bcs_type->setup(*side_pb, user_data);
-              bcs_type->buildAndRegisterEvaluators(fm, *side_pb, cm_factory, closure_models, user_data);
-              bcs_type->buildAndRegisterGatherAndOrientationEvaluators(fm, *side_pb, lo_factory, user_data);
+              bcs_type.setup(*side_pb, user_data);
+              bcs_type.buildAndRegisterEvaluators(fm, *side_pb, cm_factory, closure_models, user_data);
+              bcs_type.buildAndRegisterGatherAndOrientationEvaluators(fm, *side_pb, lo_factory, user_data);
               if ( ! physicsBlockScatterDisabled())
-                bcs_type->buildAndRegisterScatterEvaluators(fm, *side_pb, lo_factory, user_data);
+                bcs_type.buildAndRegisterScatterEvaluators(fm, *side_pb, lo_factory, user_data);
             }
-          }
+          });
 
           gid_count += globalIndexer->getElementBlockGIDCount(element_block_id);
         }
@@ -346,17 +344,15 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 	  bc_factory.buildBCStrategy(*bc,side_pb->globalData());
 
 	// Iterate over evaluation types
-        int i=0;
-	for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator
-	       bcs_type = bcstm->begin(); bcs_type != bcstm->end(); ++bcs_type,++i) {
-          if (active_evaluation_types_[i]) {
-            bcs_type->setup(*side_pb,user_data);
-            bcs_type->buildAndRegisterEvaluators(fm,*side_pb,cm_factory,closure_models,user_data);
-            bcs_type->buildAndRegisterGatherAndOrientationEvaluators(fm,*side_pb,lo_factory,user_data);
+        bcstm->forEach([&]<typename EvalT>(panzer::BCStrategy<EvalT>& bcs_type) {
+          if (active_evaluation_types_[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
+            bcs_type.setup(*side_pb,user_data);
+            bcs_type.buildAndRegisterEvaluators(fm,*side_pb,cm_factory,closure_models,user_data);
+            bcs_type.buildAndRegisterGatherAndOrientationEvaluators(fm,*side_pb,lo_factory,user_data);
             if(!physicsBlockScatterDisabled())
-              bcs_type->buildAndRegisterScatterEvaluators(fm,*side_pb,lo_factory,user_data);
+              bcs_type.buildAndRegisterScatterEvaluators(fm,*side_pb,lo_factory,user_data);
           }
-	}
+	});
 
 	// Setup the fieldmanager
 	Traits::SD setupData;

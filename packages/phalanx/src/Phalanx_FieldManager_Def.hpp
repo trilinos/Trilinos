@@ -45,7 +45,7 @@ void PHX::FieldManager<Traits>::
 getFieldData(PHX::MDField<DataT,Props...>& f)
 {
   std::any a = m_eval_containers.template
-    getAsObject<EvalT>()->getFieldData(f.fieldTag());
+    get<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
 }
@@ -58,7 +58,7 @@ void PHX::FieldManager<Traits>::
 getFieldData(PHX::MDField<const DataT,Props...>& f)
 {
   std::any a = m_eval_containers.template
-    getAsObject<EvalT>()->getFieldData(f.fieldTag());
+    get<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
 }
@@ -71,7 +71,7 @@ void PHX::FieldManager<Traits>::
 getFieldData(PHX::Field<DataT,Rank,Layout>& f)
 {
   std::any a = m_eval_containers.template
-    getAsObject<EvalT>()->getFieldData(f.fieldTag());
+    get<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
 }
@@ -84,7 +84,7 @@ void PHX::FieldManager<Traits>::
 getFieldData(PHX::Field<const DataT,Rank,Layout>& f)
 {
   std::any a = m_eval_containers.template
-    getAsObject<EvalT>()->getFieldData(f.fieldTag());
+    get<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
 }
@@ -97,7 +97,7 @@ void PHX::FieldManager<Traits>::
 getFieldData(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device>& f)
 {
   std::any a = m_eval_containers.template
-    getAsObject<EvalT>()->getFieldData(ft);
+    get<EvalT>()->getFieldData(ft);
 
   // std::any object is always the non-const data type.  To
   // correctly cast the any object to the Kokkos::View, need to
@@ -124,7 +124,7 @@ inline
 void PHX::FieldManager<Traits>::
 setUnmanagedField(PHX::MDField<DataT,Props...>& f, const bool cleanup_output)
 {
-  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),f.get_static_view_as_any(),
+  m_eval_containers.template get<EvalT>()->setUnmanagedField(f.fieldTag(),f.get_static_view_as_any(),
                                                                      cleanup_output);
 }
 
@@ -136,7 +136,7 @@ void PHX::FieldManager<Traits>::
 setUnmanagedField(PHX::Field<DataT,Rank,Layout>& f, const bool cleanup_output)
 {
   std::any any_f(f.get_static_view());
-  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),any_f,
+  m_eval_containers.template get<EvalT>()->setUnmanagedField(f.fieldTag(),any_f,
                                                                      cleanup_output);
 }
 
@@ -156,7 +156,7 @@ setUnmanagedField(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device
   static_assert(std::is_same<value_type,non_const_value_type>::value, "FieldManager::setUnmanagedField(FieldTag, View) - DataT must be non-const!");
 
   std::any any_f(f);
-  m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(ft,any_f,cleanup_output);
+  m_eval_containers.template get<EvalT>()->setUnmanagedField(ft,any_f,cleanup_output);
 }
 
 // **************************************************************
@@ -165,9 +165,7 @@ void PHX::FieldManager<Traits>::
 aliasFieldForAllEvaluationTypes(const PHX::FieldTag& aliasedField,
                                 const PHX::FieldTag& targetField)
 {
-  typename SCTM::iterator it = m_eval_containers.begin();
-  for (; it != m_eval_containers.end(); ++it)
-    it->aliasField(aliasedField,targetField);
+  m_eval_containers.forEachBase([&](auto& c) { c.aliasField(aliasedField,targetField); });
 }
 
 // **************************************************************
@@ -177,7 +175,7 @@ void PHX::FieldManager<Traits>::
 aliasField(const PHX::FieldTag& aliasedField,
            const PHX::FieldTag& targetField)
 {
-  m_eval_containers.template getAsObject<EvalT>()->aliasField(aliasedField,targetField);
+  m_eval_containers.template get<EvalT>()->aliasField(aliasedField,targetField);
 }
 
 // **************************************************************
@@ -186,10 +184,7 @@ inline
 void PHX::FieldManager<Traits>::
 requireFieldForAllEvaluationTypes(const PHX::FieldTag& t)
 {
-  typename SCTM::iterator it = m_eval_containers.begin();
-  for (; it != m_eval_containers.end(); ++it) {
-    it->requireField(t);
-  }
+  m_eval_containers.forEachBase([&](auto& c) { c.requireField(t); });
 }
 
 // **************************************************************
@@ -208,10 +203,7 @@ inline
 void PHX::FieldManager<Traits>::
 registerEvaluatorForAllEvaluationTypes(const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
 {
-  typename SCTM::iterator it = m_eval_containers.begin();
-  for (; it != m_eval_containers.end(); ++it) {
-    it->registerEvaluator(e);
-  }
+  m_eval_containers.forEachBase([&](auto& c) { c.registerEvaluator(e); });
 }
 
 // **************************************************************
@@ -224,6 +216,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
   m_eval_containers.template getAsBase<EvalT>()->registerEvaluator(e);
 }
 
+#ifndef PHALANX_HIDE_DEPRECATED_CODE
 // **************************************************************
 template<typename Traits>
 inline
@@ -233,6 +226,7 @@ registerEvaluator(FieldManager::iterator it,
 {
   it->registerEvaluator(e);
 }
+#endif
 
 // **************************************************************
 template<typename Traits>
@@ -244,7 +238,7 @@ postRegistrationSetupForType(typename Traits::SetupData d,
                              const bool& minimizeDAGMemoryUse,
                              const PHX::MemoryManager* const memoryManager)
 {
-  m_eval_containers.template getAsObject<EvalT>()->
+  m_eval_containers.template get<EvalT>()->
     postRegistrationSetup(d, *this, buildDeviceDAG,
                           minimizeDAGMemoryUse,
                           memoryManager);
@@ -259,11 +253,11 @@ postRegistrationSetup(typename Traits::SetupData d,
                       const bool& minimizeDAGMemoryUse,
                       const PHX::MemoryManager* const memoryManager)
 {
-  typename SCTM::iterator it = m_eval_containers.begin();
-  for (std::size_t i = 0; it != m_eval_containers.end(); ++it, ++i)
-    it->postRegistrationSetup(d, *this, buildDeviceDAG,
-                              minimizeDAGMemoryUse,
-                              memoryManager);
+  m_eval_containers.forEachBase([&](auto& c) {
+    c.postRegistrationSetup(d, *this, buildDeviceDAG,
+                            minimizeDAGMemoryUse,
+                            memoryManager);
+  });
 }
 
 // **************************************************************
@@ -286,7 +280,7 @@ evaluateFieldsDeviceDag(const int& work_size,
 			const int& vector_size,
 			typename Traits::EvalData d)
 {
-  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsDeviceDag(work_size,team_size,vector_size,d);
+  m_eval_containers.template get<EvalT>()->evaluateFieldsDeviceDag(work_size,team_size,vector_size,d);
 }
 
 // **************************************************************
@@ -298,7 +292,7 @@ void PHX::FieldManager<Traits>::
 evaluateFieldsTaskParallel(const int& work_size,
 			   typename Traits::EvalData d)
 {
-  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsTaskParallel(work_size,d);
+  m_eval_containers.template get<EvalT>()->evaluateFieldsTaskParallel(work_size,d);
 }
 #endif
 
@@ -329,7 +323,7 @@ inline
 void PHX::FieldManager<Traits>::
 setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dims)
 {
-  m_eval_containers.template getAsObject<EvalT>()->
+  m_eval_containers.template get<EvalT>()->
     setKokkosExtendedDataTypeDimensions(dims);
 }
 
@@ -340,7 +334,7 @@ inline
 const std::vector<PHX::index_size_type>& PHX::FieldManager<Traits>::
 getKokkosExtendedDataTypeDimensions() const
 {
-  return m_eval_containers.template getAsObject<EvalT>()->
+  return m_eval_containers.template get<EvalT>()->
     getKokkosExtendedDataTypeDimensions();
 }
 
@@ -350,9 +344,10 @@ template<typename EvalT>
 const PHX::DagManager<Traits>&
 PHX::FieldManager<Traits>::getDagManager() const
 {
-  return m_eval_containers.template getAsObject<EvalT>()->getDagManager();
+  return m_eval_containers.template get<EvalT>()->getDagManager();
 }
 
+#ifndef PHALANX_HIDE_DEPRECATED_CODE
 // **************************************************************
 template<typename Traits>
 inline
@@ -370,6 +365,7 @@ PHX::FieldManager<Traits>::end()
 {
   return m_eval_containers.end();
 }
+#endif
 
 // **************************************************************
 template<typename Traits>
@@ -396,13 +392,12 @@ writeGraphvizFile(const std::string base_filename,
 		  bool writeDependentFields,
 		  bool debugRegisteredEvaluators) const
 {
-  typename SCTM::const_iterator it = m_eval_containers.begin();
-  for (; it != m_eval_containers.end(); ++it) {
-    std::string name = base_filename + "_" + it->evaluationType() +
+  m_eval_containers.forEachBase([&](const auto& c) {
+    std::string name = base_filename + "_" + c.evaluationType() +
       file_extension;
-    it->writeGraphvizFile(name, writeEvaluatedFields, writeDependentFields,
-			  debugRegisteredEvaluators);
-  }
+    c.writeGraphvizFile(name, writeEvaluatedFields, writeDependentFields,
+                        debugRegisteredEvaluators);
+  });
 }
 
 // **************************************************************
@@ -410,9 +405,7 @@ template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::print(std::ostream& os) const
 {
-  typename SCTM::const_iterator it = m_eval_containers.begin();
-  for (; it != m_eval_containers.end(); ++it)
-    os << (*it);
+  m_eval_containers.forEachBase([&](const auto& c) { os << c; });
 }
 
 // **************************************************************
@@ -422,7 +415,7 @@ inline
 void PHX::FieldManager<Traits>::
 analyzeGraph(double& s, double& p) const
 {
-  m_eval_containers.template getAsObject<EvalT>()->analyzeGraph(s,p);
+  m_eval_containers.template get<EvalT>()->analyzeGraph(s,p);
 }
 
 // **************************************************************
@@ -440,7 +433,7 @@ template<typename Traits>
 template<typename EvalT>
 void PHX::FieldManager<Traits>::buildDagForType()
 {
-  m_eval_containers.template getAsObject<EvalT>()->buildDag();
+  m_eval_containers.template get<EvalT>()->buildDag();
 }
 
 // **************************************************************
@@ -449,7 +442,7 @@ template<typename EvalT>
 const std::vector<Teuchos::RCP<PHX::FieldTag>>&
 PHX::FieldManager<Traits>::getFieldTagsForSizing()
 {
-  return m_eval_containers.template getAsObject<EvalT>()->getFieldTags();
+  return m_eval_containers.template get<EvalT>()->getFieldTags();
 }
 
 // **************************************************************
@@ -458,7 +451,7 @@ template<typename EvalT>
 void PHX::FieldManager<Traits>::
 printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
 {
-  m_eval_containers.template getAsObject<EvalT>()->printEvaluatorStartStopMessage(ostr);  
+  m_eval_containers.template get<EvalT>()->printEvaluatorStartStopMessage(ostr);  
 }
 
 // **************************************************************

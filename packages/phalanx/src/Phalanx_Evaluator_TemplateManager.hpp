@@ -18,12 +18,27 @@
 using namespace Sacado::mpl::placeholders;
 
 namespace PHX {
+
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+  namespace detail {
+    template<typename Traits>
+    struct EvaluatorDerivedOf {
+      template<typename EvalT> using type = PHX::EvaluatorDerived<EvalT,Traits>;
+    };
+  }
+#endif
   
   template<typename Traits>
   class Evaluator_TemplateManager : 
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+    public PHX::TemplateManager<typename Traits::EvalTypes,
+                                PHX::detail::EvaluatorDerivedOf<Traits>::template type,
+                                PHX::EvaluatorBase<Traits> > {
+#else
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				PHX::EvaluatorBase<Traits>,
 				PHX::EvaluatorDerived<_,Traits> > {
+#endif
     
   public:
     
