@@ -20,6 +20,7 @@
 #include "MueLu_BelosSmoother.hpp"
 #include "MueLu_StratimikosSmoother.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_MergedBlockedMatrixFactory.hpp"
 
 namespace MueLu {
 
@@ -108,14 +109,27 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TrilinosSmoother(co
                                  << (triedStratimikos_ ? errorStratimikos_ + "\n" : ""));
 
   this->SetParameterList(paramList);
+  SetFactory("A", this->GetFactory("A"));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
+  RCP<const FactoryBase> wrappedFactory = factory;
+  if (varName == "A") {
+    typedef MueLu::MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MergedBlockedMatrixFactoryClass;
+    if (Teuchos::rcp_dynamic_cast<const MergedBlockedMatrixFactoryClass>(factory).is_null()) {
+      RCP<MergedBlockedMatrixFactoryClass> mergedAFact = rcp(new MergedBlockedMatrixFactoryClass());
+      mergedAFact->SetFactory("A", factory);
+      wrappedFactory = mergedAFact;
+    }
+  }
+
+  SmootherPrototype::SetFactory(varName, wrappedFactory);
+
   // We need to propagate SetFactory to proper place
-  if (!sTpetra_.is_null()) sTpetra_->SetFactory(varName, factory);
-  if (!sBelos_.is_null()) sBelos_->SetFactory(varName, factory);
-  if (!sStratimikos_.is_null()) sStratimikos_->SetFactory(varName, factory);
+  if (!sTpetra_.is_null()) sTpetra_->SetFactory(varName, wrappedFactory);
+  if (!sBelos_.is_null()) sBelos_->SetFactory(varName, wrappedFactory);
+  if (!sStratimikos_.is_null()) sStratimikos_->SetFactory(varName, wrappedFactory);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -190,6 +204,7 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const {
     newSmoo->s_ = newSmoo->sTpetra_;
 
   newSmoo->SetParameterList(this->GetParameterList());
+  newSmoo->SetFactory("A", this->GetFactory("A"));
 
   return newSmoo;
 }
