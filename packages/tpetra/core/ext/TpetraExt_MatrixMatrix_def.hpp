@@ -1208,10 +1208,8 @@ void kokkos_kernels_mult_A_B_newmatrix(
   } else
 #endif
   {
-    if (!Aview.origMatrix->getCrsGraph()->isSorted()) {
-      backend_type::pre_spgemm(Amat, /* known unsorted */ true);
-    }
-    backend_type::pre_spgemm(Bmerged, false);
+    backend_type::pre_spgemm(*Aview.origMatrix);
+    backend_type::pre_spgemm(Bmerged);
 
     const std::string coreLabel = "TpetraExt: MMM: Newmatrix " + backend_type::algorithm_label() + "Core";
     MM                          = Teuchos::null;
