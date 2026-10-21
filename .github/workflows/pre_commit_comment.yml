@@ -76,8 +76,8 @@ jobs:
           const baseRepoFullName = `${owner}/${repo}`;
 
           const sha = run.head_sha;
-          const { source_owner, source_repo } = run.head_repository;
           const headRepoFullName = run.head_repository?.full_name;
+          [ source_owner, source_repo ] = headRepoFullName.split('/');
           const headBranch = run.head_branch;
 
           core.info(`Workflow run id: ${run.id}`);
