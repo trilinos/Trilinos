@@ -128,8 +128,8 @@ void StepperNewmarkImplicitAForm<Scalar>::setSchemeName(std::string schemeName)
     gamma_ = 0.5;
   }
   else if (schemeName_ == "Linear Acceleration") {
-    beta_  = 0.25;
-    gamma_ = 1.0 / 6.0;
+    beta_  = 1.0 / 6.0;
+    gamma_ = 0.5;
   }
   else if (schemeName_ == "Central Difference") {
     beta_  = 0.0;

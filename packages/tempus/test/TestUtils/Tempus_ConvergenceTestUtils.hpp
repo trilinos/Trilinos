@@ -207,7 +207,7 @@ void writeOrderError(
   auto ref_solution = solutions[lastElem];
   for (std::size_t i = 0; i < lastElem; ++i) {
     dt.push_back(StepSize[i]);
-    auto tmp = solutions[i];
+    auto tmp = solutions[i]->clone_v();
     Thyra::Vp_StV(tmp.ptr(), -1.0, *ref_solution);
     Scalar L2norm = Thyra::norm_2(*tmp);
     xErrorNorm.push_back(L2norm);
@@ -217,7 +217,7 @@ void writeOrderError(
   if (!solutionsDot.empty()) {
     auto ref_solutionDot = solutionsDot[lastElem];
     for (std::size_t i = 0; i < lastElem; ++i) {
-      auto tmp = solutionsDot[i];
+      auto tmp = solutionsDot[i]->clone_v();
       Thyra::Vp_StV(tmp.ptr(), -1.0, *ref_solutionDot);
       Scalar L2norm = Thyra::norm_2(*tmp);
       xDotErrorNorm.push_back(L2norm);
@@ -228,7 +228,7 @@ void writeOrderError(
   if (!solutionsDotDot.empty()) {
     auto ref_solutionDotDot = solutionsDotDot[solutions.size() - 1];
     for (std::size_t i = 0; i < lastElem; ++i) {
-      auto tmp = solutionsDotDot[i];
+      auto tmp = solutionsDotDot[i]->clone_v();
       Thyra::Vp_StV(tmp.ptr(), -1.0, *ref_solutionDotDot);
       Scalar L2norm = Thyra::norm_2(*tmp);
       xDotDotErrorNorm.push_back(L2norm);

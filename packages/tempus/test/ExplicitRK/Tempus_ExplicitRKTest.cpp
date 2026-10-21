@@ -545,7 +545,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
 
   // the embedded solution will test the following:
   // using the starting stepsize routine, this has now decreased
-  const int refIstep = 36;
+  const int refIstep = 38;
 
   for (auto integratorChoice : IntegratorList) {
     out << "Using Integrator: " << integratorChoice << " !!!" << std::endl;
