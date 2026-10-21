@@ -5070,14 +5070,14 @@ struct SolveTridiags {
             policy(packptr.extent(0) - 1, team_size, vector_loop_size);                                                                               \
         policy.set_scratch_size(0, Kokkos::PerTeam(per_team_scratch));                                                                                \
         Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,0>",                                                                        \
-                             Kokkos::Experimental::require(policy, Kokkos::Experimental::WorkItemProperty::HintHeavyWeight),                          \
+                             policy,                                                                                                                  \
                              SingleVectorFunctor<B, 0>(*this));                                                                                       \
       } else {                                                                                                                                        \
         Kokkos::TeamPolicy<execution_space>                                                                                                           \
             policy(packptr.extent(0) - 1, team_size, vector_loop_size);                                                                               \
         policy.set_scratch_size(1, Kokkos::PerTeam(per_team_scratch));                                                                                \
         Kokkos::parallel_for("SolveTridiags::TeamPolicy::run<SingleVector,1>",                                                                        \
-                             Kokkos::Experimental::require(policy, Kokkos::Experimental::WorkItemProperty::HintHeavyWeight),                          \
+                             policy,                                                                                                                  \
                              SingleVectorFunctor<B, 1>(*this));                                                                                       \
       }                                                                                                                                               \
     } else {                                                                                                                                          \
