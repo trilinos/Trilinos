@@ -19,8 +19,8 @@
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_BelosSmoother.hpp"
 #include "MueLu_StratimikosSmoother.hpp"
-#include "MueLu_Exceptions.hpp"
 #include "MueLu_MergedBlockedMatrixFactory.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 
@@ -109,27 +109,30 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TrilinosSmoother(co
                                  << (triedStratimikos_ ? errorStratimikos_ + "\n" : ""));
 
   this->SetParameterList(paramList);
-  SetFactory("A", this->GetFactory("A"));
+  SetFactory("A", MueLu::NoFactory::getRCP());
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
-  RCP<const FactoryBase> wrappedFactory = factory;
+  RCP<const FactoryBase> smootherFactory = factory;
+
   if (varName == "A") {
+    AFact_ = factory;
+
     typedef MueLu::MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MergedBlockedMatrixFactoryClass;
     if (Teuchos::rcp_dynamic_cast<const MergedBlockedMatrixFactoryClass>(factory).is_null()) {
       RCP<MergedBlockedMatrixFactoryClass> mergedAFact = rcp(new MergedBlockedMatrixFactoryClass());
       mergedAFact->SetFactory("A", factory);
-      wrappedFactory = mergedAFact;
+      smootherFactory = mergedAFact;
     }
   }
 
-  SmootherPrototype::SetFactory(varName, wrappedFactory);
+  SmootherPrototype::SetFactory(varName, smootherFactory);
 
   // We need to propagate SetFactory to proper place
-  if (!sTpetra_.is_null()) sTpetra_->SetFactory(varName, wrappedFactory);
-  if (!sBelos_.is_null()) sBelos_->SetFactory(varName, wrappedFactory);
-  if (!sStratimikos_.is_null()) sStratimikos_->SetFactory(varName, wrappedFactory);
+  if (!sTpetra_.is_null()) sTpetra_->SetFactory(varName, smootherFactory);
+  if (!sBelos_.is_null()) sBelos_->SetFactory(varName, smootherFactory);
+  if (!sStratimikos_.is_null()) sStratimikos_->SetFactory(varName, smootherFactory);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -153,6 +156,22 @@ void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(L
                                << errorTpetra_ << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
                                "Smoother was not constructed");
+  }
+
+  // Use a fresh merge wrapper for each request cycle, but keep the same wrapper for the
+  // matching release cycle so Level request counts remain balanced.
+  if (!AFact_.is_null() && currentLevel.GetRequestMode() != Level::RELEASE) {
+    RCP<const FactoryBase> smootherFactory = AFact_;
+    typedef MueLu::MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MergedBlockedMatrixFactoryClass;
+    if (Teuchos::rcp_dynamic_cast<const MergedBlockedMatrixFactoryClass>(AFact_).is_null()) {
+      RCP<MergedBlockedMatrixFactoryClass> mergedAFact = rcp(new MergedBlockedMatrixFactoryClass());
+      mergedAFact->SetFactory("A", AFact_);
+      smootherFactory = mergedAFact;
+    }
+
+    if (!sTpetra_.is_null()) sTpetra_->SetFactory("A", smootherFactory);
+    if (!sBelos_.is_null()) sBelos_->SetFactory("A", smootherFactory);
+    if (!sStratimikos_.is_null()) sStratimikos_->SetFactory("A", smootherFactory);
   }
 
   s_->DeclareInput(currentLevel);
@@ -204,7 +223,7 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const {
     newSmoo->s_ = newSmoo->sTpetra_;
 
   newSmoo->SetParameterList(this->GetParameterList());
-  newSmoo->SetFactory("A", this->GetFactory("A"));
+  newSmoo->AFact_ = AFact_;
 
   return newSmoo;
 }
