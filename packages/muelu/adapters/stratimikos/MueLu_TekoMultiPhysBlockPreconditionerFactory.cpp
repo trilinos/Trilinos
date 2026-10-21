@@ -576,7 +576,11 @@ void TekoMultiPhysBlockPreconditionerFactory::initializeFromParameterList(const 
   }
 
   useBlockSmoothers_ = detectBlockSmootherRecursive(*amgSettings_);
-  printComplexity_   = amgSettings_->get("multiphys: print complexity", false);
+  printComplexity_   = false;
+  if (amgSettings_->isParameter("multiphys: print complexity")) {
+    printComplexity_ = amgSettings_->get<bool>("multiphys: print complexity");
+    amgSettings_->remove("multiphys: print complexity");
+  }
 
   if (useBlockSmoothers_) {
     const bool useSubcommunicators = false;
