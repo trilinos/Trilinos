@@ -393,8 +393,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       // Construct the Tpetra::CrsMatrix
       {
+        // Not all rows are sorted:
+        // off-rank entries use local indices localNumRows and localNumRows+1
+        // and should be at the end of each row, but we sometimes insert at the beginning.
+        // This could trivially be changed.
+        auto params = Teuchos::rcp(new Teuchos::ParameterList());
+        params->set("sorted", false);
         auto A_nonconst = rcp(new TpMatrix(map, colmap,
-                                           rowptr, indices, values));
+                                           rowptr, indices, values,
+                                           params));
         A_nonconst->fillComplete();
         A = A_nonconst;
       }
