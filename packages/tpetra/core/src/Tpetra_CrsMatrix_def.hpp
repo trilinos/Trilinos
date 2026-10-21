@@ -4395,9 +4395,11 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(makeIndicesLocalResult.first != 0, std::runtime_error,
                                           makeIndicesLocalResult.second);
 
-    const bool sorted = this->myGraph_->isSorted();
-    const bool merged = this->myGraph_->isMerged();
-    this->sortAndMergeIndicesAndValues(sorted, merged);
+    if (!isStorageOptimized()) {
+      const bool sorted = this->myGraph_->isSorted();
+      const bool merged = this->myGraph_->isMerged();
+      this->sortAndMergeIndicesAndValues(sorted, merged);
+    }
 
     // Make Import and Export objects, if they haven't been made
     // already.  If we made a column Map above, reuse information
