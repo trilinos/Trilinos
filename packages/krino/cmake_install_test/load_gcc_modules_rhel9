@@ -1,0 +1,23 @@
+#!/bin/bash
+
+module load aue/gcc/14.2.0
+module load aue/openmpi/4.1.6-gcc-14.2.0
+
+module load aue/cmake/4.3.3
+
+module load aue/boost/1.88.0-gcc-14.2.0-openmpi-4.1.6
+module load aue/metis/5.1.0-gcc-14.2.0
+module load aue/netlib-lapack/3.12.1-gcc-14.2.0
+
+module load aue/hdf5/1.14.6-gcc-14.2.0-openmpi-4.1.6
+module load aue/parmetis/4.0.3-gcc-14.2.0-openmpi-4.1.6
+module load aue/parallel-netcdf/1.14.1-gcc-14.2.0-openmpi-4.1.6
+module load aue/netcdf-c/4.10.0-gcc-14.2.0-openmpi-4.1.6
+
+# for pykrino
+module load aue/python/3.14.5
+
+# Define HDF5_ROOT for CMake using the loaded HDF5 module
+export HDF5_ROOT="$(dirname "$(dirname "$(which h5pcc)")")"
+
+export LD_LIBRARY_PATH=$LIBRARY_PATH:$LD_LIBRARY_PATH

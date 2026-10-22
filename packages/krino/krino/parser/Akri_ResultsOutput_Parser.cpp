@@ -8,12 +8,11 @@
 
 #include <Akri_ResultsOutput_Parser.hpp>
 
-#include <Akri_DiagWriter.hpp>
 #include <Akri_Region.hpp>
 #include <Akri_ResultsOutputOptions.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
-#include "Akri_Parser.hpp"
+#include <Akri_Parser.hpp>
 
 namespace krino {
 
@@ -90,7 +89,7 @@ ResultsSurfaceShellOutput_Parser::parse(const Parser::Node & regionNode, Region 
     int output_frequency = 1;
     if (resultsNode.get_if_present("output_frequency", output_frequency))
     {
-      options->add_step_increment(0, output_frequency);
+      options->add_surface_shell_step_increment(0, output_frequency);
     }
 
     const Parser::Node surfaceNames = resultsNode.get_sequence_if_present("surface_names");

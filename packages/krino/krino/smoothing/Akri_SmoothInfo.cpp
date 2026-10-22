@@ -11,6 +11,8 @@
 
 #include <stk_math/StkVector.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include <sstream>
+#include <stdexcept>
 #include <vector>
 #include <iostream>
 

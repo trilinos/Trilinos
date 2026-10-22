@@ -17,7 +17,7 @@
 // license that can be found in the LICENSE file.
 
 #include <Akri_QualityMetric.hpp>
-#include "Akri_MOAB_TetRefiner.hpp"
+#include <Akri_MOAB_TetRefiner.hpp>
 
 #include <cmath>
 #include <iostream>

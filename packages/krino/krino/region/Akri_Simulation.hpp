@@ -9,7 +9,6 @@
 #ifndef Akri_Simulation_h
 #define Akri_Simulation_h
 
-#include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <memory>
 #include <string>
@@ -42,12 +41,15 @@ public:
   void set_current_time(const double in_time) { my_current_time = in_time; }
   void set_stop_time(const double in_time) { my_is_transient = true; my_stop_time = in_time; }
 
-  stk::diag::Timer & get_timer() const { return my_timer; }
+  stk::diag::Timer & get_timer() const { return myTimer; }
+  stk::diag::Timer & get_parse_timer() const { return myParseTimer; }
   void print_performance_info() const;
 
 private:
   std::string my_name;
-  mutable stk::diag::Timer my_timer;
+  mutable stk::diag::Timer myTimer;
+  mutable stk::diag::Timer myParseTimer;
+  mutable stk::diag::Timer myExecuteTimer;
   bool my_is_transient;
   double my_stop_time;
   unsigned my_step_count;

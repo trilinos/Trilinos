@@ -1,0 +1,16 @@
+SET(HEADERS "")
+SET(SOURCES "")
+
+TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+FILE(GLOB HEADERS *.hpp)
+FILE(GLOB SOURCES *.cpp)
+
+TRIBITS_ADD_LIBRARY(
+  krino_unit_test_utils_lib
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  TESTONLY
+  DEPLIBS krino_decomp_lib krino_refinement_lib krino_mesh_interface_lib krino_mesh_quality_lib krino_unit_main_lib)

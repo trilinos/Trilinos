@@ -17,11 +17,15 @@
 #include <krino/mesh_utils/Akri_AllReduce.hpp>
 
 #include <stk_util/environment/EnvData.hpp>
+#include <stk_util/environment/RuntimeWarning.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+
+#include <array>
+#include <optional>
 
 namespace krino{
 
@@ -245,10 +249,105 @@ static void fill_intersecting_nonlocal_facets(const BoundingBox & localFacetBBox
     krinolog << "P" << me << ":" << " Facet communication required " << numBatches << " batches of up to " << maxFacetsPerBatch << " facets per batch." << stk::diag::dendl;
 }
 
+// Reduces the per-processor lists of non-watertight edges to a global count and, on proc 0, a
+// capped sample of edge coordinates, then emits a single non-fatal warning if any were found.
+static void report_non_watertight_edges(const stk::ParallelMachine comm,
+    const std::vector<std::array<stk::math::Vector3d,2>> & localBadEdges)
+{
+  constexpr size_t maxSampleEdges = 20;
+
+  size_t globalNumBad = localBadEdges.size();
+  krino::all_reduce_sum(comm, globalNumBad);
+  if (globalNumBad == 0)
+    return;
+
+  const int numProcs = stk::parallel_machine_size(comm);
+  const int me = stk::EnvData::parallel_rank();
+
+  // Gather a capped sample of edges to proc 0 (each proc offers at most maxSampleEdges).
+  std::vector<std::array<stk::math::Vector3d,2>> sample;
+  if (numProcs == 1)
+  {
+    sample.assign(localBadEdges.begin(),
+        localBadEdges.begin() + std::min(maxSampleEdges, localBadEdges.size()));
+  }
+  else
+  {
+    stk::CommSparse commSparse(comm);
+    const size_t numToSend = std::min(maxSampleEdges, localBadEdges.size());
+    for (int commStep = 0; commStep < 2; ++commStep)
+    {
+      if (me != 0)
+      {
+        stk::CommBuffer & b = commSparse.send_buffer(0);
+        for (size_t e = 0; e < numToSend; ++e)
+          for (int i=0; i<2; ++i)
+            for (int d=0; d<3; ++d)
+              b.pack(localBadEdges[e][i][d]);
+      }
+      if (commStep == 0)
+        commSparse.allocate_buffers();
+      else
+        commSparse.communicate();
+    }
+    if (me == 0)
+    {
+      sample.assign(localBadEdges.begin(),
+          localBadEdges.begin() + std::min(maxSampleEdges, localBadEdges.size()));
+      for (int p = 1; p < numProcs && sample.size() < maxSampleEdges; ++p)
+      {
+        stk::CommBuffer & b = commSparse.recv_buffer(p);
+        while (b.remaining() && sample.size() < maxSampleEdges)
+        {
+          std::array<stk::math::Vector3d,2> coords;
+          for (int i=0; i<2; ++i)
+            for (int d=0; d<3; ++d)
+              b.unpack(coords[i][d]);
+          sample.push_back(coords);
+        }
+      }
+    }
+  }
+
+  if (me == 0)
+  {
+    std::ostringstream msg;
+    msg << "Faceted surface is not watertight: found " << globalNumBad
+        << " edge(s) not shared by exactly two facets.  The faceted signed-distance calculation "
+        << "assumes watertight input and may produce incorrect distances or signs.";
+    msg << "\nShowing " << sample.size() << " of " << globalNumBad << " non-watertight edge(s):";
+    for (auto && edge : sample)
+      msg << "\n  edge from " << edge[0] << " to " << edge[1];
+    stk::RuntimeWarningAdHoc() << msg.str();
+  }
+}
+
 template<class FACET>
 void Faceted_Surface<FACET>::prepare_to_compute(const double /*time*/, const BoundingBox & point_bbox, const double truncation_length)
 {
   build_local_facets(point_bbox);
+
+  if (get_remove_coincident_facets())
+  {
+    // Coincident facets share a bounding box and so are distributed to the same proc by
+    // parallel_distribute_facets; a proc-local pass therefore removes each coincident group.
+    const size_t numRemoved = remove_coincident_facets(myLocalFacets);
+    if (numRemoved > 0 && krinolog.shouldPrint(LOG_DEBUG))
+      krinolog << "P" << stk::EnvData::parallel_rank() << ": Removed " << numRemoved
+          << " redundant coincident facets." << stk::diag::dendl;
+  }
+
+  if (get_check_watertight())
+  {
+    // Runs after facet distribution and coincident removal.  Two facets sharing an edge are not
+    // guaranteed to be co-located on one proc, so find_non_watertight_edges does its own parallel
+    // edge-key exchange over the (disjoint) local facets rather than relying on ghosting.
+    const stk::ParallelMachine comm = stk::EnvData::parallel_comm();
+    const double cellSize = compute_global_edge_quantization_cell_size(comm, myLocalFacets);
+    const std::vector<std::array<stk::math::Vector3d,2>> badEdges =
+        find_non_watertight_edges(myLocalFacets, comm, cellSize, get_watertight_bounding_box());
+    report_non_watertight_edges(comm, badEdges);
+  }
 
   const stk::ParallelMachine comm = stk::EnvData::parallel_comm();
   if (stk::is_true_on_all_procs(comm, myLocalFacets.empty()))
@@ -403,10 +502,10 @@ std::pair<int, double> Faceted_Surface<FACET>::compute_intersection_with_segment
 {
   const double narrowBand = (pt0-pt1).length();
 
-  const double dist0 = truncated_point_signed_distance(pt0, narrowBand, narrowBand);
+  const double dist0 = possibly_truncated_point_signed_distance(pt0, narrowBand, narrowBand);
   if (dist0 == narrowBand)
     return {0, -1.};
-  const double dist1 = truncated_point_signed_distance(pt1, narrowBand, narrowBand);
+  const double dist1 = possibly_truncated_point_signed_distance(pt1, narrowBand, narrowBand);
   if (dist1 == narrowBand)
       return {0, -1.};
 
@@ -470,5 +569,15 @@ template class Faceted_Surface<Facet3d>;
 template class Faceted_Surface<Facet2d>;
 template class Faceted_Surface<FacetWithVelocity2d>;
 template class Faceted_Surface<FacetWithVelocity3d>;
+
+void default_watertight_bounding_box_from_domain(const std::vector<std::shared_ptr<Surface>> & surfaces, const BoundingBox & bbox)
+{
+  for (const std::shared_ptr<Surface> & surf : surfaces)
+  {
+    FacetedSurfaceBase * facetedSurface = dynamic_cast<FacetedSurfaceBase*>(surf.get());
+    if (facetedSurface && facetedSurface->get_check_watertight() && !facetedSurface->get_watertight_bounding_box().has_value())
+      facetedSurface->set_watertight_bounding_box(bbox);
+  }
+}
 
 } // namespace krino

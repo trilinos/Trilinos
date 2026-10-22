@@ -9,7 +9,10 @@
 #ifndef KRINO_KRINO_SMOOTHING_AKRI_KINEMATICUTILS_HPP_
 #define KRINO_KRINO_SMOOTHING_AKRI_KINEMATICUTILS_HPP_
 #include <Akri_SethHillConfig.hpp>
+#include <Akri_MetricTensorUtils.hpp>
 #include <MiniTensor.h>
+
+#include <vector>
 
 namespace krino {
 namespace kinematicUtils {
@@ -35,9 +38,30 @@ minitensor::Tensor<double, 3> compute_deformation_gradient_tet4(
     const std::array<stk::math::Vector3d, 4> & ref,
     const std::array<stk::math::Vector3d, 4> & cur);
 
+template<typename ELEMCOORDS>
+minitensor::Tensor<double, 3> compute_anisotropic_deformation_gradient_tet4(
+    const minitensor::Tensor<double, 3> & metricMapping,
+    const ELEMCOORDS & cur);
+
+template<typename ELEMCOORDS>
+std::pair<minitensor::Tensor<double, 3>, double> compute_deformation_gradient_and_jacobian_tet4(
+    const double refSize,
+    const ELEMCOORDS & cur);
+
+std::pair<minitensor::Tensor<double, 3>, double> compute_deformation_gradient_and_jacobian_tet4(
+    const std::array<stk::math::Vector3d, 4> & ref,
+    const std::array<stk::math::Vector3d, 4> & cur);
+
 double tet4_volume(const double size);
 double tet4_volume(const std::array<stk::math::Vector3d, 4> & ref);
 double tri3_area(const double size);
+
+inline double element_energy(const double specificEnergy, const double vol)
+{
+  return (specificEnergy == std::numeric_limits<double>::max()) ?
+          std::numeric_limits<double>::max():
+          specificEnergy * vol;
+}
 
 template<typename ELEMCOORDS>
 minitensor::Tensor<double, 2> compute_deformation_gradient_tri3_2d(
@@ -45,6 +69,20 @@ minitensor::Tensor<double, 2> compute_deformation_gradient_tri3_2d(
     const ELEMCOORDS & cur);
 
 minitensor::Tensor<double, 2> compute_deformation_gradient_tri3_2d(
+    const std::array<stk::math::Vector2d, 3> & ref,
+    const std::array<stk::math::Vector2d, 3> & cur);
+
+template<typename ELEMCOORDS>
+minitensor::Tensor<double, 2> compute_anisotropic_deformation_gradient_tri3_2d(
+    const minitensor::Tensor<double, 2> & metricMapping,
+    const ELEMCOORDS & cur);
+
+template<typename ELEMCOORDS>
+std::pair<minitensor::Tensor<double, 2>, double> compute_deformation_gradient_and_jacobian_tri3_2d(
+    const double refSize,
+    const ELEMCOORDS & cur);
+
+std::pair<minitensor::Tensor<double, 2>, double> compute_deformation_gradient_and_jacobian_tri3_2d(
     const std::array<stk::math::Vector2d, 3> & ref,
     const std::array<stk::math::Vector2d, 3> & cur);
 
@@ -73,11 +111,15 @@ inline double pow_m23(const double x)
   return 1. / pow_p23(x);
 }
 
+inline bool is_invertible(const double detA)
+{
+  return detA > 0 && std::isfinite(detA);
+}
+
 template<minitensor::Index N>
 bool is_invertible(const minitensor::Tensor<double, N> & A)
 {
-  const double detA = det(A);
-  return detA > 0 && std::isfinite(detA);
+  return is_invertible(det(A));
 }
 
 template<minitensor::Index N>

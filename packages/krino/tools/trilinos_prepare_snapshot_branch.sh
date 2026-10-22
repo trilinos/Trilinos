@@ -32,7 +32,7 @@ exe cd $TRILINOS
 verify_clean_repo $TRILINOS
 
 #Pull request workflow
-exe git fetch --all
+exe git fetch --all --prune
 exe git checkout master
 exe git merge upstream/master
 exe git push origin master
@@ -40,3 +40,6 @@ exe git push origin master
 exe git branch -f $SNAPSHOT_BRANCH
 exe git checkout $SNAPSHOT_BRANCH
 exe git reset --hard upstream/$TRILINOS_BRANCH
+# The previous snapshot was squash-merged, so its commits on the fork's branch are not ancestors of
+# the new one: replace the fork's branch so trilinos_create_snapshot_commit.sh can push normally.
+exe git push --force-with-lease origin $SNAPSHOT_BRANCH

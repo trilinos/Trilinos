@@ -12,7 +12,6 @@
 #include <Akri_Element.hpp>
 #include <Akri_SubElement.hpp>
 #include <Akri_DiagWriter.hpp>
-#include <Akri_Element.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_RefinementManager.hpp>
 #include <stk_balance/balanceUtils.hpp>
@@ -208,18 +207,18 @@ accumulate_cdfem_child_weights_to_parents(const stk::mesh::BulkData & bulk_data,
       stk::mesh::selectField(element_weights_field) & cdmesh.get_child_part() &
       bulk_data.mesh_meta_data().locally_owned_part();
   const auto & buckets = bulk_data.get_buckets(stk::topology::ELEMENT_RANK, selector);
+  auto weightData = element_weights_field.data<stk::mesh::ReadWrite>();
   for(auto && b_ptr : buckets)
   {
-    double * weight_data = stk::mesh::field_data(element_weights_field, *b_ptr);
-    const int b_size = b_ptr->size();
-    for(int i=0; i < b_size; ++i)
+    auto weight_data = weightData.bucket_values(*b_ptr);
+    for(stk::mesh::EntityIdx i : b_ptr->entities())
     {
       const auto child_elem = (*b_ptr)[i];
       const auto parent = cdmesh.get_parent_element(child_elem);
-      double * parent_weight_data = stk::mesh::field_data(element_weights_field, parent);
-      STK_ThrowRequire(parent_weight_data);
-      *parent_weight_data += weight_data[i];
-      weight_data[i] = 0.;
+      STK_ThrowRequire(has_field_data(element_weights_field, parent));
+      auto parent_weight_data = weightData.entity_values(parent);
+      parent_weight_data() += weight_data(i);
+      weight_data(i) = 0.;
     }
   }
 }

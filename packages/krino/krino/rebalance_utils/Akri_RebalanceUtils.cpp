@@ -10,6 +10,7 @@
 #include <Akri_RebalanceUtils.hpp>
 #include <Akri_RebalanceUtils_Impl.hpp>
 #include <Akri_config.hpp>
+#include <Akri_AuxMetaData.hpp>
 #include <Akri_CDMesh.hpp>
 #include <Akri_RefinementManager.hpp>
 #include <stk_balance/balance.hpp>

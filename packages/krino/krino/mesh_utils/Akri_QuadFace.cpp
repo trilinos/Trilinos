@@ -1,11 +1,11 @@
-#include "Akri_QuadFace.hpp"
+#include <Akri_QuadFace.hpp>
 
 #include <type_traits>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/EntityLess.hpp>
-#include "Akri_MeshHelpers.hpp"
+#include <Akri_MeshHelpers.hpp>
 
 namespace krino {
 

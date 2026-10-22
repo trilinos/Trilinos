@@ -9,12 +9,15 @@
 #include <Akri_BoundingBoxMesh.hpp>
 #include <Akri_MeshInput_Parser.hpp>
 
-#include <Akri_DiagWriter.hpp>
 #include <Akri_MeshInputOptions.hpp>
 #include <Akri_Phase_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
-#include "Akri_Parser.hpp"
+#include <Akri_Parser.hpp>
+
+#include <algorithm>
+#include <cctype>
+#include <map>
 
 namespace krino {
 
@@ -61,7 +64,7 @@ MeshInput_Parser::parse(const Parser::Node & base_node)
       options->set_use_all_sides_for_shells(useAllSidesForShells);
     }
 
-    Phase_Parser::parse(fem_node, model_name);
+    options->set_phase_input(Phase_Parser::parse(fem_node, model_name));
   }
 }
 
@@ -127,7 +130,7 @@ MeshInput_Parser::parse_generated_mesh(const Parser::Node & fem_node, MeshInputO
     auto it = valid_entries.find(generated_mesh_element_type_string);
     if (it == valid_entries.end())
     {
-      stk::RuntimeDoomedAdHoc() << "Invalid cdfem_simplex_generation_method type: " << generated_mesh_node.info();
+      stk::RuntimeDoomedAdHoc() << "Invalid element_type: " << generated_mesh_node.info();
     }
     else
     {

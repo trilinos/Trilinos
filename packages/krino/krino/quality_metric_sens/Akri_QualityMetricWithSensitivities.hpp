@@ -8,9 +8,8 @@
 
 #ifndef AKRI_QUALITY_METRIC_WITH_SENSITIVITIES_H
 #define AKRI_QUALITY_METRIC_WITH_SENSITIVITIES_H
-#include "Sacado.hpp"
+#include <Sacado.hpp>
 #include <stk_math/StkVector.hpp>
-#include <vector>
 
 namespace krino
 {

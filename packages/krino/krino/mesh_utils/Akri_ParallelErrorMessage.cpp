@@ -30,6 +30,11 @@ std::pair<bool, std::string> ParallelErrorMessage::gather_message() const
   return gather_messages(comm.parallel(), local_message.str());
 }
 
+void ParallelErrorMessage::require_empty(const std::string & context) const
+{
+  RequireEmptyErrorMsg(comm.parallel(), local_message.str(), context);
+}
+
 void RequireEmptyErrorMsg(const stk::ParallelMachine comm, const std::string & localMsg, const std::string & errorHeaderMsg)
 {
   const auto & [error, msg] = gather_messages(comm, localMsg);

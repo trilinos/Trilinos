@@ -25,9 +25,11 @@ verify_no_local_commits() {
   fi
 }
 
+# Copies only the files git tracks in Sierra, so ignored build or editor files (e.g. .cache,
+# compile_commands.json, __pycache__) are not copied into Trilinos.
 update_package() {
   exe rm -rf packages/$1
-  exe cp -r $SIERRA/$1 packages/$1
+  exe "git -C $SIERRA archive --format=tar HEAD $1 | tar -x -C packages"
   exe git add --all packages/$1
 }
 
@@ -44,17 +46,18 @@ echo "TRILINOS: $TRILINOS"
 exe module load sierra-devel
 
 exe cd $SIERRA
-verify_clean_repo $SIERRA
-verify_no_local_commits $SIERRA_BRANCH
 exe git checkout $SIERRA_BRANCH
-exe repo sync
+verify_clean_repo $SIERRA
+exe git fetch origin
+verify_no_local_commits $SIERRA_BRANCH
+exe git merge --ff-only origin/$SIERRA_BRANCH
 STK_VERSION_STRING=$(./stk/stk_util/stk_util/registry/stk_version_gen.sh)
 
 exe cd $TRILINOS
 
 update_package krino
-exe git rm -rf packages/krino/krino_sierra packages/krino/Jamfile packages/krino/.clang-format
+exe git rm -rf --ignore-unmatch packages/krino/krino_sierra packages/krino/Jamfile packages/krino/.clang-format packages/krino/AGENTS.md
 
 export COMMIT_MESSAGE="Krino: Snapshot $(date +'%m-%d-%y %H:%M') from Sierra $STK_VERSION_STRING"
-exe git commit -a -s -m '"'$COMMIT_MESSAGE'"'
+exe git commit -s -m "\"$COMMIT_MESSAGE\""
 exe git push origin $SNAPSHOT_BRANCH

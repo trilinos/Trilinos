@@ -15,7 +15,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/environment/Env.hpp>
-#include "Akri_TransitionElementEdgeMarker.hpp"
+#include <Akri_TransitionElementEdgeMarker.hpp>
 
 namespace krino {
 
