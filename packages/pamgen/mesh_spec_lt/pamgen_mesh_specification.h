@@ -11,6 +11,7 @@
 #define pamgen_mesh_specification_LT_H
 
 #include "pamgen_element_dictionary.h"
+#include "pamgen_kokkos_utils.h"
 #include <string>
 #include <sstream>
 #include <ios>
@@ -230,6 +231,10 @@ class Mesh_Specification
     void Free_Parallel_Data();
     void Free_Locational_Data();
     void Free_Global_Data();
+
+    // Kokkos versions of key functions
+    void Copy_Coordinates_Kokkos(Mesh_Specification* dest, long long node_offset, long long total_nodes);
+    void Copy_Connectivity_Kokkos(Mesh_Specification* dest, long long block_index, long long node_offset, long long element_offset);
 
 // Definition functions
 
