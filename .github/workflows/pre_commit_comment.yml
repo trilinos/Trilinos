@@ -145,7 +145,7 @@ jobs:
 
     - name: Process message
       run: |
-        MY_PR_NUMBER=${{ steps.pr.output.number }}
+        MY_PR_NUMBER=${{ steps.pr.outputs.number }}
         MY_COMMENT_ID=${{ steps.comment.outputs.comment-id }}
         cp ${{ runner.temp }}/artifacts/format_patch_message.txt processed_format_patch.txt  
         sed -i "s/PR_NUMBER/${MY_PR_NUMBER}/" processed_format_patch.txt
@@ -155,6 +155,6 @@ jobs:
       uses: peter-evans/create-or-update-comment@v5
       with:
         comment-id: ${{ steps.comment.outputs.comment-id }}
-        issue-number: ${{ steps.pr.output.number }}
+        issue-number: ${{ steps.pr.outputs.number }}
         body-path: processed_format_patch.txt
         edit-mode: replace
