@@ -96,8 +96,8 @@ jobs:
           const prs = await github.paginate(
             github.rest.repos.listPullRequestsAssociatedWithCommit,
             {
-              source_owner,
-              source_repo,
+              owner: source_owner,
+              repo: source_repo,
               commit_sha: sha,
               per_page: 100
             }
