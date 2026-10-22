@@ -72,93 +72,10 @@ APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 # Automatically generate ETI (explicit template instantiation) files
 # for Node types that use the Kokkos Devices.
 IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
-  # Set the list of Ifpack2 classes templated on <Scalar, LO, GO,
-  # Node> for which we want to do ETI using this system.  These
-  # classes usually operate on sparse matrices (instances of
-  # Tpetra::CrsMatrix or Tpetra::RowMatrix, which also take these
-  # template parameters).
-
-  # IFPACK2_ETI_CLASSES and IFPACK2_ETI_LO_GO_CLASSES are global
-  # variables so that Stokhos can do ETI.
-
-  GLOBAL_SET(
-    IFPACK2_ETI_CLASSES
-    AdditiveSchwarz
-    BlockRelaxation
-    BorderedOperator
-    Chebyshev
-    Container
-    BandedContainer
-    DatabaseSchwarz
-    DenseContainer
-    Diagonal
-    DiagonalFilter
-    DropFilter
-    Factory
-    Hiptmair
-    IdentitySolver
-    ILUT
-    LinePartitioner
-    LocalFilter
-    LocalSparseTriangularSolver
-    MDF
-    OverlappingRowMatrix
-    Relaxation
-    ReorderFilter
-    RILUK
-    SingletonFilter
-    SparseContainer
-    SparsityFilter
-    ContainerFactory
-    TriDiContainer
-    Details::AdditiveSchwarzFilter
-    Details::Chebyshev
-    Details::ChebyshevKernel
-    Details::DenseSolver
-    Details::Factory
-    Details::InverseDiagonalKernel
-    Details::LinearSolver
-    Details::OneLevelFactory
-    Details::ScaledDampedResidual
-    Details::TriDiSolver
-    Experimental::RBILUK
-    Details::LinearSolverFactory
-  )
-
-  IF(Ifpack2_ENABLE_Amesos2)
-    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES Details::Amesos2Wrapper)
-  ENDIF()
-
-  IF(${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
-    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockTriDiContainer)
-    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockComputeResidualVector)
-    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockComputeResidualAndSolve)
-  ENDIF()
-
-  IF(Ifpack2_ENABLE_ShyLU_NodeFastILU)
-    APPEND_GLOBAL_SET(
-      IFPACK2_ETI_CLASSES
-      Details::FastILU_Base
-      Details::Filu
-      Details::Fic
-      Details::Fildl
-    )
-  ENDIF()
-
-  IF(Ifpack2_ENABLE_HYPRE)
-    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES Hypre)
-  ENDIF()
-
-  # Set the list of Ifpack2 classes templated on <LO, GO, Node> for
-  # which we want to do ETI using this system.  These classes usually
-  # operate on sparse graphs (instances of Tpetra::CrsGraph or
-  # Tpetra::RowGraph, which also take these template parameters).
-  GLOBAL_SET(
-    IFPACK2_ETI_LO_GO_CLASSES
-    LinearPartitioner
-    OverlappingPartitioner
-    Details::OverlappingRowGraph
-  )
+  # Set the lists of Ifpack2 classes (IFPACK2_ETI_CLASSES and
+  # IFPACK2_ETI_LO_GO_CLASSES) for which we want to do ETI.  These are
+  # kept in a separate file so that Stokhos can include it directly.
+  INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/Ifpack2_ETI_classes.cmake)
 
   # LGN templates
   TPETRA_PROCESS_ETI_TEMPLATES_LGN(

@@ -1,3 +1,4 @@
+include(TribitsETISupport)
 include(Join)
 MESSAGE(STATUS "${PACKAGE_NAME}: Processing ETI / test support")
 
