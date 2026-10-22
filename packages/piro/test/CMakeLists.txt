@@ -263,6 +263,21 @@ IF (Piro_ENABLE_NOX)
 
 ENDIF(Piro_ENABLE_NOX)
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ThyraProductME_Constraint_SimOpt_UnitTests
+  EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+  EXCLUDE_IF_NOT_TRUE Stratimikos_ENABLE_Belos
+  SOURCES
+  Piro_ThyraProductME_Constraint_SimOpt_UnitTests.cpp
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  MockModelEval_A_Tpetra.cpp
+  MockModelEval_A_Tpetra.hpp
+  MatrixBased_LOWS.cpp
+  MatrixBased_LOWS.hpp
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
 IF (Piro_ENABLE_Tempus)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TempusSolver_UnitTests_Tpetra
