@@ -163,6 +163,43 @@ void setParameterInitialGuess(Teuchos::ParameterList& params, ROL::Vector<double
               "Parameter Initial Guess Type \"" << init_guess_type << "\" is not Known.\nValid options are: \"From Model Evaluator\", \"Uniform Vector\" and \"Random Vector\""<<std::endl);
   }
 }
+
+// Returns a copy of the lower (or upper) bounds of the parameters p(0) of the model.
+// Throws if the model does not define them (for a product vector, if any of its blocks is not defined).
+Teuchos::RCP<Thyra::VectorBase<double>> getParameterBounds(const Thyra::ModelEvaluator<double>& model, bool lower, const std::string& caller) {
+  const Teuchos::RCP<const Thyra::VectorBase<double>> bounds = lower ? model.getLowerBounds().get_p(0) : model.getUpperBounds().get_p(0);
+  bool defined = Teuchos::nonnull(bounds);
+  const auto prod_bounds = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<double>>(bounds);
+  if (Teuchos::nonnull(prod_bounds))
+    for (int i = 0; i < prod_bounds->productSpace()->numBlocks(); ++i)
+      defined = defined && Teuchos::nonnull(prod_bounds->getVectorBlock(i));
+  TEUCHOS_TEST_FOR_EXCEPTION(!defined, Teuchos::Exceptions::InvalidParameter,
+      std::endl << caller << ", ERROR: \"Bound Constrained\" is true, but the model does not define the " <<
+      (lower ? "lower" : "upper") << " bounds of the parameters." << std::endl);
+  return bounds->clone_v();
+}
+
+// At the end of a steady-state optimization, also when an exception is thrown, resets the flags of the
+// "Optimization Status" sublist that Piro::NOXSolver uses during the optimization:
+//  - "Compute State" is set to true, so that later evaluations of the solver solve the state equation, instead of
+//    using the last computed state, which might correspond to a rejected iterate of the optimization;
+//  - "Optimizer Iteration Number" is removed, so that later evaluations of the solver observe the solution.
+class OptimizationStatusReset {
+public:
+  explicit OptimizationStatusReset(Teuchos::ParameterList& piroParams) :
+    optParams_(piroParams.sublist("Optimization Status")) {}
+
+  ~OptimizationStatusReset() {
+    optParams_.set("Compute State", true);
+    optParams_.remove("Optimizer Iteration Number", false);
+  }
+
+  OptimizationStatusReset(const OptimizationStatusReset&) = delete;
+  OptimizationStatusReset& operator=(const OptimizationStatusReset&) = delete;
+
+private:
+  Teuchos::ParameterList& optParams_;
+};
 #endif
 
 } // namespace
@@ -349,7 +386,12 @@ Piro::PerformROLSteadyAnalysis(
   ROL::Ptr<ROL::Vector<double> > rol_lambda_ptr = ROL::makePtr<ROL::ThyraVector<double>>(lambda_vec);
 
   Teuchos::EVerbosityLevel analysisVerbosityLevel = getROLVerbosityLevel(analysisVerbosity);
-  ROL::Ptr<ROL::Objective_SimOpt<double> > obj_ptr = ROL::makePtr<Piro::ThyraProductME_Objective_SimOpt<double>>(model, g_index, piroParams, analysisVerbosityLevel, observer);
+
+  // Resets the "Optimization Status" flags used by the NOX solver when this function returns
+  OptimizationStatusReset optimizationStatusReset(piroParams);
+
+  auto thyra_obj_ptr = ROL::makePtr<Piro::ThyraProductME_Objective_SimOpt<double>>(model, g_index, piroParams, analysisVerbosityLevel, observer);
+  ROL::Ptr<ROL::Objective_SimOpt<double> > obj_ptr = thyra_obj_ptr;
   ROL::Ptr<ROL::Constraint_SimOpt<double> > constr_ptr = ROL::makePtr<Piro::ThyraProductME_Constraint_SimOpt<double>>(model, adjointModel, piroParams, analysisVerbosityLevel, observer);
 
   constr_ptr->setSolveParameters(rolParams.sublist("ROL Options"));
@@ -583,26 +625,63 @@ Piro::PerformROLSteadyAnalysis(
     }
   }
 
+  const bool performOptimization = rolParams.get<bool>("Perform Optimization", true);
+  const bool boundConstrained = rolParams.get<bool>("Bound Constrained", false);
 
-  
+  // The bound-constrained algorithms project the parameters onto the bounds componentwise, which is consistent
+  // only with a diagonal dot product: with a non-diagonal one, the projected gradient does not vanish at the solution.
+  TEUCHOS_TEST_FOR_EXCEPTION(performOptimization && boundConstrained && useCustomDotProduct && !lumpHessianMatrix,
+      Teuchos::Exceptions::InvalidParameter,
+      std::endl << "Piro::PerformROLSteadyAnalysis, ERROR: " <<
+      "\"Bound Constrained\" optimization requires a diagonal dot product, " <<
+      "set \"Lump Matrix\" to true in the \"Hessian Of Response\" sublist of \"Matrix Based Dot Product\"" << std::endl);
+
   Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = Teuchos::null;
   Teuchos::RCP<const Thyra::LinearOpBase<double> > H_dotP(Teuchos::null), invH_dotP(Teuchos::null), H_sec(Teuchos::null), invH_sec(Teuchos::null);
 
   #ifdef HAVE_PIRO_TEKO
   {
+    // The Hessians of the responses with respect to the parameters (H_pp), used to define the dot product and to
+    // initialize the secant, are computed once, before the optimization, at the initial guess of the parameters and at
+    // the nominal state of the model (the state equation is not solved for the initial guess of the parameters).
+    // Therefore the dot product and the secant initialization correspond to the Hessian at the solution of the
+    // optimization problem only if H_pp does not depend on the state and on the parameters, as for quadratic
+    // regularization terms.
+    const bool useHessianSecant = useCustomSecant && (response_index_secant != -1);
+
+    Teuchos::RCP<const Piro::ProductModelEvaluator<double>> model_PME = getProductModelEvaluator(model);
+    TEUCHOS_TEST_FOR_EXCEPTION((useCustomDotProduct || useHessianSecant) && model_PME.is_null(),
+        Teuchos::Exceptions::InvalidParameter,
+        std::endl << "Piro::PerformROLSteadyAnalysis, ERROR: " <<
+        "the \"Hessian Of Response\" options of \"Matrix Based Dot Product\" and \"Custom Secant\" " <<
+        "require the model to be a Piro::ProductModelEvaluator" << std::endl);
+
+    // Inverse of a block-diagonal Hessian, whose diagonal blocks must support solves
+    const auto blockDiagonalInverse = [](Teko::BlockedLinearOp bH, int response_index) {
+      const int numBlocks = bH->productRange()->numBlocks();
+      std::vector<Teko::LinearOp> diag(numBlocks);
+      for (int i=0; i<numBlocks; ++i) {
+        auto linOp = Teuchos::rcp_dynamic_cast<Thyra::LinearOpWithSolveBase<double>>(
+          Teuchos::rcp_const_cast<Thyra::LinearOpBase<double>>(Teko::getBlock(i, i, bH)));
+        TEUCHOS_TEST_FOR_EXCEPTION(linOp.is_null(), std::logic_error,
+            std::endl << "Piro::PerformROLSteadyAnalysis, ERROR: " <<
+            "the Hessian of response " << response_index << " with respect to the parameter block " << i <<
+            " cannot be inverted, because the model does not create it as a Thyra::LinearOpWithSolveBase" << std::endl);
+        diag[i] = Thyra::nonconstInverse(linOp);
+      }
+      return Teko::createBlockUpperTriInverseOp(bH, diag);
+    };
+
     if(analysisVerbosity > 2)
       *out << "\nPiro::PerformROLSteadyAnalysis: Start the computation of H_pp" << std::endl;
 
-    Teuchos::RCP<const Piro::ProductModelEvaluator<double>> model_PME = getProductModelEvaluator(model);
-
     Teko::BlockedLinearOp bH_dotP, bH_sec;
 
-    if (useCustomDotProduct && !model_PME.is_null()) {
+    if (useCustomDotProduct) {
       bH_dotP = Teko::createBlockedOp();
       model_PME->block_diagonal_hessian_22(bH_dotP, *rol_x_ptr, *rol_p_ptr, response_index_dotProd);
     }
-    if(useCustomSecant && (response_index_secant != -1 ) && !model_PME.is_null()) {
-
+    if(useHessianSecant) {
       if (response_index_dotProd == response_index_secant)
         bH_sec = bH_dotP;
       else {
@@ -623,16 +702,16 @@ Piro::PerformROLSteadyAnalysis(
         scaling_vector_p = p->clone_v();
         auto scaling_vector_p_prod = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(scaling_vector_p);
         Teko::applyOp(bH_dotP, ones_vector_p_prod, scaling_vector_p_prod);
+
+        // The lumped Hessian (the row sums of the Hessian) defines a dot product only if it is positive
+        const double min_scaling = ::Thyra::min(*scaling_vector_p);
+        TEUCHOS_TEST_FOR_EXCEPTION(!(min_scaling > 0.0), std::logic_error,
+            std::endl << "Piro::PerformROLSteadyAnalysis, ERROR: " <<
+            "the lumped Hessian of response " << response_index_dotProd << " has non-positive entries (minimum " <<
+            min_scaling << "), so it does not define a dot product. Set \"Lump Matrix\" to false." << std::endl);
       } else {
-        int numBlocks = bH_dotP->productRange()->numBlocks();
-        std::vector<Teko::LinearOp> diag(numBlocks);
-        for (int i=0; i<numBlocks; ++i) {
-          auto linOp = Teuchos::rcp_dynamic_cast<Thyra::LinearOpWithSolveBase<double>>(
-          Teuchos::rcp_const_cast<Thyra::LinearOpBase<double>>(Teko::getBlock(i, i, bH_dotP)));
-          diag[i] = Thyra::nonconstInverse(linOp);
-        }
         H_dotP = Teko::toLinearOp(bH_dotP);
-        invH_dotP = Teko::createBlockUpperTriInverseOp(bH_dotP, diag);
+        invH_dotP = blockDiagonalInverse(bH_dotP, response_index_dotProd);
       }
     }
 
@@ -643,15 +722,8 @@ Piro::PerformROLSteadyAnalysis(
         H_sec = H_dotP;
         invH_sec = invH_dotP;
       } else {
-        int numBlocks = bH_sec->productRange()->numBlocks();
-        std::vector<Teko::LinearOp> diag(numBlocks);
-        for (int i=0; i<numBlocks; ++i) {
-          auto linOp = Teuchos::rcp_dynamic_cast<Thyra::LinearOpWithSolveBase<double>>(
-          Teuchos::rcp_const_cast<Thyra::LinearOpBase<double>>(Teko::getBlock(i, i, bH_sec)));
-          diag[i] = Thyra::nonconstInverse(linOp);
-        }
         H_sec = Teko::toLinearOp(bH_sec);
-        invH_sec = Teko::createBlockUpperTriInverseOp(bH_sec, diag);
+        invH_sec = blockDiagonalInverse(bH_sec, response_index_secant);
       }
     }
   }
@@ -672,8 +744,9 @@ if(useCustomDotProduct) {
     rol_p_primal = Teuchos::rcp(new ROL::PrimalLinearOpScaledThyraVector<double>(p, H_dotP, invH_dotP));
 }
 
-  //! check correctness of Derivatives prvided by Model Evaluator
-  if(rolParams.get<bool>("Check Derivatives", false) && useCustomDotProduct) {
+  //! check correctness of the reduced derivatives with the user defined dot-product
+  if(rolParams.get<bool>("Check Derivatives", false) && useCustomDotProduct &&
+     rolParams.sublist("Derivative Checks").get<bool>("Perform Reduced Derivative Checks", false)) {
     Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec1 = p->clone_v();
     Teuchos::RCP<Thyra::VectorBase<double> > p_rand_vec2 = p->clone_v();
 
@@ -711,41 +784,37 @@ if(useCustomDotProduct) {
       int num_steps = 10;
       int order = 2;
 
-      if(rolParams.sublist("Derivative Checks").get<bool>("Perform Reduced Derivative Checks", false)) {
-        *out << "Piro::PerformROLAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
-        reduced_obj.checkGradient(*rol_p_primal, *rol_p_direction1, true, *out);
+      *out << "Piro::PerformROLAnalysis: Checking Reduced Gradient Accuracy" << std::endl;
+      reduced_obj.checkGradient(*rol_p_primal, *rol_p_direction1, true, *out);
 
-        *out << "Piro::PerformROLAnalysis: Checking Symmetry of reduced objective Hessian" << std::endl;
-        reduced_obj.update(*rol_p_primal,ROL::UpdateType::Temp);
-        auto hsymCheck = reduced_obj.checkHessSym(*rol_p_primal, *rol_p_direction1, *rol_p_direction2, false,*out);
-        *out << "Piro::PerformROLAnalysis: Checking Symmetry of reduced objective Hessian - output:" << std::endl;
-        *out << std::right
-                << std::setw(20) << "<w, H(x)v>"
-                << std::setw(20) << "<v, H(x)w>"
-                << std::setw(20) << "abs error"
-                << "\n";
-        *out << std::scientific << std::setprecision(11) << std::right
-                << std::setw(20) << hsymCheck[0]
-                << std::setw(20) << hsymCheck[1]
-                << std::setw(20) << hsymCheck[2]
-                << "\n";
-        *out << "Piro::PerformROLAnalysis: Checking Accuracy of reduced objective Hessian" << std::endl;
-        reduced_obj.checkHessVec(*rol_p_primal, *rol_p_direction1,true,*out,num_steps,order);
-      }
+      *out << "Piro::PerformROLAnalysis: Checking Symmetry of reduced objective Hessian" << std::endl;
+      reduced_obj.update(*rol_p_primal,ROL::UpdateType::Temp);
+      auto hsymCheck = reduced_obj.checkHessSym(*rol_p_primal, *rol_p_direction1, *rol_p_direction2, false,*out);
+      *out << "Piro::PerformROLAnalysis: Checking Symmetry of reduced objective Hessian - output:" << std::endl;
+      *out << std::right
+              << std::setw(20) << "<w, H(x)v>"
+              << std::setw(20) << "<v, H(x)w>"
+              << std::setw(20) << "abs error"
+              << "\n";
+      *out << std::scientific << std::setprecision(11) << std::right
+              << std::setw(20) << hsymCheck[0]
+              << std::setw(20) << hsymCheck[1]
+              << std::setw(20) << hsymCheck[2]
+              << "\n";
+      *out << "Piro::PerformROLAnalysis: Checking Accuracy of reduced objective Hessian" << std::endl;
+      reduced_obj.checkHessVec(*rol_p_primal, *rol_p_direction1,true,*out,num_steps,order);
     }
   }
 
   int return_status = 0;
-  if(rolParams.get<bool>("Perform Optimization", true)) {
+  if(performOptimization) {
     // Run Algorithm
     Teuchos::RCP<ROL::BoundConstraint<double> > boundConstraint;
-    bool boundConstrained = rolParams.get<bool>("Bound Constrained", false);
 
     if(boundConstrained) {
-      Teuchos::RCP<Thyra::VectorBase<double>> p_lo = model->getLowerBounds().get_p(0)->clone_v();
-      Teuchos::RCP<Thyra::VectorBase<double>> p_up = model->getUpperBounds().get_p(0)->clone_v();
+      Teuchos::RCP<Thyra::VectorBase<double>> p_lo = getParameterBounds(*model, true, "Piro::PerformROLSteadyAnalysis");
+      Teuchos::RCP<Thyra::VectorBase<double>> p_up = getParameterBounds(*model, false, "Piro::PerformROLSteadyAnalysis");
 
-      //ROL::Thyra_BoundConstraint<double> boundConstraint(p_lo->clone_v(), p_up->clone_v(), eps_bound);
       boundConstraint = rcp( new ROL::Bounds<double>(ROL::makePtr<ROL::ThyraVector<double> >(p_lo), ROL::makePtr<ROL::ThyraVector<double> >(p_up)));
     }
 
@@ -772,7 +841,7 @@ if(useCustomDotProduct) {
           bool lumpConstraints(false), printToStream(true);
           prob->finalize(lumpConstraints, printToStream, *rolOutput);
           ROL::Solver<double> optSolver(prob, rolParams.sublist("ROL Options"));
-          optSolver.solve(*out);
+          optSolver.solve(*rolOutput);
           return_status = optSolver.getAlgorithmState()->statusFlag;
         } else {
           *out << "Piro::PerformROLSteadyAnalysis: Solving Full Space Unconstrained Optimization Problem" << std::endl;
@@ -781,7 +850,7 @@ if(useCustomDotProduct) {
           bool lumpConstraints(false), printToStream(true);
           prob->finalize(lumpConstraints, printToStream, *rolOutput);
           ROL::Solver<double> optSolver(prob, rolParams.sublist("ROL Options"));
-          optSolver.solve(*out);
+          optSolver.solve(*rolOutput);
           return_status = optSolver.getAlgorithmState()->statusFlag;
         }
       } else {
@@ -798,6 +867,13 @@ if(useCustomDotProduct) {
           return_status = algo->getState()->statusFlag;
         }
       }
+
+      // Observe the last accepted iterate, in case it was not observed because of the write interval
+      thyra_obj_ptr->observeLastAcceptedIterate();
+
+      // Recap of the ROL output, which is interleaved with the output of the solvers during the optimization
+      if(analysisVerbosity > 1)
+        *out << "\nPiro::PerformROLSteadyAnalysis: ROL output recap\n" << rolOutputBuffer.getStringStream().str() << std::endl;
   }
   return return_status;
 #else
@@ -951,8 +1027,8 @@ Piro::PerformROLTransientAnalysis(
   bool boundConstrained = rolParams.get<bool>("Bound Constrained", false);
 
   if(boundConstrained) {
-    Teuchos::RCP<Thyra::VectorBase<double>> p_lo = model->getLowerBounds().get_p(0)->clone_v();
-    Teuchos::RCP<Thyra::VectorBase<double>> p_up = model->getUpperBounds().get_p(0)->clone_v();
+    Teuchos::RCP<Thyra::VectorBase<double>> p_lo = getParameterBounds(*model, true, "Piro::PerformROLTransientAnalysis");
+    Teuchos::RCP<Thyra::VectorBase<double>> p_up = getParameterBounds(*model, false, "Piro::PerformROLTransientAnalysis");
 
     boundConstraint = rcp( new ROL::Bounds<double>(ROL::makePtr<ROL::ThyraVector<double> >(p_lo), ROL::makePtr<ROL::ThyraVector<double> >(p_up)));
   }
@@ -1107,8 +1183,11 @@ Piro::PerformROLTransientAnalysis(
       algo->run(rol_p_primal, *reduced_obj, *rolOutput);
       return_status = algo->getState()->statusFlag;
     }
-    if (return_status == ROL::EExitStatus::EXITSTATUS_STEPTOL) return_status = 0;
   }
+
+  // Recap of the ROL output (derivative checks and optimization), which is interleaved with the output of the solvers
+  if(analysisVerbosity > 1 && !rolOutputBuffer.getStringStream().str().empty())
+    *out << "\nPiro::PerformROLTransientAnalysis: ROL output recap\n" << rolOutputBuffer.getStringStream().str() << std::endl;
 
   return return_status;
 #else
@@ -1131,9 +1210,14 @@ Piro::PerformROLAnalysis(
 {
   auto analysisParams = piroParams.sublist("Analysis");
   bool transient = analysisParams.get<bool>("Transient", false);
-  if ( transient )
-    return PerformROLTransientAnalysis(piroModel, piroParams, p, observer);
-  return PerformROLSteadyAnalysis(piroModel, piroParams, p, observer);
+  int status = transient ?
+      PerformROLTransientAnalysis(piroModel, piroParams, p, observer) :
+      PerformROLSteadyAnalysis(piroModel, piroParams, p, observer);
+#ifdef HAVE_PIRO_ROL
+  // Stopping because the step is below the step tolerance is a successful termination
+  if (status == ROL::EExitStatus::EXITSTATUS_STEPTOL) status = 0;
+#endif
+  return status;
 }
 
 
@@ -1860,8 +1944,11 @@ Piro::getValidPiroAnalysisROLParameters(int num_parameters)
 
   validPL->sublist("Derivative Checks",  false, "Options for derivative checks");
   validPL->sublist("ROL Options",  false, "Options to pass to ROL");
-  validPL->sublist("Matrix Based Dot Product",  false, "Sublist to define a Matrix based dot product (instead of the l2 one) to define gradient in ROL");
-  validPL->sublist("Custom Secant", false, "Sublist to define a custom secant");
+  validPL->sublist("Matrix Based Dot Product",  false, "Sublist to define a Matrix based dot product (instead of the l2 one) to define gradient in ROL (steady problems only). "
+      "The \"Hessian Of Response\" matrix is computed once, at the initial guess of the parameters and at the nominal state of the model. "
+      "Bound-constrained optimization requires a diagonal dot product (\"Lump Matrix\" = true)");
+  validPL->sublist("Custom Secant", false, "Sublist to define a custom secant (steady problems only). "
+      "The \"Hessian Of Response\" initialization is computed once, at the initial guess of the parameters and at the nominal state of the model");
 
   return validPL;
 }

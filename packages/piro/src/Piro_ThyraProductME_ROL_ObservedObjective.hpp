@@ -89,7 +89,7 @@ public:
 
     if (type != ROL::UpdateType::Accept)
       observer_->parametersChanged();
-    else if (iter%write_interval_ == 0)
+    else if ((write_interval_ != 0) && (iter%write_interval_ == 0))
       observe(x, iter);
   }
 
