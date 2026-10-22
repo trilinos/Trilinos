@@ -36,7 +36,6 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 
 bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
-  int numProcs( comm->getSize() );
   int localProc( comm->getRank() );
 
   using Map_t      = Tpetra::Map<>;
@@ -146,7 +145,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   diff.norm2(diffNorms2_array);
 
   bool isOkay = true;
-  for (size_t v(0); v < numVectors; ++v) {
+  for (int v(0); v < numVectors; ++v) {
     Scalar_t diffNorm2       = diffNorms2_array[v];
     Scalar_t originalNorm2   = originalRhsNorms2_array[v];
 
