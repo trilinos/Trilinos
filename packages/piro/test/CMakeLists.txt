@@ -417,6 +417,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_ExplicitAdjointME_NOXSolver.xml
         input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml
+        input_Analysis_ROL_FullSpace_AugmentedLagrangian.xml
+        input_Analysis_ROL_ReducedSpace_LineSearch_BoundConstrained_HessianBasedDotProduct_Invalid.xml
         input_Tempus_BackwardEuler_SinCos.xml 
         input_tempus_be_nox_solver.yaml
         input_Solve_TR_Thyra.xml

@@ -96,7 +96,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   //If write_interval == -1, we print after every successful NOX solver
   //If write_inteval == 0 we never print.
   //This relies on the fact that sensitivities are always called by ROL at each iteration to asses whether the solver is converged
-  //TODO: when write_interval>1, at the moment there is no guarantee that the final iteration of the optimization (i.e. the converged solution) gets printed
+  //When write_interval>1, Piro::PerformROLSteadyAnalysis observes the last accepted iterate once the optimization ends
 
   if(appParams->isSublist("Optimization Status")){
     auto optimizationParams = appParams->sublist("Optimization Status");

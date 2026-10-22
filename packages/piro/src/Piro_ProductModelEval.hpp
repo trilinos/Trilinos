@@ -629,13 +629,18 @@ ProductModelEvaluator<Real>::getLowerBounds() const
 
     Teuchos::RCP<const Thyra::DefaultProductVectorSpace<Real>> p_space = Teuchos::rcp_dynamic_cast<const Thyra::DefaultProductVectorSpace<Real>>(this->get_p_space(0));
 
+    // The bounds of the product parameter are defined only if the bounds of all the parameters are defined
+    bool areBoundsDefined = true;
     Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Real>>> p_vecs(p_indices_.size());
     for (std::size_t i = 0; i < p_indices_.size(); ++i) {
         p_vecs[i] = internal_inArgs.get_p(p_indices_[i]);
+        areBoundsDefined = areBoundsDefined && Teuchos::nonnull(p_vecs[i]);
     }
-    Teuchos::RCP<Thyra::DefaultProductVector<Real>> p_prod = Thyra::defaultProductVector<double>(p_space, p_vecs());
 
-    result.set_p(0, p_prod);
+    if (areBoundsDefined)
+        result.set_p(0, Thyra::defaultProductVector<double>(p_space, p_vecs()));
+    else
+        result.set_p(0, Teuchos::null);
 
     return result;
 }
@@ -654,13 +659,18 @@ ProductModelEvaluator<Real>::getUpperBounds() const
 
     Teuchos::RCP<const Thyra::DefaultProductVectorSpace<Real>> p_space = Teuchos::rcp_dynamic_cast<const Thyra::DefaultProductVectorSpace<Real>>(this->get_p_space(0));
 
+    // The bounds of the product parameter are defined only if the bounds of all the parameters are defined
+    bool areBoundsDefined = true;
     Teuchos::Array<Teuchos::RCP<const Thyra::VectorBase<Real>>> p_vecs(p_indices_.size());
     for (std::size_t i = 0; i < p_indices_.size(); ++i) {
         p_vecs[i] = internal_inArgs.get_p(p_indices_[i]);
+        areBoundsDefined = areBoundsDefined && Teuchos::nonnull(p_vecs[i]);
     }
-    Teuchos::RCP<Thyra::DefaultProductVector<Real>> p_prod = Thyra::defaultProductVector<double>(p_space, p_vecs());
 
-    result.set_p(0, p_prod);
+    if (areBoundsDefined)
+        result.set_p(0, Thyra::defaultProductVector<double>(p_space, p_vecs()));
+    else
+        result.set_p(0, Teuchos::null);
 
     return result;
 }
