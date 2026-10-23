@@ -14,6 +14,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
+#include "Tempus_StepperImplicit_decl.hpp"
 #include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
 
 namespace Tempus {
@@ -607,7 +608,14 @@ createIntegratorPseudoTransientForwardSensitivity(
     pl->remove("Cache Matrices");
     sens_model = wrapStaggeredFSAModelEvaluator(
         model, sens_residual_model, sens_solve_model, cache_matrices, pl);
-    sens_integrator = createIntegratorBasic<Scalar>(pList, sens_model);
+
+    // The sensitivity integrator uses a copy of the parameters, without the
+    // objects of the forward problem that the nonlinear solver of the forward
+    // stepper stores in them (e.g., for NOX row sum scaling), which do not
+    // apply to the sensitivity problem (see removeIntegratorSolverObjects).
+    auto sensPList = Teuchos::rcp(new Teuchos::ParameterList(*pList));
+    removeIntegratorSolverObjects(*sensPList);
+    sens_integrator = createIntegratorBasic<Scalar>(sensPList, sens_model);
   }
 
   Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>>

@@ -312,5 +312,66 @@ class StepperImplicit : virtual public Tempus::Stepper<Scalar> {
   std::string solverName_;
 };
 
+/** \brief Remove from the parameters of an implicit stepper the objects that
+ *  the nonlinear solver (NOX) of a stepper built with them stored in them.
+ *
+ *  The NOX solver of an implicit stepper is given the "NOX" sublist of the
+ *  stepper parameters (see StepperImplicit::setStepperSolverValues), and NOX
+ *  stores in it objects built for the problem of that stepper: with
+ *  "Function Scaling" = "Row Sum", the observer that computes the scaling
+ *  ("Solver Options"->"User Defined Pre/Post Operator") and the merit
+ *  function ("Solver Options"->"User Defined Merit Function"), with vectors in
+ *  the residual space of the problem.  A solver built later with the same
+ *  parameters keeps these objects (the observer is chained with its own),
+ *  which fails for a problem with another residual space, e.g., the adjoint
+ *  or the sensitivity problem of the integrators and steppers for
+ *  sensitivities, which use the parameters of the forward stepper.
+ *
+ *  Applied to a copy of the parameters, for a stepper of another problem, this
+ *  removes these entries, and a "User Defined Scaling" vector ("Thyra Group
+ *  Options", replaced by "Function Scaling" = "None"): user defined NOX
+ *  observers and scaling of the forward problem are not used for the other
+ *  problem.
+ */
+inline void removeStepperSolverObjects(Teuchos::ParameterList& stepperPL)
+{
+  if (!stepperPL.isType<std::string>("Solver Name")) return;
+  const std::string solverName = stepperPL.get<std::string>("Solver Name");
+  if (!stepperPL.isSublist(solverName) ||
+      !stepperPL.sublist(solverName).isSublist("NOX"))
+    return;
+  Teuchos::ParameterList& noxPL = stepperPL.sublist(solverName).sublist("NOX");
+
+  if (noxPL.isSublist("Solver Options")) {
+    Teuchos::ParameterList& optionsPL = noxPL.sublist("Solver Options");
+    optionsPL.remove("User Defined Pre/Post Operator", false);
+    optionsPL.remove("User Defined Merit Function", false);
+  }
+  if (noxPL.isSublist("Thyra Group Options")) {
+    Teuchos::ParameterList& groupPL = noxPL.sublist("Thyra Group Options");
+    if (groupPL.isType<std::string>("Function Scaling") &&
+        groupPL.get<std::string>("Function Scaling") == "User Defined")
+      groupPL.set<std::string>("Function Scaling", "None");
+    groupPL.remove("User Defined Scaling", false);
+  }
+}
+
+/** \brief Same as removeStepperSolverObjects, for the stepper of the
+ *  integrator selected by Tempus parameters ("Integrator Name", then
+ *  "Stepper Name").
+ */
+inline void removeIntegratorSolverObjects(Teuchos::ParameterList& tempusPL)
+{
+  if (!tempusPL.isType<std::string>("Integrator Name")) return;
+  const std::string integratorName =
+      tempusPL.get<std::string>("Integrator Name");
+  if (!tempusPL.isSublist(integratorName)) return;
+  Teuchos::ParameterList& integratorPL = tempusPL.sublist(integratorName);
+  if (!integratorPL.isType<std::string>("Stepper Name")) return;
+  const std::string stepperName = integratorPL.get<std::string>("Stepper Name");
+  if (!tempusPL.isSublist(stepperName)) return;
+  removeStepperSolverObjects(tempusPL.sublist(stepperName));
+}
+
 }  // namespace Tempus
 #endif  // Tempus_StepperImplicit_decl_hpp
