@@ -97,12 +97,12 @@ create_subdynrankview_mapping(const SubT& sub, std::index_sequence<Idx...>) {
   {
     idx_t strides[7] = {(Idx<SubT::rank() ? sub.stride(Idx):1)...};
     return MapT(mdspan_non_standard_tag(), extents, strides);
-  } else if constexpr(std::is_same_v<return_layout_t, Kokkos::Experimental::layout_left_padded<Kokkos::dynamic_extent> > ||
-                      std::is_same_v<return_layout_t, Kokkos::Experimental::layout_right_padded<Kokkos::dynamic_extent> >)
+  } else if constexpr(std::is_same_v<return_layout_t, Kokkos::layout_left_padded<Kokkos::dynamic_extent> > ||
+                      std::is_same_v<return_layout_t, Kokkos::layout_right_padded<Kokkos::dynamic_extent> >)
   {
     idx_t stride = 1;
     if constexpr (SubT::rank() > 1) {
-      if constexpr(std::is_same_v<return_layout_t, Kokkos::Experimental::layout_left_padded<Kokkos::dynamic_extent> >)
+      if constexpr(std::is_same_v<return_layout_t, Kokkos::layout_left_padded<Kokkos::dynamic_extent> >)
         stride = sub.stride(1);
       else
         stride = sub.stride(SubT::rank()-2);
