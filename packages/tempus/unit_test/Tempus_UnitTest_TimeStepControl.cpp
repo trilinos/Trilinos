@@ -10,6 +10,7 @@
 #include "Tempus_UnitTest_Utils.hpp"
 
 #include "Tempus_TimeStepControl.hpp"
+#include "Tempus_TimeEventList.hpp"
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 #include "Tempus_TimeStepControlStrategyIntegralController.hpp"
@@ -695,6 +696,58 @@ TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Variable)
                          workingState->getTime(), 1.0e-14);
 
   TEST_COMPARE(workingState->getOutput(), ==, false);
+}
+
+// ************************************************************
+// ************************************************************
+// With two time events in the same time step, the time step must land on the
+// earliest one, and is an output step only if that is an output time.
+TEUCHOS_UNIT_TEST(TimeStepControl, LandOnEarliestTimeEvent_Variable)
+{
+  // Setup the SolutionHistory --------------------------------
+  auto model           = rcp(new Tempus_Test::SinCosModel<double>());
+  auto inArgsIC        = model->getNominalValues();
+  auto icSolution      = rcp_const_cast<Thyra::VectorBase<double>>(inArgsIC.get_x());
+  auto icState         = Tempus::createSolutionStateX<double>(icSolution);
+  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+  solutionHistory->addState(icState);
+  double dt = 0.9;
+  solutionHistory->getCurrentState()->setTimeStep(dt);
+
+  // Setup the TimeStepControl --------------------------------
+  // The output time (0.8) is in the TimeEventComposite before the other time
+  // event (0.5), but the time step must land on 0.5 first.
+  auto tsc = rcp(new Tempus::TimeStepControl<double>());
+  std::vector<double> outputTimes(1, 0.8);
+  tsc->setOutputTimes(outputTimes);
+  tsc->setOutputExactly(true);
+  tsc->getTimeEvents()->add(rcp(new Tempus::TimeEventList<double>(
+      std::vector<double>(1, 0.5), "Other Time List", true)));
+  auto tscs = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
+  tsc->setTimeStepControlStrategy(tscs);
+  tsc->setMinTimeStep(0.1);
+  tsc->setInitTimeStep(dt);
+  tsc->setMaxTimeStep(2.0 * dt);
+  tsc->initialize();
+  Tempus::Status status = Tempus::Status::WORKING;
+
+  // ** First Timestep ** //
+  // Set dt to hit the other time event, not an output.
+  solutionHistory->initWorkingState();
+  auto workingState = solutionHistory->getWorkingState();
+  tsc->setNextTimeStep(solutionHistory, status);
+  TEST_FLOATING_EQUALITY(workingState->getTime(), 0.5, 1.0e-14);
+  TEST_COMPARE(workingState->getOutput(), ==, false);
+  workingState->setSolutionStatus(Tempus::Status::PASSED);
+  solutionHistory->promoteWorkingState();
+
+  // ** Second Timestep ** //
+  // Set dt to hit the output time.
+  solutionHistory->initWorkingState();
+  workingState = solutionHistory->getWorkingState();
+  tsc->setNextTimeStep(solutionHistory, status);
+  TEST_FLOATING_EQUALITY(workingState->getTime(), 0.8, 1.0e-14);
+  TEST_COMPARE(workingState->getOutput(), ==, true);
 }
 
 // ************************************************************

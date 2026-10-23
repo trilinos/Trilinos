@@ -19,9 +19,13 @@
 
 namespace Piro {
 
+  //! Stream buffer that stores the ROL output and, if echo is true, also prints it
+  //! to the standard output (with putchar, so it is not affected by redirections of std::cout).
   template<class CharT, class Traits=std::char_traits<CharT>>
   class RolOutputBuffer : public std::basic_streambuf<CharT,Traits> {
      public:
+     explicit RolOutputBuffer(bool echo = true) : echo_(echo) {}
+
      const std::stringstream& getStringStream() const;
 
      protected:
@@ -29,6 +33,7 @@ namespace Piro {
 
      private:
      std::stringstream ss;
+     bool echo_;
   };
 
   Teuchos::RCP<Thyra::ProductVectorBase<double> > createProductVector(const Teuchos::RCP<Thyra::VectorBase<double> >& vec);
@@ -51,6 +56,7 @@ namespace Piro {
 
   //! \brief Performs analysis of a steady state solved model using ROL.
   //! \details Requires that the ROL package is available.
+  //! Returns the exit status of the ROL algorithm (ROL::EExitStatus), 0 if no optimization is performed.
   //! \ingroup Piro_Thyra_analysis_driver_grp
   int PerformROLSteadyAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
@@ -61,6 +67,7 @@ namespace Piro {
 
   //! \brief Performs analysis of a transient solved model using ROL.
   //! \details Requires that the ROL package is available.
+  //! Returns the exit status of the ROL algorithm (ROL::EExitStatus), 0 if no optimization is performed.
   //! \ingroup Piro_Thyra_analysis_driver_grp
   int PerformROLTransientAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
@@ -84,6 +91,8 @@ namespace Piro {
 
   //! \brief Performs analysis of a solved model using ROL.
   //! \details Requires that the ROL package is available.
+  //! Returns the exit status of the ROL algorithm (ROL::EExitStatus), except that stopping because
+  //! the step is below the step tolerance is considered a success and returns 0.
   //! \ingroup Piro_Thyra_analysis_driver_grp
   int PerformROLAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,

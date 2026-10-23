@@ -60,7 +60,12 @@ int main(int argc, char *argv[]) {
 
   Piro::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<8; iTest++) {
+  for (int iTest=0; iTest<10; iTest++) {
+
+    status = 0;
+
+    // Whether Piro::PerformAnalysis is expected to throw a Teuchos::Exceptions::InvalidParameter exception
+    bool expectInvalidParameter = false;
 
     if (doAll) {
       switch (iTest) {
@@ -72,6 +77,9 @@ int main(int argc, char *argv[]) {
        case 5: inputFile="input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_ExplicitAdjointME_NOXSolver.xml"; break;
        case 6: inputFile="input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml"; break;
        case 7: inputFile="input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct_2_parameters.xml"; break;
+       case 8: inputFile="input_Analysis_ROL_FullSpace_AugmentedLagrangian.xml"; break;
+       case 9: inputFile="input_Analysis_ROL_ReducedSpace_LineSearch_BoundConstrained_HessianBasedDotProduct_Invalid.xml";
+               expectInvalidParameter = true; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -82,13 +90,16 @@ int main(int argc, char *argv[]) {
 
     try {
 
+      // Test 7 (and a test given on the command line) uses the model with 2 parameters, the other tests use the other models
+      const bool twoParametersTest = (iTest == 7) || (iTest == 999);
+
       std::vector<std::string> mockModels = {"MockModelEval_A_Tpetra", "MockModelEval_B_Tpetra", "MockModelEval_B_Tpetra_2_parameters"};
       for (auto mockModel : mockModels) {
 
-        if (mockModel=="MockModelEval_B_Tpetra_2_parameters" && iTest < 7) {
+        if (mockModel=="MockModelEval_B_Tpetra_2_parameters" && !twoParametersTest) {
           continue;
         }
-        if (mockModel!="MockModelEval_B_Tpetra_2_parameters" && iTest > 6) {
+        if (mockModel!="MockModelEval_B_Tpetra_2_parameters" && twoParametersTest) {
           continue;
         }
 
@@ -179,7 +190,38 @@ int main(int argc, char *argv[]) {
 
         // Call the analysis routine
         RCP<Thyra::VectorBase<double>> p;
-        status = Piro::PerformAnalysis(*piro, *piroParams, p);
+
+        if (expectInvalidParameter) {
+          bool thrown = false;
+          try {
+            Piro::PerformAnalysis(*piro, *piroParams, p);
+          }
+          catch (const Teuchos::Exceptions::InvalidParameter& e) {
+            thrown = true;
+            if (Proc==0)
+              std::cout << "\nPiro_AnalysisDriver: Piro::PerformAnalysis threw the expected exception:\n" << e.what() << std::endl;
+          }
+          if (!thrown) {
+            status+=10;
+            if (Proc==0)
+              std::cout << "\nPiro_AnalysisDriver: Piro::PerformAnalysis did not throw the expected exception" << std::endl;
+          }
+          continue;
+        }
+
+        // accumulate the status of the models of the test
+        status += Piro::PerformAnalysis(*piro, *piroParams, p);
+
+        // The analysis must reset the flags that the NOX solver uses during the optimization
+        if (piroParams->isSublist("Optimization Status")) {
+          const Teuchos::ParameterList& optStatus = piroParams->sublist("Optimization Status");
+          if (optStatus.isParameter("Optimizer Iteration Number") ||
+              (optStatus.isParameter("Compute State") && !optStatus.get<bool>("Compute State"))) {
+            status+=1;
+            if (Proc==0)
+              std::cout << "\nPiro_AnalysisDriver: the \"Optimization Status\" flags have not been reset" << std::endl;
+          }
+        }
 
         if (Teuchos::nonnull(p)) { //p might be null if the package ROL is not enabled
           Thyra::DetachedVectorView<double> p_view(p);
@@ -227,5 +269,5 @@ int main(int argc, char *argv[]) {
       std::cout << "\nTEST Failed: " << overall_status << "\n" << std::endl;
   }
 
-  return status;
+  return overall_status;
 }

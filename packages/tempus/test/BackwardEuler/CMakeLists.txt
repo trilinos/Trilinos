@@ -60,6 +60,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BackwardEuler_ASA_AlgebraicEquations
+  SOURCES Tempus_BackwardEuler_ASA_AlgebraicEquations.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_SinCos_CopyFiles
   DEST_FILES Tempus_BackwardEuler_SinCos.xml
   EXEDEPS BackwardEuler_SinCos
