@@ -86,7 +86,7 @@ auto reinterpret_as_unmanaged_scalar_view(const Kokkos::View<DataType, Args...>&
   using value_type = typename view_t::value_type::value_type;
   using scalar_t = std::conditional_t<std::is_const_v<typename view_t::value_type>, const value_type, value_type>;
   constexpr bool is_layout_right = std::is_same_v<typename view_t::layout_type, Kokkos::LayoutRight> ||
-                                   std::is_same_v<typename view_t::layout_type, Kokkos::Experimental::layout_right_padded<Kokkos::dynamic_extent>>;
+                                   std::is_same_v<typename view_t::layout_type, Kokkos::layout_right_padded<Kokkos::dynamic_extent>>;
   if constexpr (view_t::rank() == 0) {
     return Kokkos::View<scalar_t*, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view));
   } else
@@ -145,7 +145,7 @@ template<class DataType, class ... Args>
 requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type> 
   && (Kokkos::View<DataType, Args...>::rank() == 2) 
   && (std::same_as<typename Kokkos::View<DataType, Args...>::layout_type, Kokkos::LayoutLeft> ||
-      std::same_as<typename Kokkos::View<DataType, Args...>::layout_type, Kokkos::Experimental::layout_left_padded<Kokkos::dynamic_extent>>))
+      std::same_as<typename Kokkos::View<DataType, Args...>::layout_type, Kokkos::layout_left_padded<Kokkos::dynamic_extent>>))
 auto reinterpret_as_unmanaged_scalar_columnwise_flat_view(const Kokkos::View<DataType, Args...>& view) {
   using view_t = Kokkos::View<DataType, Args...>;
   using value_type = typename view_t::value_type::value_type;
@@ -200,7 +200,7 @@ auto reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(const Kokkos::DualVi
   printf("Sacado::dimension_scalar: %i %i\n", (int)Sacado::dimension_scalar(view), (int)typename Kokkos::View<DataType, Args...>::value_type().size());
   int dim_scalar = typename Kokkos::View<DataType, Args...>::value_type().size();
   constexpr bool is_layout_left = std::is_same_v<typename Kokkos::DualView<DataType, Args...>::t_dev::layout_type, Kokkos::LayoutLeft> ||
-    std::is_same_v<typename Kokkos::DualView<DataType, Args...>::t_dev::layout_type, Kokkos::Experimental::layout_left_padded<Kokkos::dynamic_extent>>;
+    std::is_same_v<typename Kokkos::DualView<DataType, Args...>::t_dev::layout_type, Kokkos::layout_left_padded<Kokkos::dynamic_extent>>;
   if constexpr (is_layout_left) {
   DualViewModifiedFlagsAccessor<scalar_t**, Args...> view_scalar(
     view_access.get_modified_flags(),
