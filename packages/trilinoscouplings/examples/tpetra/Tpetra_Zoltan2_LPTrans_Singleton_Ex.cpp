@@ -65,7 +65,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   RHS_Original                    = Reader_t::readDenseFile("SF2_RHS_Original.mm", comm, A_Original_Map);
 
   bool verbose                             = true;
-  bool run_on_host                         = false;
+  bool run_on_host                         = true;
   RCP<MultiV_t> x                     = rcp(new MultiV_t(A_Original_Map, LHS_Original->getNumVectors()));
   RCP<Problem_t> preSingletonProblem  = rcp(new Problem_t(A_Original, x, RHS_Original));
 
@@ -108,16 +108,50 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   RCP<MultiV_t> rebalancedRhs    = transformedLP->getRHS();
 
   // ****************************************************************
-  // Step 6/7: Copy solution to reduced system and reverse transform
+  // Step 6/7: Copy solution and compute residual to reduced system and reverse transform
   // ****************************************************************
-  auto reducedRowMap                 = SingletonTransform.ReducedMatrix()->getRowMap();
+  auto reducedRowMap                 = rebalancedMatrix->getRowMap();
   RCP<MultiV_t> reducedSolution = Reader_t::readDenseFile("SF2_LHS_Reduced.mm", comm, reducedRowMap);
-  
   rebalancedLhs->update(1.0, *reducedSolution, 0.0);
+
+  int numVectors = RHS_Original->getNumVectors(); 
+  Teuchos::RCP<MultiV_t> reducedMatLhs = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( reducedRowMap, numVectors );
+  rebalancedMatrix->apply(*rebalancedLhs, *reducedMatLhs);
+  MultiV_t diffR(*rebalancedRhs,Teuchos::Copy);
+  diffR.update(-1., *reducedMatLhs, 1.); 
+
+  std::vector<Scalar_t> diffNorms2_vec( numVectors );
+  Teuchos::ArrayView<Scalar_t> diffNorms2_array = Teuchos::arrayViewFromVector( diffNorms2_vec );
+  diffR.norm2(diffNorms2_array);
+
+  std::vector<Scalar_t> reducedRhsNorms2_vec( numVectors );
+  Teuchos::ArrayView<Scalar_t> reducedRhsNorms2_array = Teuchos::arrayViewFromVector( reducedRhsNorms2_vec );
+  rebalancedRhs->norm2(reducedRhsNorms2_array);
+
+  bool isOkay = true;
+  for (int v(0); (v < numVectors) && isOkay; ++v) {
+    Scalar_t diffNorm2      = diffNorms2_array[v];
+    Scalar_t reducedNorm2   = reducedRhsNorms2_array[v];
+    Scalar_t ratio = diffNorm2 / reducedNorm2;
+
+    if (localProc == 0) {
+      std::cout << "||reducedRhs[" << v << "] - reducedMat * reducedLhs[" << v << "]||_2 = " << diffNorms2_array[v]
+                << ", ||reducedRhs[" << v << "]||_2 = " << reducedNorm2
+                << ", ratio = " << ratio
+                << ", eps = " << Teuchos::ScalarTraits<Scalar_t>::eps()
+                << std::endl;
+      std::cout.flush();
+    }
+    isOkay &= ( std::fabs(ratio) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
+  }
+
+  // ****************************************************************
+  // Step 6/7: Reverse transformations from Zoltan2 -> Original 
+  // ****************************************************************
 
   // Rebalance Transform Reverse
   RebalanceTransform.rvs();
-  
+
   // Reindex Transform Reverse
   ReindexTransform.rvs();
   
@@ -130,32 +164,35 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   // ****************************************************************
   // Step 7/7: check that originalRhs == originalMat * originalLhs
   // ****************************************************************
-  int numVectors = RHS_Original->getNumVectors(); 
   std::vector<Scalar_t> originalRhsNorms2_vec( numVectors );
   Teuchos::ArrayView<Scalar_t> originalRhsNorms2_array = Teuchos::arrayViewFromVector( originalRhsNorms2_vec );
   RHS_Original->norm2(originalRhsNorms2_array);
 
   Teuchos::RCP<MultiV_t> originalMatLhs = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( A_Original_Map, numVectors );
   A_Original->apply(*x, *originalMatLhs);
-  MultiV_t diff(*RHS_Original);
+  MultiV_t diff(*RHS_Original,Teuchos::Copy);
   diff.update(-1., *originalMatLhs, 1.); 
-
-  std::vector<Scalar_t> diffNorms2_vec( numVectors );
-  Teuchos::ArrayView<Scalar_t> diffNorms2_array = Teuchos::arrayViewFromVector( diffNorms2_vec );
   diff.norm2(diffNorms2_array);
 
-  bool isOkay = true;
-  for (int v(0); v < numVectors; ++v) {
+  MultiV_t lhsDiff(*LHS_Original,Teuchos::Copy);
+  lhsDiff.update(-1., *x, 1.);
+  std::vector<Scalar_t> lhsDiffNorms2_vec( numVectors );
+  Teuchos::ArrayView<Scalar_t> lhsDiffNorms2_array = Teuchos::arrayViewFromVector( lhsDiffNorms2_vec );
+  lhsDiff.norm2(lhsDiffNorms2_array);
+
+  for (int v(0); (v < numVectors) && isOkay; ++v) {
     Scalar_t diffNorm2       = diffNorms2_array[v];
     Scalar_t originalNorm2   = originalRhsNorms2_array[v];
+    Scalar_t lhsDiffNorm2    = lhsDiffNorms2_array[v];
 
-    Scalar_t ratio = diffNorm2 / originalNorm2;
+    Scalar_t ratio  = diffNorm2 / originalNorm2;
+    Scalar_t ratio2 = lhsDiffNorm2 / originalNorm2;
 
     if (localProc == 0) {
-      std::cout << "||originalRhs[" << v << "] - originalMat * originalLhs[" << v << "]||_2 = " << diffNorms2_array[v]
+      std::cout << "||originalRhs[" << v << "] - originalMat * originalLhs[" << v << "]||_2 = " << diffNorm2
+                << ", ||originalLhs[" << v << "] - transformedLHS||_2 = " << lhsDiffNorm2 << std::endl
                 << ", ||originalRhs[" << v << "]||_2 = " << originalNorm2
-                << ", ratio = " << ratio
-                << ", Scalar_t = " << typeid(Scalar_t).name()
+                << ", residual ratio = " << ratio << ", solution ratio = " << ratio2
                 << ", eps = " << Teuchos::ScalarTraits<Scalar_t>::eps()
                 << std::endl;
       std::cout.flush();
