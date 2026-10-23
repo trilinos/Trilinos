@@ -151,6 +151,14 @@ ENDIF()
 
 APPEND_SET(SOURCES Adapters/TpetraOperatorAdapter.cpp Adapters/LinearSolverAdapter.cpp)
 
+IF(${PACKAGE_NAME}_ENABLE_Stratimikos
+   AND ${PACKAGE_NAME}_ENABLE_Thyra
+   AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
+   AND ${PACKAGE_NAME}_ENABLE_Teko
+)
+  APPEND_SET(SOURCES Adapters/MueLuTekoMultiPhysBlockPreconditionerFactory.cpp)
+ENDIF()
+
 ### Tests that require other Trilinos packages
 
 # first ensure that these cmake boolean variables are defined
