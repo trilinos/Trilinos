@@ -7,6 +7,7 @@
 #include <Kokkos_Macros.hpp>
 #include <traits/Kokkos_PolicyTraitAdaptor.hpp>
 #include <traits/Kokkos_Traits_fwd.hpp>
+#include <traits/Kokkos_PolicyTraitMatcher.hpp>
 
 namespace Kokkos::Impl {
 
@@ -21,13 +22,13 @@ struct TeamHandleMixin : AnalyzeNextTrait {
   static_assert(
       std::is_void_v<typename base_t::team_handle>,
       "Kokkos Error: More than one TeamHandleTrait specified is given.");
-  static constexpr bool team_handle_is_defaulted = false;
-  using team_handle                              = TeamHandle;
+  static constexpr bool team_handle_is_not_set = false;
+  using team_handle                            = TeamHandle;
 };
 
 struct TeamHandleTrait : TraitSpecificationBase<TeamHandleTrait> {
   struct base_traits {
-    static constexpr bool team_handle_is_defaulted = true;
+    static constexpr bool team_handle_is_not_set = true;
 
     using team_handle = void;
     KOKKOS_IMPL_MSVC_NVCC_EBO_WORKAROUND

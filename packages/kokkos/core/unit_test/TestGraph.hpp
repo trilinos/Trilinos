@@ -7,7 +7,13 @@ import kokkos.core;
 #else
 #include <Kokkos_Core.hpp>
 #endif
+#ifdef KOKKOS_IMPL_HAVE_CXX20_GRAPH_MODULES
+import kokkos.graph;
+import kokkos.graph_impl;
+#else
 #include <Kokkos_Graph.hpp>
+#endif
+#include <Kokkos_Assert.hpp>
 
 #include <gtest/gtest.h>
 
@@ -42,7 +48,7 @@ struct CountTestFunctor {
   int expected_count_max;
 
   template <class... Ts>
-  KOKKOS_FUNCTION void operator()(Ts&&...) const noexcept {
+  KOKKOS_FUNCTION void operator()(Ts&&...) const {
     bugs() += int(count() > expected_count_max || count() < expected_count_min);
     count()++;
   }
@@ -57,7 +63,7 @@ struct SetViewToValueFunctor {
   T value;
 
   template <class... Ts>
-  KOKKOS_FUNCTION void operator()(Ts&&...) const noexcept {
+  KOKKOS_FUNCTION void operator()(Ts&&...) const {
     v() = value;
   }
 };
@@ -70,7 +76,7 @@ struct SetResultToViewFunctor {
   view_type v;
 
   template <class U>
-  KOKKOS_FUNCTION void operator()(U&&, value_type& val) const noexcept {
+  KOKKOS_FUNCTION void operator()(U&&, value_type& val) const {
     val += v();
   }
 };
@@ -168,7 +174,6 @@ struct TEST_CATEGORY_FIXTURE_DEATH(graph)
 //      checks that submission instantiates if need be).
 //   2. Instantiating twice in a row is invalid.
 TEST_F(TEST_CATEGORY_FIXTURE_DEATH(graph), can_instantiate_only_once) {
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   {
     bool checked_assertions = false;
     // NOLINTNEXTLINE(bugprone-assignment-in-if-condition)
@@ -1342,7 +1347,8 @@ struct NoOp {
   KOKKOS_FUNCTION void operator()(Args&&...) const {}
 };
 
-TEST(TEST_CATEGORY, execution_policy_with_default_execution_space_instance) {
+TEST(TEST_CATEGORY_DEATH,
+     execution_policy_with_default_execution_space_instance) {
   Kokkos::Experimental::Graph<TEST_EXECSPACE> graph{};
 
   const auto [exec] =
@@ -1351,7 +1357,6 @@ TEST(TEST_CATEGORY, execution_policy_with_default_execution_space_instance) {
   if (exec == TEST_EXECSPACE{}) {
     GTEST_SKIP();
   } else {
-    ::testing::FLAGS_gtest_death_test_style = "threadsafe";
     ASSERT_DEATH(graph.root_node().then_parallel_for(
                      Kokkos::RangePolicy(exec, 0, 1), NoOp{}),
                  "The execution space instance of the execution policy of a "
@@ -1648,6 +1653,22 @@ TEST_F(TEST_CATEGORY_FIXTURE(graph), team_launch_bounds_in_graph) {
   for (int i = 0; i < num_teams; ++i) {
     ASSERT_EQ(result_h(i), i + 1);
   }
+}
+
+// Ensure that node properties can be passed by const lvalue.
+TEST_F(TEST_CATEGORY_FIXTURE(graph), property_by_const_lvalue) {
+  Kokkos::Experimental::Graph<TEST_EXECSPACE> graph{};
+
+  const auto node_props = Kokkos::Experimental::node_props(
+      "property by const lvalue",
+      Kokkos::Experimental::get_device_handle(TEST_EXECSPACE{}));
+
+  const auto node_then = graph.root_node().then(node_props, NoOp{});
+  const auto node_pfor = node_then.then_parallel_for(
+      node_props, Kokkos::RangePolicy<TEST_EXECSPACE>(0, 1), NoOp{});
+  [[maybe_unused]] const auto node_pred = node_pfor.then_parallel_reduce(
+      node_props, Kokkos::RangePolicy<TEST_EXECSPACE>(0, 1),
+      NoOpReduceFunctor<TEST_EXECSPACE, int>{}, count);
 }
 
 }  // end namespace Test
