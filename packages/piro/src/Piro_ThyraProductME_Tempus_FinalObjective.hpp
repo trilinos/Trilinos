@@ -237,6 +237,7 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::EVerbosityLevel verbosityLevel_;
 
+  //! Tempus parameters. The integrators are given copies, see run_tempus.
   Teuchos::RCP<Teuchos::ParameterList> tempus_params_;
   Real time_initial_;
   Real time_final_;
@@ -456,13 +457,19 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
     integrator.setObserver(observers);
   };
 
+  // Each integrator gets its own copy of the Tempus parameters: the NOX solver of
+  // the stepper stores objects in its parameters (e.g., the row sum scaling observer,
+  // with "Function Scaling" = "Row Sum"), and a solver built later with the same
+  // parameters would chain them with its own, one more at each integration.
+  const RCP<Teuchos::ParameterList> tempusParams = rcp(new Teuchos::ParameterList(*tempus_params_));
+
   // Create and run integrator
   bool integratorStatus;
   Real t;
   RCP<const Thyra::VectorBase<Real> > x, x_dot;
   if (Teuchos::nonnull(dgdp)) {
     RCP<Tempus::IntegratorAdjointSensitivity<Real> > integrator =
-      Tempus::createIntegratorAdjointSensitivity<Real>(tempus_params_, wrapped_model, wrapped_adjoint_model);
+      Tempus::createIntegratorAdjointSensitivity<Real>(tempusParams, wrapped_model, wrapped_adjoint_model);
     addAccumulator(*integrator);
     integratorStatus = integrator->advanceTime(time_final_);
     if (integratorStatus) {
@@ -475,7 +482,7 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
   }
   else {
     RCP<Tempus::IntegratorBasic<Real> > integrator =
-      Tempus::createIntegratorBasic<Real>(tempus_params_, wrapped_model);
+      Tempus::createIntegratorBasic<Real>(tempusParams, wrapped_model);
     // Same time steps as in the forward integration of the adjoint sensitivity integrator
     if (responseType_ == Tempus::AdjointResponseType::SumOverTimes)
       Tempus::AdjointSensitivityUtils::addResponseTimeEvents(*integrator->getNonConstTimeStepControl(), responseTimes_);
