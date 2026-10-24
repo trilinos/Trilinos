@@ -147,8 +147,8 @@ class TrilinosSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOr
   //! overlap when using the smoother in additive Schwarz mode
   LO overlap_;
 
-  //! A Factory
-  RCP<FactoryBase> AFact_;
+  //! Original A factory before any monolithic-smoother merge wrapper is applied.
+  RCP<const FactoryBase> AFact_;
 
   //
   // Underlying Smoother
