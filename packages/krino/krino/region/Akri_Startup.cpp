@@ -9,7 +9,6 @@
 #include <Akri_Startup.hpp>
 
 #include <Akri_DiagWriter.hpp>
-#include <Akri_MasterElementDeterminer.hpp>
 #include <Akri_RegisterProduct.hpp>
 
 #include <mpi.h>
@@ -226,7 +225,6 @@ void Startup::setup_commandline_options()
 
 Startup::~Startup()
 {
-  krino::MasterElementDeterminer::clear_master_elements();  // needed at least with MasterElementIntrepid to destruct Views on Basis objs before Kokkos::finalize()
   Kokkos::finalize();
   MPI_Finalize();
 }

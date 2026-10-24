@@ -1106,7 +1106,7 @@ namespace Intrepid2 {
 
       switch(operatorType) {
         case OPERATOR_VALUE:
-          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (const ordinal_type pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
             using SerialValue = typename Impl::Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::template Serial<OPERATOR_VALUE>;
@@ -1114,7 +1114,7 @@ namespace Intrepid2 {
           });
           break;
         case OPERATOR_GRAD:
-          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (const ordinal_type pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
             using SerialGrad = typename Impl::Basis_HGRAD_WEDGE_DEG2_FEM<serendipity>::template Serial<OPERATOR_GRAD>;

@@ -345,14 +345,14 @@ namespace Intrepid2 {
       
       switch(operatorType) {
         case OPERATOR_VALUE:
-          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &vinv_ = this->vinv_] (ordinal_type& pt) {
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &vinv_ = this->vinv_] (const ordinal_type pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type  (pt,pt+1), Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 range_type(pt, pt+1), Kokkos::ALL() );
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::getValues( output, input, work, vinv_ );
           });
           break;
         case OPERATOR_GRAD:
-          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &vinv_ = this->vinv_] (ordinal_type& pt) {
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &vinv_ = this->vinv_] (const ordinal_type pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type(pt,pt+1), Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 range_type(pt,pt+1), Kokkos::ALL() );
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_GRAD>::getValues( output, input, work, vinv_ );

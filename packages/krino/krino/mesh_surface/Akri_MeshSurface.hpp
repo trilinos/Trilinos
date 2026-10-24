@@ -58,7 +58,7 @@ std::unique_ptr<FacetedSurfaceBase> build_mesh_surface(const stk::mesh::MetaData
 
 class Parallel_Facet_File_Reader {
 public:
-  Parallel_Facet_File_Reader(const std::string & in_filename) : my_filename(in_filename) {}
+  Parallel_Facet_File_Reader(const std::string & in_filename);
 
   static void get_batch_size(const int local_num_facets, int & batch_size, int & num_batches);
 
@@ -76,7 +76,7 @@ private:
 
 class Faceted_Surface_From_File : public Faceted_Surface<Facet3d> {
 public:
-  Faceted_Surface_From_File(const std::string & surface_name, const stk::diag::Timer &parent_timer);
+  Faceted_Surface_From_File(const stk::diag::Timer &parent_timer);
   virtual ~Faceted_Surface_From_File() {}
   virtual void build_local_facets(const BoundingBox & proc_bbox) override;
   virtual BoundingBox get_bounding_box() = 0;
@@ -91,8 +91,7 @@ private:
 
 class STLSurface : public Faceted_Surface_From_File {
 public:
-  STLSurface(const std::string & surface_name,
-      const stk::diag::Timer &parent_timer,
+  STLSurface(const stk::diag::Timer &parent_timer,
       const std::string & filename,
       const int sign,
       const stk::math::Vector3d & scale);
@@ -100,7 +99,7 @@ public:
       const stk::diag::Timer &parentTimer = sierra::Diag::sierraTimer(),
       const int sign = 1,
       const stk::math::Vector3d & scale = stk::math::Vector3d(1.,1.,1.))
-  : STLSurface("STL surf", parentTimer, filename, sign, scale) {}
+  : STLSurface(parentTimer, filename, sign, scale) {}
 
   virtual ~STLSurface() {}
   virtual BoundingBox get_bounding_box() override;
@@ -123,8 +122,7 @@ private:
 
 class FACSurface : public Faceted_Surface_From_File {
 public:
-  FACSurface(const std::string & surface_name,
-      const stk::diag::Timer &parent_timer,
+  FACSurface(const stk::diag::Timer &parent_timer,
       const std::string & filename,
       const int sign,
       const stk::math::Vector3d & scale);
@@ -145,8 +143,7 @@ private:
 
 class PLYSurface : public Faceted_Surface_From_File {
 public:
-  PLYSurface(const std::string & surface_name,
-      const stk::diag::Timer &parent_timer,
+  PLYSurface(const stk::diag::Timer &parent_timer,
       const std::string & filename,
       const int sign,
       const stk::math::Vector3d & scale);
@@ -168,8 +165,7 @@ private:
 
 class EXOSurface : public Faceted_Surface_From_File {
 public:
-  EXOSurface(const std::string & surface_name,
-      const stk::diag::Timer &parent_timer,
+  EXOSurface(const stk::diag::Timer &parent_timer,
       const std::string & filename,
       const int sign,
       const stk::math::Vector3d & scale);

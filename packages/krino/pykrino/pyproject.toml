@@ -1,0 +1,51 @@
+[build-system]
+requires = [
+    "scikit-build-core>=0.3.3",
+    "pybind11 @ git+https://github.com/pybind/pybind11.git@c6c9a9e59b2b64393de0432aa6867ed27367912a",
+    "numpy"
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "krino-python"
+version = "0.0.1"
+description="Python interface to the Krino discretization toolkit"
+readme = "README.md"
+license = "BSD-3-Clause"
+authors = [
+  { name = "David Noble" },
+]
+requires-python = ">=3.8"
+dependencies = ["numpy"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+
+[tool.scikit-build]
+wheel.packages = ["src/pykrino"]
+wheel.expand-macos-universal-tags = true
+build.verbose = true
+logging.level = "DEBUG"
+cmake.version = ">=3.23.0"
+wheel.install-dir = "pykrino"
+
+[tool.scikit-build.cmake.define]
+CMAKE_BUILD_TYPE = "RELEASE"
+Trilinos_ASSERT_DEFINED_DEPENDENCIES = "OFF"
+BUILD_SHARED_LIBS = "ON"
+Trilinos_ENABLE_TESTS = "OFF"
+Trilinos_ENABLE_EXAMPLES = "OFF"
+Trilinos_ENABLE_Fortran = "OFF"
+Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES = "OFF"
+Trilinos_ENABLE_KRINO = "ON"
+Krino_ENABLE_PyKrino = "ON"
+PyKrino_PIP_INSTALL = "ON"
+CMAKE_INSTALL_RPATH="$ORIGIN/lib64;$ORIGIN/lib;$ORIGIN;@loader_path/lib64;@loader_path/lib;@loader_path"
+CMAKE_INTERPROCEDURAL_OPTIMIZATION="OFF"

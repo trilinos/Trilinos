@@ -264,4 +264,43 @@ THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedLinearOp,
   nestedBlock2x2 )
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultBlockedLinearOp, rowStatNullBlocks,
+  Scalar )
+{
+
+  // Block diagonal operator [A 0; 0 B] with null (zero) off-diagonal blocks:
+  // its absolute row sums are those of the diagonal blocks.
+
+  typedef Scalar S;  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  typedef Thyra::RowStatLinearOpBase<S> RowStatOp;
+
+  const RCP<const VectorSpaceBase<S> > vsm =  defaultSpmdVectorSpace<S>(m);
+  const RCP<const VectorSpaceBase<S> > vsn =  defaultSpmdVectorSpace<S>(n);
+
+  const RCP<MultiVectorBase<S> > A = createMembers(vsm, m);
+  Thyra::assign(A.ptr(), as<S>(-2.0));
+  const RCP<MultiVectorBase<S> > B = createMembers(vsn, n);
+  Thyra::assign(B.ptr(), as<S>(3.0));
+
+  const RCP<LinearOpBase<S> > M = Thyra::nonconstBlock2x2<S>(A, null, null, B);
+  const RCP<const RowStatOp> M_rs =
+    Teuchos::rcp_dynamic_cast<const RowStatOp>(M, true);
+  TEST_ASSERT(M_rs->rowStatIsSupported(
+      Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM));
+
+  const RCP<VectorBase<S> > rs = createMember<S>(M->range());
+  M_rs->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM, rs.ptr());
+
+  // m rows with sum 2 m (rows of A) and n rows with sum 3 n (rows of B)
+  TEST_FLOATING_EQUALITY( Thyra::sum(*rs), as<S>(m*2.0*m + n*3.0*n),
+    as<ScalarMag>(10*SMT::eps()) );
+
+}
+
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedLinearOp,
+  rowStatNullBlocks )
+
+
 } // namespace

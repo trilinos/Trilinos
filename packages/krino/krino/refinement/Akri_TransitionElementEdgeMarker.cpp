@@ -4,16 +4,17 @@
  *  Created on: Oct 28, 2022
  *      Author: drnoble
  */
-#include "Akri_TransitionElementEdgeMarker.hpp"
+#include <Akri_TransitionElementEdgeMarker.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/util/RemoveIntersection.hpp>
-#include "Akri_Edge.hpp"
-#include "Akri_MeshHelpers.hpp"
-#include "Akri_Refinement.hpp"
+#include <Akri_Edge.hpp>
+#include <Akri_FieldRef.hpp>
+#include <Akri_MeshHelpers.hpp>
+#include <Akri_Refinement.hpp>
 
 namespace krino {
 
@@ -136,10 +137,11 @@ bool TransitionElementEdgeMarker::is_element_a_candidate_for_adaptation(const st
 
 static bool is_any_element_marked(FieldRef elementMarkerField, const std::vector<stk::mesh::Entity> & elems)
 {
+  auto elemMarkerData = elementMarkerField.data<int>();
   for(const auto & elem : elems)
   {
-    auto * elemMarker = field_data<int>(elementMarkerField, elem);
-    if (elemMarker && *elemMarker == static_cast<int>(Refinement::RefinementMarker::REFINE))
+    if (has_field_data(elementMarkerField, elem) &&
+        elemMarkerData.entity_values(elem)() == static_cast<int>(Refinement::RefinementMarker::REFINE))
       return true;
   }
   return false;
@@ -147,8 +149,8 @@ static bool is_any_element_marked(FieldRef elementMarkerField, const std::vector
 
 static bool is_element_marked_for_unrefinement(FieldRef elementMarkerField, const stk::mesh::Entity elem)
 {
-  auto * elemMarker = field_data<int>(elementMarkerField, elem);
-  if (elemMarker && *elemMarker == static_cast<int>(Refinement::RefinementMarker::COARSEN))
+  if (has_field_data(elementMarkerField, elem) &&
+      elementMarkerField.data<int>().entity_values(elem)() == static_cast<int>(Refinement::RefinementMarker::COARSEN))
     return true;
   return false;
 }
@@ -253,17 +255,17 @@ void TransitionElementEdgeMarker::locally_mark_edges_of_marked_non_transition_el
   const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & stk::mesh::selectField(markerField) & !myRefinement.parent_part();
   std::vector<Edge> edgesToRefineForElement;
 
+  auto markerData = krino::FieldRef(markerField).data<int>();
   for(const auto & bucketPtr : myMesh.get_buckets(stk::topology::ELEMENT_RANK, selector))
   {
     const stk::mesh::Bucket & bucket = *bucketPtr;
-    auto * elemMarker = field_data<int>(markerField, bucket);
-    const unsigned markerFieldLength = stk::mesh::field_scalars_per_entity(markerField, bucket);
+    auto elemMarker = markerData.bucket_values(bucket);
 
-    for(size_t i=0; i<bucketPtr->size(); ++i)
+    for(stk::mesh::EntityIdx i : bucket.entities())
     {
       const stk::mesh::Entity elem = bucket[i];
 
-      if (elemMarker[i*markerFieldLength] == static_cast<int>(Refinement::RefinementMarker::REFINE) && !is_transition(elem))
+      if (elemMarker(i, stk::mesh::ScalarIdx(0)) == static_cast<int>(Refinement::RefinementMarker::REFINE) && !is_transition(elem))
       {
         fill_entity_edges(myMesh, elem, edgesToRefineForElement);
         for (auto && edgeToRefineForElement : edgesToRefineForElement)

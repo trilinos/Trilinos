@@ -13,7 +13,18 @@ namespace krino { namespace Parser { class Node; } }
 namespace stk { namespace diag { class Timer; } }
 namespace stk { namespace mesh { class MetaData; } }
 
+#include <string>
+
 namespace krino {
+// Name of a level set or bounding surface from the name key of its input: either given directly
+//   name: LS01
+// or composed of a prefix and an index zero-padded to a number of digits, given directly or as the
+// number of digits of the largest index
+//   name: {prefix: LS, index: 1, digits: 2}       -> LS01
+//   name: {prefix: LS, index: 1, max_index: 39}   -> LS01
+// Returns an empty name if name is absent or invalid (dooming if invalid).
+std::string parse_level_set_or_bounding_surface_name(const Parser::Node & surfaceNode);
+
 namespace LevelSet_Parser {
   void parse(const Parser::Node & region_node, stk::mesh::MetaData & meta, const stk::diag::Timer & parentTimer);
 }

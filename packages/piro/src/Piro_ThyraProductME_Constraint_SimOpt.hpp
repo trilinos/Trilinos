@@ -11,9 +11,16 @@
 #define PIRO_THYRAPRODUCTME_EQUALITYCONSTRAINT_SIMOPT
 
 #include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
+#include "Thyra_DefaultLinearOpSource.hpp"
+#include "Thyra_DefaultPreconditioner.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_ModelEvaluator.hpp"
 #include "ROL_StdVector.hpp"
+#include "ROL_ThyraVector.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
 
 #include "Tpetra_CrsMatrix.hpp"
@@ -43,6 +50,8 @@ public:
     num_responses_ = -1;
     jacobian1_ = Teuchos::null;
     adjointJacobian1_ = Teuchos::null;
+    isJacobianPrecValid_ = isJacobianSolverValid_ = false;
+    isTransposedJacobianSolverValid_ = isAdjointJacobianSolverValid_ = false;
 
     availableAdjointModel_ = Teuchos::nonnull(thyra_adjointModel);
     optParams_.set<int>("Optimizer Iteration Number", -1);
@@ -109,31 +118,7 @@ public:
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
       *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyJacobian_1" << std::endl;
 
-    if(computeJacobian1_) {
-      // Create Jacobian
-      const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
-      const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
-
-      Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
-      Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
-
-      Teuchos::RCP< const Thyra::LinearOpWithSolveFactoryBase<Real> > lows_factory = thyra_model_->get_W_factory();
-      TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
-
-      if(Teuchos::is_null(jacobian1_))
-        jacobian1_ = thyra_model_->create_W_op();
-
-      inArgs.set_p(0, thyra_p.getVector());
-      inArgs.set_x(thyra_x.getVector());
-
-      outArgs.set_W_op(jacobian1_);
-      thyra_model_->evalModel(inArgs, outArgs);
-
-      computeJacobian1_ = false;
-    } else {
-      if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyJacobian_1, Skipping Jacobian Computation" << std::endl;
-    }
+    computeJacobian1(u, z, "applyJacobian_1");
 
     const ROL::ThyraVector<Real>  & thyra_v = dynamic_cast<const ROL::ThyraVector<Real>&>(v);
     ROL::ThyraVector<Real>  & thyra_jv = dynamic_cast<ROL::ThyraVector<Real>&>(jv);
@@ -237,74 +222,8 @@ public:
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
       *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyInverseJacobian_1" << std::endl;
 
-    const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
-    const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
-    const ROL::ThyraVector<Real>  & thyra_v = dynamic_cast<const ROL::ThyraVector<Real>&>(v);
-    ROL::ThyraVector<Real>  & thyra_ijv = dynamic_cast<ROL::ThyraVector<Real>&>(ijv);
-
-    Teuchos::RCP<Thyra::MultiVectorBase<Real> > thyra_ijv_ptr = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Real>>(thyra_ijv.getVector());
-
-    Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
-    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
-
-    inArgs.set_p(0, thyra_p.getVector());
-    inArgs.set_x(thyra_x.getVector());
-
-    // Create Jacobian and preconditioner
-    Teuchos::RCP< const Thyra::LinearOpWithSolveFactoryBase<Real> > lows_factory = thyra_model_->get_W_factory();
-    TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
-
-    if(Teuchos::is_null(jacobian1_))
-      jacobian1_ = thyra_model_->create_W_op();
-
-    Teuchos::RCP< const ::Thyra::DefaultLinearOpSource<Real> > losb = Teuchos::rcp(new ::Thyra::DefaultLinearOpSource<Real>(jacobian1_));
-    Teuchos::RCP< ::Thyra::PreconditionerBase<Real> > prec;
-
-    Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<Real> > prec_factory =  lows_factory->getPreconditionerFactory();
-    if (Teuchos::nonnull(prec_factory)) {
-      prec = prec_factory->createPrec();
-    } else if (outArgs.supports( Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
-      prec = thyra_model_->create_W_prec();
-    }
-    const Teuchos::RCP<Thyra::LinearOpWithSolveBase<Real> > jacobian = lows_factory->createOp();
-
-    if(computeJacobian1_)
-    {
-      outArgs.set_W_op(jacobian1_);
-      thyra_model_->evalModel(inArgs, outArgs);
-      outArgs.set_W_op(Teuchos::null);
-      inArgs.set_x(Teuchos::null);
-
-      computeJacobian1_ = false;
-    } else {
-      if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyInverseJacobian_1, Skipping Jacobian Computation" << std::endl;
-    }
-
-    if (Teuchos::nonnull(prec_factory))
-      prec_factory->initializePrec(losb, prec.get());
-    else if ( Teuchos::nonnull(prec) && (outArgs.supports( Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
-      inArgs.set_x(thyra_x.getVector());
-      outArgs.set_W_prec(prec);
-      thyra_model_->evalModel(inArgs, outArgs);
-    }
-
-    if(Teuchos::nonnull(prec))
-      Thyra::initializePreconditionedOp<Real>(*lows_factory,
-          jacobian1_,
-          prec,
-          jacobian.ptr());
-    else
-      Thyra::initializeOp<Real>(*lows_factory, jacobian1_, jacobian.ptr());
-
-    const Thyra::SolveCriteria<Real> solve_criteria;
-
-    Thyra::solve(
-        *jacobian,
-        Thyra::NOTRANS,
-        *thyra_v.getVector(),
-        thyra_ijv_ptr.ptr(),
-        Teuchos::ptr(&solve_criteria));
+    initializeJacobianSolver(u, z, "applyInverseJacobian_1");
+    solveLinearSystem(*jacobianSolver_, v, ijv, "applyInverseJacobian_1");
   }
 
 
@@ -315,37 +234,7 @@ public:
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
       *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_1" << std::endl;
 
-
-    Teuchos::RCP< Thyra::LinearOpBase<Real> > lop;
-    if(computeJacobian1_){
-      if(Teuchos::is_null(jacobian1_))
-        jacobian1_ = thyra_model_->create_W_op();
-
-      const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
-      const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
-
-      //Teuchos::RCP< Thyra::VectorBase<Real> > thyra_f = Thyra::createMember<Real>(thyra_model_->get_f_space());
-
-      Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model_->createInArgs();
-      Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
-
-      inArgs.set_p(0, thyra_p.getVector());
-      inArgs.set_x(thyra_x.getVector());
-
-      // Create implicitly transpose Jacobian and preconditioner
-      Teuchos::RCP< const Thyra::LinearOpWithSolveFactoryBase<Real> > lows_factory = thyra_model_->get_W_factory();
-      TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
-
-      outArgs.set_W_op(jacobian1_);
-      thyra_model_->evalModel(inArgs, outArgs);
-
-      computeJacobian1_ = false;
-    }
-    else {
-      if(verbosityLevel_ >= Teuchos::VERB_HIGH)
-        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyAdjointJacobian_1, Skipping Jacobian Computation" << std::endl;
-    }
-
+    computeJacobian1(u, z, "applyAdjointJacobian_1");
 
     const ROL::ThyraVector<Real>  & thyra_v = dynamic_cast<const ROL::ThyraVector<Real>&>(v);
     ROL::ThyraVector<Real>  & thyra_ajv = dynamic_cast<ROL::ThyraVector<Real>&>(ajv);
@@ -362,105 +251,20 @@ public:
     if(verbosityLevel_ >= Teuchos::VERB_MEDIUM)
       *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyInverseAdjointJacobian_1" << std::endl;
 
-    const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
-    const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
-    const ROL::ThyraVector<Real>  & thyra_v = dynamic_cast<const ROL::ThyraVector<Real>&>(v);
-    ROL::ThyraVector<Real>  & thyra_iajv = dynamic_cast<ROL::ThyraVector<Real>&>(iajv);
-    Teuchos::RCP<Thyra::MultiVectorBase<Real> > thyra_iajv_ptr = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Real>>(thyra_iajv.getVector());
-
-    Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = availableAdjointModel_ ? thyra_adjointModel_->createInArgs() : thyra_model_->createInArgs();
-    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = availableAdjointModel_ ? thyra_adjointModel_->createOutArgs() : thyra_model_->createOutArgs();
-
-    inArgs.set_p(0, thyra_p.getVector());
-    inArgs.set_x(thyra_x.getVector());
-
-    // Create implicitly transpose Jacobian and preconditioner
-    Teuchos::RCP< const Thyra::LinearOpWithSolveFactoryBase<Real> > lows_factory = availableAdjointModel_ ? thyra_adjointModel_->get_W_factory() : thyra_model_->get_W_factory();
-    TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
-    Teuchos::RCP< Thyra::LinearOpBase<Real> > lop;
-
+    // Solve with the Jacobian computed by the adjoint model, if available, or with the transpose of the Jacobian
+    Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Real>> solver;
     if(availableAdjointModel_) {
-      if(Teuchos::is_null(adjointJacobian1_) || computeAdjointJacobian1_)
-        adjointJacobian1_ = thyra_adjointModel_->create_W_op();
-      lop = adjointJacobian1_;
+      initializeAdjointJacobianSolver(u, z, "applyInverseAdjointJacobian_1");
+      solver = adjointJacobianSolver_;
     } else {
-      if(Teuchos::is_null(jacobian1_))
-        jacobian1_ = thyra_model_->create_W_op();
-      lop = jacobian1_;
+      initializeTransposedJacobianSolver(u, z, "applyInverseAdjointJacobian_1");
+      solver = transposedJacobianSolver_;
     }
 
-
-    Teuchos::RCP< const ::Thyra::DefaultLinearOpSource<Real> > losb = Teuchos::rcp(new ::Thyra::DefaultLinearOpSource<Real>(lop));
-    Teuchos::RCP< ::Thyra::PreconditionerBase<Real> > prec;
-
-    Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<Real> > prec_factory =  lows_factory->getPreconditionerFactory();
-    if (Teuchos::nonnull(prec_factory)) {
-      prec = prec_factory->createPrec();
-    } else if (outArgs.supports( Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
-      prec = availableAdjointModel_ ? thyra_adjointModel_->create_W_prec() :  thyra_model_->create_W_prec();
-    }
-    const Teuchos::RCP<Thyra::LinearOpWithSolveBase<Real> > jacobian = lows_factory->createOp();
-
-    bool compute_lop = (computeJacobian1_ && !availableAdjointModel_) || (computeAdjointJacobian1_ && availableAdjointModel_);
-
-    if(compute_lop)
-    {
-      outArgs.set_W_op(lop);
-
-      if(availableAdjointModel_) {
-        thyra_adjointModel_->evalModel(inArgs, outArgs);
-        computeAdjointJacobian1_ = false;
-      }
-      else {
-        thyra_model_->evalModel(inArgs, outArgs);
-        computeJacobian1_ = false;
-      }
-      outArgs.set_W_op(Teuchos::null);
-
-    } else if (verbosityLevel_ >= Teuchos::VERB_HIGH)
-      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::applyInverseAdjointJacobian_1, Skipping Jacobian Computation" << std::endl;
-
-    if (Teuchos::nonnull(prec_factory))
-      prec_factory->initializePrec(losb, prec.get());
-    else if ( Teuchos::nonnull(prec) && (outArgs.supports( Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) ) {
-      outArgs.set_W_prec(prec);
-      if(availableAdjointModel_)
-        thyra_adjointModel_->evalModel(inArgs, outArgs);
-      else
-        thyra_model_->evalModel(inArgs, outArgs);
-    }
-
-    if(Teuchos::nonnull(prec)) {
-      if(availableAdjointModel_) {
-        Thyra::initializePreconditionedOp<Real>(*lows_factory,
-          lop,
-          prec,
-          jacobian.ptr());
-      } else {
-        Thyra::initializePreconditionedOp<Real>(*lows_factory,
-            Thyra::transpose<Real>(lop),
-            Thyra::unspecifiedPrec<Real>(::Thyra::transpose<Real>(prec->getUnspecifiedPrecOp())),
-            jacobian.ptr());
-      }
-    }
-    else {
-      if(availableAdjointModel_)
-        Thyra::initializeOp<Real>(*lows_factory, lop, jacobian.ptr());
-      else
-        Thyra::initializeOp<Real>(*lows_factory, Thyra::transpose<Real>(lop), jacobian.ptr());
-    }
-    const Thyra::SolveCriteria<Real> solve_criteria;
-
-    lop->apply(Thyra::NOTRANS, *thyra_v.getVector(), thyra_iajv.getVector().ptr(), 1.0, 0.0);
-
+    ROL::ThyraVector<Real>  & thyra_iajv = dynamic_cast<ROL::ThyraVector<Real>&>(iajv);
     thyra_iajv.getVector()->assign(0);
-    Thyra::solve(
-        *jacobian,
-        Thyra::NOTRANS,
-        *thyra_v.getVector(),
-        thyra_iajv_ptr.ptr(),
-        Teuchos::ptr(&solve_criteria));
-  };
+    solveLinearSystem(*solver, v, iajv, "applyInverseAdjointJacobian_1");
+  }
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
       const ROL::Vector<Real> &z, Real &tol) {
@@ -902,6 +706,195 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, std::endl << "Piro::ThyraProductME_Constraint_SimOpt::update_2:  Deprecated Update function, it should not be called." << std::endl);
   }
 
+private:
+
+  // The Jacobians and the linear solvers built from them are reused until the update functions
+  // flag the Jacobians for recomputation (computeJacobian1_, computeAdjointJacobian1_).
+  // Recomputing a Jacobian invalidates the preconditioners and the solvers built from it.
+
+  //! Evaluates the Jacobian df/dx of the model at (u,z), unless it is up to date
+  void computeJacobian1(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, const std::string& caller) {
+    if(!computeJacobian1_) {
+      if(verbosityLevel_ >= Teuchos::VERB_HIGH)
+        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::" << caller << ", Skipping Jacobian Computation" << std::endl;
+      return;
+    }
+
+    if(Teuchos::is_null(jacobian1_))
+      jacobian1_ = thyra_model_->create_W_op();
+
+    evalW(*thyra_model_, u, z, jacobian1_);
+
+    computeJacobian1_ = false;
+    isJacobianPrecValid_ = isJacobianSolverValid_ = isTransposedJacobianSolverValid_ = false;
+  }
+
+  //! Evaluates the Jacobian of the adjoint model, (df/dx)^T, at (u,z), unless it is up to date.
+  //! The W operator of the adjoint model, and its preconditioner and solver, are created anew at every evaluation,
+  //! because adjoint models can replace the matrix of W instead of filling it (e.g., they assign to it the transpose
+  //! of the Jacobian, with a different graph), so that W could not be filled again.
+  void computeAdjointJacobian1(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, const std::string& caller) {
+    if(!computeAdjointJacobian1_) {
+      if(verbosityLevel_ >= Teuchos::VERB_HIGH)
+        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::" << caller << ", Skipping Adjoint Jacobian Computation" << std::endl;
+      return;
+    }
+
+    adjointJacobian1_ = thyra_adjointModel_->create_W_op();
+    adjointJacobianPrec_ = Teuchos::null;
+    adjointJacobianSolver_ = Teuchos::null;
+
+    evalW(*thyra_adjointModel_, u, z, adjointJacobian1_);
+
+    computeAdjointJacobian1_ = false;
+    isAdjointJacobianSolverValid_ = false;
+  }
+
+  //! Initializes the solver for the Jacobian df/dx at (u,z)
+  void initializeJacobianSolver(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, const std::string& caller) {
+    computeJacobian1(u, z, caller);
+    if(isJacobianSolverValid_) {
+      if(verbosityLevel_ >= Teuchos::VERB_HIGH)
+        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::" << caller << ", Reusing Linear Solver" << std::endl;
+      return;
+    }
+
+    const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Real>> lows_factory = thyra_model_->get_W_factory();
+    TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
+    initializeJacobianPrec(u, z, *lows_factory);
+
+    if(Teuchos::is_null(jacobianSolver_))
+      jacobianSolver_ = lows_factory->createOp();
+    if(Teuchos::nonnull(jacobianPrec_))
+      Thyra::initializePreconditionedOp<Real>(*lows_factory, jacobian1_, jacobianPrec_, jacobianSolver_.ptr());
+    else
+      Thyra::initializeOp<Real>(*lows_factory, jacobian1_, jacobianSolver_.ptr());
+    isJacobianSolverValid_ = true;
+  }
+
+  //! Initializes the solver for the transpose of the Jacobian df/dx at (u,z), used when the adjoint model is not available.
+  //! The preconditioner is the transpose of the preconditioner of the Jacobian, so it must support the transposed apply.
+  void initializeTransposedJacobianSolver(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, const std::string& caller) {
+    computeJacobian1(u, z, caller);
+    if(isTransposedJacobianSolverValid_) {
+      if(verbosityLevel_ >= Teuchos::VERB_HIGH)
+        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::" << caller << ", Reusing Linear Solver" << std::endl;
+      return;
+    }
+
+    const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Real>> lows_factory = thyra_model_->get_W_factory();
+    TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
+    initializeJacobianPrec(u, z, *lows_factory);
+
+    if(Teuchos::is_null(transposedJacobianSolver_))
+      transposedJacobianSolver_ = lows_factory->createOp();
+    if(Teuchos::nonnull(jacobianPrec_))
+      Thyra::initializePreconditionedOp<Real>(*lows_factory,
+          Thyra::transpose<Real>(jacobian1_),
+          Thyra::unspecifiedPrec<Real>(Thyra::transpose<Real>(jacobianPrec_->getUnspecifiedPrecOp())),
+          transposedJacobianSolver_.ptr());
+    else
+      Thyra::initializeOp<Real>(*lows_factory, Thyra::transpose<Real>(jacobian1_), transposedJacobianSolver_.ptr());
+    isTransposedJacobianSolverValid_ = true;
+  }
+
+  //! Initializes the solver for the Jacobian of the adjoint model at (u,z)
+  void initializeAdjointJacobianSolver(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, const std::string& caller) {
+    computeAdjointJacobian1(u, z, caller);
+    if(isAdjointJacobianSolverValid_) {
+      if(verbosityLevel_ >= Teuchos::VERB_HIGH)
+        *out_ << "Piro::ThyraProductME_Constraint_SimOpt::" << caller << ", Reusing Linear Solver" << std::endl;
+      return;
+    }
+
+    const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Real>> lows_factory = thyra_adjointModel_->get_W_factory();
+    TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
+
+    if(Teuchos::is_null(adjointJacobianPrec_))
+      adjointJacobianPrec_ = createPrec(*thyra_adjointModel_, *lows_factory);
+    initializePrec(*thyra_adjointModel_, *lows_factory, adjointJacobian1_, adjointJacobianPrec_, u, z);
+
+    if(Teuchos::is_null(adjointJacobianSolver_))
+      adjointJacobianSolver_ = lows_factory->createOp();
+    if(Teuchos::nonnull(adjointJacobianPrec_))
+      Thyra::initializePreconditionedOp<Real>(*lows_factory, adjointJacobian1_, adjointJacobianPrec_, adjointJacobianSolver_.ptr());
+    else
+      Thyra::initializeOp<Real>(*lows_factory, adjointJacobian1_, adjointJacobianSolver_.ptr());
+    isAdjointJacobianSolverValid_ = true;
+  }
+
+  //! Initializes the preconditioner of the Jacobian df/dx, shared by the solvers of the Jacobian and of its transpose
+  void initializeJacobianPrec(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z,
+      const Thyra::LinearOpWithSolveFactoryBase<Real>& lows_factory) {
+    if(isJacobianPrecValid_) return;
+    if(Teuchos::is_null(jacobianPrec_))
+      jacobianPrec_ = createPrec(*thyra_model_, lows_factory);
+    initializePrec(*thyra_model_, lows_factory, jacobian1_, jacobianPrec_, u, z);
+    isJacobianPrecValid_ = true;
+  }
+
+  //! Creates the preconditioner with the preconditioner factory of the linear solver factory, if available,
+  //! or with the model (W_prec). Returns null if neither is available.
+  static Teuchos::RCP<Thyra::PreconditionerBase<Real>> createPrec(const Thyra::ModelEvaluator<Real>& model,
+      const Thyra::LinearOpWithSolveFactoryBase<Real>& lows_factory) {
+    const Teuchos::RCP<Thyra::PreconditionerFactoryBase<Real>> prec_factory = lows_factory.getPreconditionerFactory();
+    if (Teuchos::nonnull(prec_factory))
+      return prec_factory->createPrec();
+    if (model.createOutArgs().supports(Thyra::ModelEvaluatorBase::OUT_ARG_W_prec))
+      return model.create_W_prec();
+    return Teuchos::null;
+  }
+
+  //! Computes the preconditioner prec of the operator op, the W operator of the model at (u,z)
+  void initializePrec(const Thyra::ModelEvaluator<Real>& model, const Thyra::LinearOpWithSolveFactoryBase<Real>& lows_factory,
+      const Teuchos::RCP<Thyra::LinearOpBase<Real>>& op, const Teuchos::RCP<Thyra::PreconditionerBase<Real>>& prec,
+      const ROL::Vector<Real> &u, const ROL::Vector<Real> &z) const {
+    if(Teuchos::is_null(prec)) return;
+    const Teuchos::RCP<Thyra::PreconditionerFactoryBase<Real>> prec_factory = lows_factory.getPreconditionerFactory();
+    if (Teuchos::nonnull(prec_factory)) {
+      prec_factory->initializePrec(Teuchos::rcp(new Thyra::DefaultLinearOpSource<Real>(op)), prec.get());
+    } else {
+      const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
+      const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
+      Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = model.createInArgs();
+      Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = model.createOutArgs();
+      inArgs.set_p(0, thyra_p.getVector());
+      inArgs.set_x(thyra_x.getVector());
+      outArgs.set_W_prec(prec);
+      model.evalModel(inArgs, outArgs);
+    }
+  }
+
+  //! Evaluates the W operator of the model at (u,z)
+  static void evalW(const Thyra::ModelEvaluator<Real>& model, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z,
+      const Teuchos::RCP<Thyra::LinearOpBase<Real>>& W) {
+    const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
+    const ROL::ThyraVector<Real>  & thyra_x = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
+    Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = model.createInArgs();
+    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = model.createOutArgs();
+    inArgs.set_p(0, thyra_p.getVector());
+    inArgs.set_x(thyra_x.getVector());
+    outArgs.set_W_op(W);
+    model.evalModel(inArgs, outArgs);
+  }
+
+  //! Solves solver*sol = rhs, using the content of sol as initial guess. Prints a warning if the solver does not converge.
+  //! The solve uses the default tolerance of the linear solver.
+  void solveLinearSystem(const Thyra::LinearOpWithSolveBase<Real>& solver, const ROL::Vector<Real> &rhs,
+      ROL::Vector<Real> &sol, const std::string& caller) const {
+    const ROL::ThyraVector<Real>  & thyra_rhs = dynamic_cast<const ROL::ThyraVector<Real>&>(rhs);
+    ROL::ThyraVector<Real>  & thyra_sol = dynamic_cast<ROL::ThyraVector<Real>&>(sol);
+    const Thyra::SolveCriteria<Real> solve_criteria;
+    const Thyra::SolveStatus<Real> solve_status = Thyra::solve<Real>(solver, Thyra::NOTRANS, *thyra_rhs.getVector(),
+        thyra_sol.getVector().ptr(), Teuchos::ptr(&solve_criteria));
+    if((solve_status.solveStatus == Thyra::SOLVE_STATUS_UNCONVERGED) && (verbosityLevel_ >= Teuchos::VERB_LOW))
+      *out_ << "Piro::ThyraProductME_Constraint_SimOpt::" << caller << ", WARNING: the linear solver did not converge. "
+            << solve_status.message << std::endl;
+  }
+
+  Teuchos::RCP<Thyra::PreconditionerBase<Real>> jacobianPrec_, adjointJacobianPrec_;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Real>> jacobianSolver_, transposedJacobianSolver_, adjointJacobianSolver_;
+  bool isJacobianPrecValid_, isJacobianSolverValid_, isTransposedJacobianSolverValid_, isAdjointJacobianSolverValid_;
 
 public:
 

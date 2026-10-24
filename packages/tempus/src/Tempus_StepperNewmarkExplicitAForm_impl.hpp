@@ -304,7 +304,8 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
             Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
 
     // Evaluate xDotDot = f(x, xDot, t).
-    this->evaluateExplicitODE(a_new, d_new, v_new, time_old, p);
+    const Scalar time_new = workingState->getTime();
+    this->evaluateExplicitODE(a_new, d_new, v_new, time_new, p);
 
     stepperNewmarkExpAppAction_->execute(
         solutionHistory, thisStepper,
@@ -316,7 +317,6 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
 
     if (this->getUseFSAL()) {
       // Evaluate xDotDot = f(x, xDot, t).
-      const Scalar time_new = workingState->getTime();
       this->evaluateExplicitODE(a_new, d_new, v_new, time_new, p);
 
       // For UseFSAL=true, x, xDot and xDotxDot are now sync'ed or consistent

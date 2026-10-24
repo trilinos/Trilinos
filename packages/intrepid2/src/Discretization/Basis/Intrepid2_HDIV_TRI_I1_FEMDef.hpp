@@ -243,14 +243,14 @@ namespace Intrepid2 {
 
       switch(operatorType) {
         case OPERATOR_VALUE:
-          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (const ordinal_type pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
             Impl::Basis_HDIV_TRI_I1_FEM::Serial<OPERATOR_VALUE>::getValues( output, input);
           });
           break;
         case OPERATOR_DIV:
-          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (const ordinal_type pt) {
             auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
             Impl::Basis_HDIV_TRI_I1_FEM::Serial<OPERATOR_DIV>::getValues( output, input);

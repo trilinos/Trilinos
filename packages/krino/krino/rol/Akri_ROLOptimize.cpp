@@ -3,42 +3,49 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_DistributedVector.hpp>
 #include <Akri_ObjectiveInterface.hpp>
-#include "ROL_Algorithm.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_StatusTest.hpp"
-#include "ROL_StdVector.hpp"
-#include "ROL_Stream.hpp"
+#include <Akri_ROLDistributedVector.hpp>
+#include <ROL_Algorithm.hpp>
+#include <ROL_LineSearchStep.hpp>
+#include <ROL_StatusTest.hpp>
+#include <ROL_StdVector.hpp>
+#include <ROL_Stream.hpp>
 #include <stk_math/StkVector.hpp>
 #include <stk_util/util/ReportHandler.hpp>
-#include "Teuchos_DefaultMpiComm.hpp"
+#include <Teuchos_DefaultMpiComm.hpp>
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <tuple>
+#include <type_traits>
 #include <vector>
 
 namespace krino {
 
-template<typename VEC>
-VEC get_from_ROL(const ROL::Vector<double>& x)
+// Copy out of a ROL vector into the native krino vector. Overloaded (not
+// templated) on the output type: the serial Vector3d path unwraps a
+// ROL::StdVector, while the DistributedVector path reads the wrapped vector
+// directly, preserving its comm and local/remote layout.
+void get_from_ROL(const ROL::Vector<double>& x, stk::math::Vector3d & xVec)
 {
   ROL::Ptr<const std::vector<double>> xROLPtr = dynamic_cast<const ROL::StdVector<double>&>(x).getVector();
-  VEC xVec(xROLPtr->size());
-  std::copy(xROLPtr->begin(), xROLPtr->end(), xVec.begin());
-  return xVec;
+  xVec = stk::math::Vector3d(xROLPtr->data(), xROLPtr->size());
 }
 
-template<>
-stk::math::Vector3d get_from_ROL(const ROL::Vector<double>& x)
+void get_from_ROL(const ROL::Vector<double>& x, DistributedVector & xVec)
 {
-  ROL::Ptr<const std::vector<double>> xROLPtr = dynamic_cast<const ROL::StdVector<double>&>(x).getVector();
-  return stk::math::Vector3d(xROLPtr->data(), xROLPtr->size());
+  xVec = static_cast<const ROLDistributedVector&>(x).get();
 }
 
-template<typename VEC>
-void fill_ROL(const VEC &xVec, ROL::Vector<double>& xROL)
+// Copy a native krino vector back into a ROL vector, overloaded on the source type.
+void fill_ROL(const stk::math::Vector3d &xVec, ROL::Vector<double>& xROL)
 {
   ROL::Ptr<std::vector<double>> xROLPtr = dynamic_cast<ROL::StdVector<double>&>(xROL).getVector();
   std::copy(xVec.begin(), xVec.end(), xROLPtr->begin());
+}
+
+void fill_ROL(const DistributedVector &xVec, ROL::Vector<double>& xROL)
+{
+  static_cast<ROLDistributedVector&>(xROL).get() = xVec;
 }
 
 template<typename ObjectiveType, typename VEC>
@@ -50,13 +57,17 @@ public:
 
   double value( const ROL::Vector<double> &xRol, double &tol )
   {
-    return myObjFn.compute_value(get_from_ROL<VEC>(xRol)) / myScale;
+    VEC x;
+    get_from_ROL(xRol, x);
+    return myObjFn.compute_value(x) / myScale;
   }
 
   void gradient( ROL::Vector<double> &gRol, const ROL::Vector<double> &xRol, double &tol )
   {
+    VEC x;
+    get_from_ROL(xRol, x);
     VEC g;
-    myObjFn.fill_gradient(get_from_ROL<VEC>(xRol), g);
+    myObjFn.fill_gradient(x, g);
     for (size_t i = 0; i < g.size(); ++i)
       g[i] /= myScale;
     fill_ROL(g, gRol);
@@ -99,17 +110,28 @@ void rol_optimize(const ObjectiveType & objFn,
   ROL::Ptr<ROL::StatusTest<double>> status = ROL::makePtr<ROL::StatusTest<double>>(parlist);
   ROL::Algorithm<double> algo(step,status,false);
 
-  const size_t dim = x.size();
-  ROL::Ptr<std::vector<double> > xPtr = ROL::makePtr<std::vector<double>>(dim, 0.0);
-
-  std::copy(x.begin(), x.end(), xPtr->begin());
-  ROL::StdVector<double> xRol(xPtr);
-
   ScaledROLObjective<ObjectiveType, VEC> rolObj(objFn, objectiveScale);
 
-  algo.run(xRol, rolObj, doOutput, std::cout);
+  if constexpr (std::is_same_v<VEC, DistributedVector>)
+  {
+    // Parallel-consistent path: ROL drives the algorithm through a vector whose
+    // inner products and norms reduce over owned entries and all_reduce.
+    ROLDistributedVector xRol(x);
+    algo.run(xRol, rolObj, doOutput, std::cout);
+    x = xRol.get();
+  }
+  else
+  {
+    const size_t dim = x.size();
+    ROL::Ptr<std::vector<double> > xPtr = ROL::makePtr<std::vector<double>>(dim, 0.0);
 
-  std::copy(xPtr->begin(), xPtr->end(), x.begin());
+    std::copy(x.begin(), x.end(), xPtr->begin());
+    ROL::StdVector<double> xRol(xPtr);
+
+    algo.run(xRol, rolObj, doOutput, std::cout);
+
+    std::copy(xPtr->begin(), xPtr->end(), x.begin());
+  }
 }
 
 template void rol_optimize(const ObjectiveInterface & objFn,

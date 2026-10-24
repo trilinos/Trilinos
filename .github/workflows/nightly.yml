@@ -6,6 +6,12 @@ on:
     - cron: '40 21 * * *' # 9:40 PM
       timezone: "America/Denver"
   workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch that is used for nightly builds"
+        required: true
+        type: string
+        default: "develop"
 
 permissions:
   contents: read
@@ -18,9 +24,9 @@ jobs:
       target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260903', 'gpu:A100']"
       image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6:20260903
       genconfig-string: "rhel_cuda-12-gcc-openmpi_debug_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_all"
-      target-branch: "develop"
+      target-branch: ${{ inputs.target_branch }}
       cdash-track: "Nightly"
-      dashboard-build-name: ${AT2_IMAGE}_release_static_bounds-check
+      dashboard-build-name: ${AT2_IMAGE}_release_static_bounds-check${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 56
       num-concurrent-tests: 112
       slots-per-gpu: 8
@@ -32,9 +38,9 @@ jobs:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260903']"
       image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.7-openmpi-4.1.6:20260903
       genconfig-string: "rhel_clang-openmpi_debug_shared_no-kokkos-arch_asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all"
-      target-branch: "develop"
+      target-branch: ${{ inputs.target_branch }}
       cdash-track: "Nightly"
-      dashboard-build-name: ${AT2_IMAGE}_debug_shared_address-sanitizer
+      dashboard-build-name: ${AT2_IMAGE}_debug_shared_address-sanitizer${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 29
       num-concurrent-tests: 16
       extra-pr-driver-args: --extra-configure-args=-D;CTEST_TEST_TIMEOUT=1200
@@ -46,9 +52,9 @@ jobs:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260903']"
       image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260903
       genconfig-string: "rhel8_gcc-openmpi_debug-coverage_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all"
-      target-branch: "develop"
+      target-branch: ${{ inputs.target_branch }}
       cdash-track: "Nightly"
-      dashboard-build-name: ${AT2_IMAGE}_debug_shared_coverage
+      dashboard-build-name: ${AT2_IMAGE}_debug_shared_coverage${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 29
       num-concurrent-tests: 16
       extra-pr-driver-args: --extra-configure-args=-D;CTEST_TEST_TIMEOUT=1200
@@ -60,9 +66,9 @@ jobs:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260903']"
       image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.7-openmpi-4.1.6:20260903
       genconfig-string: "rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all"
-      target-branch: "develop"
+      target-branch: ${{ inputs.target_branch }}
       cdash-track: "Nightly"
-      dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_cxx23
+      dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_cxx23${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 29
       num-concurrent-tests: 16
       extra-pr-driver-args: --extra-configure-args=-D;CMAKE_CXX_STANDARD=23
@@ -74,9 +80,9 @@ jobs:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260903']"
       image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.7-openmpi-4.1.6:20260903
       genconfig-string: "rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-off_all"
-      target-branch: "develop"
+      target-branch: ${{ inputs.target_branch }}
       cdash-track: "Nightly"
-      dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_deprecated_off
+      dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_deprecated_off${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 29
       num-concurrent-tests: 16
 
@@ -87,8 +93,9 @@ jobs:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260903']"
       image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.7-openmpi-4.1.6:20260903
       genconfig-string: "rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all"
+      target-branch: ${{ inputs.target_branch }}
       cdash-track: "Nightly"
-      dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_experimental
+      dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_experimental${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 29
       num-concurrent-tests: 16
       extra-pr-driver-args: --extra-configure-args=-DTpetra_ENABLE_Experimental=ON;-DAmesos2_ENABLE_Experimental=ON;-DBelos_ENABLE_Experimental=ON;-DIfpack2_ENABLE_Experimental=ON;-DXpetra_ENABLE_Experimental=ON;-DMueLu_ENABLE_Experimental=ON;-DStokhos_ENABLE_Experimental=ON;-DZoltan2Core_ENABLE_Experimental=ON

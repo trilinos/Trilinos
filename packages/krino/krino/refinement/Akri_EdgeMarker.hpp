@@ -8,9 +8,10 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <Akri_EdgeMarkerUtils.hpp>
 
 namespace krino {
+
+class ElementEdgeCaseIds;
 
 class Refinement;
 struct Edge;

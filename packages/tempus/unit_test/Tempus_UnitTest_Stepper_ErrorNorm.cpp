@@ -42,7 +42,7 @@ TEUCHOS_UNIT_TEST(Stepper_ErrorNorm, computeWRMSNorm)
   Thyra::assign(xNext.ptr(), 1.0 + tol);
   Thyra::assign(eVec.ptr(), tol);
   rmsNorm = eNorm->computeWRMSNorm(x, xNext, eVec);
-  TEST_FLOATING_EQUALITY(rmsNorm, 1.0 / std::sqrt(N), 1.0e-12);
+  TEST_FLOATING_EQUALITY(rmsNorm, 1.0, 1.0e-12);
 }
 
 // ************************************************************

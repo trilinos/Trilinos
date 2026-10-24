@@ -568,11 +568,12 @@ DefaultBlockedLinearOp<Scalar>::getRowStatImpl(
     for( int j = 0; j < numColBlocks_; ++j ) {
       ConstLinearOpPtr Op_i_j = getBlock(i,j);
 
-      VectorPtr tmp_vec = createMember(Op_i_j->range());
-
-      put_scalar (ST::zero (), tmp_vec.ptr ()); // clear vector just in case
-
+      // a null block is zero and does not contribute
       if (nonnull(Op_i_j)) {
+        VectorPtr tmp_vec = createMember(Op_i_j->range());
+
+        put_scalar (ST::zero (), tmp_vec.ptr ()); // clear vector just in case
+
         // pull out adjoint, and scaling
         ConstLinearOp * Orig_i_j = 0;
         Scalar scalar = 1.0;

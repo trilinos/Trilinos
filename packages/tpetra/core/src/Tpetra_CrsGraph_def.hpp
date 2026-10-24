@@ -2642,8 +2642,6 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
 
   indicesAreAllocated_ = true;
   indicesAreLocal_     = true;
-  indicesAreSorted_    = true;
-  noRedundancies_      = true;
   lclIndsPacked_wdv    = local_inds_wdv_type(columnIndices);
   lclIndsUnpacked_wdv  = lclIndsPacked_wdv;
   setRowPtrs(rowPointers);

@@ -156,16 +156,22 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
          //rcp(new TempusSolver<double>(integrator, stepper, stepSolver, model, tfinal, sens_method_string, 1, 0));
          rcp(new TempusSolver<double>(integrator, stepper, stepSolver, model, tfinal, sens_method_string));
 
-    const Thyra::MEB::InArgs<double> inArgs = tempus_solver->getNominalValues();
-    Thyra::MEB::OutArgs<double> outArgs = tempus_solver->createOutArgs();
-    const int solutionResponseIndex = tempus_solver->Ng() - 1;
+    // Tempus computes the adjoint sensitivities of response 0 (default "Response Function Index"
+    // of the Tempus "Sensitivities" sublist) with respect to parameter 0. The OutArgs supported
+    // by the solver depend on these indices, so the OutArgs are created after setting them.
+    const int responseIndex = 0;
     const int parameterIndex = 0;
     tempus_solver->resetSensitivityParamIndex(parameterIndex);
-    tempus_solver->resetResponseFnIndex(solutionResponseIndex);
-    const Thyra::MEB::Derivative<double> dxdp_deriv =
-        Thyra::create_DgDp_mv(*tempus_solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
-    const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
-    outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
+    tempus_solver->resetResponseFnIndex(responseIndex);
+    const Thyra::MEB::InArgs<double> inArgs = tempus_solver->getNominalValues();
+    Thyra::MEB::OutArgs<double> outArgs = tempus_solver->createOutArgs();
+    const Thyra::MEB::Derivative<double> dgdp_deriv =
+        Thyra::create_DgDp_mv(*tempus_solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_GRADIENT_FORM);
+    const RCP<Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
+    outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+    // Same check as in Thyra debug builds: the OutArgs must be compatible with the solver
+    tempus_solver->createOutArgs().assertSameSupport(outArgs);
 
     //Integrate in time
     tempus_solver->evalModel(inArgs, outArgs);
@@ -181,6 +187,14 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
     // dg/dp since the integrator returns it in gradient form.
     RCP<const Thyra::VectorBase<double> > x = integrator->getX();
     RCP<const Thyra::MultiVectorBase<double> > DgDp = integrator->getDgDp();
+
+    // The solver returns the adjoint sensitivities computed by Tempus
+    for (int i=0; i<DgDp->domain()->dim(); ++i) {
+      TEST_COMPARE_FLOATING_ARRAYS(
+        arrayFromVector(*dgdp->col(i)),
+        arrayFromVector(*DgDp->col(i)),
+        tol);
+    }
     RCP<Thyra::MultiVectorBase<double> > DxDp =
       Thyra::createMembers(model->get_x_space(), num_param);
     {

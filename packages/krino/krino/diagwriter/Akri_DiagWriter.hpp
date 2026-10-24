@@ -52,12 +52,6 @@ namespace krino
   typedef stk::diag::Tracespec Trace;
 #endif
 
-#define ThrowRuntimeError(message)                                \
-{                                                                 \
-  std::ostringstream internal_throw_runtime_message;              \
-  internal_throw_runtime_message << message;                      \
-  throw std::runtime_error(internal_throw_runtime_message.str()); \
-}
 } // namespace krino
 
 #endif // Akri_DiagWriter_h

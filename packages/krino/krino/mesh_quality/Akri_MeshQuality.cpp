@@ -59,6 +59,7 @@ double compute_quality_if_node_is_moved_terminating_early_if_below_threshold(con
   double minQualityAfterMove = qualityMetric.get_best_value_for_metric();
   std::vector<stk::math::Vector3d> nodeLocations;
 
+  auto coordsData = coordsField.data<double>();
   for (auto elem : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
   {
     if (elementSelector(mesh.bucket(elem)))
@@ -69,7 +70,9 @@ double compute_quality_if_node_is_moved_terminating_early_if_below_threshold(con
         if (elemNode == node)
           nodeLocations.push_back(newLocation);
         else
-          nodeLocations.emplace_back(field_data<double>(coordsField, elemNode), dim);
+        {
+          nodeLocations.emplace_back(coordsData.entity_values(elemNode), dim);
+        }
       }
 
       const double elemQualityAfterMove = qualityMetric.get_element_quality_metric(dim, nodeLocations);

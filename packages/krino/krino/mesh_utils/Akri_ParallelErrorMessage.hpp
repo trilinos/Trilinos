@@ -32,6 +32,10 @@ public:
   // were logged.
   std::pair<bool, std::string> gather_message() const;
 
+  // Gather messages across ranks and throw (parallel-consistently) if any rank
+  // logged an error, prefixing the gathered detail with context.
+  void require_empty(const std::string & context) const;
+
   bool have_local_error() const { return !local_message.str().empty(); }
 
 private:
