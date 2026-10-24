@@ -19,83 +19,63 @@ namespace Impl {
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-#define KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, EXECSPACE)                                  \
-  template <>                                                                                            \
-  struct swap_tpl_spec_avail<EXECSPACE,                                                                  \
-                             Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
-                                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                      \
-                             Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, \
-                                          Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                    \
-    enum : bool { value = true };                                                                        \
+#define KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(SCALAR)                                                           \
+  template <typename ExecSpace>                                                                                \
+    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                              \
+  struct swap_tpl_spec_avail<                                                                                  \
+      ExecSpace,                                                                                               \
+      Kokkos::View<SCALAR*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
+      Kokkos::View<SCALAR*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
+    enum : bool { value = true };                                                                              \
   };
 
-#ifdef KOKKOS_ENABLE_SERIAL
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::Serial)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::Serial)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Serial)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Serial)
-#endif
-
-#ifdef KOKKOS_ENABLE_OPENMP
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::OpenMP)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::OpenMP)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::OpenMP)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::OpenMP)
-#endif
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(double)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(float)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>)
 #endif
 
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-#define KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                  \
+#define KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT)                                                       \
   template <>                                                                                                        \
-  struct swap_tpl_spec_avail<                                                                                        \
-      EXECSPACE,                                                                                                     \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
+  struct swap_tpl_spec_avail<Kokkos::Cuda,                                                                           \
+                             Kokkos::View<SCALAR*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
+                             Kokkos::View<SCALAR*, LAYOUT, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
     enum : bool { value = true };                                                                                    \
   };
 
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaSpace)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutLeft)
 
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaSpace)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutRight)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutRight)
 
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::CudaUVMSpace)
-
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Cuda, Kokkos::CudaUVMSpace)
 #endif
 
 // rocBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
-#define KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                 \
-  template <>                                                                                                        \
-  struct swap_tpl_spec_avail<                                                                                        \
-      EXECSPACE,                                                                                                     \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
-    enum : bool { value = true };                                                                                    \
+#define KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(SCALAR, LAYOUT)                                                     \
+  template <>                                                                                                       \
+  struct swap_tpl_spec_avail<Kokkos::HIP,                                                                           \
+                             Kokkos::View<SCALAR*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,   \
+                             Kokkos::View<SCALAR*, LAYOUT, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
+    enum : bool { value = true };                                                                                   \
   };
 
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutLeft)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutLeft)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::LayoutLeft)
 
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace)
-KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(double, Kokkos::LayoutRight)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(float, Kokkos::LayoutRight)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<double>, Kokkos::LayoutRight)
+KOKKOSBLAS1_SWAP_TPL_SPEC_AVAIL_ROCBLAS(Kokkos::complex<float>, Kokkos::LayoutRight)
 #endif
 
 }  // namespace Impl

@@ -76,19 +76,7 @@ if(KOKKOS_ENABLE_SYCL)
     COMPONENTS batched_dla)
 endif()
 
-if(KOKKOS_ENABLE_OPENMPTARGET)
-  # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   batched_dla_openmptarget
-  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Batched_Dense.cpp
-  #   COMPONENTS batched_dla
-  # )
 
-  # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   batched_gemm_openmptarget
-  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Batched_GEMM.cpp
-  #   COMPONENTS batched_dla
-  # )
-endif()
 
 #####################
 #                   #
