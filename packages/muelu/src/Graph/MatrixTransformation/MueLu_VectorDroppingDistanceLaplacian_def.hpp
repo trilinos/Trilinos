@@ -25,10 +25,10 @@ void VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, 
                                                                                                                   rowptr_type& graph_rowptr,
                                                                                                                   nnz_count_type& nnz,
                                                                                                                   boundary_nodes_type& boundaryNodes,
+                                                                                                                  boundary_nodes_type& boundaryNodesColMap,
                                                                                                                   const std::string& droppingMethod,
                                                                                                                   const magnitudeType threshold,
                                                                                                                   const bool aggregationMayCreateDirichlet,
-                                                                                                                  const std::string& symmetrizeDroppedGraph,
                                                                                                                   const bool useBlocking,
                                                                                                                   const std::string& distanceLaplacianMetric,
                                                                                                                   Teuchos::Array<double>& dlap_weights,
@@ -39,19 +39,19 @@ void VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, 
   auto coords             = level.template Get<Teuchos::RCP<doubleMultiVector>>("Coordinates", factory.GetFactory("Coordinates").get());
   if (distanceLaplacianMetric == "unweighted") {
     auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(mergedA, coords);
-    runDroppingFunctors_on_dlap_inner(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
+    runDroppingFunctors_on_dlap_inner(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, dist2, level, factory);
   } else if (distanceLaplacianMetric == "weighted") {
     auto k_dlap_weights_host = Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(&dlap_weights[0], dlap_weights.size());
     auto k_dlap_weights      = Kokkos::View<double*>("dlap_weights", k_dlap_weights_host.extent(0));
     Kokkos::deep_copy(k_dlap_weights, k_dlap_weights_host);
     auto dist2 = DistanceLaplacian::WeightedDistanceFunctor(mergedA, coords, k_dlap_weights);
-    runDroppingFunctors_on_dlap_inner(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
+    runDroppingFunctors_on_dlap_inner(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, dist2, level, factory);
   } else if (distanceLaplacianMetric == "block weighted") {
     auto k_dlap_weights_host = Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(&dlap_weights[0], dlap_weights.size());
     auto k_dlap_weights      = Kokkos::View<double*>("dlap_weights", k_dlap_weights_host.extent(0));
     Kokkos::deep_copy(k_dlap_weights, k_dlap_weights_host);
     auto dist2 = DistanceLaplacian::BlockWeightedDistanceFunctor(mergedA, coords, k_dlap_weights, interleaved_blocksize);
-    runDroppingFunctors_on_dlap_inner(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
+    runDroppingFunctors_on_dlap_inner(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, dist2, level, factory);
   } else if (distanceLaplacianMetric == "material") {
     auto material = level.template Get<Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>("Material", factory.GetFactory("Material").get());
 
@@ -82,10 +82,10 @@ void VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, 
 
     if (material->getNumVectors() == 1) {
       auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(mergedA, coords, material);
-      runDroppingFunctors_on_dlap_inner(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
+      runDroppingFunctors_on_dlap_inner(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, dist2, level, factory);
     } else {
       auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(mergedA, coords, material);
-      runDroppingFunctors_on_dlap_inner(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
+      runDroppingFunctors_on_dlap_inner(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, dist2, level, factory);
     }
   }
 }

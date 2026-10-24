@@ -1359,7 +1359,7 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     DetectDirichletColsAndDomains(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
-                                  const Kokkos::View<bool*, typename Node::device_type>& dirichletRows,
+                                  const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                                   Kokkos::View<bool*, typename Node::device_type> dirichletCols,
                                   Kokkos::View<bool*, typename Node::device_type> dirichletDomain) {
   using ATS                                                        = KokkosKernels::ArithTraits<Scalar>;
