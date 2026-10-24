@@ -19,21 +19,20 @@ namespace Impl {
 
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-// double
-#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)                                                  \
-  template <class ExecSpace>                                                                                           \
-  struct dot_tpl_spec_avail<ExecSpace,                                                                                 \
-                            Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                            Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                   \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
-                            Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                   \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
-                            1, 1> {                                                                                    \
-    enum : bool { value = true };                                                                                      \
+
+#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(SCALAR)                                                                 \
+  template <typename ExecSpace>                                                                                     \
+    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                   \
+  struct dot_tpl_spec_avail<                                                                                        \
+      ExecSpace,                                                                                                    \
+      Kokkos::View<SCALAR, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, 1> { \
+    enum : bool { value = true };                                                                                   \
   };
 
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(double)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(float)
 
 // TODO: we met difficuties in FindTPLMKL.cmake to set the BLAS library properly
 // such that the test in CheckHostBlasReturnComplex.cmake could not be
@@ -41,29 +40,27 @@ KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::HostSpace
 // This resulted in segfault in dot() with MKL and complex.
 // So we just temporarily disable it until FindTPLMKL.cmake is fixed.
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>)
 #endif
 
 #endif
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                                  \
-  template <>                                                                                                          \
-  struct dot_tpl_spec_avail<EXECSPACE,                                                                                 \
-                            Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-                            Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                   \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
-                            Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                   \
-                                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                    \
-                            1, 1> {                                                                                    \
-    enum : bool { value = true };                                                                                      \
+#define KOKKOSBLAS1_DOT_TPL_SPEC(SCALAR, EXECSPACE)                                                                 \
+  template <>                                                                                                       \
+  struct dot_tpl_spec_avail<                                                                                        \
+      EXECSPACE,                                                                                                    \
+      Kokkos::View<SCALAR, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,        \
+      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, EXECSPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, 1> { \
+    enum : bool { value = true };                                                                                   \
   };
 
-#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(LAYOUT, EXECSPACE, MEMSPACE)             \
-  KOKKOSBLAS1_DOT_TPL_SPEC(float, LAYOUT, EXECSPACE, MEMSPACE)                  \
-  KOKKOSBLAS1_DOT_TPL_SPEC(double, LAYOUT, EXECSPACE, MEMSPACE)                 \
-  KOKKOSBLAS1_DOT_TPL_SPEC(Kokkos::complex<float>, LAYOUT, EXECSPACE, MEMSPACE) \
-  KOKKOSBLAS1_DOT_TPL_SPEC(Kokkos::complex<double>, LAYOUT, EXECSPACE, MEMSPACE)
+#define KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(EXECSPACE)             \
+  KOKKOSBLAS1_DOT_TPL_SPEC(float, EXECSPACE)                  \
+  KOKKOSBLAS1_DOT_TPL_SPEC(double, EXECSPACE)                 \
+  KOKKOSBLAS1_DOT_TPL_SPEC(Kokkos::complex<float>, EXECSPACE) \
+  KOKKOSBLAS1_DOT_TPL_SPEC(Kokkos::complex<double>, EXECSPACE)
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 // Note BMK: CUBLAS dot is consistently slower than our native dot
@@ -71,17 +68,16 @@ KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, 
 // If a future version improves performance, re-enable it here and
 // in the tpl_spec_decl file.
 #if 0
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::Cuda,
-                               Kokkos::CudaSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(Kokkos::Cuda)
 #endif
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(Kokkos::HIP)
 #endif
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
-KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace)
+KOKKOSBLAS1_DOT_TPL_SPEC_AVAIL(Kokkos::SYCL)
 #endif
 }  // namespace Impl
 }  // namespace KokkosBlas

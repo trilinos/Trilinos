@@ -1,4 +1,11 @@
 # CHANGELOG
+## 5.2.2
+
+[Full Changelog](https://github.com/kokkos/kokkos/compare/5.2.1...5.2.2)
+
+### Bug Fixes
+* Workaround warnings with std::pair as subview slice specifiers in relaxed constexpr mode [\#9467](https://github.com/kokkos/kokkos/pull/9467)
+
 ## 5.2.1
 
 [Full Changelog](https://github.com/kokkos/kokkos/compare/5.2.0...5.2.1)
@@ -49,8 +56,7 @@
 * Increase max level 1 team scratch size from 20MB to 80MB per team [\#9084](https://github.com/kokkos/kokkos/pull/9084)
 * core(graph): rename interoperability graph access with `<backend>_` prefix [\#9159](https://github.com/kokkos/kokkos/pull/9159)
 * core(graph): add enum to identify node kind [\#9170](https://github.com/kokkos/kokkos/pull/9170)
-* Add `create_mirror_view_and_copy(a_view)` overload [\#9185](https://github.com/kokkos/kokkos/pull/9185)
-* Sepperated out (limited) iterator support from algorithms and moved to core [\#6684](https://github.com/kokkos/kokkos/pull/6684)
+* Separated out (limited) iterator support from algorithms and moved to core [\#6684](https://github.com/kokkos/kokkos/pull/6684)
 * Check extent preconditions on Views in std::algorithms [\#6811](https://github.com/kokkos/kokkos/pull/6811)
 * Make the flag argument in simd constructors and load/store functions optional aligning with C++26 [\#9211](https://github.com/kokkos/kokkos/pull/9211) [\#9275](https://github.com/kokkos/kokkos/pull/9275)
 * Use C++11 style attributes in definition of `KOKKOS_FORCEINLINE_FUNCTION` and add MSVC support [\#9229](https://github.com/kokkos/kokkos/pull/9229)

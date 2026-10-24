@@ -148,8 +148,8 @@ class MergeMatrixDiagonal {
   size_type d_;  // diagonal
 };
 
-/*! \brief Return the first index on diagonal \code diag
-           in the merge matrix of \code a and \code b that is not 1
+/*! \brief Return the first index on diagonal \c diag
+           in the merge matrix of \c a and \c b that is not 1
 
 This is effectively a lower-bound search on the merge matrix diagonal
 where the predicate is "equals 1"

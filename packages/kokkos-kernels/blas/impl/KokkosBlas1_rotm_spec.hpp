@@ -28,14 +28,12 @@ struct rotm_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ROTM_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                       \
-  template <>                                                                                                        \
-  struct rotm_eti_spec_avail<                                                                                        \
-      EXEC_SPACE,                                                                                                    \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<const SCALAR[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                       \
-    enum : bool { value = true };                                                                                    \
+#define KOKKOSBLAS1_ROTM_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE)                                   \
+  template <>                                                                                         \
+  struct rotm_eti_spec_avail<                                                                         \
+      EXEC_SPACE, Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<const SCALAR[5], LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {   \
+    enum : bool { value = true };                                                                     \
   };
 
 // Include the actual specialization declarations
@@ -85,26 +83,20 @@ struct Rotm<execution_space, VectorView, ParamView, false, KOKKOSKERNELS_IMPL_CO
 // We may spread out definitions (see _DEF macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ROTM_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                        \
-  extern template struct Rotm<                                                                                       \
-      EXEC_SPACE,                                                                                                    \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<const SCALAR[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                         \
-      false, true>;
+#define KOKKOSBLAS1_ROTM_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE)                                    \
+  extern template struct Rotm<                                                                        \
+      EXEC_SPACE, Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+      Kokkos::View<const SCALAR[5], LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, false, true>;
 
 //
 // Macro for definition of full specialization of
 // KokkosBlas::Impl::Rotm.  This is NOT for users!!!  We
 // use this macro in one or more .cpp files in this directory.
 //
-#define KOKKOSBLAS1_ROTM_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                        \
-  template struct Rotm<                                                                                              \
-      EXEC_SPACE,                                                                                                    \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<const SCALAR[5], LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                   \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                         \
-      false, true>;
+#define KOKKOSBLAS1_ROTM_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE)                                                     \
+  template struct Rotm<EXEC_SPACE, Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
+                       Kokkos::View<const SCALAR[5], LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,     \
+                       false, true>;
 
 #include <KokkosBlas1_rotm_tpl_spec_decl.hpp>
 #include <generated_specializations_hpp/KokkosBlas1_rotm_eti_spec_decl.hpp>

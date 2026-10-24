@@ -18,7 +18,7 @@ Defined in header ``KokkosSparse_spgemm.hpp``
                        clno_row_view_t_ row_mapC, bool computeRowptrs = false);
 
   template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
-  void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
+  void spgemm_symbolic(KernelHandle& handle, const AMatrix& A, const bool Amode,
                        const BMatrix& B, const bool Bmode, CMatrix& C);
 
 Performs the symbolic phase of the multiplication of two sparse matrices.
@@ -39,21 +39,18 @@ After ``spgemm_symbolic`` returns, the number of non-zeros in C is available thr
    While transpose flags are part of the interface, the algorithm is only implemented for non-transposed A and B.
 
 .. note::
-  Some underlying implementations require that both A and B are sorted and merged, meaning that the column indices within each row are sorted and unique.
-
-  Expert users may want to use SpGEMM but avoid the cost of explicitly sorting and merging the input matrices.
-  The implementations where this requirement doesn't apply are Kokkos Kernels, rocSPARSE (as long as there is no row with more than 8192 intermediate products), and MKL.
+   For both modes of the algorithm, the matrices A and B must both be sorted (have the entries in each row ordered by column) if ``handle->get_spgemm_handle()->get_input_sorted()``. This is `false` by default. See :ref:`create_spgemm_handle <handle_spgemm_create>` for how this is configured in the handle. Likewise, the output matrix C is only guaranteed to be sorted if ``handle->get_spgemm_handle()->get_result_sorted()``.
 
 Parameters
 ==========
 
-:handle: spadd kernels handle obtained from an instance of ``KokkosKernels::KokkosKernelsHandle``.
+:handle: KokkosKernelsHandle with an active spgemm subhandle (i.e. `create_spgemm_handle(...)` was previously called on it).
 
 :m, n, k: dimensions of the matrices. **m** is the number of rows in ``A`` and ``C``. **n** is the number of columns in ``A`` and the number of rows in ``B``. **k** is the number of columns in ``B`` and ``C``.
 
 :row_mapA, row_mapB: row maps of the input matrices ``A`` and ``B``.
 
-:entriesA, entriesB: column indices of the entries in each row of ``A`` and ``B``. In most cases, these should be in sorted and merged order (see note above).
+:entriesA, entriesB: column indices of the entries in each row of ``A`` and ``B``.
 
 :transposeA, transposeB: transposition operator to be applied to ``row_mapA``, ``entriesA`` and ``row_mapB``, ``entriesB`` respectively. **Must both be false**; the algorithm is not yet implemented for other cases.
 
@@ -63,7 +60,7 @@ Parameters
 
 :Amode, Bmode: transposition operation to apply to ``A`` and ``B`` respectively. **Must both be false**; the algorithm is not yet implemented for other cases.
 
-:A, B, C: three instances of :doc:`KokkosSparse::CrsMatrix <crs_matrix>`. ``A`` and ``B`` are input parameters. ``C`` is an output parameter only. In most cases, ``A`` and ``B`` should be sorted and merged (see note above).
+:A, B, C: three instances of :doc:`KokkosSparse::CrsMatrix <crs_matrix>`. ``A`` and ``B`` are input parameters. ``C`` is an output parameter only.
 
 Type Requirements
 -----------------

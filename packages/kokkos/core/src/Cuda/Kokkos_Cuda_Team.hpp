@@ -20,6 +20,7 @@
 #include <Kokkos_Vectorization.hpp>
 
 #include <impl/Kokkos_Tools.hpp>
+#include <type_traits>
 #include <typeinfo>
 
 //----------------------------------------------------------------------------
@@ -43,24 +44,14 @@ struct CudaJoinFunctor {
  *  Cuda thread blocks for team closures are dimensioned as:
  *    blockDim.x == number of "vector lanes" per "thread"
  *    blockDim.y == number of "threads" per team
- *    blockDim.z == number of teams in a block
- *  where
- *    A set of teams exactly fill a warp OR a team is the whole block
- *      ( 0 == WarpSize % ( blockDim.x * blockDim.y ) )
- *      OR
- *      ( 1 == blockDim.z )
- *
- *  Thus when 1 < blockDim.z the team is warp-synchronous
- *  and __syncthreads should not be called in team collectives.
- *
- *  When multiple teams are mapped onto a single block then the
- *  total available shared memory must be partitioned among teams.
+ *    blockDim.z == 1
  */
 class CudaTeamMember {
  public:
   using execution_space      = Kokkos::Cuda;
   using scratch_memory_space = execution_space::scratch_memory_space;
   using team_handle          = CudaTeamMember;
+  using thread_handle        = ThreadHandleType<team_handle>;
 
  private:
   mutable void* m_team_reduce;
@@ -100,10 +91,7 @@ class CudaTeamMember {
   }
 
   KOKKOS_INLINE_FUNCTION void team_barrier() const {
-    KOKKOS_IF_ON_DEVICE((
-        if (1 == blockDim.z) { __syncthreads(); }  // team == block
-        else { __threadfence_block(); }            // team <= warp
-        ))
+    KOKKOS_IF_ON_DEVICE((__syncthreads();))
   }
 
   //--------------------------------------------------------------------------
@@ -114,20 +102,14 @@ class CudaTeamMember {
     (void)val;
     (void)thread_id;
     KOKKOS_IF_ON_DEVICE((
-        if (1 == blockDim.z) {  // team == block
-          __syncthreads();
-          // Wait for shared data write until all threads arrive here
-          if (threadIdx.x == 0u && threadIdx.y == (uint32_t)thread_id) {
-            *((ValueType*)m_team_reduce) = val;
-          }
-          __syncthreads();  // Wait for shared data read until root thread
-                            // writes
-          val = *((ValueType*)m_team_reduce);
-        } else {               // team <= warp
-          ValueType tmp(val);  // input might not be a register variable
-          Impl::in_place_shfl(val, tmp, blockDim.x * thread_id,
-                              blockDim.x * blockDim.y);
-        }))
+        // Wait for shared data write until all threads arrive here
+        __syncthreads();
+        if (threadIdx.x == 0u && threadIdx.y == (uint32_t)thread_id) {
+          *((ValueType*)m_team_reduce) = val;
+        }
+        // Wait for shared data read until root thread writes
+        __syncthreads();
+        val = *((ValueType*)m_team_reduce);))
   }
 
   template <class Closure, class ValueType>
@@ -136,23 +118,16 @@ class CudaTeamMember {
     (void)f;
     (void)val;
     (void)thread_id;
-    KOKKOS_IF_ON_DEVICE((
-        f(val);
-
-        if (1 == blockDim.z) {  // team == block
-          __syncthreads();
-          // Wait for shared data write until all threads arrive here
-          if (threadIdx.x == 0u && threadIdx.y == (uint32_t)thread_id) {
-            *((ValueType*)m_team_reduce) = val;
-          }
-          __syncthreads();  // Wait for shared data read until root thread
-                            // writes
-          val = *((ValueType*)m_team_reduce);
-        } else {               // team <= warp
-          ValueType tmp(val);  // input might not be a register variable
-          Impl::in_place_shfl(val, tmp, blockDim.x * thread_id,
-                              blockDim.x * blockDim.y);
-        }))
+    KOKKOS_IF_ON_DEVICE(
+        (f(val);
+         // Wait for shared data write until all threads arrive here
+         __syncthreads();
+         if (threadIdx.x == 0u && threadIdx.y == (uint32_t)thread_id) {
+           *((ValueType*)m_team_reduce) = val;
+         }
+         // Wait for shared data read until root thread writes
+         __syncthreads();
+         val = *((ValueType*)m_team_reduce);))
   }
 
   //--------------------------------------------------------------------------
@@ -161,14 +136,11 @@ class CudaTeamMember {
    *  Mapping of teams onto blocks:
    *    blockDim.x  is "vector lanes"
    *    blockDim.y  is team "threads"
-   *    blockDim.z  is number of teams per block
+   *    blockDim.z  is 1
    *
    *  Requires:
    *    blockDim.x is power two
    *    blockDim.x <= CudaTraits::WarpSize
-   *    ( 0 == CudaTraits::WarpSize % ( blockDim.x * blockDim.y )
-   *      OR
-   *    ( 1 == blockDim.z )
    */
   template <typename ReducerType>
   KOKKOS_INLINE_FUNCTION std::enable_if_t<is_reducer_v<ReducerType>>
@@ -478,6 +450,8 @@ Impl::VectorSingleStruct<Impl::CudaTeamMember> PerThread(
  *  Executes closure(iType i) for each i=[0..N).
  *
  * The range [0..N) is mapped to all threads of the the calling thread team.
+ * If the closure accepts (thread_handle, iType), the thread handle is passed
+ * so the body can use the vector lanes.
  */
 template <typename iType, class Closure>
 KOKKOS_INLINE_FUNCTION void parallel_for(
@@ -486,9 +460,22 @@ KOKKOS_INLINE_FUNCTION void parallel_for(
     const Closure& closure) {
   (void)loop_boundaries;
   (void)closure;
-  KOKKOS_IF_ON_DEVICE(
-      (for (iType i = loop_boundaries.start + threadIdx.y;
-            i < loop_boundaries.end; i += blockDim.y) { closure(i); }))
+  KOKKOS_IF_ON_DEVICE((
+      using thread_handle_t = Impl::ThreadHandleType<Impl::CudaTeamMember>;
+
+      for (iType i = loop_boundaries.start + threadIdx.y;
+           i < loop_boundaries.end; i += blockDim.y) {
+        if constexpr (std::is_invocable_v<Closure, iType>) {
+          closure(i);
+        } else if constexpr (std::is_invocable_v<
+                                 Closure, thread_handle_t const&, iType>) {
+          closure(thread_handle_t(loop_boundaries.member), i);
+        } else {
+          static_assert(Kokkos::Impl::always_false<Closure>::value,
+                        "Kokkos::parallel_for(TeamThreadRange) closure must be "
+                        "invocable with (iType) or (ThreadHandleType, iType)");
+        }
+      }))
 }
 
 //----------------------------------------------------------------------------

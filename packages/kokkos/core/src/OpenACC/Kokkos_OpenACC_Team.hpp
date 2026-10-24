@@ -27,6 +27,7 @@ class OpenACCTeamMember {
   using execution_space      = Kokkos::Experimental::OpenACC;
   using scratch_memory_space = execution_space::scratch_memory_space;
   using team_handle          = OpenACCTeamMember;
+  using thread_handle        = ThreadHandleType<team_handle>;
 
   scratch_memory_space m_team_shared;
   int m_team_scratch_size[2];
@@ -229,8 +230,14 @@ class TeamPolicyInternal<Kokkos::Experimental::OpenACC, Properties...>
     return m_team_scratch_size[level] +
            team_size_ * m_thread_scratch_size[level];
   }
+  size_t team_scratch_size(int level) const {
+    return m_team_scratch_size[level];
+  }
+  size_t thread_scratch_size(int level) const {
+    return m_thread_scratch_size[level];
+  }
 
-  Kokkos::Experimental::OpenACC space() const { return m_space; }
+  const Kokkos::Experimental::OpenACC& space() const { return m_space; }
 
   template <class... OtherProperties>
   TeamPolicyInternal(const TeamPolicyInternal<OtherProperties...>& p)

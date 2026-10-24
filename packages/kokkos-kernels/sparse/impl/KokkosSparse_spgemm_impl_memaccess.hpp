@@ -192,8 +192,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   MyExecSpace().fence();
 
   // do a parallel prefix sum
-  KokkosKernels::Impl::exclusive_parallel_prefix_sum<row_lno_temp_work_view_t, MyExecSpace>(a_row_cnt + 1,
-                                                                                            c_flop_rowmap);
+  KokkosKernels::exclusive_parallel_prefix_sum(MyExecSpace(), c_flop_rowmap);
   MyExecSpace().fence();
 
   std::cout << "overall_flops:" << overall_flops << std::endl;
