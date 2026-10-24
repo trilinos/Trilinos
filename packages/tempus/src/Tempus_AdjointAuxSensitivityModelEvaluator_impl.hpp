@@ -33,6 +33,7 @@ AdjointAuxSensitivityModelEvaluator<Scalar>::
     t_init_(t_init),
     t_final_(t_final),
     mass_matrix_is_computed_(false),
+    dgdx_dot_checked_(false),
     t_interp_(Teuchos::ScalarTraits<Scalar>::rmax())
 {
   using Teuchos::Array;
@@ -50,6 +51,10 @@ AdjointAuxSensitivityModelEvaluator<Scalar>::
   p_index_                 = pl->get<int>("Sensitivity Parameter Index", 0);
   g_index_                 = pl->get<int>("Response Function Index", 0);
   num_adjoint_             = model_->get_g_space(g_index_)->dim();
+  response_type_           = AdjointSensitivityUtils::parseResponseType(
+                pl->get<std::string>("Response Type"));
+  g_depends_on_p_ = pl->get<bool>("Response Depends on Parameters");
+  f_depends_on_p_ = pl->get<bool>("Residual Depends on Parameters");
 
   // We currently do not support a non-constant mass matrix
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -119,9 +124,10 @@ template <typename Scalar>
 void AdjointAuxSensitivityModelEvaluator<Scalar>::setForwardSolutionHistory(
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh)
 {
-  sh_            = sh;
-  t_interp_      = Teuchos::ScalarTraits<Scalar>::rmax();
-  forward_state_ = Teuchos::null;
+  sh_               = sh;
+  t_interp_         = Teuchos::ScalarTraits<Scalar>::rmax();
+  forward_state_    = Teuchos::null;
+  dgdx_dot_checked_ = false;
 }
 
 template <typename Scalar>
@@ -334,6 +340,19 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::evalModelImpl(
     my_dfdx_->apply(Thyra::NOTRANS, *adjoint_x_mv, adjoint_f_mv.ptr(),
                     Scalar(-1.0), Scalar(0.0));
 
+    // For a time-integrated response, add the source term:
+    // explicit form residual F(y) = -df/dx^T*y + dg/dx^T
+    if (response_type_ == AdjointResponseType::TimeIntegral) {
+      if (my_dgdx_mv_ == Teuchos::null)
+        my_dgdx_mv_ = createMembers(model_->get_x_space(), num_adjoint_);
+      AdjointSensitivityUtils::evalResponseGradientX(
+          *model_, g_index_, responseInArgs(me_inArgs), *my_dgdx_mv_,
+          !dgdx_dot_checked_,
+          "Tempus::AdjointAuxSensitivityModelEvaluator::evalModel");
+      dgdx_dot_checked_ = true;
+      Thyra::update(Scalar(1.0), *my_dgdx_mv_, adjoint_f_mv.ptr());
+    }
+
     // Implicit form residual df/dx_dot^T*y_dot + df/dx^T*y using the second
     // scalar argument to apply() to change the explicit term above
     RCP<const DPV> prod_x_dot;
@@ -369,48 +388,29 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::evalModelImpl(
     }
 
     // Compute g = z_dot - df/dp^T*y for computing the model parameter term
-    // in the adjoint sensitivity formula
+    // in the adjoint sensitivity formula (g = z_dot - df/dp^T*y + dg/dp^T for
+    // a time-integrated response)
     RCP<Thyra::VectorBase<Scalar> > adjoint_g =
         prod_f->getNonconstVectorBlock(1);
     RCP<Thyra::MultiVectorBase<Scalar> > adjoint_g_mv =
         rcp_dynamic_cast<DMVPV>(adjoint_g, true)->getNonconstMultiVector();
 
-    MEB::OutArgs<Scalar> me_outArgs2 = model_->createOutArgs();
-    MEB::DerivativeSupport dfdp_support =
-        me_outArgs2.supports(MEB::OUT_ARG_DfDp, p_index_);
-    Thyra::EOpTransp trans = Thyra::CONJTRANS;
-    if (dfdp_support.supports(MEB::DERIV_LINEAR_OP)) {
-      if (my_dfdp_op_ == Teuchos::null)
-        my_dfdp_op_ = model_->create_DfDp_op(p_index_);
-      me_outArgs2.set_DfDp(p_index_, MEB::Derivative<Scalar>(my_dfdp_op_));
-      trans = Thyra::CONJTRANS;
-    }
-    else if (dfdp_support.supports(MEB::DERIV_MV_JACOBIAN_FORM)) {
-      if (my_dfdp_mv_ == Teuchos::null)
-        my_dfdp_mv_ = createMembers(model_->get_f_space(),
-                                    model_->get_p_space(p_index_)->dim());
-      me_outArgs2.set_DfDp(
-          p_index_,
-          MEB::Derivative<Scalar>(my_dfdp_mv_, MEB::DERIV_MV_JACOBIAN_FORM));
-      my_dfdp_op_ = my_dfdp_mv_;
-      trans       = Thyra::CONJTRANS;
-    }
-    else if (dfdp_support.supports(MEB::DERIV_MV_GRADIENT_FORM)) {
-      if (my_dfdp_mv_ == Teuchos::null)
-        my_dfdp_mv_ = createMembers(model_->get_p_space(p_index_),
-                                    model_->get_f_space()->dim());
-      me_outArgs2.set_DfDp(
-          p_index_,
-          MEB::Derivative<Scalar>(my_dfdp_mv_, MEB::DERIV_MV_GRADIENT_FORM));
-      my_dfdp_op_ = my_dfdp_mv_;
-      trans       = Thyra::CONJ;
+    if (f_depends_on_p_) {
+      AdjointSensitivityUtils::applyDfDpTranspose(
+          *model_, p_index_, me_inArgs, *adjoint_x_mv, *adjoint_g_mv,
+          Scalar(1.0), Scalar(0.0), my_dfdp_op_, my_dfdp_mv_);
     }
     else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                                 "Invalid df/dp support");
-    model_->evalModel(me_inArgs, me_outArgs2);
-    my_dfdp_op_->apply(trans, *adjoint_x_mv, adjoint_g_mv.ptr(), Scalar(1.0),
-                       Scalar(0.0));
+      Thyra::assign(adjoint_g_mv.ptr(), Scalar(0.0));
+
+    // For a time-integrated response, subtract dg/dp^T
+    if (response_type_ == AdjointResponseType::TimeIntegral && g_depends_on_p_) {
+      if (my_dgdp_mv_ == Teuchos::null)
+        my_dgdp_mv_ = createMembers(model_->get_p_space(p_index_), num_adjoint_);
+      AdjointSensitivityUtils::evalResponseGradientP(
+          *model_, g_index_, p_index_, responseInArgs(me_inArgs), *my_dgdp_mv_);
+      Thyra::update(Scalar(-1.0), *my_dgdp_mv_, adjoint_g_mv.ptr());
+    }
 
     if (prod_x_dot != Teuchos::null) {
       RCP<const Thyra::VectorBase<Scalar> > z_dot =
@@ -431,7 +431,30 @@ AdjointAuxSensitivityModelEvaluator<Scalar>::getValidParameters()
   pl->set<int>("Response Function Index", 0);
   pl->set<bool>("Mass Matrix Is Constant", true);
   pl->set<bool>("Mass Matrix Is Identity", false);
+  pl->set<std::string>("Response Type", "Final Time",
+                       "\"Final Time\": g(x(T),p,T), "
+                       "\"Time Integral\": int_{t0}^{T} g(x(t),p,t) dt, or "
+                       "\"Sum Over Times\": sum_k g(x(t_k),p,t_k)");
+  pl->set<std::string>("Response Time List", "",
+                       "Comma-separated times t_k of the \"Sum Over Times\" "
+                       "response");
+  pl->set<bool>("Response Depends on Parameters", true);
+  pl->set<bool>("Residual Depends on Parameters", true);
   return pl;
+}
+
+template <typename Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+AdjointAuxSensitivityModelEvaluator<Scalar>::responseInArgs(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& me_inArgs) const
+{
+  // The response is evaluated at the forward state, including x_dot when the
+  // model supports it (for explicit steppers x_dot is not set in me_inArgs).
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar> inArgs = me_inArgs;
+  if (inArgs.supports(MEB::IN_ARG_x_dot) && forward_state_->getXDot() != Teuchos::null)
+    inArgs.set_x_dot(forward_state_->getXDot());
+  return inArgs;
 }
 
 }  // namespace Tempus

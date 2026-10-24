@@ -21,9 +21,11 @@
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
+#include "../TestUtils/Tempus_AdjointResponseTestUtils.hpp"
 
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 
+#include <algorithm>
 #include <vector>
 #include <fstream>
 #include <sstream>
@@ -213,6 +215,141 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
     }
     ftmp.close();
   }
+}
+
+// ************************************************************
+// ************************************************************
+// Adjoint sensitivities of the time-integrated response
+// J = int_{t0}^{T} x(t) dt.
+TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA_TimeIntegral)
+{
+  std::vector<double> StepSize, ErrorNorm;
+  double order = 0.0;
+  computeSinCosAdjointResponseErrors(
+      "Tempus_BackwardEuler_SinCos_ASA.xml",
+      [](ParameterList& pl) {
+        pl.sublist("Sensitivities").set("Mass Matrix Is Identity", false);
+      },
+      "Time Integral", std::vector<double>(), 6, 0.1, true, StepSize,
+      ErrorNorm, order, out, success);
+
+  const double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
+  out << "  Expected order: " << order << "  Observed order: " << slope << std::endl;
+  TEST_FLOATING_EQUALITY(slope, order, 0.04);
+}
+
+// ************************************************************
+// ************************************************************
+// Adjoint sensitivities of the response J = sum_k x(t_k), with response times
+// on the time grid, including the initial and final times.
+TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA_SumOverTimes)
+{
+  std::vector<double> StepSize, ErrorNorm;
+  double order = 0.0;
+  computeSinCosAdjointResponseErrors(
+      "Tempus_BackwardEuler_SinCos_ASA.xml",
+      [](ParameterList& pl) {
+        pl.sublist("Sensitivities").set("Mass Matrix Is Identity", false);
+      },
+      "Sum Over Times", {0.1, 0.4, 0.7, 1.0}, 6, 0.1, true, StepSize,
+      ErrorNorm, order, out, success);
+
+  const double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
+  out << "  Expected order: " << order << "  Observed order: " << slope << std::endl;
+  TEST_FLOATING_EQUALITY(slope, order, 0.04);
+}
+
+// ************************************************************
+// ************************************************************
+// Same as SinCos_ASA_SumOverTimes, with a response time that is not on the
+// time grid.  With "Variable" time steps the forward time steps land on it.
+TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA_SumOverTimes_Variable)
+{
+  std::vector<double> StepSize, ErrorNorm;
+  double order = 0.0;
+  computeSinCosAdjointResponseErrors(
+      "Tempus_BackwardEuler_SinCos_ASA.xml",
+      [](ParameterList& pl) {
+        pl.sublist("Sensitivities").set("Mass Matrix Is Identity", false);
+        // Variable time steps, which only change to land on time events
+        ParameterList& tscs = pl.sublist("Default Integrator")
+                                  .sublist("Time Step Control")
+                                  .sublist("Time Step Control Strategy");
+        tscs.set("Strategy Type", "Basic VS");
+        tscs.set("Amplification Factor", 1.5);
+        tscs.set("Reduction Factor", 0.5);
+        tscs.set("Minimum Value Monitoring Function", 0.0);
+        tscs.set("Maximum Value Monitoring Function", 1.0e+10);
+      },
+      "Sum Over Times", {0.1 + 1.0 / 3.0, 0.8, 1.0}, 6, 0.1, true, StepSize,
+      ErrorNorm, order, out, success);
+
+  const double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
+  out << "  Expected order: " << order << "  Observed order: " << slope << std::endl;
+  TEST_FLOATING_EQUALITY(slope, order, 0.04);
+}
+
+// ************************************************************
+// ************************************************************
+// With "Constant" time steps (the default time step control strategy), a
+// response time that is not on the time grid is an error.
+TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA_SumOverTimes_OffGrid)
+{
+  std::vector<double> StepSize, ErrorNorm;
+  double order = 0.0;
+  TEST_THROW(computeSinCosAdjointResponseErrors(
+                 "Tempus_BackwardEuler_SinCos_ASA.xml",
+                 [](ParameterList& pl) {
+                   pl.sublist("Sensitivities")
+                       .set("Mass Matrix Is Identity", false);
+                 },
+                 "Sum Over Times", {0.1 + 1.0 / 3.0, 1.0}, 1, 0.1, true,
+                 StepSize, ErrorNorm, order, out, success),
+             std::logic_error);
+}
+
+// ************************************************************
+// ************************************************************
+// NOX row sum scaling ("Function Scaling" = "Row Sum") of the nonlinear solves
+// of the forward and adjoint problems, with the explicit adjoint model.  The
+// forward and adjoint integrators are created from the same parameters, in
+// which the forward solver stores its row sum scaling objects (in the forward
+// residual space), and the adjoint operator, a blocked operator with a scaled
+// identity block, must support the row sums and the scaling.  The problem is
+// linear and the linear solves are direct, so the errors are those without
+// scaling.
+TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA_RowSumScaling)
+{
+  const std::vector<double> responseTimes = {0.4, 1.0};
+
+  // Parameters with or without row sum scaling
+  auto configure = [](const bool rowSumScaling) {
+    return [rowSumScaling](ParameterList& pl) {
+      pl.sublist("Sensitivities").set("Mass Matrix Is Identity", false);
+      if (rowSumScaling)
+        pl.sublist("Default Stepper")
+            .sublist("Default Solver")
+            .sublist("NOX")
+            .sublist("Thyra Group Options")
+            .set("Function Scaling", "Row Sum");
+    };
+  };
+
+  std::vector<double> StepSize, ErrorNorm, StepSizeScaled, ErrorNormScaled;
+  double order = 0.0;
+  computeSinCosAdjointResponseErrors(
+      "Tempus_BackwardEuler_SinCos_ASA.xml", configure(false),
+      "Sum Over Times", responseTimes, 3, 0.1, true, StepSize, ErrorNorm,
+      order, out, success);
+  computeSinCosAdjointResponseErrors(
+      "Tempus_BackwardEuler_SinCos_ASA.xml", configure(true), "Sum Over Times",
+      responseTimes, 3, 0.1, true, StepSizeScaled, ErrorNormScaled, order, out,
+      success);
+
+  TEST_EQUALITY(ErrorNormScaled.size(), ErrorNorm.size());
+  for (std::size_t n = 0; n < std::min(ErrorNorm.size(), ErrorNormScaled.size());
+       ++n)
+    TEST_FLOATING_EQUALITY(ErrorNormScaled[n], ErrorNorm[n], 1.0e-8);
 }
 
 }  // namespace Tempus_Test

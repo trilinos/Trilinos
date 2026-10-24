@@ -127,14 +127,16 @@ class MultiVectorLinearOp : virtual public RowStatLinearOpBase<Scalar>,
   /** @name Overridden from RowStatLinearOpBase */
   //@{
 
-  /** \brief Determine if a given row stat is supported. */
+  /** \brief Determine if a given row stat is supported (false if the
+   *  underlying operator is not a RowStatLinearOpBase). */
   bool rowStatIsSupportedImpl(
       const RowStatLinearOpBaseUtils::ERowStat rowStat) const
   {
     using Teuchos::rcp_dynamic_cast;
-    return rcp_dynamic_cast<const RowStatLinearOpBase<Scalar> >(
-               op_.getConstObj())
-        ->rowStatIsSupported(rowStat);
+    RCP<const RowStatLinearOpBase<Scalar> > row_stat_op =
+        rcp_dynamic_cast<const RowStatLinearOpBase<Scalar> >(
+            op_.getConstObj());
+    return nonnull(row_stat_op) && row_stat_op->rowStatIsSupported(rowStat);
   }
 
   /** \brief Get some statistics about a supported row.
@@ -171,20 +173,24 @@ class MultiVectorLinearOp : virtual public RowStatLinearOpBase<Scalar>,
   /** @name Overridden from ScaledLinearOpBase */
   //@{
 
+  /** \brief False if the underlying operator is not a ScaledLinearOpBase. */
   virtual bool supportsScaleLeftImpl() const
   {
     using Teuchos::rcp_dynamic_cast;
-    return rcp_dynamic_cast<const ScaledLinearOpBase<Scalar> >(
-               op_.getConstObj())
-        ->supportsScaleLeft();
+    RCP<const ScaledLinearOpBase<Scalar> > scaled_op =
+        rcp_dynamic_cast<const ScaledLinearOpBase<Scalar> >(
+            op_.getConstObj());
+    return nonnull(scaled_op) && scaled_op->supportsScaleLeft();
   }
 
+  /** \brief False if the underlying operator is not a ScaledLinearOpBase. */
   virtual bool supportsScaleRightImpl() const
   {
     using Teuchos::rcp_dynamic_cast;
-    return rcp_dynamic_cast<const ScaledLinearOpBase<Scalar> >(
-               op_.getConstObj())
-        ->supportsScaleRight();
+    RCP<const ScaledLinearOpBase<Scalar> > scaled_op =
+        rcp_dynamic_cast<const ScaledLinearOpBase<Scalar> >(
+            op_.getConstObj());
+    return nonnull(scaled_op) && scaled_op->supportsScaleRight();
   }
 
   virtual void scaleLeftImpl(const VectorBase<Scalar> &row_scaling)

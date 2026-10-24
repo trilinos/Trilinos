@@ -10,10 +10,15 @@
 #ifndef Tempus_IntegratorAdjointSensitivity_decl_hpp
 #define Tempus_IntegratorAdjointSensitivity_decl_hpp
 
+#include <vector>
+
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_AdjointAuxSensitivityModelEvaluator.hpp"
+#include "Tempus_AdjointSensitivityUtils.hpp"
+#include "Tempus_AdjointDAEJumpSolver.hpp"
+#include "Tempus_DAEStructure.hpp"
 
 #include "Tempus_StepperStaggeredForwardSensitivity.hpp"  // For SensitivityStepMode
 
@@ -41,6 +46,56 @@ namespace Tempus {
  *
  * Because of limitations on the steppers, the implementation currently assumes
  * df/dxdot is a constant matrix.
+ *
+ * Besides the final-time response above, two more responses are supported
+ * through the "Response Type" option of the "Sensitivities" sublist:
+ * <ul>
+ *   <li> "Time Integral": J = int_{0}^T g(x(t),p,t) dt.  The adjoint equations
+ *        get the source term dg/dx^T, y(T) = 0, and the sensitivity is
+ *        int_{0}^T(dg/dp^T - df/dp^T*y)dt + dx/dp(0)^T*df/dx_dot(0)^T*y(0).
+ *   <li> "Sum Over Times": J = sum_k g(x(t_k),p,t_k), with the times t_k given
+ *        by "Response Time List".  Between the times t_k the adjoint equations
+ *        are homogeneous, and at each t_k the adjoint jumps by
+ *        df/dx_dot^{-T}*dg/dx(t_k)^T.  The sensitivity is
+ *        sum_k dg/dp(t_k)^T - int_{0}^T(df/dp^T*y)dt
+ *          + dx/dp(0)^T*df/dx_dot(0)^T*y(0).
+ *        The adjoint integration is restarted at every t_k, so no time step
+ *        crosses a jump.  The forward time steps must end at the times t_k:
+ *        with "Step Type" = "Variable" the times t_k are added as time events
+ *        on which the time steps land exactly, with "Step Type" = "Constant"
+ *        they must be on the time grid.
+ * </ul>
+ * In both cases the response must not depend on x_dot.  If the model supports
+ * dg/dx_dot, it is checked to be zero.
+ *
+ * <b>Index-1 DAEs.</b>  If some equations do not depend on x_dot (algebraic
+ * equations, e.g. constraints, or Dirichlet conditions written as
+ * f_i = x_i - d_i(p,t)), df/dx_dot is singular and the jumps above are not
+ * defined.  For an index-1 DAE, the "Algebraic Equations Mask" option gives
+ * the algebraic equations, the rows of df/dx_dot that are zero (see
+ * DAEStructure).  With
+ * E = df/dx_dot, A = df/dx, and P_a, P_d the masks of the algebraic and
+ * differential equations, the adjoint jump at a response time t_k is then
+ * given by the solution z of
+ *        C^T z = dg/dx(t_k)^T,   C = P_a A + P_d E   (at the state at t_k):
+ * <ul>
+ *   <li> the jump of the adjoint is P_d z (its differential components);
+ *   <li> the algebraic adjoint unknowns are determined by the adjoint
+ *        equations, which are a DAE as well, and the algebraic components of
+ *        z add -df/dp(t_k)^T (P_a z) to the sensitivity.
+ * </ul>
+ * This accounts for the dependence of the response on the algebraic unknowns
+ * x_a: for a semi-explicit DAE, ordering the algebraic equations and unknowns
+ * first, C = [A_aa A_ad; 0 E_dd], so P_a z = A_aa^{-T} dg/dx_a^T and
+ * P_d z = E_dd^{-T} (dg/dx_d^T - A_ad^T P_a z).
+ * C^T z = dg/dx^T is solved with AdjointDAEJumpSolver (options in the
+ * "Algebraic Jump Solver" sublist of "Sensitivities"), using only evaluations
+ * of the adjoint model: the model must return the true df/dx_dot and df/dx
+ * for any alpha and beta.  The "Time Integral" response has no jumps and
+ * does not need this option.  The steppers must be suited to index-1 DAEs
+ * (e.g. Backward Euler), and must not compute consistent initial conditions
+ * ("Initial Condition Consistency" = "Consistent"), which requires a
+ * nonsingular df/dx_dot.
  *
  * To extract the final solution x(T) and sensitivity dg/dp(T) one should use
  * the getX() and getDgDp() methods, which return these quantities directly.
@@ -94,6 +149,17 @@ class IntegratorAdjointSensitivity : virtual public Tempus::Integrator<Scalar> {
    *         currently required to be true.
    *    <li> "Mass Matrix Is Identity" (default: false) Whether the mass matrix
    *         is the identity matrix, in which some computations can be skipped.
+   *    <li> "Response Type" (default: "Final Time") "Final Time" for
+   *         g(x(T),p), "Time Integral" for int_{0}^T g(x(t),p,t) dt, or
+   *         "Sum Over Times" for sum_k g(x(t_k),p,t_k).
+   *    <li> "Response Time List" (default: "") Comma-separated list of the
+   *         times t_k of the "Sum Over Times" response.
+   *    <li> "Algebraic Equations Mask" (default: null) A
+   *         Teuchos::RCP<const Thyra::VectorBase<Scalar> > in the residual
+   *         space, equal to 1 on the algebraic equations of an index-1 DAE
+   *         and 0 elsewhere (see the class description and DAEStructure).
+   *    <li> "Algebraic Jump Solver" (sublist) Options of the solver of the
+   *         adjoint jumps of an index-1 DAE (see AdjointDAEJumpSolver).
    * </ul>
    *
    * To support use-cases with explicitly computed adjoint operators, the
@@ -120,7 +186,13 @@ class IntegratorAdjointSensitivity : virtual public Tempus::Integrator<Scalar> {
       const Teuchos::RCP<SolutionHistory<Scalar>> &solution_history,
       const int p_index, const int g_index, const bool g_depends_on_p,
       const bool f_depends_on_p, const bool ic_depends_on_p,
-      const bool mass_matrix_is_identity);
+      const bool mass_matrix_is_identity,
+      const AdjointResponseType response_type   = AdjointResponseType::FinalTime,
+      const std::vector<Scalar> &response_times = std::vector<Scalar>(),
+      const Teuchos::RCP<const DAEStructure<Scalar>> &dae_structure =
+          Teuchos::null,
+      const Teuchos::RCP<const Teuchos::ParameterList> &dae_jump_solver_pl =
+          Teuchos::null);
 
   /** \brief Constructor that requires a subsequent setParameterList,
    * setStepper, and initialize calls. */
@@ -214,6 +286,12 @@ class IntegratorAdjointSensitivity : virtual public Tempus::Integrator<Scalar> {
     return adjoint_model_;
   };
 
+  /// Structure of the index-1 DAE (null for an ODE)
+  Teuchos::RCP<const DAEStructure<Scalar>> getDAEStructure() const
+  {
+    return dae_structure_;
+  }
+
   /// \name Overridden from Teuchos::Describable
   //@{
   std::string description() const override;
@@ -236,6 +314,28 @@ class IntegratorAdjointSensitivity : virtual public Tempus::Integrator<Scalar> {
       const Teuchos::RCP<const SolutionHistory<Scalar>>
           &adjoint_solution_history);
 
+  //! Solver for df/dx_dot^T, computed with the adjoint model at inArgs
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar>>
+  createAdjointMassMatrixSolver(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) const;
+
+  //! Forward state at time t, which must be the time of a stored time step
+  Teuchos::RCP<const SolutionState<Scalar>> findForwardState(
+      const SolutionHistory<Scalar> &state_solution_history, const Scalar t,
+      const Scalar tol) const;
+
+  //! Integrate the adjoint problem from tau_begin to tau_end, starting from
+  //! adjoint_state, which is overwritten with the adjoint state at tau_end.
+  //! index is the time step index at tau_begin (negative for the initial
+  //! index of the time step control), and it is overwritten with the index
+  //! at tau_end.
+  bool integrateAdjoint(const Scalar tau_begin, const Scalar tau_end,
+                        Thyra::VectorBase<Scalar> &adjoint_state, int &index);
+
+  //! Append the states of the adjoint integrator to adjoint_solution_history_
+  //! (used when the adjoint integration is restarted at response times).
+  void appendAdjointSolutionHistory(const Scalar tol);
+
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model_;
   Teuchos::RCP<IntegratorBasic<Scalar>> state_integrator_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> adjoint_model_;
@@ -248,9 +348,21 @@ class IntegratorAdjointSensitivity : virtual public Tempus::Integrator<Scalar> {
   bool f_depends_on_p_;
   bool ic_depends_on_p_;
   bool mass_matrix_is_identity_;
+  AdjointResponseType response_type_;
+  std::vector<Scalar> response_times_;
+  //! Adjoint solution history combining the segments of the adjoint
+  //! integration for the "Sum Over Times" response (null otherwise)
+  Teuchos::RCP<SolutionHistory<Scalar>> adjoint_solution_history_;
   Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> dxdp_init_;
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> dgdp_;
   SensitivityStepMode stepMode_;
+  //! Structure of the index-1 DAE (null for an ODE)
+  Teuchos::RCP<const DAEStructure<Scalar>> dae_structure_;
+  //! Solver of the adjoint jumps of the index-1 DAE (null for an ODE)
+  Teuchos::RCP<const AdjointDAEJumpSolver<Scalar>> dae_jump_solver_;
+  //! df/dp work objects for the algebraic contributions of the jumps
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar>> dfdp_op_;
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> dfdp_mv_;
 };
 
 /// Nonmember constructor
