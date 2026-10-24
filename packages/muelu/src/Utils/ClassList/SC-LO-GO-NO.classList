@@ -4,7 +4,6 @@ AggregateQualityEstimateFactory
 AmalgamationFactory
 Amesos2Smoother
 AMGXOperator - #if defined(HAVE_MUELU_AMGX)
-AlgebraicPermutationStrategy
 BelosSmoother - #if defined(HAVE_MUELU_BELOS)
 BlackBoxPFactory
 BlockedCoarseMapFactory
@@ -59,7 +58,6 @@ InitialBlockNumberFactory
 IntrepidPCoarsenFactory - #if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 InverseApproximationFactory
 LineDetectionFactory
-LocalPermutationStrategy
 LowPrecisionFactory
 MapTransferFactory
 MatrixAnalysisFactory
@@ -74,8 +72,6 @@ ParameterListInterpreter
 PatternFactory
 PerfUtils
 PerfModels
-PermutationFactory
-PermutingSmoother
 PgPFactory
 PreDropFunctionBaseClass
 PreDropFunctionConstVal

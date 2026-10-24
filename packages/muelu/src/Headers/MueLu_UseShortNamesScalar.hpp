@@ -29,9 +29,6 @@ using Amesos2Smoother [[maybe_unused]] = MueLu::Amesos2Smoother<Scalar, LocalOrd
 #ifdef MUELU_AMGXOPERATOR_SHORT
 using AMGXOperator [[maybe_unused]] = MueLu::AMGXOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
-using AlgebraicPermutationStrategy [[maybe_unused]] = MueLu::AlgebraicPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_BELOSSMOOTHER_SHORT
 using BelosSmoother [[maybe_unused]] = MueLu::BelosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -194,9 +191,6 @@ using InverseApproximationFactory [[maybe_unused]] = MueLu::InverseApproximation
 #ifdef MUELU_LINEDETECTIONFACTORY_SHORT
 using LineDetectionFactory [[maybe_unused]] = MueLu::LineDetectionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
-using LocalPermutationStrategy [[maybe_unused]] = MueLu::LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_LOWPRECISIONFACTORY_SHORT
 using LowPrecisionFactory [[maybe_unused]] = MueLu::LowPrecisionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -238,12 +232,6 @@ using PerfUtils [[maybe_unused]] = MueLu::PerfUtils<Scalar, LocalOrdinal, Global
 #endif
 #ifdef MUELU_PERFMODELS_SHORT
 using PerfModels [[maybe_unused]] = MueLu::PerfModels<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_PERMUTATIONFACTORY_SHORT
-using PermutationFactory [[maybe_unused]] = MueLu::PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_PERMUTINGSMOOTHER_SHORT
-using PermutingSmoother [[maybe_unused]] = MueLu::PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_PGPFACTORY_SHORT
 using PgPFactory [[maybe_unused]] = MueLu::PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
