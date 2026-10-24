@@ -335,6 +335,23 @@ IF (Piro_ENABLE_Tempus)
     STANDARD_PASS_OUTPUT
   )
 
+  # The mass-spring-damper model has locally replicated maps: one process
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ThyraProductME_Tempus_FinalObjective_UnitTests
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    EXCLUDE_IF_NOT_TRUE Stratimikos_ENABLE_Belos
+    SOURCES
+    Piro_ThyraProductME_Tempus_FinalObjective_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    MassSpringDamperModel.cpp
+    MassSpringDamperModel.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TempusSolverForwardOnly_UnitTests_Tpetra
     SOURCES

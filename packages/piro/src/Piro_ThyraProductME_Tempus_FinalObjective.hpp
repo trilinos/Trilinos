@@ -30,6 +30,7 @@
 
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_DefaultNominalBoundsOverrideModelEvaluator.hpp"
+#include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 #include "ROL_Objective.hpp"
@@ -37,6 +38,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_ThyraVector.hpp"
 
+#include "Piro_ProductModelEval.hpp"
 #include "Piro_TempusIntegrator.hpp"
 #include "Piro_TempusSolver.hpp"
 #include "Piro_ROL_ObserverBase.hpp"
@@ -228,6 +230,12 @@ private:
   //! sensitivities neglect dg/dx_dot.
   void checkFinalTimeDgDxDot(const Thyra::ModelEvaluatorBase::InArgs<Real>& inArgs);
 
+  //! InArgs of initialStateModel_ for the consistent initial state function: its nominal
+  //! values, with the parameters p (unpacked if the objective's model is a
+  //! Piro::ProductModelEvaluator around it) and the initial time
+  Thyra::ModelEvaluatorBase::InArgs<Real>
+  initialStateInArgs(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p) const;
+
   const Teuchos::RCP<Thyra::ModelEvaluator<Real>> thyra_model_;
   const Teuchos::RCP<Thyra::ModelEvaluator<Real>> thyra_adjoint_model_;
   Teuchos::RCP<Piro::TempusIntegrator<Real>> piroTempusIntegrator_;
@@ -241,6 +249,18 @@ private:
   Teuchos::RCP<Teuchos::ParameterList> tempus_params_;
   Real time_initial_;
   Real time_final_;
+
+  //! Makes the initial state consistent with the parameters (see
+  //! Piro::TempusSolver::setConsistentInitialStateFunction); empty if not set
+  typename Piro::TempusSolver<Real>::ConsistentInitialStateFunction consistentInitialState_;
+
+  //! Model given to consistentInitialState_: the model of the Piro::TempusSolver, also
+  //! when the objective's model is a Piro::ProductModelEvaluator around it, so that the
+  //! function always gets the same model and parameter layout
+  Teuchos::RCP<Thyra::ModelEvaluator<Real>> initialStateModel_;
+  //! Indices of the parameters of initialStateModel_ in the product parameter of the
+  //! objective's model (empty if the objective's model is initialStateModel_)
+  std::vector<int> initialStatePIndices_;
 
   Tempus::AdjointResponseType responseType_;
   std::vector<Real> responseTimes_;
@@ -283,6 +303,20 @@ ThyraProductME_TempusFinalObjective(
   // Integrate to the final time of the Tempus time step control used by the Piro::TempusSolver.
   time_initial_ = piroTempusSolver->getStartTime();
   time_final_ = piroTempusSolver->getFinalTime();
+
+  // Each integration starts from the nominal initial state, made consistent with the
+  // parameters if the Piro::TempusSolver has a function for it. The function gets the model
+  // of the Piro::TempusSolver, with its parameter layout: Piro::PerformROLTransientAnalysis
+  // gives the objective a Piro::ProductModelEvaluator around it, whose parameter 0 is the
+  // product of the optimization parameters.
+  consistentInitialState_ = piroTempusSolver->getConsistentInitialStateFunction();
+  initialStateModel_ = piroTempusSolver->getSubModel();
+  const Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> productModel =
+    Teuchos::rcp_dynamic_cast<const Piro::ProductModelEvaluator<Real>>(thyra_model_);
+  if (Teuchos::nonnull(productModel) && productModel->getUnderlyingModel().get() == initialStateModel_.get())
+    initialStatePIndices_ = productModel->get_p_indices();
+  else if (thyra_model_.get() != initialStateModel_.get())
+    initialStateModel_ = thyra_model_;  // another model: the function gets the objective's model
 
   // The adjoint integrator differentiates the response and parameter selected in the
   // Tempus "Sensitivities" sublist. Make sure they are the objective response and the
@@ -434,6 +468,16 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
   // Override the nominal parameters of the model with p
   MEB::InArgs<Real> inArgs = thyra_model_->getNominalValues();
   inArgs.set_p(0, p);
+  // Initial state consistent with p (e.g., the algebraic components of a DAE: the
+  // continuous adjoint evaluates the model at the initial state in its last step)
+  if (consistentInitialState_) {
+    TEUCHOS_TEST_FOR_EXCEPTION(inArgs.get_x().is_null(), std::logic_error,
+      std::endl << "Piro::ThyraProductME_TempusFinalObjective: the model has no nominal initial state x "
+      "to make consistent." << std::endl);
+    const RCP<Thyra::VectorBase<Real>> x0 = inArgs.get_x()->clone_v();
+    consistentInitialState_(initialStateModel_, initialStateInArgs(p), *x0);
+    inArgs.set_x(x0);
+  }
   const RCP<const MEB::InArgs<Real>> nominalValues = rcp(new MEB::InArgs<Real>(inArgs));
   RCP<DNBOME> wrapped_model = rcp(new DNBOME(thyra_model_, nominalValues));
   // If the adjoint model is null, Tempus uses an implicit adjoint model.
@@ -533,6 +577,30 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
   }
 
   return integratorStatus;
+}
+
+template <typename Real>
+Thyra::ModelEvaluatorBase::InArgs<Real>
+ThyraProductME_TempusFinalObjective<Real>::
+initialStateInArgs(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p) const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgs<Real> icInArgs = initialStateModel_->getNominalValues();
+  if (initialStatePIndices_.empty()) {
+    icInArgs.set_p(0, p);
+  }
+  else {
+    const Teuchos::RCP<const Thyra::ProductVectorBase<Real>> prod_p =
+      Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(p);
+    TEUCHOS_TEST_FOR_EXCEPTION(prod_p.is_null() ||
+      prod_p->productSpace()->numBlocks() != static_cast<int>(initialStatePIndices_.size()), std::logic_error,
+      std::endl << "Piro::ThyraProductME_TempusFinalObjective: the parameters of the product model "
+      "evaluator are not a product vector with one block per parameter index." << std::endl);
+    for (std::size_t i = 0; i < initialStatePIndices_.size(); ++i)
+      icInArgs.set_p(initialStatePIndices_[i], prod_p->getVectorBlock(i));
+  }
+  if (icInArgs.supports(MEB::IN_ARG_t)) icInArgs.set_t(time_initial_);
+  return icInArgs;
 }
 
 template <typename Real>
