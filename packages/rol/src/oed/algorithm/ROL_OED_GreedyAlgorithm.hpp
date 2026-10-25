@@ -229,6 +229,109 @@ private:
 };
 
 template<typename Real>
+struct GreedyObjectiveE : public GreedyObjective<Real> {
+public:
+  GreedyObjectiveE(const Ptr<MomentOperator<Real>>& cov_, bool useDeletion_, unsigned maxit=0u, Real tol=Real(-1))
+    : GreedyObjective<Real>(cov_,useDeletion_),
+      vmax_(cov_->getFactors()->createParameterVector(false)),
+      Mv_(cov_->getFactors()->createParameterVector(true)),
+      vinc_(cov_->getFactors()->createParameterVector(false)),
+      a_(cov_->getFactors()->createParameterVector(true)),
+      lamMax_(0),
+      maxit_(maxit>0u ? maxit : 1000u*cov_->getFactors()->numFactors()),
+      tol_(tol>static_cast<Real>(0) ? tol : 1e-1*std::sqrt(ROL_EPSILON<Real>())) {
+    X_.resize(nobs);
+    Y_.resize(nobs);
+    XY_.reshape(nobs,nobs);
+    SXa_.resize(nobs);
+    for (unsigned i=0; i<nobs; ++i) {
+      X_[i] = GreedyObjective<Real>::factors->createParameterVector(true);
+      Y_[i] = GreedyObjective<Real>::factors->createParameterVector(false);
+    }
+    vmax_->randomize(static_cast<Real>(-1),static_cast<Real>(1));
+    vmax_->scale(static_cast<Real>(1)/vmax_->norm());
+  }
+  void update(const Vector<Real>& x, int iter=-1) {
+    GreedyObjective<Real>::update(x,iter);
+    lamMax_ = powerit(*vmax_,x);
+    vinc_->set(*vmax_);
+  }
+  Real value(const Vector<Real>& x) const override final {
+    return lamMax_;
+  }
+  Real computeIncrement(const Vector<Real>& x, unsigned ind) const override final {
+    const Real one(1), scal(GreedyObjective<Real>::useDeletion ? -one : one);
+    Real lamMax0 = powerit_inc(*vinc_,x,ind);
+    return scal*(lamMax_-lamMax0);
+    //return scal*(one-lamMax0/lamMax_);
+  }
+  std::string getName() const override final { return "E-Optimality"; }
+private:
+  Real powerit(Vector<Real>& v, const Vector<Real>& x) const {
+    const Real one(1);
+    Real err(static_cast<Real>(10)*tol_), lamMax(0), lamMax0(0);
+    unsigned it(0);
+    while (err > tol_ && it < maxit_) {
+      cov->applyInverse(*Mv_,v,x);
+      lamMax = Mv_->apply(v);
+      v.set(*Mv_);
+      v.scale(one/Mv_->norm());
+      if (it > 0) err = std::abs(lamMax-lamMax0)/std::abs(lamMax);
+      lamMax0 = lamMax;
+      it++;
+    }
+    return lamMax;
+  }
+  Real powerit_inc(Vector<Real>& v, const Vector<Real>& x, unsigned ind) const {
+    const Real one(1), scal(GreedyObjective<Real>::useDeletion ? -one : one);
+    Real err(static_cast<Real>(10)*tol_), lamMax(0), lamMax0(0);
+    unsigned it(0);
+    while (err > tol_ && it < maxit_) {
+      // Begin apply inverse via Sherman-Morrison-Woodbury
+      cov->applyInverse(*a_,v,x);
+      for (unsigned i=0u; i<nobs; ++i) {
+        factors->applyAdjoint(*X_[i],*obs[i],ind); // Can Compute X offline
+        cov->applyInverse(*Y_[i],*X_[i],x);
+	SXa_(i) = X_[i]->apply(*a_);
+        for (unsigned j=0u; j<=i; ++j)
+          XY_(i,j) = scal*Y_[i]->apply(*X_[j]);
+        XY_(i,i) += one;
+      }
+      int info;
+      lapack->POTRF('L',nobs,XY_.values(),nobs,&info);
+      lapack->POTRS('L',nobs,1,XY_.values(),nobs,SXa_.values(),nobs,&info);
+      Mv_->set(*a_);
+      for (unsigned i=0u; i<nobs; ++i)
+        Mv_->axpy(-scal*SXa_(i),*Y_[i]);
+      // End apply inverse via Sherman-Morrison-Woodbury
+      lamMax = Mv_->apply(v);
+      v.set(*Mv_);
+      v.scale(static_cast<Real>(1)/Mv_->norm());
+      if (it > 0) err = std::abs(lamMax-lamMax0)/std::abs(lamMax);
+      lamMax0 = lamMax;
+      it++;
+    }
+    return lamMax;
+  }
+
+  const Ptr<Vector<Real>> vmax_;
+  mutable Ptr<Vector<Real>> Mv_, vinc_, a_;
+  mutable std::vector<Ptr<Vector<Real>>> X_, Y_;
+  mutable LA::Matrix<Real> XY_;
+  mutable LA::Vector<Real> SXa_;
+  Real lamMax_;
+  const unsigned maxit_;
+  const Real tol_;
+
+  using GreedyObjective<Real>::lapack;
+  using GreedyObjective<Real>::blas;
+  using GreedyObjective<Real>::nobs;
+  using GreedyObjective<Real>::obs;
+  using GreedyObjective<Real>::cov;
+  using GreedyObjective<Real>::factors;
+};
+
+template<typename Real>
 struct GreedyObjectiveI : public GreedyObjective<Real> {
 public:
   GreedyObjectiveI(const Ptr<MomentOperator<Real>>& cov_,
@@ -355,10 +458,16 @@ Ptr<Vector<Real>> GreedyAlgorithm(const Ptr<GreedyObjective<Real>>& obj,
   // Print output to stream
   auto type = obj->getName();
   os << std::endl;
-  if (useDeletion)
+  if (useDeletion) {
     os << "Greedy Deletion Algorithm for Binary " << type << std::endl;
-  else
+    os << "  >> Warning: Removing too many sensors may result in unexpected" << std::endl
+       << "              behavior due to a singular covariance matrix" << std::endl;
+  }
+  else {
     os << "Greedy Addition Algorithm for Binary " << type << std::endl;
+    os << "  >> Warning: Starting with zero sensors may result in unexpected" << std::endl
+       << "              behavior due to a singular covariance matrix" << std::endl;
+  }
   os << "  ";
   os << std::setw(6)  << std::left << "iter";
   os << std::setw(15) << std::left << "value";
@@ -397,6 +506,7 @@ Ptr<Vector<Real>> GreedyAlgorithm(const Ptr<GreedyObjective<Real>>& obj,
         os << std::setw(10) << std::left << rind;
     }
     os << std::endl;
+    if (!useDeletion && cost >= budget) break;
 
     // Compute effectivity index
     vi = scale*ROL_NINF<Real>();
@@ -622,6 +732,45 @@ Ptr<Vector<Real>> GreedyAlgorithmD(const Ptr<Objective<Real>>& model,
   cov->generateFactors(model,theta,sampler);
   bool useDeletion = list.sublist("OED").sublist("Greedy").get("Use Deletion",true);
   auto obj = makePtr<GreedyObjectiveD<Real>>(cov,useDeletion);
+  return GreedyAlgorithm<Real>(obj,cvec,budget,list,os);
+}
+
+// Specialized Greedy Algorithm for E-Optimality
+template<typename Real>
+Ptr<Vector<Real>> GreedyAlgorithmE(const Ptr<Constraint<Real>>& model,
+                                   const Ptr<Vector<Real>>& obs,
+                                   const Ptr<SampleGenerator<Real>>& sampler,
+                                   const Ptr<Vector<Real>>& theta,
+                                   const Ptr<MomentOperator<Real>>& cov,
+                                   const Ptr<Vector<Real>>& cvec,
+                                         Real budget,
+                                         ParameterList& list,
+                                         std::ostream& os=std::cout) {
+  list.sublist("OED").set("Optimality Type","E");
+  cov->generateFactors(model,theta,obs,sampler);
+  bool useDeletion = list.sublist("OED").sublist("Greedy").get("Use Deletion",true);
+  int maxit = list.sublist("OED").sublist("Greedy").sublist("E-Optimality").get("Power Iteration Limit",0);
+  Real tol = list.sublist("OED").sublist("Greedy").sublist("E-Optimality").get("Power Iteration Tolerance",-1.0);
+  auto obj = makePtr<GreedyObjectiveE<Real>>(cov,useDeletion,maxit,tol);
+  return GreedyAlgorithm<Real>(obj,cvec,budget,list,os);
+}
+
+// Specialized Greedy Algorithm for E-Optimality
+template<typename Real>
+Ptr<Vector<Real>> GreedyAlgorithmE(const Ptr<Objective<Real>>& model,
+                                   const Ptr<SampleGenerator<Real>>& sampler,
+                                   const Ptr<Vector<Real>>& theta,
+                                   const Ptr<MomentOperator<Real>>& cov,
+                                   const Ptr<Vector<Real>>& cvec,
+                                         Real budget,
+                                         ParameterList& list,
+                                         std::ostream& os=std::cout) {
+  list.sublist("OED").set("Optimality Type","E");
+  cov->generateFactors(model,theta,sampler);
+  bool useDeletion = list.sublist("OED").sublist("Greedy").get("Use Deletion",true);
+  int maxit = list.sublist("OED").sublist("Greedy").sublist("E-Optimality").get("Power Iteration Limit",0);
+  Real tol = list.sublist("OED").sublist("Greedy").sublist("E-Optimality").get("Power Iteration Tolerance",-1.0);
+  auto obj = makePtr<GreedyObjectiveE<Real>>(cov,useDeletion,maxit,tol);
   return GreedyAlgorithm<Real>(obj,cvec,budget,list,os);
 }
 

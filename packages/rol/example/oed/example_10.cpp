@@ -19,7 +19,6 @@
 
 #include "ROL_OED_Factory.hpp"
 #include "ROL_OED_StdMomentOperator.hpp"
-#include "ROL_OED_GreedyAlgorithm.hpp"
 #include "ROL_OED_PrintDesign.hpp"
 
 #include "ROL_GlobalMPISession.hpp"
