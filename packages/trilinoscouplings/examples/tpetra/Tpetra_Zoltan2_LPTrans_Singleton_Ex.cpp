@@ -101,11 +101,15 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
 
   Rebalance_t RebalanceTransform( paramListForZoltan2PartitioningProblem );
   RCP<Problem_t> transformedLP = RebalanceTransform(postReindexProblem);
-  RebalanceTransform.fwd();
 
-  RCP<Matrix_t> rebalancedMatrix = rcp<Matrix_t>( dynamic_cast<Matrix_t *>(transformedLP->getMatrix().get()), false );
+  RCP<Matrix_t> rebalancedMatrix = Teuchos::rcp_dynamic_cast<Matrix_t>( transformedLP->getMatrix() );
   RCP<MultiV_t> rebalancedLhs    = transformedLP->getLHS();
   RCP<MultiV_t> rebalancedRhs    = transformedLP->getRHS();
+
+  // Set matrix to zero to make sure fwd() is moving data from original linear problem to rebalanced linear problem
+  rebalancedMatrix->setAllToScalar( Teuchos::ScalarTraits<Scalar_t>::zero() );
+
+  RebalanceTransform.fwd();
 
   // ****************************************************************
   // Step 6/7: Copy solution and compute residual to reduced system and reverse transform
