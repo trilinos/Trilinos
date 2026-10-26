@@ -330,6 +330,11 @@ bool TestCaseBase<Scalar_t, LocalId_t, GlobalId_t, Node_t>::baseCheckTransformed
   // *****************************************************************
   Matrix_t *tmpPtr1 = dynamic_cast<Matrix_t *>(m_linearProblem->getMatrix().get());
   Matrix_t *tmpPtr2 = dynamic_cast<Matrix_t *>(transformedProblem->getMatrix().get());
+  // Check that rangeMap == rowMap == domainMap.
+  result = tmpPtr2->getRangeMap()->isSameAs(*tmpPtr2->getDomainMap());
+  if (result == false) return result;
+  result = tmpPtr2->getRangeMap()->isSameAs(*tmpPtr2->getRowMap());
+  if (result == false) return result;
   if (m_mapsShallChange) {
     result = this->baseCheckMapsAreDifferent(*tmpPtr1, *tmpPtr2);
     if (result == false) return result;

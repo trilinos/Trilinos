@@ -558,8 +558,8 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     gblInds_wdv = originalGraph.gblInds_wdv;
   }
 
-  setDomainRangeMaps(domainMap.is_null() ? originalGraph.getDomainMap() : domainMap,
-                     rangeMap.is_null() ? originalGraph.getRangeMap() : rangeMap);
+  setDomainRangeMaps(domainMap.is_null() ? rowMap : domainMap,
+                     rangeMap.is_null() ? rowMap : rangeMap);
 
   checkInternalState();
 }
