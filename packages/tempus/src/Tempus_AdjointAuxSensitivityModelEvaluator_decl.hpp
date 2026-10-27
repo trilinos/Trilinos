@@ -18,6 +18,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
+#include "Tempus_AdjointSensitivityUtils.hpp"
 
 namespace Tempus {
 
@@ -53,6 +54,18 @@ namespace Tempus {
  *        F(y) = df/dxdot^T*y_dot + df/dx^T*y = 0.
  * Moving beyond this assumption will require modifications to the steppers
  * in how they generate time-derivative terms.
+ *
+ * For a time-integrated response J = int_{0}^T g(x(t),p,t) dt ("Response Type"
+ * = "Time Integral"), the response enters the adjoint equations as a source
+ * term.  In the reversed time tau the equations become
+ *        F(y,z) = [ df/dx_dot^T*y_dot + df/dx^T*y - dg/dx^T ] = 0
+ *                 [ dz/dtau - df/dp^T*y + dg/dp^T          ]
+ * (explicit form: y_dot = -df/dx^T*y + dg/dx^T, z_dot = df/dp^T*y - dg/dp^T),
+ * with y = 0 and z = 0 at t = T, and the sensitivity of J is
+ *        -z(0) + dx/dp(0)^T*df/dx_dot(0)^T*y(0).
+ * The response must not depend on x_dot.  For "Final Time" and
+ * "Sum Over Times" responses the adjoint equations are homogeneous; the
+ * response terms are added by IntegratorAdjointSensitivity.
  */
 template <typename Scalar>
 class AdjointAuxSensitivityModelEvaluator
@@ -78,6 +91,18 @@ class AdjointAuxSensitivityModelEvaluator
    *         currently required to be true.
    *    <li> "Mass Matrix Is Identity" (default: false) Whether the mass matrix
    *         is the identity matrix, in which some computations can be skipped.
+   *    <li> "Response Type" (default: "Final Time") "Final Time",
+   *         "Time Integral" or "Sum Over Times" (see
+   *         IntegratorAdjointSensitivity).  Only "Time Integral" changes the
+   *         adjoint equations.
+   *    <li> "Response Time List" (default: "") Times of the "Sum Over Times"
+   *         response (not used by this model evaluator).
+   *    <li> "Response Depends on Parameters" (default: true) Whether the
+   *         response depends on the parameters.  If false, dg/dp is not
+   *         evaluated for a "Time Integral" response.
+   *    <li> "Residual Depends on Parameters" (default: true) Whether the
+   *         residual depends on the parameters.  If false, df/dp is not
+   *         evaluated and the auxiliary integral does not include it.
    * </ul>
    */
   AdjointAuxSensitivityModelEvaluator(
@@ -141,6 +166,10 @@ class AdjointAuxSensitivityModelEvaluator
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
 
+  //! InArgs for evaluating the response derivatives at the forward state
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> responseInArgs(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& me_inArgs) const;
+
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
@@ -157,6 +186,9 @@ class AdjointAuxSensitivityModelEvaluator
   Scalar t_final_;
   bool mass_matrix_is_constant_;
   bool mass_matrix_is_identity_;
+  AdjointResponseType response_type_;
+  bool g_depends_on_p_;
+  bool f_depends_on_p_;
   int p_index_;
   int g_index_;
   int num_adjoint_;
@@ -166,6 +198,9 @@ class AdjointAuxSensitivityModelEvaluator
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdot_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdp_op_;
   mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dfdp_mv_;
+  mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dgdx_mv_;
+  mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dgdp_mv_;
+  mutable bool dgdx_dot_checked_;
   mutable Teuchos::RCP<Tempus::SolutionState<Scalar> > forward_state_;
   mutable Scalar t_interp_;
 };

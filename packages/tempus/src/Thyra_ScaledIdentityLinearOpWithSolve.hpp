@@ -10,18 +10,31 @@
 #ifndef Thyra_ScaledIdentityLinearOpWithSolve_hpp
 #define Thyra_ScaledIdentityLinearOpWithSolve_hpp
 
+#include <string>
+
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_RowStatLinearOpBase.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 namespace Thyra {
 
 /**
- * \brief Implicit concrete <tt>LinearOpBase</tt> subclass that
- * takes a flattended out multi-vector and performs a multi-RHS apply with it.
+ * \brief Scaled identity operator s*I, with its solve.
+ *
+ * The row statistics (absolute row and column sums |s|) and the left and
+ * right scaling by uniform vectors (all entries equal to d, s <- d*s) are
+ * supported, so that the operator can be a block of an operator scaled by a
+ * nonlinear solver, e.g., NOX with "Function Scaling" = "Row Sum" (the
+ * auxiliary block of AdjointAuxSensitivityModelEvaluator).  A scaling by a
+ * nonuniform vector throws, since the result is not a scaled identity.
  */
 template <class Scalar>
 class ScaledIdentityLinearOpWithSolve
-  : virtual public LinearOpWithSolveBase<Scalar> {
+  : virtual public LinearOpWithSolveBase<Scalar>,
+    virtual public RowStatLinearOpBase<Scalar>,
+    virtual public ScaledLinearOpBase<Scalar> {
  public:
   /** @name Constructors/initializers/accessors */
   //@{
@@ -114,6 +127,58 @@ class ScaledIdentityLinearOpWithSolve
   }
   //@}
 
+  /** @name Overridden from RowStatLinearOpBase */
+  //@{
+
+  /** \brief The absolute row and column sums are |s|; their inverses
+   *  require s != 0. */
+  bool rowStatIsSupportedImpl(
+      const RowStatLinearOpBaseUtils::ERowStat rowStat) const
+  {
+    switch (rowStat) {
+      case RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM:
+      case RowStatLinearOpBaseUtils::ROW_STAT_COL_SUM: return true;
+      case RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM:
+      case RowStatLinearOpBaseUtils::ROW_STAT_INV_COL_SUM:
+        return s_ != Teuchos::ScalarTraits<Scalar>::zero();
+    }
+    return false;
+  }
+
+  void getRowStatImpl(const RowStatLinearOpBaseUtils::ERowStat rowStat,
+                      const Ptr<VectorBase<Scalar> >& rowStatVec) const
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    TEUCHOS_ASSERT(this->rowStatIsSupported(rowStat));
+    const Scalar abs_s = ST::magnitude(s_);
+    if (rowStat == RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM ||
+        rowStat == RowStatLinearOpBaseUtils::ROW_STAT_INV_COL_SUM)
+      put_scalar(ST::one() / abs_s, rowStatVec);
+    else
+      put_scalar(abs_s, rowStatVec);
+  }
+  //@}
+
+  /** @name Overridden from ScaledLinearOpBase */
+  //@{
+
+  bool supportsScaleLeftImpl() const { return true; }
+
+  bool supportsScaleRightImpl() const { return true; }
+
+  /** \brief diag(d) * s*I = (d*s) I, for a uniform vector d. */
+  void scaleLeftImpl(const VectorBase<Scalar>& row_scaling)
+  {
+    s_ *= uniformValue(row_scaling, "scaleLeft");
+  }
+
+  /** \brief s*I * diag(d) = (d*s) I, for a uniform vector d. */
+  void scaleRightImpl(const VectorBase<Scalar>& col_scaling)
+  {
+    s_ *= uniformValue(col_scaling, "scaleRight");
+  }
+  //@}
+
  private:
   // //////////////////////////////
   // Private data members
@@ -123,6 +188,26 @@ class ScaledIdentityLinearOpWithSolve
 
   // //////////////////////////////
   // Private member functions
+
+  /// The value d of the entries of a uniform vector (throws otherwise)
+  static Scalar uniformValue(const VectorBase<Scalar>& v,
+                             const std::string& caller)
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    typedef typename ST::magnitudeType Mag;
+    if (v.space()->dim() == 0) return ST::one();
+    const Scalar d                = get_ele(v, 0);
+    RCP<VectorBase<Scalar> > diff = v.clone_v();
+    add_scalar(-d, diff.ptr());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        norm_inf(*diff) > Mag(100) * ST::eps() * ST::magnitude(d),
+        std::logic_error,
+        "Error - Thyra::ScaledIdentityLinearOpWithSolve::"
+            << caller
+            << ": only a scaling by a uniform vector (all entries equal) "
+               "keeps the operator a scaled identity.\n");
+    return d;
+  }
 
   static void validateInitialize(
       const RCP<const VectorSpaceBase<Scalar> >& space)

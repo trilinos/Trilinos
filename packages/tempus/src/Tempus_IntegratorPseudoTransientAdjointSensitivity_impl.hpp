@@ -15,6 +15,8 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_ImplicitAdjointModelEvaluator.hpp"
 
+#include "Tempus_StepperImplicit_decl.hpp"
+
 namespace Tempus {
 
 template <class Scalar>
@@ -32,7 +34,8 @@ IntegratorPseudoTransientAdjointSensitivity<Scalar>::
   state_integrator_       = createIntegratorBasic<Scalar>(inputPL, model_);
   sens_model_             = createSensitivityModel(model_, adjoint_residual_model_,
                                                    adjoint_solve_model_, inputPL);
-  sens_integrator_        = createIntegratorBasic<Scalar>(inputPL, sens_model_);
+  sens_integrator_        = createIntegratorBasic<Scalar>(adjointParameters(inputPL),
+                                                   sens_model_);
   stepMode_               = SensitivityStepMode::Forward;
   do_forward_integration_ = true;
   do_adjoint_integration_ = true;
@@ -467,8 +470,24 @@ void IntegratorPseudoTransientAdjointSensitivity<Scalar>::setParameterList(
 
   model = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>>(
       sens_integrator_->getStepper()->getModel());
-  auto tmp_sens_integrator = createIntegratorBasic<Scalar>(inputPL, model);
+  auto tmp_sens_integrator =
+      createIntegratorBasic<Scalar>(adjointParameters(inputPL), model);
   sens_integrator_->copy(tmp_sens_integrator);
+}
+
+template <class Scalar>
+Teuchos::RCP<Teuchos::ParameterList>
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::adjointParameters(
+    const Teuchos::RCP<Teuchos::ParameterList>& inputPL)
+{
+  // The adjoint integrator uses a copy of the parameters, without the objects
+  // of the forward problem that the nonlinear solver of the forward stepper
+  // stores in them (e.g., for NOX row sum scaling), which do not apply to the
+  // adjoint problem (see removeIntegratorSolverObjects).
+  if (inputPL == Teuchos::null) return inputPL;
+  auto adjointPL = Teuchos::rcp(new Teuchos::ParameterList(*inputPL));
+  removeIntegratorSolverObjects(*adjointPL);
+  return adjointPL;
 }
 
 template <class Scalar>

@@ -21,6 +21,7 @@
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
+#include "../TestUtils/Tempus_AdjointResponseTestUtils.hpp"
 
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 
@@ -200,6 +201,58 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos_ASA)
     }
     ftmp.close();
   }
+}
+
+// ************************************************************
+// ************************************************************
+// Adjoint sensitivities of the time-integrated response
+// J = int_{t0}^{T} x(t) dt, with BDF2.
+TEUCHOS_UNIT_TEST(BDF2, SinCos_ASA_TimeIntegral)
+{
+  std::vector<double> StepSize, ErrorNorm;
+  double order = 0.0;
+  computeSinCosAdjointResponseErrors(
+      "Tempus_BDF2_SinCos_SA.xml",
+      [](ParameterList& pl) {
+        ParameterList& interp_pl = pl.sublist("Default Integrator")
+                                       .sublist("Solution History")
+                                       .sublist("Interpolator");
+        interp_pl.set("Interpolator Type", "Lagrange");
+        interp_pl.set("Order", 1);
+      },
+      "Time Integral", std::vector<double>(), 5, 0.025, false, StepSize, ErrorNorm,
+      order, out, success);
+
+  const double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
+  out << "  Expected order: " << order << "  Observed order: " << slope << std::endl;
+  TEST_FLOATING_EQUALITY(slope, order, 0.04);
+}
+
+// ************************************************************
+// ************************************************************
+// Adjoint sensitivities of the response J = sum_k x(t_k), including the
+// initial and final times, with BDF2.  The adjoint integration is restarted
+// at each time t_k (with the start up stepper of BDF2), so smaller time steps
+// are needed to reach the asymptotic order.
+TEUCHOS_UNIT_TEST(BDF2, SinCos_ASA_SumOverTimes)
+{
+  std::vector<double> StepSize, ErrorNorm;
+  double order = 0.0;
+  computeSinCosAdjointResponseErrors(
+      "Tempus_BDF2_SinCos_SA.xml",
+      [](ParameterList& pl) {
+        ParameterList& interp_pl = pl.sublist("Default Integrator")
+                                       .sublist("Solution History")
+                                       .sublist("Interpolator");
+        interp_pl.set("Interpolator Type", "Lagrange");
+        interp_pl.set("Order", 1);
+      },
+      "Sum Over Times", {0.0, 0.3, 0.6, 1.0}, 5, 0.025, false, StepSize, ErrorNorm,
+      order, out, success);
+
+  const double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
+  out << "  Expected order: " << order << "  Observed order: " << slope << std::endl;
+  TEST_FLOATING_EQUALITY(slope, order, 0.04);
 }
 
 }  // namespace Tempus_Test
