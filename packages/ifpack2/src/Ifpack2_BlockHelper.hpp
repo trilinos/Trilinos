@@ -32,34 +32,73 @@ template <typename ViewType>
 using Unmanaged = Kokkos::View<typename ViewType::data_type,
                                typename ViewType::array_layout,
                                typename ViewType::device_type,
-                               MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
+                               MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged>>;
 template <typename ViewType>
 using Atomic = Kokkos::View<typename ViewType::data_type,
                             typename ViewType::array_layout,
                             typename ViewType::device_type,
-                            MemoryTraits<typename ViewType::memory_traits, Kokkos::Atomic> >;
+                            MemoryTraits<typename ViewType::memory_traits, Kokkos::Atomic>>;
 template <typename ViewType>
 using Const = Kokkos::View<typename ViewType::const_data_type,
                            typename ViewType::array_layout,
                            typename ViewType::device_type,
                            typename ViewType::memory_traits>;
 template <typename ViewType>
-using ConstUnmanaged = Const<Unmanaged<ViewType> >;
+using ConstUnmanaged = Const<Unmanaged<ViewType>>;
 
 template <typename ViewType>
-using AtomicUnmanaged = Atomic<Unmanaged<ViewType> >;
+using AtomicUnmanaged = Atomic<Unmanaged<ViewType>>;
 
 template <typename ViewType>
 using Unmanaged = Kokkos::View<typename ViewType::data_type,
                                typename ViewType::array_layout,
                                typename ViewType::device_type,
-                               MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
+                               MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged>>;
 
 template <typename ViewType>
 using Scratch = Kokkos::View<typename ViewType::data_type,
                              typename ViewType::array_layout,
                              typename ViewType::execution_space::scratch_memory_space,
-                             MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
+                             MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged>>;
+
+// Uint32IndexedView and Uint32IndexedConstView: if mdspan is available, these
+// are versions of unmanaged view with uint32_t as the index_type.
+// Otherwise, they are default unmanaged Views (with 64-bit indexing).
+//
+// mdspan was controlled by KOKKOS_ENABLE_IMPL_MDSPAN before 5.3,
+// but after 5.3 is always available.
+#if defined(KOKKOS_ENABLE_IMPL_MDSPAN) || (KOKKOS_VERSION >= 50299)
+template <class OrigExtents, class NewIndexType, class Seq>
+struct ReplaceExtentsIndexType;
+
+template <class OrigExtents, class NewIndexType, size_t... Is>
+struct ReplaceExtentsIndexType<OrigExtents, NewIndexType,
+                               std::index_sequence<Is...>> {
+  using type = Kokkos::extents<NewIndexType, OrigExtents::static_extent(Is)...>;
+};
+
+template <class OrigExtents, class NewIndexType>
+using ReplaceExtentsIndexType_t = typename ReplaceExtentsIndexType<
+    OrigExtents, NewIndexType,
+    std::make_index_sequence<OrigExtents::rank()>>::type;
+
+template <class ViewT, class NewIndexType>
+using ViewWithIndexType_t = Kokkos::View<
+    typename ViewT::element_type,
+    ReplaceExtentsIndexType_t<typename ViewT::extents_type, NewIndexType>,
+    typename ViewT::layout_type,
+    typename ViewT::accessor_type>;
+
+template <typename ViewT>
+using Uint32IndexedView = ViewWithIndexType_t<Unmanaged<ViewT>, uint32_t>;
+template <typename ViewT>
+using Uint32IndexedConstView = ViewWithIndexType_t<ConstUnmanaged<ViewT>, uint32_t>;
+#else
+template <typename ViewT>
+using Uint32IndexedView = Unmanaged<ViewT>;
+template <typename ViewT>
+using Uint32IndexedConstView = ConstUnmanaged<ViewT>;
+#endif
 
 ///
 /// tpetra little block index
@@ -240,7 +279,7 @@ template <typename T, int N, typename ExecSpace>
 struct SumReducer {
   typedef SumReducer reducer;
   typedef ArrayValueType<T, N> value_type;
-  typedef Kokkos::View<value_type, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > result_view_type;
+  typedef Kokkos::View<value_type, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> result_view_type;
   value_type *value;
 
   KOKKOS_INLINE_FUNCTION
@@ -495,13 +534,13 @@ struct NormManager {
  public:
   NormManager()                     = default;
   NormManager(const NormManager &b) = default;
-  NormManager(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) {
+  NormManager(const Teuchos::RCP<const Teuchos::Comm<int>> &comm) {
     sweep_step_             = 1;
     sweep_step_upper_bound_ = 1;
     collective_             = comm->getSize() > 1;
     if (collective_) {
 #ifdef HAVE_IFPACK2_MPI
-      const auto mpi_comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+      const auto mpi_comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
       TEUCHOS_ASSERT(!mpi_comm.is_null());
       comm_ = *mpi_comm->getRawMpiComm();
 #endif
