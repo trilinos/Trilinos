@@ -76,7 +76,7 @@ class PointwiseDropBoundaryFunctor {
     if (isBoundaryRow) {
       for (local_ordinal_type k = 0; k < row.length; ++k) {
         auto clid           = row.colidx(k);
-        results(offset + k) = Kokkos::max(rlid == clid ? KEEP : DROP,
+        results(offset + k) = Kokkos::max(rlid == clid ? KEEP : BOUNDARY_ENTRY,
                                           results(offset + k));
       }
     }
@@ -99,18 +99,15 @@ class PointwiseSymmetricDropBoundaryFunctor {
 
   local_matrix_type A;
   boundary_nodes_view boundaryNodes;
-  boundary_nodes_view boundaryNodesCol;
+  boundary_nodes_view boundaryNodesColMap;
   results_view results;
 
  public:
-  PointwiseSymmetricDropBoundaryFunctor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_, boundary_nodes_view boundaryNodes_, results_view& results_)
+  PointwiseSymmetricDropBoundaryFunctor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_, boundary_nodes_view boundaryNodes_, boundary_nodes_view boundaryNodesColMap_, results_view& results_)
     : boundaryNodes(boundaryNodes_)
+    , boundaryNodesColMap(boundaryNodesColMap_)
     , results(results_) {
-    A                        = A_.getLocalMatrixDevice();
-    auto boundaryNodesColumn = typename boundary_nodes_view::non_const_type("boundaryNodesColumn", A_.getColMap()->getLocalNumElements());
-    auto boundaryNodesDomain = typename boundary_nodes_view::non_const_type("boundaryNodesDomain", A_.getDomainMap()->getLocalNumElements());
-    Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletColsAndDomains(A_, boundaryNodes, boundaryNodesColumn, boundaryNodesDomain);
-    boundaryNodesCol = boundaryNodesColumn;
+    A = A_.getLocalMatrixDevice();
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
@@ -120,8 +117,8 @@ class PointwiseSymmetricDropBoundaryFunctor {
     const bool isBoundaryRow = boundaryNodes(rlid);
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto clid = row.colidx(k);
-      if (isBoundaryRow || boundaryNodesCol(clid))
-        results(offset + k) = Kokkos::max(rlid == clid ? KEEP : DROP,
+      if (isBoundaryRow || boundaryNodesColMap(clid))
+        results(offset + k) = Kokkos::max(rlid == clid ? KEEP : BOUNDARY_ENTRY,
                                           results(offset + k));
     }
   }
@@ -161,7 +158,7 @@ class VectorDropBoundaryFunctor {
     if (isBoundaryRow) {
       for (local_ordinal_type k = 0; k < row.length; ++k) {
         auto clid           = row.colidx(k);
-        results(offset + k) = Kokkos::max(rlid == clid ? KEEP : DROP,
+        results(offset + k) = Kokkos::max(rlid == clid ? KEEP : BOUNDARY_ENTRY,
                                           results(offset + k));
       }
     }
@@ -187,20 +184,17 @@ class VectorSymmetricDropBoundaryFunctor {
   block_indices_view_type point_to_block;
   block_indices_view_type ghosted_point_to_block;
   boundary_nodes_view boundaryNodes;
-  boundary_nodes_view boundaryNodesCol;
+  boundary_nodes_view boundaryNodesColMap;
   results_view results;
 
  public:
-  VectorSymmetricDropBoundaryFunctor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_, boundary_nodes_view boundaryNodes_, results_view& results_)
+  VectorSymmetricDropBoundaryFunctor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_, boundary_nodes_view boundaryNodes_, boundary_nodes_view boundaryNodesColMap_, results_view& results_)
     : point_to_block(point_to_block_)
     , ghosted_point_to_block(ghosted_point_to_block_)
     , boundaryNodes(boundaryNodes_)
+    , boundaryNodesColMap(boundaryNodesColMap_)
     , results(results_) {
-    A                        = A_.getLocalMatrixDevice();
-    auto boundaryNodesColumn = typename boundary_nodes_view::non_const_type("boundaryNodesColumn", A_.getColMap()->getLocalNumElements());
-    auto boundaryNodesDomain = typename boundary_nodes_view::non_const_type("boundaryNodesDomain", A_.getDomainMap()->getLocalNumElements());
-    Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletColsAndDomains(A_, boundaryNodes, boundaryNodesColumn, boundaryNodesDomain);
-    boundaryNodesCol = boundaryNodesColumn;
+    A = A_.getLocalMatrixDevice();
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
@@ -210,8 +204,8 @@ class VectorSymmetricDropBoundaryFunctor {
     const bool isBoundaryRow = boundaryNodes(point_to_block(rlid));
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto clid = row.colidx(k);
-      if (isBoundaryRow || boundaryNodesCol(ghosted_point_to_block(clid))) {
-        results(offset + k) = Kokkos::max(rlid == clid ? KEEP : DROP,
+      if (isBoundaryRow || boundaryNodesColMap(ghosted_point_to_block(clid))) {
+        results(offset + k) = Kokkos::max(rlid == clid ? KEEP : BOUNDARY_ENTRY,
                                           results(offset + k));
       }
     }
