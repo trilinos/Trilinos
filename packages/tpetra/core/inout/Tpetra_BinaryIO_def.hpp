@@ -305,24 +305,33 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeHeaderToNewFile(c
                                                                                const trcp_tcomm_t& comm) {
 #ifdef HAVE_TPETRACORE_MPI
   if (Details::teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = Details::extractMpiCommFromTeuchos(*comm);
-    MPI_File file;
-    const int err = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()),
-                                  MPI_MODE_CREATE | MPI_MODE_WRONLY,
-                                  MPI_INFO_NULL, &file);
-    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_open failed for '" << filename << "'.");
-    const int truncateErr = MPI_File_set_size(file, static_cast<MPI_Offset>(0));
-    TEUCHOS_TEST_FOR_EXCEPTION(truncateErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_set_size failed while truncating '" << filename << "'.");
+    // Rank 0 alone creates, truncates, and writes the header.  A collective
+    // MPI_File_set_size followed by rank 0's write conflicts under MPI's default
+    // consistency semantics: without sync-barrier-sync, another process's
+    // truncate may land after the header write and erase it.  Closing on rank 0
+    // before the barrier makes the header visible to later collective opens.
+    int fileErr = MPI_SUCCESS;
     if (comm->getRank() == 0) {
-      MPI_Status status;
-      const int writeErr = MPI_File_write_at(file, 0, const_cast<FileHeader*>(&header),
-                                             sizeof(FileHeader), MPI_BYTE, &status);
-      TEUCHOS_TEST_FOR_EXCEPTION(writeErr != MPI_SUCCESS, std::runtime_error,
-                                 "Tpetra::BinaryIO: MPI_File_write_at failed while writing header.");
+      MPI_File file;
+      fileErr = MPI_File_open(MPI_COMM_SELF, const_cast<char*>(filename.c_str()),
+                              MPI_MODE_CREATE | MPI_MODE_WRONLY,
+                              MPI_INFO_NULL, &file);
+      if (fileErr == MPI_SUCCESS) {
+        fileErr = MPI_File_set_size(file, static_cast<MPI_Offset>(0));
+        if (fileErr == MPI_SUCCESS) {
+          MPI_Status status;
+          fileErr = MPI_File_write_at(file, 0, const_cast<FileHeader*>(&header),
+                                      sizeof(FileHeader), MPI_BYTE, &status);
+        }
+        const int closeErr = MPI_File_close(&file);
+        if (fileErr == MPI_SUCCESS) {
+          fileErr = closeErr;
+        }
+      }
     }
-    MPI_File_close(&file);
+    Teuchos::broadcast(*comm, 0, 1, &fileErr);
+    TEUCHOS_TEST_FOR_EXCEPTION(fileErr != MPI_SUCCESS, std::runtime_error,
+                               "Tpetra::BinaryIO: Failed to create file '" << filename << "' and write its header.");
     comm->barrier();
     return;
   }

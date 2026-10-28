@@ -767,6 +767,40 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, OppositeByteOrderThrows,
   cleanupFile(filename, comm);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, OverwriteLargerExistingFile,
+                                  ST, LO, GO, NODE) {
+  using map_type       = Tpetra::Map<LO, GO, NODE>;
+  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, NODE>;
+
+  auto comm                  = Tpetra::getDefaultComm();
+  auto bigMap                = rcp(new map_type(50 * static_cast<global_size_t>(comm->getSize()),
+                                                static_cast<GO>(0),
+                                                comm,
+                                                Tpetra::GloballyDistributed));
+  auto smallMap              = rcp(new map_type(4 * static_cast<global_size_t>(comm->getSize()) + 1,
+                                                static_cast<GO>(0),
+                                                comm,
+                                                Tpetra::GloballyDistributed));
+  auto bigA                  = makeTridiagonalMatrix<ST, LO, GO, NODE>(bigMap);
+  auto smallA                = makeTridiagonalMatrix<ST, LO, GO, NODE>(smallMap);
+  auto smallX                = makeDenseTestMultiVector<ST, LO, GO, NODE>(smallMap, 2);
+  const std::string filename = makeFilename("Tpetra_BinaryIO_OverwriteLargerExistingFile", *comm);
+
+  // Writing a new file must replace (not partially overwrite) a larger existing
+  // one, and the new header must survive the truncation.
+  binary_io_type::writeSparseFile(filename, *bigA);
+  binary_io_type::writeSparseFile(filename, *smallA);
+  TEST_ASSERT(Tpetra::Details::hasTpetraBinaryHeader(filename, comm));
+  auto B = binary_io_type::readSparseFile(filename, comm);
+  assertSameMatrix(*smallA, *B);
+
+  binary_io_type::writeSparseFile(filename, *bigA);
+  binary_io_type::writeDenseFile(filename, *smallX);
+  auto Y = binary_io_type::readDenseFile(filename, comm);
+  assertSameMultiVector(*smallX, *Y);
+  cleanupFile(filename, comm);
+}
+
 #if defined(HAVE_TPETRA_INST_DOUBLE)
 #define UNIT_TEST_GROUP(LO, GO, NODE)                                                                      \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTrip, double, LO, GO, NODE)                       \
@@ -779,6 +813,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, OppositeByteOrderThrows,
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, HeaderLocalOrdinalMismatchThrows, double, LO, GO, NODE)   \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, TruncatedFileThrowsOnAllRanks, double, LO, GO, NODE)      \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, OppositeByteOrderThrows, double, LO, GO, NODE)            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, OverwriteLargerExistingFile, double, LO, GO, NODE)        \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripDefaultMap, double, LO, GO, NODE)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripCustomRowMap, double, LO, GO, NODE)        \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripLargeGIDs, double, LO, GO, NODE)           \

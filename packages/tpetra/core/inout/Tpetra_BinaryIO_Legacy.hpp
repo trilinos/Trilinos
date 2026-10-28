@@ -451,6 +451,11 @@ convertLegacyBinaryToBinary(const std::string& oldFileName,
                                                                                       comm,
                                                                                       true);
   binary_io_type::writeSparseFile(newFileName, *matrix);
+  // A missing header would make readBinarySparseFile silently fall back to the
+  // legacy parser, which reads a zeroed header as an empty matrix.
+  TEUCHOS_TEST_FOR_EXCEPTION(!hasTpetraBinaryHeader(newFileName, comm),
+                             std::runtime_error,
+                             "Tpetra::BinaryIO: Converted file '" << newFileName << "' does not start with a Tpetra binary I/O header.");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
