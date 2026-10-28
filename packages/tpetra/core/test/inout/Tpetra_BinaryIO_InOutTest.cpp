@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
+#include <iterator>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -62,6 +63,26 @@ void overwriteHeaderField(const std::string& filename,
     file.seekp(static_cast<std::streamoff>(fieldOffset), std::ios::beg);
     file.write(reinterpret_cast<const char*>(&value), sizeof(value));
     TEUCHOS_TEST_FOR_EXCEPTION(!file.good(), std::runtime_error, "Failed to patch " << filename << ".");
+  }
+  comm->barrier();
+}
+
+// Drop the last \c bytesToRemove bytes of \c filename.
+void truncateFile(const std::string& filename,
+                  const unsigned long long bytesToRemove,
+                  const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
+  comm->barrier();
+  if (comm->getRank() == 0) {
+    std::vector<char> contents;
+    {
+      std::ifstream in(filename.c_str(), std::ios::binary);
+      TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error, "Failed to open " << filename << " for truncation.");
+      contents.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(contents.size() < bytesToRemove, std::logic_error, "File " << filename << " is too small to truncate.");
+    std::ofstream out(filename.c_str(), std::ios::binary | std::ios::trunc);
+    out.write(contents.data(), static_cast<std::streamsize>(contents.size() - bytesToRemove));
+    TEUCHOS_TEST_FOR_EXCEPTION(!out.good(), std::runtime_error, "Failed to truncate " << filename << ".");
   }
   comm->barrier();
 }
@@ -134,6 +155,44 @@ makeImbalancedContiguousMap(const Teuchos::RCP<const Teuchos::Comm<int>>& comm) 
   return rcp(new Tpetra::Map<LO, GO, Node>(globalNumElts,
                                            numLocalElts,
                                            static_cast<GO>(0),
+                                           comm));
+}
+
+// Contiguous map in which the last process owns no elements (when there is more than one process).
+template <class LO, class GO, class Node>
+RCP<const Tpetra::Map<LO, GO, Node>>
+makeMapWithEmptyLastRank(const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
+  const int numProcs                = comm->getSize();
+  const bool isEmpty                = numProcs > 1 && comm->getRank() == numProcs - 1;
+  const size_t numLocalElts         = isEmpty ? 0 : static_cast<size_t>(5 + comm->getRank());
+  const global_size_t globalNumElts = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  return rcp(new Tpetra::Map<LO, GO, Node>(globalNumElts,
+                                           numLocalElts,
+                                           static_cast<GO>(0),
+                                           comm));
+}
+
+// First GID used by the large-GID tests: a few below INT_MAX, so GIDs straddle the 32-bit limit.
+long long largeGidBase() {
+  return static_cast<long long>(std::numeric_limits<int>::max()) - 2ll;
+}
+
+// Noncontiguous map whose GIDs straddle INT_MAX and also include values near 2^40.
+// Only meaningful for 64-bit GlobalOrdinal types.
+template <class LO, class GO, class Node>
+RCP<const Tpetra::Map<LO, GO, Node>>
+makeLargeGidMap(const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
+  const long long numProcs = static_cast<long long>(comm->getSize());
+  const long long rank     = static_cast<long long>(comm->getRank());
+  const long long base     = largeGidBase();
+  Teuchos::Array<GO> gids;
+  for (long long i = 0; i < 4; ++i) {
+    gids.push_back(static_cast<GO>(base + rank + i * numProcs));
+  }
+  gids.push_back(static_cast<GO>((1ll << 40) + rank));
+  return rcp(new Tpetra::Map<LO, GO, Node>(Teuchos::OrdinalTraits<global_size_t>::invalid(),
+                                           gids(),
+                                           static_cast<GO>(base),
                                            comm));
 }
 
@@ -553,16 +612,177 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, SparseRoundTripCustomRowMap,
   cleanupFile(filename, comm);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, MapRoundTripLargeGIDs,
+                                  ST, LO, GO, NODE) {
+  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, NODE>;
+
+  if (sizeof(GO) < 8) {
+    out << "Skipping: GlobalOrdinal cannot represent GIDs above INT_MAX." << std::endl;
+    return;
+  }
+
+  auto comm                  = Tpetra::getDefaultComm();
+  auto map                   = makeLargeGidMap<LO, GO, NODE>(comm);
+  const std::string filename = makeFilename("Tpetra_BinaryIO_MapRoundTripLargeGIDs", *comm);
+
+  binary_io_type::writeMapFile(filename, *map);
+  auto inMap = Tpetra::readBinaryMapFile<LO, GO, NODE>(filename, comm);
+  TEST_ASSERT(map->isSameAs(*inMap));
+  TEST_EQUALITY(static_cast<long long>(inMap->getIndexBase()), largeGidBase());
+  TEST_EQUALITY(static_cast<long long>(inMap->getMaxAllGlobalIndex()),
+                (1ll << 40) + static_cast<long long>(comm->getSize() - 1));
+
+  {
+    BinaryIOChunkLimitGuard smallChunks(8ull);
+    binary_io_type::writeMapFile(filename, *map);
+    auto inMapSmallChunks = Tpetra::readBinaryMapFile<LO, GO, NODE>(filename, comm);
+    TEST_ASSERT(map->isSameAs(*inMapSmallChunks));
+  }
+  cleanupFile(filename, comm);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, SparseRoundTripLargeGIDs,
+                                  ST, LO, GO, NODE) {
+  using map_type       = Tpetra::Map<LO, GO, NODE>;
+  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, NODE>;
+
+  if (sizeof(GO) < 8) {
+    out << "Skipping: GlobalOrdinal cannot represent GIDs above INT_MAX." << std::endl;
+    return;
+  }
+
+  // Contiguous rows starting just below INT_MAX, so row and column GIDs straddle the 32-bit limit.
+  auto comm                         = Tpetra::getDefaultComm();
+  const global_size_t globalNumRows = 4 * static_cast<global_size_t>(comm->getSize()) + 3;
+  auto map                          = rcp(new map_type(globalNumRows,
+                                                       static_cast<GO>(largeGidBase()),
+                                                       comm,
+                                                       Tpetra::GloballyDistributed));
+  auto A                            = makeTridiagonalMatrix<ST, LO, GO, NODE>(map);
+  auto X                            = makeDenseTestMultiVector<ST, LO, GO, NODE>(map, 2);
+  const std::string filename        = makeFilename("Tpetra_BinaryIO_SparseRoundTripLargeGIDs", *comm);
+
+  binary_io_type::writeSparseFile(filename, *A);
+  auto B = binary_io_type::readSparseFile(filename, comm);
+  assertSameMatrix(*A, *B);
+
+  binary_io_type::writeDenseFile(filename, *X);
+  auto Y = binary_io_type::readDenseFile(filename, comm);
+  assertSameMultiVector(*X, *Y);
+  cleanupFile(filename, comm);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, DenseRoundTripEmptyRankSmallChunks,
+                                  ST, LO, GO, NODE) {
+  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, NODE>;
+
+  // Processes have different chunk counts, and the empty process makes only
+  // zero-length collective calls; this hangs if any process skips a collective.
+  auto comm                  = Tpetra::getDefaultComm();
+  auto map                   = makeMapWithEmptyLastRank<LO, GO, NODE>(comm);
+  auto X                     = makeDenseTestMultiVector<ST, LO, GO, NODE>(map, 3);
+  const std::string filename = makeFilename("Tpetra_BinaryIO_DenseRoundTripEmptyRankSmallChunks", *comm);
+
+  {
+    BinaryIOChunkLimitGuard smallChunks(16ull);
+    binary_io_type::writeDenseFile(filename, *X);
+    auto Y = binary_io_type::readDenseFile(filename, comm);
+    assertSameMultiVector(*X, *Y);
+    auto Z = binary_io_type::readDenseFile(filename, map);
+    assertSameMultiVector(*X, *Z);
+  }
+  cleanupFile(filename, comm);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, SparseRoundTripEmptyRankSmallChunks,
+                                  ST, LO, GO, NODE) {
+  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, NODE>;
+
+  auto comm                  = Tpetra::getDefaultComm();
+  auto map                   = makeMapWithEmptyLastRank<LO, GO, NODE>(comm);
+  auto A                     = makeTridiagonalMatrix<ST, LO, GO, NODE>(map);
+  const std::string filename = makeFilename("Tpetra_BinaryIO_SparseRoundTripEmptyRankSmallChunks", *comm);
+
+  {
+    BinaryIOChunkLimitGuard smallChunks(16ull);
+    binary_io_type::writeSparseFile(filename, *A);
+    auto B = binary_io_type::readSparseFile(filename, comm);
+    assertSameMatrix(*A, *B);
+  }
+  cleanupFile(filename, comm);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, TruncatedFileThrowsOnAllRanks,
+                                  ST, LO, GO, NODE) {
+  using map_type       = Tpetra::Map<LO, GO, NODE>;
+  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, NODE>;
+
+  auto comm                         = Tpetra::getDefaultComm();
+  const global_size_t globalNumElts = 6 * static_cast<global_size_t>(comm->getSize());
+  auto map                          = rcp(new map_type(globalNumElts,
+                                                       static_cast<GO>(0),
+                                                       comm,
+                                                       Tpetra::GloballyDistributed));
+  auto X                            = makeDenseTestMultiVector<ST, LO, GO, NODE>(map, 1);
+  const std::string filename        = makeFilename("Tpetra_BinaryIO_TruncatedFileThrowsOnAllRanks", *comm);
+
+  // Removing the last value leaves only the last process's read range past end-of-file;
+  // every process must still throw (rather than some hanging or returning garbage).
+  binary_io_type::writeDenseFile(filename, *X);
+  truncateFile(filename, sizeof(ST), comm);
+  TEST_THROW(binary_io_type::readDenseFile(filename, comm), std::runtime_error);
+
+  // Truncating into the map section's GID payload exercises the map reader's collective read.
+  binary_io_type::writeMapFile(filename, *map);
+  truncateFile(filename, sizeof(GO), comm);
+  TEST_THROW((Tpetra::readBinaryMapFile<LO, GO, NODE>(filename, comm)), std::runtime_error);
+  cleanupFile(filename, comm);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, OppositeByteOrderThrows,
+                                  ST, LO, GO, NODE) {
+  using map_type       = Tpetra::Map<LO, GO, NODE>;
+  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, NODE>;
+
+  auto comm                         = Tpetra::getDefaultComm();
+  const global_size_t globalNumElts = 3 * static_cast<global_size_t>(comm->getSize());
+  auto map                          = rcp(new map_type(globalNumElts,
+                                                       static_cast<GO>(0),
+                                                       comm,
+                                                       Tpetra::GloballyDistributed));
+  auto X                            = makeDenseTestMultiVector<ST, LO, GO, NODE>(map, 1);
+  const std::string filename        = makeFilename("Tpetra_BinaryIO_OppositeByteOrderThrows", *comm);
+
+  const unsigned long long byteOrderMarkerOffset = 16ull;
+  const unsigned long long swappedMarker         = Tpetra::Details::binaryIOByteSwap64(0x0102030405060708ull);
+  TEST_EQUALITY(swappedMarker, 0x0807060504030201ull);
+
+  binary_io_type::writeDenseFile(filename, *X);
+  overwriteHeaderField(filename, byteOrderMarkerOffset, swappedMarker, comm);
+  TEST_THROW(binary_io_type::readDenseFile(filename, comm), std::runtime_error);
+
+  binary_io_type::writeMapFile(filename, *map);
+  overwriteHeaderField(filename, byteOrderMarkerOffset, swappedMarker, comm);
+  TEST_THROW((Tpetra::readBinaryMapFile<LO, GO, NODE>(filename, comm)), std::runtime_error);
+  cleanupFile(filename, comm);
+}
+
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-#define UNIT_TEST_GROUP(LO, GO, NODE)                                                                    \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTrip, double, LO, GO, NODE)                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTripImbalancedContiguous, double, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripDefaultMap, double, LO, GO, NODE)         \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripCustomMap, double, LO, GO, NODE)          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripSmallChunks, double, LO, GO, NODE)        \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, HeaderLocalOrdinalMismatchThrows, double, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripDefaultMap, double, LO, GO, NODE)        \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripCustomRowMap, double, LO, GO, NODE)
+#define UNIT_TEST_GROUP(LO, GO, NODE)                                                                       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTrip, double, LO, GO, NODE)                        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTripImbalancedContiguous, double, LO, GO, NODE)    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTripLargeGIDs, double, LO, GO, NODE)               \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripDefaultMap, double, LO, GO, NODE)            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripCustomMap, double, LO, GO, NODE)             \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripSmallChunks, double, LO, GO, NODE)           \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripEmptyRankSmallChunks, double, LO, GO, NODE)  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, HeaderLocalOrdinalMismatchThrows, double, LO, GO, NODE)    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, TruncatedFileThrowsOnAllRanks, double, LO, GO, NODE)       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, OppositeByteOrderThrows, double, LO, GO, NODE)             \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripDefaultMap, double, LO, GO, NODE)           \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripCustomRowMap, double, LO, GO, NODE)         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripLargeGIDs, double, LO, GO, NODE)            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripEmptyRankSmallChunks, double, LO, GO, NODE)
 #else
 #define UNIT_TEST_GROUP(LO, GO, NODE)
 #endif

@@ -120,14 +120,6 @@ class BinaryIO {
 
   static unsigned long long mapFlags(const map_type& map);
 
-  static unsigned long long checkedByteCount(const unsigned long long count, const size_t elementSize);
-  static unsigned long long checkedByteOffset(const unsigned long long dataOffset,
-                                              const unsigned long long globalOffset,
-                                              const size_t elementSize);
-  static void broadcastBytesFromRoot(char data[],
-                                     const unsigned long long byteCount,
-                                     const trcp_tcomm_t& comm);
-
   static void checkFileOpen(const bool success, const std::string& filename, const trcp_tcomm_t& comm, const char mode[]);
 
   static void writeHeaderToNewFile(const std::string& filename, const FileHeader& header, const trcp_tcomm_t& comm);
@@ -156,36 +148,6 @@ class BinaryIO {
                                                const trcp_tcomm_t& comm);
 
   static unsigned long long exclusiveScanUnsignedLongLong(const unsigned long long localValue, const trcp_tcomm_t& comm);
-
-  template <class T>
-  static void writeArrayFromRoot(const std::string& filename,
-                                 const unsigned long long dataOffset,
-                                 const T* data,
-                                 const unsigned long long count,
-                                 const trcp_tcomm_t& comm);
-
-  template <class T>
-  static void readArrayFromRoot(const std::string& filename,
-                                const unsigned long long dataOffset,
-                                T* data,
-                                const unsigned long long count,
-                                const trcp_tcomm_t& comm);
-
-  template <class T>
-  static void writeArrayCollective(const std::string& filename,
-                                   const unsigned long long dataOffset,
-                                   const T* data,
-                                   const unsigned long long count,
-                                   const unsigned long long globalOffset,
-                                   const trcp_tcomm_t& comm);
-
-  template <class T>
-  static void readArrayCollective(const std::string& filename,
-                                  const unsigned long long dataOffset,
-                                  T* data,
-                                  const unsigned long long count,
-                                  const unsigned long long globalOffset,
-                                  const trcp_tcomm_t& comm);
 };
 
 }  // namespace Tpetra

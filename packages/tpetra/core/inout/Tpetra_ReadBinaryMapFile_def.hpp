@@ -89,20 +89,6 @@ unsigned long long binaryIOTypeFlags() {
   return flags;
 }
 
-inline void binaryIOBroadcastBytesFromRoot(char data[],
-                                           const unsigned long long byteCount,
-                                           const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
-  unsigned long long remaining      = byteCount;
-  char* current                     = data;
-  const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<int>::max());
-  while (remaining > 0) {
-    const unsigned long long chunk = std::min(remaining, maxChunk);
-    Teuchos::broadcast(*comm, 0, static_cast<int>(chunk), current);
-    current += static_cast<std::ptrdiff_t>(chunk);
-    remaining -= chunk;
-  }
-}
-
 inline void binaryIOCheckFileOpen(const bool success,
                                   const std::string& filename,
                                   const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
@@ -112,138 +98,6 @@ inline void binaryIOCheckFileOpen(const bool success,
   TEUCHOS_TEST_FOR_EXCEPTION(opened == 0,
                              std::runtime_error,
                              "Tpetra::BinaryIO: Failed to open file '" << filename << "' for " << mode << ".");
-}
-
-inline unsigned long long binaryIOCheckedByteCount(const unsigned long long count,
-                                                   const size_t elementSize) {
-  TEUCHOS_TEST_FOR_EXCEPTION(count > 0 &&
-                                 elementSize > static_cast<size_t>(std::numeric_limits<unsigned long long>::max() / count),
-                             std::overflow_error,
-                             "Tpetra::BinaryIO: Byte count overflow while computing transfer size.");
-  return count * static_cast<unsigned long long>(elementSize);
-}
-
-inline unsigned long long binaryIOCheckedByteOffset(const unsigned long long dataOffset,
-                                                    const unsigned long long globalOffset,
-                                                    const size_t elementSize) {
-  const unsigned long long payloadOffset = binaryIOCheckedByteCount(globalOffset, elementSize);
-  TEUCHOS_TEST_FOR_EXCEPTION(dataOffset > std::numeric_limits<unsigned long long>::max() - payloadOffset,
-                             std::overflow_error,
-                             "Tpetra::BinaryIO: Byte offset overflow while computing file offset.");
-  return dataOffset + payloadOffset;
-}
-
-template <class T>
-void binaryIOReadArrayFromRoot(const std::string& filename,
-                               const unsigned long long dataOffset,
-                               T* data,
-                               const unsigned long long count,
-                               const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
-  const unsigned long long byteCount = binaryIOCheckedByteCount(count, sizeof(T));
-#ifdef HAVE_TPETRACORE_MPI
-  if (teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = extractMpiCommFromTeuchos(*comm);
-    MPI_File file;
-    const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
-    TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_open failed while reading root-owned array data.");
-    if (comm->getRank() == 0) {
-      MPI_Status status;
-      const int readErr = MPI_File_read_at(file,
-                                           static_cast<MPI_Offset>(dataOffset),
-                                           data,
-                                           static_cast<int>(byteCount),
-                                           MPI_BYTE,
-                                           &status);
-      TEUCHOS_TEST_FOR_EXCEPTION(readErr != MPI_SUCCESS, std::runtime_error,
-                                 "Tpetra::BinaryIO: MPI_File_read_at failed while reading root-owned array data.");
-    }
-    MPI_File_close(&file);
-    if (comm->getSize() > 1) {
-      binaryIOBroadcastBytesFromRoot(reinterpret_cast<char*>(data), byteCount, comm);
-    }
-    return;
-  }
-#endif
-  if (comm->getRank() == 0) {
-    std::ifstream in(filename.c_str(), std::ios::binary);
-    TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error,
-                               "Tpetra::BinaryIO: Failed to open file '" << filename << "' while reading root-owned array data.");
-    in.seekg(static_cast<std::streamoff>(dataOffset), std::ios::beg);
-    in.read(reinterpret_cast<char*>(data), static_cast<std::streamsize>(byteCount));
-    TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error,
-                               "Tpetra::BinaryIO: Failed to read root-owned array data from file '" << filename << "'.");
-  }
-  if (comm->getSize() > 1) {
-    binaryIOBroadcastBytesFromRoot(reinterpret_cast<char*>(data), byteCount, comm);
-  }
-}
-
-template <class T>
-void binaryIOReadArrayCollective(const std::string& filename,
-                                 const unsigned long long dataOffset,
-                                 T* data,
-                                 const unsigned long long count,
-                                 const unsigned long long globalOffset,
-                                 const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
-  const unsigned long long byteCount  = binaryIOCheckedByteCount(count, sizeof(T));
-  const unsigned long long byteOffset = binaryIOCheckedByteOffset(dataOffset, globalOffset, sizeof(T));
-#ifdef HAVE_TPETRACORE_MPI
-  if (teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = extractMpiCommFromTeuchos(*comm);
-    MPI_File file;
-    const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
-    TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_open failed while reading array data.");
-
-    char* current                           = reinterpret_cast<char*>(data);
-    unsigned long long remaining            = byteCount;
-    unsigned long long currentOffset        = byteOffset;
-    const unsigned long long maxChunk       = static_cast<unsigned long long>(std::numeric_limits<int>::max());
-    const unsigned long long localNumChunks = (byteCount + maxChunk - 1ull) / maxChunk;
-    unsigned long long numChunks            = 0;
-    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &localNumChunks, &numChunks);
-    int readErr = MPI_SUCCESS;
-    for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && readErr == MPI_SUCCESS; ++chunkIndex) {
-      const unsigned long long chunk = std::min(remaining, maxChunk);
-      MPI_Status status;
-      readErr = MPI_File_read_at_all(file,
-                                     static_cast<MPI_Offset>(currentOffset),
-                                     current,
-                                     static_cast<int>(chunk),
-                                     MPI_BYTE,
-                                     &status);
-      current += static_cast<std::ptrdiff_t>(chunk);
-      currentOffset += chunk;
-      remaining -= chunk;
-    }
-    MPI_File_close(&file);
-    TEUCHOS_TEST_FOR_EXCEPTION(readErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_read_at_all failed while reading array data.");
-    return;
-  }
-#endif
-  if (comm->getRank() == 0) {
-    std::ifstream in(filename.c_str(), std::ios::binary);
-    TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error,
-                               "Tpetra::BinaryIO: Failed to open file '" << filename << "' while reading array data.");
-    in.seekg(static_cast<std::streamoff>(byteOffset), std::ios::beg);
-
-    char* current                     = reinterpret_cast<char*>(data);
-    unsigned long long remaining      = byteCount;
-    const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<std::streamsize>::max());
-    while (remaining > 0) {
-      const unsigned long long chunk = std::min(remaining, maxChunk);
-      in.read(current, static_cast<std::streamsize>(chunk));
-      TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error,
-                                 "Tpetra::BinaryIO: Failed to read array data from file '" << filename << "'.");
-      current += static_cast<std::ptrdiff_t>(chunk);
-      remaining -= chunk;
-    }
-  }
-  if (comm->getSize() > 1) {
-    binaryIOBroadcastBytesFromRoot(reinterpret_cast<char*>(data), byteCount, comm);
-  }
 }
 
 inline BinaryIOFileHeader binaryIOReadHeaderFromFile(const std::string& filename,
@@ -290,6 +144,12 @@ void binaryIOValidateMapHeader(const BinaryIOFileHeader& header) {
   TEUCHOS_TEST_FOR_EXCEPTION(header.version != binaryIOFileVersion,
                              std::runtime_error,
                              "Tpetra::BinaryIO: Unsupported file version " << header.version << ".");
+  // Files are stored in the writer's native byte order; reading a file written
+  // with the opposite endianness is detected but not converted.
+  TEUCHOS_TEST_FOR_EXCEPTION(header.byteOrderMarker == binaryIOByteSwap64(binaryIOByteOrderMarker),
+                             std::runtime_error,
+                             "Tpetra::BinaryIO: File was written on a machine with the opposite byte order; "
+                             "byte-order conversion is not supported.");
   TEUCHOS_TEST_FOR_EXCEPTION(header.byteOrderMarker != binaryIOByteOrderMarker,
                              std::runtime_error,
                              "Tpetra::BinaryIO: Unsupported byte order marker.");

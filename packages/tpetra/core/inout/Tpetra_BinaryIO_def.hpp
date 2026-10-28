@@ -227,6 +227,12 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::validateHeader(const F
   TEUCHOS_TEST_FOR_EXCEPTION(header.version != fileVersion,
                              std::runtime_error,
                              "Tpetra::BinaryIO: Unsupported file version " << header.version << ".");
+  // Files are stored in the writer's native byte order; reading a file written
+  // with the opposite endianness is detected but not converted.
+  TEUCHOS_TEST_FOR_EXCEPTION(header.byteOrderMarker == Details::binaryIOByteSwap64(byteOrderMarker),
+                             std::runtime_error,
+                             "Tpetra::BinaryIO: File was written on a machine with the opposite byte order; "
+                             "byte-order conversion is not supported.");
   TEUCHOS_TEST_FOR_EXCEPTION(header.byteOrderMarker != byteOrderMarker,
                              std::runtime_error,
                              "Tpetra::BinaryIO: Unsupported byte order marker.");
@@ -279,42 +285,6 @@ unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mapFlags
     flags |= 1ull << 2;
   }
   return flags;
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::checkedByteCount(const unsigned long long count,
-                                                                                         const size_t elementSize) {
-  TEUCHOS_TEST_FOR_EXCEPTION(count > 0 &&
-                                 elementSize > static_cast<size_t>(std::numeric_limits<unsigned long long>::max() / count),
-                             std::overflow_error,
-                             "Tpetra::BinaryIO: Byte count overflow while computing transfer size.");
-  return count * static_cast<unsigned long long>(elementSize);
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::checkedByteOffset(const unsigned long long dataOffset,
-                                                                                          const unsigned long long globalOffset,
-                                                                                          const size_t elementSize) {
-  const unsigned long long payloadOffset = checkedByteCount(globalOffset, elementSize);
-  TEUCHOS_TEST_FOR_EXCEPTION(dataOffset > std::numeric_limits<unsigned long long>::max() - payloadOffset,
-                             std::overflow_error,
-                             "Tpetra::BinaryIO: Byte offset overflow while computing file offset.");
-  return dataOffset + payloadOffset;
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::broadcastBytesFromRoot(char data[],
-                                                                                 const unsigned long long byteCount,
-                                                                                 const trcp_tcomm_t& comm) {
-  unsigned long long remaining      = byteCount;
-  char* current                     = data;
-  const unsigned long long maxChunk = Details::binaryIOIntCountMaxChunk();
-  while (remaining > 0) {
-    const unsigned long long chunk = std::min(remaining, maxChunk);
-    Teuchos::broadcast(*comm, 0, static_cast<int>(chunk), current);
-    current += static_cast<std::ptrdiff_t>(chunk);
-    remaining -= chunk;
-  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -530,276 +500,6 @@ unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::exclusiv
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-template <class T>
-void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeArrayFromRoot(const std::string& filename,
-                                                                             const unsigned long long dataOffset,
-                                                                             const T* data,
-                                                                             const unsigned long long count,
-                                                                             const trcp_tcomm_t& comm) {
-  const unsigned long long byteCount = checkedByteCount(count, sizeof(T));
-  if (byteCount > 0) {
-    Details::binaryIOCheckedAddByteOffset(dataOffset, byteCount - 1ull);
-  }
-#ifdef HAVE_TPETRACORE_MPI
-  if (Details::teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = Details::extractMpiCommFromTeuchos(*comm);
-    MPI_File file;
-    const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
-    TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_open failed while writing root-owned array data.");
-    int writeErr = MPI_SUCCESS;
-    if (comm->getRank() == 0) {
-      const char* current                = reinterpret_cast<const char*>(data);
-      unsigned long long currentOffset   = dataOffset;
-      const unsigned long long maxChunk  = Details::binaryIOIntCountMaxChunk();
-      const unsigned long long numChunks = Details::binaryIOChunkCount(byteCount, maxChunk);
-      for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && writeErr == MPI_SUCCESS; ++chunkIndex) {
-        const unsigned long long chunk = Details::binaryIOChunkSize(byteCount, maxChunk, chunkIndex);
-        MPI_Status status;
-        writeErr = MPI_File_write_at(file,
-                                     static_cast<MPI_Offset>(currentOffset),
-                                     const_cast<char*>(current),
-                                     static_cast<int>(chunk),
-                                     MPI_BYTE,
-                                     &status);
-        current += static_cast<std::ptrdiff_t>(chunk);
-        currentOffset += chunk;
-      }
-    }
-    MPI_File_close(&file);
-    Teuchos::broadcast(*comm, 0, 1, &writeErr);
-    TEUCHOS_TEST_FOR_EXCEPTION(writeErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_write_at failed while writing root-owned array data.");
-    comm->barrier();
-    return;
-  }
-#endif
-  if (comm->getRank() == 0) {
-    std::fstream out(filename.c_str(), std::ios::binary | std::ios::in | std::ios::out);
-    TEUCHOS_TEST_FOR_EXCEPTION(!out.good(), std::runtime_error,
-                               "Tpetra::BinaryIO: Failed to open file '" << filename << "' while writing root-owned array data.");
-    out.seekp(static_cast<std::streamoff>(dataOffset), std::ios::beg);
-
-    const char* current               = reinterpret_cast<const char*>(data);
-    unsigned long long remaining      = byteCount;
-    const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<std::streamsize>::max());
-    while (remaining > 0) {
-      const unsigned long long chunk = std::min(remaining, maxChunk);
-      out.write(current, static_cast<std::streamsize>(chunk));
-      TEUCHOS_TEST_FOR_EXCEPTION(!out.good(), std::runtime_error,
-                                 "Tpetra::BinaryIO: Failed to write root-owned array data to file '" << filename << "'.");
-      current += static_cast<std::ptrdiff_t>(chunk);
-      remaining -= chunk;
-    }
-  }
-  comm->barrier();
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-template <class T>
-void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readArrayFromRoot(const std::string& filename,
-                                                                            const unsigned long long dataOffset,
-                                                                            T* data,
-                                                                            const unsigned long long count,
-                                                                            const trcp_tcomm_t& comm) {
-  const unsigned long long byteCount = checkedByteCount(count, sizeof(T));
-  if (byteCount > 0) {
-    Details::binaryIOCheckedAddByteOffset(dataOffset, byteCount - 1ull);
-  }
-#ifdef HAVE_TPETRACORE_MPI
-  if (Details::teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = Details::extractMpiCommFromTeuchos(*comm);
-    MPI_File file;
-    const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
-    TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_open failed while reading root-owned array data.");
-    int readErr = MPI_SUCCESS;
-    if (comm->getRank() == 0) {
-      char* current                      = reinterpret_cast<char*>(data);
-      unsigned long long currentOffset   = dataOffset;
-      const unsigned long long maxChunk  = Details::binaryIOIntCountMaxChunk();
-      const unsigned long long numChunks = Details::binaryIOChunkCount(byteCount, maxChunk);
-      for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && readErr == MPI_SUCCESS; ++chunkIndex) {
-        const unsigned long long chunk = Details::binaryIOChunkSize(byteCount, maxChunk, chunkIndex);
-        MPI_Status status;
-        readErr = MPI_File_read_at(file,
-                                   static_cast<MPI_Offset>(currentOffset),
-                                   current,
-                                   static_cast<int>(chunk),
-                                   MPI_BYTE,
-                                   &status);
-        current += static_cast<std::ptrdiff_t>(chunk);
-        currentOffset += chunk;
-      }
-    }
-    MPI_File_close(&file);
-    Teuchos::broadcast(*comm, 0, 1, &readErr);
-    TEUCHOS_TEST_FOR_EXCEPTION(readErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_read_at failed while reading root-owned array data.");
-    if (comm->getSize() > 1) {
-      broadcastBytesFromRoot(reinterpret_cast<char*>(data), byteCount, comm);
-    }
-    return;
-  }
-#endif
-  if (comm->getRank() == 0) {
-    std::ifstream in(filename.c_str(), std::ios::binary);
-    TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error,
-                               "Tpetra::BinaryIO: Failed to open file '" << filename << "' while reading root-owned array data.");
-    in.seekg(static_cast<std::streamoff>(dataOffset), std::ios::beg);
-
-    char* current                     = reinterpret_cast<char*>(data);
-    unsigned long long remaining      = byteCount;
-    const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<std::streamsize>::max());
-    while (remaining > 0) {
-      const unsigned long long chunk = std::min(remaining, maxChunk);
-      in.read(current, static_cast<std::streamsize>(chunk));
-      TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error,
-                                 "Tpetra::BinaryIO: Failed to read root-owned array data from file '" << filename << "'.");
-      current += static_cast<std::ptrdiff_t>(chunk);
-      remaining -= chunk;
-    }
-  }
-  if (comm->getSize() > 1) {
-    broadcastBytesFromRoot(reinterpret_cast<char*>(data), byteCount, comm);
-  }
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-template <class T>
-void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeArrayCollective(const std::string& filename,
-                                                                               const unsigned long long dataOffset,
-                                                                               const T* data,
-                                                                               const unsigned long long count,
-                                                                               const unsigned long long globalOffset,
-                                                                               const trcp_tcomm_t& comm) {
-  const unsigned long long byteCount  = checkedByteCount(count, sizeof(T));
-  const unsigned long long byteOffset = checkedByteOffset(dataOffset, globalOffset, sizeof(T));
-#ifdef HAVE_TPETRACORE_MPI
-  if (Details::teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = Details::extractMpiCommFromTeuchos(*comm);
-    MPI_File file;
-    const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
-    TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_open failed while writing array data.");
-
-    const char* current                     = reinterpret_cast<const char*>(data);
-    unsigned long long remaining            = byteCount;
-    unsigned long long currentOffset        = byteOffset;
-    const unsigned long long maxChunk       = Details::binaryIOIntCountMaxChunk();
-    const unsigned long long localNumChunks = Details::binaryIOChunkCount(byteCount, maxChunk);
-    unsigned long long numChunks            = 0;
-    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &localNumChunks, &numChunks);
-    int writeErr = MPI_SUCCESS;
-    for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && writeErr == MPI_SUCCESS; ++chunkIndex) {
-      const unsigned long long chunk = std::min(remaining, maxChunk);
-      MPI_Status status;
-      writeErr = MPI_File_write_at_all(file,
-                                       static_cast<MPI_Offset>(currentOffset),
-                                       const_cast<char*>(current),
-                                       static_cast<int>(chunk),
-                                       MPI_BYTE,
-                                       &status);
-      current += static_cast<std::ptrdiff_t>(chunk);
-      currentOffset += chunk;
-      remaining -= chunk;
-    }
-    MPI_File_close(&file);
-    TEUCHOS_TEST_FOR_EXCEPTION(writeErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_write_at_all failed while writing array data.");
-    return;
-  }
-#endif
-  if (comm->getRank() == 0) {
-    std::fstream out(filename.c_str(), std::ios::binary | std::ios::in | std::ios::out);
-    TEUCHOS_TEST_FOR_EXCEPTION(!out.good(), std::runtime_error,
-                               "Tpetra::BinaryIO: Failed to open file '" << filename << "' while writing array data.");
-    out.seekp(static_cast<std::streamoff>(byteOffset), std::ios::beg);
-
-    const char* current               = reinterpret_cast<const char*>(data);
-    unsigned long long remaining      = byteCount;
-    const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<std::streamsize>::max());
-    while (remaining > 0) {
-      const unsigned long long chunk = std::min(remaining, maxChunk);
-      out.write(current, static_cast<std::streamsize>(chunk));
-      TEUCHOS_TEST_FOR_EXCEPTION(!out.good(), std::runtime_error,
-                                 "Tpetra::BinaryIO: Failed to write array data to file '" << filename << "'.");
-      current += static_cast<std::ptrdiff_t>(chunk);
-      remaining -= chunk;
-    }
-  }
-  comm->barrier();
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-template <class T>
-void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readArrayCollective(const std::string& filename,
-                                                                              const unsigned long long dataOffset,
-                                                                              T* data,
-                                                                              const unsigned long long count,
-                                                                              const unsigned long long globalOffset,
-                                                                              const trcp_tcomm_t& comm) {
-  const unsigned long long byteCount  = checkedByteCount(count, sizeof(T));
-  const unsigned long long byteOffset = checkedByteOffset(dataOffset, globalOffset, sizeof(T));
-#ifdef HAVE_TPETRACORE_MPI
-  if (Details::teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = Details::extractMpiCommFromTeuchos(*comm);
-    MPI_File file;
-    const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
-    TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_open failed while reading array data.");
-
-    char* current                           = reinterpret_cast<char*>(data);
-    unsigned long long remaining            = byteCount;
-    unsigned long long currentOffset        = byteOffset;
-    const unsigned long long maxChunk       = Details::binaryIOIntCountMaxChunk();
-    const unsigned long long localNumChunks = Details::binaryIOChunkCount(byteCount, maxChunk);
-    unsigned long long numChunks            = 0;
-    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &localNumChunks, &numChunks);
-    int readErr = MPI_SUCCESS;
-    for (unsigned long long chunkIndex = 0; chunkIndex < numChunks && readErr == MPI_SUCCESS; ++chunkIndex) {
-      const unsigned long long chunk = std::min(remaining, maxChunk);
-      MPI_Status status;
-      readErr = MPI_File_read_at_all(file,
-                                     static_cast<MPI_Offset>(currentOffset),
-                                     current,
-                                     static_cast<int>(chunk),
-                                     MPI_BYTE,
-                                     &status);
-      current += static_cast<std::ptrdiff_t>(chunk);
-      currentOffset += chunk;
-      remaining -= chunk;
-    }
-    MPI_File_close(&file);
-    TEUCHOS_TEST_FOR_EXCEPTION(readErr != MPI_SUCCESS, std::runtime_error,
-                               "Tpetra::BinaryIO: MPI_File_read_at_all failed while reading array data.");
-    return;
-  }
-#endif
-  if (comm->getRank() == 0) {
-    std::ifstream in(filename.c_str(), std::ios::binary);
-    TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error,
-                               "Tpetra::BinaryIO: Failed to open file '" << filename << "' while reading array data.");
-    in.seekg(static_cast<std::streamoff>(byteOffset), std::ios::beg);
-
-    char* current                     = reinterpret_cast<char*>(data);
-    unsigned long long remaining      = byteCount;
-    const unsigned long long maxChunk = static_cast<unsigned long long>(std::numeric_limits<std::streamsize>::max());
-    while (remaining > 0) {
-      const unsigned long long chunk = std::min(remaining, maxChunk);
-      in.read(current, static_cast<std::streamsize>(chunk));
-      TEUCHOS_TEST_FOR_EXCEPTION(!in.good(), std::runtime_error,
-                                 "Tpetra::BinaryIO: Failed to read array data from file '" << filename << "'.");
-      current += static_cast<std::ptrdiff_t>(chunk);
-      remaining -= chunk;
-    }
-  }
-  if (comm->getSize() > 1) {
-    broadcastBytesFromRoot(reinterpret_cast<char*>(data), byteCount, comm);
-  }
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMapSection(const std::string& filename,
                                                                           const unsigned long long mapSectionOffset,
                                                                           const map_type& map,
@@ -811,7 +511,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMapSection(const 
   const unsigned long long localCount = static_cast<unsigned long long>(gidsDevice.extent(0));
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> localCounts("Tpetra::BinaryIO::mapLocalCounts", comm->getSize());
   Teuchos::gatherAll(*comm, 1, &localCount, comm->getSize(), localCounts.data());
-  writeArrayFromRoot(filename,
+  Details::binaryIOWriteArrayFromRoot(filename,
                      mapSectionCountsOffset(mapSectionOffset),
                      localCounts.data(),
                      static_cast<unsigned long long>(localCounts.extent(0)),
@@ -819,7 +519,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMapSection(const 
 
   const unsigned long long globalOffset = exclusiveScanUnsignedLongLong(localCount, comm);
   const auto gidsHost                   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), gidsDevice);
-  writeArrayCollective(filename,
+  Details::binaryIOWriteArrayCollective(filename,
                        mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
                        gidsHost.data(),
                        localCount,
@@ -843,7 +543,7 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapSection(const std::s
 
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> localCounts("Tpetra::BinaryIO::mapLocalCounts",
                                                                    Details::binaryIOCheckedSize(sectionHeader.numRanks, "map section rank count"));
-  readArrayFromRoot(filename,
+  Details::binaryIOReadArrayFromRoot(filename,
                     mapSectionCountsOffset(mapSectionOffset),
                     localCounts.data(),
                     static_cast<unsigned long long>(localCounts.extent(0)),
@@ -857,7 +557,7 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapSection(const std::s
 
   Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> gids("Tpetra::BinaryIO::mapGids",
                                                        Details::binaryIOCheckedSize(localCount, "map section local element count"));
-  readArrayCollective(filename,
+  Details::binaryIOReadArrayCollective(filename,
                       mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
                       gids.data(),
                       localCount,
@@ -920,7 +620,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeDenseFile(const s
         KOKKOS_LAMBDA(const size_t i) {
           localValues(i) = static_cast<Scalar>(localXHost(i, j));
         });
-    writeArrayCollective(filename, header.valuesOffset, localValues.data(), localCount, columnOffset, map->getComm());
+    Details::binaryIOWriteArrayCollective(filename, header.valuesOffset, localValues.data(), localCount, columnOffset, map->getComm());
   }
 }
 
@@ -965,9 +665,7 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readDenseFile(const std::st
 
   for (size_t j = 0; j < fileX->getNumVectors(); ++j) {
     const unsigned long long columnOffset = static_cast<unsigned long long>(j) * globalLength + fileGlobalOffset;
-    if (fileLocalCount > 0) {
-      readArrayCollective(filename, header.valuesOffset, localValues.data(), fileLocalCount, columnOffset, comm);
-    }
+    Details::binaryIOReadArrayCollective(filename, header.valuesOffset, localValues.data(), fileLocalCount, columnOffset, comm);
     Kokkos::parallel_for(
         "Tpetra::BinaryIO::copyDenseColumnToDeviceHost",
         Kokkos::RangePolicy<host_execution_space>(0, localValues.extent(0)),
@@ -1097,10 +795,10 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseFile(const 
         localRowPtr(i) += globalNnzOffset;
       });
 
-  writeArrayCollective(filename, header.rowPtrOffset, localRowPtr.data(),
+  Details::binaryIOWriteArrayCollective(filename, header.rowPtrOffset, localRowPtr.data(),
                        static_cast<unsigned long long>(localRowPtr.extent(0)), globalRowOffset, rowMap->getComm());
-  writeArrayCollective(filename, header.columnIndicesOffset, localColumns.data(), localNnz, globalNnzOffset, rowMap->getComm());
-  writeArrayCollective(filename, header.valuesOffset, localValues.data(), localNnz, globalNnzOffset, rowMap->getComm());
+  Details::binaryIOWriteArrayCollective(filename, header.columnIndicesOffset, localColumns.data(), localNnz, globalNnzOffset, rowMap->getComm());
+  Details::binaryIOWriteArrayCollective(filename, header.valuesOffset, localValues.data(), localNnz, globalNnzOffset, rowMap->getComm());
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1144,7 +842,7 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
   const unsigned long long globalRowOffset = exclusiveScanUnsignedLongLong(localNumRows64, comm);
 
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> localRowPtr("Tpetra::BinaryIO::localRowPtr", localNumRows + 1);
-  readArrayCollective(filename, header.rowPtrOffset, localRowPtr.data(),
+  Details::binaryIOReadArrayCollective(filename, header.rowPtrOffset, localRowPtr.data(),
                       localNumRows64 + 1, globalRowOffset, comm);
   TEUCHOS_TEST_FOR_EXCEPTION(localRowPtr(localNumRows) < localRowPtr(0),
                              std::runtime_error,
@@ -1174,8 +872,8 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
   const size_t localNnz               = Details::binaryIOCheckedSize(localNnz64, "local sparse entry count");
   Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> globalColumns("Tpetra::BinaryIO::globalColumns", localNnz);
   Kokkos::View<Scalar*, Kokkos::HostSpace> values("Tpetra::BinaryIO::values", localNnz);
-  readArrayCollective(filename, header.columnIndicesOffset, globalColumns.data(), localNnz64, nnzStart, comm);
-  readArrayCollective(filename, header.valuesOffset, values.data(), localNnz64, nnzStart, comm);
+  Details::binaryIOReadArrayCollective(filename, header.columnIndicesOffset, globalColumns.data(), localNnz64, nnzStart, comm);
+  Details::binaryIOReadArrayCollective(filename, header.valuesOffset, values.data(), localNnz64, nnzStart, comm);
 
   const auto dom = domainMap.is_null() ? fileDomainMap : domainMap;
   const auto ran = rangeMap.is_null() ? fileRangeMap : rangeMap;
