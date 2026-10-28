@@ -768,20 +768,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BinaryIO, OppositeByteOrderThrows,
 }
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-#define UNIT_TEST_GROUP(LO, GO, NODE)                                                                       \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTrip, double, LO, GO, NODE)                        \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTripImbalancedContiguous, double, LO, GO, NODE)    \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTripLargeGIDs, double, LO, GO, NODE)               \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripDefaultMap, double, LO, GO, NODE)            \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripCustomMap, double, LO, GO, NODE)             \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripSmallChunks, double, LO, GO, NODE)           \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripEmptyRankSmallChunks, double, LO, GO, NODE)  \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, HeaderLocalOrdinalMismatchThrows, double, LO, GO, NODE)    \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, TruncatedFileThrowsOnAllRanks, double, LO, GO, NODE)       \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, OppositeByteOrderThrows, double, LO, GO, NODE)             \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripDefaultMap, double, LO, GO, NODE)           \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripCustomRowMap, double, LO, GO, NODE)         \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripLargeGIDs, double, LO, GO, NODE)            \
+#define UNIT_TEST_GROUP(LO, GO, NODE)                                                                      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTrip, double, LO, GO, NODE)                       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTripImbalancedContiguous, double, LO, GO, NODE)   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, MapRoundTripLargeGIDs, double, LO, GO, NODE)              \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripDefaultMap, double, LO, GO, NODE)           \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripCustomMap, double, LO, GO, NODE)            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripSmallChunks, double, LO, GO, NODE)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, DenseRoundTripEmptyRankSmallChunks, double, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, HeaderLocalOrdinalMismatchThrows, double, LO, GO, NODE)   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, TruncatedFileThrowsOnAllRanks, double, LO, GO, NODE)      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, OppositeByteOrderThrows, double, LO, GO, NODE)            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripDefaultMap, double, LO, GO, NODE)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripCustomRowMap, double, LO, GO, NODE)        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripLargeGIDs, double, LO, GO, NODE)           \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BinaryIO, SparseRoundTripEmptyRankSmallChunks, double, LO, GO, NODE)
 #else
 #define UNIT_TEST_GROUP(LO, GO, NODE)

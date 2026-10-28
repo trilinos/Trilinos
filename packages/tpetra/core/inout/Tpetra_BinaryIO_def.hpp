@@ -512,19 +512,19 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMapSection(const 
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> localCounts("Tpetra::BinaryIO::mapLocalCounts", comm->getSize());
   Teuchos::gatherAll(*comm, 1, &localCount, comm->getSize(), localCounts.data());
   Details::binaryIOWriteArrayFromRoot(filename,
-                     mapSectionCountsOffset(mapSectionOffset),
-                     localCounts.data(),
-                     static_cast<unsigned long long>(localCounts.extent(0)),
-                     comm);
+                                      mapSectionCountsOffset(mapSectionOffset),
+                                      localCounts.data(),
+                                      static_cast<unsigned long long>(localCounts.extent(0)),
+                                      comm);
 
   const unsigned long long globalOffset = exclusiveScanUnsignedLongLong(localCount, comm);
   const auto gidsHost                   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), gidsDevice);
   Details::binaryIOWriteArrayCollective(filename,
-                       mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
-                       gidsHost.data(),
-                       localCount,
-                       globalOffset,
-                       comm);
+                                        mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
+                                        gidsHost.data(),
+                                        localCount,
+                                        globalOffset,
+                                        comm);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -544,10 +544,10 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapSection(const std::s
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> localCounts("Tpetra::BinaryIO::mapLocalCounts",
                                                                    Details::binaryIOCheckedSize(sectionHeader.numRanks, "map section rank count"));
   Details::binaryIOReadArrayFromRoot(filename,
-                    mapSectionCountsOffset(mapSectionOffset),
-                    localCounts.data(),
-                    static_cast<unsigned long long>(localCounts.extent(0)),
-                    comm);
+                                     mapSectionCountsOffset(mapSectionOffset),
+                                     localCounts.data(),
+                                     static_cast<unsigned long long>(localCounts.extent(0)),
+                                     comm);
 
   const unsigned long long localCount = localCounts(comm->getRank());
   unsigned long long globalOffset     = 0;
@@ -558,11 +558,11 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapSection(const std::s
   Kokkos::View<GlobalOrdinal*, Kokkos::HostSpace> gids("Tpetra::BinaryIO::mapGids",
                                                        Details::binaryIOCheckedSize(localCount, "map section local element count"));
   Details::binaryIOReadArrayCollective(filename,
-                      mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
-                      gids.data(),
-                      localCount,
-                      globalOffset,
-                      comm);
+                                       mapSectionPayloadOffset(mapSectionOffset, sectionHeader.numRanks),
+                                       gids.data(),
+                                       localCount,
+                                       globalOffset,
+                                       comm);
 
   using device_type = typename map_type::device_type;
   Kokkos::View<GlobalOrdinal*, device_type> gidsDevice("Tpetra::BinaryIO::mapGidsDevice", gids.extent(0));
@@ -796,7 +796,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeSparseFile(const 
       });
 
   Details::binaryIOWriteArrayCollective(filename, header.rowPtrOffset, localRowPtr.data(),
-                       static_cast<unsigned long long>(localRowPtr.extent(0)), globalRowOffset, rowMap->getComm());
+                                        static_cast<unsigned long long>(localRowPtr.extent(0)), globalRowOffset, rowMap->getComm());
   Details::binaryIOWriteArrayCollective(filename, header.columnIndicesOffset, localColumns.data(), localNnz, globalNnzOffset, rowMap->getComm());
   Details::binaryIOWriteArrayCollective(filename, header.valuesOffset, localValues.data(), localNnz, globalNnzOffset, rowMap->getComm());
 }
@@ -843,7 +843,7 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
 
   Kokkos::View<unsigned long long*, Kokkos::HostSpace> localRowPtr("Tpetra::BinaryIO::localRowPtr", localNumRows + 1);
   Details::binaryIOReadArrayCollective(filename, header.rowPtrOffset, localRowPtr.data(),
-                      localNumRows64 + 1, globalRowOffset, comm);
+                                       localNumRows64 + 1, globalRowOffset, comm);
   TEUCHOS_TEST_FOR_EXCEPTION(localRowPtr(localNumRows) < localRowPtr(0),
                              std::runtime_error,
                              "Tpetra::BinaryIO: Sparse row pointers in file are not monotonic on this rank.");
