@@ -89,12 +89,15 @@ namespace
     const auto rightOrdinals = serendipityOrdinals<SerendipityFamily>(cellTopo, fs2, p2);
 
     const int numCells = geometry.numCells();
+    // copy the full-tensor matrix to the host before indexing into it (the device memory may not be host-accessible)
+    using HostDeviceType = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
+    const Data<Scalar,HostDeviceType> fullIntegralsHost(fullIntegrals);
     using HostView = Kokkos::View<Scalar***,Kokkos::HostSpace>;
     HostView standardIntegrals("filtered full-tensor integrals", numCells, leftOrdinals.size(), rightOrdinals.size());
     for (int cell=0; cell<numCells; cell++)
       for (unsigned i=0; i<leftOrdinals.size(); i++)
         for (unsigned j=0; j<rightOrdinals.size(); j++)
-          standardIntegrals(cell,i,j) = fullIntegrals(cell,leftOrdinals[i],rightOrdinals[j]); // Data access is host-accessible on the (serial) test device
+          standardIntegrals(cell,i,j) = fullIntegralsHost(cell,leftOrdinals[i],rightOrdinals[j]);
 
     auto paMatrix = constructPAMatrix<Scalar,SerendipityFamily>(geometry, p1, fs1, op1, vectorWeight1, p2, fs2, op2, vectorWeight2, applyOrientations);
     auto paIntegrals = paMatrix.allocateMatrixStorage();
