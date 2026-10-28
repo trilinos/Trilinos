@@ -124,11 +124,11 @@ void BucketRepository::set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool ne
     bucket.getPartition()->set_flag_needs_to_be_sorted(needsSorting);
 }
 
-void BucketRepository::internal_default_sort_bucket_entities(bool mustSortFacesByNodeIds)
+void BucketRepository::internal_default_sort_bucket_entities()
 {
     for(std::vector<Partition*>& partitionVector : m_partitions)
         for(Partition* partition : partitionVector)
-            partition->default_sort_if_needed(mustSortFacesByNodeIds);
+            partition->default_sort_if_needed();
 }
 
 void BucketRepository::internal_custom_sort_bucket_entities(const EntitySorterBase& sorter)

@@ -511,12 +511,20 @@ public:
 
 TEST(NgpEntitySorting, Comparator)
 {
+  using stk::mesh::EntityKey;
   stk::mesh::impl::EntityCompareInvalidAtEnd compare;
-  EXPECT_TRUE( compare(stk::mesh::Entity(1), stk::mesh::Entity(2)));
-  EXPECT_TRUE( compare(stk::mesh::Entity(1), stk::mesh::Entity(stk::mesh::Entity::InvalidEntity)));
-  EXPECT_FALSE(compare(stk::mesh::Entity(stk::mesh::Entity::InvalidEntity), stk::mesh::Entity(1)));
-  EXPECT_TRUE( compare(stk::mesh::Entity(stk::mesh::Entity::MaxEntity), stk::mesh::Entity(stk::mesh::Entity::InvalidEntity)));
-  EXPECT_FALSE(compare(stk::mesh::Entity(stk::mesh::Entity::InvalidEntity), stk::mesh::Entity(stk::mesh::Entity::MaxEntity)));
+  EntityKey node1(stk::topology::NODE_RANK, 1);
+  EntityKey node2(stk::topology::NODE_RANK, 2);
+  EntityKey elem1(stk::topology::ELEM_RANK, 1);
+  EntityKey invalid;
+
+  EXPECT_TRUE( compare(node1, node2));
+  EXPECT_FALSE(compare(node2, node1));
+  EXPECT_FALSE(compare(node1, node1));
+  EXPECT_TRUE( compare(node2, elem1));
+  EXPECT_TRUE( compare(node1, invalid));
+  EXPECT_FALSE(compare(invalid, node1));
+  EXPECT_FALSE(compare(invalid, invalid));
 }
 
 NGP_TEST_F(NgpBucketRepositoryTest, check_get_partitions)
@@ -2166,6 +2174,21 @@ public:
     }
   }
 
+  void set_keys_reversing_local_offsets(unsigned numEntities)
+  {
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+    auto& entityKeys = ngpMesh.get_entity_keys();
+    if (entityKeys.extent(0) < numEntities + 1) {
+      Kokkos::resize(entityKeys, numEntities + 1);
+    }
+    auto rank = testRank;
+    Kokkos::parallel_for(numEntities, KOKKOS_LAMBDA(const unsigned i) {
+      const unsigned localOffset = i + 1;
+      entityKeys(localOffset) = stk::mesh::EntityKey(rank, numEntities + 1 - localOffset);
+    });
+    Kokkos::fence();
+  }
+
   template <typename DevicePartition>
   void add_entities_in_buckets_in_reverse_order(DevicePartition* partition)
   {
@@ -2188,6 +2211,14 @@ public:
   void add_entities_in_partitions_in_reverse_order()
   {
     auto& deviceBucketRepo = get_device_bucket_repo();
+    unsigned maxNumEntitiesInPartition = 0;
+    for (unsigned i = 0; i < deviceBucketRepo.num_partitions(testRank); ++i) {
+      auto partition = deviceBucketRepo.get_partition(testRank, i);
+      maxNumEntitiesInPartition = std::max(maxNumEntitiesInPartition,
+                                           static_cast<unsigned>(partition->get_bucket(0)->capacity() * partition->num_buckets()));
+    }
+    set_keys_reversing_local_offsets(maxNumEntitiesInPartition);
+
     for (unsigned i = 0; i < deviceBucketRepo.num_partitions(testRank); ++i) {
       auto partition = deviceBucketRepo.get_partition(testRank, i);
       add_entities_in_buckets_in_reverse_order(partition);
@@ -2227,17 +2258,24 @@ public:
       auto partition = get_device_bucket_repo().get_partition(testRank, i);
       auto numBuckets = partition->num_buckets();
 
-      auto comp = stk::mesh::Entity{};
+      stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+      auto hostEntityKeys = Kokkos::create_mirror_view_and_copy(stk::ngp::HostMemSpace{}, ngpMesh.get_entity_keys());
+      stk::mesh::impl::EntityCompareInvalidAtEnd compare;
+
+      stk::mesh::EntityKey prevKey;
       for (unsigned j = 0; j < numBuckets; j++) {
         auto bucket = partition->m_buckets[j];
-        auto hostEntities = Kokkos::create_mirror_view_and_copy(stk::ngp::HostMemSpace{}, bucket->m_entities);
-        auto isSorted = Kokkos::Experimental::is_sorted(stk::ngp::HostExecSpace{}, hostEntities, stk::mesh::impl::EntityCompareInvalidAtEnd{});
 
         if (!bucket->is_active()) { continue; }
 
-        EXPECT_TRUE(isSorted);
-        EXPECT_TRUE(comp < hostEntities(0));
-        comp = hostEntities(hostEntities.extent(0)-1);
+        auto hostEntities = Kokkos::create_mirror_view_and_copy(stk::ngp::HostMemSpace{}, bucket->m_entities);
+        for (unsigned k = 0; k < bucket->size(); ++k) {
+          const stk::mesh::EntityKey key = hostEntityKeys(hostEntities(k).local_offset());
+          if (prevKey.is_valid()) {
+            EXPECT_TRUE(compare(prevKey, key));
+          }
+          prevKey = key;
+        }
       }
 
     }
@@ -2256,7 +2294,7 @@ NGP_TEST_F(NgpPartitionTestSortBucketEntitiesTest, get_entities_sorting_level)
 
   auto& deviceBucketRepo = get_device_bucket_repo();
   auto partition = deviceBucketRepo.get_partition(testRank, 0);
-  auto level0MaxNumBuckets = level0MaxSize / (bucketCapacity * sizeof(stk::mesh::Entity));
+  auto level0MaxNumBuckets = level0MaxSize / (bucketCapacity * (sizeof(stk::mesh::Entity) + sizeof(stk::mesh::EntityKey)));
   auto rank = partition->get_rank();
   auto& partOrdinals = partition->superset_part_ordinals();
 

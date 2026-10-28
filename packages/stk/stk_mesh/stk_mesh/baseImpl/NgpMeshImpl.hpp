@@ -979,25 +979,29 @@ bool should_keep_induced_part(MeshType const& ngpMesh, TeamMember const& team,
   return anyKeeps;
 }
 
-template <typename DeniedPartRemovalViewType>
+template <typename SortedViewType, typename T>
 KOKKOS_INLINE_FUNCTION
-bool is_part_removal_denied(DeniedPartRemovalViewType deniedPartRemovalView, Entity entity, PartOrdinal part)
+bool sorted_view_contains(SortedViewType const& sortedView, T const& target)
 {
-  const size_t numDenied = deniedPartRemovalView.extent(0);
-  if (numDenied == 0) { return false; }
-
-  const DeniedPartRemoval target{entity, part};
-  size_t lo = 0;
-  size_t hi = numDenied;
+  auto numEntries = sortedView.extent(0);
+  auto lo = 0u;
+  auto hi = numEntries;
   while (lo < hi) {
     const size_t mid = lo + (hi - lo) / 2;
-    if (deniedPartRemovalView(mid) < target) {
+    if (static_cast<T>(sortedView(mid)) < target) {
       lo = mid + 1;
     } else {
       hi = mid;
     }
   }
-  return (lo < numDenied) && (deniedPartRemovalView(lo) == target);
+  return (lo < numEntries) && (static_cast<T>(sortedView(lo)) == target);
+}
+
+template <typename DeniedPartRemovalViewType>
+KOKKOS_INLINE_FUNCTION
+bool is_part_removal_denied(DeniedPartRemovalViewType deniedPartRemovalView, Entity entity, PartOrdinal part)
+{
+  return sorted_view_contains(deniedPartRemovalView, DeniedPartRemoval{entity, part});
 }
 
 template<typename MeshType, typename WrappedEntityViewType, typename AddPartsViewType, typename RmPartsViewType,
@@ -1065,14 +1069,7 @@ void set_new_part_list_per_entity_with_induced_parts(MeshType const& ngpMesh,
                             return false;
                           };
       
-      auto isInWrappedEntities = [&](Entity entity) {
-                                   for (unsigned re = 0; re < wrappedEntities.extent(0); ++re) {
-                                     if (entity == static_cast<Entity>(wrappedEntities(re))) {
-                                       return true;
-                                     }
-                                   }
-                                   return false;
-                                 };
+      auto isInWrappedEntities = [&](Entity entity) { return sorted_view_contains(wrappedEntities, entity); };
 
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, myNumParts),
         [&](const int& thIdx) {
@@ -1823,75 +1820,11 @@ void set_new_part_list_per_entity_after_relation_addition(const MeshType& ngpMes
   Kokkos::fence();
 }
 
-template <typename MeshType, typename EntitySrcDestView, typename NewBucketsToAddViewType>
-void assign_initial_bucket_id_and_ordinal(MeshType const& ngpMesh, stk::topology::rank_t rank, EntitySrcDestView& entitySrcDestView,
-                                          NewBucketsToAddViewType& numNewBucketsToAddInPartitions)
+template <typename EntitySrcDestType>
+KOKKOS_INLINE_FUNCTION
+bool is_same_dest_partition_group(EntitySrcDestType const& lhs, EntitySrcDestType const& rhs)
 {
-  auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
-  deviceBucketRepo.check_mesh_consistency();
-
-  auto begin = Kokkos::Experimental::begin(entitySrcDestView);
-  auto end = Kokkos::Experimental::end(entitySrcDestView);
-
-  if (!Kokkos::Experimental::is_sorted(typename MeshType::MeshExecSpace{}, entitySrcDestView)) {
-    Kokkos::sort(entitySrcDestView);
-  }
-
-  // TODO convert to block partitioned parallel scan
-  Kokkos::parallel_for(
-      1, KOKKOS_LAMBDA(const int) {
-        auto currRank = stk::topology::INVALID_RANK;
-        unsigned currDestPartitionId = INVALID_PARTITION_ID;
-        unsigned nextBucketOrdinalInPartition = INVALID_INDEX;
-        unsigned nextEntityOrdinalInBucket = INVALID_INDEX;
-
-        int newBucketPerPartitionIdx = -1;
-
-        unsigned bucketCapacity = deviceBucketRepo.get_bucket_capacity();
-
-        for (unsigned i = 0; i < entitySrcDestView.extent(0); ++i) {
-          auto& srcDest = entitySrcDestView(i);
-          auto destPartitionId = srcDest.destPartitionId;
-
-          // new sets of entities into another partition
-          if (currDestPartitionId != destPartitionId || currRank != rank) {
-            currDestPartitionId = destPartitionId;
-            currRank = rank;
-
-            auto partition = deviceBucketRepo.get_partition(rank, destPartitionId);
-            auto lastBucketIdx = partition->get_last_avail_bucket_index();
-
-            numNewBucketsToAddInPartitions(++newBucketPerPartitionIdx) = {rank, destPartitionId, 0};
-
-            // append to the end of existing bucket
-            if (lastBucketIdx != INVALID_INDEX) {
-              auto destBucket = partition->m_buckets[lastBucketIdx];
-              nextBucketOrdinalInPartition = lastBucketIdx;
-              nextEntityOrdinalInBucket = destBucket->size();
-            }
-            // place into a new bucket
-            else {
-              nextBucketOrdinalInPartition = partition->m_buckets.size();
-              nextEntityOrdinalInBucket = 0;
-              numNewBucketsToAddInPartitions(newBucketPerPartitionIdx).numBucketsToAdd++;
-            }
-          }
-
-          // need to place into next (new) bucket
-          if (nextEntityOrdinalInBucket >= bucketCapacity) {
-            nextBucketOrdinalInPartition++;
-            nextEntityOrdinalInBucket = 0;
-            numNewBucketsToAddInPartitions(newBucketPerPartitionIdx).numBucketsToAdd++;
-          }
-
-          srcDest.destBucketId = INVALID_BUCKET_ID;  // to be filled in later; can't be determined now
-          srcDest.destBucketIndexInPartition = nextBucketOrdinalInPartition;
-          srcDest.destBucketOrd = nextEntityOrdinalInBucket;
-
-          nextEntityOrdinalInBucket++;
-        }
-      });
-  Kokkos::fence();
+  return (lhs.rank == rhs.rank) && (lhs.destPartitionId == rhs.destPartitionId);
 }
 
 template <typename MeshType, typename EntitySrcDestView, typename NewBucketsToAddViewType,
@@ -1900,12 +1833,16 @@ void assign_dest_bucket_id_and_ordinal(MeshType const& ngpMesh, EntitySrcDestVie
                                        NewBucketsToAddViewType& numNewBucketsToAddInPartitions,
                                        GrowLastBucketViewType& growLastBucketInPartition)
 {
+  using ExecSpace = typename MeshType::MeshExecSpace;
+  using MemSpace = typename EntitySrcDestView::memory_space;
+  using UnsignedViewType = Kokkos::View<unsigned*, MemSpace>;
+
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
   deviceBucketRepo.check_mesh_consistency();
 
   auto begin = Kokkos::Experimental::begin(entitySrcDestView);
   auto end = Kokkos::Experimental::remove_if(
-      typename MeshType::MeshExecSpace{}, entitySrcDestView,
+      ExecSpace{}, entitySrcDestView,
       KOKKOS_LAMBDA(typename EntitySrcDestView::value_type const& srcDest) {
         return srcDest.srcPartitionId == srcDest.destPartitionId;
       });
@@ -1913,85 +1850,73 @@ void assign_dest_bucket_id_and_ordinal(MeshType const& ngpMesh, EntitySrcDestVie
   auto newLength = Kokkos::Experimental::distance(begin, end);
   Kokkos::resize(entitySrcDestView, newLength); 
 
-  if (!Kokkos::Experimental::is_sorted(typename MeshType::MeshExecSpace{}, entitySrcDestView)) {
+  if (!Kokkos::Experimental::is_sorted(ExecSpace{}, entitySrcDestView)) {
     Kokkos::sort(entitySrcDestView);
   }
 
-  // TODO convert to block partitioned parallel scan
-  Kokkos::parallel_for(
-      1, KOKKOS_LAMBDA(const int) {
-        auto currRank = stk::topology::INVALID_RANK;
-        unsigned currDestPartitionId = INVALID_PARTITION_ID;
-        unsigned nextBucketOrdinalInPartition = INVALID_INDEX;
-        unsigned nextEntityOrdinalInBucket = INVALID_INDEX;
+  auto numEntities = entitySrcDestView.extent(0);
+  UnsignedViewType destPartitionGroupId(Kokkos::view_alloc(Kokkos::WithoutInitializing, "destPartitionGroupId"), numEntities);
+  UnsignedViewType destPartitionGroupStartIdx(Kokkos::view_alloc(Kokkos::WithoutInitializing, "destPartitionGroupStartIdx"), numEntities);
 
-        int newBucketPerPartitionIdx = -1;
-        int growLastBucketInPartitionIdx = -1;
+  // For numbering destination partition groups (id and starting idx)
+  Kokkos::parallel_scan("number_dest_partition_groups", Kokkos::RangePolicy<ExecSpace>(0, numEntities),
+    KOKKOS_LAMBDA(const unsigned i, unsigned& update, const bool isFinal) {
+      const bool isGroupStart = (i == 0) || !is_same_dest_partition_group(entitySrcDestView(i), entitySrcDestView(i-1));
+      if (isFinal && isGroupStart) {
+        destPartitionGroupStartIdx(update) = i;
+      }
+      if (isGroupStart) { ++update; }
+      if (isFinal) {
+        destPartitionGroupId(i) = update - 1;
+      }
+    }
+  );
 
-        unsigned maxBucketCapacity = deviceBucketRepo.get_maximum_bucket_capacity();
+  Kokkos::parallel_for("assign_dest_bucket_id_and_ordinal", Kokkos::RangePolicy<ExecSpace>(0, numEntities),
+    KOKKOS_LAMBDA(const unsigned i) {
+      auto& srcDest = entitySrcDestView(i);
+      auto rank = srcDest.rank;
+      auto destPartitionId = srcDest.destPartitionId;
+      auto groupId = destPartitionGroupId(i);
+      auto posInGroup = i - destPartitionGroupStartIdx(groupId);
 
-        for (unsigned i = 0; i < entitySrcDestView.extent(0); ++i) {
-          auto& srcDest = entitySrcDestView(i);
-          auto rank = srcDest.rank;
-          auto destPartitionId = srcDest.destPartitionId;
-          unsigned destBucketCapacity = maxBucketCapacity;
+      auto maxBucketCapacity = deviceBucketRepo.get_maximum_bucket_capacity();
+      auto partition = deviceBucketRepo.get_partition(rank, destPartitionId);
+      auto lastBucketIdx = partition->get_last_avail_bucket_index(maxBucketCapacity);
+      auto appendToLastBucket = (lastBucketIdx != INVALID_INDEX);
 
-          // new sets of entities into another partition
-          if (currDestPartitionId != destPartitionId || currRank != rank) {
-            currDestPartitionId = destPartitionId;
-            currRank = rank;
+      unsigned startBucketIdxInPartition = partition->m_buckets.size();
+      unsigned startBucketOrd = 0;
+      unsigned startBucketCapacity = maxBucketCapacity;
 
-            auto partition = deviceBucketRepo.get_partition(rank, destPartitionId);
-            auto lastBucketIdx = partition->get_last_avail_bucket_index(maxBucketCapacity);
+      if (appendToLastBucket) {
+        auto destBucket = partition->m_buckets[lastBucketIdx];
+        startBucketIdxInPartition = lastBucketIdx;
+        startBucketOrd = destBucket->size();
+        startBucketCapacity = destBucket->capacity();
+      }
 
-            numNewBucketsToAddInPartitions(++newBucketPerPartitionIdx) = {rank, destPartitionId, 0};
+      auto posFromStartBucket = startBucketOrd + posInGroup;
+      srcDest.destBucketId = INVALID_BUCKET_ID;  // to be determined later; can't be done now
+      srcDest.destBucketIndexInPartition = startBucketIdxInPartition + posFromStartBucket / maxBucketCapacity;
+      srcDest.destBucketOrd = posFromStartBucket % maxBucketCapacity;
 
-            if (lastBucketIdx != INVALID_INDEX) {
-              // append to the end of existing bucket
-              auto destBucket = partition->m_buckets[lastBucketIdx];
-              nextBucketOrdinalInPartition = lastBucketIdx;
-              nextEntityOrdinalInBucket = destBucket->size();
-              destBucketCapacity = destBucket->capacity();
-            }
-            else {
-              // place into a new bucket
-              nextBucketOrdinalInPartition = partition->m_buckets.size();
-              nextEntityOrdinalInBucket = 0;
-              numNewBucketsToAddInPartitions(newBucketPerPartitionIdx).numBucketsToAdd++;
-            }
-          }
+      auto isGroupEnd = (i == numEntities - 1) || !is_same_dest_partition_group(entitySrcDestView(i), entitySrcDestView(i+1));
+      if (isGroupEnd) {
+        STK_NGP_ThrowAssertMsg(!appendToLastBucket ||
+                               partition->m_buckets[lastBucketIdx]->size() == partition->m_buckets[lastBucketIdx]->get_active_entity_span(),
+                               "Appending to a bucket in the middle of a partition. sync_from_partitions was not called.");
 
-          if (nextEntityOrdinalInBucket >= maxBucketCapacity) {
-            // need to place into next (new) bucket
-            nextBucketOrdinalInPartition++;
-            nextEntityOrdinalInBucket = 0;
-            numNewBucketsToAddInPartitions(newBucketPerPartitionIdx).numBucketsToAdd++;
-          }
-          else if (nextEntityOrdinalInBucket >= destBucketCapacity) {
-            growLastBucketInPartition(++growLastBucketInPartitionIdx) = {rank, destPartitionId, true};
-          }
+        auto numBucketsToAdd = (appendToLastBucket ? 0 : 1) + posFromStartBucket / maxBucketCapacity;
+        numNewBucketsToAddInPartitions(groupId) = {rank, destPartitionId, numBucketsToAdd};
 
-          srcDest.destBucketId = INVALID_BUCKET_ID;  // to be filled in later; can't be determined now
-          srcDest.destBucketIndexInPartition = nextBucketOrdinalInPartition;
-          srcDest.destBucketOrd = nextEntityOrdinalInBucket;
-
-          // printf("assign_dest_bucket_id_and_ordinal at [%u] entitySrcDest:\n"
-          //        "\tsrcPartitionId = %u\n",
-          //        i,
-          //        srcDest.srcPartitionId);
-
-          // printf("\tdestPartitionId = %u\n"
-          //        "\tdestBucketIndexInPartition = %u\n"
-          //        "\tdestBucketOrd = %u\n"
-          //        "\tnum new buckets to add = %u\n"
-          //        "\tdestNodeConnectivityStartIdx = %u\n"
-          //        "\tdestNodeConnectivityLength = %u\n"
-          //        srcDest.destPartitionId, srcDest.destBucketIndexInPartition, srcDest.destBucketOrd,
-          //        numNewBucketsToAddInPartitions(newBucketPerPartitionIdx).numBucketsToAdd,
-
-          nextEntityOrdinalInBucket++;
+        if (appendToLastBucket && startBucketCapacity < maxBucketCapacity &&
+            posFromStartBucket >= startBucketCapacity) {
+          growLastBucketInPartition(groupId) = {rank, destPartitionId, true};
         }
-      });
+      }
+    }
+  );
   Kokkos::fence();
 }
 

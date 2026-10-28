@@ -152,6 +152,26 @@ endif()
 
 stk_check_fp_handling()
 
+# yaml-cpp is optional; it enables the stk_transfer --input-file capability.
+# Set STK_HAS_YAML_CPP=OFF to disable it even if yaml-cpp is found.
+if (NOT DEFINED STK_HAS_YAML_CPP OR STK_HAS_YAML_CPP)
+  if(NOT HAVE_STK_Trilinos)
+    find_package(yaml-cpp QUIET)
+  elseif(TPL_ENABLE_yamlcpp)
+    SET(STK_HAS_YAML_CPP ON)
+  endif()
+endif()
+
+
+if(TPL_ENABLE_yamlcpp OR TARGET yaml-cpp OR TARGET yaml-cpp::yaml-cpp OR YAML_CPP_LIBRARIES)
+  message("Found yaml-cpp, enabling stk_transfer input-file support")
+  SET(STK_HAS_YAML_CPP ON)
+elseif(NOT HAVE_STK_Trilinos AND STK_HAS_YAML_CPP)
+  message(FATAL_ERROR "yaml-cpp requested via STK_HAS_YAML_CPP=ON but not found.")
+else()
+  message("Optional yaml-cpp usage not enabled (stk_transfer --input-file will not be supported)")
+endif()
+
 if(NOT HAVE_STK_Trilinos)
   find_package(SEACAS QUIET)
 endif()

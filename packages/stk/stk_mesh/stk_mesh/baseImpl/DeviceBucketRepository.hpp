@@ -314,7 +314,7 @@ class DeviceBucketRepository
           auto destPartition = get_partition(rank, destPartitionId);
 
           destPartition->add_entity_without_connectivity(entity, destBucketIndexInPartition, destBucketOrd);
-          srcPartition->remove_entity(srcBucketId, srcBucketOrd);
+          srcPartition->remove_entity(*get_bucket(rank, srcBucketId), srcBucketOrd);
 
           srcPartition->set_modified();
           destPartition->set_modified();
@@ -562,8 +562,11 @@ class DeviceBucketRepository
   template <typename NewBucketsToAddViewType>
   void batch_create_buckets(NewBucketsToAddViewType numNewBucketsToAddInPartition)
   {
+    Kokkos::Profiling::pushRegion("batch_create_buckets");
     auto hostNumBucketsToCreate =
         Kokkos::create_mirror_view_and_copy(stk::ngp::HostMemSpace{}, numNewBucketsToAddInPartition);
+
+    std::vector<std::vector<std::pair<DevicePartition<NgpMemSpace>*, unsigned>>> partitionsAndNumBucketsPerRank(m_entityEndRank);
     for (unsigned i = 0; i < hostNumBucketsToCreate.extent(0); ++i) {
       auto& numBucktsToCreateInfo = hostNumBucketsToCreate(i);
       auto rank = numBucktsToCreateInfo.rank;
@@ -573,11 +576,13 @@ class DeviceBucketRepository
         continue;
       }
 
-      auto partition = get_partition(rank, partitionId);
-      for (unsigned j = 0; j < numBucketsToCreate; ++j) {
-        construct_new_bucket(rank, partition->superset_part_ordinals(), partition);  // Max capacity, for performance
-      }
+      partitionsAndNumBucketsPerRank[rank].emplace_back(get_partition(rank, partitionId), numBucketsToCreate);
     }
+
+    for (EntityRank rank = stk::topology::BEGIN_RANK; rank < m_entityEndRank; ++rank) {
+      construct_new_buckets(rank, partitionsAndNumBucketsPerRank[rank]);
+    }
+    Kokkos::Profiling::popRegion();
   }
 
   template <typename GrowLastBucketInPartitionType>
@@ -642,27 +647,85 @@ class DeviceBucketRepository
                                      PartOrdinalViewType<NgpMemSpace> const& partOrdinals,
                                      DevicePartition<NgpMemSpace>* partition = nullptr)
   {
-    Kokkos::Profiling::pushRegion("construct_bucket");
-    auto newBucket = construct_new_bucket_without_part_ordinals(rank);
-    newBucket->set_part_ordinals(partOrdinals);
-
     partition = (partition != nullptr) ? partition : get_partition(rank, partOrdinals);
-    partition->add_bucket(newBucket);
-    partition->set_modified();
+    STK_ThrowRequireMsg(partition != nullptr, "construct_new_bucket: no partition matches the given part ordinals");
+
+    construct_new_buckets(rank, {{partition, 1u}});
+
+    DeviceBucketViewVector& buckets = m_buckets[rank];
+    return &buckets[buckets.size()-1];
+  }
+
+  void construct_new_buckets_in_partition(const EntityRank rank,
+                                          DevicePartition<NgpMemSpace>& partition,
+                                          unsigned numBuckets,
+                                          PartVector& parts,
+                                          std::vector<DeviceFieldDataManagerBase::NewBucketInfo>& newBucketInfos)
+  {
+    Kokkos::Profiling::pushRegion("construct_new_buckets_in_partition");
+    auto const& partOrdinals = partition.superset_part_ordinals();
+    const PartVector& allParts = m_mesh->get_bulk_on_host().mesh_meta_data().get_parts();
+
+    const auto& devicePartRepo = get_device_part_repository();
+    auto locallyOwnedPartOrdinal = devicePartRepo.get_locally_owned_part_ordinal();
+    auto globallySharedPartOrdinal = devicePartRepo.get_globally_shared_part_ordinal();
+    auto auraPartOrdinal = devicePartRepo.get_aura_part_ordinal();
+
+    auto hostPartOrdinals = Kokkos::create_mirror_view_and_copy(stk::ngp::HostMemSpace{}, partOrdinals);
+    parts.resize(partOrdinals.extent(0));
+
+    bool isOwned = false;
+    bool isShared = false;
+    bool isInAura = false;
+    for (unsigned i = 0; i < partOrdinals.extent(0); ++i) {
+      auto partOrdinal = hostPartOrdinals(i);
+      parts[i] = allParts[partOrdinal];
+      isOwned |= (partOrdinal == locallyOwnedPartOrdinal);
+      isShared |= (partOrdinal == globallySharedPartOrdinal);
+      isInAura |= (partOrdinal == auraPartOrdinal);
+    }
+
+    for (unsigned b = 0; b < numBuckets; ++b) {
+      auto newBucket = construct_new_bucket_without_part_ordinals(rank);
+      newBucket->m_partOrdinals = partOrdinals;
+      newBucket->set_ownership(isOwned, isShared, isInAura);
+      partition.add_bucket(newBucket);
+      newBucketInfos.push_back({static_cast<unsigned>(newBucket->size()), static_cast<unsigned>(newBucket->capacity()), &parts});
+    }
+    partition.set_modified();
+    Kokkos::Profiling::popRegion();
+  }
+
+  void construct_new_buckets(const EntityRank rank,
+                             std::vector<std::pair<DevicePartition<NgpMemSpace>*, unsigned>> const& partitionsAndNumBuckets)
+  {
+    unsigned totalNumNewBuckets = 0;
+    for (auto const& [partition, numBuckets] : partitionsAndNumBuckets) {
+      totalNumNewBuckets += numBuckets;
+    }
+    if (totalNumNewBuckets == 0) { return; }
+
+    Kokkos::Profiling::pushRegion("construct_new_buckets");
+    DeviceBucketViewVector& buckets = m_buckets[rank];
+    if (buckets.size() + totalNumNewBuckets > buckets.capacity()) {
+      buckets.reserve(buckets.size() + totalNumNewBuckets);
+      update_bucket_ptrs_in_partitions(rank);
+    }
 
     DeviceFieldDataManagerBase* deviceFieldDataManagerBase = m_mesh->get_field_data_manager(m_mesh->get_bulk_on_host());
 
-    auto hostPartOrdinals = Kokkos::create_mirror_view_and_copy(stk::ngp::HostMemSpace{}, partOrdinals);
-
     const MetaData& meta = m_mesh->get_bulk_on_host().mesh_meta_data();
-    const PartVector& allParts = meta.get_parts();
-    PartVector parts(partOrdinals.extent(0));
-    for(unsigned i=0; i<partOrdinals.extent(0); ++i) {
-      parts[i] = allParts[hostPartOrdinals(i)];
+    std::vector<PartVector> partsPerPartition(partitionsAndNumBuckets.size());
+    std::vector<DeviceFieldDataManagerBase::NewBucketInfo> newBucketInfos;
+    newBucketInfos.reserve(totalNumNewBuckets);
+
+    for (unsigned p = 0; p < partitionsAndNumBuckets.size(); ++p) {
+      auto [partition, numBuckets] = partitionsAndNumBuckets[p];
+      construct_new_buckets_in_partition(rank, *partition, numBuckets, partsPerPartition[p], newBucketInfos);
     }
 
     constexpr bool deviceMeshMod = true;
-    deviceFieldDataManagerBase->add_new_bucket(rank, newBucket->size(), newBucket->capacity(), parts, deviceMeshMod);
+    deviceFieldDataManagerBase->add_new_buckets(rank, newBucketInfos, deviceMeshMod);
 
     auto& fieldsOfRank = meta.get_fields(rank);
     for(auto* field : fieldsOfRank) {
@@ -671,9 +734,7 @@ class DeviceBucketRepository
         deviceFieldDataManagerBase->set_device_field_meta_data(*impl::get_device_data(*field));
       }
     }
-
     Kokkos::Profiling::popRegion();
-    return newBucket;
   }
 
   void grow_last_bucket(DevicePartition<NgpMemSpace>& partition)
@@ -685,6 +746,8 @@ class DeviceBucketRepository
     const unsigned lastBucketIndex = partition.num_buckets() - 1;
     auto& lastBucket = partition.get_bucket(lastBucketIndex);
     lastBucket->grow_capacity(m_maximumBucketCapacity);  // All device growth is to max capacity (for performance)
+    lastBucket->set_modified();
+    partition.set_modified();
 
     DeviceFieldDataManagerBase* deviceFieldDataManager = m_mesh->get_field_data_manager(m_mesh->get_bulk_on_host());
     deviceFieldDataManager->grow_bucket(partition.get_rank(), lastBucket.bucketId, m_maximumBucketCapacity);
@@ -701,6 +764,10 @@ class DeviceBucketRepository
     bucket->set_inactive();
     m_buckets[bucket->entity_rank()].decrement_num_active_entries();
     bucket->set_modified();
+
+    if (bucket->partition_id() != INVALID_PARTITION_ID) {
+      get_partition(bucket->entity_rank(), bucket->partition_id())->set_modified();
+    }
   }
 
   void invalidate_partition(DevicePartition<NgpMemSpace>* partition)
@@ -833,7 +900,7 @@ class DeviceBucketRepository
     Kokkos::fence();
     STK_ThrowAssert(maxNumBuckets > 0);
 
-    auto maxNeededSize = sizeof(Entity) * m_maximumBucketCapacity * maxNumBuckets;
+    auto maxNeededSize = (sizeof(Entity) + sizeof(EntityKey)) * m_maximumBucketCapacity * maxNumBuckets;
     auto numPartitions = num_partitions(rank);
     auto neededShmemForMaxParallel = maxNeededSize * numPartitions;
     auto mode = get_scratch_level(neededShmemForMaxParallel);
@@ -851,6 +918,7 @@ class DeviceBucketRepository
     auto teamScratchLevel = (sortMode == SCRATCH_LEVEL0) ? 0 : 1;
 
     teamPolicy.set_scratch_size(teamScratchLevel, Kokkos::PerTeam(shmemSize));
+    auto entityKeys = m_mesh->get_entity_keys();
 
     Kokkos::parallel_for("sort_entitise_in_partitions", teamPolicy,
       KOKKOS_CLASS_LAMBDA(const TeamMember& teamMember) {
@@ -858,7 +926,7 @@ class DeviceBucketRepository
         auto partition = get_partition(rank, partitionIdx);
 
         if (partition->is_active()) {
-          partition->sort_entities_in_buckets(teamMember, teamScratchLevel, shmemSize);
+          partition->sort_entities_in_buckets(teamMember, teamScratchLevel, shmemSize, entityKeys);
         }
       }
     );
@@ -870,11 +938,14 @@ class DeviceBucketRepository
     using TeamPolicy = Kokkos::TeamPolicy<stk::ngp::ExecSpace>;
     using TeamMember = typename TeamPolicy::member_type;
 
-    unsigned maxNumEntityPerPartition = (maxMemSizePerPartition / sizeof(Entity));
+    unsigned maxNumEntityPerPartition = (maxMemSizePerPartition / (sizeof(Entity) + sizeof(EntityKey)));
     auto& partitions = get_partitions(rank);
     unsigned allEntitiesViewExtent =  maxNumEntityPerPartition * partitions.size();
-    Kokkos::View<Entity*> allEntities("temporary_all_entities_view", allEntitiesViewExtent);
 
+    Kokkos::View<Entity*> allEntities("temporary_all_entities_view", allEntitiesViewExtent);
+    Kokkos::View<EntityKey*> allEntityKeys("temporary_all_entity_keys_view", allEntitiesViewExtent);
+
+    auto entityKeys = m_mesh->get_entity_keys();
     auto teamPolicy = TeamPolicy(partitions.size(), Kokkos::AUTO);
 
     Kokkos::parallel_for("sort_entitise_in_partitions", teamPolicy,
@@ -882,8 +953,8 @@ class DeviceBucketRepository
         const unsigned partitionIdx = teamMember.league_rank();
         auto partition = get_partition(rank, partitionIdx);
 
-        if (partition->is_active()) {
-          partition->sort_entities_in_buckets(teamMember, allEntities, maxNumEntityPerPartition);
+        if (partition->is_active() && partition->is_modified()) {
+          partition->sort_entities_in_buckets(teamMember, allEntities, allEntityKeys, entityKeys, maxNumEntityPerPartition);
         }
       }
     );

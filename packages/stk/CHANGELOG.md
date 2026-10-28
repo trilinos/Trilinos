@@ -1,4 +1,9 @@
 # CHANGELOG
+5.33.2   (STK_VERSION 5330200) 10/27/2026
+  stk_transfer: add YAML input file
+  stk_transfer: add ability for receiver in ReducedDependencyGeometricTransfer
+                to blend multiple sender values
+  
 
 5.33.1   (STK_VERSION 5330100) 10/15/2026
   stk_search: added backward compatibility with OpenMP 4.x - the functions

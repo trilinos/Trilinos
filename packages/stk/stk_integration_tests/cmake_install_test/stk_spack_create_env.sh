@@ -26,31 +26,31 @@ exe cd ${STK_SPACK_WORK_DIR}
 
 if [ "${skip_spack_setup}" == "false" ] ; then
 exe rm -rf spack
-exe git clone --depth=100 git@github.com:spack/spack.git
+exe git clone --depth=100 -b v1.2.2 git@github.com:spack/spack.git
 fi
 
 exe source ./spack/share/spack/setup-env.sh
 
 if [ "${skip_spack_setup}" == "false" ] ; then
-  exe spack env create stk_gcc12_spack_env
+  exe spack env create stk_gcc14_spack_env
 fi
 
-exe spack env activate stk_gcc12_spack_env
+exe spack env activate stk_gcc14_spack_env
 
-exe cp ${sierra_dir}/stk/stk_integration_tests/cmake_install_test/spack.gcc.yaml spack.yaml
+exe cp ${sierra_dir}/stk/stk_integration_tests/cmake_install_test/spack.gcc14.yaml spack.yaml
 exe sed -i s@SED_REPLACE_STK_SPACK_INSTALL_PATH@"${work_dir}/spack-install"@g spack.yaml
 exe sed -i s@SED_REPLACE_STK_SPACK_STAGE_PATH@"${work_dir}/spack-stage"@g spack.yaml
 exe spack config add -f spack.yaml
 
-exe spack add gcc@12.3.0
-exe spack add cmake@3.29.4
-exe spack add boost@1.85.0
+exe spack add gcc@14.2.0
+exe spack add cmake@4.3.3
+exe spack add boost@1.88.0
 exe spack add googletest cxxstd=20
 exe spack add zlib@1.3
 exe spack add openmpi@4.1.6
-exe spack add hdf5@1.14.3
-exe spack add parallel-netcdf@1.12.3
-exe spack add netcdf-c@4.9.2
+exe spack add hdf5@1.14.6
+exe spack add parallel-netcdf@1.14.1
+exe spack add netcdf-c@4.10.0
 exe spack add metis@5.1.0
 exe spack add parmetis@4.0.3
 exe spack add yaml-cpp@0.8.0

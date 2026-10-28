@@ -37,6 +37,7 @@
 #include "stk_mesh/base/Types.hpp"
 #include <cstddef>
 #include <any>
+#include <vector>
 
 namespace stk::mesh {
 
@@ -59,6 +60,13 @@ public:
   {
     size_t size = 0;
     size_t capacity = 0;
+  };
+
+  struct NewBucketInfo
+  {
+    unsigned size = 0;
+    unsigned capacity = 0;
+    const PartVector* parts = nullptr;
   };
 
   DeviceFieldDataManagerBase() = default;
@@ -85,6 +93,10 @@ public:
                               unsigned bucketCapacity,
                               const PartVector& parts,
                               bool deviceMeshMod = false) = 0;
+
+  virtual void add_new_buckets(EntityRank rank,
+                               const std::vector<NewBucketInfo>& newBuckets,
+                               bool deviceMeshMod = false) = 0;
 
   virtual size_t synchronized_count() const = 0;
 

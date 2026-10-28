@@ -42,7 +42,7 @@ exe module load aue/git/2.42.0
 exe module load aue/netlib-lapack/3.11.0-gcc-10.3.0
 exe module load aue/openmpi/4.1.6-gcc-10.3.0
 
-exe git clone --depth=100 git@github.com:spack/spack.git
+exe git clone --depth=100 -b v1.2.2 git@github.com:spack/spack.git
 exe source ./spack/share/spack/setup-env.sh
 
 exe spack env create stkSpackTesting

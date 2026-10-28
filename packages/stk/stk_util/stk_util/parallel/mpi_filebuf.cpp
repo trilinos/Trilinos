@@ -7,15 +7,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -31,7 +31,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
  */
 
 #include "stk_util/parallel/mpi_filebuf.hpp"
@@ -111,7 +111,6 @@ mpi_filebuf * mpi_filebuf::open(
   const std::ios_base::openmode file_mode ,
   const char * const   file_name )
 {
-#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
   const double start_time = mpi_wall_time();
 
   // If already open then abort
@@ -180,6 +179,8 @@ mpi_filebuf * mpi_filebuf::open(
     return nullptr ;
   }
 
+#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
+
   // If input and use_aprepro, parse the file and store parsed results
   // into buffer on root_processor.
   if (use_aprepro && !comm_output) {
@@ -225,7 +226,7 @@ mpi_filebuf * mpi_filebuf::open(
 
     aprepro_warnings = warnStream.str();
     aprepro_errors   = errStream.str();
-    aprepro_info     = infoStream.str();     
+    aprepro_info     = infoStream.str();
 
     if(aprepro_parsing_error_count > 0 && aprepro_errors.empty()) {
         aprepro_errors = "Fatal aprepro errors encountered";
@@ -235,6 +236,7 @@ mpi_filebuf * mpi_filebuf::open(
     if (err != MPI_SUCCESS)
       MPI_Abort(communicator,err);
   }
+#endif
 
   //--------------------------------------------------------------------
   // All memory allocated and root processor opened the file
@@ -251,7 +253,6 @@ mpi_filebuf * mpi_filebuf::open(
 
   comm_time += mpi_wall_time() - start_time ;
 
-#endif
   return this ;
 }
 #else
@@ -352,7 +353,7 @@ mpi_filebuf * mpi_filebuf::close()
       aprepro_buffer_ptr = 0;
       aprepro_buffer_len = 0;
     }
-    
+
     tmp = this ;
   }
 
@@ -397,7 +398,7 @@ int mpi_filebuf::underflow()
     if (err != MPI_SUCCESS)
       MPI_Abort(comm,err);
 #endif
-    
+
     // If the read is successfull then update the get buffer pointers:
     if (nread > 0) {
 #if defined( STK_HAS_MPI )

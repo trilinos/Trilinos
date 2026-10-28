@@ -62,14 +62,10 @@ class DevicePartition;
 
 struct EntityCompareInvalidAtEnd
 {
-  using entity_value_type = stk::mesh::Entity::entity_value_type;
-  static_assert(entity_value_type(Entity::InvalidEntity)-1 == std::numeric_limits<entity_value_type>::max(),
-                "InvalidEntity must wrap around to large value");
-
   KOKKOS_INLINE_FUNCTION
-  constexpr bool operator()(const Entity& lhs, const Entity& rhs) const
+  bool operator()(const EntityKey& lhs, const EntityKey& rhs) const
   {
-    return lhs.local_offset() - 1 < rhs.local_offset() - 1;
+    return lhs.m_value < rhs.m_value;
   }
 };
 
@@ -247,13 +243,24 @@ struct DeviceBucketT {
   void update_entity_data_from_host(const stk::mesh::Bucket &bucket);
   void copy_host_bucket_ownership(const Bucket &bucket);
   void initialize_ownership();
+
+  void set_ownership(bool isOwned, bool isShared, bool isInAura)
+  {
+#ifndef NDEBUG
+    initialize_ownership();
+    STK_ThrowRequireMsg(m_isOwned == isOwned && m_isShared == isShared && m_isInAura == isInAura,
+                        "Bucket ownership does not match initialize_ownership() on its part ordinals");
+#endif
+    m_isOwned = isOwned;
+    m_isShared = isShared;
+    m_isInAura = isInAura;
+  }
+
   void set_part_ordinals(PartOrdinalViewType<BucketNgpMemSpace> partOrdinals);
 
   void sync_to_host(stk::mesh::Bucket& bucket);
 
   void clone_device_bucket(DeviceBucketT<BucketNgpMemSpace> const& rhs);
-
-  void sort_entities();
 
   void init_entity_view();
 
@@ -277,8 +284,6 @@ struct DeviceBucketT {
 
   KOKKOS_FUNCTION
   const PartOrdinalViewType<BucketNgpMemSpace>& get_part_ordinals() const { return m_partOrdinals; }
-
-  void set_part_ordinals(PartOrdinalViewType<BucketNgpMemSpace>& view) { m_partOrdinals = view; }
 
   KOKKOS_FUNCTION
   void update_bucket_meta_entity_added()
@@ -396,31 +401,6 @@ void DeviceBucketT<BucketNgpMemSpace>::remove_entity(unsigned bucketOrd)
   update_bucket_meta_entity_removed();
 }
 
-template <typename BucketNgpMemSpace>
-void DeviceBucketT<BucketNgpMemSpace>::sort_entities()
-{
-  using EntityUViewType = Kokkos::View<Entity*, BucketNgpMemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  EntityUViewType compactEntityUView(m_entities.data(), get_active_entity_span());
-  if (!Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactEntityUView, impl::EntityCompareInvalidAtEnd{})) {
-    Kokkos::View<impl::EntityAndIndex*, BucketNgpMemSpace> entitiesToSort(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entities_to_sort"), compactEntityUView.size());
-
-    Kokkos::parallel_for("copy_entities", entitiesToSort.size(),
-      KOKKOS_CLASS_LAMBDA (const unsigned idx)
-      {
-        entitiesToSort(idx) = impl::EntityAndIndex{m_entities[idx], idx};
-      }
-    );
-
-    Kokkos::sort(entitiesToSort, impl::EntityCompareInvalidAtEnd{});
-
-    Kokkos::deep_copy(compactEntityUView, entitiesToSort);
-
-    permute_field_data(entitiesToSort);
-  }
-  STK_ThrowAssert(Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactEntityUView, impl::EntityCompareInvalidAtEnd{}));
-
-  update_bucket_meta_set_entity_span_to_active_count();
-}
 
 
 template <typename BucketNgpMemSpace>

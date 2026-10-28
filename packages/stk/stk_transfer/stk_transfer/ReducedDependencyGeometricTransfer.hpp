@@ -499,67 +499,75 @@ void ReducedDependencyGeometricTransfer<INTERPOLATE>::exchange_transfer_ids()
   impl::exchange_transfer_ids(m_comm_data);
 }
 
-template <class INTERPOlATE>
-void ReducedDependencyGeometricTransfer<INTERPOlATE>::filter_to_nearest(typename MeshB::EntityProcVec to_entity_keys,
-    typename MeshA::EntityProcVec from_entity_keys )
+// Keep the nearest candidate per receiving point or, if the receiving mesh provides get_candidate_tolerances(),
+// every candidate within (nearest distance + that point's tolerance). Decided on the receiving side only; the
+// sending side gets the same int mask as before, so the wire format is unchanged. Any future change that sends
+// new data to the sending side must be gated on a new coupling version.
+template <class INTERPOLATE>
+void ReducedDependencyGeometricTransfer<INTERPOLATE>::filter_to_nearest(
+    typename MeshB::EntityProcVec to_entity_keys, typename MeshA::EntityProcVec from_entity_keys)
 {
-  // Find the winner
-  std::map<EntityKeyB, std::pair<double, int> > filterMap;
+  using ReceivingMesh = MeshB;
 
-  for (const auto &[offset, num_keys] : m_comm_data.offset_and_num_keys_to_mesh) {
-    for(int jj =0; jj < num_keys; ++jj){
+  // For each receiving point, its nearest candidate {distance, pairing-index}.
+  std::map<EntityKeyB, std::pair<double, int>> receiverToNearestCandidate;
+
+  for (const auto& [offset, num_keys] : m_comm_data.offset_and_num_keys_to_mesh) {
+    for (int jj = 0; jj < num_keys; ++jj) {
       STK_ThrowRequireMsg(offset + jj < (int) to_points_distance_on_to_mesh.size(),
           "'offset+jj' (" << offset << "+" << jj << ") required to be less than to_points_distance_on_to_mesh.size() ("
                           << to_points_distance_on_to_mesh.size() << ")");
-      std::pair<double,int> dist_and_to_entity_index = std::make_pair(to_points_distance_on_to_mesh[offset+jj], offset+jj);
-      auto key = to_entity_keys[offset+jj].id();
-      if ( filterMap.find(key) == filterMap.end() )
-      {
-        filterMap[key] = dist_and_to_entity_index;
-      }
-      else
-      {
-        auto current_dist_and_index = filterMap.at(key);
-        if (to_points_distance_on_to_mesh[offset+jj] < current_dist_and_index.first) {
-          filterMap[key] = dist_and_to_entity_index;
-        }
+      const double distance = to_points_distance_on_to_mesh[offset + jj];
+      auto receiverId = to_entity_keys[offset + jj].id();
+      auto [it, inserted] = receiverToNearestCandidate.try_emplace(receiverId, distance, offset + jj);
+      if (!inserted && distance < it->second.first) {
+        it->second = {distance, offset + jj};
       }
     }
   }
 
-
-  // Create Mask of to_entity_keys winners, if the key is in the map give the mask 1 otherwise 0
-  std::vector<int> FilterMaskTo(to_entity_keys.size(),0);
-
-  for (unsigned int ii = 0; ii < to_entity_keys.size(); ++ii )
-  {
-    auto key = to_entity_keys[ii].id();
-    auto iter = filterMap.find(key);
-    //key must match and must be the same entity index
-    if( iter != filterMap.end() && iter->second.second == static_cast<int>(ii))
-    {
-      FilterMaskTo[ii] = 1;
+  std::vector<double> candidateTolerances;
+  if constexpr (impl::has_get_candidate_tolerances<ReceivingMesh>()) {
+    if (m_meshb) {
+      m_meshb->get_candidate_tolerances(to_entity_keys, candidateTolerances);
+      STK_ThrowRequireMsg(candidateTolerances.size() == to_entity_keys.size(),
+          "get_candidate_tolerances returned " << candidateTolerances.size() << " tolerances for "
+                                               << to_entity_keys.size() << " receiving keys");
     }
-    else
-    {
-      FilterMaskTo[ii] = 0;
+  }
+  const bool useCandidateTolerances = !candidateTolerances.empty();
+
+  // Mark surviving pairings: nearest only, or all within [min_dist, min_dist + tol] per point.
+  std::vector<int> receiveCandidateMask(to_entity_keys.size(), 0);
+
+  for (unsigned int ii = 0; ii < to_entity_keys.size(); ++ii) {
+    auto receiverId = to_entity_keys[ii].id();
+    auto found = receiverToNearestCandidate.find(receiverId);
+    if (found == receiverToNearestCandidate.end()) {
+      receiveCandidateMask[ii] = 0;
+    } else if (!useCandidateTolerances || candidateTolerances[ii] < 0.0) {
+      receiveCandidateMask[ii] = (found->second.second == static_cast<int>(ii)) ? 1 : 0;
+    } else {
+      receiveCandidateMask[ii] =
+          (to_points_distance_on_to_mesh[ii] <= found->second.first + candidateTolerances[ii]) ? 1 : 0;
     }
   }
 
-  std::vector<int> FilterMaskFrom(from_entity_keys.size(),0);
-  do_reverse_communication(m_comm_data, FilterMaskFrom, FilterMaskTo);
+  // Reverse-communicate the surviving pairings to the sending side.
+  std::vector<int> sendCandidateMask(from_entity_keys.size(), 0);
+  do_reverse_communication(m_comm_data, sendCandidateMask, receiveCandidateMask);
 
-  const int to_count = std::count(FilterMaskTo.begin(), FilterMaskTo.end(), 1);
-  const int from_count = std::count(FilterMaskFrom.begin(), FilterMaskFrom.end(), 1);
+  const int to_count = std::count(receiveCandidateMask.begin(), receiveCandidateMask.end(), 1);
+  const int from_count = std::count(sendCandidateMask.begin(), sendCandidateMask.end(), 1);
 
   const auto version = stk::util::get_common_coupling_version();
   if (version >= 15 && version <= 20) {
     bool exception_on_local_proc = false;
     std::string error_msg;
     try {
-      m_interpolate.mask_parametric_coords(FilterMaskFrom, from_count);
+      m_interpolate.mask_parametric_coords(sendCandidateMask, from_count);
       error_msg = "error on another proc";
-    } catch (std::exception &e) {
+    } catch (std::exception& e) {
       exception_on_local_proc = true;
       error_msg = e.what();
     }
@@ -567,34 +575,28 @@ void ReducedDependencyGeometricTransfer<INTERPOlATE>::filter_to_nearest(typename
     bool exception_on_any_proc = stk::is_true_on_any_proc(m_comm_data.m_shared_comm, exception_on_local_proc);
     STK_ThrowRequireMsg(!exception_on_any_proc, error_msg);
   } else {
-    m_interpolate.mask_parametric_coords(FilterMaskFrom, from_count);
+    m_interpolate.mask_parametric_coords(sendCandidateMask, from_count);
   }
 
-
   from_entity_keys_masked.resize(from_count);
-  impl::copy_according_to_mask(from_entity_keys, from_entity_keys_masked, FilterMaskFrom);
+  impl::copy_according_to_mask(from_entity_keys, from_entity_keys_masked, sendCandidateMask);
 
   to_entity_keys_masked.resize(to_count);
-  impl::copy_according_to_mask(to_entity_keys, to_entity_keys_masked, FilterMaskTo);
+  impl::copy_according_to_mask(to_entity_keys, to_entity_keys_masked, receiveCandidateMask);
 
   construct_comm_data<MeshA, MeshB>(from_entity_keys_masked, to_entity_keys_masked, m_comm_data);
 }
 
-template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE>::apply()
+template <class INTERPOLATE>
+void ReducedDependencyGeometricTransfer<INTERPOLATE>::apply()
 {
   repeat_search_if_needed();
 
-  if (m_mesha)
-    m_mesha->update_values();
+  if (m_mesha) m_mesha->update_values();
 
-  m_interpolate.apply(m_meshb.get(),
-      m_mesha.get(),
-      to_entity_keys_masked,
-      from_entity_keys_masked,
-      m_comm_data);
+  m_interpolate.apply(m_meshb.get(), m_mesha.get(), to_entity_keys_masked, from_entity_keys_masked, m_comm_data);
 
-  if(m_meshb)
-    m_meshb->update_values();
+  if (m_meshb) m_meshb->update_values();
 }
 
 template <class INTERPOLATE>

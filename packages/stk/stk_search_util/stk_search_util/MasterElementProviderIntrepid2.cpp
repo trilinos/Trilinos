@@ -48,10 +48,12 @@ void MasterElementProviderIntrepid2::evaluate_field(const Topology& topo,
     m_paramCoords = PointViewType("int_point", numEvalPoints, numParCoords);
   }
 
-  STK_ThrowRequireMsg(paramCoords.size() >= numParCoordsOrig*numEvalPoints,
-                      "Insufficient length for parametric coordinates: " << paramCoords.size() << " Expected: " << numParCoordsOrig*numEvalPoints);
-  STK_ThrowRequireMsg(fieldData.size() >= numNodes*numFieldComponents,
-                        "Insufficient length for fieldData: " << fieldData.size() << " Expected: " << numNodes*numFieldComponents);
+  const size_t totalPoints = static_cast<size_t>(numEvalPoints) * numParCoordsOrig;
+  STK_ThrowRequireMsg(paramCoords.size() >= totalPoints,
+                      "Insufficient length for parametric coordinates: " << paramCoords.size() << " Expected: " << totalPoints);
+  const size_t totalComponents = static_cast<size_t>(numNodes) * numFieldComponents;
+  STK_ThrowRequireMsg(fieldData.size() >= totalComponents,
+                        "Insufficient length for fieldData: " << fieldData.size() << " Expected: " << totalComponents);
 
   for (unsigned p=0; p < numEvalPoints; ++p){
     for (unsigned d=0; d < numParCoords; ++d)

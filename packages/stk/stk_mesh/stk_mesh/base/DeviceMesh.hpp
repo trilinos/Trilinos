@@ -639,6 +639,7 @@ public:
 #endif
 
     Kokkos::Profiling::pushRegion("construct_part_ordinal_proxy");
+    Kokkos::Profiling::pushRegion("gather_wrapped_entities");
     EntityWrapperViewType wrappedEntities;
     if (expandDownward) {
       auto maxNumDownwardConnectedEntities = impl::get_max_num_downward_connected_entities(*this, entities);
@@ -652,8 +653,13 @@ public:
       wrappedEntities = EntityWrapperViewType(Kokkos::view_alloc("wrappedEntities"), entities.extent(0));
       Kokkos::deep_copy(wrappedEntities, entities);
     }
-    impl::remove_invalid_wrapped_entities_sort_unique_merge_and_resize(wrappedEntities, MeshExecSpace{});
+    Kokkos::Profiling::popRegion();
 
+    Kokkos::Profiling::pushRegion("sort_unique_wrapped_entities");
+    impl::remove_invalid_wrapped_entities_sort_unique_merge_and_resize(wrappedEntities, MeshExecSpace{});
+    Kokkos::Profiling::popRegion();
+
+    Kokkos::Profiling::pushRegion("compute_new_part_lists");
     // determine resulting parts per entity including inducible parts
     const unsigned maxCurrentNumPartsPerEntity = impl::get_max_num_parts_per_entity(*this, wrappedEntities);
     const unsigned maxNewNumPartsPerEntity = maxCurrentNumPartsPerEntity + addPartOrdinals.size();
@@ -668,12 +674,15 @@ public:
     impl::set_new_part_list_per_entity_with_induced_parts(*this, wrappedEntities, sortedAddPartOrdinals, removePartOrdinals,
                                                           maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy,
                                                           deniedPartRemovalView);
+    Kokkos::Profiling::popRegion();
 
+    Kokkos::Profiling::pushRegion("sort_unique_part_ordinal_proxy");
     PartOrdinalsProxyViewType copiedPartOrdinalsProxy(Kokkos::view_alloc(Kokkos::WithoutInitializing, "copiedPartOrdinalsProxy"), wrappedEntities.size());
     Kokkos::deep_copy(copiedPartOrdinalsProxy, partOrdinalsProxy);
 
     impl::sort_and_unique_and_resize(partOrdinalsProxy, MeshExecSpace{});
     Kokkos::fence();
+    Kokkos::Profiling::popRegion();
     Kokkos::Profiling::popRegion();
 
     m_deviceBucketRepo.batch_create_partitions(partOrdinalsProxy);

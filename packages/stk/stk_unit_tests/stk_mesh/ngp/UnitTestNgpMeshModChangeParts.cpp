@@ -442,6 +442,107 @@ NGP_TEST_F(NgpBatchChangeEntityParts, addPartToNode_ngpDevice)
   check_bucket_layout(*m_bulk, {{{"part1", "part2"}, {nodeId}}}, stk::topology::NODE_RANK);
 }
 
+NGP_TEST_F(NgpBatchChangeEntityParts, emptyChange_hostLastBucketSmallerThanFirst_ngpDevice)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  build_empty_mesh(1, 4);
+
+  auto& part1 = m_meta->declare_part_with_topology("part1", stk::topology::NODE);
+  for (stk::mesh::EntityId nodeId = 1; nodeId <= 6; ++nodeId) {
+    create_node(*m_bulk, nodeId, {&part1});
+  }
+
+  check_bucket_layout(*m_bulk, {{{"part1"}, {1, 2, 3, 4}}, {{"part1"}, {5, 6}}}, stk::topology::NODE_RANK);
+  ASSERT_EQ(4u, m_bulk->buckets(stk::topology::NODE_RANK)[0]->capacity());
+  ASSERT_EQ(2u, m_bulk->buckets(stk::topology::NODE_RANK)[1]->capacity());
+
+  DeviceEntitiesType entities("deviceEntities", 0);
+  DevicePartOrdinalsType addPartOrdinals("deviceAddParts", 0);
+  DevicePartOrdinalsType removePartOrdinals("deviceRemoveParts", 0);
+
+  auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals));
+
+  ngp_unit_test_utils::device_check_bucket_layout(*m_bulk, {{{"part1"}, {1, 2, 3, 4}}, {{"part1"}, {5, 6}}}, stk::topology::NODE_RANK);
+}
+
+NGP_TEST_F(NgpBatchChangeEntityParts, moveTwoNodesIntoPartiallyFullHostBucket_ngpDevice)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  build_empty_mesh(1, 8);
+
+  auto& part1 = m_meta->declare_part_with_topology("part1", stk::topology::NODE);
+  auto& part2 = m_meta->declare_part_with_topology("part2", stk::topology::NODE);
+
+  for (stk::mesh::EntityId nodeId = 1; nodeId <= 3; ++nodeId) {
+    create_node(*m_bulk, nodeId, {&part1});
+  }
+  create_node(*m_bulk, 4, {&part2});
+  create_node(*m_bulk, 5, {&part2});
+
+  check_bucket_layout(*m_bulk, {{{"part1"}, {1, 2, 3}}, {{"part2"}, {4, 5}}}, stk::topology::NODE_RANK);
+  ASSERT_EQ(4u, m_bulk->buckets(stk::topology::NODE_RANK)[0]->capacity());
+
+  DeviceEntitiesType entities("deviceEntities", 2);
+  DevicePartOrdinalsType addPartOrdinals("deviceAddParts", 1);
+  DevicePartOrdinalsType removePartOrdinals("deviceRemoveParts", 1);
+
+  auto hostEntities = Kokkos::create_mirror_view(entities);
+  hostEntities(0) = m_bulk->get_entity(stk::topology::NODE_RANK, 4);
+  hostEntities(1) = m_bulk->get_entity(stk::topology::NODE_RANK, 5);
+  Kokkos::deep_copy(entities, hostEntities);
+  Kokkos::deep_copy(addPartOrdinals, part1.mesh_meta_data_ordinal());
+  Kokkos::deep_copy(removePartOrdinals, part2.mesh_meta_data_ordinal());
+
+  auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals));
+
+  ngp_unit_test_utils::device_check_bucket_layout(*m_bulk, {{{"part1"}, {1, 2, 3, 4, 5}}}, stk::topology::NODE_RANK);
+  EXPECT_GE(ngpMesh.get_bucket(stk::topology::NODE_RANK, 0).capacity(), 5u);
+}
+
+NGP_TEST_F(NgpBatchChangeEntityParts, moveNodesDeclaredOutOfIdOrder_deviceBucketsInIdOrder_ngpDevice)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  build_empty_mesh(8, 8);
+
+  auto& part1 = m_meta->declare_part_with_topology("part1", stk::topology::NODE);
+  auto& part2 = m_meta->declare_part_with_topology("part2", stk::topology::NODE);
+
+  const std::vector<stk::mesh::EntityId> declarationOrder {3, 1, 2};
+  for (stk::mesh::EntityId nodeId : declarationOrder) {
+    create_node(*m_bulk, nodeId, {&part1});
+  }
+  const stk::mesh::Entity node1 = m_bulk->get_entity(stk::topology::NODE_RANK, 1);
+  const stk::mesh::Entity node3 = m_bulk->get_entity(stk::topology::NODE_RANK, 3);
+  ASSERT_LT(node3.local_offset(), node1.local_offset());
+
+  check_bucket_layout(*m_bulk, {{{"part1"}, {1, 2, 3}}}, stk::topology::NODE_RANK);
+
+  DeviceEntitiesType entities("deviceEntities", declarationOrder.size());
+  DevicePartOrdinalsType addPartOrdinals("deviceAddParts", 1);
+  DevicePartOrdinalsType removePartOrdinals("deviceRemoveParts", 1);
+
+  auto hostEntities = Kokkos::create_mirror_view(entities);
+  for (unsigned i = 0; i < declarationOrder.size(); ++i) {
+    hostEntities(i) = m_bulk->get_entity(stk::topology::NODE_RANK, declarationOrder[i]);
+  }
+  Kokkos::deep_copy(entities, hostEntities);
+  Kokkos::deep_copy(addPartOrdinals, part2.mesh_meta_data_ordinal());
+  Kokkos::deep_copy(removePartOrdinals, part1.mesh_meta_data_ordinal());
+
+  auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+  ngpMesh.batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals);
+
+  ngp_unit_test_utils::device_check_bucket_layout(*m_bulk, {{{"part2"}, {1, 2, 3}}}, stk::topology::NODE_RANK);
+
+  ngpMesh.update_bulk_data();
+  check_bucket_layout(*m_bulk, {{{"part2"}, {1, 2, 3}}}, stk::topology::NODE_RANK);
+}
+
 NGP_TEST_F(NgpBatchChangeEntityParts, hostAccessAfterDeviceMeshMod)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
