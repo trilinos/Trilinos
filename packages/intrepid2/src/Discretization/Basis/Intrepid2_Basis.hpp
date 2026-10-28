@@ -201,7 +201,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         \li     ordinalToTag_[DodOrd][2] = ordinal of the specified DoF relative to the subcell
         \li     ordinalToTag_[DofOrd][3] = total number of DoFs associated with the subcell
     */
-    OrdinalTypeArray2DHost ordinalToTag_;
+    mutable OrdinalTypeArray2DHost ordinalToTag_;
 
     /** \brief  DoF tag to ordinal lookup table.
 
@@ -214,7 +214,20 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
 
         \li     tagToOrdinal_[subcDim][subcOrd][subcDofOrd] = Degree-of-freedom ordinal
     */
-    OrdinalTypeArray3DHost tagToOrdinal_;
+    mutable OrdinalTypeArray3DHost tagToOrdinal_;
+
+    /** \brief  Hook for derived classes that can defer construction of dense tag tables.
+     */
+    virtual void initializeTags() const {}
+
+    /** \brief  Materialize dense tag tables on demand for compatibility APIs.
+     */
+    void requireTags() const {
+      if (ordinalToTag_.extent(0) == 0 || tagToOrdinal_.extent(0) == 0)
+      {
+        this->initializeTags();
+      }
+    }
 
     /** \brief  Fills <var>ordinalToTag_</var> and <var>tagToOrdinal_</var> by basis-specific tag data
 
@@ -862,9 +875,10 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
      
      \return the number of DoFs associated with the specified subcell.
      */
-    ordinal_type
+    virtual ordinal_type
     getDofCount( const ordinal_type subcDim,
                  const ordinal_type subcOrd ) const {
+      this->requireTags();
       if ( subcDim >= 0   &&   subcDim < static_cast<ordinal_type>(tagToOrdinal_.extent(0)) &&
            subcOrd >= 0   &&   subcOrd < static_cast<ordinal_type>(tagToOrdinal_.extent(1)) )
       {
@@ -888,10 +902,11 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
 
         \return the DoF ordinal corresponding to the specified DoF tag data.
     */
-    ordinal_type
+    virtual ordinal_type
     getDofOrdinal( const ordinal_type subcDim,
                    const ordinal_type subcOrd,
                    const ordinal_type subcDofOrd ) const {
+      this->requireTags();
       // this should be abort and able to be called as a device function
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( subcDim < 0 || subcDim >= static_cast<ordinal_type>(tagToOrdinal_.extent(0)), std::out_of_range,
@@ -923,6 +938,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     /** \brief DoF tag to ordinal data structure */
     const OrdinalTypeArray3DHost
     getAllDofOrdinal() const {
+      requireTags();
       return tagToOrdinal_;
     }
 
@@ -937,8 +953,9 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         \li     element [2] = tag field 2  ->  ordinal of the specified DoF relative to the subcell
         \li     element [3] = tag field 3  ->  total number of DoFs associated with the subcell
     */
-    const OrdinalTypeArrayStride1DHost
+    virtual const OrdinalTypeArrayStride1DHost
     getDofTag( const ordinal_type dofOrd ) const {
+      this->requireTags();
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= static_cast<ordinal_type>(ordinalToTag_.extent(0)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofTag): dofOrd is out of range");
@@ -955,8 +972,9 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         \li     element [DofOrd][2] = tag field 2 for the DoF with the specified ordinal
         \li     element [DofOrd][3] = tag field 3 for the DoF with the specified ordinal
     */
-    const OrdinalTypeArray2DHost
+    virtual const OrdinalTypeArray2DHost
     getAllDofTags() const {
+      this->requireTags();
       return ordinalToTag_;
     }
 

@@ -623,15 +623,18 @@ struct OperatorTensorDecomposition
     std::string name_; // name of the basis
     
     int numTensorialExtrusions_; // relative to cell topo returned by getBaseCellTopology().
+    bool useShardsCellTopologyAndTags_; // if true, use shards topology/tag numbering for low-dimensional tensor products.
+    mutable typename BasisBase::OrdinalTypeArray2DHost dofTagScratch_; // one-row compatibility view for analytic getDofTag().
   public:
     using DeviceType = typename BasisBase::DeviceType;
     using ExecutionSpace  = typename BasisBase::ExecutionSpace;
     using OutputValueType = typename BasisBase::OutputValueType;
     using PointValueType  = typename BasisBase::PointValueType;
     
-    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
-    using OutputViewType         = typename BasisBase::OutputViewType;
+    using OrdinalTypeArray1DHost       = typename BasisBase::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost       = typename BasisBase::OrdinalTypeArray2DHost;
+    using OrdinalTypeArrayStride1DHost = typename BasisBase::OrdinalTypeArrayStride1DHost;
+    using OutputViewType               = typename BasisBase::OutputViewType;
     using PointViewType          = typename BasisBase::PointViewType;
     using TensorBasis            = Basis_TensorBasis<BasisBaseClass>;
   public:
@@ -644,7 +647,7 @@ struct OperatorTensorDecomposition
     Basis_TensorBasis(BasisPtr basis1, BasisPtr basis2, EFunctionSpace functionSpace = FUNCTION_SPACE_MAX,
                       const bool useShardsCellTopologyAndTags = false)
     :
-    basis1_(basis1),basis2_(basis2)
+    basis1_(basis1),basis2_(basis2),useShardsCellTopologyAndTags_(useShardsCellTopologyAndTags)
     {
       this->functionSpace_ = functionSpace;
       
@@ -730,91 +733,14 @@ struct OperatorTensorDecomposition
       
       if (useShardsCellTopologyAndTags)
       {
-        setShardsTopologyAndTags();
+        setShardsTopology();
       }
-      else
-      {
-        // we build tags recursively, making reference to basis1_ and basis2_'s tags to produce the tensor product tags.
-  //      // initialize tags
-        const auto & cardinality = this->basisCardinality_;
-  
-        // Basis-dependent initializations
-        const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-        const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
-        const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-        const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-        const ordinal_type posDfCnt = 3;        // position in the tag, counting from 0, of DoF count for the subcell
-  
-        OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
-  
-        // we assume that basis2_ is defined on a line, and that basis1_ is defined on a domain that is once-extruded in by that line.
-        auto cellTopo = CellTopology::cellTopology(tensorComponents_[0]->getBaseCellTopology(), numTensorialExtrusions_);
-        auto basis1Topo = cellTopo->getTensorialComponent();
-        
-        const ordinal_type spaceDim = spaceDim1 + spaceDim2;
-        const ordinal_type sideDim   = spaceDim - 1;
-        
-        const OrdinalTypeArray2DHost ordinalToTag1 = basis1_->getAllDofTags();
-        const OrdinalTypeArray2DHost ordinalToTag2 = basis2_->getAllDofTags();
-                
-        for (int fieldOrdinal1=0; fieldOrdinal1<basis1_->getCardinality(); fieldOrdinal1++)
-        {
-          ordinal_type subcellDim1   = ordinalToTag1(fieldOrdinal1,posScDim);
-          ordinal_type subcellOrd1   = ordinalToTag1(fieldOrdinal1,posScOrd);
-          ordinal_type subcellDfCnt1 = ordinalToTag1(fieldOrdinal1,posDfCnt);
-          for (int fieldOrdinal2=0; fieldOrdinal2<basis2_->getCardinality(); fieldOrdinal2++)
-          {
-            ordinal_type subcellDim2   = ordinalToTag2(fieldOrdinal2,posScDim);
-            ordinal_type subcellOrd2   = ordinalToTag2(fieldOrdinal2,posScOrd);
-            ordinal_type subcellDfCnt2 = ordinalToTag2(fieldOrdinal2,posDfCnt);
-            
-            ordinal_type subcellDim = subcellDim1 + subcellDim2;
-            ordinal_type subcellOrd;
-            if (subcellDim2 == 0)
-            {
-              // vertex node in extrusion; the subcell is not extruded but belongs to one of the two "copies"
-              // of the basis1 topology
-              ordinal_type sideOrdinal = cellTopo->getTensorialComponentSideOrdinal(subcellOrd2); // subcellOrd2 is a "side" of the line topology
-              subcellOrd = CellTopology::getSubcellOrdinalMap(cellTopo, sideDim, sideOrdinal,
-                                                              subcellDim1, subcellOrd1);
-            }
-            else
-            {
-              // line subcell in time; the subcell *is* extruded in final dimension
-              subcellOrd = cellTopo->getExtrudedSubcellOrdinal(subcellDim1, subcellOrd1);
-              if (subcellOrd == -1)
-              {
-                std::cout << "ERROR: -1 subcell ordinal.\n";
-                subcellOrd = cellTopo->getExtrudedSubcellOrdinal(subcellDim1, subcellOrd1);
-              }
-            }
-            ordinal_type tensorFieldOrdinal = fieldOrdinal2 * basis1_->getCardinality() + fieldOrdinal1;
-      //        cout << "(" << fieldOrdinal1 << "," << fieldOrdinal2 << ") --> " << i << endl;
-            ordinal_type dofOffsetOrdinal1 = ordinalToTag1(fieldOrdinal1,posDfOrd);
-            ordinal_type dofOffsetOrdinal2 = ordinalToTag2(fieldOrdinal2,posDfOrd);
-            ordinal_type dofsForSubcell1   = ordinalToTag1(fieldOrdinal1,posDfCnt);
-            ordinal_type dofOffsetOrdinal  = dofOffsetOrdinal2 * dofsForSubcell1 + dofOffsetOrdinal1;
-            tagView(tagSize*tensorFieldOrdinal + posScDim) = subcellDim; // subcellDim
-            tagView(tagSize*tensorFieldOrdinal + posScOrd) = subcellOrd; // subcell ordinal
-            tagView(tagSize*tensorFieldOrdinal + posDfOrd) = dofOffsetOrdinal;  // ordinal of the specified DoF relative to the subcell
-            tagView(tagSize*tensorFieldOrdinal + posDfCnt) = subcellDfCnt1 * subcellDfCnt2; // total number of DoFs associated with the subcell
-          }
-        }
-        
-        //        // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-        //        // tags are constructed on host
-        this->setOrdinalTagData(this->tagToOrdinal_,
-                                this->ordinalToTag_,
-                                tagView,
-                                this->basisCardinality_,
-                                tagSize,
-                                posScDim,
-                                posScOrd,
-                                posDfOrd);
-      }
+      // Dense tag tables are intentionally not built here.  TensorBasis answers
+      // scalar tag queries from its factorized component bases below, and only
+      // materializes the full tables if a compatibility view is requested.
     }
     
-    void setShardsTopologyAndTags()
+    void setShardsTopology()
     {
       shards::CellTopology cellTopo1 = basis1_->getBaseCellTopology();
       shards::CellTopology cellTopo2 = basis2_->getBaseCellTopology();
@@ -845,6 +771,164 @@ struct OperatorTensorDecomposition
       
       // numTensorialExtrusions_ is relative to the baseCellTopology; what we've just done is found a cell topology of the same spatial dimension as the extruded topology, so now numTensorialExtrusions_ should be 0.
       numTensorialExtrusions_ = 0;
+    }
+
+    ordinal_type getCompositeSubcellOrdinal(const ordinal_type subcellDim1,
+                                            const ordinal_type subcellOrd1,
+                                            const ordinal_type subcellDim2,
+                                            const ordinal_type subcellOrd2) const
+    {
+      if (useShardsCellTopologyAndTags_)
+      {
+        TensorTopologyMap topoMap(basis1_->getBaseCellTopology(), basis2_->getBaseCellTopology());
+        return topoMap.getCompositeSubcellOrdinal(subcellDim1, subcellOrd1, subcellDim2, subcellOrd2);
+      }
+      else
+      {
+        const ordinal_type tensorialDegree = tensorComponents_.size() - 1;
+        auto cellTopo = CellTopology::cellTopology(tensorComponents_[0]->getBaseCellTopology(), tensorialDegree);
+        const ordinal_type spaceDim = basis1_->getDomainDimension() + basis2_->getDomainDimension();
+        const ordinal_type sideDim  = spaceDim - 1;
+        if (subcellDim2 == 0)
+        {
+          ordinal_type sideOrdinal = cellTopo->getTensorialComponentSideOrdinal(subcellOrd2);
+          return CellTopology::getSubcellOrdinalMap(cellTopo, sideDim, sideOrdinal, subcellDim1, subcellOrd1);
+        }
+        else
+        {
+          return cellTopo->getExtrudedSubcellOrdinal(subcellDim1, subcellOrd1);
+        }
+      }
+    }
+
+    void fillDofTag(const ordinal_type dofOrd, OrdinalTypeArray2DHost tag, const ordinal_type row) const
+    {
+      const ordinal_type basis1Cardinality = basis1_->getCardinality();
+      const ordinal_type fieldOrdinal1 = dofOrd % basis1Cardinality;
+      const ordinal_type fieldOrdinal2 = dofOrd / basis1Cardinality;
+
+      auto tag1 = basis1_->getDofTag(fieldOrdinal1);
+      const ordinal_type subcellDim1   = tag1(0);
+      const ordinal_type subcellOrd1   = tag1(1);
+      const ordinal_type dofOrd1       = tag1(2);
+      const ordinal_type subcellDfCnt1 = tag1(3);
+      auto tag2 = basis2_->getDofTag(fieldOrdinal2);
+      const ordinal_type subcellDim2   = tag2(0);
+      const ordinal_type subcellOrd2   = tag2(1);
+      const ordinal_type dofOrd2       = tag2(2);
+      const ordinal_type subcellDfCnt2 = tag2(3);
+
+      tag(row,0) = subcellDim1 + subcellDim2;
+      tag(row,1) = getCompositeSubcellOrdinal(subcellDim1, subcellOrd1, subcellDim2, subcellOrd2);
+      tag(row,2) = dofOrd2 * subcellDfCnt1 + dofOrd1;
+      tag(row,3) = subcellDfCnt1 * subcellDfCnt2;
+    }
+
+    void setTensorProductTags()
+    {
+      // Build the legacy dense table only when a compatibility view asks for it.
+      const auto & cardinality = this->basisCardinality_;
+      const ordinal_type tagSize  = 4;
+      const ordinal_type posScDim = 0;
+      const ordinal_type posScOrd = 1;
+      const ordinal_type posDfOrd = 2;
+      const ordinal_type posDfCnt = 3;
+
+      OrdinalTypeArray2DHost tagRows("tag rows", cardinality, tagSize);
+      OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
+      for (ordinal_type tensorFieldOrdinal=0; tensorFieldOrdinal<cardinality; tensorFieldOrdinal++)
+      {
+        fillDofTag(tensorFieldOrdinal, tagRows, tensorFieldOrdinal);
+        for (ordinal_type tagEntry=0; tagEntry<tagSize; tagEntry++)
+        {
+          tagView(tagSize*tensorFieldOrdinal + tagEntry) = tagRows(tensorFieldOrdinal,tagEntry);
+        }
+      }
+
+      this->setOrdinalTagData(this->tagToOrdinal_,
+                              this->ordinalToTag_,
+                              tagView,
+                              this->basisCardinality_,
+                              tagSize,
+                              posScDim,
+                              posScOrd,
+                              posDfOrd);
+    }
+
+    virtual void initializeTags() const override
+    {
+      TensorBasis* self = const_cast<TensorBasis*>(this);
+      if (useShardsCellTopologyAndTags_)
+        self->setShardsTopologyAndTags();
+      else
+        self->setTensorProductTags();
+    }
+
+    virtual ordinal_type getDofCount( const ordinal_type subcDim,
+                                      const ordinal_type subcOrd ) const override
+    {
+      if (useShardsCellTopologyAndTags_)
+      {
+        return BasisBase::getDofCount(subcDim, subcOrd);
+      }
+      for (ordinal_type tensorFieldOrdinal=0; tensorFieldOrdinal<this->basisCardinality_; tensorFieldOrdinal++)
+      {
+        auto tag = this->getDofTag(tensorFieldOrdinal);
+        if ((tag(0) == subcDim) && (tag(1) == subcOrd)) return tag(3);
+      }
+      return 0;
+    }
+
+    virtual ordinal_type getDofOrdinal( const ordinal_type subcDim,
+                                        const ordinal_type subcOrd,
+                                        const ordinal_type subcDofOrd ) const override
+    {
+      if (useShardsCellTopologyAndTags_)
+      {
+        return BasisBase::getDofOrdinal(subcDim, subcOrd, subcDofOrd);
+      }
+      for (ordinal_type tensorFieldOrdinal=0; tensorFieldOrdinal<this->basisCardinality_; tensorFieldOrdinal++)
+      {
+        auto tag = this->getDofTag(tensorFieldOrdinal);
+        if ((tag(0) == subcDim) && (tag(1) == subcOrd) && (tag(2) == subcDofOrd)) return tensorFieldOrdinal;
+      }
+#ifdef HAVE_INTREPID2_DEBUG
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error,
+                                    ">>> ERROR (Basis_TensorBasis::getDofOrdinal): Invalid DoF tag is found.");
+#endif
+      return -1;
+    }
+
+    virtual const OrdinalTypeArrayStride1DHost getDofTag( const ordinal_type dofOrd ) const override
+    {
+      if (useShardsCellTopologyAndTags_)
+      {
+        return BasisBase::getDofTag(dofOrd);
+      }
+#ifdef HAVE_INTREPID2_DEBUG
+      INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= this->basisCardinality_, std::out_of_range,
+                                    ">>> ERROR (Basis_TensorBasis::getDofTag): dofOrd is out of range");
+#endif
+      if (dofTagScratch_.extent(0) == 0)
+      {
+        dofTagScratch_ = OrdinalTypeArray2DHost("TensorBasis dof tag scratch", 1, 4);
+      }
+      fillDofTag(dofOrd, dofTagScratch_, 0);
+      return Kokkos::subview(dofTagScratch_, 0, Kokkos::ALL());
+    }
+
+    virtual const OrdinalTypeArray2DHost getAllDofTags() const override
+    {
+      this->requireTags();
+      return this->ordinalToTag_;
+    }
+
+    void setShardsTopologyAndTags()
+    {
+      useShardsCellTopologyAndTags_ = true;
+      setShardsTopology();
+      shards::CellTopology cellTopo1 = basis1_->getBaseCellTopology();
+      shards::CellTopology cellTopo2 = basis2_->getBaseCellTopology();
       
       // initialize tags
       {

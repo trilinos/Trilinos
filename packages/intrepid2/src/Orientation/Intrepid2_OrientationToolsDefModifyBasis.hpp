@@ -95,6 +95,9 @@ namespace Intrepid2 {
                    Kokkos::subview(input,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL())
                  : Kokkos::subview(input,        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
+        // the callers copy input to output, so a cell aligned to the reference needs no modification
+        if (orts(cell).isAlignedToReference()) return;
+
         // edge transformation
         if (numEdges > 0)
         {
