@@ -16,10 +16,17 @@
 #ifndef PAMatrixAssembly_h
 #define PAMatrixAssembly_h
 
-#include "JacobianFlopEstimate.hpp"
+#include "Intrepid2_CellGeometry.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_DerivedBasisFamily.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_IntegrationTools.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_PAMatrix.hpp"
+#include "Intrepid2_TensorPoints.hpp"
+
+#include "JacobianFlopEstimate.hpp" // (relies on the Intrepid2 headers above)
 
 /** \file   PAMatrixAssembly.hpp
     \brief  Locally assembles a matrix of one basis integrated cell-wise against another -- an array of shape (C,F1,F2), with formulation (op1(e1_i), op2(e2_j)), using "structured" Intrepid2 methods; these algorithmically exploit geometric structure as expressed in the provided CellGeometry.
