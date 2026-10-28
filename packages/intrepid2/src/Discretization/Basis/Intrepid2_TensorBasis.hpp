@@ -689,7 +689,6 @@ struct OperatorTensorDecomposition
       this->basisType_         = basis1_->getBasisType();
       this->basisCoordinates_  = COORDINATES_CARTESIAN;
       
-      ordinal_type spaceDim1 = basis1_->getDomainDimension();
       ordinal_type spaceDim2 = basis2_->getDomainDimension();
       
       INTREPID2_TEST_FOR_EXCEPTION(spaceDim2 != 1, std::invalid_argument, "TensorBasis only supports 1D bases in basis2_ position");
@@ -832,7 +831,6 @@ struct OperatorTensorDecomposition
       const ordinal_type posScDim = 0;
       const ordinal_type posScOrd = 1;
       const ordinal_type posDfOrd = 2;
-      const ordinal_type posDfCnt = 3;
 
       OrdinalTypeArray2DHost tagRows("tag rows", cardinality, tagSize);
       OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);

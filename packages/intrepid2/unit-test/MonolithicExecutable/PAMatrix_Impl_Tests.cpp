@@ -132,7 +132,6 @@ namespace
       const Scalar beta  = 0.0;
       const ordinal_type LDA = M;
       const char trB = storeBTransposed ? 'T' : 'N';
-      const ordinal_type LDB = storeBTransposed ? N * cellCount : K;
       Intrepid2::Impl::gemm<typename DeviceType::execution_space>('N', trB, M, N*cellCount, K, alpha, AView.data(), LDA, BView.data(), beta, CView.data());
 
       testFloatingEquality1(CView, CViewExpected, relTol, absTol, out, success);
@@ -250,16 +249,6 @@ namespace
         Kokkos::deep_copy(AView, AViewHost);
         Kokkos::deep_copy(BView, BViewHost);
         Kokkos::deep_copy(CViewExpected, CViewExpectedHost);
-
-        Teuchos::stat_map_type statData;
-        std::vector<std::string> statNames;
-        Teuchos::TimeMonitor::computeGlobalTimerStatistics(statData, statNames, Teuchos::Intersection, "gemm-test");
-
-        double priorTimeInSeconds = 0;
-        if (statData["gemm-test"].size() > 0)
-        {
-          priorTimeInSeconds = statData["gemm-test"][0].first;
-        }
 
         const Scalar alpha = 1.0;
         const Scalar beta  = 0.0;

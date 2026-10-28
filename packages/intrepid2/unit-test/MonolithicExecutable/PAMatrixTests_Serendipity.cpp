@@ -51,7 +51,6 @@ namespace
   template<class SerendipityFamily>
   std::vector<int> serendipityOrdinals(const shards::CellTopology &cellTopo, const EFunctionSpace &fs, const int &p)
   {
-    using DeviceType = typename SerendipityFamily::DeviceType;
     using BasisBase  = typename SerendipityFamily::Basis;
     auto basis = getBasis< SerendipityFamily >(cellTopo, fs, p);
     auto serendipityBasis = Teuchos::rcp_dynamic_cast< SerendipityBasis<BasisBase> >(basis, true);

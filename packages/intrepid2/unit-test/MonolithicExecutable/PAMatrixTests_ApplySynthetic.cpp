@@ -108,7 +108,7 @@ void testSyntheticPAMatrixApply(std::vector< std::vector< std::vector< Scalar > 
     for (int f=0; f<F; f++)
     {
       auto row = basis1Op[f];
-      INTREPID2_TEST_FOR_EXCEPTION(row.size() != P, std::invalid_argument, "Each row of op container must have the same length");
+      INTREPID2_TEST_FOR_EXCEPTION(int(row.size()) != P, std::invalid_argument, "Each row of op container must have the same length");
       for (int p=0; p<P; p++)
       {
         basis1OpViewHost(f,p) = row[p];
@@ -127,7 +127,7 @@ void testSyntheticPAMatrixApply(std::vector< std::vector< std::vector< Scalar > 
     for (int f=0; f<F; f++)
     {
       auto row = basis2Op[f];
-      INTREPID2_TEST_FOR_EXCEPTION(row.size() != P, std::invalid_argument, "Each row of op container must have the same length");
+      INTREPID2_TEST_FOR_EXCEPTION(int(row.size()) != P, std::invalid_argument, "Each row of op container must have the same length");
       for (int p=0; p<P; p++)
       {
         basis2OpViewHost(f,p) = row[p];
@@ -143,7 +143,7 @@ void testSyntheticPAMatrixApply(std::vector< std::vector< std::vector< Scalar > 
   for (int c=0; c<C; c++)
   {
     auto row = pointWeights[c];
-    INTREPID2_TEST_FOR_EXCEPTION(row.size() != P, std::invalid_argument, "Each row of pointWeights container must have the same length");
+    INTREPID2_TEST_FOR_EXCEPTION(int(row.size()) != P, std::invalid_argument, "Each row of pointWeights container must have the same length");
     for (int p=0; p<P; p++)
     {
       pointWeightsViewHost(c,p) = row[p];

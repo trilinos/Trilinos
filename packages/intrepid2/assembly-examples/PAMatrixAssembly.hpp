@@ -123,7 +123,6 @@ Intrepid2::PAMatrix<DeviceType,Scalar> constructPAMatrix(Intrepid2::CellGeometry
   auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
   initialSetupTimer->start();
   using namespace std;
-  using IntegrationTools   = IntegrationTools<DeviceType>;
   // dimensions of the returned view are (C,F,F)
 
   Intrepid2::ScalarView<Intrepid2::Orientation,DeviceType> orientations;
@@ -138,8 +137,6 @@ Intrepid2::PAMatrix<DeviceType,Scalar> constructPAMatrix(Intrepid2::CellGeometry
   auto basis1 = getBasis< BasisFamily >(cellTopo, fs1, polyOrder1);
   auto basis2 = getBasis< BasisFamily >(cellTopo, fs2, polyOrder2);
 
-  int numFields1 = basis1->getCardinality();
-  int numFields2 = basis2->getCardinality();
   int numCells = geometry.numCells();
 
   auto cubature = DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder1 + polyOrder2);
@@ -156,7 +153,6 @@ Intrepid2::PAMatrix<DeviceType,Scalar> constructPAMatrix(Intrepid2::CellGeometry
   basis2->getValues(basis2Values, tensorCubaturePoints, op2);
   basis2Values.setBasis(basis2);
 
-  int cellOffset = 0;
 
   auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
 
@@ -167,7 +163,6 @@ Intrepid2::PAMatrix<DeviceType,Scalar> constructPAMatrix(Intrepid2::CellGeometry
   Data<PointScalar,DeviceType> jacobianInv    = CellTools<DeviceType>::allocateJacobianInv(jacobian);
   TensorData<PointScalar,DeviceType> cellMeasures = geometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
 
-  const int numJacobianDataPoints = jacobian.getDataExtent(1); // data extent will be 1 for affine, numPoints for other cases
   const int numPoints             = jacobian.extent_int(1); // number of logical points
 
   auto refData = geometry.getJacobianRefData(tensorCubaturePoints);

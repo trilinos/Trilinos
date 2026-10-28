@@ -151,7 +151,6 @@ using GemmDeviceType = Kokkos::Serial;
   {
     auto cellDimInfo = composedTransform.getDimensionInfo(0); // cell dimension
     int numTensorComponents = pointWeights.numTensorComponents();
-    const int & numLogicalCells = cellDimInfo.logicalExtent;
     if (pointWeights.separateFirstComponent())
     {
       auto cellDimInfo_points = pointWeights.getTensorComponent(0).getDimensionInfo(0);
@@ -318,7 +317,6 @@ void PAMatrix<DeviceType,Scalar>::init(const TransformedBasisValues<Scalar,Devic
       INTREPID2_TEST_FOR_EXCEPTION(basisValuesRight.basisValues().tensorData(familyOrdinal).numTensorComponents() != numTensorComponentsLeft, std::invalid_argument, "Right families must match left in the number of tensor components");
     }
   }
-  const int numPointTensorComponents = cellMeasures.numTensorComponents() - 1;
 
   // for now, we don't check for separability: we always treat as non-separable.
   // we could gain some performance in the not-too-common case that the integrals are separable; I haven't yet figured out how much.
@@ -553,7 +551,6 @@ void PAMatrix<DeviceType,Scalar>::init(const TransformedBasisValues<Scalar,Devic
     // "a" keeps track of the spatial dimension over which we are integrating in the left vector.
     // Components are allowed to span several dimensions; we keep track of the offset for the component in a_offset
     int a_offset = 0;
-    bool haveLaunchedContributionToCurrentFamilyLeft = false; // helps to track whether we need a Kokkos::fence before launching a kernel.
     for (int leftComponentOrdinal=0; leftComponentOrdinal<leftComponentCount; leftComponentOrdinal++)
     {
       TensorData<Scalar,DeviceType> leftComponent = leftIsVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal)
@@ -608,7 +605,6 @@ void PAMatrix<DeviceType,Scalar>::init(const TransformedBasisValues<Scalar,Devic
                                                        : basisValuesRight.basisValues().numFieldsInFamily(rightFamilyOrdinal);
         // "b" keeps track of the spatial dimension over which we are integrating in the right vector
         // components are allowed to span several dimensions; we keep track of the offset for the component in b_offset
-        bool haveLaunchedContributionToCurrentFamilyRight = false; // helps to track whether we need a Kokkos::fence before launching a kernel.
         int b_offset = 0;
         for (int rightComponentOrdinal=0; rightComponentOrdinal<rightComponentCount; rightComponentOrdinal++)
         {
@@ -1453,7 +1449,6 @@ void PAMatrix<DeviceType,Scalar>::extractDiagonal(const Data<Scalar,DeviceType> 
 template<typename DeviceType,class Scalar>
 Kokkos::View<Scalar*,DeviceType> PAMatrix<DeviceType,Scalar>::allocateWorkspace(const ordinal_type &worksetSize) const
 {
-  using View1D = Kokkos::View<Scalar*,DeviceType>;
   int size1D = maxIntermediateSize_ * worksetSize * 2;
 
   if (_orientations.size() > 0)
@@ -1470,7 +1465,6 @@ template<typename DeviceType,class Scalar>
 Kokkos::View<Scalar*,DeviceType> PAMatrix<DeviceType,Scalar>::allocateWorkspace(const ordinal_type &worksetSize,
                                                                                 const ordinal_type &n) const
 {
-  using View1D = Kokkos::View<Scalar*,DeviceType>;
   int size1D = maxIntermediateSize_ * worksetSize * n * 2;
 
   if (_orientations.size() > 0)
@@ -1496,7 +1490,6 @@ void PAMatrix<DeviceType,Scalar>::apply(const OutputViewType &outputVector,
   INTREPID2_TEST_FOR_EXCEPTION(hasOrdinalFilter(), std::invalid_argument, "PAMatrix::apply() does not yet support ordinal filters");
 
   using ExecutionSpace = typename DeviceType::execution_space;
-  using View1D = Kokkos::View<Scalar*,DeviceType>;
 
   const ordinal_type C  = inputVector.extent_int(0); // C, F2, N
   const ordinal_type F2 = inputVector.extent_int(1);
@@ -1630,9 +1623,9 @@ void PAMatrix<DeviceType,Scalar>::apply(const OutputViewType &outputVector,
         const auto A = op.opView.data();
         const ordinal_type LDA = Pr; // will need to revise if we ever pad our operators (for byte alignment)
         const auto B = in.data();
-        auto C = out.data();
+        auto CData = out.data();
         INTREPID2_TEST_FOR_EXCEPTION(Nr % Fr != 0, std::invalid_argument, "Error: Nr must be a multiple of Fr");
-        Impl::gemm<Impl::GemmDeviceType>('N', 'T', Pr, Nr/Fr, Fr, alpha, A, LDA, B, beta, C);
+        Impl::gemm<Impl::GemmDeviceType>('N', 'T', Pr, Nr/Fr, Fr, alpha, A, LDA, B, beta, CData);
         Nr = (Nr * Pr) / Fr;
 
       }
@@ -1663,10 +1656,10 @@ void PAMatrix<DeviceType,Scalar>::apply(const OutputViewType &outputVector,
         const auto A = op.opView.data();
         const ordinal_type LDA = Fr; // will need to revise if we ever pad our operators (for byte alignment)
         const auto B = in.data();
-        auto C = out.data();
+        auto CData = out.data();
 
         INTREPID2_TEST_FOR_EXCEPTION(Nr % Pr != 0, std::invalid_argument, "Error: Nr must be a multiple of Pr");
-        Impl::gemm<Impl::GemmDeviceType>('N', 'T', Fr, Nr/Pr, Pr, alpha, A, LDA, B, beta, C);
+        Impl::gemm<Impl::GemmDeviceType>('N', 'T', Fr, Nr/Pr, Pr, alpha, A, LDA, B, beta, CData);
         Nr = (Nr * Fr) / Pr;
 
       }
