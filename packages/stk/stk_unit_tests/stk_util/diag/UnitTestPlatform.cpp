@@ -97,6 +97,8 @@ TEST(SierraEnv, osname_and_osversion)
 
 TEST(SierraEnv, get_heap_info)
 {
+#if defined(SIERRA_HEAP_INFO)
+
   size_t M = 1024*1024;
   std::vector<double> bigvec(2*M);
   std::fill(bigvec.begin(), bigvec.end(), 3.14);
@@ -117,6 +119,10 @@ TEST(SierraEnv, get_heap_info)
 #else
   std::cout<<"using glibc < 2.33, get_heap_info is unreliable..."<<std::endl;
 #endif
+
+#else // SIERRA_HEAP_INFO
+  std::cout << "SIERRA_HEAP_INFO not defined, get_heap_info not available on this platform..." << std::endl;
+#endif // SIERRA_HEAP_INFO
 }
 
 TEST(SierraEnv, pid_and_pgrp)

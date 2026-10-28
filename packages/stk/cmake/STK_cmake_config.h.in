@@ -76,6 +76,8 @@
 
 #cmakedefine STK_HAS_SEACAS_NEMESIS
 
+#cmakedefine STK_HAS_YAML_CPP
+
 /* Non-typical "not" macro for optional dependence on SEACASAprepro_lib (See
  * STK #17354) */
 #ifndef NOT_HAVE_STK_SEACASAPREPRO_LIB

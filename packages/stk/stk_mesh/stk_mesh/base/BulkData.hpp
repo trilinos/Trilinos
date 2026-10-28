@@ -1517,10 +1517,6 @@ protected: //data
 #ifdef SIERRA_MIGRATION
   bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
   std::vector<FmwkId> m_fmwk_global_ids;
-  inline bool should_sort_faces_by_node_ids() const { return m_shouldSortFacesByNodeIds; }
-  bool m_shouldSortFacesByNodeIds;
-#else
-  inline bool should_sort_faces_by_node_ids() const { return false; }
 #endif
   enum AutomaticAuraOption m_autoAuraOption;
   bool m_turningOffAutoAura;

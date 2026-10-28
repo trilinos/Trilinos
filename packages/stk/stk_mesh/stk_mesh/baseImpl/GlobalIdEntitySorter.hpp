@@ -48,14 +48,10 @@ namespace impl {
 class GlobalIdEntitySorter : public EntitySorterBase
 {
 public:
-    GlobalIdEntitySorter(bool mustSortFacesByNodeIds=false)
-     : m_mustSortFacesByNodeIds(mustSortFacesByNodeIds)
+    GlobalIdEntitySorter()
     {}  
 
     virtual void sort(stk::mesh::BulkData &bulk, EntityVector& entityVector) const override;
-
-private:
-  bool m_mustSortFacesByNodeIds;
 };
 
 } // namespace impl

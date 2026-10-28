@@ -75,7 +75,7 @@ public:
   BulkData& mesh() const { return m_mesh; }
 
   void set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool needsSorting);
-  void internal_default_sort_bucket_entities(bool mustSortFacesByNodeIds=false);
+  void internal_default_sort_bucket_entities();
   void internal_custom_sort_bucket_entities(const EntitySorterBase& sorter);
 
   Bucket *get_bucket(EntityRank entity_rank, int bucket_id) const;

@@ -39,7 +39,7 @@ else()
 
   FOREACH(NUMPROCS 1)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/a_np${NUMPROCS})
-    add_test(NAME "stk_topology_utest_a_np${NUMPROCS}" 
+    add_test(NAME "stk_topology_utest_a_np${NUMPROCS}"
              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/a_np${NUMPROCS}
              COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_topology_utest_a)
     set_property(TEST "stk_topology_utest_a_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
@@ -55,7 +55,7 @@ else()
 
   FOREACH(NUMPROCS 1)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/b_np${NUMPROCS})
-    add_test(NAME "stk_topology_utest_b_np${NUMPROCS}" 
+    add_test(NAME "stk_topology_utest_b_np${NUMPROCS}"
              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/b_np${NUMPROCS}
              COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_topology_utest_b)
     set_property(TEST "stk_topology_utest_b_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
@@ -71,37 +71,42 @@ else()
 
   FOREACH(NUMPROCS 1)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/c_np${NUMPROCS})
-    add_test(NAME "stk_topology_utest_c_np${NUMPROCS}" 
+    add_test(NAME "stk_topology_utest_c_np${NUMPROCS}"
              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/c_np${NUMPROCS}
              COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_topology_utest_c)
     set_property(TEST "stk_topology_utest_c_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
   ENDFOREACH()
-
 endif()
 
 if(TARGET stk_topology_utest_a)
-target_include_directories(stk_topology_utest_a PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
-
-  INSTALL(TARGETS stk_topology_utest_a DESTINATION ${STK_INSTALL_BINDIR})
+  target_include_directories(stk_topology_utest_a PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
 endif()
 
 if(TARGET stk_topology_utest_b)
-target_include_directories(stk_topology_utest_b PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
-
-  INSTALL(TARGETS stk_topology_utest_b DESTINATION ${STK_INSTALL_BINDIR})
+  target_include_directories(stk_topology_utest_b PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
 endif()
 
 if(TARGET stk_topology_utest_c)
-target_include_directories(stk_topology_utest_c PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
+  target_include_directories(stk_topology_utest_c PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+endif()
 
-  INSTALL(TARGETS stk_topology_utest_c DESTINATION ${STK_INSTALL_BINDIR})
+if(NOT HAVE_STK_Trilinos)
+  if(TARGET stk_topology_utest_a)
+    INSTALL(TARGETS stk_topology_utest_a DESTINATION ${STK_INSTALL_BINDIR})
+  endif()
+  if(TARGET stk_topology_utest_b)
+    INSTALL(TARGETS stk_topology_utest_b DESTINATION ${STK_INSTALL_BINDIR})
+  endif()
+  if(TARGET stk_topology_utest_c)
+    INSTALL(TARGETS stk_topology_utest_c DESTINATION ${STK_INSTALL_BINDIR})
+  endif()
 endif()

@@ -98,6 +98,7 @@ cmake \
 -DTPL_ENABLE_Zlib:BOOL=ON \
 -DTPL_ENABLE_ParMETIS:BOOL=ON \
 -DTPL_ENABLE_Pnetcdf:BOOL=ON \
+-DTPL_ENABLE_yamlcpp=ON \
 -DNetCDF_LIBRARIES="-lnetcdf -lpnetcdf -lhdf5_hl -lhdf5 -ldl" \
 -DTPL_ENABLE_HDF5:BOOL=ON \
 -DHDF5_LIBRARIES="-lhdf5" \

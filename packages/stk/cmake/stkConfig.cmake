@@ -9,4 +9,6 @@ find_dependency(ArborX QUIET)
 find_dependency(SEACAS REQUIRED)
 find_dependency(GTest REQUIRED)
 find_dependency(Zoltan2Core REQUIRED)
+# Optional; only needed if stk was built with yaml-cpp (STK_HAS_YAML_CPP).
+find_package(yaml-cpp QUIET)
 include("${CMAKE_CURRENT_LIST_DIR}/stkTargets.cmake")

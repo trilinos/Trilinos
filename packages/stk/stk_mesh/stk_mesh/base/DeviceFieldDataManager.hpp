@@ -116,6 +116,10 @@ public:
                               const PartVector& parts,
                               bool deviceMeshMod = false) override;
 
+  virtual void add_new_buckets(EntityRank rank,
+                               const std::vector<NewBucketInfo>& newBuckets,
+                               bool deviceMeshMod = false) override;
+
 
   virtual size_t synchronized_count() const override { return m_synchronizedCount; }
 
@@ -517,17 +521,30 @@ void DeviceFieldDataManager<Space>::add_new_bucket(EntityRank rank,
                                                    const PartVector& parts,
                                                    bool deviceMeshMod)
 {
+  add_new_buckets(rank, {NewBucketInfo{bucketSize, bucketCapacity, &parts}}, deviceMeshMod);
+}
+
+template <typename Space>
+void DeviceFieldDataManager<Space>::add_new_buckets(EntityRank rank,
+                                                    const std::vector<NewBucketInfo>& newBuckets,
+                                                    bool deviceMeshMod)
+{
+  if (newBuckets.empty()) { return; }
+
   const MetaData& meta = m_bulk.mesh_meta_data();
   const FieldVector& allFieldsOfRank = meta.get_fields(rank);
   const int oldNumBuckets = m_bucketCapacity[rank].size();
-  const int newNumBuckets = oldNumBuckets+1;
-  const unsigned newBucketId = oldNumBuckets;
+  const int newNumBuckets = oldNumBuckets + newBuckets.size();
 
   resize_bucket_arrays(rank, oldNumBuckets, newNumBuckets);
   resize_field_meta_data_arrays(allFieldsOfRank, oldNumBuckets, newNumBuckets);
   resize_bucket_modified_array(rank, allFieldsOfRank.size(), newNumBuckets);
 
-  allocate_bucket(rank, allFieldsOfRank, parts, newBucketId, bucketSize, bucketCapacity, deviceMeshMod);
+  for (unsigned i = 0; i < newBuckets.size(); ++i) {
+    const NewBucketInfo& newBucket = newBuckets[i];
+    allocate_bucket(rank, allFieldsOfRank, *newBucket.parts, oldNumBuckets + i, newBucket.size, newBucket.capacity,
+                    deviceMeshMod);
+  }
 
   Kokkos::deep_copy(m_deviceBucketIsModified[rank], m_deviceBucketIsModifiedOnHost[rank]);
 

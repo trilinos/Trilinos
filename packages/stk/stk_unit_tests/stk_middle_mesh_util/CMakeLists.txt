@@ -25,13 +25,12 @@ else()
 
   FOREACH(NUMPROCS 1 2)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
-    add_test(NAME "stk_middle_mesh_util_utest_np${NUMPROCS}" 
-             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS} 
-             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_middle_mesh_util_utest 
+    add_test(NAME "stk_middle_mesh_util_utest_np${NUMPROCS}"
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS}
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_middle_mesh_util_utest
              --gtest_filter=-*externalFile)
     set_property(TEST "stk_middle_mesh_util_utest_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
   ENDFOREACH()
-
 endif()
 
 if(TARGET stk_middle_mesh_util_utest)
@@ -39,6 +38,9 @@ if(TARGET stk_middle_mesh_util_utest)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
   )
+endif()
 
+if(NOT HAVE_STK_Trilinos)
   INSTALL(TARGETS stk_middle_mesh_util_utest DESTINATION ${STK_INSTALL_BINDIR})
 endif()
+

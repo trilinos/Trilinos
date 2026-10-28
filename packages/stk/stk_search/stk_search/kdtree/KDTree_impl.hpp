@@ -868,6 +868,11 @@ inline void create_hierarchy(ObjectBoundingBoxHierarchy_T<RangeBoxType> *hierarc
     //  This method attempts to exploit maximum available parallelism.  However, the method requires
     //  nested threading which can have high overhead on some systems, only use if a largeish number
     //  of threads is available.
+    //
+    //  Here we check for a particular version (5.0) of the OpenMP standard
+    //  because the function omp_get_supported_active_levels() doesn't exist
+    //  in earlier versions, and a trilinos/stk user encountered at least one
+    //  build platform where (as of Oct 2026) OpenMP 5 is not supported.
 #if _OPENMP >= 201811
     int origNesting = omp_get_max_active_levels();
     omp_set_max_active_levels(omp_get_supported_active_levels());

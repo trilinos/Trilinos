@@ -355,7 +355,6 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
 #ifdef SIERRA_MIGRATION
     m_add_fmwk_data(add_fmwk_data),
     m_fmwk_global_ids(),
-    m_shouldSortFacesByNodeIds(false),
 #endif
     m_autoAuraOption(auto_aura_option),
     m_turningOffAutoAura(false),
@@ -3600,7 +3599,7 @@ void BulkData::modification_end_for_sync_to_host(ModEndOptimizationFlag opt)
 
   if (opt == ModEndOptimizationFlag::MOD_END_SORT)
   {
-    m_bucket_repository.internal_default_sort_bucket_entities(should_sort_faces_by_node_ids());
+    m_bucket_repository.internal_default_sort_bucket_entities();
   }
 
   m_bucket_repository.internal_modification_end();
@@ -3958,7 +3957,7 @@ void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt,
                                                 bool resetSymGhostInfo)
 {
   if(opt == impl::MeshModification::MOD_END_SORT) {
-    m_bucket_repository.internal_default_sort_bucket_entities(should_sort_faces_by_node_ids());
+    m_bucket_repository.internal_default_sort_bucket_entities();
   }
 
   m_bucket_repository.internal_modification_end();

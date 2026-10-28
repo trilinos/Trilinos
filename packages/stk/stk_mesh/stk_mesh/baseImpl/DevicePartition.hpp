@@ -223,6 +223,15 @@ class DevicePartition
     return true;
   }
 
+  KOKKOS_FUNCTION
+  void remove_entity(DeviceBucket& srcBucket, unsigned srcBucketOrd)
+  {
+    STK_NGP_ThrowAssert(srcBucket.partition_id() == m_partitionId);
+    srcBucket.remove_entity(srcBucketOrd);
+
+    update_partition_meta_entity_removed();
+  }
+
   void add_bucket(DeviceBucket* bucket)
   {
     bucket->m_owningPartitionId = m_partitionId;
@@ -267,9 +276,10 @@ class DevicePartition
     m_buckets.resize(num_buckets());
   }
 
-  template <typename TeamMember, typename EntityView>
+  template <typename TeamMember, typename EntityView, typename EntityKeyView, typename EntityKeyLookupView>
   KOKKOS_INLINE_FUNCTION
-  void gather_all_entities_and_sort(TeamMember const& teamMember, EntityView& allEntities)
+  void gather_all_entities_and_sort(TeamMember const& teamMember, EntityView& allEntities,
+                                    EntityKeyView& allEntityKeys, EntityKeyLookupView const& entityKeys)
   {
     auto bucketCapacity = get_bucket(0)->capacity();
 
@@ -285,19 +295,22 @@ class DevicePartition
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, bucketCapacity),
           [&](const int entityIdx) {
             auto invalid = !isActive || (static_cast<unsigned>(entityIdx) >= bucketActiveSpan);
-            allEntities(destIdx+entityIdx) = invalid ? Entity{} : srcEntities(entityIdx);
+            const Entity entity = invalid ? Entity{} : srcEntities(entityIdx);
+            allEntities(destIdx+entityIdx) = entity;
+            allEntityKeys(destIdx+entityIdx) = entity.is_local_offset_valid() ? entityKeys(entity.local_offset())
+                                                                              : EntityKey{};
           }
         );
       }
     );
     teamMember.team_barrier();
 
-    if (!Kokkos::Experimental::is_sorted(teamMember, allEntities, EntityCompareInvalidAtEnd{})) {
-      Kokkos::Experimental::sort_team(teamMember, allEntities, EntityCompareInvalidAtEnd{});
+    if (!Kokkos::Experimental::is_sorted(teamMember, allEntityKeys, EntityCompareInvalidAtEnd{})) {
+      Kokkos::Experimental::sort_by_key_team(teamMember, allEntityKeys, allEntities, EntityCompareInvalidAtEnd{});
     }
 
 #ifndef NDEBUG
-    auto sorted = Kokkos::Experimental::is_sorted(teamMember, allEntities, EntityCompareInvalidAtEnd{});
+    auto sorted = Kokkos::Experimental::is_sorted(teamMember, allEntityKeys, EntityCompareInvalidAtEnd{});
 
     // check that gathered valid entity count equals entity count known by this partition
     Kokkos::single(Kokkos::PerTeam(teamMember), [&]() {
@@ -325,6 +338,10 @@ class DevicePartition
     Kokkos::single(Kokkos::PerTeam(teamMember), [&]() {
       STK_NGP_ThrowRequireMsg(bucketCapacity > 0,
                               "Capacity of bucket 0 is zero; cannot scatter entities to buckets.");
+      for (unsigned i = 0; i + 1 < num_buckets(); ++i) {
+        STK_NGP_ThrowRequireMsg(get_bucket(i)->capacity() == bucketCapacity,
+                                "Only the last bucket in a partition may have a smaller (non-max) capacity.");
+      }
     });
     teamMember.team_barrier();
 #endif
@@ -340,10 +357,10 @@ class DevicePartition
           return;
         }
 
-        auto srcIdx = bucketIdx * bucket->capacity();
+        auto srcIdx = bucketIdx * bucketCapacity;
         auto& destEntities = bucket->m_entities;
 
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, bucketCapacity), 
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, bucket->capacity()),
           [&](const int entityIdx) {
             destEntities(entityIdx) = allEntities(srcIdx+entityIdx);
           }
@@ -367,33 +384,38 @@ class DevicePartition
     });
   }
 
-  template <typename TeamMember>
+  template <typename TeamMember, typename EntityKeyLookupView>
   KOKKOS_FUNCTION
-  void sort_entities_in_buckets(TeamMember const& teamMember, unsigned teamScratchLevel, size_t perTeamScratchSize)
+  void sort_entities_in_buckets(TeamMember const& teamMember, unsigned teamScratchLevel, size_t perTeamScratchSize,
+                                EntityKeyLookupView const& entityKeys)
   {
-    using ScratchView = Kokkos::View<Entity*, typename TeamMember::scratch_memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+    using EntityScratchView = Kokkos::View<Entity*, typename TeamMember::scratch_memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+    using EntityKeyScratchView = Kokkos::View<EntityKey*, typename TeamMember::scratch_memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-    auto entityViewExtent = perTeamScratchSize / sizeof(Entity);
-    ScratchView allEntities(teamMember.team_scratch(teamScratchLevel), entityViewExtent);
+    auto viewExtent = perTeamScratchSize / (sizeof(Entity) + sizeof(EntityKey));
+    EntityScratchView allEntities(teamMember.team_scratch(teamScratchLevel), viewExtent);
+    EntityKeyScratchView allEntityKeys(teamMember.team_scratch(teamScratchLevel), viewExtent);
 
-    gather_all_entities_and_sort(teamMember, allEntities);
+    gather_all_entities_and_sort(teamMember, allEntities, allEntityKeys, entityKeys);
 
     scatter_entities_to_buckets(teamMember, allEntities);
   }
 
-  template <typename TeamMember, typename EntityView>
-  requires (Kokkos::is_view_v<EntityView>)
+  template <typename TeamMember, typename EntityView, typename EntityKeyView, typename EntityKeyLookupView>
   KOKKOS_FUNCTION
-  void sort_entities_in_buckets(TeamMember const& teamMember, EntityView& allEntities, unsigned maxNumEntityPerPartition)
+  void sort_entities_in_buckets(TeamMember const& teamMember, EntityView& allEntities, EntityKeyView& allEntityKeys,
+                                EntityKeyLookupView const& entityKeys, unsigned maxNumEntityPerPartition)
   {
     using EntityUView = Kokkos::View<Entity*, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+    using EntityKeyUView = Kokkos::View<EntityKey*, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
     auto partitionIdx = teamMember.league_rank();
     auto startIdx = partitionIdx * maxNumEntityPerPartition;
 
     EntityUView entitiesInPartition(allEntities.data()+startIdx, maxNumEntityPerPartition);
+    EntityKeyUView entityKeysInPartition(allEntityKeys.data()+startIdx, maxNumEntityPerPartition);
 
-    gather_all_entities_and_sort(teamMember, entitiesInPartition);
+    gather_all_entities_and_sort(teamMember, entitiesInPartition, entityKeysInPartition, entityKeys);
 
     scatter_entities_to_buckets(teamMember, entitiesInPartition);
   }

@@ -43,17 +43,7 @@ namespace impl {
 
 void GlobalIdEntitySorter::sort(stk::mesh::BulkData &bulk, EntityVector& entityVector) const
 {   
-  auto fastEntityLess = [&bulk](const Entity lhs, const Entity rhs)->bool
-                        {return (bulk.entity_key(lhs) < bulk.entity_key(rhs));};
-
-  const bool useSlowEntityLess = m_mustSortFacesByNodeIds;
-
-  if (useSlowEntityLess) {
-    std::sort(entityVector.begin(), entityVector.end(), EntityLess(bulk));
-  }
-  else {
-    std::sort(entityVector.begin(), entityVector.end(), fastEntityLess);
-  }
+  std::sort(entityVector.begin(), entityVector.end(), EntityLess(bulk));
 }   
 
 } // namespace impl

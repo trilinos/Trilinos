@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,22 +30,36 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#include <stk_mesh/base/EntityLess.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
+#include "gtest/gtest.h"
+#include "stk_util/parallel/Parallel.hpp"
+#include "stk_util/parallel/mpi_filebuf.hpp"
+#include <iostream>
+#include <fstream>
 
-namespace stk {
-namespace mesh {
+#if defined ( STK_HAS_MPI )
+TEST(Parallel, read_and_broadcast_file)
+{
+    stk::ParallelMachine comm = stk::parallel_machine_world();
+    const int myProc = stk::parallel_machine_rank(comm);
+    const int numProcs = stk::parallel_machine_size(comm);
+    if (numProcs < 2 || numProcs > 4) { GTEST_SKIP(); }
 
-#ifdef SIERRA_MIGRATION
-EntityLess::EntityLess(const BulkData& mesh)
-  : m_mesh(&mesh),
-    m_shouldSortFacesByNodeIds(mesh.should_sort_faces_by_node_ids()),
-    m_sideRank(mesh.mesh_meta_data().side_rank())
-{}
-#endif   
+    std::string expected = "line 1\nline 2\nline 3: more stuff\nline 4";
+    std::string fileName("test.txt");
 
-} // namespace mesh
-} // namespace stk
+    if (myProc == 0) {
+      std::ofstream out(fileName);
+      out << expected;
+    }
+
+    stk::parallel_machine_barrier(comm);
+
+    std::string fileContents = stk::read_and_broadcast_file(fileName, comm);
+
+    EXPECT_EQ(expected, fileContents);
+}
+
+#endif
+

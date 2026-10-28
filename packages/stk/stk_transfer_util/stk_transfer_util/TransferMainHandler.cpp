@@ -35,6 +35,7 @@
 #include "stk_transfer_util/TransferMainIO.hpp"
 #include "stk_transfer_util/TransferMainBroker.hpp"
 #include "stk_transfer_util/LogMessage.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 namespace transfer_util {
@@ -85,12 +86,25 @@ void TransferMainHandler::set_master_element_provider(std::shared_ptr<stk::searc
 
 void TransferMainHandler::parse()
 {
+  //During parsing of command-line and/or input-file syntax, we will just output
+  //"clean" error messages, meaning no stack-traces.
+  //(These are the handlers used by macros such as STK_ThrowRequireMsg etc.)
+  stk::ErrorHandler origAssertHandler = stk::set_assert_handler(stk::clean_error_handler);
+  stk::ErrorHandler origErrorHandler = stk::set_error_handler(stk::clean_error_handler);
+  stk::ErrorHandler origInvArgHandler = stk::set_invalid_arg_handler(stk::clean_error_handler);
+
   m_parser.parse_command_line_options(m_argc, m_argv);
 
   if (m_parser.get_parser_status() == TransferParserStatus::SUCCESS) {
-    m_settings = m_parser.generate_transfer_settings();
-    m_validator.require_file_exists(m_settings.get_sendMesh_filename(), m_settings.get_num_input_processors());
-    m_validator.require_file_exists(m_settings.get_recvMesh_filename(), m_settings.get_num_output_processors());
+    try {
+      m_settings = m_parser.generate_transfer_settings();
+      m_validator.require_file_exists(m_settings.get_sendMesh_filename(), m_settings.get_num_input_processors());
+      m_validator.require_file_exists(m_settings.get_recvMesh_filename(), m_settings.get_num_output_processors());
+    }
+    catch(std::exception& e) {
+      std::cerr << e.what() << std::endl;
+      m_exitCode = TransferMainStatus::PARSE_ERROR;
+    }
   }
   else if (m_parser.get_parser_status() == TransferParserStatus::PARSE_ONLY) {
     m_exitCode = TransferMainStatus::PARSE_ONLY;
@@ -98,6 +112,12 @@ void TransferMainHandler::parse()
   else {
     m_exitCode = TransferMainStatus::PARSE_ERROR;
   }
+
+  //Now restore the error handlers so that the STK_Throw* macros resume showing
+  //stack-traces.
+  stk::set_assert_handler(origAssertHandler);
+  stk::set_error_handler(origErrorHandler);
+  stk::set_invalid_arg_handler(origInvArgHandler);
 }
 
 bool TransferMainHandler::is_no_op() const
@@ -169,6 +189,9 @@ void TransferMainHandler::print_running_message() const
 {
   stk::transfer_util::log_message(m_comm, "STK Transfer: STK Version "+stk::version_string());
   stk::transfer_util::log_message(m_comm, "Transfer Information:");
+  if (m_parser.input_file_specified()) {
+    stk::transfer_util::log_message(m_comm, "Input-file: "+m_parser.get_input_file_name());
+  }
   stk::transfer_util::log_message(m_comm, "Send-mesh: "+ m_settings.get_sendMesh_filename());
   stk::transfer_util::log_message(m_comm, "Recv-mesh: "+ m_settings.get_recvMesh_filename());
   stk::transfer_util::log_message(m_comm, "Output-mesh: "+ m_settings.get_outputMesh_filename());
