@@ -913,20 +913,32 @@ namespace Sacado {
       value_type dx(int i) const {
         using std::pow; using std::log; using Sacado::if_then_else;
         const int sz1 = expr1.size(), sz2 = expr2.size();
-        if (sz1 > 0 && sz2 > 0)
-          return if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) );
+        if (sz1 > 0 && sz2 > 0) {
+          return if_then_else(expr1.val() == scalar_type(0.0),
+            if_then_else(expr2.val() == scalar_type(1.0), expr1.dx(i), value_type(0.0)),
+            if_then_else(expr1.val() > scalar_type(0.0),
+              value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())),
+              value_type(0.0)));
+        }
         else if (sz1 > 0)
           // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
           // It seems less accurate and caused convergence problems in some codes
           return if_then_else( expr2.val() == scalar_type(1.0), expr1.dx(i), if_then_else(expr1.val() == scalar_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),expr2.val())) ));
         else
-          return if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val())) );
+          return if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0),
+            if_then_else(expr1.val() > scalar_type(0.0),
+              value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val())),
+              value_type(0.0)));
       }
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
         using std::pow; using std::log; using Sacado::if_then_else;
-        return if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())));
+        return if_then_else(expr1.val() == scalar_type(0.0),
+          if_then_else(expr2.val() == scalar_type(1.0), expr1.fastAccessDx(i), value_type(0.0)),
+          if_then_else(expr1.val() > scalar_type(0.0),
+            value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())),
+            value_type(0.0)));
       }
 
     protected:
@@ -1094,20 +1106,34 @@ namespace Sacado {
       value_type dx(int i) const {
         using std::pow; using std::log;
         const int sz1 = expr1.size(), sz2 = expr2.size();
-        if (sz1 > 0 && sz2 > 0)
-          return expr1.val() == scalar_type(0.0) ? value_type(0.0) : value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val()));
+        if (sz1 > 0 && sz2 > 0) {
+          if (expr1.val() == scalar_type(0.0))
+            return expr2.val() == scalar_type(1.0) ? expr1.dx(i) : value_type(0.0);
+          if (expr1.val() <= scalar_type(0.0))
+            return value_type(0.0);
+          return value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val()));
+        }
         else if (sz1 > 0)
           // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
           // It seems less accurate and caused convergence problems in some codes
           return expr2.val() == scalar_type(1.0) ? expr1.dx(i) : expr1.val() == scalar_type(0.0) ? value_type(0.0) : value_type(expr2.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),expr2.val()));
-        else
-          return expr1.val() == scalar_type(0.0) ? value_type(0.0) : value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val()));
+        else {
+          if (expr1.val() == scalar_type(0.0))
+            return value_type(0.0);
+          if (expr1.val() <= scalar_type(0.0))
+            return value_type(0.0);
+          return value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val()));
+        }
       }
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
         using std::pow; using std::log;
-        return expr1.val() == scalar_type(0.0) ? value_type(0.0) : value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val()));
+        if (expr1.val() == scalar_type(0.0))
+          return expr2.val() == scalar_type(1.0) ? expr1.fastAccessDx(i) : value_type(0.0);
+        if (expr1.val() <= scalar_type(0.0))
+          return value_type(0.0);
+        return value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val()));
       }
 
     protected:
