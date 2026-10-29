@@ -94,10 +94,10 @@ set(ML_ENABLE_SuperLU OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(Ifpack2_ENABLE_ThyraTpetraAdapters ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +shylu_fastilu
 set(Ifpack2_ENABLE_ShyLU_NodeFastILU ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
-#TODO: make sure all variants are satisfied
 # depends_on(kokkos+wraper+cuda+cuda_relocatable_device_code+cuda_constexpr) from +cuda
-set(Kokkos_ENABLE_CUDA ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
-set(Kokkos_ENABLE_RELOCATABLE_DEVICE_CODE ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+# manually changed to ~cuda
+set(Kokkos_ENABLE_CUDA OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+set(Kokkos_ENABLE_RELOCATABLE_DEVICE_CODE OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +disable_deprecated_code
 set(Tpetra_ENABLE_DEPRECATED_CODE OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(Kokkos_ENABLE_DEPRECATED_CODE OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
@@ -118,10 +118,8 @@ set(GlobiPack_HIDE_DEPRECATED_CODE ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FI
 set(Tempus_HIDE_DEPRECATED_CODE ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(SEACASProj_HIDE_DEPRECATED_CODE ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(Trios_HIDE_DEPRECATED_CODE ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
-#TODO: make sure all variants are satisfied
 # depends_on(kokkos-kernels+cuda+cublas+cusolver+cusparse+execspace_cuda+memspace_cudaspace) from +cuda
 set(KokkosKernels_ENABLE_SUPERNODAL_SPTRSV OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
-#TODO: make sure all variants are satisfied
 # depends_on(kokkos-kernels memspace_cudauvmspace=False) from +cuda~cuda_default_uvm
 # depends_on(kokkos-kernels+superlu) from +superlu"
 # depends_on(superlu) from +superlu
@@ -155,9 +153,11 @@ set(Trilinos_ENABLE_DEBUG OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # ~openmp
 set(Trilinos_ENABLE_OpenMP OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +cuda
-set(TPL_ENABLE_CUDA ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
+# manually changed to ~cuda
+set(TPL_ENABLE_CUDA OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
 # +cuda
-set(TPL_ENABLE_CUSPARSE ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
+# manually changed to ~cuda
+set(TPL_ENABLE_CUSPARSE OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
 # +cuda
 set(Tpetra_ASSUME_GPU_AWARE_MPI OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # cmake_args() - config
