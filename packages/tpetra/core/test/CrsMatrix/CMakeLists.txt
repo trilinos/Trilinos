@@ -105,6 +105,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # We split the CrsMatrix_WithGraph test by execution space.
 # This speeds up the build.
 
+ASSERT_DEFINED(Tpetra_INST_NEXTSILICON)
+IF(Tpetra_INST_NEXTSILICON)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_WithGraph_NEXTSILICON
+    SOURCES CrsMatrix_WithGraph_NextSilicon.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ${ARGS}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+  )
+ENDIF()
+
 ASSERT_DEFINED(Tpetra_INST_SYCL)
 IF(Tpetra_INST_SYCL)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

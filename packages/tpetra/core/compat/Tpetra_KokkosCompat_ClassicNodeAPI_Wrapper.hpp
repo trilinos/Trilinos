@@ -84,6 +84,14 @@ typedef KokkosDeviceWrapperNode<::Kokkos::SYCL, ::Kokkos::SYCLDeviceUSMSpace> Ko
 #endif
 #endif
 
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::NextSilicon, ::Kokkos::Experimental::NextSiliconSharedSpace> KokkosNextSiliconWrapperNode;
+#else
+typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::NextSilicon, ::Kokkos::Experimental::NextSiliconSpace> KokkosNextSiliconWrapperNode;
+#endif
+#endif
+
 #ifdef KOKKOS_ENABLE_HIP
 #ifdef HAVE_TPETRA_SHARED_ALLOCS
 typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPManagedSpace> KokkosHIPWrapperNode;

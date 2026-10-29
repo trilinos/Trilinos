@@ -13,6 +13,13 @@
 #  define HAVE_TPETRA_KOKKOSCLASSIC_DEFAULTNODE_SYCLWRAPPERNODE 1
 #endif // HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE
 
+// Defined if and only if Tpetra's default execution space is Kokkos::Experimental::NextSilicon.
+#cmakedefine HAVE_TPETRA_DEFAULTNODE_NEXTSILICONWRAPPERNODE
+// For backwards compatibility ONLY.
+#ifdef HAVE_TPETRA_DEFAULTNODE_NEXTSILICONWRAPPERNODE
+#  define HAVE_TPETRA_KOKKOSCLASSIC_DEFAULTNODE_NEXTSILICONWRAPPERNODE 1
+#endif // HAVE_TPETRA_DEFAULTNODE_NEXTSILICONWRAPPERNODE
+
 // Defined if and only if Tpetra's default execution space is Kokkos::HIP.
 #cmakedefine HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE
 // For backwards compatibility ONLY.

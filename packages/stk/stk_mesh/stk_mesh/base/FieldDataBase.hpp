@@ -20,11 +20,26 @@ namespace impl {
 class MeshModification;
 template <typename MemSpace_> class DeviceBucketRepository;
 
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+// NextSilicon compiles host and device code into a single translation unit, so
+// KOKKOS_IF_ON_HOST/KOKKOS_IF_ON_DEVICE expand to *runtime* tests on a thread-space
+// flag rather than the preprocessor branches the split-compilation backends
+// (CUDA/HIP/SYCL) use. The thread space is therefore not a compile-time property
+// and this predicate cannot be constexpr; the trailing return also gives the
+// runtime form a value on every control path.
+KOKKOS_FORCEINLINE_FUNCTION
+bool is_called_on_host() {
+  KOKKOS_IF_ON_HOST(return true;);
+  KOKKOS_IF_ON_DEVICE(return false;);
+  return true;
+}
+#else
 KOKKOS_FORCEINLINE_FUNCTION
 constexpr bool is_called_on_host() {
   KOKKOS_IF_ON_HOST(return true;);
   KOKKOS_IF_ON_DEVICE(return false;);
 }
+#endif
 
 }
 

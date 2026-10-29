@@ -291,6 +291,9 @@ PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::HIP)
 #if defined(KOKKOS_ENABLE_SYCL)
 PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::SYCL)
 #endif
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+PANZER_INSTANTIATE_INTREPID2_BASIS(Kokkos::Experimental::NextSilicon)
+#endif
 
 // The list above covers PHX::Device only while its memory space is its
 // execution space's own, which is what SPACE::device_type means.  A shared

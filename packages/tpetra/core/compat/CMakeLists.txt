@@ -40,6 +40,17 @@ IF(Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosSYCLWrapperNode")
       ON
       CACHE BOOL ""
   )
+ELSEIF(Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode")
+  IF(NOT Kokkos_ENABLE_NEXTSILICON)
+    MESSAGE(FATAL_ERROR "Kokkos_ENABLE_NEXTSILICON is OFF, but you set Tpetra's default Node type to Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode.")
+  ENDIF()
+  IF(NOT Tpetra_INST_NEXTSILICON)
+    MESSAGE(FATAL_ERROR "Tpetra_INST_NEXTSILICON is OFF, but you set Tpetra's default Node type to Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode.")
+  ENDIF()
+  SET(HAVE_TPETRA_DEFAULTNODE_NEXTSILICONWRAPPERNODE
+      ON
+      CACHE BOOL ""
+  )
 ELSEIF(Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosHIPWrapperNode")
   IF(NOT Kokkos_ENABLE_HIP)
     MESSAGE(FATAL_ERROR "Kokkos_ENABLE_HIP is OFF, but you set Tpetra's default Node type to Tpetra::KokkosCompat::KokkosHIPWrapperNode.")
@@ -107,6 +118,16 @@ ELSEIF(Tpetra_DefaultNode STREQUAL "")
     MESSAGE(STATUS "Setting default Node to Tpetra::KokkosCompat::KokkosSYCLWrapperNode.")
     SET(Tpetra_DefaultNode "Tpetra::KokkosCompat::KokkosSYCLWrapperNode")
     SET(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE
+        ON
+        CACHE BOOL ""
+    )
+  ELSEIF(Tpetra_INST_NEXTSILICON)
+    IF(NOT Kokkos_ENABLE_NEXTSILICON)
+      MESSAGE(FATAL_ERROR "Tpetra_INST_NEXTSILICON is ON, but Kokkos_ENABLE_NEXTSILICON is OFF.")
+    ENDIF()
+    MESSAGE(STATUS "Setting default Node to Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode.")
+    SET(Tpetra_DefaultNode "Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode")
+    SET(HAVE_TPETRA_DEFAULTNODE_NEXTSILICONWRAPPERNODE
         ON
         CACHE BOOL ""
     )

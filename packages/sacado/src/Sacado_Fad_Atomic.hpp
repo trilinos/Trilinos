@@ -317,7 +317,7 @@ namespace Sacado {
         }
       }
 
-#elif defined(KOKKOS_ENABLE_SYCL)
+#elif defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_NEXTSILICON)
 
       // Our implementation of Kokkos::atomic_oper_fetch() and
       // Kokkos::atomic_fetch_oper() for Sacado types on device.

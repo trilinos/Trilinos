@@ -231,6 +231,11 @@ static inline int ComputeResidualVectorRecommendedSYCLVectorSize(const int blksi
   return total_team_size / team_size;
 }
 
+static inline int ComputeResidualVectorRecommendedNextSiliconVectorSize(const int /*blksize*/,
+                                                                        const int /*team_size*/) {
+  return 1;
+}
+
 template <typename T>
 static inline int ComputeResidualVectorRecommendedVectorSize(const int blksize,
                                                              const int team_size) {
@@ -240,6 +245,8 @@ static inline int ComputeResidualVectorRecommendedVectorSize(const int blksize,
     return ComputeResidualVectorRecommendedHIPVectorSize(blksize, team_size);
   if (is_sycl<T>::value)
     return ComputeResidualVectorRecommendedSYCLVectorSize(blksize, team_size);
+  if (is_nextsilicon<T>::value)
+    return ComputeResidualVectorRecommendedNextSiliconVectorSize(blksize, team_size);
   return -1;
 }
 
