@@ -151,6 +151,22 @@ public:
    *  inconsistent algebraic components: the last step of the adjoint integration
    *  uses the initial state. An empty function (the default) leaves the initial
    *  state unchanged.
+   *
+   *  The transient optimization with the ROL dynamic constraint ("Tempus Driver" =
+   *  false) does not call it (Piro::PerformROLTransientAnalysis prints a warning): ROL
+   *  integrates from the nominal initial state for all parameters. Its gradient is the
+   *  exact gradient of its time discretization, so it does not need a consistent
+   *  initial state, but a response at the initial time uses the nominal one.
+   *
+   *  Only x0 is made consistent: the initial time derivative is the nominal one, unless
+   *  the Tempus stepper recomputes it ("Initial Condition Consistency"; note that
+   *  "Consistent" solves the residual for x_dot with x fixed, which requires a
+   *  nonsingular mass matrix, so it does not apply to DAEs). Steppers that do not use
+   *  the time derivative of the previous time step (e.g., Backward Euler) do not use the
+   *  initial x_dot to advance in time, but the adjoint integration evaluates the model
+   *  derivatives at the initial x_dot: an inconsistent x_dot affects the gradient if
+   *  df/dx or df/dp depends on x_dot (e.g., a mass matrix that depends on the state, or
+   *  a parameter that multiplies x_dot).
    */
   void setConsistentInitialStateFunction(const ConsistentInitialStateFunction& f)
   { consistentInitialStateFunction_ = f; }

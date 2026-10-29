@@ -180,8 +180,8 @@ IF (Piro_ENABLE_NOX)
       # compared with the minimizers of the continuous problems, with SDIRK 2 Stage 2nd order (and
       # variable time steps landing on the response times). With Backward Euler, the O(dt) error of the
       # Tempus adjoint gradient, dominated for this model by the last adjoint step (at the initial time),
-      # is too large near the optimum for the optimization to converge. A smaller enough dt for the test to 
-      # converge would lead to test timeout. Backward Euler is tested with the ROL dynamic constraint,
+      # is too large near the optimum for the optimization to converge, and a dt small enough for it to
+      # converge would make the test time out. Backward Euler is tested with the ROL dynamic constraint,
       # whose gradient is the exact gradient of the discrete objective.
       TRIBITS_ADD_TEST(
         AnalysisDriverTranstientTempus_MSD
@@ -344,6 +344,20 @@ IF (Piro_ENABLE_Tempus)
     Piro_ThyraProductME_Tempus_FinalObjective_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     Piro_Test_ThyraSupport.hpp
+    MassSpringDamperModel.cpp
+    MassSpringDamperModel.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ThyraProductME_ROL_DynamicObjective_UnitTests
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    SOURCES
+    Piro_ThyraProductME_ROL_DynamicObjective_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
     MassSpringDamperModel.cpp
     MassSpringDamperModel.hpp
     MatrixBased_LOWS.cpp

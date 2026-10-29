@@ -1042,7 +1042,6 @@ Piro::PerformROLTransientAnalysis(
   else if (!rolParams.get<string>("Response Time List", "").empty())
     *out << "WARNING: Piro::PerformROLTransientAnalysis: \"Response Time List\" is ignored, it is only used with " <<
             "\"Response Type\" = \"Sum Over Times\"." << std::endl;
-  const double timeTol = 1.0e-9 * std::max(std::abs(t_f - t_0), std::abs(t_f) + 1.0e-6);
 
   if(analysisVerbosity >= 3) {
     *out << "\nPiro PerformAnalysis: ROL options:" << std::endl;
@@ -1100,6 +1099,15 @@ Piro::PerformROLTransientAnalysis(
       piroParams, analysisVerbosityLevel, observer));
   }
   else {
+    // ROL integrates from the fixed nominal initial state; the function of the Piro::TempusSolver
+    // that makes the initial state consistent with the parameters is not used.
+    if (piroTempusSolver->getConsistentInitialStateFunction())
+      *out << "WARNING: Piro::PerformROLTransientAnalysis: the Piro::TempusSolver has a function that makes the " <<
+              "initial state consistent with the parameters, but it is not used when \"Tempus Driver\" is false: " <<
+              "ROL integrates from the nominal initial state for all parameters. The gradient is still the exact " <<
+              "gradient of the objective, but a response at the initial time (\"Time Integral\", or \"Sum Over Times\" " <<
+              "with the initial time in the \"Response Time List\") uses the nominal initial state." << std::endl;
+
     // The ROL dynamic-constraint approach uses a uniform time grid.
     TEUCHOS_TEST_FOR_EXCEPTION(
         (nt < 1) || (std::abs(nt_real - nt) > 1e-8*std::max(1.0, nt_real)),
@@ -1133,18 +1141,9 @@ Piro::PerformROLTransientAnalysis(
 
     const bool useFinalTimeStepResponse = (responseType != Tempus::AdjointResponseType::TimeIntegral);
     auto piro_obj_ptr = ROL::makePtr<Piro::ThyraProductME_ROL_DynamicObjective<double>>(model, forward_integrator, adjoint_integrator, adjointModel, g_index, piroParams, numTimeStamps, useFinalTimeStepResponse, true, analysisVerbosityLevel, observer);
-    if (responseType == Tempus::AdjointResponseType::SumOverTimes) {
-      // The response times must be ends of the time stamps 1,...,nt
-      for (const double t_k : responseTimes) {
-        const long k = std::lround((t_k - t_0)/dt_rol);
-        TEUCHOS_TEST_FOR_EXCEPTION((k < 1) || (k > nt) || (std::abs(t_0 + k*dt_rol - t_k) > timeTol),
-            Teuchos::Exceptions::InvalidParameter,
-            std::endl << "Piro::PerformROLTransientAnalysis, ERROR: the response time " << t_k << " is not supported " <<
-            "when \"Tempus Driver\" is false: the response times must be in (Initial Time, Final Time] = (" << t_0 <<
-            ", " << t_f << "] and multiples of the time step " << dt_rol << " from the initial time." << std::endl);
-      }
-      piro_obj_ptr->setResponseTimes(responseTimes, timeTol);
-    }
+    // The response times must be on the time grid (checked by setResponseTimes)
+    if (responseType == Tempus::AdjointResponseType::SumOverTimes)
+      piro_obj_ptr->setResponseTimes(responseTimes, *timeStamps);
     ROL::Ptr<ROL::DynamicObjective<double> > obj_ptr = piro_obj_ptr;
     auto constr_ptr = ROL::makePtr<Piro::ThyraProductME_ROL_DynamicConstraint<double>>(forward_integrator, adjoint_integrator, adjointModel, piroParams, analysisVerbosityLevel, observer);
 
@@ -1985,8 +1984,8 @@ Piro::getValidPiroAnalysisROLParameters(int num_parameters)
       "\"Time Integral\" for the time integral of g(x(t),p,t) (trapezoidal rule over the time steps), or \"Sum Over Times\" for the sum of g(x(t_k),p,t_k) "
       "over the times t_k of the \"Response Time List\" (e.g., the times of the observations). With the Tempus driver, \"Time Integral\" and "
       "\"Sum Over Times\" require a response that does not depend on x_dot; for \"Sum Over Times\", the time steps land on the times t_k with "
-      "'Variable' time steps, while with 'Constant' time steps (and without the Tempus driver) the times t_k must be on the time grid. "
-      "Without the Tempus driver, the times t_k must be larger than the initial time. "
+      "'Variable' time steps, while with 'Constant' time steps (and without the Tempus driver) the times t_k must be on the time grid, "
+      "up to the tolerances Tempus->Sensitivities->\"Response Time Relative Tolerance\" (default 1e-9) and \"Response Time Absolute Tolerance\" (default 1e-15). "
       "Higher-order Tempus steppers need an interpolation (Tempus->Integrator->Solution History->Interpolator->Order) of order at least "
       "the stepper order minus one to retain their order in the gradient");
   validPL->set<string>("Response Time List", "", "Transient problems only. Comma-separated list of the times t_k of the \"Sum Over Times\" response");

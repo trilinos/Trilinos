@@ -94,7 +94,11 @@ public:
       addPointResponses(*state);
   }
 
-  //! Value of the response computed by the last time integration
+  //! Value of the response computed by the last time integration. If the time
+  //! integration failed, this is the partial value up to the last accepted time
+  //! step: ThyraProductME_TempusFinalObjective reports the failure ("State Solve
+  //! Converged" = false), and the value is then replaced by the "Objective
+  //! Recovery Value" (or value() throws).
   Real getValue() const { return value_; }
 
   //! Response times that are not the time of a time step, including those that
@@ -221,14 +225,23 @@ private:
                   const Teuchos::RCP<Thyra::VectorBase<Real>>& g,
                   const Teuchos::RCP<Thyra::VectorBase<Real>>& dgdp);
 
-  //! Tolerance for comparing times (same as in Tempus::IntegratorAdjointSensitivity)
+  //! Tolerance for comparing times: the same as Tempus::IntegratorAdjointSensitivity,
+  //! with the tolerances of the Tempus "Sensitivities" parameters
   Real timeTolerance() const {
-    return Real(1.0e-9) * std::max(std::abs(time_final_ - time_initial_), std::abs(time_final_) + Real(1.0e-6));
+    const Teuchos::ParameterList& tempusParams = *tempus_params_;
+    return Tempus::AdjointSensitivityUtils::timeTolerance(time_initial_, time_final_,
+      tempusParams.isSublist("Sensitivities") ? &tempusParams.sublist("Sensitivities") : nullptr);
   }
 
   //! Warn (once) if a final-time response depends on x_dot: the Tempus adjoint
-  //! sensitivities neglect dg/dx_dot.
+  //! sensitivities neglect dg/dx_dot. The check needs dg/dx_dot in gradient form;
+  //! other forms are not checked (a Jacobian form has one column per state
+  //! component, and a linear operator would need an adjoint apply).
   void checkFinalTimeDgDxDot(const Thyra::ModelEvaluatorBase::InArgs<Real>& inArgs);
+
+  //! Warn (once) if the interpolation of the forward solution used by the adjoint
+  //! integrator has a lower order than needed to retain the order of the stepper.
+  void checkInterpolationOrder(const Tempus::IntegratorAdjointSensitivity<Real>& integrator);
 
   //! InArgs of initialStateModel_ for the consistent initial state function: its nominal
   //! values, with the parameters p (unpacked if the objective's model is a
@@ -265,6 +278,7 @@ private:
   Tempus::AdjointResponseType responseType_;
   std::vector<Real> responseTimes_;
   bool checkedDgDxDot_;
+  bool checkedInterpolationOrder_;
 
   //! Parameters and final state of the last successful forward integration
   Teuchos::RCP<Thyra::VectorBase<Real>> last_p_;
@@ -294,7 +308,8 @@ ThyraProductME_TempusFinalObjective(
   verbosityLevel_(verbLevel),
   tempus_params_(Teuchos::rcp<Teuchos::ParameterList>(new Teuchos::ParameterList(piroParams.sublist("Tempus")))),
   responseType_(Tempus::AdjointResponseType::FinalTime),
-  checkedDgDxDot_(false)
+  checkedDgDxDot_(false),
+  checkedInterpolationOrder_(false)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(thyra_model_->get_g_space(g_index_)->dim() != 1, Teuchos::Exceptions::InvalidParameter,
     std::endl << "Piro::ThyraProductME_TempusFinalObjective: the objective response " << g_index_ <<
@@ -335,26 +350,6 @@ ThyraProductME_TempusFinalObjective(
           << " with 0, the index of the optimization parameters in the product model evaluator" << std::endl;
   }
   sensPL.set<int>("Sensitivity Parameter Index", 0);
-
-  // The adjoint integration evaluates the forward solution between the stored
-  // time steps (e.g., at the stage times of Runge-Kutta methods) by interpolation.
-  // A stepper of order q needs an interpolation of order q-1 to retain its order.
-  const Teuchos::RCP<Tempus::Stepper<Real>> stepper = piroTempusIntegrator_->getStepper();
-  const std::string integratorName = tempus_params_->get<std::string>("Integrator Name", "");
-  int interpolationOrder = 0;
-  if (!integratorName.empty() && tempus_params_->isSublist(integratorName) &&
-      tempus_params_->sublist(integratorName).isSublist("Solution History") &&
-      tempus_params_->sublist(integratorName).sublist("Solution History").isSublist("Interpolator"))
-    interpolationOrder = tempus_params_->sublist(integratorName).sublist("Solution History")
-      .sublist("Interpolator").get<int>("Order", 0);
-  if (Teuchos::nonnull(stepper) && stepper->getOrder() - 1 > interpolationOrder) {
-    *out_ << "WARNING: Piro::ThyraProductME_TempusFinalObjective: the Tempus stepper \""
-          << stepper->getStepperType() << "\" has order " << stepper->getOrder()
-          << ", but the interpolation of the forward solution used by the adjoint integration has order "
-          << interpolationOrder << ". Set Tempus->" << integratorName << "->Solution History->Interpolator->"
-          << "\"Order\" to at least " << stepper->getOrder() - 1 << " to retain the order of the stepper "
-          << "in the gradient." << std::endl;
-  }
 }
 
 template <typename Real>
@@ -505,6 +500,12 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
   // the stepper stores objects in its parameters (e.g., the row sum scaling observer,
   // with "Function Scaling" = "Row Sum"), and a solver built later with the same
   // parameters would chain them with its own, one more at each integration.
+  // The copies are shallow for such objects. If the Piro::TempusSolver solved before
+  // this objective was built, tempus_params_ (and each copy) holds its row sum
+  // observer, which the forward solvers chain with their own: a fixed extra cost (one
+  // more row sum per Newton iteration), written into the scaling vector of the
+  // Piro::TempusSolver, which recomputes it before using it. The adjoint integrator
+  // removes these objects (Tempus::removeIntegratorSolverObjects).
   const RCP<Teuchos::ParameterList> tempusParams = rcp(new Teuchos::ParameterList(*tempus_params_));
 
   // Create and run integrator
@@ -514,6 +515,7 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
   if (Teuchos::nonnull(dgdp)) {
     RCP<Tempus::IntegratorAdjointSensitivity<Real> > integrator =
       Tempus::createIntegratorAdjointSensitivity<Real>(tempusParams, wrapped_model, wrapped_adjoint_model);
+    checkInterpolationOrder(*integrator);
     addAccumulator(*integrator);
     integratorStatus = integrator->advanceTime(time_final_);
     if (integratorStatus) {
@@ -601,6 +603,32 @@ initialStateInArgs(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p) const
   }
   if (icInArgs.supports(MEB::IN_ARG_t)) icInArgs.set_t(time_initial_);
   return icInArgs;
+}
+
+template <typename Real>
+void
+ThyraProductME_TempusFinalObjective<Real>::
+checkInterpolationOrder(const Tempus::IntegratorAdjointSensitivity<Real>& integrator)
+{
+  // The adjoint integration evaluates the forward solution between the stored
+  // time steps (e.g., at the stage times of Runge-Kutta methods) by interpolation.
+  // A stepper of order q needs an interpolation of order q-1 to retain its order.
+  if (checkedInterpolationOrder_) return;
+  checkedInterpolationOrder_ = true;
+  const Teuchos::RCP<const Tempus::Stepper<Real>> stepper = integrator.getStepper();
+  const Teuchos::RCP<const Tempus::SolutionHistory<Real>> history = integrator.getStateSolutionHistory();
+  if (stepper.is_null() || history.is_null() || history->getInterpolator().is_null()) return;
+  const int interpolationOrder = history->getInterpolator()->order();
+  if (stepper->getOrder() - 1 > interpolationOrder) {
+    const std::string integratorName = tempus_params_->isType<std::string>("Integrator Name") ?
+      tempus_params_->get<std::string>("Integrator Name") : std::string("<Integrator Name>");
+    *out_ << "WARNING: Piro::ThyraProductME_TempusFinalObjective: the Tempus stepper \""
+          << stepper->getStepperType() << "\" has order " << stepper->getOrder()
+          << ", but the interpolation of the forward solution used by the adjoint integration has order "
+          << interpolationOrder << ". Set Tempus->" << integratorName
+          << "->Solution History->Interpolator->\"Order\" to at least " << stepper->getOrder() - 1
+          << " to retain the order of the stepper in the gradient." << std::endl;
+  }
 }
 
 template <typename Real>
