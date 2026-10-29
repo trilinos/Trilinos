@@ -10,6 +10,7 @@
 #ifndef MUELU_STRUCTUREDRAPFACTORY_DEF_HPP
 #define MUELU_STRUCTUREDRAPFACTORY_DEF_HPP
 
+#include <cstdint>
 #include <sstream>
 #include <vector>
 
@@ -24,6 +25,7 @@
 #include <Xpetra_MapFactory.hpp>
 
 #include "MueLu_StructuredRAPFactory_decl.hpp"
+#include "MueLu_StructuredRAPKernel.hpp"
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_NoFactory.hpp"
@@ -116,6 +118,11 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::StructuredRAPFa
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
+  // If no triple product is prescribed, use Xpetra implementation by default
+  validParamList->set<std::string>(
+      "rap: triple product implementation", "unstructured",
+      "Implementation used with a prebuilt coarse graph: unstructured or structured.");
+
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("rap: triple product");         // in the long term this has to be the only option for multiplication
   SET_VALID_ENTRY("rap: prebuild coarse graph");  // if true, the coarse graph is prebuilt and passed to the triple matrix product kernel. This can be used to optimize the symbolic phase of the triple matrix product.
@@ -189,8 +196,8 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInp
       "StructuredRAPFactory requires \"transpose: use implicit\" = true because "
       "the prebuilt coarse graph assumes the Galerkin product P^T A P.");
 
-  const bool prebuildCoarseGraph = pL.get<bool>("rap: prebuild coarse graph");
-  const bool useRAPDelegate      = !prebuildCoarseGraph;
+  const bool useRAPDelegate =
+      !pL.get<bool>("rap: prebuild coarse graph");
 
   if (useRAPDelegate) {
     ConfigureRAPFactoryDelegate();
@@ -203,26 +210,24 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInp
   Input(fineLevel, "A");
   Input(coarseLevel, "P");
 
-  if (prebuildCoarseGraph) {
-    const RCP<const FactoryBase> coarseDimensionsFactory =
-        GetStructuredMetadataFactory("lCoarseNodesPerDim");
-    const RCP<const FactoryBase> interpolationOrderFactory =
-        GetStructuredMetadataFactory("structuredInterpolationOrder");
-    fineLevel.DeclareInput("lCoarseNodesPerDim", coarseDimensionsFactory.get(), this);
-    fineLevel.DeclareInput("structuredInterpolationOrder", interpolationOrderFactory.get(), this);
-    if (fineLevel.GetLevelID() == 0) {
-      TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable("numDimensions", NoFactory::get()),
-                                 Exceptions::RuntimeError,
-                                 "StructuredRAPFactory: numDimensions was not provided on level 0.");
-      TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable("lNodesPerDim", NoFactory::get()),
-                                 Exceptions::RuntimeError,
-                                 "StructuredRAPFactory: lNodesPerDim was not provided on level 0.");
-      fineLevel.DeclareInput("numDimensions", NoFactory::get(), this);
-      fineLevel.DeclareInput("lNodesPerDim", NoFactory::get(), this);
-    } else {
-      Input(fineLevel, "numDimensions");
-      Input(fineLevel, "lNodesPerDim");
-    }
+  const RCP<const FactoryBase> coarseDimensionsFactory =
+      GetStructuredMetadataFactory("lCoarseNodesPerDim");
+  const RCP<const FactoryBase> interpolationOrderFactory =
+      GetStructuredMetadataFactory("structuredInterpolationOrder");
+  fineLevel.DeclareInput("lCoarseNodesPerDim", coarseDimensionsFactory.get(), this);
+  fineLevel.DeclareInput("structuredInterpolationOrder", interpolationOrderFactory.get(), this);
+  if (fineLevel.GetLevelID() == 0) {
+    TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable("numDimensions", NoFactory::get()),
+                               Exceptions::RuntimeError,
+                               "StructuredRAPFactory: numDimensions was not provided on level 0.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable("lNodesPerDim", NoFactory::get()),
+                               Exceptions::RuntimeError,
+                               "StructuredRAPFactory: lNodesPerDim was not provided on level 0.");
+    fineLevel.DeclareInput("numDimensions", NoFactory::get(), this);
+    fineLevel.DeclareInput("lNodesPerDim", NoFactory::get(), this);
+  } else {
+    Input(fineLevel, "numDimensions");
+    Input(fineLevel, "lNodesPerDim");
   }
 
   // call DeclareInput of all user-given transfer factories
@@ -286,23 +291,59 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
   const LO interiorNode = interior[2] * fineNodes[0] * fineNodes[1] +
                           interior[1] * fineNodes[0] + interior[0];
 
+  const auto localA            = A.getLocalMatrixDevice();
+  const LO invalidLocalOrdinal = Teuchos::OrdinalTraits<LO>::invalid();
+  std::vector<std::vector<LO>> ownedColumns(
+      Teuchos::as<size_t>(dofsPerNode));
   bool hasCompleteLocalStencil = hasLocalInterior;
-  // Every rank checks its candidate interior node which can be used to detect the fine-grid stencil
-  if (hasCompleteLocalStencil) {
-    for (LO rowDof = 0; rowDof < dofsPerNode && hasCompleteLocalStencil; ++rowDof) {
-      const LO row = interiorNode * dofsPerNode + rowDof;
-      Teuchos::ArrayView<const LO> columns;
-      graph->getLocalRowView(row, columns);
-      if (columns.size() == 0) {
+  if (hasLocalInterior) {
+    const size_t firstRow     = Teuchos::as<size_t>(interiorNode * dofsPerNode);
+    const auto detectedRowMap = Kokkos::subview(
+        localA.graph.row_map,
+        std::make_pair(firstRow,
+                       firstRow + Teuchos::as<size_t>(dofsPerNode) + 1));
+    const auto detectedRowMapHost = Kokkos::create_mirror_view_and_copy(
+        Kokkos::HostSpace(), detectedRowMap);
+    const size_t firstEntry = detectedRowMapHost(0);
+    const size_t lastEntry =
+        detectedRowMapHost(Teuchos::as<size_t>(dofsPerNode));
+    const auto detectedEntries = Kokkos::subview(
+        localA.graph.entries, std::make_pair(firstEntry, lastEntry));
+    using device_type     = typename Node::device_type;
+    using execution_space = typename device_type::execution_space;
+    Kokkos::View<LO*, device_type> detectedOwnedColumns(
+        Kokkos::ViewAllocateWithoutInitializing(
+            "StructuredRAP: detected owned columns"),
+        lastEntry - firstEntry);
+    const auto rowLocalMap = rowMap->getLocalMap();
+    const auto colLocalMap = colMap->getLocalMap();
+    Kokkos::parallel_for(
+        "StructuredRAP: map detected stencil columns",
+        Kokkos::RangePolicy<execution_space>(0, lastEntry - firstEntry),
+        KOKKOS_LAMBDA(const size_t entry) {
+          const GO globalColumn =
+              colLocalMap.getGlobalElement(detectedEntries(entry));
+          detectedOwnedColumns(entry) =
+              rowLocalMap.getLocalElement(globalColumn);
+        });
+    const auto detectedOwnedColumnsHost =
+        Kokkos::create_mirror_view_and_copy(
+            Kokkos::HostSpace(), detectedOwnedColumns);
+
+    for (LO rowDof = 0; rowDof < dofsPerNode; ++rowDof) {
+      const size_t rowBegin = detectedRowMapHost(Teuchos::as<size_t>(rowDof));
+      const size_t rowEnd =
+          detectedRowMapHost(Teuchos::as<size_t>(rowDof) + 1);
+      if (rowBegin == rowEnd)
         hasCompleteLocalStencil = false;
-        break;
-      }
-      for (int entry = 0; entry < columns.size(); ++entry) {
-        const GO globalColumn = colMap->getGlobalElement(columns[entry]);
-        if (!rowMap->isNodeGlobalElement(globalColumn)) {
+      auto& rowColumns = ownedColumns[Teuchos::as<size_t>(rowDof)];
+      rowColumns.reserve(rowEnd - rowBegin);
+      for (size_t entry = rowBegin; entry < rowEnd; ++entry) {
+        const LO ownedColumn =
+            detectedOwnedColumnsHost(entry - firstEntry);
+        rowColumns.push_back(ownedColumn);
+        if (ownedColumn == invalidLocalOrdinal)
           hasCompleteLocalStencil = false;
-          break;
-        }
       }
     }
   }
@@ -324,19 +365,12 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
   // Only the elected rank performs detection
   if (myRank == detectorRank) {
     for (LO rowDof = 0; rowDof < dofsPerNode; ++rowDof) {
-      const LO row = interiorNode * dofsPerNode + rowDof;
-      Teuchos::ArrayView<const LO> columns;
-      graph->getLocalRowView(row, columns);
-
-      for (int entry = 0; entry < columns.size(); ++entry) {
-        const GO globalColumn = colMap->getGlobalElement(columns[entry]);
-        const LO ownedColumn  = rowMap->getLocalElement(globalColumn);
-        TEUCHOS_TEST_FOR_EXCEPTION(
-            ownedColumn == Teuchos::OrdinalTraits<LO>::invalid(), Exceptions::RuntimeError,
-            prefix << "the selected detector row contains a nonowned column.");
-
-        const LO columnNode = ownedColumn / dofsPerNode;
-        const LO columnDof  = ownedColumn % dofsPerNode;
+      const auto& rowColumns = ownedColumns[Teuchos::as<size_t>(rowDof)];
+      const size_t rowLength = rowColumns.size();
+      for (size_t entry = 0; entry < rowLength; ++entry) {
+        const LO ownedColumn = rowColumns[entry];
+        const LO columnNode  = ownedColumn / dofsPerNode;
+        const LO columnDof   = ownedColumn % dofsPerNode;
         LO columnX, columnY, columnZ;
         StructuredRAPFactoryDetails::getLocalNodeIndices(
             columnNode, fineNodes, columnX, columnY, columnZ);
@@ -356,7 +390,7 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
           stencil.stencilOffsets.push_back(offset);
 
         stencil.entries.push_back(FineStencilEntry{
-            offset, rowDof, columnDof, Teuchos::as<LO>(entry)});
+            offset, rowDof, columnDof});
       }
     }
   }
@@ -367,7 +401,7 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
 
   Teuchos::Array<int> offsetData(3 * counts[0]);
   Teuchos::Array<int> entryOffsetData(3 * counts[1]);
-  Teuchos::Array<LO> entryData(3 * counts[1]);
+  Teuchos::Array<LO> entryData(2 * counts[1]);
   if (myRank == detectorRank) {
     for (int offset = 0; offset < counts[0]; ++offset) {
       offsetData[3 * offset]     = stencil.stencilOffsets[offset].x;
@@ -378,9 +412,8 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
       entryOffsetData[3 * entry]     = stencil.entries[entry].offset.x;
       entryOffsetData[3 * entry + 1] = stencil.entries[entry].offset.y;
       entryOffsetData[3 * entry + 2] = stencil.entries[entry].offset.z;
-      entryData[3 * entry]           = stencil.entries[entry].rowDof;
-      entryData[3 * entry + 1]       = stencil.entries[entry].columnDof;
-      entryData[3 * entry + 2]       = stencil.entries[entry].entryOrdinal;
+      entryData[2 * entry]           = stencil.entries[entry].rowDof;
+      entryData[2 * entry + 1]       = stencil.entries[entry].columnDof;
     }
   }
 
@@ -390,7 +423,7 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
   if (counts[1] > 0) {
     Teuchos::broadcast<int, int>(*comm, detectorRank, 3 * counts[1],
                                  entryOffsetData.getRawPtr());
-    Teuchos::broadcast<int, LO>(*comm, detectorRank, 3 * counts[1],
+    Teuchos::broadcast<int, LO>(*comm, detectorRank, 2 * counts[1],
                                 entryData.getRawPtr());
   }
 
@@ -407,8 +440,7 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectFineStenc
           StencilOffset{entryOffsetData[3 * entry],
                         entryOffsetData[3 * entry + 1],
                         entryOffsetData[3 * entry + 2]},
-          entryData[3 * entry], entryData[3 * entry + 1],
-          entryData[3 * entry + 2]});
+          entryData[2 * entry], entryData[2 * entry + 1]});
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(stencil.stencilOffsets.empty(), Exceptions::RuntimeError,
@@ -494,37 +526,10 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeriveCoarseRAP
   return coarseStencil;
 }
 
-// Detect the fine-grid stencil and derive the corresponding coarse RAP stencil.
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-typename StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::StructuredGraphSpec
-StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructuredGraphSpec(
-    const Matrix& A, const Matrix& P, const int numDimensions,
-    const Teuchos::Array<LocalOrdinal>& lFineNodesPerDim,
-    const int interpolationOrder) const {
-  const FineStencilSpec fineStencil =
-      DetectFineStencil(A, numDimensions, lFineNodesPerDim);
-
-  Teuchos::FancyOStream& out = GetOStream(Runtime0);
-  out << "StructuredRAP: Detected "
-      << fineStencil.numDimensions << "D fine stencil with "
-      << fineStencil.dofsPerNode << " DOF(s) per node and "
-      << fineStencil.stencilOffsets.size() << " nodal offset(s)";
-  out << std::endl;
-
-  const StructuredGraphSpec coarseStencil =
-      DeriveCoarseRAPStencil(fineStencil, interpolationOrder);
-  out << "StructuredRAP: Deduced " << coarseStencil.description
-      << " coarse stencil with " << coarseStencil.stencilOffsets.size()
-      << " nodal offset(s)";
-  out << std::endl;
-
-  return coarseStencil;
-}
-
 // Prebuild sparsity structure of coarse matrix
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructuredGraph(
-    RCP<Matrix>& Ac, RCP<Matrix> P,
+    RCP<Matrix>& Ac, const RCP<Matrix>& P,
     const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
     const StructuredGraphSpec& graphSpec) const {
   using local_graph_type = typename CrsGraph::local_graph_type;
@@ -555,9 +560,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
                              "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
                                                                          << "): at most three DOFs per node are supported.");
 
-  Kokkos::Array<GO, 3> localNodes{};
-  for (int dim = 0; dim < 3; ++dim)
-    localNodes[dim] = Teuchos::as<GO>(1);
+  Kokkos::Array<GO, 3> localNodes{{GO(1), GO(1), GO(1)}};
   for (int dim = 0; dim < graphSpec.numDimensions; ++dim) {
     localNodes[dim] = Teuchos::as<GO>(lCoarseNodesPerDim[dim]);
     TEUCHOS_TEST_FOR_EXCEPTION(localNodes[dim] <= 0, Exceptions::RuntimeError,
@@ -634,15 +637,11 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
   localRankData[2] = localNodes[1];
   localRankData[3] = localNodes[2];
   Teuchos::Array<GO> rankData(4 * numRanks);
-  {
-    // For RankData on every rank
-    Teuchos::gatherAll(*comm, 4, localRankData.getRawPtr(), 4 * numRanks, rankData.getRawPtr());
-  }
+  Teuchos::gatherAll(*comm, 4, localRankData.getRawPtr(),
+                     4 * numRanks, rankData.getRawPtr());
 
   // Get mx, my and mz (number of ranks per dimension) like they are defined in Galeri (compare Galeri_XpetraMaps_def.hpp)
-  Kokkos::Array<int, 3> procGrid{};
-  for (int dim = 0; dim < 3; ++dim)
-    procGrid[dim] = 1;
+  Kokkos::Array<int, 3> procGrid{{1, 1, 1}};
   if (graphSpec.numDimensions == 1) {
     procGrid[0] = numRanks;
   } else if (graphSpec.numDimensions == 2) {
@@ -702,9 +701,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
   const int myProcY = (myRank % procXY) / procGrid[0];
   const int myProcZ = myRank / procXY;
 
-  Kokkos::Array<GO, 3> globalNodes{};
-  for (int dim = 0; dim < 3; ++dim)
-    globalNodes[dim] = Teuchos::as<GO>(0);
+  Kokkos::Array<GO, 3> globalNodes{{GO(0), GO(0), GO(0)}};
   for (int px = 0; px < procGrid[0]; ++px)
     globalNodes[0] += rankData[4 * px + 1];
   for (int py = 0; py < procGrid[1]; ++py)
@@ -726,10 +723,10 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
 
   const size_t stencilSize = graphSpec.stencilOffsets.size();
   const int numDimensions  = graphSpec.numDimensions;
-  const auto rowLocalMap   = rowMap->getLocalMap();
 
   const bool debug = Behavior::debug();
   if (debug) {
+    const auto rowLocalMap  = rowMap->getLocalMap();
     size_t invalidLocalRows = 0;
     Kokkos::parallel_reduce(
         "StructuredRAP: validate local rows", range_policy(executionSpace, 0, localNumRows),
@@ -811,109 +808,127 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
   }
   const size_t numRemoteColumns = remoteRegionOffsets[numRemoteRegions];
 
-  Kokkos::View<GO*, device_type> colMapGids(
-      Kokkos::ViewAllocateWithoutInitializing("StructuredRAP: column map GIDs"),
-      localNumRows + numRemoteColumns);
-  const auto localRowGidsDevice = rowMap->getMyGlobalIndicesDevice();
-  Kokkos::parallel_for(
-      "StructuredRAP: fill column map", range_policy(executionSpace, 0, localNumRows + numRemoteColumns),
-      KOKKOS_LAMBDA(const size_t entry) {
-        if (entry < localNumRows) {
-          colMapGids(entry) = localRowGidsDevice(entry);
-          return;
-        }
-
-        const size_t remoteEntry = entry - localNumRows;
-        size_t region            = 0;
-        while (remoteEntry >= remoteRegionOffsets[region + 1])
-          ++region;
-
-        const StencilOffset direction = remoteRegionDirections[region];
-        const GO neighborNx           = remoteRegionNx[region];
-        const GO neighborNy           = remoteRegionNy[region];
-        const GO neighborNz           = remoteRegionNz[region];
-        size_t regionEntry            = remoteEntry - remoteRegionOffsets[region];
-        const GO dof                  = static_cast<GO>(regionEntry % rowsPerNode);
-        size_t regionNode             = regionEntry / rowsPerNode;
-
-        GO neighborX = direction.x < 0 ? neighborNx - 1 : 0;
-        GO neighborY = direction.y < 0 ? neighborNy - 1 : 0;
-        GO neighborZ = direction.z < 0 ? neighborNz - 1 : 0;
-        if (direction.x == 0) {
-          neighborX = static_cast<GO>(regionNode % static_cast<size_t>(neighborNx));
-          regionNode /= static_cast<size_t>(neighborNx);
-        }
-        if (direction.y == 0) {
-          neighborY = static_cast<GO>(regionNode % static_cast<size_t>(neighborNy));
-          regionNode /= static_cast<size_t>(neighborNy);
-        }
-        if (direction.z == 0)
-          neighborZ = static_cast<GO>(regionNode);
-
-        const GO neighborNode = remoteRegionFirstNodes[region] +
-                                neighborZ * neighborNx * neighborNy + neighborY * neighborNx + neighborX;
-        colMapGids(entry) = globalMinGid + neighborNode * dofsPerNodeGO + dof;
-      });
-  executionSpace.fence("StructuredRAP: column map GIDs ready");
-
-  typename Map::global_indices_array_device_type constColMapGids = colMapGids;
-  // colMap is filled here
   RCP<const Map> colMap;
-  {
-    colMap = MapFactory::Build(
-        rowMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-        constColMapGids, rowMap->getIndexBase(), comm);
-  }
-
-  // Loop to fill rowptr
-  row_map_type rowptr;
-  size_t localNnz = 0;
-  {
-    rowptr = row_map_type(
-        Kokkos::ViewAllocateWithoutInitializing("StructuredRAP: graph row pointers"), localNumRows + 1);
-    Kokkos::parallel_scan(
-        "StructuredRAP: compute graph row pointers", range_policy(executionSpace, 0, localNumNodes + 1),
-        KOKKOS_LAMBDA(const size_t localNodeIndex, size_t& update, const bool final) {
-          if (localNodeIndex == localNumNodes) {
-            if (final)
-              rowptr(localNumRows) = update;
+  if (numRemoteColumns == 0) {
+    colMap = rowMap;
+  } else {
+    Kokkos::View<GO*, device_type> colMapGids(
+        Kokkos::ViewAllocateWithoutInitializing("StructuredRAP: column map GIDs"),
+        localNumRows + numRemoteColumns);
+    const auto localRowGidsDevice = rowMap->getMyGlobalIndicesDevice();
+    Kokkos::parallel_for(
+        "StructuredRAP: fill column map", range_policy(executionSpace, 0, localNumRows + numRemoteColumns),
+        KOKKOS_LAMBDA(const size_t entry) {
+          if (entry < localNumRows) {
+            colMapGids(entry) = localRowGidsDevice(entry);
             return;
           }
 
-          const GO localNode = static_cast<GO>(localNodeIndex);
-          GO x = 0, y = 0, z = 0;
-          StructuredRAPFactoryDetails::getLocalNodeIndices(localNode, localNodes, x, y, z);
-          const bool isInterior =
-              x > 0 && x + 1 < localNodes[0] &&
-              (numDimensions < 2 || (y > 0 && y + 1 < localNodes[1])) &&
-              (numDimensions < 3 || (z > 0 && z + 1 < localNodes[2]));
-          size_t rowLength = isInterior ? stencilSize * rowsPerNode : 0;
-          if (!isInterior) {
-            for (size_t stencil = 0; stencil < stencilSize; ++stencil) {
-              int neighborRank = myRank;
-              GO neighborNode  = 0;
-              if (StructuredRAPFactoryDetails::resolveNeighbor(
-                      x, y, z, stencilOffsets[stencil], localNodes, procGrid, rankDataDevice,
-                      myProcX, myProcY, myProcZ, neighborRank, neighborNode))
-                rowLength += rowsPerNode;
-            }
-          }
+          const size_t remoteEntry = entry - localNumRows;
+          size_t region            = 0;
+          while (remoteEntry >= remoteRegionOffsets[region + 1])
+            ++region;
 
-          if (final) {
-            const size_t firstRow = localNodeIndex * rowsPerNode;
-            for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof)
-              rowptr(firstRow + rowDof) = update + rowDof * rowLength;
+          const StencilOffset direction = remoteRegionDirections[region];
+          const GO neighborNx           = remoteRegionNx[region];
+          const GO neighborNy           = remoteRegionNy[region];
+          const GO neighborNz           = remoteRegionNz[region];
+          size_t regionEntry            = remoteEntry - remoteRegionOffsets[region];
+          const GO dof                  = static_cast<GO>(regionEntry % rowsPerNode);
+          size_t regionNode             = regionEntry / rowsPerNode;
+
+          GO neighborX = direction.x < 0 ? neighborNx - 1 : 0;
+          GO neighborY = direction.y < 0 ? neighborNy - 1 : 0;
+          GO neighborZ = direction.z < 0 ? neighborNz - 1 : 0;
+          if (direction.x == 0) {
+            neighborX = static_cast<GO>(regionNode % static_cast<size_t>(neighborNx));
+            regionNode /= static_cast<size_t>(neighborNx);
           }
-          update += rowLength * rowsPerNode;
-        },
-        localNnz);
+          if (direction.y == 0) {
+            neighborY = static_cast<GO>(regionNode % static_cast<size_t>(neighborNy));
+            regionNode /= static_cast<size_t>(neighborNy);
+          }
+          if (direction.z == 0)
+            neighborZ = static_cast<GO>(regionNode);
+
+          const GO neighborNode = remoteRegionFirstNodes[region] +
+                                  neighborZ * neighborNx * neighborNy + neighborY * neighborNx + neighborX;
+          colMapGids(entry) = globalMinGid + neighborNode * dofsPerNodeGO + dof;
+        });
+    executionSpace.fence("StructuredRAP: column map GIDs ready");
+
+    typename Map::global_indices_array_device_type constColMapGids = colMapGids;
+    colMap                                                         = MapFactory::Build(
+                                                                rowMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                                constColMapGids, rowMap->getIndexBase(), comm);
   }
 
-  entries_type colind;
-  {
-    colind = entries_type(
-        Kokkos::ViewAllocateWithoutInitializing("StructuredRAP: graph column indices"), localNnz);
+  // For each low/interior/high boundary combination, precompute the affine
+  // number of stencil interactions preceding (x,y,z) in lexicographic order.
+  // This makes row offsets constant-time in the graph-fill kernel and avoids a
+  // device-wide scan without traversing the stencil for every interior node.
+  constexpr size_t numBoundaryClasses = 64;
+  Kokkos::Array<std::int64_t, numBoundaryClasses> prefixConstant{};
+  Kokkos::Array<std::int64_t, numBoundaryClasses> prefixX{};
+  Kokkos::Array<std::int64_t, numBoundaryClasses> prefixY{};
+  Kokkos::Array<std::int64_t, numBoundaryClasses> prefixZ{};
+  size_t localNnz              = 0;
+  const int procCoordinates[3] = {myProcX, myProcY, myProcZ};
+  for (size_t stencil = 0; stencil < stencilSize; ++stencil) {
+    const StencilOffset& offset = stencilOffsets[stencil];
+    const int offsets[3]        = {offset.x, offset.y, offset.z};
+    GO lower[3]                 = {0, 0, 0};
+    GO upper[3]                 = {localNodes[0], localNodes[1], localNodes[2]};
+    for (int dim = 0; dim < 3; ++dim) {
+      if (offsets[dim] < 0 && procCoordinates[dim] == 0)
+        lower[dim] = 1;
+      if (offsets[dim] > 0 && procCoordinates[dim] + 1 == procGrid[dim])
+        --upper[dim];
+    }
+    const std::int64_t lengths[3] = {
+        static_cast<std::int64_t>(upper[0] - lower[0]),
+        static_cast<std::int64_t>(upper[1] - lower[1]),
+        static_cast<std::int64_t>(upper[2] - lower[2])};
+    localNnz += static_cast<size_t>(lengths[0] * lengths[1] * lengths[2]) *
+                rowsPerNode * rowsPerNode;
+
+    for (size_t boundaryClass = 0; boundaryClass < numBoundaryClasses; ++boundaryClass) {
+      std::int64_t coordinates[3];
+      for (int dim = 0; dim < 3; ++dim) {
+        const bool low   = boundaryClass & (size_t(1) << (2 * dim));
+        const bool high  = boundaryClass & (size_t(2) << (2 * dim));
+        coordinates[dim] = low ? 0 : high ? static_cast<std::int64_t>(localNodes[dim] - 1)
+                                          : 1;
+      }
+      std::int64_t* coefficients[3] = {
+          &prefixX[boundaryClass], &prefixY[boundaryClass], &prefixZ[boundaryClass]};
+      auto addClamped = [&](const int dim, const std::int64_t multiplier) {
+        const std::int64_t begin = static_cast<std::int64_t>(lower[dim]);
+        const std::int64_t end   = static_cast<std::int64_t>(upper[dim]);
+        if (coordinates[dim] >= end)
+          prefixConstant[boundaryClass] += (end - begin) * multiplier;
+        else if (coordinates[dim] >= begin) {
+          prefixConstant[boundaryClass] -= begin * multiplier;
+          *coefficients[dim] += multiplier;
+        }
+      };
+      const bool insideZ = coordinates[2] >= lower[2] && coordinates[2] < upper[2];
+      const bool insideY = coordinates[1] >= lower[1] && coordinates[1] < upper[1];
+      addClamped(2, lengths[0] * lengths[1]);
+      if (insideZ)
+        addClamped(1, lengths[0]);
+      if (insideZ && insideY)
+        addClamped(0, 1);
+    }
   }
+
+  row_map_type rowptr(
+      Kokkos::ViewAllocateWithoutInitializing("StructuredRAP: graph row pointers"), localNumRows + 1);
+
+  entries_type colind(
+      Kokkos::ViewAllocateWithoutInitializing(
+          "StructuredRAP: graph column indices"),
+      localNnz);
 
   const LO invalidLocalOrdinal = Teuchos::OrdinalTraits<LO>::invalid();
   Kokkos::View<int, device_type> invalidColumn;
@@ -930,6 +945,15 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
           const GO localNode = static_cast<GO>(localNodeIndex);
           GO x = 0, y = 0, z = 0;
           StructuredRAPFactoryDetails::getLocalNodeIndices(localNode, localNodes, x, y, z);
+          const size_t boundaryClass =
+              (x == 0 ? size_t(1) : 0) | (x + 1 == localNodes[0] ? size_t(2) : 0) |
+              (y == 0 ? size_t(4) : 0) | (y + 1 == localNodes[1] ? size_t(8) : 0) |
+              (z == 0 ? size_t(16) : 0) | (z + 1 == localNodes[2] ? size_t(32) : 0);
+          const size_t nodeRowStart = static_cast<size_t>(
+                                          prefixConstant[boundaryClass] + prefixX[boundaryClass] * static_cast<std::int64_t>(x) +
+                                          prefixY[boundaryClass] * static_cast<std::int64_t>(y) +
+                                          prefixZ[boundaryClass] * static_cast<std::int64_t>(z)) *
+                                      rowsPerNode * rowsPerNode;
           size_t columnOffset = 0;
           const bool isInterior =
               x > 0 && x + 1 < localNodes[0] &&
@@ -937,7 +961,10 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
               (numDimensions < 3 || (z > 0 && z + 1 < localNodes[2]));
 
           if (isInterior) {
-            const size_t firstRow = localNodeIndex * rowsPerNode;
+            const size_t firstRow  = localNodeIndex * rowsPerNode;
+            const size_t rowLength = stencilSize * rowsPerNode;
+            for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof)
+              rowptr(firstRow + rowDof) = nodeRowStart + rowDof * rowLength;
             for (size_t stencil = 0; stencil < stencilSize; ++stencil) {
               const GO neighborLocalNode = localNode + localStencilNodeOffsets[stencil];
               for (size_t colDof = 0; colDof < rowsPerNode; ++colDof) {
@@ -948,6 +975,8 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
                 ++columnOffset;
               }
             }
+            if (localNodeIndex + 1 == localNumNodes)
+              rowptr(localNumRows) = localNnz;
             return;
           }
 
@@ -1011,12 +1040,16 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
             nodeColumns[insertion] = value;
           }
 
-          const size_t firstRow = localNodeIndex * rowsPerNode;
+          const size_t firstRow  = localNodeIndex * rowsPerNode;
+          const size_t rowLength = columnOffset;
           for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof) {
-            const size_t rowStart = rowptr(firstRow + rowDof);
+            const size_t rowStart     = nodeRowStart + rowDof * rowLength;
+            rowptr(firstRow + rowDof) = rowStart;
             for (size_t entry = 0; entry < columnOffset; ++entry)
               colind(rowStart + entry) = nodeColumns[entry];
           }
+          if (localNodeIndex + 1 == localNumNodes)
+            rowptr(localNumRows) = localNnz;
         });
     executionSpace.fence("StructuredRAP: graph column indices ready");
   }
@@ -1046,17 +1079,14 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
   }
 
   local_graph_type localGraph(colind, rowptr);
-  RCP<CrsGraph> graph;
-  {
-    graph = CrsGraphFactory::Build(
-        localGraph, rowMap, colMap, rowMap, rowMap, paramList);
-  }
-  {
-    using values_type = typename Matrix::local_matrix_type::values_type;
-    values_type values(
-        Kokkos::ViewAllocateWithoutInitializing("StructuredRAP: matrix values"), localNnz);
-    Ac = MatrixFactory::Build(graph, values, paramList);
-  }
+  RCP<CrsGraph> graph = CrsGraphFactory::Build(
+      localGraph, rowMap, colMap, rowMap, rowMap, paramList);
+  using values_type = typename Matrix::local_matrix_type::values_type;
+  values_type values(
+      Kokkos::ViewAllocateWithoutInitializing(
+          "StructuredRAP: matrix values"),
+      localNnz);
+  Ac = MatrixFactory::Build(graph, values, paramList);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1065,8 +1095,8 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
   const bool doFillComplete        = true;
   const bool doOptimizeStorage     = true;
   const Teuchos::ParameterList& pL = GetParameterList();
-  const bool prebuildCoarseGraph   = pL.get<bool>("rap: prebuild coarse graph");
-  const bool useRAPDelegate        = !prebuildCoarseGraph;
+  const bool useRAPDelegate =
+      !pL.get<bool>("rap: prebuild coarse graph");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       !pL.get<bool>("transpose: use implicit"), Exceptions::RuntimeError,
@@ -1079,6 +1109,13 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
                              "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
 
   if (useRAPDelegate) {
+    if (pL.get<std::string>("rap: triple product implementation") ==
+        "structured") {
+      GetOStream(Runtime0)
+          << "StructuredRAP: Coarse graph prebuilding is disabled, "
+             "redirecting the structured triple product to Xpetra."
+          << std::endl;
+    }
     if (coarseLevel.IsAvailable("RAP reuse data", this)) {
       RCP<ParameterList> RAPparams = coarseLevel.Get<RCP<ParameterList>>("RAP reuse data", this);
       coarseLevel.Set("RAP reuse data", RAPparams, rapFactoryDelegate_.get());
@@ -1100,32 +1137,95 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
   }
 
   {
+    const std::string labelstr = FormattingHelper::getColonLabel(coarseLevel.getObjectLabel());
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
     std::ostringstream levelstr;
     levelstr << coarseLevel.GetLevelID();
-    std::string labelstr = FormattingHelper::getColonLabel(coarseLevel.getObjectLabel());
 
     TEUCHOS_TEST_FOR_EXCEPTION(
         pL.get<bool>("rap: triple product") == false, Exceptions::RuntimeError,
         "StructuredRAPFactory requires \"rap: triple product\" = true.");
 
-    RCP<Matrix> A;
-    RCP<Matrix> P;
+    RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
+    RCP<Matrix> P = Get<RCP<Matrix>>(coarseLevel, "P");
+    const std::string tripleProductImplementation =
+        pL.get<std::string>("rap: triple product implementation");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        tripleProductImplementation != "unstructured" && tripleProductImplementation != "structured",
+        Exceptions::RuntimeError,
+        "StructuredRAPFactory: unknown value \"" << tripleProductImplementation
+                                                 << "\" for \"rap: triple product implementation\". "
+                                                    "Valid values are \"unstructured\" and \"structured\".");
+
+    const RCP<const FactoryBase> coarseDimensionsFactory =
+        GetStructuredMetadataFactory("lCoarseNodesPerDim");
+    const RCP<const FactoryBase> interpolationOrderFactory =
+        GetStructuredMetadataFactory("structuredInterpolationOrder");
+    const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim =
+        fineLevel.Get<Teuchos::Array<LocalOrdinal>>(
+            "lCoarseNodesPerDim", coarseDimensionsFactory.get());
+    const int interpolationOrder =
+        fineLevel.Get<int>("structuredInterpolationOrder",
+                           interpolationOrderFactory.get());
+    const int numDimensions =
+        fineLevel.GetLevelID() == 0
+            ? fineLevel.Get<int>("numDimensions", NoFactory::get())
+            : Get<int>(fineLevel, "numDimensions");
+    const Teuchos::Array<LocalOrdinal> lFineNodesPerDim =
+        fineLevel.GetLevelID() == 0
+            ? fineLevel.Get<Teuchos::Array<LocalOrdinal>>(
+                  "lNodesPerDim", NoFactory::get())
+            : Get<Teuchos::Array<LocalOrdinal>>(fineLevel, "lNodesPerDim");
+    Teuchos::Array<int> structuredCoarseningRate;
+    if (tripleProductImplementation == "structured") {
+      // lCoarseNodesPerDim and structuredInterpolationOrder are produced by
+      // StructuredAggregationFactory. Read the rate from that same producer
+      // so the structured RAP path uses the existing
+      // "aggregation: coarsening rate" setting instead of requiring a second,
+      // potentially inconsistent RAP-specific parameter.
+      const Factory* structuredFactory =
+          dynamic_cast<const Factory*>(coarseDimensionsFactory.get());
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          structuredFactory == nullptr, Exceptions::RuntimeError,
+          "StructuredRAPFactory: the factory producing lCoarseNodesPerDim "
+          "does not expose its aggregation parameters.");
+      const ParameterList& structuredParameters =
+          structuredFactory->GetParameterList();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          !structuredParameters.isType<std::string>(
+              "aggregation: coarsening rate"),
+          Exceptions::RuntimeError,
+          "StructuredRAPFactory: the factory producing lCoarseNodesPerDim "
+          "does not provide the string parameter \"aggregation: coarsening "
+          "rate\".");
+      try {
+        structuredCoarseningRate = Teuchos::fromStringToArray<int>(
+            structuredParameters.get<std::string>(
+                "aggregation: coarsening rate"));
+      } catch (const Teuchos::InvalidArrayStringRepresentation& e) {
+        GetOStream(Errors, -1)
+            << " *** \"aggregation: coarsening rate\" must be a string "
+               "convertible into an array! *** "
+            << std::endl;
+        throw e;
+      }
+    }
+    if (P.is_null()) {
+      Ac = Teuchos::null;
+      Set(coarseLevel, "A", Ac);
+      return;
+    }
+
+    const FineStencilSpec fineStencil =
+        DetectFineStencil(*A, numDimensions, lFineNodesPerDim);
+    const StructuredGraphSpec graphSpec =
+        DeriveCoarseRAPStencil(fineStencil, interpolationOrder);
+
     {
       RCP<ParameterList> RAPparams;
       {
         SubFactoryMonitor mGraph(*this, "Prebuilding coarse Ac graph", coarseLevel);
-
-        A = Get<RCP<Matrix>>(fineLevel, "A");
-        P = Get<RCP<Matrix>>(coarseLevel, "P");
-        // We do not have a valid P (e.g., # global aggregates = 0), so bail.
-        // This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize().
-        if (P.is_null()) {
-          Ac = Teuchos::null;
-          Set(coarseLevel, "A", Ac);
-          return;
-        }
 
         RAPparams = rcp(new ParameterList);
         if (pL.isSublist("matrixmatrix: kernel params"))
@@ -1135,61 +1235,45 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
           GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
 
           RAPparams = coarseLevel.Get<RCP<ParameterList>>("RAP reuse data", this);
-
           TEUCHOS_TEST_FOR_EXCEPTION(!RAPparams->isParameter("graph"), Exceptions::RuntimeError,
                                      "StructuredRAPFactory::Build(): \"RAP reuse data\" does not contain the expected graph.");
           Ac = RAPparams->get<RCP<Matrix>>("graph");
           TEUCHOS_TEST_FOR_EXCEPTION(Ac.is_null(), Exceptions::RuntimeError,
                                      "StructuredRAPFactory::Build(): \"RAP reuse data\" graph is null.");
-
-          // Some eigenvalue may have been cached with the matrix in the previous run.
-          // As the matrix values will be updated, we need to reset the eigenvalue.
           Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-        } else if (prebuildCoarseGraph) {
-          const int numDimensions = fineLevel.GetLevelID() == 0
-                                        ? fineLevel.Get<int>("numDimensions", NoFactory::get())
-                                        : Get<int>(fineLevel, "numDimensions");
-          const Teuchos::Array<LocalOrdinal> lFineNodesPerDim =
-              fineLevel.GetLevelID() == 0
-                  ? fineLevel.Get<Teuchos::Array<LocalOrdinal>>("lNodesPerDim", NoFactory::get())
-                  : Get<Teuchos::Array<LocalOrdinal>>(fineLevel, "lNodesPerDim");
-          const RCP<const FactoryBase> coarseDimensionsFactory =
-              GetStructuredMetadataFactory("lCoarseNodesPerDim");
-          const RCP<const FactoryBase> interpolationOrderFactory =
-              GetStructuredMetadataFactory("structuredInterpolationOrder");
-          const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim =
-              fineLevel.Get<Teuchos::Array<LocalOrdinal>>(
-                  "lCoarseNodesPerDim", coarseDimensionsFactory.get());
-          const int interpolationOrder = fineLevel.Get<int>(
-              "structuredInterpolationOrder", interpolationOrderFactory.get());
-          const StructuredGraphSpec graphSpec =
-              GetStructuredGraphSpec(*A, *P, numDimensions, lFineNodesPerDim,
-                                     interpolationOrder);
+        } else {
+          // If reuse data is not available, prebuild the sparse graph from the
+          // detected fine stencil and its derived coarse RAP stencil.
           GetOStream(Statistics1) << "StructuredRAP: Using " << graphSpec.description
                                   << " stencil with " << graphSpec.stencilOffsets.size()
                                   << " nodal entries." << std::endl;
           GetStructuredGraph(Ac, P, lCoarseNodesPerDim, graphSpec);
         }
-
-        // We always need global constants for the RAP, but not for the temporaries.
-        RAPparams->set("compute global constants: temporaries", RAPparams->get("compute global constants: temporaries", false));
-        RAPparams->set("compute global constants", true);
-
-        if (Ac.is_null())
-          Ac = MatrixFactory::Build(P->getDomainMap(), Teuchos::as<LocalOrdinal>(0));
       }
 
-      SubFactoryMonitor m2(*this, "MxMxM: P^T x A x P (implicit)", coarseLevel);
+      // We *always* need global constants for the RAP, but not for the temps
+      RAPparams->set("compute global constants: temporaries", RAPparams->get("compute global constants: temporaries", false));
+      RAPparams->set("compute global constants", true);
 
-      Xpetra::TripleMatrixMultiply<SC, LO, GO, NO>::
-          MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
-                      doOptimizeStorage, labelstr + std::string("MueLu::P^T*A*P-implicit-") + levelstr.str(),
-                      RAPparams);
+      if (tripleProductImplementation == "unstructured") {
+        SubFactoryMonitor m2(*this, "MxMxM: Xpetra P^T x A x P (implicit)", coarseLevel);
+        Xpetra::TripleMatrixMultiply<SC, LO, GO, NO>::
+            MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+                        doOptimizeStorage, labelstr + std::string("MueLu::Xpetra-P^T*A*P-implicit-") + levelstr.str(),
+                        RAPparams);
+      } else {
+        SubFactoryMonitor m2(*this, "MxMxM: Structured P^T x A x P (implicit)", coarseLevel);
+        Details::StructuredRAPKernel<SC, LO, GO, NO>::Compute(
+            *A, *P, *Ac, fineStencil, interpolationOrder,
+            lFineNodesPerDim, lCoarseNodesPerDim,
+            structuredCoarseningRate, RAPparams);
+
+        Ac->CreateView("stridedMaps", P, true, P, false);
+      }
 
       {
-        GetOStream(Statistics1) << "StructuredRAP: Ac nnz (prebuild coarse graph = "
-                                << (prebuildCoarseGraph ? "true" : "false")
-                                << "): local = " << Ac->getLocalNumEntries()
+        GetOStream(Statistics1) << "StructuredRAP: Ac nnz: local = "
+                                << Ac->getLocalNumEntries()
                                 << ", global = " << Ac->getGlobalNumEntries() << std::endl;
 
         Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double>>("rap: relative diagonal floor")();
@@ -1218,11 +1302,9 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
         }
 
-        if (!Ac.is_null()) {
-          std::ostringstream oss;
-          oss << "A_" << coarseLevel.GetLevelID();
-          Ac->setObjectLabel(oss.str());
-        }
+        std::ostringstream oss;
+        oss << "A_" << coarseLevel.GetLevelID();
+        Ac->setObjectLabel(oss.str());
         Set(coarseLevel, "A", Ac);
 
         RAPparams->set("graph", Ac);
@@ -1242,34 +1324,6 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
       RCP<const FactoryBase> fac = *it;
       GetOStream(Runtime0) << "RAPFactory: call transfer factory: " << fac->description() << std::endl;
       fac->CallBuild(coarseLevel);
-      // Coordinates transfer is marginally different from all other operations
-      // because it is *optional*, and not required. For instance, we may need
-      // coordinates only on level 4 if we start repartitioning from that level,
-      // but we don't need them on level 1,2,3. As our current Hierarchy setup
-      // assumes propagation of dependencies only through three levels, this
-      // means that we need to rely on other methods to propagate optional data.
-      //
-      // The method currently used is through RAP transfer factories, which are
-      // simply factories which are called at the end of RAP with a single goal:
-      // transfer some fine data to coarser level. Because these factories are
-      // kind of outside of the mainline factories, they behave different. In
-      // particular, we call their Build method explicitly, rather than through
-      // Get calls. This difference is significant, as the Get call is smart
-      // enough to know when to release all factory dependencies, and Build is
-      // dumb. This led to the following CoordinatesTransferFactory sequence:
-      // 1. Request level 0
-      // 2. Request level 1
-      // 3. Request level 0
-      // 4. Release level 0
-      // 5. Release level 1
-      //
-      // The problem is missing "6. Release level 0". Because it was missing,
-      // we had outstanding request on "Coordinates", "Aggregates" and
-      // "CoarseMap" on level 0.
-      //
-      // This was fixed by explicitly calling Release on transfer factories in
-      // RAPFactory. I am still unsure how exactly it works, but now we have
-      // clear data requests for all levels.
       coarseLevel.Release(*fac);
     }
   }
