@@ -11,6 +11,7 @@
 #define Tempus_AdjointSensitivityUtils_hpp
 
 #include <algorithm>
+#include <cmath>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -96,6 +97,52 @@ std::vector<Scalar> parseTimeList(const std::string& str)
   }
   std::sort(times.begin(), times.end());
   return times;
+}
+
+/** \brief Tolerance for comparing times of a time integration on
+ *  [t_init, t_final], e.g., the times of a "Sum Over Times" response with the
+ *  times of the time steps:
+ *
+ *    tol = max(relTol * max(|t_init|, |t_final|), absTol),
+ *
+ *  with relTol and absTol the parameters "Response Time Relative Tolerance"
+ *  (default 1e-9) and "Response Time Absolute Tolerance" (default 1e-15) of
+ *  the "Sensitivities" parameters sensPL (the defaults if sensPL is null or
+ *  does not set them).
+ *
+ *  - The times of the time steps are sums of time steps, t_{n+1} = t_n + dt,
+ *    so after n steps they carry a rounding error of up to about
+ *    n * eps * max(|t_init|, |t_final|) (eps = 2.2e-16 in double precision).
+ *    The times given in the input (e.g., 0.1) are rounded as well. The
+ *    default relTol = 1e-9 accepts these errors for up to millions of time
+ *    steps.
+ *  - The tolerance must be smaller than half of the time steps, so that two
+ *    times of the time grid are not confused: with the default relTol, the
+ *    time steps must be larger than 2e-9 * max(|t_init|, |t_final|), e.g.,
+ *    fewer than 5e8 time steps when t_init = 0. For small time steps with
+ *    large times, use a smaller relTol.
+ *  - absTol keeps the tolerance positive when t_init = t_final = 0.
+ *
+ *  Tempus::IntegratorAdjointSensitivity uses the tolerances of its
+ *  "Sensitivities" parameters: codes that compare times with those of a
+ *  Tempus adjoint integration (e.g., to check response times against a time
+ *  grid) should pass the same parameters.
+ */
+template <class Scalar>
+Scalar timeTolerance(const Scalar t_init, const Scalar t_final,
+                     const Teuchos::ParameterList* sensPL = nullptr)
+{
+  using std::abs;
+  const auto tolerance = [sensPL](const std::string& name,
+                                  const double defaultValue) {
+    if (sensPL == nullptr || !sensPL->isParameter(name))
+      return defaultValue;
+    else
+      return sensPL->get<double>(name);
+  };
+  const Scalar relTol(tolerance("Response Time Relative Tolerance", 1.0e-9));
+  const Scalar absTol(tolerance("Response Time Absolute Tolerance", 1.0e-15));
+  return std::max(relTol * std::max(abs(t_init), abs(t_final)), absTol);
 }
 
 /** \brief Evaluate dg/dx^T (gradient form, x_space x num_g) of response

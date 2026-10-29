@@ -154,6 +154,10 @@ class IntegratorAdjointSensitivity : virtual public Tempus::Integrator<Scalar> {
    *         "Sum Over Times" for sum_k g(x(t_k),p,t_k).
    *    <li> "Response Time List" (default: "") Comma-separated list of the
    *         times t_k of the "Sum Over Times" response.
+   *    <li> "Response Time Relative Tolerance" (default: 1e-9) and
+   *         "Response Time Absolute Tolerance" (default: 1e-15) Tolerances
+   *         for comparing the times t_k with the times of the time steps
+   *         (see AdjointSensitivityUtils::timeTolerance).
    *    <li> "Algebraic Equations Mask" (default: null) A
    *         Teuchos::RCP<const Thyra::VectorBase<Scalar> > in the residual
    *         space, equal to 1 on the algebraic equations of an index-1 DAE
@@ -222,6 +226,16 @@ class IntegratorAdjointSensitivity : virtual public Tempus::Integrator<Scalar> {
   virtual Teuchos::RCP<const SolutionHistory<Scalar>> getSolutionHistory()
       const override;
   Teuchos::RCP<const SolutionHistory<Scalar>> getStateSolutionHistory() const;
+
+  /// Set the "Sensitivities" parameters with the tolerances for comparing
+  /// times (see AdjointSensitivityUtils::timeTolerance); null for the
+  /// default tolerances. createIntegratorAdjointSensitivity sets them.
+  void setTimeToleranceParameters(
+      const Teuchos::RCP<const Teuchos::ParameterList> &pl)
+  {
+    time_tolerance_pl_ = pl;
+  }
+
   Teuchos::RCP<const SolutionHistory<Scalar>> getSensSolutionHistory() const;
   /// Get the SolutionHistory
   virtual Teuchos::RCP<SolutionHistory<Scalar>> getNonConstSolutionHistory()
@@ -350,6 +364,8 @@ class IntegratorAdjointSensitivity : virtual public Tempus::Integrator<Scalar> {
   bool mass_matrix_is_identity_;
   AdjointResponseType response_type_;
   std::vector<Scalar> response_times_;
+  //! Parameters with the tolerances for comparing times (null: defaults)
+  Teuchos::RCP<const Teuchos::ParameterList> time_tolerance_pl_;
   //! Adjoint solution history combining the segments of the adjoint
   //! integration for the "Sum Over Times" response (null otherwise)
   Teuchos::RCP<SolutionHistory<Scalar>> adjoint_solution_history_;
