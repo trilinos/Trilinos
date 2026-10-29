@@ -105,6 +105,18 @@ jobs:
       skip-run-tests: true
       target-branch: ${{ github.base_ref }}
 
+  rocm7-clang22-openmpi4:
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'rocm-7.2.1-clang-22.0.0-openmpi-4.1.6-zen4-gfx942', '20261022']"
+      genconfig-string: "rhel_rocm-clang-openmpi_release-debug_static_AMDgfx942_Zen4_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-rocm-7.2.1-clang-22.0.0-openmpi-4.1.6-zen4-gfx942:20261022
+      cdash-track: "Pull Request (Non-blocking)"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_static
+      max-cores-allowed: 29
+      target-branch: ${{ github.base_ref }}
+      skip-run-tests: true
+
   oneapi2024:
     uses: ./.github/workflows/ci.yml
     with:
