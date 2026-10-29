@@ -197,6 +197,7 @@ set(TPL_ENABLE_yaml OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 #set(TPL_ENABLE_KokkosKernels ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +scotch
 set(TPL_ENABLE_Scotch ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+set(Scotch_FIND_SHARED_LIBS ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +umfpack
 # Enabled in spack based build but turned off at guidance of @sebrowne
 set(TPL_ENABLE_UMFPACK OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
