@@ -196,6 +196,13 @@ int main(int argc, char *argv[]) {
     parlist->sublist("OED").sublist("Greedy").set("Use Deletion",false);
     auto pda = ROL::OED::GreedyAlgorithmD<RealT>(model,sampler,theta,M,cost,budget,*parlist,*outStream);
     ROL::OED::PrintDesign<RealT>(pda,sampler,"GreedyAdditionDesignD",".txt");
+
+    parlist->sublist("OED").sublist("Greedy").set("Use Deletion",true);
+    auto ped = ROL::OED::GreedyAlgorithmE<RealT>(model,sampler,theta,M,cost,budget,*parlist,*outStream);
+    ROL::OED::PrintDesign<RealT>(ped,sampler,"GreedyDeletionDesignE",".txt");
+    parlist->sublist("OED").sublist("Greedy").set("Use Deletion",false);
+    auto pea = ROL::OED::GreedyAlgorithmE<RealT>(model,sampler,theta,M,cost,budget,*parlist,*outStream);
+    ROL::OED::PrintDesign<RealT>(pea,sampler,"GreedyAdditionDesignE",".txt");
     
     parlist->sublist("OED").sublist("Greedy").set("Use Deletion",true);
     auto pid = ROL::OED::GreedyAlgorithmI<RealT>(model,sampler,theta,M,cost,budget,*parlist,*outStream);

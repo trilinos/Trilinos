@@ -147,12 +147,12 @@ int main(int argc, char *argv[]) {
     std::string ocType = parlist->sublist("OED").get("Optimality Type","A");
     auto type = ROL::OED::StringToRegressionType(regType);
     auto M = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,(homNoise ? ROL::nullPtr : noise));
-    bool addTik = parlist->sublist("Problem").get("Use Tikhonov",false);
-    if (addTik) {
-      RealT beta  = parlist->sublist("Problem").get("Tikhonov Parameter",1e-4);
-      auto P = ROL::makePtr<RegularizationOperator<RealT>>(beta);
-      M->setPerturbation(P);
-    }
+    // Turn on regularization --- this is essential for the greedy addition
+    // algorithm because depends on the inverse of the covariance, which will
+    // start out singular
+    RealT beta  = parlist->sublist("Problem").get("Tikhonov Parameter",1e-4);
+    auto P = ROL::makePtr<RegularizationOperator<RealT>>(beta);
+    M->setPerturbation(P);
     auto factory = ROL::makePtr<ROL::OED::Factory<RealT>>(model,sampler,theta,M,*parlist);
 
     // Build greedy algorithm
@@ -189,6 +189,13 @@ int main(int argc, char *argv[]) {
     parlist->sublist("OED").sublist("Greedy").set("Use Deletion",false);
     auto pda = ROL::OED::GreedyAlgorithmD<RealT>(model,sampler,theta,M,cost,budget,*parlist,*outStream);
     ROL::OED::PrintDesign<RealT>(pda,sampler,"GreedyAdditionDesignD",".txt");
+
+    parlist->sublist("OED").sublist("Greedy").set("Use Deletion",true);
+    auto ped = ROL::OED::GreedyAlgorithmE<RealT>(model,sampler,theta,M,cost,budget,*parlist,*outStream);
+    ROL::OED::PrintDesign<RealT>(ped,sampler,"GreedyDeletionDesignE",".txt");
+    parlist->sublist("OED").sublist("Greedy").set("Use Deletion",false);
+    auto pea = ROL::OED::GreedyAlgorithmE<RealT>(model,sampler,theta,M,cost,budget,*parlist,*outStream);
+    ROL::OED::PrintDesign<RealT>(pea,sampler,"GreedyAdditionDesignE",".txt");
     
     parlist->sublist("OED").sublist("Greedy").set("Use Deletion",true);
     auto pid = ROL::OED::GreedyAlgorithmI<RealT>(model,sampler,theta,M,cost,budget,*parlist,*outStream);
