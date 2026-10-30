@@ -438,6 +438,9 @@ AdjointAuxSensitivityModelEvaluator<Scalar>::getValidParameters()
   pl->set<std::string>("Response Time List", "",
                        "Comma-separated times t_k of the \"Sum Over Times\" "
                        "response");
+  // Used by IntegratorAdjointSensitivity (AdjointSensitivityUtils::timeTolerance)
+  pl->set<double>("Response Time Relative Tolerance", 1.0e-9);
+  pl->set<double>("Response Time Absolute Tolerance", 1.0e-15);
   pl->set<bool>("Response Depends on Parameters", true);
   pl->set<bool>("Residual Depends on Parameters", true);
   return pl;

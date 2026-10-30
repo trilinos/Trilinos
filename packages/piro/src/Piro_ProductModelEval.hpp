@@ -10,6 +10,8 @@
 #ifndef PIRO_PRODUCTMODELEVAL_HPP
 #define PIRO_PRODUCTMODELEVAL_HPP
 
+#include "Piro_ConfigDefs.hpp"
+
 #include "Teuchos_RCP.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
@@ -21,6 +23,7 @@
 
 #ifdef HAVE_PIRO_ROL
 #include "ROL_Types.hpp"
+#include "ROL_ThyraVector.hpp"
 #endif
 
 #ifdef HAVE_PIRO_TEKO

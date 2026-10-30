@@ -10,7 +10,11 @@
 #ifndef PIRO_THYRAPRODUCTME_TEMPUS_FINALOBJECTIVE_HPP
 #define PIRO_THYRAPRODUCTME_TEMPUS_FINALOBJECTIVE_HPP
 
+#include <algorithm>
+#include <cmath>
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -20,9 +24,13 @@
 #include "Tempus_IntegratorAdjointSensitivity.hpp"
 #include "Tempus_IntegratorPseudoTransientForwardSensitivity.hpp"
 #include "Tempus_IntegratorPseudoTransientAdjointSensitivity.hpp"
+#include "Tempus_IntegratorObserverComposite.hpp"
+#include "Tempus_IntegratorObserverNoOp.hpp"
+#include "Tempus_AdjointSensitivityUtils.hpp"
 
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_DefaultNominalBoundsOverrideModelEvaluator.hpp"
+#include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 #include "ROL_Objective.hpp"
@@ -30,17 +38,132 @@
 #include "ROL_Vector.hpp"
 #include "ROL_ThyraVector.hpp"
 
+#include "Piro_ProductModelEval.hpp"
 #include "Piro_TempusIntegrator.hpp"
 #include "Piro_TempusSolver.hpp"
 #include "Piro_ROL_ObserverBase.hpp"
 
 namespace Piro {
 
-/** \brief Reduced objective g(x(T), p) for transient problems, computed with Tempus.
+/** \brief Tempus observer that computes a "Time Integral" or "Sum Over Times"
+ *  response during the forward time integration.
+ *
+ * - "Time Integral": J = int_{t0}^{T} g(x(t),p,t) dt, computed with the
+ *   trapezoidal rule over the accepted time steps.
+ * - "Sum Over Times": J = sum_k g(x(t_k),p,t_k), where the time steps must end
+ *   at the times t_k (up to the tolerance). The model is evaluated exactly at
+ *   the times t_k.
+ */
+template <typename Real>
+class TempusResponseAccumulator : public Tempus::IntegratorObserverNoOp<Real> {
+public:
+  TempusResponseAccumulator(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Real>>& model, const int g_index,
+    const Thyra::ModelEvaluatorBase::InArgs<Real>& inArgs,
+    const Tempus::AdjointResponseType responseType,
+    const std::vector<Real>& responseTimes, const Real timeTol) :
+    model_(model), g_index_(g_index), inArgs_(inArgs), responseType_(responseType),
+    responseTimes_(responseTimes), timeTol_(timeTol),
+    value_(0), t_prev_(0), g_prev_(0), next_(0) {}
+
+  void observeStartIntegrator(const Tempus::Integrator<Real>& integrator) override {
+    const Teuchos::RCP<const Tempus::SolutionState<Real>> state =
+      integrator.getSolutionHistory()->getCurrentState();
+    value_ = 0;
+    next_ = 0;
+    missed_.clear();
+    t_prev_ = state->getTime();
+    if (responseType_ == Tempus::AdjointResponseType::TimeIntegral)
+      g_prev_ = evalResponse(*state, t_prev_);
+    else
+      addPointResponses(*state);
+  }
+
+  void observeEndTimeStep(const Tempus::Integrator<Real>& integrator) override {
+    const Teuchos::RCP<const Tempus::SolutionState<Real>> state =
+      integrator.getSolutionHistory()->getCurrentState();
+    const Real t = state->getTime();
+    if (t <= t_prev_) return;  // the time step failed
+    if (responseType_ == Tempus::AdjointResponseType::TimeIntegral) {
+      const Real g = evalResponse(*state, t);
+      value_ += (t - t_prev_) / Real(2) * (g_prev_ + g);
+      g_prev_ = g;
+    }
+    t_prev_ = t;
+    if (responseType_ == Tempus::AdjointResponseType::SumOverTimes)
+      addPointResponses(*state);
+  }
+
+  //! Value of the response computed by the last time integration. If the time
+  //! integration failed, this is the partial value up to the last accepted time
+  //! step: ThyraProductME_TempusFinalObjective reports the failure ("State Solve
+  //! Converged" = false), and the value is then replaced by the "Objective
+  //! Recovery Value" (or value() throws).
+  Real getValue() const { return value_; }
+
+  //! Response times that are not the time of a time step, including those that
+  //! have not been reached
+  std::vector<Real> getMissedTimes() const {
+    std::vector<Real> missed = missed_;
+    missed.insert(missed.end(), responseTimes_.begin() + next_, responseTimes_.end());
+    return missed;
+  }
+
+private:
+  //! Add the responses at the times t_k up to the time of the state
+  void addPointResponses(const Tempus::SolutionState<Real>& state) {
+    const Real t = state.getTime();
+    for (; next_ < responseTimes_.size() && responseTimes_[next_] <= t + timeTol_; ++next_) {
+      if (std::abs(responseTimes_[next_] - t) <= timeTol_)
+        value_ += evalResponse(state, responseTimes_[next_]);
+      else
+        missed_.push_back(responseTimes_[next_]);
+    }
+  }
+
+  Real evalResponse(const Tempus::SolutionState<Real>& state, const Real t) const {
+    typedef Thyra::ModelEvaluatorBase MEB;
+    MEB::InArgs<Real> inArgs = inArgs_;
+    inArgs.set_x(state.getX());
+    if (inArgs.supports(MEB::IN_ARG_x_dot) && Teuchos::nonnull(state.getXDot()))
+      inArgs.set_x_dot(state.getXDot());
+    if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(t);
+    MEB::OutArgs<Real> outArgs = model_->createOutArgs();
+    const Teuchos::RCP<Thyra::VectorBase<Real>> g = Thyra::createMember<Real>(model_->get_g_space(g_index_));
+    outArgs.set_g(g_index_, g);
+    model_->evalModel(inArgs, outArgs);
+    return Thyra::get_ele(*g, 0);
+  }
+
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Real>> model_;
+  const int g_index_;
+  const Thyra::ModelEvaluatorBase::InArgs<Real> inArgs_;
+  const Tempus::AdjointResponseType responseType_;
+  const std::vector<Real> responseTimes_;
+  const Real timeTol_;
+  Real value_, t_prev_, g_prev_;
+  std::size_t next_;
+  std::vector<Real> missed_;
+};
+
+/** \brief Reduced objective for transient problems, computed with Tempus.
+ *
+ * Three types of objectives are supported (see setResponseType()), with g the
+ * scalar response of the model:
+ * - "Final Time" (default): J(p) = g(x(T),p,T)
+ * - "Time Integral": J(p) = int_{t0}^{T} g(x(t),p,t) dt
+ * - "Sum Over Times": J(p) = sum_k g(x(t_k),p,t_k), e.g., for observations
+ *   available at the times t_k.
  *
  * The value is computed by integrating the forward problem with Tempus up to the
- * final time T of the Tempus time step control. The gradient is computed with the
- * Tempus adjoint sensitivity integrator.
+ * final time T of the Tempus time step control (the time integral with the
+ * trapezoidal rule over the time steps). The gradient is computed with the
+ * Tempus adjoint sensitivity integrator, with the "Response Type" and
+ * "Response Time List" of the Tempus "Sensitivities" sublist set accordingly.
+ * For "Time Integral" and "Sum Over Times" the response must not depend on
+ * x_dot. For "Sum Over Times" the time steps land on the times t_k with
+ * "Variable" time steps, with "Constant" time steps the times t_k must be on
+ * the time grid.
  *
  * The parameters are the product parameter vector (parameter 0) of the model
  * evaluator, so several parameter vectors are supported through
@@ -74,6 +197,11 @@ public:
 
   virtual ~ThyraProductME_TempusFinalObjective() {}
 
+  /** \brief Set the type of objective: "Final Time" (default), "Time Integral" or
+   *  "Sum Over Times", with responseTimes the times t_k of "Sum Over Times". */
+  void setResponseType(const Tempus::AdjointResponseType responseType,
+                       const std::vector<Real>& responseTimes = std::vector<Real>());
+
   //! Compute value of objective
   Real value( const ROL::Vector<Real> &p, Real &tol ) override;
 
@@ -91,11 +219,35 @@ public:
 
 private:
   //! Integrate the forward problem (and the adjoint problem if dgdp is not null)
-  //! with parameters p, and compute the response g at the final time.
+  //! with parameters p, and compute the response g.
   //! Returns false if the time integration failed.
   bool run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
                   const Teuchos::RCP<Thyra::VectorBase<Real>>& g,
                   const Teuchos::RCP<Thyra::VectorBase<Real>>& dgdp);
+
+  //! Tolerance for comparing times: the same as Tempus::IntegratorAdjointSensitivity,
+  //! with the tolerances of the Tempus "Sensitivities" parameters
+  Real timeTolerance() const {
+    const Teuchos::ParameterList& tempusParams = *tempus_params_;
+    return Tempus::AdjointSensitivityUtils::timeTolerance(time_initial_, time_final_,
+      tempusParams.isSublist("Sensitivities") ? &tempusParams.sublist("Sensitivities") : nullptr);
+  }
+
+  //! Warn (once) if a final-time response depends on x_dot: the Tempus adjoint
+  //! sensitivities neglect dg/dx_dot. The check needs dg/dx_dot in gradient form;
+  //! other forms are not checked (a Jacobian form has one column per state
+  //! component, and a linear operator would need an adjoint apply).
+  void checkFinalTimeDgDxDot(const Thyra::ModelEvaluatorBase::InArgs<Real>& inArgs);
+
+  //! Warn (once) if the interpolation of the forward solution used by the adjoint
+  //! integrator has a lower order than needed to retain the order of the stepper.
+  void checkInterpolationOrder(const Tempus::IntegratorAdjointSensitivity<Real>& integrator);
+
+  //! InArgs of initialStateModel_ for the consistent initial state function: its nominal
+  //! values, with the parameters p (unpacked if the objective's model is a
+  //! Piro::ProductModelEvaluator around it) and the initial time
+  Thyra::ModelEvaluatorBase::InArgs<Real>
+  initialStateInArgs(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p) const;
 
   const Teuchos::RCP<Thyra::ModelEvaluator<Real>> thyra_model_;
   const Teuchos::RCP<Thyra::ModelEvaluator<Real>> thyra_adjoint_model_;
@@ -106,8 +258,27 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::EVerbosityLevel verbosityLevel_;
 
+  //! Tempus parameters. The integrators are given copies, see run_tempus.
   Teuchos::RCP<Teuchos::ParameterList> tempus_params_;
+  Real time_initial_;
   Real time_final_;
+
+  //! Makes the initial state consistent with the parameters (see
+  //! Piro::TempusSolver::setConsistentInitialStateFunction); empty if not set
+  typename Piro::TempusSolver<Real>::ConsistentInitialStateFunction consistentInitialState_;
+
+  //! Model given to consistentInitialState_: the model of the Piro::TempusSolver, also
+  //! when the objective's model is a Piro::ProductModelEvaluator around it, so that the
+  //! function always gets the same model and parameter layout
+  Teuchos::RCP<Thyra::ModelEvaluator<Real>> initialStateModel_;
+  //! Indices of the parameters of initialStateModel_ in the product parameter of the
+  //! objective's model (empty if the objective's model is initialStateModel_)
+  std::vector<int> initialStatePIndices_;
+
+  Tempus::AdjointResponseType responseType_;
+  std::vector<Real> responseTimes_;
+  bool checkedDgDxDot_;
+  bool checkedInterpolationOrder_;
 
   //! Parameters and final state of the last successful forward integration
   Teuchos::RCP<Thyra::VectorBase<Real>> last_p_;
@@ -135,14 +306,32 @@ ThyraProductME_TempusFinalObjective(
   optParams_(piroParams.sublist("Optimization Status")),
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   verbosityLevel_(verbLevel),
-  tempus_params_(Teuchos::rcp<Teuchos::ParameterList>(new Teuchos::ParameterList(piroParams.sublist("Tempus"))))
+  tempus_params_(Teuchos::rcp<Teuchos::ParameterList>(new Teuchos::ParameterList(piroParams.sublist("Tempus")))),
+  responseType_(Tempus::AdjointResponseType::FinalTime),
+  checkedDgDxDot_(false),
+  checkedInterpolationOrder_(false)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(thyra_model_->get_g_space(g_index_)->dim() != 1, Teuchos::Exceptions::InvalidParameter,
     std::endl << "Piro::ThyraProductME_TempusFinalObjective: the objective response " << g_index_ <<
     " has dimension " << thyra_model_->get_g_space(g_index_)->dim() << ", but it must be a scalar." << std::endl);
 
   // Integrate to the final time of the Tempus time step control used by the Piro::TempusSolver.
+  time_initial_ = piroTempusSolver->getStartTime();
   time_final_ = piroTempusSolver->getFinalTime();
+
+  // Each integration starts from the nominal initial state, made consistent with the
+  // parameters if the Piro::TempusSolver has a function for it. The function gets the model
+  // of the Piro::TempusSolver, with its parameter layout: Piro::PerformROLTransientAnalysis
+  // gives the objective a Piro::ProductModelEvaluator around it, whose parameter 0 is the
+  // product of the optimization parameters.
+  consistentInitialState_ = piroTempusSolver->getConsistentInitialStateFunction();
+  initialStateModel_ = piroTempusSolver->getSubModel();
+  const Teuchos::RCP<const Piro::ProductModelEvaluator<Real>> productModel =
+    Teuchos::rcp_dynamic_cast<const Piro::ProductModelEvaluator<Real>>(thyra_model_);
+  if (Teuchos::nonnull(productModel) && productModel->getUnderlyingModel().get() == initialStateModel_.get())
+    initialStatePIndices_ = productModel->get_p_indices();
+  else if (thyra_model_.get() != initialStateModel_.get())
+    initialStateModel_ = thyra_model_;  // another model: the function gets the objective's model
 
   // The adjoint integrator differentiates the response and parameter selected in the
   // Tempus "Sensitivities" sublist. Make sure they are the objective response and the
@@ -161,6 +350,40 @@ ThyraProductME_TempusFinalObjective(
           << " with 0, the index of the optimization parameters in the product model evaluator" << std::endl;
   }
   sensPL.set<int>("Sensitivity Parameter Index", 0);
+}
+
+template <typename Real>
+void
+ThyraProductME_TempusFinalObjective<Real>::
+setResponseType(const Tempus::AdjointResponseType responseType, const std::vector<Real>& responseTimes)
+{
+  responseType_ = responseType;
+  responseTimes_.clear();
+  std::string typeName = "Final Time";
+  if (responseType_ == Tempus::AdjointResponseType::TimeIntegral)
+    typeName = "Time Integral";
+  else if (responseType_ == Tempus::AdjointResponseType::SumOverTimes) {
+    typeName = "Sum Over Times";
+    responseTimes_ = responseTimes;
+    std::sort(responseTimes_.begin(), responseTimes_.end());
+    TEUCHOS_TEST_FOR_EXCEPTION(responseTimes_.empty(), Teuchos::Exceptions::InvalidParameter,
+      std::endl << "Piro::ThyraProductME_TempusFinalObjective::setResponseType: the \"Sum Over Times\" "
+      "response requires at least one response time." << std::endl);
+    const Real tol = timeTolerance();
+    TEUCHOS_TEST_FOR_EXCEPTION(responseTimes_.front() < time_initial_ - tol || responseTimes_.back() > time_final_ + tol,
+      Teuchos::Exceptions::InvalidParameter,
+      std::endl << "Piro::ThyraProductME_TempusFinalObjective::setResponseType: the response times [" <<
+      responseTimes_.front() << ", " << responseTimes_.back() << "] must be in the time interval [" <<
+      time_initial_ << ", " << time_final_ << "]." << std::endl);
+  }
+
+  Teuchos::ParameterList& sensPL = tempus_params_->sublist("Sensitivities");
+  sensPL.set<std::string>("Response Type", typeName);
+  std::ostringstream timeList;
+  timeList.precision(17);
+  for (std::size_t k = 0; k < responseTimes_.size(); ++k)
+    timeList << (k > 0 ? ", " : "") << responseTimes_[k];
+  sensPL.set<std::string>("Response Time List", timeList.str());
 }
 
 template <typename Real>
@@ -207,8 +430,9 @@ gradient( ROL::Vector<Real> &grad, const ROL::Vector<Real> &p, Real &/* tol */ )
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(!success, std::runtime_error,
-    std::endl << "Piro::ThyraProductME_TempusFinalObjective::gradient: the time integration failed, "
-    "the gradient cannot be computed." << (tempusError.empty() ? "" : " Tempus error:\n") << tempusError << std::endl);
+    std::endl << "Piro::ThyraProductME_TempusFinalObjective::gradient: the time integration or the adjoint "
+    "sensitivity computation failed, the gradient cannot be computed." << (tempusError.empty() ? "" : " Tempus error:\n") <<
+    tempusError << std::endl);
 }
 
 template <typename Real>
@@ -239,6 +463,16 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
   // Override the nominal parameters of the model with p
   MEB::InArgs<Real> inArgs = thyra_model_->getNominalValues();
   inArgs.set_p(0, p);
+  // Initial state consistent with p (e.g., the algebraic components of a DAE: the
+  // continuous adjoint evaluates the model at the initial state in its last step)
+  if (consistentInitialState_) {
+    TEUCHOS_TEST_FOR_EXCEPTION(inArgs.get_x().is_null(), std::logic_error,
+      std::endl << "Piro::ThyraProductME_TempusFinalObjective: the model has no nominal initial state x "
+      "to make consistent." << std::endl);
+    const RCP<Thyra::VectorBase<Real>> x0 = inArgs.get_x()->clone_v();
+    consistentInitialState_(initialStateModel_, initialStateInArgs(p), *x0);
+    inArgs.set_x(x0);
+  }
   const RCP<const MEB::InArgs<Real>> nominalValues = rcp(new MEB::InArgs<Real>(inArgs));
   RCP<DNBOME> wrapped_model = rcp(new DNBOME(thyra_model_, nominalValues));
   // If the adjoint model is null, Tempus uses an implicit adjoint model.
@@ -247,13 +481,42 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
 
   piroTempusIntegrator_->clearSolutionHistory();
 
+  // For "Time Integral" and "Sum Over Times" responses the value is computed by an
+  // observer during the forward integration
+  RCP<TempusResponseAccumulator<Real>> accumulator;
+  if (responseType_ != Tempus::AdjointResponseType::FinalTime)
+    accumulator = rcp(new TempusResponseAccumulator<Real>(thyra_model_, g_index_, inArgs,
+      responseType_, responseTimes_, timeTolerance()));
+  auto addAccumulator = [&accumulator](auto& integrator) {
+    if (accumulator.is_null()) return;
+    RCP<Tempus::IntegratorObserverComposite<Real>> observers = rcp(new Tempus::IntegratorObserverComposite<Real>);
+    if (Teuchos::nonnull(integrator.getObserver()))
+      observers->addObserver(integrator.getObserver());
+    observers->addObserver(accumulator);
+    integrator.setObserver(observers);
+  };
+
+  // Each integrator gets its own copy of the Tempus parameters: the NOX solver of
+  // the stepper stores objects in its parameters (e.g., the row sum scaling observer,
+  // with "Function Scaling" = "Row Sum"), and a solver built later with the same
+  // parameters would chain them with its own, one more at each integration.
+  // The copies are shallow for such objects. If the Piro::TempusSolver solved before
+  // this objective was built, tempus_params_ (and each copy) holds its row sum
+  // observer, which the forward solvers chain with their own: a fixed extra cost (one
+  // more row sum per Newton iteration), written into the scaling vector of the
+  // Piro::TempusSolver, which recomputes it before using it. The adjoint integrator
+  // removes these objects (Tempus::removeIntegratorSolverObjects).
+  const RCP<Teuchos::ParameterList> tempusParams = rcp(new Teuchos::ParameterList(*tempus_params_));
+
   // Create and run integrator
   bool integratorStatus;
   Real t;
   RCP<const Thyra::VectorBase<Real> > x, x_dot;
   if (Teuchos::nonnull(dgdp)) {
     RCP<Tempus::IntegratorAdjointSensitivity<Real> > integrator =
-      Tempus::createIntegratorAdjointSensitivity<Real>(tempus_params_, wrapped_model, wrapped_adjoint_model);
+      Tempus::createIntegratorAdjointSensitivity<Real>(tempusParams, wrapped_model, wrapped_adjoint_model);
+    checkInterpolationOrder(*integrator);
+    addAccumulator(*integrator);
     integratorStatus = integrator->advanceTime(time_final_);
     if (integratorStatus) {
       // dg/dp is computed in gradient form, with one column per response component
@@ -265,7 +528,11 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
   }
   else {
     RCP<Tempus::IntegratorBasic<Real> > integrator =
-      Tempus::createIntegratorBasic<Real>(tempus_params_, wrapped_model);
+      Tempus::createIntegratorBasic<Real>(tempusParams, wrapped_model);
+    // Same time steps as in the forward integration of the adjoint sensitivity integrator
+    if (responseType_ == Tempus::AdjointResponseType::SumOverTimes)
+      Tempus::AdjointSensitivityUtils::addResponseTimeEvents(*integrator->getNonConstTimeStepControl(), responseTimes_);
+    addAccumulator(*integrator);
     integratorStatus = integrator->advanceTime(time_final_);
     t = integrator->getTime();
     x = integrator->getX();
@@ -278,12 +545,28 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
 
   // Evaluate the response at the final state
   MEB::InArgs<Real> modelInArgs = inArgs;
-  MEB::OutArgs<Real> modelOutArgs = thyra_model_->createOutArgs();
   modelInArgs.set_x(x);
   if (modelInArgs.supports(MEB::IN_ARG_x_dot)) modelInArgs.set_x_dot(x_dot);
   if (modelInArgs.supports(MEB::IN_ARG_t)) modelInArgs.set_t(t);
-  modelOutArgs.set_g(g_index_, g);
-  thyra_model_->evalModel(modelInArgs, modelOutArgs);
+  if (accumulator.is_null()) {
+    MEB::OutArgs<Real> modelOutArgs = thyra_model_->createOutArgs();
+    modelOutArgs.set_g(g_index_, g);
+    thyra_model_->evalModel(modelInArgs, modelOutArgs);
+    if (integratorStatus && Teuchos::nonnull(dgdp))
+      checkFinalTimeDgDxDot(modelInArgs);
+  }
+  else {
+    if (integratorStatus) {
+      const std::vector<Real> missed = accumulator->getMissedTimes();
+      std::ostringstream missedList;
+      for (const Real t_k : missed) missedList << " " << t_k;
+      TEUCHOS_TEST_FOR_EXCEPTION(!missed.empty(), std::logic_error,
+        std::endl << "Piro::ThyraProductME_TempusFinalObjective: no time step ends at the response times" <<
+        missedList.str() << ". With 'Variable' time steps, the time steps land on the response times; with " <<
+        "'Constant' time steps, the response times must be on the time grid." << std::endl);
+    }
+    Thyra::set_ele(0, accumulator->getValue(), g.ptr());
+  }
 
   // Store the final state for the observer
   if (integratorStatus) {
@@ -296,6 +579,79 @@ run_tempus(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p,
   }
 
   return integratorStatus;
+}
+
+template <typename Real>
+Thyra::ModelEvaluatorBase::InArgs<Real>
+ThyraProductME_TempusFinalObjective<Real>::
+initialStateInArgs(const Teuchos::RCP<const Thyra::VectorBase<Real>>& p) const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgs<Real> icInArgs = initialStateModel_->getNominalValues();
+  if (initialStatePIndices_.empty()) {
+    icInArgs.set_p(0, p);
+  }
+  else {
+    const Teuchos::RCP<const Thyra::ProductVectorBase<Real>> prod_p =
+      Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(p);
+    TEUCHOS_TEST_FOR_EXCEPTION(prod_p.is_null() ||
+      prod_p->productSpace()->numBlocks() != static_cast<int>(initialStatePIndices_.size()), std::logic_error,
+      std::endl << "Piro::ThyraProductME_TempusFinalObjective: the parameters of the product model "
+      "evaluator are not a product vector with one block per parameter index." << std::endl);
+    for (std::size_t i = 0; i < initialStatePIndices_.size(); ++i)
+      icInArgs.set_p(initialStatePIndices_[i], prod_p->getVectorBlock(i));
+  }
+  if (icInArgs.supports(MEB::IN_ARG_t)) icInArgs.set_t(time_initial_);
+  return icInArgs;
+}
+
+template <typename Real>
+void
+ThyraProductME_TempusFinalObjective<Real>::
+checkInterpolationOrder(const Tempus::IntegratorAdjointSensitivity<Real>& integrator)
+{
+  // The adjoint integration evaluates the forward solution between the stored
+  // time steps (e.g., at the stage times of Runge-Kutta methods) by interpolation.
+  // A stepper of order q needs an interpolation of order q-1 to retain its order.
+  if (checkedInterpolationOrder_) return;
+  checkedInterpolationOrder_ = true;
+  const Teuchos::RCP<const Tempus::Stepper<Real>> stepper = integrator.getStepper();
+  const Teuchos::RCP<const Tempus::SolutionHistory<Real>> history = integrator.getStateSolutionHistory();
+  if (stepper.is_null() || history.is_null() || history->getInterpolator().is_null()) return;
+  const int interpolationOrder = history->getInterpolator()->order();
+  if (stepper->getOrder() - 1 > interpolationOrder) {
+    const std::string integratorName = tempus_params_->isType<std::string>("Integrator Name") ?
+      tempus_params_->get<std::string>("Integrator Name") : std::string("<Integrator Name>");
+    *out_ << "WARNING: Piro::ThyraProductME_TempusFinalObjective: the Tempus stepper \""
+          << stepper->getStepperType() << "\" has order " << stepper->getOrder()
+          << ", but the interpolation of the forward solution used by the adjoint integration has order "
+          << interpolationOrder << ". Set Tempus->" << integratorName
+          << "->Solution History->Interpolator->\"Order\" to at least " << stepper->getOrder() - 1
+          << " to retain the order of the stepper in the gradient." << std::endl;
+  }
+}
+
+template <typename Real>
+void
+ThyraProductME_TempusFinalObjective<Real>::
+checkFinalTimeDgDxDot(const Thyra::ModelEvaluatorBase::InArgs<Real>& inArgs)
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  if (checkedDgDxDot_) return;
+  checkedDgDxDot_ = true;
+  MEB::OutArgs<Real> outArgs = thyra_model_->createOutArgs();
+  if (!outArgs.supports(MEB::OUT_ARG_DgDx_dot, g_index_).supports(MEB::DERIV_MV_GRADIENT_FORM))
+    return;
+  const Teuchos::RCP<Thyra::MultiVectorBase<Real>> dgdx_dot = Thyra::createMembers(thyra_model_->get_x_space(), 1);
+  outArgs.set_DgDx_dot(g_index_, MEB::Derivative<Real>(dgdx_dot, MEB::DERIV_MV_GRADIENT_FORM));
+  thyra_model_->evalModel(inArgs, outArgs);
+  const Real norm = Thyra::norm_inf(*dgdx_dot->col(0));
+  if (norm != Real(0)) {
+    *out_ << "WARNING: Piro::ThyraProductME_TempusFinalObjective: the response " << g_index_
+          << " depends on x_dot (|dg/dx_dot| = " << norm << " at the final time), but the Tempus adjoint "
+          << "sensitivities neglect this dependence, so the gradient is not consistent with the objective. "
+          << "Use \"Tempus Driver\" = false, or a response that does not depend on x_dot." << std::endl;
+  }
 }
 
 } // namespace Piro

@@ -390,9 +390,25 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
 
   // Set initial time and initial condition 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model_->getNominalValues();
+
+  // Set parameters as part of initial conditions
+  for (int l = 0; l < num_p_; ++l) {
+    auto p_in = inArgs.get_p(l);
+    if (Teuchos::nonnull(p_in)) {
+      state_ic.set_p(l, p_in);
+    }
+  }
+
+  // Make the initial state consistent with the parameters (e.g., the algebraic components
+  // of a DAE), unless it was set with setInitialState
+  const bool make_consistent = static_cast<bool>(consistentInitialStateFunction_) && !initial_state_reset_;
+  const bool supports_t = state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t);
+
   Teuchos::RCP<const Thyra::VectorBase<Scalar>> xinit, xdotinit, xdotdotinit; 
-  if(t_initial_ > 0.0 && state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t)) {
-    state_ic.set_t(t_initial_);
+  if((t_initial_ > 0.0 && supports_t) || make_consistent) {
+    if (supports_t) {
+      state_ic.set_t(t_initial_);
+    }
     //If initial state has not been reset, get the initial state from ME in args
     if (!initial_state_reset_) { 
       if (state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_x)) {
@@ -403,6 +419,13 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
       }
       if (state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot)) {
         xdotdotinit = state_ic.get_x_dot_dot();
+      }
+      if (make_consistent) {
+        TEUCHOS_TEST_FOR_EXCEPTION(xinit.is_null(), std::logic_error,
+          "\n Error! Piro::TempusSolver: the model has no nominal initial state x to make consistent.\n");
+        const RCP<Thyra::VectorBase<Scalar>> x0 = xinit->clone_v();
+        consistentInitialStateFunction_(model_, state_ic, *x0);
+        xinit = x0;
       }
       piroTempusIntegrator_->initializeSolutionHistory(t_initial_, xinit, xdotinit, xdotdotinit); 
       //Reset observer.  This is necessary for correct observation of solution
@@ -437,14 +460,6 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
         *out_ << "\n*** Piro::TempusSolver::evalModelImpl xdotdotinit at time = " << t_initial_ << " ***\n";
       }
 #endif
-    }
-  }
-  
-  // Set parameters as part of initial conditions
-  for (int l = 0; l < num_p_; ++l) {
-    auto p_in = inArgs.get_p(l); 
-    if (Teuchos::nonnull(p_in)) {
-      state_ic.set_p(l, p_in);
     }
   }
 
