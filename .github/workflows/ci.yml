@@ -57,6 +57,10 @@ on:
         description: 'Extra arguments to be used when calling PullRequestLinuxDriverTest.py'
         required: false
         type: string
+      kokkos-version:
+        required: false
+        type: string
+        default: internal
 
 jobs:
   build-test:
@@ -67,6 +71,22 @@ jobs:
         with:
           fetch-depth: 1
           ref: ${{ github.event.pull_request && github.ref || inputs.target-branch }}
+      - name: Clone Kokkos
+        if: ${{ inputs.kokkos-version != 'internal' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: kokkos/kokkos
+          path: external/kokkos
+          fetch-depth: 1
+          ref: ${{ inputs.kokkos-version }}
+      - name: Clone Kokkos-Kernels
+        if: ${{ inputs.kokkos-version != 'internal' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: kokkos/kokkos-kernels
+          path: external/kokkos-kernels
+          fetch-depth: 1
+          ref: ${{ inputs.kokkos-version }}
       - name: Print debug outputs
         shell: bash -l {0}
         env:
