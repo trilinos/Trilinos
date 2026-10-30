@@ -214,6 +214,44 @@ getConstTpetraVector(const RCP<const VectorBase<Scalar> > &v)
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+getTpetraVectorBlock(const RCP<VectorBase<Scalar> > &mv, int k)
+{
+
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT(nonnull(mv));
+#endif
+
+  using Teuchos::rcp_dynamic_cast;
+
+  auto bmv = rcp_dynamic_cast<ProductVectorBase<Scalar>>(mv, true);
+  auto mv_block = bmv->getNonconstVectorBlock(k);
+
+  return getTpetraVector(mv_block);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+getConstTpetraVectorBlock(const RCP<const VectorBase<Scalar> > &mv, int k)
+{
+
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT(nonnull(mv));
+#endif
+
+  using Teuchos::rcp_dynamic_cast;
+
+  auto bmv = rcp_dynamic_cast<const ProductVectorBase<Scalar>>(mv, true);
+  auto mv_block = bmv->getVectorBlock(k);
+
+  return getConstTpetraVector(mv_block);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
 getTpetraMultiVector(const RCP<MultiVectorBase<Scalar> > &mv)
@@ -284,6 +322,44 @@ getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> > &mv)
 
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+getTpetraMultiVectorBlock(const RCP<MultiVectorBase<Scalar> > &mv, int k)
+{
+
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT(nonnull(mv));
+#endif
+
+  using Teuchos::rcp_dynamic_cast;
+
+  auto bmv = rcp_dynamic_cast<ProductMultiVectorBase<Scalar>>(mv, true);
+  auto mv_block = bmv->getNonconstMultiVectorBlock(k);
+
+  return getTpetraMultiVector(mv_block);
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+getConstTpetraMultiVectorBlock(const RCP<const MultiVectorBase<Scalar> > &mv, int k)
+{
+
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT(nonnull(mv));
+#endif
+
+  using Teuchos::rcp_dynamic_cast;
+
+  auto bmv = rcp_dynamic_cast<const ProductMultiVectorBase<Scalar>>(mv, true);
+  auto mv_block = bmv->getMultiVectorBlock(k);
+
+  return getConstTpetraMultiVector(mv_block);
 }
 
 
@@ -416,6 +492,90 @@ SolveStatus<Scalar> solve(
 }
 
 
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> toTpetra(const RCP<const Thyra::VectorSpaceBase<Scalar>> &vs) {
+  using TOVE = TpetraOperatorVectorExtraction<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  return TOVE::getTpetraMap(vs);
+}
+
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class thy_vec_type,
+          class tp_vec_type,
+          class ret_type>
+std::enable_if_t<
+    std::is_same_v<std::remove_const_t<thy_vec_type>, MultiVectorBase<Scalar >> ||
+    std::is_same_v<std::remove_const_t<thy_vec_type>, VectorBase<Scalar>>,
+    RCP<ret_type>>
+toTpetra(const RCP<thy_vec_type> &mv) {
+  using TOVE =
+      TpetraOperatorVectorExtraction<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  if constexpr (std::is_const_v<thy_vec_type>) {
+    if constexpr (std::is_same_v<std::remove_const_t<thy_vec_type>, MultiVectorBase<Scalar>>) {
+      return TOVE::getConstTpetraMultiVector(mv);
+    } else {
+      return TOVE::getConstTpetraVector(mv);
+    }
+  } else {
+    if constexpr (std::is_same_v<std::remove_const_t<thy_vec_type>, MultiVectorBase<Scalar>>) {
+      return TOVE::getTpetraMultiVector(mv);
+    } else {
+      return TOVE::getTpetraVector(mv);
+    }
+  }
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class thy_vec_type,
+          class tp_vec_type,
+          class ret_type>
+RCP<ret_type> toTpetra(const RCP<thy_vec_type> &mv, const int k) {
+  using TOVE =
+      TpetraOperatorVectorExtraction<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  if constexpr (std::is_const_v<thy_vec_type>) {
+    if constexpr (std::is_same_v<std::remove_const_t<thy_vec_type>, MultiVectorBase<Scalar>>) {
+      return TOVE::getConstTpetraMultiVectorBlock(mv, k);
+    } else {
+      return TOVE::getConstTpetraVectorBlock(mv, k);
+    }
+  } else {
+    if constexpr (std::is_same_v<std::remove_const_t<thy_vec_type>, MultiVectorBase<Scalar>>) {
+      return TOVE::getTpetraMultiVectorBlock(mv, k);
+    } else {
+      return TOVE::getTpetraVectorBlock(mv, k);
+    }
+  }
+}
+
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class thy_op_type,
+          class ret_type>
+std::enable_if_t<std::is_same_v<std::remove_const_t<thy_op_type>,
+                                LinearOpBase<Scalar>>, RCP<ret_type>> toTpetra(const RCP<thy_op_type> &op) {
+  using TOVE =
+      TpetraOperatorVectorExtraction<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  if constexpr (std::is_const_v<thy_op_type>) {
+    return TOVE::getConstTpetraOperator(op);
+  } else {
+    return TOVE::getTpetraOperator(op);
+  }
+}
+
+
+
 } // namespace Thyra
 
 #define THYRATPETRAADAPTERS_TPETRATHYRAWRAPPERS_INSTANT(S, LO, GO, N)          \
@@ -496,6 +656,41 @@ SolveStatus<Scalar> solve(
       const Teuchos::RCP<Tpetra::MultiVector<S, LO, GO, N>> &,                 \
       const Teuchos::Ptr<const Thyra::SolveCriteria<S>>);                      \
                                                                                \
-  template class Thyra::TpetraOperatorVectorExtraction<S, LO, GO, N>;
+  template class Thyra::TpetraOperatorVectorExtraction<S, LO, GO, N>;          \
+                                                                               \
+  template Teuchos::RCP<const Tpetra::Map<LO, GO, N>>                          \
+  Thyra::toTpetra<S, LO, GO, N>(                                               \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>> &);                  \
+                                                                               \
+  template Teuchos::RCP<Tpetra::Vector<S, LO, GO, N>>                          \
+  Thyra::toTpetra<S, LO, GO, N>(const Teuchos::RCP<Thyra::VectorBase<S>> &);   \
+  template Teuchos::RCP<const Tpetra::Vector<S, LO, GO, N>>                    \
+  Thyra::toTpetra<S, LO, GO, N>(                                               \
+      const Teuchos::RCP<const Thyra::VectorBase<S>> &);                       \
+  template Teuchos::RCP<Tpetra::MultiVector<S, LO, GO, N>>                     \
+  Thyra::toTpetra<S, LO, GO, N>(                                               \
+      const Teuchos::RCP<Thyra::MultiVectorBase<S>> &);                        \
+  template Teuchos::RCP<const Tpetra::MultiVector<S, LO, GO, N>>               \
+  Thyra::toTpetra<S, LO, GO, N>(                                               \
+      const Teuchos::RCP<const Thyra::MultiVectorBase<S>> &);                  \
+                                                                               \
+  template Teuchos::RCP<Tpetra::Vector<S, LO, GO, N>>                          \
+  Thyra::toTpetra<S, LO, GO, N>(const Teuchos::RCP<Thyra::VectorBase<S>> &,    \
+                                const int);                                    \
+  template Teuchos::RCP<const Tpetra::Vector<S, LO, GO, N>>                    \
+  Thyra::toTpetra<S, LO, GO, N>(                                               \
+      const Teuchos::RCP<const Thyra::VectorBase<S>> &, const int);            \
+  template Teuchos::RCP<Tpetra::MultiVector<S, LO, GO, N>>                     \
+  Thyra::toTpetra<S, LO, GO, N>(                                               \
+      const Teuchos::RCP<Thyra::MultiVectorBase<S>> &, const int);             \
+  template Teuchos::RCP<const Tpetra::MultiVector<S, LO, GO, N>>               \
+  Thyra::toTpetra<S, LO, GO, N>(                                               \
+      const Teuchos::RCP<const Thyra::MultiVectorBase<S>> &, const int);       \
+                                                                               \
+  template Teuchos::RCP<Tpetra::Operator<S, LO, GO, N>>                        \
+  Thyra::toTpetra<S, LO, GO, N>(const Teuchos::RCP<Thyra::LinearOpBase<S>> &); \
+  template Teuchos::RCP<const Tpetra::Operator<S, LO, GO, N>>                  \
+  Thyra::toTpetra<S, LO, GO, N>(                                               \
+      const Teuchos::RCP<const Thyra::LinearOpBase<S>> &);
 
 #endif // THYRA_TPETRA_THYRA_WRAPPERS_HPP
