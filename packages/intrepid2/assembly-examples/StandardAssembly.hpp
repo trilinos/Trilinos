@@ -19,6 +19,8 @@
 #include "JacobianFlopEstimate.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 
+#include <vector>
+
 /** \file   StandardAssembly.hpp
     \brief  Locally assembles a matrix of one basis integrated cell-wise against another -- an array of shape (C,F1,F2), with formulation (op1(e1_i), op2(e2_j)), using standard Intrepid2 methods; these do not algorithmically exploit geometric structure.
  */
@@ -114,7 +116,8 @@ template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typen
 Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, int worksetSize,
                                                                  const int &polyOrder1, const Intrepid2::EFunctionSpace &fs1, const Intrepid2::EOperator &op1, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight1,
                                                                  const int &polyOrder2, const Intrepid2::EFunctionSpace &fs2, const Intrepid2::EOperator &op2, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight2,
-                                                                 double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+                                                                 double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount,
+                                                                 Teuchos::RCP<std::vector<PointScalar>> cubatureWeightMultipliers = Teuchos::null)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
   int numVertices = 1;
@@ -161,6 +164,16 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
   ScalarView<double,DeviceType> cubatureWeights("cubature weights", numPoints);
   
   cubature->getCubature(cubaturePoints, cubatureWeights);
+  if (cubatureWeightMultipliers != Teuchos::null)
+  {
+    INTREPID2_TEST_FOR_EXCEPTION(static_cast<int>(cubatureWeightMultipliers->size()) != numPoints, std::invalid_argument, "cubatureWeightMultipliers must have one entry per cubature point");
+    auto weightsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubatureWeights);
+    for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
+    {
+      weightsHost(pointOrdinal) *= (*cubatureWeightMultipliers)[pointOrdinal];
+    }
+    Kokkos::deep_copy(cubatureWeights, weightsHost);
+  }
   
   const double flopsPerJacobianPerCell    = flopsPerJacobian(spaceDim, numPoints, numVertices);
   const double flopsPerJacobianDetPerCell = flopsPerJacobianDet(spaceDim, numPoints);
