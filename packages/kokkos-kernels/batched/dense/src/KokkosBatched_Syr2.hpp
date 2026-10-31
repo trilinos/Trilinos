@@ -34,7 +34,7 @@ namespace KokkosBatched {
 template <typename ArgUplo, typename ArgTrans>
 struct SerialSyr2 {
   static_assert(
-      std::is_same_v<ArgUplo, Uplo::Upper> || std::is_same_v<ArgUplo, Uplo::Lower>,
+      is_uplo_v<ArgUplo>,
       "KokkosBatched::syr2: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
   static_assert(std::is_same_v<ArgTrans, Trans::Transpose> || std::is_same_v<ArgTrans, Trans::ConjTranspose>,
                 "KokkosBatched::syr2: Use Trans::Transpose for {s,d,c,z}syr2 or Trans::ConjTranspose for {c,z}her2");

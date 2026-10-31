@@ -46,7 +46,7 @@ struct Functor_TestBlasSerialAxpy {
   inline void run() {
     using value_type = typename ViewType::value_type;
     std::string name_region("KokkosBlas::Test::SerialAxpy");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name_work_tag         = (std::is_same<AlgoTagType, KokkosKernelAxpyTag>::value ? "::KokkosBlas"
                                          : std::is_same<AlgoTagType, NaiveAxpyTag>::value      ? "::Naive"
                                                                                                : "::UnknownWorkTag");

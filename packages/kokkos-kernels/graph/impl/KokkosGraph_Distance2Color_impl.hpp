@@ -917,8 +917,8 @@ class GraphColorDistance2 {
   void resolveConflictsSerial(rowmap_t xadj_, entries_t adj_, rowmap_t t_xadj_, entries_t t_adj_,
                               color_view_type vertex_colors_, lno_view_t current_vertexList_,
                               size_type current_vertexListLength_) {
-    color_type* forbidden = new color_type[nr];
-    for (lno_t i = 0; i < nr; i++) forbidden[i] = nr;
+    color_type* forbidden = new color_type[nr + 1];
+    for (lno_t i = 0; i <= nr; i++) forbidden[i] = nr;
     lno_t vid = 0;
     lno_t end = nr;
 
@@ -1187,18 +1187,10 @@ class GraphColorDistance2 {
                 if (vid_d1 != vid) {
                   const color_type color        = _colors(vid_d1);
                   const color_type color_offset = color - offset;
-                  if (color && color_offset < VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
-                    // if it is in the current range, then add the color to the
-                    // banned colors
-                    if (color > offset) {
-                      // convert color to bit representation
-                      bit_64_forbidden_type ban_color_bit = 1;
-
-                      ban_color_bit = ban_color_bit << color_offset;
-
-                      // add it to forbidden colors
-                      forbidden |= (bit_64_forbidden_type(1) << color_offset);
-                    }
+                  if (color >= offset && color_offset < VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
+                    // convert color to bit representation and add it to
+                    // forbidden colors
+                    forbidden |= (bit_64_forbidden_type(1) << color_offset);
                   }
                 }
               }
