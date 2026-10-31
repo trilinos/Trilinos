@@ -1254,25 +1254,33 @@ void pamatrixAssembleDirect(const PAMatrix<DeviceType,Scalar> &matrix, Data<Scal
                                          L.pairOpLast.data(), firstInFamily ? Scalar(0.0) : Scalar(1.0), lastAccumulator.data());
         if (!lastInFamily) continue;
         auto source = lastAccumulator;
-        auto write = [&](auto matrixView, auto rankTag) {
-          constexpr int rank = decltype(rankTag)::value;
-          // cell outermost, so that writes stay within one cell's matrix; for each (cell, last-component pair), the prefix
-          // pairs are contiguous in neither source nor destination, but the destination row is fixed by (iLast, pair) and the
-          // writes for consecutive prefix pairs fall in a few rows (Kokkos MDRange iterates the last index fastest)
-          Kokkos::parallel_for("PAMatrix::assemble(): write direct contraction",
-                               Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{Cw, FLast*GLast, prefixPairs}),
+        // cell outermost, so that writes stay within one cell's matrix.  (Separate lambdas for the two output ranks:
+        // CUDA extended lambdas cannot be defined in generic lambdas or capture in constexpr-if contexts.)
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{Cw, FLast*GLast, prefixPairs});
+        if (outputRank == 3)
+        {
+          auto matrixView = integrals.template getUnderlyingView<3>();
+          Kokkos::parallel_for("PAMatrix::assemble(): write direct contraction", policy,
           KOKKOS_LAMBDA(const ordinal_type &cell, const ordinal_type &ijLast, const ordinal_type &pair) {
             const int iLast = ijLast % FLast, jLast = ijLast / FLast;
             const ordinal_type row = rowMap(prefixRow(pair) + iLast * leftStrideLast);
             const ordinal_type col = colMap(prefixCol(pair) + jLast * rightStrideLast);
             if ((row < 0) || (col < 0)) return;
-            const Scalar value = source(cell + (pair + size_t(ijLast) * prefixPairs) * Cw);
-            if constexpr (rank == 3) matrixView(cell + cellStart, row, col) += value;
-            else                     matrixView(row, col) += value;
+            matrixView(cell + cellStart, row, col) += source(cell + (pair + size_t(ijLast) * prefixPairs) * Cw);
           });
-        };
-        if (outputRank == 3) write(integrals.template getUnderlyingView<3>(), std::integral_constant<int,3>());
-        else                 write(integrals.template getUnderlyingView<2>(), std::integral_constant<int,2>());
+        }
+        else
+        {
+          auto matrixView = integrals.template getUnderlyingView<2>();
+          Kokkos::parallel_for("PAMatrix::assemble(): write direct contraction", policy,
+          KOKKOS_LAMBDA(const ordinal_type &cell, const ordinal_type &ijLast, const ordinal_type &pair) {
+            const int iLast = ijLast % FLast, jLast = ijLast / FLast;
+            const ordinal_type row = rowMap(prefixRow(pair) + iLast * leftStrideLast);
+            const ordinal_type col = colMap(prefixCol(pair) + jLast * rightStrideLast);
+            if ((row < 0) || (col < 0)) return;
+            matrixView(row, col) += source(cell + (pair + size_t(ijLast) * prefixPairs) * Cw);
+          });
+        }
       }
       else
       {
@@ -1307,21 +1315,31 @@ void pamatrixAssembleDirect(const PAMatrix<DeviceType,Scalar> &matrix, Data<Scal
         }
         auto source = groupSum;
         auto P = L.pairOpLast;
-        auto write = [&](auto matrixView, auto rankTag) {
-          constexpr int rank = decltype(rankTag)::value;
-          Kokkos::parallel_for("PAMatrix::assemble(): sparse last stage",
-                               Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numKept, Cw}),
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numKept, Cw});
+        if (outputRank == 3)
+        {
+          auto matrixView = integrals.template getUnderlyingView<3>();
+          Kokkos::parallel_for("PAMatrix::assemble(): sparse last stage", policy,
           KOKKOS_LAMBDA(const ordinal_type &k, const ordinal_type &cell) {
             const Scalar * const s = &source(size_t(QLast) * (cell + size_t(keptPairV(k)) * Cw));
             const Scalar * const p = &P(size_t(QLast) * keptIJV(k));
             Scalar value = 0;
             for (int q=0; q<QLast; q++) value += s[q] * p[q];
-            if constexpr (rank == 3) matrixView(cell + cellStart, keptRowV(k), keptColV(k)) += value;
-            else                     matrixView(keptRowV(k), keptColV(k)) += value;
+            matrixView(cell + cellStart, keptRowV(k), keptColV(k)) += value;
           });
-        };
-        if (outputRank == 3) write(integrals.template getUnderlyingView<3>(), std::integral_constant<int,3>());
-        else                 write(integrals.template getUnderlyingView<2>(), std::integral_constant<int,2>());
+        }
+        else
+        {
+          auto matrixView = integrals.template getUnderlyingView<2>();
+          Kokkos::parallel_for("PAMatrix::assemble(): sparse last stage", policy,
+          KOKKOS_LAMBDA(const ordinal_type &k, const ordinal_type &cell) {
+            const Scalar * const s = &source(size_t(QLast) * (cell + size_t(keptPairV(k)) * Cw));
+            const Scalar * const p = &P(size_t(QLast) * keptIJV(k));
+            Scalar value = 0;
+            for (int q=0; q<QLast; q++) value += s[q] * p[q];
+            matrixView(keptRowV(k), keptColV(k)) += value;
+          });
+        }
       }
     }
   }
