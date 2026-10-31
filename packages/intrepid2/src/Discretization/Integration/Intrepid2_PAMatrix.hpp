@@ -171,9 +171,15 @@ namespace Intrepid2 {
     /** \brief   Fully assembles the matrix, using sum factorization.
         \param   integrals          [out] - Output matrix, with logical shape (C,F,F).  See allocateMatrixStorage().
 
-        For supported structures, columns are computed in blocks by sum-factorized contraction of unit trial columns
-        (without forming the unit-column vectors); otherwise, assembly proceeds by apply() to blocked unit columns.  Ordinal
-        filters (e.g., Serendipity bases) are supported on the former path only.
+        For supported structures (scalar point weights; one-dimensional tensor components; no orientations), the matrix
+        is assembled by direct sum factorization: the point weights are contracted against the per-component products of
+        left and right 1D operators, one component at a time, by GEMMs over all cells of a workset.  Passes that share
+        their last-component operators share the last contraction, and the output is written once.  With sparse ordinal
+        filters (e.g., Serendipity bases), the last contraction computes only the kept entries.  Workset size is chosen
+        from a memory budget (environment variable INTREPID2_PAMATRIX_ASSEMBLE_WORKSPACE_MB, default 512).  Setting
+        INTREPID2_PAMATRIX_ASSEMBLE_UNIT_COLUMNS selects the previous path, which computes blocks of columns by
+        contraction of unit trial columns, for these structures too.  Other structures are assembled by apply() to
+        blocked unit columns.  Ordinal filters are supported on the first two paths only.
     */
     void assemble(Data<Scalar,DeviceType> &integrals) const;
 

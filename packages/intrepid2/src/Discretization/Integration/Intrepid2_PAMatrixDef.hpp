@@ -28,6 +28,8 @@
 #endif
 
 #include <algorithm>
+#include <cstdlib>
+#include <type_traits>
 
 namespace Intrepid2 {
 
@@ -935,6 +937,397 @@ bool pamatrixAssembleUsesUnitColumnPath(const PAMatrix<DeviceType,Scalar> &matri
   return useUnitColumnPath;
 }
 
+//! true unless INTREPID2_PAMATRIX_ASSEMBLE_UNIT_COLUMNS is set, in which case assemble() uses the unit-column path even
+//! where the direct-contraction path applies (for verification and performance comparison)
+inline bool pamatrixAssembleDirectContractionEnabled()
+{
+  static const bool enabled = (std::getenv("INTREPID2_PAMATRIX_ASSEMBLE_UNIT_COLUMNS") == nullptr);
+  return enabled;
+}
+
+/** \brief Direct sum-factorized assembly.
+
+    For one integration pass (scalar point weights W, left operators L_r of size F_r x Q_r, right operators R_r of size
+    Q_r x G_r, r = 0..R-1, component 0 fastest in both field and point ordinals),
+      M(c, I, J) = sum_p W(c,p) prod_r L_r(i_r, p_r) R_r(p_r, j_r).
+    With the pair operators P_r(q, (i,j)) = L_r(i,q) R_r(q,j), stage r maps a tensor stored as (p_r, X) to (X, (i_r j_r))
+    by the GEMM T' = T^T P_r.  Starting from W stored as (p_0, ..., p_{R-1}, c), after R-1 stages the tensor is
+    (p_{R-1}, c, (i_0 j_0), ..., (i_{R-2} j_{R-2})).
+
+    Passes are grouped by their last-component operator pair (L_{R-1}, R_{R-1}); within a group, the stage-(R-1) inputs
+    are summed, so that each group needs one last-stage contraction.  The last stage either
+    - (unfiltered, or dense filters) accumulates all groups' (c, ..., (i_{R-1} j_{R-1})) results by GEMM into one
+      buffer, which a single permutation writes to the output; or
+    - (sparse ordinal filters, e.g. Serendipity) computes each kept output entry directly as a length-Q_{R-1} dot product
+      against the group's pair operator, skipping the full tensor-product intermediate.
+    Cells are processed in worksets sized to a memory budget (INTREPID2_PAMATRIX_ASSEMBLE_WORKSPACE_MB, default 512).
+
+    Requires the structure accepted by pamatrixAssembleUsesUnitColumnPath() (scalar point weights, one-dimensional
+    tensor components, equal left and right component counts, no orientations). */
+template<typename DeviceType,class Scalar>
+void pamatrixAssembleDirect(const PAMatrix<DeviceType,Scalar> &matrix, Data<Scalar,DeviceType> &integrals)
+{
+  using ExecutionSpace = typename DeviceType::execution_space;
+  using View1D    = Kokkos::View<Scalar*,DeviceType>;
+  using OrdView1D = Kokkos::View<ordinal_type*,DeviceType>;
+  using OpSpec    = typename PAMatrix<DeviceType,Scalar>::OpSpec;
+
+  const ordinal_type numCells       = matrix._basisValuesLeft.numCells();
+  const ordinal_type numFieldsLeft  = matrix._basisValuesLeft.numFields();
+  const ordinal_type numFieldsRight = matrix._basisValuesRight.numFields();
+  const bool hasLeftFilter  = matrix.leftOrdinalFilter_ .extent_int(0) > 0;
+  const bool hasRightFilter = matrix.rightOrdinalFilter_.extent_int(0) > 0;
+
+  const int outputRank = integrals.getUnderlyingViewRank();
+  INTREPID2_TEST_FOR_EXCEPTION((outputRank != 2) && (outputRank != 3), std::invalid_argument,
+      "PAMatrix::assemble() supports only rank-2 or rank-3 underlying matrix storage");
+  // with rank-2 storage (constant in the cell), assemble cell 0 only
+  const ordinal_type numCellsComputed = (outputRank == 3) ? numCells : 1;
+
+  const auto &passes = matrix.componentIntegralsToSum_;
+  const int numPasses = int(passes.size());
+  const int R = int(std::get<2>(passes[0]).size());
+
+  // full-ordinal row/column -> output row/column (or -1 if filtered out); with family offsets, a pass's full ordinal is
+  // offset + (tensor ordinal within the family)
+  auto hostLeftFilter  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), matrix.leftOrdinalFilter_);
+  auto hostRightFilter = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), matrix.rightOrdinalFilter_);
+  const ordinal_type numFullLeft  = hasLeftFilter  ? matrix.numUnfilteredFieldsLeft_  : numFieldsLeft;
+  const ordinal_type numFullRight = hasRightFilter ? matrix.numUnfilteredFieldsRight_ : numFieldsRight;
+  std::vector<ordinal_type> rowForFull(numFullLeft, -1), colForFull(numFullRight, -1);
+  for (ordinal_type row=0; row<numFieldsLeft;  row++) rowForFull[hasLeftFilter  ? hostLeftFilter(row)  : row] = row;
+  for (ordinal_type col=0; col<numFieldsRight; col++) colForFull[hasRightFilter ? hostRightFilter(col) : col] = col;
+
+  // group passes by (left family span/offset, right family span/offset, last-component operator pair): within a group,
+  // the last-stage contraction is shared
+  struct Group { std::vector<int> passes; };
+  std::vector<Group> groups;
+  {
+    auto sameOp = [](const OpSpec &a, const OpSpec &b) { return (a.opView.data() == b.opView.data()) && (a.M == b.M) && (a.N == b.N); };
+    for (int pass=0; pass<numPasses; pass++)
+    {
+      const auto &t = passes[pass];
+      int found = -1;
+      for (int g=0; g<int(groups.size()); g++)
+      {
+        const auto &u = passes[groups[g].passes[0]];
+        if ((std::get<3>(t) == std::get<3>(u)) && (std::get<5>(t) == std::get<5>(u)) &&
+            (std::get<4>(t) == std::get<4>(u)) && (std::get<6>(t) == std::get<6>(u)) &&
+            sameOp(std::get<0>(t)[R-1], std::get<0>(u)[R-1]) && sameOp(std::get<2>(t)[R-1], std::get<2>(u)[R-1]))
+        {
+          bool sameShape = true;
+          for (int r=0; r<R-1; r++)
+          {
+            sameShape = sameShape && (std::get<0>(t)[r].M == std::get<0>(u)[r].M) && (std::get<2>(t)[r].N == std::get<2>(u)[r].N);
+          }
+          if (sameShape) { found = g; break; }
+        }
+      }
+      if (found < 0) { groups.push_back(Group()); found = int(groups.size()) - 1; }
+      groups[found].passes.push_back(pass);
+    }
+  }
+
+  // per-group geometry: extents, and host row/column offset tables over the pair (i,j) index space of the first R-1
+  // components and the last component; output row = rowForFull[leftOffset + I], I = I_prefix + i_{R-1} * strideLast
+  struct GroupLayout
+  {
+    int leftOffset, rightOffset;
+    std::vector<int> F, G, Q;      // per component
+    int prefixPairs = 1;           // prod_{r<R-1} F_r G_r
+    int prefixLeft = 1, prefixRight = 1;
+    View1D pairOpLast;             // (Q_{R-1}, F_{R-1} G_{R-1})
+    OrdView1D prefixRowOffset, prefixColOffset; // per prefix pair: I_prefix, J_prefix
+  };
+  std::vector<GroupLayout> layouts(groups.size());
+  // groups that share family offsets and component shapes have identical (c, prefix pairs, (i_{R-1} j_{R-1})) layouts,
+  // so their dense last-stage results can be accumulated (beta = 1) before a single write
+  std::vector<int> writeFamily(groups.size(), -1);
+  int numWriteFamilies = 0;
+  for (int g=0; g<int(groups.size()); g++)
+  {
+    const auto &t = passes[groups[g].passes[0]];
+    auto &L = layouts[g];
+    L.leftOffset  = std::get<3>(t);
+    L.rightOffset = std::get<5>(t);
+    for (int r=0; r<R; r++)
+    {
+      L.F.push_back(std::get<0>(t)[r].M);
+      L.Q.push_back(std::get<0>(t)[r].N);
+      L.G.push_back(std::get<2>(t)[r].N);
+    }
+    for (int r=0; r<R-1; r++) { L.prefixPairs *= L.F[r] * L.G[r]; L.prefixLeft *= L.F[r]; L.prefixRight *= L.G[r]; }
+    OrdView1D rowOffsets("PAMatrix assemble prefix row offsets", L.prefixPairs), colOffsets("PAMatrix assemble prefix col offsets", L.prefixPairs);
+    auto rowHost = Kokkos::create_mirror_view(rowOffsets);
+    auto colHost = Kokkos::create_mirror_view(colOffsets);
+    for (int pair=0; pair<L.prefixPairs; pair++)
+    {
+      int remainder = pair, I = 0, J = 0, leftStride = 1, rightStride = 1;
+      for (int r=0; r<R-1; r++)
+      {
+        const int ij = remainder % (L.F[r] * L.G[r]);
+        remainder /= (L.F[r] * L.G[r]);
+        I += (ij % L.F[r]) * leftStride;
+        J += (ij / L.F[r]) * rightStride;
+        leftStride *= L.F[r];
+        rightStride *= L.G[r];
+      }
+      rowHost(pair) = I;
+      colHost(pair) = J;
+    }
+    Kokkos::deep_copy(rowOffsets, rowHost);
+    Kokkos::deep_copy(colOffsets, colHost);
+    L.prefixRowOffset = rowOffsets;
+    L.prefixColOffset = colOffsets;
+    // last-component pair operator
+    {
+      const int F = L.F[R-1], Q = L.Q[R-1], Gn = L.G[R-1];
+      View1D P(Kokkos::view_alloc(Kokkos::WithoutInitializing, "PAMatrix assemble pair operator"), size_t(Q) * F * Gn);
+      const Scalar * const Lop = std::get<0>(t)[R-1].opView.data();
+      const Scalar * const Rop = std::get<2>(t)[R-1].opView.data();
+      Kokkos::parallel_for("PAMatrix::assemble(): last pair operator", Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{Q,F,Gn}),
+      KOKKOS_LAMBDA(const ordinal_type &q, const ordinal_type &i, const ordinal_type &j) {
+        P(q + (i + j * F) * size_t(Q)) = Lop[i + q * F] * Rop[q + j * Q];
+      });
+      L.pairOpLast = P;
+    }
+  }
+  for (int g=0; g<int(groups.size()); g++)
+  {
+    for (int h=0; h<g; h++)
+    {
+      const auto &A = layouts[g], &B = layouts[h];
+      if ((A.leftOffset == B.leftOffset) && (A.rightOffset == B.rightOffset) && (A.F == B.F) && (A.G == B.G))
+      {
+        writeFamily[g] = writeFamily[h];
+        break;
+      }
+    }
+    if (writeFamily[g] < 0) writeFamily[g] = numWriteFamilies++;
+  }
+
+  // Sparse-filter path: when few (row, column) pairs survive, compute each kept entry directly at the last stage.
+  // Kept pairs, per group: (prefix pair, last-component (i,j)) -> output (row, col)
+  // (INTREPID2_PAMATRIX_ASSEMBLE_SPARSE_LAST=1 forces it whenever there is a filter, =0 disables it; for testing)
+  bool useSparseLast = false;
+  {
+    const double keptFraction = double(numFieldsLeft) * numFieldsRight / (double(numFullLeft) * numFullRight);
+    useSparseLast = (hasLeftFilter || hasRightFilter) && (keptFraction < 0.25);
+    const char *sparseSetting = std::getenv("INTREPID2_PAMATRIX_ASSEMBLE_SPARSE_LAST");
+    if (sparseSetting != nullptr) useSparseLast = (hasLeftFilter || hasRightFilter) && (std::atoi(sparseSetting) != 0);
+  }
+
+  // workset size from the memory budget: the largest per-cell intermediate is max over stages of (current tensor size)
+  size_t perCellDoubles = 0;
+  for (const auto &L : layouts)
+  {
+    size_t size = 1;
+    for (int r=0; r<R; r++) size *= L.Q[r];
+    size_t maxSize = size;
+    for (int r=0; r<R-1; r++)
+    {
+      size = size / L.Q[r] * L.F[r] * L.G[r];
+      maxSize = std::max(maxSize, size);
+    }
+    if (!useSparseLast) maxSize = std::max(maxSize, size / L.Q[R-1] * L.F[R-1] * L.G[R-1]);
+    perCellDoubles = std::max(perCellDoubles, maxSize);
+  }
+  const char *budgetString = std::getenv("INTREPID2_PAMATRIX_ASSEMBLE_WORKSPACE_MB");
+  const double budgetBytes = ((budgetString != nullptr) ? std::atof(budgetString) : 512.0) * 1024.0 * 1024.0;
+  // three buffers of perCellDoubles (ping, pong, group accumulator), plus the last-stage accumulator
+  const ordinal_type worksetSize = std::max<ordinal_type>(1, std::min<ordinal_type>(numCellsComputed,
+                                   ordinal_type(budgetBytes / (4.0 * sizeof(Scalar) * double(perCellDoubles)))));
+
+  View1D bufferA(Kokkos::view_alloc(Kokkos::WithoutInitializing, "PAMatrix assemble direct A"), perCellDoubles * worksetSize);
+  View1D bufferB(Kokkos::view_alloc(Kokkos::WithoutInitializing, "PAMatrix assemble direct B"), perCellDoubles * worksetSize);
+  View1D groupSum(Kokkos::view_alloc(Kokkos::WithoutInitializing, "PAMatrix assemble direct group sum"), perCellDoubles * worksetSize);
+  View1D lastAccumulator;
+  if (!useSparseLast) lastAccumulator = View1D(Kokkos::view_alloc(Kokkos::WithoutInitializing, "PAMatrix assemble direct last"), perCellDoubles * worksetSize);
+
+  if (outputRank == 3) Kokkos::deep_copy(integrals.template getUnderlyingView<3>(), Scalar(0));
+  else                 Kokkos::deep_copy(integrals.template getUnderlyingView<2>(), Scalar(0));
+
+  // pair operators for the first R-1 components, per pass
+  std::vector<std::vector<View1D>> pairOps(numPasses);
+  for (int pass=0; pass<numPasses; pass++)
+  {
+    const auto &t = passes[pass];
+    for (int r=0; r<R-1; r++)
+    {
+      const int F = std::get<0>(t)[r].M, Q = std::get<0>(t)[r].N, Gn = std::get<2>(t)[r].N;
+      View1D P(Kokkos::view_alloc(Kokkos::WithoutInitializing, "PAMatrix assemble pair operator"), size_t(Q) * F * Gn);
+      const Scalar * const Lop = std::get<0>(t)[r].opView.data();
+      const Scalar * const Rop = std::get<2>(t)[r].opView.data();
+      Kokkos::parallel_for("PAMatrix::assemble(): pair operator", Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{Q,F,Gn}),
+      KOKKOS_LAMBDA(const ordinal_type &q, const ordinal_type &i, const ordinal_type &j) {
+        P(q + (i + j * F) * size_t(Q)) = Lop[i + q * F] * Rop[q + j * Q];
+      });
+      pairOps[pass].push_back(P);
+    }
+  }
+
+  for (ordinal_type cellStart=0; cellStart<numCellsComputed; cellStart+=worksetSize)
+  {
+    const ordinal_type Cw = std::min(worksetSize, numCellsComputed - cellStart);
+
+    // for the dense last stage, the accumulator holds (Q-contracted) results for all groups in turn; we write each group's
+    // result to the output after its last GEMM, so the accumulator is per group
+    for (int g=0; g<int(groups.size()); g++)
+    {
+      const auto &L = layouts[g];
+      const int QLast = L.Q[R-1];
+      const size_t lastInputSize = size_t(QLast) * Cw * L.prefixPairs; // (p_{R-1}, c, prefix pairs)
+
+      // sum the group's passes' stage-(R-1) inputs into groupSum
+      bool firstPass = true;
+      for (int pass : groups[g].passes)
+      {
+        const auto &t = passes[pass];
+        const auto &pointDataSpec = std::get<1>(t);
+        const int numPointsTotal = pointDataSpec.P;
+        const int C = pointDataSpec.C;
+        const Scalar * const pointData = matrix._pointDataCache.find(pointDataSpec)->second.data();
+        // stage-0 input (p_0, ..., p_{R-1}, c) into bufferA
+        {
+          auto dest = bufferA;
+          Kokkos::parallel_for("PAMatrix::assemble(): transpose point weights",
+                               Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{Cw,numPointsTotal}),
+          KOKKOS_LAMBDA(const ordinal_type &cell, const ordinal_type &point) {
+            const ordinal_type dataCell = (C == 1) ? 0 : cell + cellStart;
+            dest(point + size_t(cell) * numPointsTotal) = pointData[dataCell + point * C];
+          });
+        }
+        View1D current = bufferA, other = bufferB;
+        size_t currentSize = size_t(numPointsTotal) * Cw;
+        for (int r=0; r<R-1; r++)
+        {
+          const int Q = L.Q[r], FG = L.F[r] * L.G[r];
+          const size_t X = currentSize / Q;
+          const bool lastPrefixStage = (r == R-2);
+          // the group's passes share everything after this stage, so sum at the final prefix stage (beta = 1)
+          View1D target = lastPrefixStage ? groupSum : other;
+          const Scalar beta = (lastPrefixStage && !firstPass) ? Scalar(1) : Scalar(0);
+          Impl::gemm<Impl::GemmDeviceType>('T', 'N', ordinal_type(X), FG, Q, Scalar(1.0), current.data(), Q,
+                                           pairOps[pass][r].data(), beta, target.data());
+          currentSize = X * FG;
+          if (!lastPrefixStage) std::swap(current, other);
+        }
+        if (R == 1)
+        {
+          // no prefix stages: the group sum is the weights themselves
+          auto src = bufferA; auto dst = groupSum;
+          const bool accumulate = !firstPass;
+          Kokkos::parallel_for("PAMatrix::assemble(): sum weights", Kokkos::RangePolicy<ExecutionSpace>(0, ordinal_type(currentSize)),
+          KOKKOS_LAMBDA(const ordinal_type &k) { dst(k) = accumulate ? dst(k) + src(k) : src(k); });
+        }
+        firstPass = false;
+      }
+      // groupSum: (p_{R-1}, c, prefix pairs), size lastInputSize
+
+      const int FLast = L.F[R-1], GLast = L.G[R-1];
+      const int leftStrideLast = L.prefixLeft, rightStrideLast = L.prefixRight;
+      const int leftOffset = L.leftOffset, rightOffset = L.rightOffset;
+      const int prefixPairs = L.prefixPairs;
+      auto prefixRow = L.prefixRowOffset;
+      auto prefixCol = L.prefixColOffset;
+
+      // device copies of the full->output maps, offset to this group's family
+      OrdView1D rowMap("PAMatrix assemble row map", size_t(L.prefixLeft) * FLast);
+      OrdView1D colMap("PAMatrix assemble col map", size_t(L.prefixRight) * GLast);
+      {
+        auto rowHost = Kokkos::create_mirror_view(rowMap);
+        auto colHost = Kokkos::create_mirror_view(colMap);
+        for (int I=0; I<L.prefixLeft*FLast;  I++) rowHost(I) = rowForFull[leftOffset  + I];
+        for (int J=0; J<L.prefixRight*GLast; J++) colHost(J) = colForFull[rightOffset + J];
+        Kokkos::deep_copy(rowMap, rowHost);
+        Kokkos::deep_copy(colMap, colHost);
+      }
+
+      if (!useSparseLast)
+      {
+        // last stage: (p_{R-1}, [c, prefix pairs]) -> ([c, prefix pairs], (i_{R-1} j_{R-1}))
+        const size_t X = lastInputSize / QLast;
+        bool firstInFamily = true, lastInFamily = true;
+        for (int h=0; h<g; h++) if (writeFamily[h] == writeFamily[g]) firstInFamily = false;
+        for (int h=g+1; h<int(groups.size()); h++) if (writeFamily[h] == writeFamily[g]) lastInFamily = false;
+        Impl::gemm<Impl::GemmDeviceType>('T', 'N', ordinal_type(X), FLast * GLast, QLast, Scalar(1.0), groupSum.data(), QLast,
+                                         L.pairOpLast.data(), firstInFamily ? Scalar(0.0) : Scalar(1.0), lastAccumulator.data());
+        if (!lastInFamily) continue;
+        auto source = lastAccumulator;
+        auto write = [&](auto matrixView, auto rankTag) {
+          constexpr int rank = decltype(rankTag)::value;
+          // cell outermost, so that writes stay within one cell's matrix; for each (cell, last-component pair), the prefix
+          // pairs are contiguous in neither source nor destination, but the destination row is fixed by (iLast, pair) and the
+          // writes for consecutive prefix pairs fall in a few rows (Kokkos MDRange iterates the last index fastest)
+          Kokkos::parallel_for("PAMatrix::assemble(): write direct contraction",
+                               Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{Cw, FLast*GLast, prefixPairs}),
+          KOKKOS_LAMBDA(const ordinal_type &cell, const ordinal_type &ijLast, const ordinal_type &pair) {
+            const int iLast = ijLast % FLast, jLast = ijLast / FLast;
+            const ordinal_type row = rowMap(prefixRow(pair) + iLast * leftStrideLast);
+            const ordinal_type col = colMap(prefixCol(pair) + jLast * rightStrideLast);
+            if ((row < 0) || (col < 0)) return;
+            const Scalar value = source(cell + (pair + size_t(ijLast) * prefixPairs) * Cw);
+            if constexpr (rank == 3) matrixView(cell + cellStart, row, col) += value;
+            else                     matrixView(row, col) += value;
+          });
+        };
+        if (outputRank == 3) write(integrals.template getUnderlyingView<3>(), std::integral_constant<int,3>());
+        else                 write(integrals.template getUnderlyingView<2>(), std::integral_constant<int,2>());
+      }
+      else
+      {
+        // sparse last stage: for each kept (row, col) of this group, value(c) = sum_q groupSum(q, c, prefixPair) P(q, ij)
+        std::vector<int> keptPair, keptIJ, keptRow, keptCol;
+        auto rowHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowMap);
+        auto colHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), colMap);
+        auto prefixRowHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), prefixRow);
+        auto prefixColHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), prefixCol);
+        for (int pair=0; pair<prefixPairs; pair++)
+        {
+          for (int jLast=0; jLast<GLast; jLast++)
+          {
+            const ordinal_type col = colHost(prefixColHost(pair) + jLast * rightStrideLast);
+            if (col < 0) continue;
+            for (int iLast=0; iLast<FLast; iLast++)
+            {
+              const ordinal_type row = rowHost(prefixRowHost(pair) + iLast * leftStrideLast);
+              if (row < 0) continue;
+              keptPair.push_back(pair); keptIJ.push_back(iLast + jLast * FLast); keptRow.push_back(row); keptCol.push_back(col);
+            }
+          }
+        }
+        const int numKept = int(keptPair.size());
+        if (numKept == 0) continue;
+        OrdView1D keptPairV("kept pair", numKept), keptIJV("kept ij", numKept), keptRowV("kept row", numKept), keptColV("kept col", numKept);
+        {
+          auto a = Kokkos::create_mirror_view(keptPairV); auto b = Kokkos::create_mirror_view(keptIJV);
+          auto c = Kokkos::create_mirror_view(keptRowV);  auto d = Kokkos::create_mirror_view(keptColV);
+          for (int k=0; k<numKept; k++) { a(k) = keptPair[k]; b(k) = keptIJ[k]; c(k) = keptRow[k]; d(k) = keptCol[k]; }
+          Kokkos::deep_copy(keptPairV, a); Kokkos::deep_copy(keptIJV, b); Kokkos::deep_copy(keptRowV, c); Kokkos::deep_copy(keptColV, d);
+        }
+        auto source = groupSum;
+        auto P = L.pairOpLast;
+        auto write = [&](auto matrixView, auto rankTag) {
+          constexpr int rank = decltype(rankTag)::value;
+          Kokkos::parallel_for("PAMatrix::assemble(): sparse last stage",
+                               Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numKept, Cw}),
+          KOKKOS_LAMBDA(const ordinal_type &k, const ordinal_type &cell) {
+            const Scalar * const s = &source(size_t(QLast) * (cell + size_t(keptPairV(k)) * Cw));
+            const Scalar * const p = &P(size_t(QLast) * keptIJV(k));
+            Scalar value = 0;
+            for (int q=0; q<QLast; q++) value += s[q] * p[q];
+            if constexpr (rank == 3) matrixView(cell + cellStart, keptRowV(k), keptColV(k)) += value;
+            else                     matrixView(keptRowV(k), keptColV(k)) += value;
+          });
+        };
+        if (outputRank == 3) write(integrals.template getUnderlyingView<3>(), std::integral_constant<int,3>());
+        else                 write(integrals.template getUnderlyingView<2>(), std::integral_constant<int,2>());
+      }
+    }
+  }
+  ExecutionSpace().fence();
+}
+
 template<typename DeviceType,class Scalar>
 void PAMatrix<DeviceType,Scalar>::assemble(Data<Scalar,DeviceType> &integrals) const
 {
@@ -954,6 +1347,11 @@ void PAMatrix<DeviceType,Scalar>::assemble(Data<Scalar,DeviceType> &integrals) c
       "PAMatrix::assemble() output container has incompatible extents");
 
   const bool useUnitColumnPath = pamatrixAssembleUsesUnitColumnPath(*this);
+  if (useUnitColumnPath && pamatrixAssembleDirectContractionEnabled())
+  {
+    pamatrixAssembleDirect(*this, integrals);
+    return;
+  }
   INTREPID2_TEST_FOR_EXCEPTION(hasOrdinalFilter() && !useUnitColumnPath, std::invalid_argument,
       "PAMatrix::assemble() supports ordinal filters only for structures handled by its unit-column path");
 
