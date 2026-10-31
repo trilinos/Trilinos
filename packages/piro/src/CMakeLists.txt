@@ -90,6 +90,14 @@ IF (Piro_ENABLE_ROL)
     Piro_ThyraProductME_Constraint_SimOpt.hpp
     Piro_CustomLBFGSSecant.hpp)
 
+  IF (Piro_ENABLE_Tempus)
+    APPEND_SET(HEADERS
+      Piro_ThyraProductME_ROL_DynamicConstraint.hpp
+      Piro_ThyraProductME_ROL_DynamicObjective.hpp
+      Piro_ThyraProductME_ROL_ObservedObjective.hpp
+      Piro_ThyraProductME_Tempus_FinalObjective.hpp)
+  ENDIF()
+
   # Add rol/adapters/thyra directories if Rol is enabled
   TRIBITS_INCLUDE_DIRECTORIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/function

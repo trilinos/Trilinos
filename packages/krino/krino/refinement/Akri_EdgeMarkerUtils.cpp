@@ -2,6 +2,7 @@
 
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Refinement.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 
 namespace krino {
 namespace EdgeMarkerUtils {

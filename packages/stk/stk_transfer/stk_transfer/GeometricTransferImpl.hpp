@@ -370,6 +370,23 @@ bool need_repeat_search(Mesh& mesh)
     return false;
   }
 }
+
+// Optional receiving-mesh hook for ReducedDependencyGeometricTransfer. A receiving mesh without
+// it keeps only the nearest candidate per receiving point.
+//
+//   void get_candidate_tolerances(const EntityProcVec& receiving_keys, std::vector<double>& tolerances) const;
+//     One tolerance per receiving key: every candidate within (nearest distance + tolerance) of the
+//     point survives. A negative tolerance keeps only the nearest candidate for that point.
+//     Distances come from the sending interpolate's obtain_parametric_coords and must be 0-based:
+//     0 for a point inside the element, otherwise the distance to the element.
+//     If several candidates survive, the masked receiving keys repeat that point, and the receiving
+//     code's interpolate apply() must combine them, however it likes.
+template <typename ReceivingMesh>
+constexpr bool has_get_candidate_tolerances()
+{
+  return requires(ReceivingMesh& mesh, const typename ReceivingMesh::EntityProcVec& keys,
+      std::vector<double>& tolerances) { mesh.get_candidate_tolerances(keys, tolerances); };
+}
 }
 
 

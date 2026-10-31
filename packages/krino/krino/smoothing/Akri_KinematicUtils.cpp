@@ -14,6 +14,11 @@
 #include <Akri_Smoothing_Utils.hpp>
 #include <stk_math/StkVector.hpp>
 #include <MiniTensor.h>
+#include <stk_util/util/ReportHandler.hpp>
+
+#include <algorithm>
+#include <cmath>
+#include <utility>
 
 namespace krino {
 namespace kinematicUtils {
@@ -104,6 +109,32 @@ std::array<stk::math::Vector3d, 4> compute_ideal_tet4_reference(
   return compute_ideal_tet4_reference(h);
 }
 
+template<typename ELEMCOORDS>
+Tensor compute_anisotropic_deformation_gradient_tet4(
+    const Tensor & metricMapping,
+    const ELEMCOORDS & cur)
+{
+  const double c = 0.5 * std::sqrt(2.0);
+
+  Tensor F(minitensor::Filler::ZEROS);
+
+  for (int i = 0; i < 3; ++i)
+  {
+    const double h0 = c * (cur[0][i] - cur[1][i] - cur[2][i] + cur[3][i]);
+    const double h1 = c * (cur[0][i] - cur[1][i] + cur[2][i] - cur[3][i]);
+    const double h2 = c * (cur[0][i] + cur[1][i] - cur[2][i] - cur[3][i]);
+
+    for (int p = 0; p < 3; ++p)
+    {
+      F(p, 0) += metricMapping(p, i) * h0;
+      F(p, 1) += metricMapping(p, i) * h1;
+      F(p, 2) += metricMapping(p, i) * h2;
+    }
+  }
+
+  return F;
+}
+
 // ==========================================================================
 // Element-level energy and force computation
 // Ported from Norma.jl src/model.jl lines 649-676
@@ -187,6 +218,48 @@ Tensor compute_deformation_gradient_tet4(
   }
 
   return F;
+}
+
+std::pair<minitensor::Tensor<double, 3>, double> compute_deformation_gradient_and_jacobian_tet4(
+    const std::array<stk::math::Vector3d, 4> & ref,
+    const std::array<stk::math::Vector3d, 4> & cur)
+{
+  const auto F = compute_deformation_gradient_tet4(ref, cur);
+  return std::make_pair(F, minitensor::det(F));
+}
+
+template<typename ELEMCOORDS>
+Tensor2d compute_anisotropic_deformation_gradient_tri3_2d(
+    const Tensor2d & metricMapping,
+    const ELEMCOORDS & cur)
+{
+  return metricMapping * compute_deformation_gradient_tri3_2d(1., cur);
+}
+
+template<typename ELEMCOORDS>
+std::pair<minitensor::Tensor<double, 2>, double> compute_deformation_gradient_and_jacobian_tri3_2d(
+    const double refSize,
+    const ELEMCOORDS & cur)
+{
+  const auto F = compute_deformation_gradient_tri3_2d(refSize, cur);
+  return std::make_pair(F, minitensor::det(F));
+}
+
+std::pair<minitensor::Tensor<double, 2>, double> compute_deformation_gradient_and_jacobian_tri3_2d(
+    const std::array<stk::math::Vector2d, 3> & ref,
+    const std::array<stk::math::Vector2d, 3> & cur)
+{
+  const auto F = compute_deformation_gradient_tri3_2d(ref, cur);
+  return std::make_pair(F, minitensor::det(F));
+}
+
+template<typename ELEMCOORDS>
+std::pair<minitensor::Tensor<double, 3>, double> compute_deformation_gradient_and_jacobian_tet4(
+    const double refSize,
+    const ELEMCOORDS & cur)
+{
+  const auto F = compute_deformation_gradient_tet4(refSize, cur);
+  return std::make_pair(F, minitensor::det(F));
 }
 
 double tri3_area(const double size)
@@ -336,9 +409,20 @@ template double compute_ideal_tet4_h(const std::array<stk::math::Vector3d, 4> & 
 template double compute_ideal_tet4_h(const CONSTPTRCONSTPTR & coords, SmoothReference mode);
 template Tensor compute_deformation_gradient_tet4(const double refSize, const std::array<stk::math::Vector3d, 4> & cur);
 template Tensor compute_deformation_gradient_tet4(const double refSize, const CONSTPTRCONSTPTR & cur);
+template Tensor compute_anisotropic_deformation_gradient_tet4(const Tensor & metricMapping, const std::array<stk::math::Vector3d, 4> & cur);
+template Tensor compute_anisotropic_deformation_gradient_tet4(const Tensor & metricMapping, const CONSTPTRCONSTPTR & cur);
 template Tensor2d compute_deformation_gradient_tri3_2d(const double refSize, const std::array<stk::math::Vector3d, 3> & cur);
 template Tensor2d compute_deformation_gradient_tri3_2d(const double refSize, const std::array<stk::math::Vector2d, 3> & cur);
 template Tensor2d compute_deformation_gradient_tri3_2d(const double refSize, const CONSTPTRCONSTPTR & cur);
+template Tensor2d compute_anisotropic_deformation_gradient_tri3_2d(const Tensor2d & metricMapping, const std::array<stk::math::Vector3d, 3> & cur);
+template Tensor2d compute_anisotropic_deformation_gradient_tri3_2d(const Tensor2d & metricMapping, const std::array<stk::math::Vector2d, 3> & cur);
+template Tensor2d compute_anisotropic_deformation_gradient_tri3_2d(const Tensor2d & metricMapping, const CONSTPTRCONSTPTR & cur);
+template std::pair<minitensor::Tensor<double, 3>, double> compute_deformation_gradient_and_jacobian_tet4(const double refSize, const std::array<stk::math::Vector3d, 4> & cur);
+template std::pair<minitensor::Tensor<double, 3>, double> compute_deformation_gradient_and_jacobian_tet4(const double refSize, const CONSTPTRCONSTPTR & cur);
+template std::pair<minitensor::Tensor<double, 2>, double> compute_deformation_gradient_and_jacobian_tri3_2d(const double refSize, const std::array<stk::math::Vector3d, 3> & cur);
+template std::pair<minitensor::Tensor<double, 2>, double> compute_deformation_gradient_and_jacobian_tri3_2d(const double refSize, const std::array<stk::math::Vector2d, 3> & cur);
+template std::pair<minitensor::Tensor<double, 2>, double> compute_deformation_gradient_and_jacobian_tri3_2d(const double refSize, const CONSTPTRCONSTPTR & cur);
+
 
 }
 }

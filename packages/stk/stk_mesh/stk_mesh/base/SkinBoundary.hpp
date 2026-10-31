@@ -36,6 +36,7 @@
 #define stk_mesh_SkinBoundary_hpp
 
 #include <ostream>
+#include <stk_mesh/base/Types.hpp>      // for PartVector
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Selector; } }

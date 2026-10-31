@@ -1174,7 +1174,7 @@ createStepperERK_3Stage3rdOrder(
     \verbatim
       u1 = u^n + dt L(u^n)
       u2 = 3 u^n/4 + u1/4 + dt L(u1)/4
-      u^(n+1) = u^n/3 + 2 u2/2 + 2 dt L(u2)/3
+      u^(n+1) = u^n/3 + 2 u2/3 + 2 dt L(u2)/3
     \endverbatim
  *
  *  See StepperExplicitRK for additional details.
@@ -1928,7 +1928,7 @@ class StepperERK_SSPERK54 : virtual public StepperExplicitRK<Scalar> {
     A(0, 0) = A(0, 1) = A(0, 2) = A(0, 3) = A(0, 4) = zero;
 
     A(1, 0) = as<Scalar>(0.391752226571889);
-    A(1, 1) = A(1, 2) = A(1, 3) = A(0, 4) = zero;
+    A(1, 1) = A(1, 2) = A(1, 3) = A(1, 4) = zero;
 
     A(2, 0) = as<Scalar>(0.217669096261169);
     A(2, 1) = as<Scalar>(0.368410593050372);
@@ -1937,7 +1937,7 @@ class StepperERK_SSPERK54 : virtual public StepperExplicitRK<Scalar> {
     A(3, 0) = as<Scalar>(0.082692086657811);
     A(3, 1) = as<Scalar>(0.139958502191896);
     A(3, 2) = as<Scalar>(0.251891774271693);
-    A(3, 3) = A(2, 4) = zero;
+    A(3, 3) = A(3, 4) = zero;
 
     A(4, 0) = as<Scalar>(0.067966283637115);
     A(4, 1) = as<Scalar>(0.115034698504632);
@@ -2439,6 +2439,9 @@ class StepperSDIRK_2Stage2ndOrder : virtual public StepperDIRK<Scalar> {
 
     int order = 1;
     if (std::abs((gamma_ - gammaDefault_) / gamma_) < 1.0e-08) order = 2;
+    if (std::abs((gamma_ -
+                  Teuchos::as<Scalar>((2 * one + ST::squareroot(2 * one)) / (2 * one))) /
+                 gamma_) < 1.0e-08) order = 2;
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
         this->getStepperType(), A, b, c, order, order, order));

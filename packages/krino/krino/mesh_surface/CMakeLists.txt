@@ -12,8 +12,7 @@ TRIBITS_ADD_LIBRARY(
   krino_mesh_surface_lib
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  )
+  DEPLIBS krino_surface_lib krino_mesh_utils_lib)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_mesh_surface_lib)
-    

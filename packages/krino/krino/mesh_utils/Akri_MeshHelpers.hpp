@@ -9,7 +9,6 @@
 #ifndef Akri_MeshHelpers_h
 #define Akri_MeshHelpers_h
 
-#include <Akri_Edge.hpp>
 #include <Akri_FieldRef.hpp>
 #include <stk_math/StkVector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -20,13 +19,14 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-#include <iostream>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace krino {
+
+struct Edge;
 
 typedef std::pair<stk::topology, stk::mesh::Part*>  TopologyPartPair;
 typedef std::vector<TopologyPartPair> TopologyPartVector;
@@ -104,7 +104,6 @@ void fill_side_nodes(const stk::mesh::BulkData & mesh, const stk::topology elemT
 void fill_side_nodes(const stk::mesh::BulkData & mesh, const stk::topology elemTopology, const stk::mesh::Entity * elemNodes, const unsigned sideId, std::vector<stk::mesh::Entity> & sideNodes);
 void fill_side_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity elem, const unsigned sideId, std::vector<stk::mesh::Entity> & sideNodes);
 stk::mesh::PartVector get_all_block_parts(const stk::mesh::MetaData & meta);
-double * get_field_data(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity);
 double & get_scalar_field(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity);
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity);
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, const unsigned vecLen);
@@ -145,6 +144,8 @@ bool are_entities_selected(const stk::mesh::Selector & selector, const stk::mesh
 bool is_entity_selected(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & selector, const stk::mesh::Entity entity);
 void fill_edge_elements(const stk::mesh::BulkData & mesh, const Edge & edge, std::vector<stk::mesh::Entity> & edgeElements);
 void fill_selected_edge_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elemSelector, const Edge & edge, std::vector<stk::mesh::Entity> & edgeElements);
+void fill_selected_edge_neighbors(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elemSelector, const stk::mesh::Entity & elem, std::vector<stk::mesh::Entity> & edgeNbrs);
+bool has_any_selected_edge_neighbor(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elemSelector, const stk::mesh::Entity & elem);
 void unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, std::set<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
 void pack_entities_for_sharing_procs(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
 std::vector<stk::mesh::Entity> unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, stk::CommSparse &commSparse);
@@ -181,8 +182,11 @@ template <typename NODECONTAINER>
 void fill_node_locations(const int dim, const FieldRef coordsField, const NODECONTAINER & nodes, std::vector<stk::math::Vector3d> & nodeLocations)
 {
   nodeLocations.clear();
+  auto coordsData = coordsField.data<double>();
   for (auto node : nodes)
-    nodeLocations.emplace_back(field_data<double>(coordsField, node), dim);
+  {
+    nodeLocations.emplace_back(coordsData.entity_values(node), dim);
+  }
 }
 
 template <typename NODECONTAINER>

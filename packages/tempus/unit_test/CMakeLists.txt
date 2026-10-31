@@ -422,6 +422,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  UnitTest_ScaledIdentityLinearOpWithSolve
+  SOURCES Tempus_UnitTest_ScaledIdentityLinearOpWithSolve.cpp ${TEMPUS_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   UnitTest_Stepper_ErrorNorm
   SOURCES Tempus_UnitTest_Stepper_ErrorNorm.cpp ${TEMPUS_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models

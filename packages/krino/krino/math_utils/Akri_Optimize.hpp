@@ -3,49 +3,56 @@
 
 #include <functional>
 #include <stk_math/StkVector.hpp>
+#include <Akri_OptimizeTypes.hpp>
 
 namespace krino {
 
 template<typename Objective, typename VEC>
 void steepest_descent(const Objective & objFn,
     VEC& x,
-    const double xTol = 1e-6,
-    const double gradTol = 1e-6,
-    const double objectiveScale = 1.0,
-    const unsigned maxIter = 200,
-    const bool doOutput = false);
+    const double xTol = OptimizationDefaults::stepTol,
+    const double gradTol = OptimizationDefaults::gradTol,
+    const double objectiveScale = OptimizationDefaults::objectiveScale,
+    const unsigned maxIter = OptimizationDefaults::maxIter,
+    const bool doOutput = OptimizationDefaults::doOutput);
 
 template<typename Objective, typename VEC>
 void lbfgs(const Objective & objFn,
     VEC& x,
-    const double xTol = 1e-6,
-    const double gradTol = 1e-6,
-    const double objectiveScale = 1.0,
-    const unsigned maxIter = 200,
-    const unsigned maxLevels = 10,
-    const bool doOutput = false);
+    const double xTol = OptimizationDefaults::stepTol,
+    const double gradTol = OptimizationDefaults::gradTol,
+    const double objectiveScale = OptimizationDefaults::objectiveScale,
+    const unsigned maxIter = OptimizationDefaults::maxIter,
+    const unsigned maxLevels = OptimizationDefaults::maxLevelsBFGS,
+    const bool doOutput = OptimizationDefaults::doOutput);
 
-template<typename Objective, typename VEC>
-std::function<void(const Objective &objFn, VEC &x)>
-build_steepest_descent_optimizer_with_parameters(const double xTol = 1e-6,
-    const double gradTol = 1e-6,
-    const double objectiveScale = 1.0,
-    const unsigned maxIter = 200,
-    const bool doOutput = false)
+template<typename OptimizerFunction>
+OptimizerFunction
+build_steepest_descent_optimizer_with_parameters(const double xTol = OptimizationDefaults::stepTol,
+    const double gradTol = OptimizationDefaults::gradTol,
+    const double objectiveScale = OptimizationDefaults::objectiveScale,
+    const unsigned maxIter = OptimizationDefaults::maxIter,
+    const bool doOutput = OptimizationDefaults::doOutput)
 {
+  using Objective = typename OptimizerFunctionTraits<OptimizerFunction>::objective_type;
+  using VEC = typename OptimizerFunctionTraits<OptimizerFunction>::vector_type;
+
   auto fn = [=](const Objective &objFn, VEC &x) { steepest_descent(objFn, x, xTol, gradTol, objectiveScale, maxIter, doOutput); };
   return fn;
 }
 
-template<typename Objective, typename VEC>
-std::function<void(const Objective &objFn, VEC &x)>
-build_lbgfs_optimizer_with_parameters(const double xTol = 1e-6,
-    const double gradTol = 1e-6,
-    const double objectiveScale = 1.0,
-    const unsigned maxIter = 200,
-    const unsigned maxLevels = 10,
-    const bool doOutput = false)
+template<typename OptimizerFunction>
+OptimizerFunction
+build_lbgfs_optimizer_with_parameters(const double xTol = OptimizationDefaults::stepTol,
+    const double gradTol = OptimizationDefaults::gradTol,
+    const double objectiveScale = OptimizationDefaults::objectiveScale,
+    const unsigned maxIter = OptimizationDefaults::maxIter,
+    const unsigned maxLevels = OptimizationDefaults::maxLevelsBFGS,
+    const bool doOutput = OptimizationDefaults::doOutput)
 {
+  using Objective = typename OptimizerFunctionTraits<OptimizerFunction>::objective_type;
+  using VEC = typename OptimizerFunctionTraits<OptimizerFunction>::vector_type;
+
   auto fn = [=](const Objective &objFn, VEC &x) { lbfgs(objFn, x, xTol, gradTol, objectiveScale, maxIter, maxLevels, doOutput); };
   return fn;
 }

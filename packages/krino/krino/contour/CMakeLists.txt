@@ -1,0 +1,18 @@
+SET(HEADERS "")
+SET(SOURCES "")
+
+TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+FILE(GLOB HEADERS *.hpp)
+FILE(GLOB SOURCES *.cpp)
+
+TRIBITS_ADD_LIBRARY(
+  krino_contour_lib
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  DEPLIBS krino_foundation_lib krino_surface_lib krino_math_utils_lib krino_mesh_utils_lib krino_quality_metric_lib krino_refinement_lib krino_geometry_lib krino_diagwriter_lib)
+
+INSTALL(FILES ${HEADERS} DESTINATION
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_contour_lib)

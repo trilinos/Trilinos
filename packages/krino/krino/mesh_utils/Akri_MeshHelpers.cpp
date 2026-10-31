@@ -133,6 +133,43 @@ void fill_selected_edge_elements(const stk::mesh::BulkData & mesh, const stk::me
   edgeElements.resize(numSelected);
 }
 
+void fill_selected_edge_neighbors(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elemSelector, const stk::mesh::Entity & elem, std::vector<stk::mesh::Entity> & edgeNbrs)
+{
+  const stk::topology elemTopology = mesh.bucket(elem).topology();
+  const unsigned numEdges = elemTopology.num_edges();
+  const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
+
+  edgeNbrs.clear();
+  std::vector<stk::mesh::Entity> edgeElements;
+  for ( unsigned iEdge = 0; iEdge < numEdges; iEdge++ )
+  {
+    const unsigned * edgeNodeOrdinals = get_edge_node_ordinals(elemTopology, iEdge);
+    stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{elemNodes[edgeNodeOrdinals[0]], elemNodes[edgeNodeOrdinals[1]]}, stk::topology::ELEMENT_RANK, edgeElements);
+    for (auto edgeElem : edgeElements)
+      if (edgeElem != elem && is_entity_selected(mesh, elemSelector, edgeElem))
+        edgeNbrs.push_back(edgeElem);
+  }
+  stk::util::sort_and_unique(edgeNbrs);
+}
+
+bool has_any_selected_edge_neighbor(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elemSelector, const stk::mesh::Entity & elem)
+{
+  const stk::topology elemTopology = mesh.bucket(elem).topology();
+  const unsigned numEdges = elemTopology.num_edges();
+  const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
+
+  std::vector<stk::mesh::Entity> edgeElements;
+  for ( unsigned iEdge = 0; iEdge < numEdges; iEdge++ )
+  {
+    const unsigned * edgeNodeOrdinals = get_edge_node_ordinals(elemTopology, iEdge);
+    stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{elemNodes[edgeNodeOrdinals[0]], elemNodes[edgeNodeOrdinals[1]]}, stk::topology::ELEMENT_RANK, edgeElements);
+    for (auto nbr : edgeElements)
+      if (is_entity_selected(mesh, elemSelector, nbr))
+        return true;
+  }
+  return false;
+}
+
 void fill_selected_side_attached_elements(const stk::mesh::BulkData &mesh,
   const stk::mesh::Selector & elementSelector,
   const stk::mesh::Entity elem,
@@ -166,41 +203,38 @@ std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::me
   return sideNbrs;
 }
 
-double * get_field_data(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity)
-{
-  STK_ThrowRequireMsg(field.valid(), "Invalid field: " << field.name());
-  double * fieldData = field_data<double>(field, entity);
-  STK_ThrowRequireMsg(nullptr != fieldData, "Field: " << field.name() << " not present on " << debug_entity_1line(mesh, entity));
-  return fieldData;
-}
-
 double & get_scalar_field(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity)
 {
-  return *get_field_data(mesh, field, entity);
+  STK_ThrowRequireMsg(field.valid(), "Invalid field: " << field.name());
+  STK_ThrowRequireMsg(has_field_data(field, entity), "Field: " << field.name() << " not present on " << debug_entity_1line(mesh, entity));
+  // entity_values(entity)() returns a genuine scalar reference (no pointer(), no striding),
+  // so callers can read-modify-write the scalar in place.
+  return field.data<double, stk::mesh::ReadWrite>().entity_values(entity)();
 }
 
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity)
 {
-  return stk::math::Vector3d(get_field_data(mesh, vecField, entity));
+  STK_ThrowRequireMsg(vecField.valid(), "Invalid field: " << vecField.name());
+  STK_ThrowRequireMsg(has_field_data(vecField, entity), "Field: " << vecField.name() << " not present on " << debug_entity_1line(mesh, entity));
+  return stk::math::Vector3d(vecField.data<double>().entity_values(entity));
 }
 
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, const unsigned vecLen)
 {
-  return stk::math::Vector3d(get_field_data(mesh, vecField, entity), vecLen);
+  STK_ThrowRequireMsg(vecField.valid(), "Invalid field: " << vecField.name());
+  STK_ThrowRequireMsg(has_field_data(vecField, entity), "Field: " << vecField.name() << " not present on " << debug_entity_1line(mesh, entity));
+  return stk::math::Vector3d(vecField.data<double>().entity_values(entity), vecLen);
 }
 
 void fill_vector_from_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, stk::math::Vector3d & vec)
 {
-  const double * fieldData = get_field_data(mesh, vecField, entity);
-  for (unsigned i=0; i<3; ++i) vec[i] = fieldData[i];
+  vec = get_vector_field(mesh, vecField, entity);
 }
 
 void fill_vector_from_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, const unsigned vecLen, stk::math::Vector3d & vec)
 {
   STK_ThrowAssert(3 >= vecLen);
-  const double * fieldData = get_field_data(mesh, vecField, entity);
-  for (unsigned i=0; i<vecLen; ++i) vec[i] = fieldData[i];
-  for (unsigned i=vecLen; i<3; ++i) vec[i] = 0;
+  vec = get_vector_field(mesh, vecField, entity, vecLen);
 }
 
 size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::EntityRank entityRank)
@@ -263,17 +297,18 @@ stk::math::Vector3d get_side_normal(const stk::mesh::BulkData& mesh,
 {
   const auto * sideNodes = mesh.begin_nodes(side);
   const stk::topology sideTopology = mesh.bucket(side).topology();
+  auto coordsData = coordsField.data<double>();
   if (sideTopology == stk::topology::TRIANGLE_3 || sideTopology == stk::topology::TRIANGLE_6)
   {
-    const stk::math::Vector3d v0(field_data<double>(coordsField, sideNodes[0]));
-    const stk::math::Vector3d v1(field_data<double>(coordsField, sideNodes[1]));
-    const stk::math::Vector3d v2(field_data<double>(coordsField, sideNodes[2]));
+    const stk::math::Vector3d v0(coordsData.entity_values(sideNodes[0]));
+    const stk::math::Vector3d v1(coordsData.entity_values(sideNodes[1]));
+    const stk::math::Vector3d v2(coordsData.entity_values(sideNodes[2]));
     return Cross(v1-v0,v2-v0).unit_vector();
   }
   else if (sideTopology == stk::topology::LINE_2 || sideTopology == stk::topology::LINE_3)
   {
-    const stk::math::Vector3d v0(field_data<double>(coordsField, sideNodes[0]), 2);
-    const stk::math::Vector3d v1(field_data<double>(coordsField, sideNodes[1]), 2);
+    const stk::math::Vector3d v0(coordsData.entity_values(sideNodes[0]), 2);
+    const stk::math::Vector3d v1(coordsData.entity_values(sideNodes[1]), 2);
     return crossZ(v1-v0).unit_vector();
   }
   STK_ThrowRequireMsg(false, "Unsupported topology " << sideTopology);
@@ -309,11 +344,12 @@ void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::
 {
   StkMeshEntities elementNodes{mesh.begin_nodes(element), mesh.end_nodes(element)};
   resize_container(elementNodeCoords, elementNodes.size());
+  auto coordsData = coordsField.data<double>();
   for (size_t n=0; n<elementNodeCoords.size(); ++n)
   {
-    double * coords = field_data<double>(coordsField, elementNodes[n]);
+    auto coords = coordsData.entity_values(elementNodes[n]);
     for ( int d = 0; d < DIM; ++d )
-      elementNodeCoords[n][d] = coords[d];
+      elementNodeCoords[n][d] = coords(stk::mesh::ComponentIdx(d));
   }
 }
 
@@ -542,7 +578,7 @@ void compute_element_volume_range(const stk::mesh::BulkData & mesh, double & min
       }
       else
       {
-        ThrowRuntimeError("Topology " << elem_topology << " not supported in compute_element_volume_range.");
+        STK_ThrowErrorMsg("Topology " << elem_topology << " not supported in compute_element_volume_range.");
       }
     }
   }
@@ -588,7 +624,7 @@ void compute_element_quality(const stk::mesh::BulkData & mesh, double & minEdgeL
       }
       else
       {
-        ThrowRuntimeError("Topology " << elem_topology << " not supported in compute_element_quality.");
+        STK_ThrowErrorMsg("Topology " << elem_topology << " not supported in compute_element_quality.");
       }
     }
   }
@@ -960,7 +996,8 @@ compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Enti
     const double edge_rms = compute_simplex_RMS_edge_lengths(nodes);
     return vol/(edge_rms*edge_rms*edge_rms);
   }
-  ThrowRuntimeError("Topology " << elem_topology << " not supported in compute_element_volume_to_edge_ratio.");
+  STK_ThrowErrorMsg("Topology " << elem_topology << " not supported in compute_element_volume_to_edge_ratio.");
+  return 0.; // unreachable; STK_ThrowErrorMsg does not return
 }
 
 //--------------------------------------------------------------------------------
@@ -968,21 +1005,20 @@ compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Enti
 template<typename T>
 void debug_write_entity_field_if_present(std::ostream & output, const stk::mesh::BulkData & mesh, const FieldRef field, const stk::mesh::Entity entity)
 {
-  field.field().sync_to_host();
   if (field.entity_rank() == mesh.entity_rank(entity) && field.type_is<T>())
   {
-    const auto * data = field_data<T>(field, entity);
-    if (nullptr != data)
+    if (has_field_data(field, entity))
     {
+      const auto data = field.data<T>().entity_values(entity);
       const unsigned field_length = field.length();
       if (1 == field_length)
       {
-        output << "  Field: " << field.name() << ", state=" << static_cast<int>(field.state()) << ", value=" << *data << "\n";
+        output << "  Field: " << field.name() << ", state=" << static_cast<int>(field.state()) << ", value=" << data(stk::mesh::ScalarIdx(0)) << "\n";
       }
       else
       {
         output << "  Field: " << field.name() << ", state=" << static_cast<int>(field.state()) << ", values[] = ";
-        for (unsigned i = 0; i < field_length; ++i) output << data[i] << " ";
+        for (unsigned i = 0; i < field_length; ++i) output << data(stk::mesh::ScalarIdx(i)) << " ";
         output << "\n";
       }
     }
@@ -1153,7 +1189,7 @@ get_side_permutation(stk::topology topology, stk::mesh::Permutation node_permuta
         case 0:  return {0, 1, 2};
         case 1:  return {2, 0, 1};
         case 2:  return {1, 2, 0};
-        default: ThrowRuntimeError("find_side_permutation error, invalid triangle permutation.");
+        default: STK_ThrowErrorMsg("find_side_permutation error, invalid triangle permutation.");
       }
       break;
     case stk::topology::TETRAHEDRON_4:
@@ -1172,11 +1208,12 @@ get_side_permutation(stk::topology topology, stk::mesh::Permutation node_permuta
         case  9:  return {0, 2, 3, 1};
         case 10:  return {2, 3, 0, 1};
         case 11:  return {3, 0, 2, 1};
-        default: ThrowRuntimeError("find_side_permutation error, invalid tetrahedron permutation.");
+        default: STK_ThrowErrorMsg("find_side_permutation error, invalid tetrahedron permutation.");
       }
       break;
-    default: ThrowRuntimeError("find_side_permutation error, unsupported topology.");
+    default: STK_ThrowErrorMsg("find_side_permutation error, unsupported topology.");
   }
+  return {}; // unreachable; STK_ThrowErrorMsg does not return
 }
 
 //--------------------------------------------------------------------------------
@@ -1876,10 +1913,14 @@ double compute_child_position(const stk::mesh::BulkData & mesh, stk::mesh::Entit
 {
   // if this function is not sufficiently precise or too expensive, then this position should be stored elsewhere
   const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
+  auto coordsData = coordsField.data<double>();
+  const stk::math::Vector3d childCoords(coordsData.entity_values(child));
+  const stk::math::Vector3d parent0Coords(coordsData.entity_values(parent0));
+  const stk::math::Vector3d parent1Coords(coordsData.entity_values(parent1));
   return compute_child_position(mesh.mesh_meta_data().spatial_dimension(),
-    field_data<double>(coordsField, child),
-    field_data<double>(coordsField, parent0),
-    field_data<double>(coordsField, parent1));
+    childCoords,
+    parent0Coords,
+    parent1Coords);
 }
 
 //--------------------------------------------------------------------------------
@@ -1890,11 +1931,11 @@ void store_child_node_parent_ids(const stk::mesh::BulkData & mesh,
     const stk::mesh::Entity childNode,
     const std::vector<stk::mesh::Entity> & parentNodes)
 {
-  auto * parentIdsData = field_data<PARENTIDTYPE>(parentIdsField, childNode);
-  STK_ThrowAssertMsg(parentIdsData, "No parent ids are stored for node " << mesh.identifier(childNode)
+  STK_ThrowAssertMsg(has_field_data(parentIdsField, childNode), "No parent ids are stored for node " << mesh.identifier(childNode)
       << ", suggesting that it is a mesh node, not a child node.");
+  auto parentIdsData = parentIdsField.data<PARENTIDTYPE, stk::mesh::ReadWrite>().entity_values(childNode);
   for (size_t i=0; i<4; ++i)
-    parentIdsData[i] = (i<parentNodes.size()) ? mesh.identifier(parentNodes[i]) : 0;
+    parentIdsData(stk::mesh::ScalarIdx(i)) = (i<parentNodes.size()) ? mesh.identifier(parentNodes[i]) : 0;
 }
 
 void store_child_node_parent_weights([[maybe_unused]] const stk::mesh::BulkData & mesh,
@@ -1902,11 +1943,11 @@ void store_child_node_parent_weights([[maybe_unused]] const stk::mesh::BulkData 
     const stk::mesh::Entity childNode,
     const std::vector<double> & parentWts)
 {
-  auto * parentWtsData = field_data<double>(parentWtsField, childNode);
-  STK_ThrowAssertMsg(parentWtsData, "No parent weights are stored for node " << mesh.identifier(childNode)
+  STK_ThrowAssertMsg(has_field_data(parentWtsField, childNode), "No parent weights are stored for node " << mesh.identifier(childNode)
       << ", suggesting that it is a mesh node, not a child node.");
+  auto parentWtsData = parentWtsField.data<double, stk::mesh::ReadWrite>().entity_values(childNode);
   for (size_t i=0; i<4; ++i)
-    parentWtsData[i] = (i<parentWts.size()) ? parentWts[i] : 0.0;
+    parentWtsData(stk::mesh::ScalarIdx(i)) = (i<parentWts.size()) ? parentWts[i] : 0.0;
 }
 
 void store_child_node_parent_ids_and_weights(const stk::mesh::BulkData & mesh,
@@ -1921,7 +1962,7 @@ void store_child_node_parent_ids_and_weights(const stk::mesh::BulkData & mesh,
   else if (parentIdsField.type_is<uint64_t>())
     store_child_node_parent_ids<uint64_t>(mesh, parentIdsField, childNode, parentNodes);
   else
-    ThrowRuntimeError("Unsupported field type for parentIdsField");
+    STK_ThrowErrorMsg("Unsupported field type for parentIdsField");
   store_child_node_parent_weights(mesh, parentWtsField, childNode, parentWts);
 }
 
@@ -1935,12 +1976,12 @@ std::vector<stk::mesh::EntityId> get_child_node_parent_ids([[maybe_unused]] cons
   std::vector<stk::mesh::EntityId> parentIds;
   parentIds.reserve(4);
 
-  const auto * parentIdsData = field_data<PARENTIDTYPE>(parentIdsField, childNode);
-  STK_ThrowAssertMsg(parentIdsData, "No parent ids are stored for node " << mesh.identifier(childNode)
+  STK_ThrowAssertMsg(has_field_data(parentIdsField, childNode), "No parent ids are stored for node " << mesh.identifier(childNode)
       << ", suggesting that it is a mesh node, not a child node.");
+  const auto parentIdsData = parentIdsField.data<PARENTIDTYPE>().entity_values(childNode);
   for (int i=0; i<4; ++i)
-    if (0 != parentIdsData[i])
-      parentIds.push_back(parentIdsData[i]);
+    if (0 != parentIdsData(stk::mesh::ScalarIdx(i)))
+      parentIds.push_back(parentIdsData(stk::mesh::ScalarIdx(i)));
   return parentIds;
 }
 
@@ -1952,7 +1993,8 @@ std::vector<stk::mesh::EntityId> get_child_node_parent_ids(const stk::mesh::Bulk
     return get_child_node_parent_ids<unsigned>(mesh, parentIdsField, childNode);
   else if (parentIdsField.type_is<uint64_t>())
     return get_child_node_parent_ids<uint64_t>(mesh, parentIdsField, childNode);
-  ThrowRuntimeError("Unsupported field type for parentIdsField");
+  STK_ThrowErrorMsg("Unsupported field type for parentIdsField");
+  return {}; // unreachable; STK_ThrowErrorMsg does not return
 }
 
 std::vector<std::pair<stk::mesh::Entity, double>> get_child_node_parents_and_weights(const stk::mesh::BulkData & mesh,
@@ -1961,9 +2003,9 @@ std::vector<std::pair<stk::mesh::Entity, double>> get_child_node_parents_and_wei
     const stk::mesh::Entity childNode)
 {
   const std::vector<stk::mesh::EntityId> parentIds = get_child_node_parent_ids(mesh, parentIdsField, childNode);
-  const auto * parentWtsData = field_data<double>(parentWtsField, childNode);
-  STK_ThrowAssertMsg(parentWtsData, "No parent weights are stored for node " << mesh.identifier(childNode)
+  STK_ThrowAssertMsg(has_field_data(parentWtsField, childNode), "No parent weights are stored for node " << mesh.identifier(childNode)
       << ", suggesting that it is a mesh node, not a child node.");
+  const auto parentWtsData = parentWtsField.data<double>().entity_values(childNode);
 
   std::vector<std::pair<stk::mesh::Entity, double>> parentsAndWts;
   parentsAndWts.reserve(parentIds.size());
@@ -1972,7 +2014,7 @@ std::vector<std::pair<stk::mesh::Entity, double>> get_child_node_parents_and_wei
     const stk::mesh::Entity parent = mesh.get_entity(stk::topology::NODE_RANK, parentIds[i]);
     STK_ThrowAssert(mesh.is_valid(parent));
 
-    parentsAndWts.emplace_back(parent, parentWtsData[i]);
+    parentsAndWts.emplace_back(parent, parentWtsData(stk::mesh::ScalarIdx(i)));
   }
 
   return parentsAndWts;
@@ -1984,14 +2026,14 @@ std::vector<std::pair<stk::mesh::EntityId, double>> get_child_node_parent_ids_an
     const stk::mesh::Entity childNode)
 {
   const std::vector<stk::mesh::EntityId> parentIds = get_child_node_parent_ids(mesh, parentIdsField, childNode);
-  const auto * parentWtsData = field_data<double>(parentWtsField, childNode);
-  STK_ThrowAssertMsg(parentWtsData, "No parent weights are stored for node " << mesh.identifier(childNode)
+  STK_ThrowAssertMsg(has_field_data(parentWtsField, childNode), "No parent weights are stored for node " << mesh.identifier(childNode)
       << ", suggesting that it is a mesh node, not a child node.");
+  const auto parentWtsData = parentWtsField.data<double>().entity_values(childNode);
 
   std::vector<std::pair<stk::mesh::EntityId, double>> parentIdsAndWts;
   parentIdsAndWts.reserve(parentIds.size());
   for (size_t i=0; i<parentIds.size(); ++i)
-    parentIdsAndWts.emplace_back(parentIds[i], parentWtsData[i]);
+    parentIdsAndWts.emplace_back(parentIds[i], parentWtsData(stk::mesh::ScalarIdx(i)));
 
   return parentIdsAndWts;
 }
@@ -2762,15 +2804,14 @@ check_face_and_edge_ownership(const stk::mesh::BulkData & mesh)
 bool
 set_region_id_on_unset_entity_and_neighbors(stk::mesh::BulkData & mesh, stk::mesh::Entity & entity, stk::mesh::EntityRank entity_rank, stk::mesh::FieldBase & region_id_field, const unsigned region_id)
 {
-  unsigned * region_id_data = stk::mesh::field_data(reinterpret_cast<stk::mesh::Field<unsigned>&>(region_id_field), entity);
-  STK_ThrowAssert(NULL != region_id_data);
-  if (*region_id_data != 0)
+  auto region_id_data = region_id_field.data<unsigned, stk::mesh::ReadWrite>().entity_values(entity);
+  if (region_id_data() != 0)
   {
-    STK_ThrowAssert(*region_id_data == region_id);
+    STK_ThrowAssert(region_id_data() == region_id);
     return false;
   }
 
-  *region_id_data = region_id;
+  region_id_data() = region_id;
 
   // now visit neighbors
   const stk::mesh::Entity* begin_nodes = mesh.begin_nodes(entity);
@@ -2807,13 +2848,13 @@ identify_isolated_regions(stk::mesh::Part & part, stk::mesh::FieldBase & region_
 
   // initialize region id
   const stk::mesh::BucketVector & buckets = mesh.get_buckets(entity_rank, selector);
+  auto region_id_data = region_id_field.data<unsigned, stk::mesh::ReadWrite>();
   for (stk::mesh::BucketVector::const_iterator ib = buckets.begin(); ib != buckets.end(); ++ib )
   {
     const stk::mesh::Bucket & b = **ib;
-    const size_t length = b.size();
-    unsigned * region_id = stk::mesh::field_data(reinterpret_cast<stk::mesh::Field<unsigned>&>(region_id_field), b);
-    STK_ThrowAssert(NULL != region_id);
-    std::fill(region_id, region_id+length, 0);
+    auto region_id = region_id_data.bucket_values(b);
+    for (stk::mesh::EntityIdx i : b.entities())
+      region_id(i) = 0;
   }
 
   unsigned local_region_counter = 0;
@@ -3028,7 +3069,8 @@ determine_ordinal_and_permutation(const stk::mesh::BulkData & mesh, const stk::m
       }
     }
   }
-  ThrowRuntimeError("Could not find connection between " << mesh.entity_key(entity) << " and " << mesh.entity_key(relative) << "\n" << debug_entity(mesh, entity) << debug_entity(mesh, relative));
+  STK_ThrowErrorMsg("Could not find connection between " << mesh.entity_key(entity) << " and " << mesh.entity_key(relative) << "\n" << debug_entity(mesh, entity) << debug_entity(mesh, relative));
+  return {}; // unreachable; STK_ThrowErrorMsg does not return
 }
 
 stk::mesh::Entity find_any_element_using_edge(const stk::mesh::BulkData & mesh, const std::array<stk::mesh::Entity,2> & edgeNodes)

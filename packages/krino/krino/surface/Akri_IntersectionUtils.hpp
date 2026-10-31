@@ -8,9 +8,13 @@
 #ifndef KRINO_KRINO_SURFACE_AKRI_INTERSECTIONUTILS_HPP_
 #define KRINO_KRINO_SURFACE_AKRI_INTERSECTIONUTILS_HPP_
 #include <array>
-#include <Akri_BoundingBox.hpp>
+#include <vector>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
+
+template<class REAL, unsigned DIM> class BoundingBox_T;
+typedef BoundingBox_T<float,3> BoundingBox;
 
 bool does_bounding_box_intersect_tetrahedron(const BoundingBox & bbox, const std::array<stk::math::Vector3d,4> & tetNodes);
 

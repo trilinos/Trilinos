@@ -62,8 +62,8 @@ BoundingBox_T<REAL,DIM>::global_reduce()
   const VecType local_min = min;
   const VecType local_max = max;
 
-  stk::all_reduce_min(stk::EnvData::parallel_comm(), local_min.data(), min.data(), 3);
-  stk::all_reduce_max(stk::EnvData::parallel_comm(), local_max.data(), max.data(), 3);
+  stk::all_reduce_min(stk::EnvData::parallel_comm(), local_min.data(), min.data(), DIM);
+  stk::all_reduce_max(stk::EnvData::parallel_comm(), local_max.data(), max.data(), DIM);
 }
 
 // Explicit template instantiation

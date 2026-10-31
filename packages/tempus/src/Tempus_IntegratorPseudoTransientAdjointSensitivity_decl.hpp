@@ -269,6 +269,11 @@ class IntegratorPseudoTransientAdjointSensitivity
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model,
       const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
 
+  // Parameters of the adjoint integrator: a copy of the parameters without
+  // the objects of the forward problem stored by its nonlinear solver
+  static Teuchos::RCP<Teuchos::ParameterList> adjointParameters(
+      const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
+
   void buildSolutionHistory();
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;

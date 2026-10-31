@@ -18,12 +18,19 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <Ioss_SubSystem.h>
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <iterator>
 #include <cstring>
 #include <cmath>
 
 namespace krino{
+
+Parallel_Facet_File_Reader::Parallel_Facet_File_Reader(const std::string & in_filename) : my_filename(in_filename)
+{
+  STK_ThrowRequireMsg(stk::EnvData::parallel_size() > 0, "MPI environment not initialized.");
+}
 
 void Parallel_Facet_File_Reader::read(const std::string & read_description, const std::function<void(void)> & read_function)
 {
@@ -44,7 +51,7 @@ void Parallel_Facet_File_Reader::read(const std::string & read_description, cons
   const bool ok_globally = stk::is_true_on_all_procs(stk::EnvData::parallel_comm(), ok_locally);
   if (!ok_globally)
   {
-    ThrowRuntimeError("Error " << read_description << " for file " << my_filename);
+    STK_ThrowErrorMsg("Error " << read_description << " for file " << my_filename);
   }
 }
 
@@ -66,7 +73,7 @@ void Parallel_Facet_File_Reader::get_batch_size(const int local_num_facets, int 
     krinolog << "Reading " << num_facets << " facets, using " << num_batches << " batches of " << batch_size << "." << stk::diag::dendl;
 }
 
-Faceted_Surface_From_File::Faceted_Surface_From_File(const std::string & /*surface_name*/, const stk::diag::Timer &parent_timer)
+Faceted_Surface_From_File::Faceted_Surface_From_File(const stk::diag::Timer &parent_timer)
 : Faceted_Surface<Facet3d>(),
   my_timer("Facet File Reader", parent_timer),
   my_built_local_facets(false)
@@ -99,12 +106,11 @@ void Parallel_Facet_File_Reader::close_file()
   read("closing file", [this](){my_input.close();});
 }
 
-FACSurface::FACSurface(const std::string & surface_name,
-    const stk::diag::Timer &parent_timer,
+FACSurface::FACSurface(const stk::diag::Timer &parent_timer,
     const std::string & filename,
     const int sign,
     const stk::math::Vector3d & scale)
- : Faceted_Surface_From_File(surface_name, parent_timer),
+ : Faceted_Surface_From_File(parent_timer),
    my_reader(filename),
    my_dist_sign(sign),
    my_scale(scale)
@@ -203,12 +209,11 @@ void FACSurface::read_facets(const int batch_size, const int num_facets, const s
   }
 }
 
-PLYSurface::PLYSurface(const std::string & surface_name,
-    const stk::diag::Timer &parent_timer,
+PLYSurface::PLYSurface(const stk::diag::Timer &parent_timer,
     const std::string & filename,
     const int sign,
     const stk::math::Vector3d & scale)
- : Faceted_Surface_From_File(surface_name, parent_timer),
+ : Faceted_Surface_From_File(parent_timer),
    my_reader(filename),
    my_dist_sign(sign),
    my_scale(scale)
@@ -345,12 +350,11 @@ void PLYSurface::read_facets(const int batch_size, const std::vector<stk::math::
   }
 }
 
-STLSurface::STLSurface(const std::string & surface_name,
-    const stk::diag::Timer &parent_timer,
+STLSurface::STLSurface(const stk::diag::Timer &parent_timer,
     const std::string & filename,
     const int sign,
     const stk::math::Vector3d & scale)
- : Faceted_Surface_From_File(surface_name, parent_timer),
+ : Faceted_Surface_From_File(parent_timer),
    my_is_ascii(true),
    my_reader(filename),
    my_dist_sign(sign),
@@ -700,12 +704,20 @@ BoundingBox STLSurface::get_binary_facet_bounding_box(const unsigned numFacets)
   return bbox;
 }
 
-EXOSurface::EXOSurface(const std::string & surface_name,
-    const stk::diag::Timer &parent_timer,
+static void
+check_exodus_surface_counts(const std::string & filename, const int numDim, const int numNodes)
+{
+  STK_ThrowRequireMsg(3 == numDim,
+      "Exodus surface " << filename << " must be 3D, but has dimension " << numDim << ".");
+  STK_ThrowRequireMsg(numNodes >= 0,
+      "Exodus surface " << filename << " has an invalid node count " << numNodes << ".");
+}
+
+EXOSurface::EXOSurface(const stk::diag::Timer &parent_timer,
     const std::string & filename,
     const int sign,
     const stk::math::Vector3d & scale)
- : Faceted_Surface_From_File(surface_name, parent_timer),
+ : Faceted_Surface_From_File(parent_timer),
    my_filename(filename),
    my_dist_sign(sign),
    my_scale(scale)
@@ -724,7 +736,7 @@ EXOSurface::get_bounding_box()
     /* open file */
     Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", my_filename.c_str(), Ioss::READ_MODEL, MPI_COMM_SELF);
     if ( !db ) {
-      ThrowRuntimeError("error reading file " << my_filename);
+      STK_ThrowErrorMsg("error reading file " << my_filename);
     }
     io = std::make_unique<Ioss::Region>(db, "EXOSurface IC Region");
 
@@ -732,10 +744,10 @@ EXOSurface::get_bounding_box()
     int num_dim   = io->get_property("spatial_dimension").get_int();
     int num_nodes = io->get_property("node_count").get_int();
 
-    STK_ThrowAssert( 3 == num_dim );
+    check_exodus_surface_counts(my_filename, num_dim, num_nodes);
 
     /* generate coordinates */
-    xyz.resize(num_nodes*num_dim);
+    xyz.resize(size_t(num_nodes) * num_dim);
 
     Ioss::NodeBlock *nb = io->get_node_blocks()[0];
     nb->get_field_data("mesh_model_coordinates", xyz);
@@ -764,7 +776,7 @@ EXOSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
     /* open file */
     Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", my_filename.c_str(), Ioss::READ_MODEL, MPI_COMM_SELF);
     if ( !db ) {
-      ThrowRuntimeError("error reading file " << my_filename);
+      STK_ThrowErrorMsg("error reading file " << my_filename);
     }
     io = std::make_unique<Ioss::Region>(db, "EXOSurface IC Region");
 
@@ -782,10 +794,10 @@ EXOSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
         << ", num elems = " << num_elem
         << ", num elem blks = " << num_elem_blk << std::endl;
 
-    STK_ThrowAssert( 3 == num_dim );
+    check_exodus_surface_counts(my_filename, num_dim, num_nodes);
 
     /* generate coordinates */
-    xyz.resize(num_nodes*num_dim);
+    xyz.resize(size_t(num_nodes) * num_dim);
     nmap.resize(num_nodes);
 
     Ioss::NodeBlock *nb = io->get_node_blocks()[0];
@@ -814,9 +826,15 @@ EXOSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
         << " with name " << eb_name << "..." << std::endl;
 
       int nodes_per_elem_in_blk = eb->get_property("topology_node_count").get_int();
-      STK_ThrowAssert( nodes_per_elem_in_blk == nodes_per_elem );
+      STK_ThrowRequireMsg(nodes_per_elem_in_blk == nodes_per_elem,
+          "Exodus surface " << my_filename << " block " << eb_name << " has "
+                            << nodes_per_elem_in_blk << " nodes per element; expected "
+                            << nodes_per_elem << ".");
+      STK_ThrowRequireMsg(num_elem_in_blk >= 0,
+          "Exodus surface " << my_filename << " block " << eb_name
+                            << " has an invalid element count " << num_elem_in_blk << ".");
 
-      conn.resize(num_elem_in_blk*nodes_per_elem_in_blk);
+      conn.resize(size_t(num_elem_in_blk) * nodes_per_elem_in_blk);
 
       krinolog
         << "  num elem in blk = " << num_elem_in_blk
@@ -945,7 +963,7 @@ void MeshSurface<FACET>::add_side_facet(const stk::mesh::BulkData & mesh, const 
   }
   else
   {
-    ThrowRuntimeError("Elements with side topology " << sideTopology.name() << " not supported for mesh surface initialization.");
+    STK_ThrowErrorMsg("Elements with side topology " << sideTopology.name() << " not supported for mesh surface initialization.");
   }
 }
 
@@ -1009,14 +1027,15 @@ void MeshSurface<FACET>::add_facet2d(const stk::mesh::BulkData& mesh, const stk:
   
   const stk::mesh::Entity* side_nodes = mesh.begin_nodes(side);
 
-  const double * pt0 = stk::mesh::field_data(my_coord_ref, side_nodes[p0]);
-  const double * pt1 = stk::mesh::field_data(my_coord_ref, side_nodes[p1]);
-  
-  pt[0][0] = pt0[0];
-  pt[0][1] = pt0[1];
+  auto coordsData = my_coord_ref.data();
+  const auto pt0 = coordsData.entity_values(side_nodes[p0]);
+  const auto pt1 = coordsData.entity_values(side_nodes[p1]);
+
+  pt[0][0] = pt0(0_comp);
+  pt[0][1] = pt0(1_comp);
   pt[0][2] = 0.0;
-  pt[1][0] = pt1[0];
-  pt[1][1] = pt1[1];
+  pt[1][0] = pt1(0_comp);
+  pt[1][1] = pt1(1_comp);
   pt[1][2] = 0.0;
   
   add_facet2d(pt[0], pt[1]);
@@ -1038,10 +1057,14 @@ void MeshSurface<FACET>::add_facet3d(const stk::mesh::BulkData& mesh, const stk:
   
   const stk::mesh::Entity* side_nodes = mesh.begin_nodes(side);
 
-  pt[0] = stk::math::Vector3d(stk::mesh::field_data(my_coord_ref, side_nodes[p0]));
-  pt[1] = stk::math::Vector3d(stk::mesh::field_data(my_coord_ref, side_nodes[p1]));
-  pt[2] = stk::math::Vector3d(stk::mesh::field_data(my_coord_ref, side_nodes[p2]));
-  
+  auto coordsData = my_coord_ref.data();
+  const auto c0 = coordsData.entity_values(side_nodes[p0]);
+  const auto c1 = coordsData.entity_values(side_nodes[p1]);
+  const auto c2 = coordsData.entity_values(side_nodes[p2]);
+  pt[0] = stk::math::Vector3d(c0(0_comp), c0(1_comp), c0(2_comp));
+  pt[1] = stk::math::Vector3d(c1(0_comp), c1(1_comp), c1(2_comp));
+  pt[2] = stk::math::Vector3d(c2(0_comp), c2(1_comp), c2(2_comp));
+
   add_facet3d(pt[0], pt[1], pt[2]);
 }
 
@@ -1061,10 +1084,15 @@ void MeshSurface<FACET>::add_quad3d(const stk::mesh::BulkData& mesh, const stk::
 
   const stk::mesh::Entity* side_nodes = mesh.begin_nodes(side);
 
-  pt[0] = stk::math::Vector3d(stk::mesh::field_data(my_coord_ref, side_nodes[p0]));
-  pt[1] = stk::math::Vector3d(stk::mesh::field_data(my_coord_ref, side_nodes[p1]));
-  pt[2] = stk::math::Vector3d(stk::mesh::field_data(my_coord_ref, side_nodes[p2]));
-  pt[3] = stk::math::Vector3d(stk::mesh::field_data(my_coord_ref, side_nodes[p3]));
+  auto coordsData = my_coord_ref.data();
+  const auto c0 = coordsData.entity_values(side_nodes[p0]);
+  const auto c1 = coordsData.entity_values(side_nodes[p1]);
+  const auto c2 = coordsData.entity_values(side_nodes[p2]);
+  const auto c3 = coordsData.entity_values(side_nodes[p3]);
+  pt[0] = stk::math::Vector3d(c0(0_comp), c0(1_comp), c0(2_comp));
+  pt[1] = stk::math::Vector3d(c1(0_comp), c1(1_comp), c1(2_comp));
+  pt[2] = stk::math::Vector3d(c2(0_comp), c2(1_comp), c2(2_comp));
+  pt[3] = stk::math::Vector3d(c3(0_comp), c3(1_comp), c3(2_comp));
 
   // scale is the RMS of the diagonal lengths, sqr_scale is scale*scale, or the average of the lengths squared
   const double sqr_scale = 0.5*((pt[0]-pt[2]).length_squared()+(pt[1]-pt[3]).length_squared());

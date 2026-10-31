@@ -16,6 +16,7 @@
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperImplicit_decl.hpp"
 #include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
 #include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
 
@@ -81,8 +82,15 @@ void StepperStaggeredForwardSensitivity<Scalar>::setModel(
   else
     stateStepper_->setModel(appModel);
 
-  if (sensitivityStepper_ == Teuchos::null)
-    sensitivityStepper_ = sf->createStepper(stepperPL_, fsa_model_);
+  if (sensitivityStepper_ == Teuchos::null) {
+    // The sensitivity stepper uses a copy of the parameters, without the
+    // objects of the forward problem that the nonlinear solver of the state
+    // stepper stores in them (e.g., for NOX row sum scaling), which do not
+    // apply to the sensitivity problem (see removeStepperSolverObjects).
+    auto sensStepperPL = Teuchos::rcp(new Teuchos::ParameterList(*stepperPL_));
+    removeStepperSolverObjects(*sensStepperPL);
+    sensitivityStepper_ = sf->createStepper(sensStepperPL, fsa_model_);
+  }
   else
     sensitivityStepper_->setModel(fsa_model_);
 

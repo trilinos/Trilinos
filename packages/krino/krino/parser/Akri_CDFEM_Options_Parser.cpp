@@ -71,7 +71,7 @@ parse_small_cluster_cleanup(const Parser::Node & cdfemNode)
         {
           stk::RuntimeDoomedAdHoc() << "Blank or missing to phase name (convert_small_clusters_to_phase).\n";
         }
-        unsigned smallClusterSize;
+        unsigned smallClusterSize = 0;
         if (!clusterNode.get_if_present("element_count_for_small_clusters", smallClusterSize))
         {
           stk::RuntimeDoomedAdHoc() << "Blank or missing cluster size (element_count_for_small_clusters).\n";

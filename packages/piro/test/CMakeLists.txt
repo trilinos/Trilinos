@@ -103,6 +103,79 @@ IF (Piro_ENABLE_NOX)
         PASS_REGULAR_EXPRESSION "TEST PASSED"
         ADDED_TESTS_NAMES_OUT AnalysisDriverTranstientTempus_MSD_NAME 
       )
+
+      # Problems whose optimum is determined by the state part of the response (small
+      # parameter penalty, inactive bounds), so that they check the transient state
+      # derivatives, the time discretization and the final time used by the optimizer.
+      TRIBITS_ADD_TEST(
+        AnalysisDriverTranstientROL_MSD
+        NAME AnalysisDriverTranstientROL_MSD_StateDriven
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_ReducedSpace_Transient_MSD_StateDriven.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+      )
+      TRIBITS_ADD_TEST(
+        AnalysisDriverTranstient_IR_ROL_MSD
+        NAME AnalysisDriverTranstient_IR_ROL_MSD_StateDriven
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_ReducedSpace_Transient_Integrated_Response_MSD_StateDriven.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+      )
+      TRIBITS_ADD_TEST(
+        AnalysisDriverTranstientTempus_MSD
+        NAME AnalysisDriverTranstientTempus_MSD_StateDriven
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_Tempus_Transient_MSD_StateDriven.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+      )
+      # Same problem as AnalysisDriverTranstientROL_MSD_StateDriven without adjoint model evaluator:
+      # the adjoint Jacobians are the transposes of the Jacobians.
+      TRIBITS_ADD_TEST(
+        AnalysisDriverTranstientROL_MSD
+        NAME AnalysisDriverTranstientROL_MSD_StateDriven_ImplicitAdjoint
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_ReducedSpace_Transient_MSD_StateDriven_ImplicitAdjoint.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+      )
+      # Two parameter vectors, ordered differently than in the model (indices 1 and 0)
+      TRIBITS_ADD_TEST(
+        AnalysisDriverTranstientROL_MSD
+        NAME AnalysisDriverTranstientROL_2_parameters
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_ReducedSpace_Transient_2_parameters.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+      )
+      TRIBITS_ADD_TEST(
+        AnalysisDriverTranstientTempus_MSD
+        NAME AnalysisDriverTranstientTempus_2_parameters
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_Tempus_Transient_2_parameters.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+      )
     #ENDIF()
     #TRIBITS_ADD_EXECUTABLE_AND_TEST(
     #  AnalysisDriverTempus
@@ -189,6 +262,21 @@ IF (Piro_ENABLE_NOX)
   ENDIF()
 
 ENDIF(Piro_ENABLE_NOX)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ThyraProductME_Constraint_SimOpt_UnitTests
+  EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+  EXCLUDE_IF_NOT_TRUE Stratimikos_ENABLE_Belos
+  SOURCES
+  Piro_ThyraProductME_Constraint_SimOpt_UnitTests.cpp
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  MockModelEval_A_Tpetra.cpp
+  MockModelEval_A_Tpetra.hpp
+  MatrixBased_LOWS.cpp
+  MatrixBased_LOWS.hpp
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
 
 IF (Piro_ENABLE_Tempus)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -312,6 +400,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_HDSA_continuation.xml
         input_Analysis_HDSA_OED.xml
         input_Analysis_ROL_Tempus_Transient_MSD.xml
+        input_Analysis_ROL_Tempus_Transient_MSD_StateDriven.xml
+        input_Analysis_ROL_Tempus_Transient_2_parameters.xml
         input_Analysis_ROL_ReducedSpace_LineSearch.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_AdjointSensitivities_CheckGradients.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_HessianBasedDotProduct.xml
@@ -319,11 +409,16 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_ROL_ReducedSpace_Transient_2_parameters.xml
         input_Analysis_ROL_ReducedSpace_Transient_MSD.xml
         input_Analysis_ROL_ReducedSpace_Transient_Integrated_Response_MSD.xml
+        input_Analysis_ROL_ReducedSpace_Transient_Integrated_Response_MSD_StateDriven.xml
+        input_Analysis_ROL_ReducedSpace_Transient_MSD_StateDriven.xml
+        input_Analysis_ROL_ReducedSpace_Transient_MSD_StateDriven_ImplicitAdjoint.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct_2_parameters.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_ExplicitAdjointME_NOXSolver.xml
         input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml
+        input_Analysis_ROL_FullSpace_AugmentedLagrangian.xml
+        input_Analysis_ROL_ReducedSpace_LineSearch_BoundConstrained_HessianBasedDotProduct_Invalid.xml
         input_Tempus_BackwardEuler_SinCos.xml 
         input_tempus_be_nox_solver.yaml
         input_Solve_TR_Thyra.xml

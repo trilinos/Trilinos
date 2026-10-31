@@ -204,7 +204,8 @@ TEST(TransferMainHandler, invalidExtrapolateOption)
 
   testing::internal::CaptureStderr();
   stk::set_outputP0(&stk::outputNull(), comm);
-  EXPECT_ANY_THROW(stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv()));
+  stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv());
+  EXPECT_EQ(stk::transfer_util::TransferMainStatus::PARSE_ERROR, handlerAll.exit_code());
   testing::internal::GetCapturedStderr();
 
   unlink(sendMesh.c_str());
@@ -226,7 +227,8 @@ TEST(TransferMainHandler, invalidTransferType)
 
   testing::internal::CaptureStderr();
   stk::set_outputP0(&stk::outputNull(), comm);
-  EXPECT_ANY_THROW(stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv()));
+  stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv());
+  EXPECT_EQ(stk::transfer_util::TransferMainStatus::PARSE_ERROR, handlerAll.exit_code());
   testing::internal::GetCapturedStderr();
 
   unlink(sendMesh.c_str());
@@ -248,7 +250,8 @@ TEST(TransferMainHandler, invalidRecvType)
 
   testing::internal::CaptureStderr();
   stk::set_outputP0(&stk::outputNull(), comm);
-  EXPECT_ANY_THROW(stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv()));
+  stk::transfer_util::TransferMainHandler handlerAll(comm, args.argc(), args.argv());
+  EXPECT_EQ(stk::transfer_util::TransferMainStatus::PARSE_ERROR, handlerAll.exit_code());
   testing::internal::GetCapturedStderr();
 
   unlink(sendMesh.c_str());

@@ -5,14 +5,25 @@
  *      Author: drnoble
  */
 #include <Akri_BoundingBoxDistance.hpp>
-#include "Akri_FacetedSurfaceCalcs.hpp"
+#include <Akri_FacetedSurfaceCalcs.hpp>
 
 #include <stk_util/util/ReportHandler.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <stk_math/StkVector.hpp>
 #include <Akri_Facet.hpp>
 #include <Akri_Sign.hpp>
 #include <Akri_QualityMetric.hpp>
+#include <krino/mesh_utils/Akri_AllReduce.hpp>
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <functional>
+#include <limits>
+#include <map>
+#include <optional>
+#include <vector>
 
 namespace krino {
 
@@ -389,37 +400,333 @@ stk::math::Vector3d compute_pseudo_normal(const stk::math::Vector3d &x, const st
   return compute_pseudo_normal(facetDistQueries, closestQuery);
 }
 
-// Explicit template instantiation
+template<class FACET>
+static std::vector<long long> canonical_quantized_facet_key(const FACET & facet)
+{
+  // Winding-independent key: quantize each vertex to a facet-size-scaled grid, then
+  // sort the vertices, so a facet and its reverse-wound twin produce the same key.
+  constexpr double relTol = 1.e-6;
+  const double scale = std::sqrt(facet.mean_squared_edge_length());
+  const double cell = relTol * scale;
 
-template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & nearestFacets);
-template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & nearestFacets);
-template stk::math::Vector3d compute_closest_point_normal(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & nearestFacets);
-template stk::math::Vector3d compute_closest_point_normal(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & nearestFacets);
-template double point_distance_given_nearest_facets<Facet2d>(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
-template double point_distance_given_nearest_facets<Facet3d>(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
-template double compute_point_to_facets_distance_by_average_normal<Facet2d>(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & facets);
-template double compute_point_to_facets_distance_by_average_normal<Facet3d>(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & facets);
-template stk::math::Vector3d compute_pseudo_normal<Facet2d>(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & nearestFacets);
-template stk::math::Vector3d compute_pseudo_normal<Facet3d>(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & nearestFacets);
-template std::pair<int, double> compute_facet_edge_intersection<Facet2d>(const Facet2d & facet, const stk::math::Vector3d& edgePt0, const stk::math::Vector3d& edgePt1);
-template std::pair<int, double> compute_facet_edge_intersection<Facet3d>(const Facet3d & facet, const stk::math::Vector3d& edgePt0, const stk::math::Vector3d& edgePt1);
-template double compute_intersection_between_surface_facets_and_edge<Facet2d>(const std::vector<const Facet2d*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1);
-template double compute_intersection_between_surface_facets_and_edge<Facet3d>(const std::vector<const Facet3d*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1);
+  std::vector<std::array<long long,3>> quantizedVerts;
+  quantizedVerts.reserve(FACET::DIM);
+  for (int v=0; v<FACET::DIM; ++v)
+  {
+    const stk::math::Vector3d & p = facet.facet_vertex(v);
+    std::array<long long,3> q;
+    for (int d=0; d<3; ++d)
+      q[d] = (cell > 0.) ? std::llround(p[d]/cell) : 0ll;
+    quantizedVerts.push_back(q);
+  }
+  std::sort(quantizedVerts.begin(), quantizedVerts.end());
 
-template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets);
-template stk::math::Vector3d compute_closest_point_normal(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets);
-template double point_distance_given_nearest_facets<FacetWithVelocity2d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
-template double compute_point_to_facets_distance_by_average_normal<FacetWithVelocity2d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & facets);
-template stk::math::Vector3d compute_pseudo_normal<FacetWithVelocity2d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets);
-template std::pair<int, double> compute_facet_edge_intersection<FacetWithVelocity2d>(const FacetWithVelocity2d & facet, const stk::math::Vector3d& edgePt0, const stk::math::Vector3d& edgePt1);
-template double compute_intersection_between_surface_facets_and_edge<FacetWithVelocity2d>(const std::vector<const FacetWithVelocity2d*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1);
+  std::vector<long long> key;
+  key.reserve(3*FACET::DIM);
+  for (auto && q : quantizedVerts)
+    for (int d=0; d<3; ++d)
+      key.push_back(q[d]);
+  return key;
+}
 
-template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets);
-template stk::math::Vector3d compute_closest_point_normal(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets);
-template double point_distance_given_nearest_facets<FacetWithVelocity3d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
-template double compute_point_to_facets_distance_by_average_normal<FacetWithVelocity3d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & facets);
-template stk::math::Vector3d compute_pseudo_normal<FacetWithVelocity3d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets);
-template std::pair<int, double> compute_facet_edge_intersection<FacetWithVelocity3d>(const FacetWithVelocity3d & facet, const stk::math::Vector3d& edgePt0, const stk::math::Vector3d& edgePt1);
-template double compute_intersection_between_surface_facets_and_edge<FacetWithVelocity3d>(const std::vector<const FacetWithVelocity3d*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1);
+template<class FACET>
+size_t remove_coincident_facets(std::vector<FACET> & facets)
+{
+  const size_t numFacets = facets.size();
+  if (numFacets < 2)
+    return 0;
+
+  // Group facets that occupy the same location (regardless of winding).
+  std::map<std::vector<long long>, std::vector<size_t>> facetGroups;
+  for (size_t i=0; i<numFacets; ++i)
+    facetGroups[canonical_quantized_facet_key(facets[i])].push_back(i);
+
+  // Every facet in a coincident group shares the same vertices, so each normal is either aligned
+  // with or opposed to the group's reference normal.  Opposing orientations cancel pairwise (both
+  // facets of each pair are degenerate for the average-normal distance); the surviving same-normal
+  // duplicates then collapse to a single representative.  Net effect per group: keep one facet when
+  // the two orientations are unbalanced, or none when they are balanced (everything cancels).
+  std::vector<bool> shouldRemove(numFacets, false);
+  size_t numToRemove = 0;
+  for (auto && entry : facetGroups)
+  {
+    const std::vector<size_t> & members = entry.second;
+    if (members.size() < 2)
+      continue;
+
+    const stk::math::Vector3d refNormal = facets[members[0]].facet_normal();
+    std::vector<size_t> sameSide;      // normal aligned with refNormal (always includes members[0])
+    std::vector<size_t> oppositeSide;  // normal opposes refNormal
+    for (size_t idx : members)
+    {
+      if (Dot(facets[idx].facet_normal(), refNormal) < 0.)
+        oppositeSide.push_back(idx);
+      else
+        sameSide.push_back(idx);
+    }
+
+    // Mark the whole group for removal, then keep a single majority-side representative unless the
+    // orientations are balanced (in which case the group cancels entirely).
+    for (size_t idx : members)
+      shouldRemove[idx] = true;
+    numToRemove += members.size();
+
+    if (sameSide.size() != oppositeSide.size())
+    {
+      const size_t keepIdx = (sameSide.size() > oppositeSide.size()) ? sameSide[0] : oppositeSide[0];
+      shouldRemove[keepIdx] = false;
+      --numToRemove;
+    }
+  }
+
+  if (numToRemove == 0)
+    return 0;
+
+  std::vector<FACET> keptFacets;
+  keptFacets.reserve(numFacets - numToRemove);
+  for (size_t i=0; i<numFacets; ++i)
+    if (!shouldRemove[i])
+      keptFacets.push_back(facets[i]);
+  facets.swap(keptFacets);
+
+  return numToRemove;
+}
+
+namespace {
+
+std::array<long long,3> quantize_point(const stk::math::Vector3d & p, const double cell)
+{
+  std::array<long long,3> q;
+  for (int d=0; d<3; ++d)
+    q[d] = (cell > 0.) ? std::llround(p[d]/cell) : 0ll;
+  return q;
+}
+
+// Enumerates the edges of a facet as (winding/order-independent quantized key, representative
+// endpoint coordinates).  3D facets contribute their three triangle edges; 2D facets (segments)
+// contribute their two endpoints, since a watertight closed curve requires each endpoint to be
+// shared by exactly two segments.
+template<class FACET>
+std::vector<std::pair<std::vector<long long>, std::array<stk::math::Vector3d,2>>>
+enumerate_facet_edges(const FACET & facet, const double cell)
+{
+  std::vector<std::pair<std::vector<long long>, std::array<stk::math::Vector3d,2>>> edges;
+  if constexpr (3 == FACET::DIM)
+  {
+    static constexpr int edgeVerts[3][2] = {{0,1},{1,2},{2,0}};
+    edges.reserve(3);
+    for (auto && ev : edgeVerts)
+    {
+      const stk::math::Vector3d & p0 = facet.facet_vertex(ev[0]);
+      const stk::math::Vector3d & p1 = facet.facet_vertex(ev[1]);
+      std::array<long long,3> q0 = quantize_point(p0, cell);
+      std::array<long long,3> q1 = quantize_point(p1, cell);
+      if (q1 < q0) // unoriented: sort the two quantized endpoints so both windings match
+        std::swap(q0, q1);
+      edges.push_back({{q0[0],q0[1],q0[2],q1[0],q1[1],q1[2]}, {p0, p1}});
+    }
+  }
+  else
+  {
+    edges.reserve(2);
+    for (int v=0; v<2; ++v)
+    {
+      const stk::math::Vector3d & p = facet.facet_vertex(v);
+      const std::array<long long,3> q = quantize_point(p, cell);
+      edges.push_back({{q[0],q[1],q[2]}, {p, p}});
+    }
+  }
+  return edges;
+}
+
+// Deterministic owner processor for an edge key (pure function of key contents, so every processor
+// that produces this key agrees on where its tally is accumulated).  FNV-1a hash.
+size_t hash_edge_key(const std::vector<long long> & key)
+{
+  size_t h = 1469598103934665603ull;
+  for (long long k : key)
+  {
+    h ^= static_cast<size_t>(k);
+    h *= 1099511628211ull;
+  }
+  return h;
+}
+
+}
+
+template<class FACET>
+double compute_global_edge_quantization_cell_size(const stk::ParallelMachine comm, const std::vector<FACET> & localFacets)
+{
+  constexpr double relTol = 1.e-6;
+  double globalMinMeanSqEdge = std::numeric_limits<double>::max();
+  for (auto && facet : localFacets)
+    globalMinMeanSqEdge = std::min(globalMinMeanSqEdge, facet.mean_squared_edge_length());
+  krino::all_reduce_min(comm, globalMinMeanSqEdge);
+  if (globalMinMeanSqEdge == std::numeric_limits<double>::max() || globalMinMeanSqEdge <= 0.)
+    return 0.;
+  return relTol * std::sqrt(globalMinMeanSqEdge);
+}
+
+template<class FACET>
+std::vector<std::array<stk::math::Vector3d,2>>
+find_non_watertight_edges(const std::vector<FACET> & localFacets,
+    const stk::ParallelMachine comm,
+    const double globalEdgeCellSize,
+    const std::optional<BoundingBox> & restrictBbox)
+{
+  struct EdgeData { int count = 0; std::array<stk::math::Vector3d,2> coords; };
+
+  // Tally proc-local edge incidence counts keyed by the winding/order-independent quantized key.
+  std::map<std::vector<long long>, EdgeData> localEdges;
+  for (auto && facet : localFacets)
+    for (auto && edge : enumerate_facet_edges(facet, globalEdgeCellSize))
+    {
+      EdgeData & data = localEdges[edge.first];
+      if (data.count == 0)
+        data.coords = edge.second;
+      ++data.count;
+    }
+
+  auto edge_is_within_restriction = [&restrictBbox](const std::array<stk::math::Vector3d,2> & coords)
+  {
+    if (!restrictBbox.has_value())
+      return true;
+    return restrictBbox->contains(coords[0]) && restrictBbox->contains(coords[1]);
+  };
+
+  // An edge lying along a face of the restriction box is a boundary produced by intersecting the
+  // surface with the meshed domain, not a crack in the surface, so it must not be flagged.  An edge
+  // is "on the box" when both endpoints share the box's min or max plane in some dimension.  The box
+  // is stored in single precision, so the on-plane tolerance admits the float round-off of the plane
+  // coordinate (relative to its magnitude), floored by the edge quantization cell size.  Dimensions
+  // in which the box has no extent (e.g. the z direction of a 2D domain) are not faces and so are
+  // skipped -- otherwise every edge would trivially lie on that degenerate plane.
+  auto edge_is_on_bounding_box = [&restrictBbox, globalEdgeCellSize](const std::array<stk::math::Vector3d,2> & coords)
+  {
+    if (!restrictBbox.has_value())
+      return false;
+    const BoundingBox & box = *restrictBbox;
+    auto plane_tol = [globalEdgeCellSize](const double plane)
+    {
+      return std::max(globalEdgeCellSize, 8. * std::numeric_limits<float>::epsilon() * std::abs(plane));
+    };
+    auto both_on_plane = [&coords, &plane_tol](const int d, const double plane)
+    {
+      const double tol = plane_tol(plane);
+      return std::abs(coords[0][d] - plane) <= tol && std::abs(coords[1][d] - plane) <= tol;
+    };
+    for (int d = 0; d < 3; ++d)
+    {
+      const double lo = static_cast<double>(box.get_min()[d]);
+      const double hi = static_cast<double>(box.get_max()[d]);
+      if (hi - lo <= plane_tol(hi) + plane_tol(lo))
+        continue; // degenerate/flat dimension (e.g. the z of a 2D domain): not a face
+      if (both_on_plane(d, lo) || both_on_plane(d, hi))
+        return true;
+    }
+    return false;
+  };
+
+  auto edge_is_reportable = [&edge_is_within_restriction, &edge_is_on_bounding_box](const std::array<stk::math::Vector3d,2> & coords)
+  {
+    return edge_is_within_restriction(coords) && !edge_is_on_bounding_box(coords);
+  };
+
+  std::vector<std::array<stk::math::Vector3d,2>> badEdges;
+
+  const int numProcs = stk::parallel_machine_size(comm);
+  if (numProcs == 1)
+  {
+    for (auto && entry : localEdges)
+      if (entry.second.count != 2 && edge_is_reportable(entry.second.coords))
+        badEdges.push_back(entry.second.coords);
+    return badEdges;
+  }
+
+  // Send each local edge tally to the deterministic owner of its key.  Two-step CommSparse
+  // (size then communicate), mirroring parallel_distribute_facets in Akri_Faceted_Surface.cpp.
+  stk::CommSparse commSparse(comm);
+  for (int commStep = 0; commStep < 2; ++commStep)
+  {
+    for (auto && entry : localEdges)
+    {
+      const std::vector<long long> & key = entry.first;
+      const int owner = static_cast<int>(hash_edge_key(key) % static_cast<size_t>(numProcs));
+      stk::CommBuffer & b = commSparse.send_buffer(owner);
+      const size_t keyLen = key.size();
+      b.pack(keyLen);
+      for (long long k : key)
+        b.pack(k);
+      b.pack(entry.second.count);
+      for (int i=0; i<2; ++i)
+        for (int d=0; d<3; ++d)
+          b.pack(entry.second.coords[i][d]);
+    }
+    if (commStep == 0)
+      commSparse.allocate_buffers();
+    else
+      commSparse.communicate();
+  }
+
+  // Owner sums per-key contributions from all processors and decides watertightness.
+  std::map<std::vector<long long>, EdgeData> ownedEdges;
+  for (int p = 0; p < numProcs; ++p)
+  {
+    stk::CommBuffer & b = commSparse.recv_buffer(p);
+    while (b.remaining())
+    {
+      size_t keyLen = 0;
+      b.unpack(keyLen);
+      std::vector<long long> key(keyLen);
+      for (size_t i=0; i<keyLen; ++i)
+        b.unpack(key[i]);
+      int count = 0;
+      b.unpack(count);
+      std::array<stk::math::Vector3d,2> coords;
+      for (int i=0; i<2; ++i)
+        for (int d=0; d<3; ++d)
+          b.unpack(coords[i][d]);
+      EdgeData & data = ownedEdges[key];
+      if (data.count == 0)
+        data.coords = coords;
+      data.count += count;
+    }
+  }
+
+  for (auto && entry : ownedEdges)
+    if (entry.second.count != 2 && edge_is_reportable(entry.second.coords))
+      badEdges.push_back(entry.second.coords);
+
+  return badEdges;
+}
+
+// Explicit template instantiation.
+//
+// Every free function in this file is instantiated for each concrete facet type.
+// The list is generated by the macro below so that adding a calc function is a
+// single new line inside the macro (automatically covering all facet types) and
+// adding a facet type is a single new macro invocation.  This keeps the four
+// per-type blocks in lock-step -- there is no way to instantiate a function for
+// some types but forget others.  The generated code is identical to writing each
+// instantiation by hand, so compute/storage characteristics are unchanged.
+
+#define KRINO_INSTANTIATE_FACETED_SURFACE_CALCS(FACET) \
+  template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets); \
+  template stk::math::Vector3d compute_closest_point_normal(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets); \
+  template double point_distance_given_nearest_facets<FACET>(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance); \
+  template double compute_point_to_facets_distance_by_average_normal<FACET>(const stk::math::Vector3d &x, const std::vector<const FACET*> & facets); \
+  template stk::math::Vector3d compute_pseudo_normal<FACET>(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets); \
+  template std::pair<int, double> compute_facet_edge_intersection<FACET>(const FACET & facet, const stk::math::Vector3d& edgePt0, const stk::math::Vector3d& edgePt1); \
+  template double compute_intersection_between_surface_facets_and_edge<FACET>(const std::vector<const FACET*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1); \
+  template size_t remove_coincident_facets<FACET>(std::vector<FACET> & facets); \
+  template double compute_global_edge_quantization_cell_size<FACET>(const stk::ParallelMachine comm, const std::vector<FACET> & localFacets); \
+  template std::vector<std::array<stk::math::Vector3d,2>> find_non_watertight_edges<FACET>(const std::vector<FACET> & localFacets, const stk::ParallelMachine comm, const double globalEdgeCellSize, const std::optional<BoundingBox> & restrictBbox);
+
+KRINO_INSTANTIATE_FACETED_SURFACE_CALCS(Facet2d)
+KRINO_INSTANTIATE_FACETED_SURFACE_CALCS(Facet3d)
+KRINO_INSTANTIATE_FACETED_SURFACE_CALCS(FacetWithVelocity2d)
+KRINO_INSTANTIATE_FACETED_SURFACE_CALCS(FacetWithVelocity3d)
+
+#undef KRINO_INSTANTIATE_FACETED_SURFACE_CALCS
 
 }

@@ -7,34 +7,47 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <utility>
 #include "TransferMainParser.hpp"
-#include <stk_util/command_line/CommandLineParserUtils.hpp>
+
+#include <climits>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <stk_transfer_util/LogMessage.hpp>
 #include <stk_util/Version.hpp>
+#include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/diag/StringUtil.hpp>
+#include <stk_util/util/ReportHandler.hpp>
+#include <stk_util/parallel/mpi_filebuf.hpp>
+#include <utility>
+
 #include "stk_transfer_util/TransferMainSettings.hpp"
 
 namespace stk {
 namespace transfer_util {
 
 TransferMainParser::TransferMainParser(MPI_Comm comm)
-  : m_comm(comm),
-    m_cmdLineParser(comm),
-    m_quickExample("Basic example: mpirun --np 1 stk_transfer -s send.exo -r recv.exo -o xfer_result.exo"),
-    m_longExamples("Examples:\nmpirun --np 1 stk_transfer -s send.exo -r recv.exo -o xfer_result.exo --xfer-type INTERP --recv-type FACE_CENTROID --part-list block_1:surface_1\n"
-                   "mpirun --np 1 stk_transfer -s send.exo -r recv.exo -o xfer_result.exo --xfer-type PATCH --recv-type ELEMENT_CENTROID")
+    : m_comm(comm),
+      m_cmdLineParser(comm),
+      m_quickExample("Basic example: mpirun --np 1 stk_transfer -s send.exo -r recv.exo -o xfer_result.exo"),
+      m_longExamples(
+          "Examples:\nmpirun --np 1 stk_transfer -s send.exo -r recv.exo -o xfer_result.exo --xfer-type INTERP "
+          "--recv-type FACE_CENTROID --part-list block_1:surface_1\n"
+          "mpirun --np 1 stk_transfer -s send.exo -r recv.exo -o xfer_result.exo --xfer-type PATCH --recv-type "
+          "ELEMENT_CENTROID\n"
+          "mpirun --np 1 stk_transfer --input-file transfer.yaml"),
+      m_transferParserStatus(TransferParserStatus::PARSE_ERROR)
 {
   add_options_to_parser();
 }
 
 void TransferMainParser::add_options_to_parser()
 {
-
   stk::CommandLineOption sendMeshFilename{m_optionNames.sendMesh, "s",
-          "Mesh to read from, i.e., send mesh."};
+      "Mesh to read from, i.e., send mesh. (required, unless specified in the input file)"};
   stk::CommandLineOption recvMeshFilename{m_optionNames.recvMesh, "r",
-          "Mesh to transfer data to, i.e., receive mesh."};
+      "Mesh to transfer data to, i.e., receive mesh. (required, unless specified in the input file)"};
   stk::CommandLineOption outputMeshFilename{m_optionNames.outputMesh, "o",
           "Mesh to write transferred data to (optional). (default: transferred_[recvMesh])"};
   stk::CommandLineOption transferType{m_optionNames.transferType, "x",
@@ -90,8 +103,23 @@ void TransferMainParser::add_options_to_parser()
 
   stk::CommandLineOption coordTransformZExpr{m_optionNames.coordTransformZExpr, "",
           "Expression to use for the z-coordinate for a 2D mesh to a 3D mesh transfer. Valid values are numerical constants or expressions containing x and y, e.g. z=x+y (default: z=0)"};
-  m_cmdLineParser.add_required<std::string>(sendMeshFilename);
-  m_cmdLineParser.add_required<std::string>(recvMeshFilename);
+  stk::CommandLineOption inputFile{m_optionNames.inputFile, "i",
+      "YAML input file specifying transfer options. The top-level keys are the long names of the "
+      "command-line options (e.g. 'send-mesh: send.exo'). Options given on the command line take "
+      "precedence over options in the input file. List-type options use YAML sequences and maps:\n"
+      "  field-list: [field_1, {send: send_field_2, recv: recv_field_2}]\n"
+      "  part-list: {send: [block_1, block_2], recv: [surface_1]}\n"
+      "  time-steps: LAST    (or ALL, FIRST, \"1:5:2\", or {begin: 1, end: 5, stride: 2})\n"
+      "  2d-to-3d-axisymmetric: {axis: [0, 0, 1], translation: [0, 0, 0]}    (use {} for defaults)\n"
+      "  3d-to-3d-axisymmetric: {theta-min: 30, theta-max: 60, axis: [0, 0, 1], translation: [0, 0, 0]}" +
+          std::string(
+              transfer_input_file_supported()
+                  ? ""
+                  : "\nNOTE: this build of stk_transfer does not support input files (built without yaml-cpp).")};
+
+  m_cmdLineParser.add_optional<std::string>(inputFile);
+  m_cmdLineParser.add_optional<std::string>(sendMeshFilename);
+  m_cmdLineParser.add_optional<std::string>(recvMeshFilename);
   m_cmdLineParser.add_optional<std::string>(outputMeshFilename);
   m_cmdLineParser.add_optional<std::string>(transferType);
   m_cmdLineParser.add_optional<std::string>(fieldList);
@@ -108,12 +136,47 @@ void TransferMainParser::add_options_to_parser()
   m_cmdLineParser.disallow_unrecognized();
 }
 
+namespace
+{
+
+// STK_ThrowRequireMsg exceptions contain the failed expression, the source location and a
+// stack trace, followed by "Error: <message>". For input errors, users only need the message.
+std::string user_error_message(const std::string& what)
+{
+  std::string message = what;
+  const std::size_t locationPos = what.find("Error occurred at: ");
+  if (locationPos != std::string::npos) {
+    const std::size_t messagePos = what.find("\nError: ", locationPos);
+    if (messagePos != std::string::npos) {
+      message = what.substr(messagePos + 1);
+    }
+  }
+  const std::size_t lastNonSpace = message.find_last_not_of(" \t\n\r");
+  return (lastNonSpace == std::string::npos) ? "" : message.substr(0, lastNonSpace + 1);
+}
+
+}  // namespace
+
 void TransferMainParser::parse_command_line_options(int argc, const char** argv)
 {
+  m_commandLineParsed = true;
   stk::CommandLineParser::ParseState parseState = m_cmdLineParser.parse(argc, argv);
 
   if (parseState == stk::CommandLineParser::ParseComplete) {
     m_transferParserStatus = TransferParserStatus::SUCCESS;
+
+    try {
+      read_input_file_if_specified();
+      require_mesh_specified(m_optionNames.sendMesh, m_inputFileOptions.sendMesh);
+      require_mesh_specified(m_optionNames.recvMesh, m_inputFileOptions.recvMesh);
+    } catch (std::exception& e) {
+      m_transferParserStatus = TransferParserStatus::PARSE_ERROR;
+      if (stk::parallel_machine_rank(m_comm) == 0) {
+        std::cerr << user_error_message(e.what()) << std::endl;
+      }
+      stk::outputP0() << m_quickExample << std::endl;
+      stk::outputP0() << "Use 'stk_transfer --help' for more information." << std::endl;
+    }
   }
   else {
     switch(parseState) {
@@ -135,6 +198,54 @@ void TransferMainParser::parse_command_line_options(int argc, const char** argv)
       default: break;
     }
   }
+}
+
+void TransferMainParser::set_input_file_contents(const std::string& yamlText)
+{
+  STK_ThrowRequireMsg(!m_commandLineParsed,
+      "TransferMainParser::set_input_file_contents must be called before parse_command_line_options.");
+  m_inputFileOptions = parse_transfer_input_file_yaml(yamlText);
+}
+
+bool TransferMainParser::input_file_specified() const
+{
+  return m_cmdLineParser.is_option_parsed(m_optionNames.inputFile);
+}
+
+std::string TransferMainParser::get_input_file_name() const
+{
+  return m_cmdLineParser.get_option_value<std::string>(m_optionNames.inputFile);
+}
+
+void TransferMainParser::read_input_file_if_specified()
+{
+  if (input_file_specified()) {
+    const std::string fileName = get_input_file_name();
+    STK_ThrowRequireMsg(transfer_input_file_supported(),
+        "stk_transfer was built without the yaml-cpp library, so --"
+            << m_optionNames.inputFile
+            << " is not supported. Specify the transfer options on the command line instead.");
+    m_inputFileOptions = parse_transfer_input_file_yaml(stk::read_and_broadcast_file(fileName, m_comm));
+  }
+}
+
+void TransferMainParser::require_mesh_specified(
+    const std::string& optionName, const std::optional<std::string>& fileValue) const
+{
+  const std::string inputFileHint = transfer_input_file_supported()
+                                        ? " or as '" + optionName + ":' in the --" + m_optionNames.inputFile + " file"
+                                        : "";
+  STK_ThrowRequireMsg(get_string_option(optionName, fileValue).has_value(),
+      "required option '--" << optionName << "' not found. Specify it on the command line" << inputFileHint << ".");
+}
+
+std::optional<std::string> TransferMainParser::get_string_option(
+    const std::string& optionName, const std::optional<std::string>& fileValue) const
+{
+  if (m_cmdLineParser.is_option_parsed(optionName)) {
+    return m_cmdLineParser.get_option_value<std::string>(optionName);
+  }
+  return fileValue;
 }
 
 TransferMainSettings TransferMainParser::generate_transfer_settings()
@@ -175,31 +286,27 @@ void TransferMainParser::set_num_output_processors(TransferMainSettings& setting
 
 void TransferMainParser::set_sendMesh_filename(TransferMainSettings& settings)
 {
-  const std::string sendMesh = m_cmdLineParser.get_option_value<std::string>(m_optionNames.sendMesh);
-  settings.set_sendMesh_filename(sendMesh);
+  settings.set_sendMesh_filename(get_string_option(m_optionNames.sendMesh, m_inputFileOptions.sendMesh).value_or(""));
 }
 
 void TransferMainParser::set_recvMesh_filename(TransferMainSettings& settings)
 {
-  const std::string recvMesh = m_cmdLineParser.get_option_value<std::string>(m_optionNames.recvMesh);
-  settings.set_recvMesh_filename(recvMesh);
+  settings.set_recvMesh_filename(get_string_option(m_optionNames.recvMesh, m_inputFileOptions.recvMesh).value_or(""));
 }
 
 void TransferMainParser::set_outputMesh_filename(TransferMainSettings& settings)
 {
-  const std::string recvMesh = m_cmdLineParser.get_option_value<std::string>(m_optionNames.recvMesh);
-  std::string outputMesh = "transferred_" + recvMesh;
-  if (m_cmdLineParser.is_option_parsed(m_optionNames.outputMesh)) {
-    outputMesh = m_cmdLineParser.get_option_value<std::string>(m_optionNames.outputMesh);
-  }
+  const std::string recvMesh = get_string_option(m_optionNames.recvMesh, m_inputFileOptions.recvMesh).value_or("");
+  const std::string outputMesh =
+      get_string_option(m_optionNames.outputMesh, m_inputFileOptions.outputMesh).value_or("transferred_" + recvMesh);
 
   settings.set_outputMesh_filename(outputMesh);
 }
 
 void TransferMainParser::set_transfer_type(TransferMainSettings& settings)
 {
-  const std::string transferType = m_cmdLineParser.is_option_parsed(m_optionNames.transferType) ?
-    sierra::make_upper(m_cmdLineParser.get_option_value<std::string>(m_optionNames.transferType)) : "INTERP";
+  const std::string transferType = sierra::make_upper(
+      get_string_option(m_optionNames.transferType, m_inputFileOptions.transferType).value_or("INTERP"));
 
   STK_ThrowRequireMsg(settings.set_transfer_type(transferType),
                       "Invalid option " + transferType + " provided for transfer type.");
@@ -207,8 +314,8 @@ void TransferMainParser::set_transfer_type(TransferMainSettings& settings)
 
 void TransferMainParser::set_2d_to_3d_mapping_type(TransferMainSettings& settings)
 {
-  const std::string mappingType = m_cmdLineParser.is_option_parsed(m_optionNames.mappingType2dTo3d) ?
-    sierra::make_upper(m_cmdLineParser.get_option_value<std::string>(m_optionNames.mappingType2dTo3d)) : "ZPLANE";
+  const std::string mappingType = sierra::make_upper(
+      get_string_option(m_optionNames.mappingType2dTo3d, m_inputFileOptions.mappingType2dTo3d).value_or("ZPLANE"));
 
   STK_ThrowRequireMsg(settings.set_2d_to_3d_mapping_type(mappingType),
                       "Invalid option " + mappingType + " provided for 2d-to-3d-mapping-type.");
@@ -216,10 +323,10 @@ void TransferMainParser::set_2d_to_3d_mapping_type(TransferMainSettings& setting
 
 void TransferMainParser::set_coord_transf_z_expr(TransferMainSettings& settings)
 {
-  const std::string expression = m_cmdLineParser.is_option_parsed(m_optionNames.coordTransformZExpr) ?
-    m_cmdLineParser.get_option_value<std::string>(m_optionNames.coordTransformZExpr) : "z=0";
+  const std::string expression =
+      get_string_option(m_optionNames.coordTransformZExpr, m_inputFileOptions.coordTransformZExpr).value_or("z=0");
 
-    settings.set_coord_transf_z_expr(expression);
+  settings.set_coord_transf_z_expr(expression);
 }
 
 void TransferMainParser::set_transfer_fields(TransferMainSettings& settings)
@@ -238,6 +345,10 @@ void TransferMainParser::set_transfer_fields(TransferMainSettings& settings)
       else {
         settings.set_transfer_field({fieldNamePair[0], fieldNamePair[1]});
       }
+    }
+  } else if (m_inputFileOptions.fields) {
+    for (const std::pair<std::string, std::string>& fieldNamePair : *m_inputFileOptions.fields) {
+      settings.set_transfer_field(fieldNamePair);
     }
   }
 }
@@ -266,13 +377,16 @@ void TransferMainParser::set_transfer_parts(TransferMainSettings& settings)
 
     settings.set_transfer_send_parts(sendPartNames);
     settings.set_transfer_recv_parts(recvPartNames);
+  } else if (m_inputFileOptions.parts) {
+    settings.set_transfer_send_parts(m_inputFileOptions.parts->send);
+    settings.set_transfer_recv_parts(m_inputFileOptions.parts->recv);
   }
 }
 
 void TransferMainParser::set_extrapolate_option(TransferMainSettings& settings)
 {
-  const std::string policy = m_cmdLineParser.is_option_parsed(m_optionNames.ExtrapolateOption) ?
-    sierra::make_upper(m_cmdLineParser.get_option_value<std::string>(m_optionNames.ExtrapolateOption)) : "IGNORE";
+  const std::string policy = sierra::make_upper(
+      get_string_option(m_optionNames.ExtrapolateOption, m_inputFileOptions.extrapolateOption).value_or("IGNORE"));
 
   STK_ThrowRequireMsg(settings.set_extrapolate_option(policy),
                       "Invalid option " + policy + " provided for extrapolate option.");
@@ -280,16 +394,17 @@ void TransferMainParser::set_extrapolate_option(TransferMainSettings& settings)
 
 void TransferMainParser::set_master_elements_name(TransferMainSettings& settings)
 {
-  const std::string masterElemName = m_cmdLineParser.is_option_parsed(m_optionNames.UseMasterElements) ?
-    sierra::make_upper(m_cmdLineParser.get_option_value<std::string>(m_optionNames.UseMasterElements)) : sierra::make_upper(default_master_element_name);
+  const std::string masterElemName =
+      sierra::make_upper(get_string_option(m_optionNames.UseMasterElements, m_inputFileOptions.masterElements)
+              .value_or(default_master_element_name));
 
   settings.set_master_elements_name(masterElemName);
 }
 
 void TransferMainParser::set_recv_type(TransferMainSettings& settings)
 {
-  const std::string recvType = m_cmdLineParser.is_option_parsed(m_optionNames.recvType) ?
-    sierra::make_upper(m_cmdLineParser.get_option_value<std::string>(m_optionNames.recvType)) : "NODE";
+  const std::string recvType =
+      sierra::make_upper(get_string_option(m_optionNames.recvType, m_inputFileOptions.recvType).value_or("NODE"));
 
   STK_ThrowRequireMsg(settings.set_recv_type(recvType),
                       "Invalid option " + recvType + " provided for receive type.");
@@ -297,8 +412,8 @@ void TransferMainParser::set_recv_type(TransferMainSettings& settings)
 
 void TransferMainParser::set_time_steps_spec(TransferMainSettings& settings)
 {
-  const std::string timeSteps = m_cmdLineParser.is_option_parsed(m_optionNames.timeSteps) ?
-    sierra::make_upper(m_cmdLineParser.get_option_value<std::string>(m_optionNames.timeSteps)) : "ALL";
+  const std::string timeSteps =
+      sierra::make_upper(get_string_option(m_optionNames.timeSteps, m_inputFileOptions.timeSteps).value_or("ALL"));
   settings.set_time_steps_spec(timeSteps);
 }
 
@@ -328,6 +443,8 @@ void TransferMainParser::set_2d_to_3d_axisymmetric_transfer_params(TransferMainS
     }
 
     settings.set_2d_to_3d_axisymmetric_transfer_params(params_struct);
+  } else if (m_inputFileOptions.twoDTo3DAxisymmetric) {
+    settings.set_2d_to_3d_axisymmetric_transfer_params(*m_inputFileOptions.twoDTo3DAxisymmetric);
   }
 }
 
@@ -361,10 +478,10 @@ void TransferMainParser::set_3d_to_3d_axisymmetric_transfer_params(TransferMainS
     }
 
     settings.set_3d_to_3d_axisymmetric_transfer_params(params_struct);
+  } else if (m_inputFileOptions.threeDTo3DAxisymmetric) {
+    settings.set_3d_to_3d_axisymmetric_transfer_params(*m_inputFileOptions.threeDTo3DAxisymmetric);
   }
 }
-
-  void set_3d_to_3d_axisymmetric_transfer_params(TransferMainSettings& settings);
 
 } // namespace transfer_util
 } // namespace stk

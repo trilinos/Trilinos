@@ -23,6 +23,7 @@
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
+#include "../TestUtils/Tempus_AdjointResponseTestUtils.hpp"
 
 #include <fstream>
 #include <vector>
@@ -261,6 +262,76 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA)
     TEST_FLOATING_EQUALITY(ErrorNorm[0], RKMethodErrors[m], 5.0e-4);
   }
   Teuchos::TimeMonitor::summarize();
+}
+
+// ************************************************************
+// ************************************************************
+// Adjoint sensitivities of the time-integrated response
+// J = int_{t0}^{T} x(t) dt, with SDIRK 2 Stage 2nd order.
+TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA_TimeIntegral)
+{
+  std::vector<double> StepSize, ErrorNorm;
+  double order = 0.0;
+  computeSinCosAdjointResponseErrors(
+      "Tempus_DIRK_SinCos.xml",
+      [](ParameterList& pl) {
+        pl.sublist("Default Stepper")
+            .set("Stepper Type", "SDIRK 2 Stage 2nd order");
+        pl.sublist("Default Stepper").set("gamma", 0.2928932188134524);
+        pl.sublist("Default Stepper")
+            .set("Initial Condition Consistency", "None");
+        pl.sublist("Default Stepper")
+            .set("Initial Condition Consistency Check", false);
+        pl.sublist("Sensitivities").set("Mass Matrix Is Identity", true);
+        // The stage times are between the time steps, a 2nd order method
+        // needs linear interpolation of the forward solution.
+        ParameterList& interp_pl = pl.sublist("Default Integrator")
+                                       .sublist("Solution History")
+                                       .sublist("Interpolator");
+        interp_pl.set("Interpolator Type", "Lagrange");
+        interp_pl.set("Order", 1);
+      },
+      "Time Integral", std::vector<double>(), 5, 0.1, false, StepSize, ErrorNorm,
+      order, out, success);
+
+  const double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
+  out << "  Expected order: " << order << "  Observed order: " << slope << std::endl;
+  TEST_FLOATING_EQUALITY(slope, order, 0.04);
+}
+
+// ************************************************************
+// ************************************************************
+// Adjoint sensitivities of the response J = sum_k x(t_k), including the
+// initial and final times, with SDIRK 2 Stage 2nd order.
+TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA_SumOverTimes)
+{
+  std::vector<double> StepSize, ErrorNorm;
+  double order = 0.0;
+  computeSinCosAdjointResponseErrors(
+      "Tempus_DIRK_SinCos.xml",
+      [](ParameterList& pl) {
+        pl.sublist("Default Stepper")
+            .set("Stepper Type", "SDIRK 2 Stage 2nd order");
+        pl.sublist("Default Stepper").set("gamma", 0.2928932188134524);
+        pl.sublist("Default Stepper")
+            .set("Initial Condition Consistency", "None");
+        pl.sublist("Default Stepper")
+            .set("Initial Condition Consistency Check", false);
+        pl.sublist("Sensitivities").set("Mass Matrix Is Identity", true);
+        // The stage times are between the time steps, a 2nd order method
+        // needs linear interpolation of the forward solution.
+        ParameterList& interp_pl = pl.sublist("Default Integrator")
+                                       .sublist("Solution History")
+                                       .sublist("Interpolator");
+        interp_pl.set("Interpolator Type", "Lagrange");
+        interp_pl.set("Order", 1);
+      },
+      "Sum Over Times", {0.0, 0.3, 0.6, 1.0}, 5, 0.1, false, StepSize, ErrorNorm,
+      order, out, success);
+
+  const double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
+  out << "  Expected order: " << order << "  Observed order: " << slope << std::endl;
+  TEST_FLOATING_EQUALITY(slope, order, 0.04);
 }
 
 }  // namespace Tempus_Test

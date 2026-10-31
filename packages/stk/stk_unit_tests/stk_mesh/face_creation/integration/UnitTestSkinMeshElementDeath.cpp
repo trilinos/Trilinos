@@ -26,27 +26,6 @@ namespace
 using stk::unit_test_util::build_mesh;
 using stk::mesh::MeshBuilder;
 
-class BulkDataTester : public stk::mesh::BulkData
-{
-public:
-  BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-    stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto /*pointerWeWontDelete*/){}), comm)
-  {
-  }
-
-  virtual ~BulkDataTester()
-  {
-  }
-
-  void set_sorting_by_face()
-  {
-#ifdef SIERRA_MIGRATION
-    m_shouldSortFacesByNodeIds = true;
-#endif
-  }
-};
-
-
 void kill_element(stk::mesh::Entity element, stk::mesh::BulkData& bulkData, stk::mesh::Part& active, stk::mesh::Part& skin)
 {
   stk::mesh::ElemElemGraph graph(bulkData);
@@ -99,11 +78,11 @@ TEST(ElementDeath, compare_death_and_skin_mesh)
   {
     unsigned spatialDim = 3;
 
-    stk::mesh::MetaData meta(spatialDim);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(comm).set_spatial_dimension(spatialDim).create();
+    stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
     stk::mesh::Part& skin  = meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
     stk::io::put_io_part_attribute(skin);
-    BulkDataTester bulkData(meta, comm);
-    bulkData.set_sorting_by_face();
+    stk::mesh::BulkData& bulkData = *bulkPtr;
 
     stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
     stk::io::fill_mesh("generated:1x1x4", bulkData);
@@ -123,7 +102,6 @@ TEST(ElementDeath, compare_death_and_skin_mesh)
     compare_skin(num_gold_skinned_faces, bulkData, skin, active);
   }
 }
-
 
 } // end namespace
 

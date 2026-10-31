@@ -10,32 +10,17 @@
 #ifndef STK_TRANSFER_UTIL_TRANSFERMAINPARSER_HPP
 #define STK_TRANSFER_UTIL_TRANSFERMAINPARSER_HPP
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/command_line/CommandLineParserParallel.hpp>
-#include <string>
+#include <optional>
 #include <ostream>
+#include <stk_transfer_util/TransferMainInputFile.hpp>
+#include <stk_transfer_util/TransferMainOptionNames.hpp>
 #include <stk_transfer_util/TransferMainSettings.hpp>
+#include <stk_util/command_line/CommandLineParserParallel.hpp>
+#include <stk_util/parallel/Parallel.hpp>
+#include <string>
 
 namespace stk {
 namespace transfer_util {
-
-struct OptionNames
-{
-  const std::string sendMesh = "send-mesh";
-  const std::string recvMesh = "recv-mesh";
-  const std::string outputMesh = "output-mesh";
-  const std::string fieldList = "field-list";
-  const std::string partList = "part-list";
-  const std::string ExtrapolateOption = "extrapolate-option";
-  const std::string UseMasterElements = "use-master-elements";
-  const std::string recvType = "recv-type";
-  const std::string transferType = "xfer-type";
-  const std::string timeSteps = "time-steps";
-  const std::string mappingType2dTo3d = "2d-to-3d-mapping-type";
-  const std::string twoDto3DAxisymmetric = "2d-to-3d-axisymmetric";
-  const std::string threeDto3DAxisymmetric = "3d-to-3d-axisymmetric";
-  const std::string coordTransformZExpr = "2d-to-3d-z-coord";
-};
 
 enum class TransferParserStatus {
   SUCCESS                    = 0,
@@ -55,39 +40,56 @@ public:
   TransferParserStatus get_parser_status() const { return m_transferParserStatus; }
   TransferMainSettings generate_transfer_settings();
 
+  // Parse the contents of a YAML input file (see TransferMainInputFile.hpp for the syntax).
+  // Options specified on the command line take precedence over options in the input file.
+  // Lets callers (e.g., unit tests) provide input-file text directly instead of via
+  // --input-file. Must be called BEFORE parse_command_line_options (enforced; throws
+  // otherwise) so that required options can be satisfied by the input file. If
+  // --input-file is also given, the file replaces this text. Throws an exception derived
+  // from std::exception on syntax errors.
+  void set_input_file_contents(const std::string& yamlText);
+
 #ifdef STK_BUILT_FOR_SIERRA
   static inline const std::string default_master_element_name = "SIERRA";
 #else
   static inline const std::string default_master_element_name = "INTREPID2";
 #endif
 
+  bool input_file_specified() const;
+  std::string get_input_file_name() const;
+
 protected:
+ void read_input_file_if_specified();
+ void require_mesh_specified(const std::string& optionName, const std::optional<std::string>& fileValue) const;
+ std::optional<std::string> get_string_option(
+     const std::string& optionName, const std::optional<std::string>& fileValue) const;
 
-  void set_num_input_processors(TransferMainSettings& settings);
-  void set_num_output_processors(TransferMainSettings& settings);
-  void set_sendMesh_filename(TransferMainSettings& settings);
-  void set_recvMesh_filename(TransferMainSettings& settings);
-  void set_outputMesh_filename(TransferMainSettings& settings);
-  void set_transfer_fields(TransferMainSettings& settings);
-  void set_transfer_parts(TransferMainSettings& settings);
-  void set_extrapolate_option(TransferMainSettings& settings);
-  void set_master_elements_name(TransferMainSettings& settings);
-  void set_recv_type(TransferMainSettings& settings);
-  void set_time_steps_spec(TransferMainSettings& settings);
-  void set_transfer_type(TransferMainSettings& settings);
-  void set_2d_to_3d_mapping_type(TransferMainSettings& settings);
-  void set_2d_to_3d_axisymmetric_transfer_params(TransferMainSettings& settings);
-  void set_3d_to_3d_axisymmetric_transfer_params(TransferMainSettings& settings);
-  void set_coord_transf_z_expr(TransferMainSettings& settings);
+ void set_num_input_processors(TransferMainSettings& settings);
+ void set_num_output_processors(TransferMainSettings& settings);
+ void set_sendMesh_filename(TransferMainSettings& settings);
+ void set_recvMesh_filename(TransferMainSettings& settings);
+ void set_outputMesh_filename(TransferMainSettings& settings);
+ void set_transfer_fields(TransferMainSettings& settings);
+ void set_transfer_parts(TransferMainSettings& settings);
+ void set_extrapolate_option(TransferMainSettings& settings);
+ void set_master_elements_name(TransferMainSettings& settings);
+ void set_recv_type(TransferMainSettings& settings);
+ void set_time_steps_spec(TransferMainSettings& settings);
+ void set_transfer_type(TransferMainSettings& settings);
+ void set_2d_to_3d_mapping_type(TransferMainSettings& settings);
+ void set_2d_to_3d_axisymmetric_transfer_params(TransferMainSettings& settings);
+ void set_3d_to_3d_axisymmetric_transfer_params(TransferMainSettings& settings);
+ void set_coord_transf_z_expr(TransferMainSettings& settings);
 
-  const MPI_Comm m_comm;
-  OptionNames m_optionNames;
-  stk::CommandLineParserParallel m_cmdLineParser;
-  std::string m_quickExample;
-  std::string m_longExamples;
-  std::string m_quickError;
-  TransferParserStatus m_transferParserStatus;
-
+ const MPI_Comm m_comm;
+ OptionNames m_optionNames;
+ stk::CommandLineParserParallel m_cmdLineParser;
+ std::string m_quickExample;
+ std::string m_longExamples;
+ std::string m_quickError;
+ TransferParserStatus m_transferParserStatus;
+ TransferInputFileOptions m_inputFileOptions;
+ bool m_commandLineParsed = false;
 };
 
 } // namespace transfer_util

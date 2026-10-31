@@ -35,7 +35,6 @@
 #ifndef STK_UTIL_Diag_WriterParser_h
 #define STK_UTIL_Diag_WriterParser_h
 
-#include "stk_util/stk_config.h"
 #include "stk_util/diag/Option.hpp"  // for OptionMaskParser, OptionMaskParser::Mask
 #include <string>                    // for string
 
@@ -80,6 +79,18 @@ public:
    *        string.
    */
   Mask parse(const char *mask_string) const override;
+
+  /**
+   * @brief Member function <b>parseArg</b> parses the argument and its argument
+   * values.
+   *
+   * @param name    a <b>std::string</b> const reference to the argument
+   *        name.
+   *
+   * @param arg      a <b>std::string</b> const reference to the argument
+   *        values.
+   */
+  virtual void parseArg(const std::string &name, const std::string &arg) const override;
 
 };
 

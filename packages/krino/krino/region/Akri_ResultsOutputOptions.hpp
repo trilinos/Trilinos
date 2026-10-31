@@ -9,11 +9,12 @@
 #ifndef Akri_ResultsOutputOptions_h
 #define Akri_ResultsOutputOptions_h
 
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 #include <stk_util/environment/Scheduler.hpp>
-#include "stk_topology/topology.hpp"    // for topology, etc
+#include <stk_topology/topology.hpp>    // for topology, etc
 #include <Ioss_PropertyManager.h>
 
 namespace stk { namespace mesh { class Part; } }
@@ -55,13 +56,22 @@ namespace krino {
 
     void add_step_increment(int start, int increment)
     {
+      myOutputStepInterval = increment;
       my_scheduler.add_interval(start, increment);
     }
+    // Reports the increment last passed to add_step_increment (0 if never set).
+    // Mirrors what was handed to the volume-output scheduler so callers can
+    // query the configured cadence without poking the mutating Scheduler.
+    int get_output_step_interval() const { return myOutputStepInterval; }
 
     void add_surface_shell_step_increment(int start, int increment)
     {
+      mySurfaceShellStepInterval = increment;
       mySurfaceShellScheduler.add_interval(start, increment);
     }
+    // Reports the increment last passed to add_surface_shell_step_increment
+    // (0 if never set).  Mirrors the surface-shell scheduler's cadence.
+    int get_surface_shell_step_interval() const { return mySurfaceShellStepInterval; }
 
     void add_nodal_field(const std::string & internalName, const std::string & newName)
     {
@@ -91,6 +101,8 @@ namespace krino {
     std::set<FieldName_OutputName_Pair> my_nodal_fields;
     std::set<FieldName_OutputName_Pair> my_element_fields;
     Ioss::PropertyManager my_properties;
+    int myOutputStepInterval{0};
+    int mySurfaceShellStepInterval{0};
   };
 
 } // namespace krino

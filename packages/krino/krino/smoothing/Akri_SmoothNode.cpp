@@ -9,7 +9,7 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshHelpers.hpp>
-#include <Akri_Objective_MeanRatioAboutNode.hpp>
+#include <Akri_Objective_Mesh.hpp>
 #include <Akri_MeshQuality.hpp>
 #include <Akri_QualityMetric.hpp>
 #include <Akri_QualityMetricWithSensitivities.hpp>
@@ -86,9 +86,9 @@ void set_node_coordinates(const stk::mesh::BulkData &mesh,
     const stk::mesh::Entity node,
     const stk::math::Vector3d & newCoords)
 {
-  double * nodeCoords = get_field_data(mesh, coordsField, node);
+  auto nodeCoords = coordsField.data<double, stk::mesh::ReadWrite>().entity_values(node);
   for (unsigned d=0; d<coordsField.dim(); ++d)
-    nodeCoords[d] = newCoords[d];
+    nodeCoords(stk::mesh::ComponentIdx(d)) = newCoords[d];
 }
 
 void smooth_nodes(const stk::mesh::BulkData &mesh,

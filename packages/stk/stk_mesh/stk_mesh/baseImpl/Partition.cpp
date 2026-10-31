@@ -308,12 +308,12 @@ void Partition::reset_partition_key(const std::vector<unsigned>& newKey)
   m_extPartitionKey = newKey;
 }
 
-void Partition::default_sort_if_needed(bool mustSortFacesByNodeIds)
+void Partition::default_sort_if_needed()
 {
   if (!empty() && m_updated_since_sort)
   {
     if (m_removeMode == FILL_HOLE_THEN_SORT) {
-      sort(GlobalIdEntitySorter(mustSortFacesByNodeIds));
+      sort(GlobalIdEntitySorter());
     }
     else {
       finalize_pending_removes_by_sliding_memory();

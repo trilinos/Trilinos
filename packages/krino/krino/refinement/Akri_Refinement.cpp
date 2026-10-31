@@ -1,5 +1,6 @@
 #include <Akri_HexRefiner.hpp>
 #include <Akri_Refinement.hpp>
+#include <iostream>
 
 #include <numeric>
 
@@ -9,20 +10,19 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
-#include "Akri_ParallelErrorMessage.hpp"
-#include "Akri_ChildNodeCreator.hpp"
-#include "Akri_DiagWriter.hpp"
-#include "Akri_Edge.hpp"
-#include "Akri_EntityIdPool.hpp"
-#include "Akri_MeshHelpers.hpp"
-#include "Akri_MOAB_TetRefiner.hpp"
-#include "Akri_NodeRefiner.hpp"
-#include "Akri_TransitionElementEdgeMarker.hpp"
+#include <Akri_ParallelErrorMessage.hpp>
+#include <Akri_DiagWriter.hpp>
+#include <stk_util/util/ReportHandler.hpp>
+#include <Akri_Edge.hpp>
+#include <Akri_EntityIdPool.hpp>
+#include <Akri_MeshHelpers.hpp>
+#include <Akri_MOAB_TetRefiner.hpp>
+#include <Akri_NodeRefiner.hpp>
+#include <Akri_TransitionElementEdgeMarker.hpp>
 #include <Akri_QuadRefiner.hpp>
 #include <Akri_QualityMetric.hpp>
-#include "Akri_TriRefiner.hpp"
-#include "Akri_NodeRefiner.hpp"
-#include "Akri_RefinerUtils.hpp"
+#include <Akri_TriRefiner.hpp>
+#include <Akri_RefinerUtils.hpp>
 
 namespace krino {
 
@@ -124,33 +124,29 @@ int Refinement::refinement_level(const stk::mesh::Entity elem) const
   if (!is_child(elem))
     return 0;
   STK_ThrowAssertMsg(myRefinementLevelField, "Refinement level field is not defined.");
-  const auto * refineLevel = stk::mesh::field_data(*myRefinementLevelField, elem);
-  STK_ThrowAssertMsg(refineLevel != nullptr, "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
-  return *refineLevel;
+  STK_ThrowAssertMsg(has_field_data(*myRefinementLevelField, elem), "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  return myRefinementLevelField->data<stk::mesh::ReadOnly>().entity_values(elem)();
 }
 
 void Refinement::set_refinement_level(const stk::mesh::Entity elem, const int refinementLevel) const
 {
   STK_ThrowAssertMsg(myRefinementLevelField, "Refinement level field is not defined.");
-  auto * refineLevel = stk::mesh::field_data(*myRefinementLevelField, elem);
-  STK_ThrowAssertMsg(is_child(elem) && refineLevel != nullptr, "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
-  *refineLevel = refinementLevel;
+  STK_ThrowAssertMsg(is_child(elem) && has_field_data(*myRefinementLevelField, elem), "Refinement level field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  myRefinementLevelField->data<stk::mesh::ReadWrite>().entity_values(elem)() = refinementLevel;
 }
 
 
 int Refinement::get_originating_processor_for_parent_element(const stk::mesh::Entity elem) const
 {
-  const auto * originatingProc = stk::mesh::field_data(*myOriginatingProcForParentElementField, elem);
-  STK_ThrowAssertMsg(originatingProc != nullptr, "ORIGINATING_PROC_FOR_PARENT_ELEMENT field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
-  return *originatingProc;
+  STK_ThrowAssertMsg(has_field_data(*myOriginatingProcForParentElementField, elem), "ORIGINATING_PROC_FOR_PARENT_ELEMENT field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  return myOriginatingProcForParentElementField->data<stk::mesh::ReadOnly>().entity_values(elem)();
 }
 
 void Refinement::set_originating_processor_for_parent_element(const stk::mesh::Entity elem, const int originatingProc) const
 {
   STK_ThrowAssertMsg(is_parent(elem), "Call to set_originating_processor_for_parent_element() for non-parent element " << myMeta.mesh_bulk_data().entity_key(elem));
-  auto * originatingProcData = stk::mesh::field_data(*myOriginatingProcForParentElementField, elem);
-  STK_ThrowAssertMsg(originatingProcData != nullptr, "ORIGINATING_PROC_FOR_PARENT_ELEMENT field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
-  *originatingProcData = originatingProc;
+  STK_ThrowAssertMsg(has_field_data(*myOriginatingProcForParentElementField, elem), "ORIGINATING_PROC_FOR_PARENT_ELEMENT field missing on " << myMeta.mesh_bulk_data().entity_key(elem));
+  myOriginatingProcForParentElementField->data<stk::mesh::ReadWrite>().entity_values(elem)() = originatingProc;
 }
 
 unsigned Refinement::get_num_children_when_fully_refined(const stk::topology elementTopology)
@@ -169,9 +165,10 @@ unsigned Refinement::get_num_children_when_fully_refined(const stk::topology ele
   case stk::topology::HEXAHEDRON_8:
       return 8;
   default:
-      ThrowRuntimeError("Element topology not found in get_num_children_when_fully_refined: " << elementTopology.name());
+      STK_ThrowErrorMsg("Element topology not found in get_num_children_when_fully_refined: " << elementTopology.name());
       break;
   }
+  return 0; // unreachable; STK_ThrowErrorMsg does not return
 }
 
 unsigned Refinement::get_num_children_when_fully_refined(const stk::mesh::Entity elem) const
@@ -182,32 +179,32 @@ unsigned Refinement::get_num_children_when_fully_refined(const stk::mesh::Entity
 std::array<stk::mesh::EntityId,2> Refinement::get_edge_parent_node_ids(const stk::mesh::Entity edgeNode) const
 {
   STK_ThrowAssertMsg(myRefinedEdgeNodeParentIdsField, "Edge Node Ids field is not defined.");
-  auto * edgeNodeIds = stk::mesh::field_data(*myRefinedEdgeNodeParentIdsField, edgeNode);
-  STK_ThrowAssertMsg(edgeNodeIds != nullptr, "Edge Node Ids field missing on node " << myMeta.mesh_bulk_data().identifier(edgeNode));
-  return {{edgeNodeIds[0], edgeNodeIds[1]}};
+  STK_ThrowAssertMsg(has_field_data(*myRefinedEdgeNodeParentIdsField, edgeNode), "Edge Node Ids field missing on node " << myMeta.mesh_bulk_data().identifier(edgeNode));
+  const auto edgeNodeIds = myRefinedEdgeNodeParentIdsField->data<stk::mesh::ReadOnly>().entity_values(edgeNode);
+  return {{edgeNodeIds(stk::mesh::ScalarIdx(0)), edgeNodeIds(stk::mesh::ScalarIdx(1))}};
 }
 
 std::array<stk::mesh::Entity,2> Refinement::get_edge_parent_nodes(const stk::mesh::Entity edgeNode) const
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
   STK_ThrowAssertMsg(myRefinedEdgeNodeParentIdsField, "Edge Node Ids field is not defined.");
-  auto * edgeNodeIds = stk::mesh::field_data(*myRefinedEdgeNodeParentIdsField, edgeNode);
-  STK_ThrowAssertMsg(edgeNodeIds != nullptr, "Edge Node Ids field missing on node " << mesh.identifier(edgeNode));
-  return {{mesh.get_entity(stk::topology::NODE_RANK, edgeNodeIds[0]), mesh.get_entity(stk::topology::NODE_RANK, edgeNodeIds[1])}};
+  STK_ThrowAssertMsg(has_field_data(*myRefinedEdgeNodeParentIdsField, edgeNode), "Edge Node Ids field missing on node " << mesh.identifier(edgeNode));
+  const auto edgeNodeIds = myRefinedEdgeNodeParentIdsField->data<stk::mesh::ReadOnly>().entity_values(edgeNode);
+  return {{mesh.get_entity(stk::topology::NODE_RANK, edgeNodeIds(stk::mesh::ScalarIdx(0))), mesh.get_entity(stk::topology::NODE_RANK, edgeNodeIds(stk::mesh::ScalarIdx(1)))}};
 }
 
-static unsigned num_children_with_valid_id(const uint64_t * childElemIdsData, const unsigned numChildWhenFullyRefined)
+static unsigned num_children_with_valid_id(const stk::mesh::EntityValues<const uint64_t, stk::ngp::HostSpace> & childElemIdsData, const unsigned numChildWhenFullyRefined)
 {
   unsigned numChild = 0;
   for (unsigned iChild=0; iChild<numChildWhenFullyRefined; ++iChild)
-    if (stk::mesh::InvalidEntityId != childElemIdsData[iChild])
+    if (stk::mesh::InvalidEntityId != childElemIdsData(stk::mesh::ScalarIdx(iChild)))
       ++numChild;
   return numChild;
 }
 
-static bool has_child_with_invalid_id(const uint64_t * childElemIdsData, const unsigned numChildWhenFullyRefined)
+static bool has_child_with_invalid_id(const stk::mesh::EntityValues<const uint64_t, stk::ngp::HostSpace> & childElemIdsData, const unsigned numChildWhenFullyRefined)
 {
-  return (stk::mesh::InvalidEntityId == childElemIdsData[numChildWhenFullyRefined-1]);
+  return (stk::mesh::InvalidEntityId == childElemIdsData(stk::mesh::ScalarIdx(numChildWhenFullyRefined-1)));
 }
 
 bool Refinement::is_this_parent_element_partially_refined(const stk::mesh::Entity parentElem) const
@@ -227,13 +224,12 @@ unsigned Refinement::get_num_children(const stk::mesh::Entity elem) const
   return 0;
 }
 
-std::tuple<const uint64_t *,unsigned> Refinement::get_child_ids_and_num_children_when_fully_refined(const stk::mesh::Entity elem) const
+std::tuple<stk::mesh::EntityValues<const uint64_t, stk::ngp::HostSpace>,unsigned> Refinement::get_child_ids_and_num_children_when_fully_refined(const stk::mesh::Entity elem) const
 {
   const unsigned numChildWhenFullyRefined = get_num_children_when_fully_refined(elem);
   const stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
-  const auto * childElemIdsData = stk::mesh::field_data(childElementIdsField, elem);
-  STK_ThrowAssertMsg(nullptr != childElemIdsData, "Element is parent, but does not have " << childElementIdsField.name() << " defined.");
-  return std::make_tuple(childElemIdsData, numChildWhenFullyRefined);
+  STK_ThrowAssertMsg(has_field_data(childElementIdsField, elem), "Element is parent, but does not have " << childElementIdsField.name() << " defined.");
+  return std::make_tuple(childElementIdsField.data<stk::mesh::ReadOnly>().entity_values(elem), numChildWhenFullyRefined);
 }
 
 void Refinement::fill_child_element_ids(const stk::mesh::Entity elem, std::vector<stk::mesh::EntityId> & childElemIds) const
@@ -244,9 +240,9 @@ void Refinement::fill_child_element_ids(const stk::mesh::Entity elem, std::vecto
     const auto & [childElemIdsData, numChildWhenFullyRefined] = get_child_ids_and_num_children_when_fully_refined(elem);
     for (unsigned iChild=0; iChild<numChildWhenFullyRefined; ++iChild)
     {
-      if ((stk::mesh::InvalidEntityId == childElemIdsData[iChild]))
+      if ((stk::mesh::InvalidEntityId == childElemIdsData(stk::mesh::ScalarIdx(iChild))))
         return;
-      childElemIds.push_back(childElemIdsData[iChild]);
+      childElemIds.push_back(childElemIdsData(stk::mesh::ScalarIdx(iChild)));
     }
   }
 }
@@ -260,9 +256,9 @@ void Refinement::fill_children(const stk::mesh::Entity elem, std::vector<stk::me
     const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
     for (unsigned iChild=0; iChild<numChildWhenFullyRefined; ++iChild)
     {
-      if ((stk::mesh::InvalidEntityId == childElemIdsData[iChild]))
+      if ((stk::mesh::InvalidEntityId == childElemIdsData(stk::mesh::ScalarIdx(iChild))))
         return;
-      children.push_back(mesh.get_entity(stk::topology::ELEMENT_RANK, childElemIdsData[iChild]));
+      children.push_back(mesh.get_entity(stk::topology::ELEMENT_RANK, childElemIdsData(stk::mesh::ScalarIdx(iChild))));
     }
   }
 }
@@ -314,9 +310,8 @@ stk::mesh::Part & Refinement::refined_quad_face_node_part() const
 stk::math::Vector3d Refinement::get_coordinates(const stk::mesh::Entity node, const int dim) const
 {
   STK_ThrowAssertMsg(myCoordsField, "Coordinates field is not defined.");
-  const double * coordsData = stk::mesh::field_data(*myCoordsField, node);
-  STK_ThrowAssertMsg(nullptr != coordsData, "Node does not have " << myCoordsField->name() << " defined.");
-  return stk::math::Vector3d(coordsData, dim);
+  STK_ThrowAssertMsg(has_field_data(*myCoordsField, node), "Node does not have " << myCoordsField->name() << " defined.");
+  return stk::math::Vector3d(myCoordsField->data<stk::mesh::ReadOnly>().entity_values(node), dim);
 }
 
 template<size_t NUMREFINEDPARENTNODES, size_t NUMCHILDNODES>
@@ -501,25 +496,24 @@ stk::mesh::Field<uint64_t> & Refinement::get_child_element_ids_field(const unsig
       STK_ThrowAssert(myChildElementIds8Field);
       return *myChildElementIds8Field;
   default:
-      ThrowRuntimeError("Unsupported number of children when fully refined in get_child_element_ids_field: " << numChildWhenFullyRefined);
+      STK_ThrowErrorMsg("Unsupported number of children when fully refined in get_child_element_ids_field: " << numChildWhenFullyRefined);
       break;
   }
+  return *myChildElementIds2Field; // unreachable; STK_ThrowErrorMsg does not return
 }
 
-stk::mesh::EntityId * Refinement::get_child_element_ids(const unsigned numChildWhenFullyRefined, const stk::mesh::Entity parent) const
+stk::mesh::Field<uint64_t> & Refinement::get_child_element_ids_field_with_data(const unsigned numChildWhenFullyRefined, const stk::mesh::Entity parent) const
 {
   stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
-  stk::mesh::EntityId * childElemIdsData = stk::mesh::field_data(childElementIdsField, parent);
-  STK_ThrowAssertMsg(nullptr != childElemIdsData, "Element is does not have " << childElementIdsField.name() << " defined.");
-  return childElemIdsData;
+  STK_ThrowAssertMsg(has_field_data(childElementIdsField, parent), "Element is does not have " << childElementIdsField.name() << " defined.");
+  return childElementIdsField;
 }
 
-stk::mesh::EntityId * Refinement::get_child_element_ids(const unsigned numChildWhenFullyRefined, const stk::mesh::Bucket & bucket) const
+stk::mesh::Field<uint64_t> & Refinement::get_child_element_ids_field_with_data(const unsigned numChildWhenFullyRefined, const stk::mesh::Bucket & bucket) const
 {
   stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field(numChildWhenFullyRefined);
-  stk::mesh::EntityId * childElemIdsData = stk::mesh::field_data(childElementIdsField, bucket);
-  STK_ThrowAssertMsg(nullptr != childElemIdsData, "Bucket does not have " << childElementIdsField.name() << " defined.");
-  return childElemIdsData;
+  STK_ThrowAssertMsg(has_field_data(childElementIdsField, bucket), "Bucket does not have " << childElementIdsField.name() << " defined.");
+  return childElementIdsField;
 }
 
 template <size_t NUMREFINEDNODES>
@@ -571,11 +565,14 @@ void Refinement::set_parent_parts_and_parent_child_relation_fields(const stk::me
 
   const stk::mesh::EntityId parentElementId = mesh.identifier(parentElement);
   const int parentRefinementLevel = refinement_level(parentElement);
-  auto * childElemIds = get_child_element_ids(numChildWhenFullyRefined, parentElement);
-  std::fill(childElemIds, childElemIds+numChildWhenFullyRefined, stk::mesh::InvalidEntityId);
+  stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field_with_data(numChildWhenFullyRefined, parentElement);
+  auto childElementIdsFieldData = childElementIdsField.data<stk::mesh::ReadWrite>();
+  auto childElemIds = childElementIdsFieldData.entity_values(parentElement);
+  for (unsigned iChild=0; iChild<numChildWhenFullyRefined; ++iChild)
+    childElemIds(stk::mesh::ScalarIdx(iChild)) = stk::mesh::InvalidEntityId;
   for (size_t iChild=0; iChild<childElements.size(); ++iChild)
   {
-    childElemIds[iChild] = mesh.identifier(childElements[iChild]);
+    childElemIds(stk::mesh::ScalarIdx(iChild)) = mesh.identifier(childElements[iChild]);
     set_parent_id(childElements[iChild], parentElementId);
     set_refinement_level(childElements[iChild], parentRefinementLevel+1);
   }
@@ -598,19 +595,20 @@ static void prolong_element_fields(const stk::mesh::BulkData & mesh,
     if( field.entity_rank() == stk::topology::ELEM_RANK && field.type_is<double>() )
     {
 
-      const auto * parentElemData = field_data<double>(field, parentElem);
-      if (nullptr != parentElemData)
+      if (has_field_data(field, parentElem))
       {
+        auto fieldReadData = field.data<double>();
+        auto fieldWriteData = field.data<double, stk::mesh::ReadWrite>();
+        const auto parentElemData = fieldReadData.entity_values(parentElem);
         for(const auto & childElem : childElems)
         {
-          auto * childElemData = field_data<double>(field, childElem);
-
-          if(!childElemData) continue;
+          if(!has_field_data(field, childElem)) continue;
+          auto childElemData = fieldWriteData.entity_values(childElem);
 
           const unsigned fieldLength = field.length();
           for (unsigned i = 0; i < fieldLength; ++i)
           {
-            childElemData[i] = parentElemData[i];
+            childElemData(stk::mesh::ScalarIdx(i)) = parentElemData(stk::mesh::ScalarIdx(i));
           }
         }
       }
@@ -629,28 +627,28 @@ static void restrict_element_fields(const stk::mesh::BulkData & mesh,
     if( field.entity_rank() == stk::topology::ELEM_RANK && field.type_is<double>() )
     {
 
-      auto * parentElemData = field_data<double>(field, parentElem);
-      if (nullptr != parentElemData)
+      if (has_field_data(field, parentElem))
       {
+        auto fieldReadData = field.data<double>();
         const unsigned fieldLength = field.length();
         std::vector<double> averagedChildElemData(fieldLength,0.);
         double numActiveChildren = 0.0;
         for(const auto & childElem : childElems)
         {
-          auto * childElemData = field_data<double>(field, childElem);
-
-          if(!childElemData) continue;
+          if(!has_field_data(field, childElem)) continue;
+          const auto childElemData = fieldReadData.entity_values(childElem);
           numActiveChildren += 1.;
           for (unsigned i = 0; i < fieldLength; ++i)
           {
-            averagedChildElemData[i] += childElemData[i];
+            averagedChildElemData[i] += childElemData(stk::mesh::ScalarIdx(i));
           }
         }
         if (numActiveChildren > 0.)
         {
+          auto parentElemData = field.data<double, stk::mesh::ReadWrite>().entity_values(parentElem);
           for (unsigned i = 0; i < fieldLength; ++i)
           {
-            parentElemData[i] = averagedChildElemData[i]/numActiveChildren;
+            parentElemData(stk::mesh::ScalarIdx(i)) = averagedChildElemData[i]/numActiveChildren;
           }
         }
       }
@@ -910,8 +908,9 @@ static unsigned num_new_child_elements_for_case_id(const stk::topology & elemTop
     case stk::topology::HEXAHEDRON_8:
         return HexRefiner::num_new_child_elements_hex8(caseId);
     default:
-        ThrowRuntimeError("Element topology not found in refine_element: " << elemTopology.name());
+        STK_ThrowErrorMsg("Element topology not found in refine_element: " << elemTopology.name());
     }
+  return 0; // unreachable; STK_ThrowErrorMsg does not return
 }
 
 void Refinement::adapt_element_and_append_sides_to_create(const stk::topology & elemTopology,
@@ -968,7 +967,7 @@ void Refinement::adapt_element_and_append_sides_to_create(const stk::topology & 
         refine_hex_8_and_append_sides_to_create(childParts, elemTopology, elem, elemChildEdgeNodes, postCaseId, childSides);
         break;
     default:
-        ThrowRuntimeError("Element topology not found in refine_element: " << elemTopology.name());
+        STK_ThrowErrorMsg("Element topology not found in refine_element: " << elemTopology.name());
         break;
     }
 }
@@ -1290,15 +1289,16 @@ static void adjust_parent_and_child_rebalance_weights(stk::mesh::Field<double> &
   if (children.empty())
     return;
 
+  auto elemWtData = elemWtField.data<stk::mesh::ReadWrite>();
   double childWtSum = 0.;
   for (auto && child : children)
   {
-    double & childWt = *stk::mesh::field_data(elemWtField, child);
-    childWtSum += childWt;
-    childWt = 0.;
+    auto childWt = elemWtData.entity_values(child);
+    childWtSum += childWt();
+    childWt() = 0.;
   }
-  double & parentWt = *stk::mesh::field_data(elemWtField, parent);
-  parentWt += childWtSum;
+  auto parentWt = elemWtData.entity_values(parent);
+  parentWt() += childWtSum;
 }
 
 void Refinement::update_element_rebalance_weights_incorporating_parallel_owner_constraints(stk::mesh::Field<double> & elemWtField) const
@@ -1583,6 +1583,16 @@ bool Refinement::do_refinement(const EdgeMarkerInterface & edgeMarker)
   return didMakeAnyChanges;
 }
 
+size_t Refinement::num_newly_refined_nodes() const
+{
+  return myNodeRefiner.num_refined_nodes_and_edge_midnodes();
+}
+
+void Refinement::for_each_newly_refined_node(const UnaryForChildNodeAndParents & unary) const
+{
+  myNodeRefiner.for_each_refined_node_and_edge_midnode(myMeta.mesh_bulk_data(), unary);
+}
+
 bool Refinement::do_uniform_refinement(const int numUniformRefinementLevels)
 {
   UniformRefinementEdgeMarker uniformMarker(myMeta.mesh_bulk_data(), *this);
@@ -1640,9 +1650,8 @@ void Refinement::find_edges_to_refine(const EdgeMarkerInterface & edgeMarker)
 stk::mesh::EntityId Refinement::get_parent_id(const stk::mesh::Entity elem) const
 {
   STK_ThrowAssertMsg(myParentElementIdField, "Parent ids field is not defined.");
-  const auto * parentElemIdData = stk::mesh::field_data(*myParentElementIdField, elem);
-  STK_ThrowAssertMsg(nullptr != parentElemIdData, "Element is does not have " << myParentElementIdField->name() << " defined.");
-  return *parentElemIdData;
+  STK_ThrowAssertMsg(has_field_data(*myParentElementIdField, elem), "Element is does not have " << myParentElementIdField->name() << " defined.");
+  return myParentElementIdField->data<stk::mesh::ReadOnly>().entity_values(elem)();
 }
 
 std::pair<stk::mesh::EntityId,int> Refinement::get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const
@@ -1654,9 +1663,8 @@ std::pair<stk::mesh::EntityId,int> Refinement::get_parent_id_and_parallel_owner_
 void Refinement::set_parent_id(const stk::mesh::Entity elem, const stk::mesh::EntityId parentElemId) const
 {
   STK_ThrowAssertMsg(myParentElementIdField, "Parent ids field is not defined.");
-  auto * parentElemIdData = stk::mesh::field_data(*myParentElementIdField, elem);
-  STK_ThrowAssertMsg(nullptr != parentElemIdData, "Element is does not have " << myParentElementIdField->name() << " defined.");
-  *parentElemIdData = parentElemId;
+  STK_ThrowAssertMsg(has_field_data(*myParentElementIdField, elem), "Element is does not have " << myParentElementIdField->name() << " defined.");
+  myParentElementIdField->data<stk::mesh::ReadWrite>().entity_values(elem)() = parentElemId;
 }
 
 namespace {
@@ -1774,15 +1782,17 @@ void Refinement::restore_parent_and_child_element_parts(const std::vector<stk::m
 void Refinement::add_child_to_parent(const stk::mesh::EntityId childId, const stk::mesh::Entity parent)
 {
   const unsigned numChildWhenFullyRefined = get_num_children_when_fully_refined(parent);
-  auto * childElemIdsData = get_child_element_ids(numChildWhenFullyRefined, parent);
+  stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field_with_data(numChildWhenFullyRefined, parent);
+  auto childElementIdsFieldData = childElementIdsField.data<stk::mesh::ReadWrite>();
+  auto childElemIdsData = childElementIdsFieldData.entity_values(parent);
 
   unsigned iChild = 0;
-  while(iChild<numChildWhenFullyRefined && childElemIdsData[iChild] != stk::mesh::InvalidEntityId)
+  while(iChild<numChildWhenFullyRefined && childElemIdsData(stk::mesh::ScalarIdx(iChild)) != stk::mesh::InvalidEntityId)
     ++iChild;
 
   STK_ThrowRequireMsg(iChild < numChildWhenFullyRefined, "Logic error when assigning child id for parent element.");
 
-  childElemIdsData[iChild] = childId;
+  childElemIdsData(stk::mesh::ScalarIdx(iChild)) = childId;
 }
 
 void Refinement::parallel_sync_child_element_ids_fields()
@@ -1802,8 +1812,12 @@ void Refinement::restore_child_element_ids_field(const std::vector<ParentAndChil
   for (auto && bucket : mesh.get_buckets(stk::topology::ELEMENT_RANK, myMeta.locally_owned_part() & parent_part()))
   {
     const unsigned numChildWhenFullyRefined = get_num_children_when_fully_refined(bucket->topology());
-    auto * childElemIds = get_child_element_ids(numChildWhenFullyRefined, *bucket);
-    std::fill(childElemIds, childElemIds+bucket->size()*numChildWhenFullyRefined, stk::mesh::InvalidEntityId);
+    stk::mesh::Field<uint64_t> & childElementIdsField = get_child_element_ids_field_with_data(numChildWhenFullyRefined, *bucket);
+    auto childElementIdsFieldData = childElementIdsField.data<stk::mesh::ReadWrite>();
+    auto childElemIds = childElementIdsFieldData.bucket_values(*bucket);
+    for (stk::mesh::EntityIdx i : bucket->entities())
+      for (unsigned iChild=0; iChild<numChildWhenFullyRefined; ++iChild)
+        childElemIds(i, stk::mesh::ScalarIdx(iChild)) = stk::mesh::InvalidEntityId;
   }
 
   for (auto && bucket : mesh.get_buckets(stk::topology::ELEMENT_RANK, myMeta.locally_owned_part() & child_part()))

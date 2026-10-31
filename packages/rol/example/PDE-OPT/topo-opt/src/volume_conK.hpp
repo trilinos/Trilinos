@@ -51,25 +51,25 @@ public:
     nupda_++;
   }
 
-  void value( ROL::Vector<Real> &c, const ROL::Vector<Real> &z, Real &tol ) {
+  void value( ROL::Vector<Real> &c, const ROL::Vector<Real> &z, Real &tol ) override {
     nfval_++;
     dynamic_cast<ROL::SingletonVector<Real>&>(c).setValue(V0_ + Vdual_->dot(z));
   }
 
   void applyJacobian(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
-                     const ROL::Vector<Real> &z, Real &tol) {
+                     const ROL::Vector<Real> &z, Real &tol) override {
     njaco_++;
     dynamic_cast<ROL::SingletonVector<Real>&>(jv).setValue(Vdual_->dot(v));
   }
 
-  void applyAdjointJacobian( ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
+  void applyAdjointJacobian( ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) override {
     najac_++;
     Real vval = dynamic_cast<const ROL::SingletonVector<Real>&>(v).getValue();
     jv.set(*V_);
     jv.scale(vval);
   }
 
-  void applyAdjointHessian( ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
+  void applyAdjointHessian( ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) override {
     nhess_++;
     ahwv.zero();
   }
@@ -90,7 +90,7 @@ public:
 
 // For parametrized (stochastic) objective functions and constraints
 public:
-  void setParameter(const std::vector<Real> &param) {
+  void setParameter(const std::vector<Real> &param) override {
     ROL::Constraint<Real>::setParameter(param);
     qoi_->setParameter(param);
   }

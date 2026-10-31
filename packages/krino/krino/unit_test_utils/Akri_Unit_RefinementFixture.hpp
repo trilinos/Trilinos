@@ -1,0 +1,555 @@
+#ifndef KRINO_KRINO_UNIT_TESTS_AKRI_UNIT_REFINEMENTFIXTURE_HPP_
+#define KRINO_KRINO_UNIT_TESTS_AKRI_UNIT_REFINEMENTFIXTURE_HPP_
+
+#include <Akri_StkMeshFixture.hpp>
+#include <random>
+#include <stk_mesh/base/FieldBLAS.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
+#include <stk_util/diag/Timer.hpp>
+#include <Akri_AllReduce.hpp>
+#include <Akri_EdgeMarker.hpp>
+#include <Akri_FieldRef.hpp>
+#include <Akri_MeshHelpers.hpp>
+#include <Akri_MeshQuality.hpp>
+#include <Akri_QualityMetric.hpp>
+#include <Akri_Refinement.hpp>
+#include <Akri_TransitionElementEdgeMarker.hpp>
+#include <Akri_AuxMetaData.hpp>
+#include <Akri_RefinementManager.hpp>
+#include <Akri_UnitTestUtils.hpp>
+
+namespace krino {
+
+inline void set_refinement_marker_field(FieldRef elementMarkerField, const Refinement::RefinementMarker value)
+{
+  stk::mesh::field_fill(static_cast<int>(value), elementMarkerField, stk::mesh::selectField(elementMarkerField));
+}
+
+inline void clear_refinement_marker_field(FieldRef elementMarkerField)
+{
+  set_refinement_marker_field(elementMarkerField, Refinement::RefinementMarker::NOTHING);
+}
+
+
+template <typename MESHSPEC>
+class RefinementFixture : public StkMeshFixture<MESHSPEC::TOPOLOGY>
+{
+public:
+  RefinementFixture()
+  : myRefinement(mMesh.mesh_meta_data(), &this->get_aux_meta().active_part(), sierra::Diag::sierraTimer()),
+    myEdgeBasedEdgeMarker(mMesh, myRefinement)
+  {
+    stk::mesh::MetaData & meta = mMesh.mesh_meta_data();
+    stk::mesh::FieldBase & elemMarkerField = meta.declare_field<int>(stk::topology::ELEMENT_RANK, myElementMarkerFieldName, 1);
+    stk::mesh::FieldBase & elemField = meta.declare_field<double>(stk::topology::ELEMENT_RANK, myElemFieldName, 1);
+    myElementMarkerField = FieldRef(elemMarkerField);
+    myElemField = FieldRef(elemField);
+    stk::mesh::put_field_on_mesh(elemMarkerField, meta.universal_part(), 1, 1, nullptr);
+    stk::mesh::put_field_on_mesh(elemField, meta.universal_part(), 1, 1, nullptr);
+    mMesh.set_automatic_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
+  }
+
+  using StkMeshFixture<MESHSPEC::TOPOLOGY>::mMesh;
+  using StkMeshFixture<MESHSPEC::TOPOLOGY>::mBuilder;
+  using StkMeshFixture<MESHSPEC::TOPOLOGY>::mComm;
+  using StkMeshFixture<MESHSPEC::TOPOLOGY>::write_mesh;
+
+  void mark_elements_for_refinement(const std::vector<stk::mesh::Entity> & elements)
+  {
+    auto elemMarkerData = myElementMarkerField.data<int, stk::mesh::ReadWrite>();
+    for (auto && elem : elements)
+    {
+      elemMarkerData.entity_values(elem)() = static_cast<int>(Refinement::RefinementMarker::REFINE);
+    }
+  }
+  void mark_elements_for_unrefinement(const std::vector<stk::mesh::Entity> & elements)
+  {
+    auto elemMarkerData = myElementMarkerField.data<int, stk::mesh::ReadWrite>();
+    for (auto && elem : elements)
+    {
+      elemMarkerData.entity_values(elem)() = static_cast<int>(Refinement::RefinementMarker::COARSEN);
+    }
+  }
+  void mark_nonparent_elements()
+  {
+    auto elemMarkerData = myElementMarkerField.data<int, stk::mesh::ReadWrite>();
+    for ( auto && bucket : mMesh.get_buckets( stk::topology::ELEMENT_RANK, mMesh.mesh_meta_data().locally_owned_part() ) )
+    {
+      const auto markerValue = myRefinement.is_parent(*bucket) ? Refinement::RefinementMarker::NOTHING : Refinement::RefinementMarker::REFINE;
+      auto elemMarker = elemMarkerData.bucket_values(*bucket);
+      for (stk::mesh::EntityIdx i : bucket->entities())
+        elemMarker(i) = static_cast<int>(markerValue);
+    }
+  }
+
+  void clear_edge_marker()
+  {
+    myEdgeBasedEdgeMarker.clear_marked_edges();
+  }
+
+  void mark_edge_for_refinement(const Edge edge)
+  {
+    myEdgeBasedEdgeMarker.mark_edge_for_refinement(edge);
+  }
+
+  void mark_edges_for_refinement(const std::vector<Edge> & edges)
+  {
+    for (auto & edge : edges)
+      myEdgeBasedEdgeMarker.mark_edge_for_refinement(edge);
+  }
+
+  bool do_refinement()
+  {
+    const TransitionElementEdgeMarker edgeMarker(mMesh, myRefinement, myElementMarkerField.name());
+    return myRefinement.do_refinement(edgeMarker);
+  }
+
+   bool do_edge_refinement()
+   {
+     return myRefinement.do_refinement(myEdgeBasedEdgeMarker);
+   }
+
+  void perform_iterations_of_uniform_refinement_with_general_element_marker(const int numIterationsOfUMR)
+  {
+    for (int iRefine=0; iRefine<numIterationsOfUMR; ++iRefine)
+    {
+      myTimer.start();
+      mark_nonparent_elements();
+
+      do_refinement();
+      myTimer.stop();
+      std::cout << "After " << iRefine+1 << " levels of refinement, there are " << get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK) << " elements, time = " << myTimer.getMetric<stk::diag::CPUTime>().getLap() << std::endl;
+    }
+  }
+
+  void perform_iterations_of_uniform_refinement_with_uniform_marker(const int numIterationsOfUMR)
+  {
+    myTimer.start();
+    myRefinement.do_uniform_refinement(numIterationsOfUMR);
+    myTimer.stop();
+    const size_t numElems = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
+    if (0 == stk::parallel_machine_rank(mComm))
+      std::cout << "After " << numIterationsOfUMR << " levels of uniform refinement, there are " << numElems << " elements, time = " << myTimer.getMetric<stk::diag::CPUTime>().getLap() << std::endl;
+  }
+
+  void refine_marked_elements(const std::string fileName = "")
+  {
+    do_refinement();
+
+    if (!fileName.empty())
+      write_mesh(fileName);
+  }
+
+  void refine_marked_edges(const std::string fileName = "")
+  {
+    do_edge_refinement();
+
+    if (!fileName.empty())
+      write_mesh(fileName);
+  }
+
+  template<typename NODES>
+  bool entity_intersects_x_value(const NODES & entityNodes, const double x0)
+  {
+    static constexpr double tol{1.e-9};
+    bool hasZero = false;
+    bool hasNeg = false;
+    bool hasPos = false;
+    for (auto && node : entityNodes)
+    {
+      const stk::math::Vector3d nodeCoords = this->get_node_coordinates(node);
+      const double x = nodeCoords[0] - x0;
+      if (std::abs(x) < tol)
+        hasZero = true;
+      else if (x < 0)
+        hasNeg = true;
+      else
+        hasPos = true;
+    }
+    if (hasZero)
+      return hasNeg || hasPos;
+    return hasNeg && hasPos;
+  }
+
+  template<typename NODES>
+  bool entity_crosses_x_value(const NODES & entityNodes, const double x0)
+  {
+    static constexpr double tol{1.e-9};
+    bool hasNeg = false;
+    bool hasPos = false;
+    for (auto && node : entityNodes)
+    {
+      const stk::math::Vector3d nodeCoords = this->get_node_coordinates(node);
+      const double x = nodeCoords[0] - x0;
+      if (x < -tol)
+          hasNeg = true;
+      else if (x > tol)
+        hasPos = true;
+    }
+    return hasNeg && hasPos;
+  }
+
+  bool element_intersects_x_equal_0(const stk::mesh::Entity elem)
+  {
+    return entity_intersects_x_value(StkMeshEntities{mMesh.begin_nodes(elem), mMesh.end_nodes(elem)}, 0.);
+  }
+
+  bool edge_crosses_x_value(const Edge edge, const double x0)
+  {
+    return entity_crosses_x_value(get_edge_nodes(edge), x0);
+  }
+
+  std::pair<bool, double> tag_element_spans_z_equal_0_and_compute_element_field(const stk::mesh::Entity elem, bool /*flip*/)
+  {
+    static constexpr double tol{1.e-9};
+    bool hasNeg = false;
+    bool hasPos = false;
+    bool hasNodeOnZEqual0 = false;
+    double centroidValue = 0.0;
+    for (auto && node : StkMeshEntities{mMesh.begin_nodes(elem), mMesh.end_nodes(elem)})
+    {
+      const stk::math::Vector3d nodeCoords = this->get_node_coordinates(node);
+      centroidValue += nodeCoords[2];
+
+      if (std::abs(nodeCoords[2]) < tol)
+        hasNodeOnZEqual0 = true;
+      else if (nodeCoords[2] < 0)
+        hasNeg = true;
+      else
+        hasPos = true;
+    }
+    centroidValue /= (double)mMesh.num_nodes(elem);
+    if (hasNodeOnZEqual0) return std::pair<bool, double>{true,centroidValue};
+    return std::pair<bool, double>{hasNeg && hasPos, centroidValue};
+  }
+
+  void mark_elements_spanning_z_equal_0_and_populate_elem_field(bool flip)
+  {
+    clear_refinement_marker();
+    AuxMetaData & auxMeta = AuxMetaData::get(mMesh.mesh_meta_data());
+    auto elemMarkerData = myElementMarkerField.data<int, stk::mesh::ReadWrite>();
+    auto elemFieldData = myElemField.data<double, stk::mesh::ReadWrite>();
+    for ( auto && bucket : mMesh.get_buckets( stk::topology::ELEMENT_RANK, mMesh.mesh_meta_data().locally_owned_part() & auxMeta.active_part()) )
+    {
+      auto elemMarker = elemMarkerData.bucket_values(*bucket);
+      auto elemField = elemFieldData.bucket_values(*bucket);
+      for ( stk::mesh::EntityIdx iElem : bucket->entities() )
+      {
+        auto doMarkAndFieldVal = tag_element_spans_z_equal_0_and_compute_element_field((*bucket)[iElem], flip);
+        auto doMark = std::get<0>(doMarkAndFieldVal);
+        auto centroidValue = std::get<1>(doMarkAndFieldVal);
+        if (doMark) elemMarker(iElem) = static_cast<int>(Refinement::RefinementMarker::REFINE);
+
+        if (centroidValue <= 0 ) elemField(iElem) = -1;
+        else elemField(iElem) = 1;
+
+        if(flip) elemField(iElem) *= -1.0;
+      }
+    }
+  }
+
+  void check_elem_field_values_spanning_z_equal_0(bool flip)
+  {
+    clear_refinement_marker();
+    AuxMetaData & auxMeta = AuxMetaData::get(mMesh.mesh_meta_data());
+    auto elemFieldData = myElemField.data<double>();
+    for ( auto && bucket : mMesh.get_buckets( stk::topology::ELEMENT_RANK, mMesh.mesh_meta_data().locally_owned_part() & auxMeta.active_part()) )
+    {
+      auto elemField = elemFieldData.bucket_values(*bucket);
+      for ( stk::mesh::EntityIdx iElem : bucket->entities() )
+      {
+        auto doMarkAndFieldVal = tag_element_spans_z_equal_0_and_compute_element_field((*bucket)[iElem], flip);
+        auto centroidValue = std::get<1>(doMarkAndFieldVal);
+        double goldValue;
+        if (centroidValue < 0 ) goldValue = -1.0;
+        else goldValue = 1.0;
+
+        if(flip) goldValue *= -1.0;
+        EXPECT_EQ(goldValue, elemField(iElem));
+      }
+    }
+  }
+
+  void mark_elements_spanning_x_equal_0()
+  {
+    clear_refinement_marker();
+
+    auto elemMarkerData = myElementMarkerField.data<int, stk::mesh::ReadWrite>();
+    for ( auto && bucket : mMesh.get_buckets( stk::topology::ELEMENT_RANK, mMesh.mesh_meta_data().locally_owned_part() ) )
+    {
+      auto elemMarker = elemMarkerData.bucket_values(*bucket);
+      for ( stk::mesh::EntityIdx iElem : bucket->entities() )
+      {
+        if (element_intersects_x_equal_0((*bucket)[iElem]))
+          elemMarker(iElem) = static_cast<int>(Refinement::RefinementMarker::REFINE);
+      }
+    }
+  }
+
+  void mark_edges_crossing_x_value(const double x0)
+  {
+    clear_edge_marker();
+
+    std::vector<Edge> elemEdges;
+    for ( auto && bucket : mMesh.get_buckets( stk::topology::ELEMENT_RANK, mMesh.mesh_meta_data().locally_owned_part() & !myRefinement.parent_part() ) )
+    {
+      for ( size_t iElem=0; iElem<bucket->size(); ++iElem )
+      {
+        fill_entity_edges(mMesh, (*bucket)[iElem], elemEdges);
+        for (auto & edge : elemEdges)
+          if (edge_crosses_x_value(edge, x0))
+            mark_edge_for_refinement(edge);
+      }
+    }
+  }
+
+  void randomly_select_children(std::mt19937 & rand_gen,
+      const double select_fraction,
+      std::vector<stk::mesh::Entity> & elems_out)
+  {
+    elems_out.clear();
+
+    std::uniform_real_distribution<> rand_dist(0., 1.);
+    const auto & meta = mMesh.mesh_meta_data();
+    const stk::mesh::Selector selector = meta.locally_owned_part() & myRefinement.child_part();
+    for (auto && bucket : mMesh.get_buckets(stk::topology::ELEMENT_RANK, selector))
+    {
+      for (size_t iElem = 0; iElem < bucket->size(); ++iElem)
+      {
+        const double rand_val = rand_dist(rand_gen);
+        if (rand_val < select_fraction)
+        {
+          elems_out.push_back((*bucket)[iElem]);
+        }
+      }
+    }
+  }
+
+  void randomly_mark_elements(std::mt19937 &rand_gen)
+  {
+    clear_refinement_marker();
+
+    std::uniform_real_distribution<> rand_dist(0., 1.);
+    const double refine_prob = 0.1;
+    const double unrefine_prob = 0.95;
+    const auto & meta = mMesh.mesh_meta_data();
+    const stk::mesh::Selector owned_leaf = meta.locally_owned_part() & !myRefinement.parent_part();
+    const stk::mesh::Selector owned_parent = meta.locally_owned_part() & myRefinement.parent_part();
+    auto elemMarkerData = myElementMarkerField.data<int, stk::mesh::ReadWrite>();
+    for ( auto && bucket : mMesh.get_buckets( stk::topology::ELEMENT_RANK, owned_leaf ) )
+    {
+      auto elemMarker = elemMarkerData.bucket_values(*bucket);
+      for ( stk::mesh::EntityIdx iElem : bucket->entities() )
+      {
+        const double rand_val = rand_dist(rand_gen);
+        if(rand_val < refine_prob)
+        {
+          elemMarker(iElem) = static_cast<int>(Refinement::RefinementMarker::REFINE);
+        }
+      }
+    }
+
+    for ( auto && bucket : mMesh.get_buckets( stk::topology::ELEMENT_RANK, owned_parent ) )
+    {
+      auto elemMarker = elemMarkerData.bucket_values(*bucket);
+      for ( stk::mesh::EntityIdx iElem : bucket->entities() )
+      {
+        const double rand_val = rand_dist(rand_gen);
+        if(rand_val < unrefine_prob)
+        {
+          elemMarker(iElem) = static_cast<int>(Refinement::RefinementMarker::COARSEN);
+          for(auto && child : myRefinement.get_children((*bucket)[iElem]))
+          {
+            elemMarkerData.entity_values(child)() = static_cast<int>(Refinement::RefinementMarker::COARSEN);
+          }
+        }
+      }
+    }
+  }
+
+
+
+  std::vector<stk::mesh::Entity> get_elements_with_given_ids(const std::vector<stk::mesh::EntityId> & idsOfElems)
+  {
+    std::vector<stk::mesh::Entity> elementsToRefine;
+    for (auto && idOfElem : idsOfElems)
+    {
+      stk::mesh::Entity elemToRefine = mMesh.get_entity(stk::topology::ELEMENT_RANK, idOfElem);
+      if (mMesh.is_valid(elemToRefine) && mMesh.bucket(elemToRefine).owned())
+        elementsToRefine.push_back(elemToRefine);
+    }
+    return elementsToRefine;
+  }
+
+  void refine_elements(const std::vector<stk::mesh::Entity> & elemsToRefine, const std::string fileName = "")
+  {
+    clear_refinement_marker();
+    mark_elements_for_refinement(elemsToRefine);
+    refine_marked_elements(fileName);
+  }
+
+  void refine_elements_with_given_ids(const std::vector<stk::mesh::EntityId> & idsOfElemsToRefine, const std::string fileName = "")
+  {
+    refine_elements(get_elements_with_given_ids(idsOfElemsToRefine), fileName);
+  }
+
+  void refine_elements_with_given_indices(const std::vector<unsigned> & indicesOfElemsToRefine, const std::string fileName = "")
+  {
+    refine_elements_with_given_ids(mBuilder.get_ids_of_elements_with_given_indices(indicesOfElemsToRefine), fileName);
+  }
+
+  double compute_mesh_quality()
+  {
+    const ScaledJacobianQualityMetric qualityMetric;
+    const FieldRef coordsField(mMesh.mesh_meta_data().coordinate_field());
+    return krino::compute_mesh_quality(mMesh, this->get_aux_meta().active_part(), coordsField, qualityMetric);
+  }
+
+  void unrefine_mesh()
+  {
+    myRefinement.fully_unrefine_mesh();
+  }
+  std::vector<stk::mesh::Entity> get_children(const stk::mesh::Entity elem)
+  {
+    return myRefinement.get_children(elem);
+  }
+  unsigned get_num_children(const stk::mesh::Entity elem)
+  {
+    return myRefinement.get_num_children(elem);
+  }
+
+  void clear_refinement_marker()
+  {
+    clear_refinement_marker_field(myElementMarkerField);
+  }
+
+  void mark_all_elements_for_unrefinement()
+  {
+    set_refinement_marker_field(myElementMarkerField, Refinement::RefinementMarker::COARSEN);
+  }
+
+  void mark_all_elements_for_refinement()
+  {
+    set_refinement_marker_field(myElementMarkerField, Refinement::RefinementMarker::REFINE);
+  }
+
+  void test_refinement_of_transition_element_leads_to_refinement_of_parent(const int indexOfCenterElement)
+  {
+    const stk::mesh::Entity centerElem = mMesh.get_entity(stk::topology::ELEMENT_RANK, mBuilder.get_assigned_element_global_ids()[indexOfCenterElement]);
+    std::vector<stk::mesh::Entity> transitionElements;
+
+    const unsigned numEdges = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK) - 1;
+    for (int iCaseId=0; iCaseId<(1<<numEdges); ++iCaseId)
+    {
+      std::vector<unsigned> edgeElementsToRefine;
+      for (unsigned iEdge=0; iEdge<numEdges; ++iEdge)
+        if (iCaseId & (1<<iEdge))
+          edgeElementsToRefine.push_back(iEdge);
+
+      refine_elements_with_given_indices(edgeElementsToRefine);
+
+      unsigned numTransitionElements = 0;
+      if (mMesh.is_valid(centerElem))
+        numTransitionElements = get_num_children(centerElem);
+      all_reduce_max(mMesh.parallel(), numTransitionElements);
+
+      unrefine_mesh();
+
+      for (unsigned iTransitionElement=0; iTransitionElement<numTransitionElements; ++iTransitionElement)
+      {
+        refine_elements_with_given_indices(edgeElementsToRefine);
+        std::vector<stk::mesh::Entity> elementsToRefine;
+        if (mMesh.is_valid(centerElem))
+        {
+          transitionElements = get_children(centerElem);
+
+          ASSERT_EQ(numTransitionElements, transitionElements.size()) << "Number of transition elements changed from " << numTransitionElements << " to " << transitionElements.size() << std::endl;
+
+          elementsToRefine.push_back(transitionElements[iTransitionElement]);
+        }
+
+        refine_elements(elementsToRefine);
+        if (mMesh.is_valid(centerElem) && mMesh.bucket(centerElem).owned())
+        {
+          const unsigned numChildrenAfterRefinementOfTransition = (get_children(centerElem)).size();
+          EXPECT_EQ(myRefinement.get_num_children_when_fully_refined(centerElem), numChildrenAfterRefinementOfTransition);
+        }
+
+        unrefine_mesh();
+      }
+    }
+  }
+
+  void test_refinement_of_given_elements(const std::vector<unsigned> & indicesOfElemsToRefine, const unsigned goldNumElements, const unsigned goldNumNodes, const double goldQuality, const std::string fileName = "")
+  {
+    if(stk::parallel_machine_size(mComm) <= 4)
+    {
+      refine_elements_with_given_indices(indicesOfElemsToRefine, fileName);
+
+      EXPECT_EQ(goldNumElements, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
+      EXPECT_EQ(goldNumNodes, get_global_num_entities(mMesh, stk::topology::NODE_RANK));
+
+      const double quality = compute_mesh_quality();
+      EXPECT_NEAR(quality, goldQuality, 0.02);
+    }
+  }
+
+  void move_owned_elements_with_given_ids_and_owned_attached_entities_to_processor(const std::vector<stk::mesh::EntityId> & elemIds, const int proc)
+  {
+    std::vector<stk::mesh::EntityProc> entitiesToMove;
+    for (auto elemId : elemIds)
+    {
+      stk::mesh::Entity elem = mMesh.get_entity(stk::topology::ELEMENT_RANK, elemId);
+      if (mMesh.is_valid(elem) && mMesh.parallel_owner_rank(elem) == mMesh.parallel_rank())
+      {
+        entitiesToMove.emplace_back(elem, proc);
+        for (auto && relRank : {stk::topology::EDGE_RANK, stk::topology::FACE_RANK})
+          for (auto edgeOrFace : StkMeshEntities{mMesh.begin(elem,relRank), mMesh.end(elem,relRank)})
+            if (mMesh.parallel_owner_rank(edgeOrFace) == mMesh.parallel_rank())
+              entitiesToMove.emplace_back(edgeOrFace, proc);
+      }
+    }
+    mMesh.change_entity_owner(entitiesToMove);
+    fix_node_ownership_to_assure_selected_owned_element(mMesh, this->get_aux_meta().active_part());
+  }
+
+  void test_child_node_count_and_location(const unsigned goldNumChildNodes)
+  {
+    EXPECT_EQ(goldNumChildNodes, myRefinement.num_newly_refined_nodes());
+
+    unsigned numCheckedChildren = 0;
+    const auto check_child_node_parents = [&](const stk::mesh::Entity childNode, const stk::mesh::Entity * parentNodeBeg, const stk::mesh::Entity * parentNodeEnd)
+    {
+      const stk::math::Vector3d childNodeCoords = this->get_node_coordinates(childNode);
+      const StkMeshEntities parentNodes{parentNodeBeg, parentNodeEnd};
+      stk::math::Vector3d avgParentNodeCoords = stk::math::Vector3d::ZERO;
+      for (auto parent : parentNodes)
+        avgParentNodeCoords += this->get_node_coordinates(parent);
+      avgParentNodeCoords /= parentNodes.size();
+      expect_eq(avgParentNodeCoords, childNodeCoords);
+      ++numCheckedChildren;
+    };
+
+    myRefinement.for_each_newly_refined_node(check_child_node_parents);
+    EXPECT_EQ(goldNumChildNodes, numCheckedChildren);
+  }
+
+
+protected:
+  MESHSPEC meshSpec;
+  stk::diag::Timer myTimer{"Refinement", sierra::Diag::sierraTimer()};
+  Refinement myRefinement;
+  std::string myElementMarkerFieldName{"ELEMENT_MARKER"};
+  std::string myElemFieldName{"ELEMENT_FIELD"};
+  FieldRef myElementMarkerField;
+  FieldRef myElemField;
+  EdgeBasedEdgeMarker myEdgeBasedEdgeMarker;
+};
+
+}
+
+
+
+
+#endif /* KRINO_KRINO_UNIT_TESTS_AKRI_UNIT_REFINEMENTFIXTURE_HPP_ */

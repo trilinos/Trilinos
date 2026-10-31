@@ -27,6 +27,7 @@ struct MPVectorWorkConfig {
 
   typedef MPVectorWorkConfig execution_policy ;
   typedef ExecSpace          execution_space ;
+  typedef execution_space    execution_type;
   typedef Tag                work_tag ;
 
   execution_space space_;

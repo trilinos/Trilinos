@@ -11,13 +11,20 @@
 
 #include <stddef.h>                     // for NULL
 #include <string>                       // for string
-#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/Field.hpp"  // for Field
-#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
-#include "stk_mesh/base/FieldState.hpp"  // for FieldState, etc
-#include "stk_mesh/base/Types.hpp"      // for EntityRank
-#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, etc
+#include <vector>                       // for vector
+#include <type_traits>                  // for is_same_v, decay_t
+#include <Kokkos_Core.hpp>              // for Kokkos::Array
+#include <stk_mesh/base/DataTraits.hpp>  // for DataTraits
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/Field.hpp>  // for Field
+#include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
+#include <stk_mesh/base/FieldState.hpp>  // for FieldState, etc
+#include <stk_mesh/base/BucketValues.hpp>  // for BucketValues
+#include <stk_mesh/base/EntityValues.hpp>  // for EntityValues
+#include <stk_mesh/base/Types.hpp>      // for EntityRank
+#include <stk_util/ngp/NgpSpaces.hpp>  // for HostSpace
+#include <stk_util/stk_kokkos_macros.h>  // for KOKKOS_FUNCTION, STK_HOST_FILE
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowAssertMsg, etc
 namespace stk { namespace mesh { class Bucket; } }
 
 namespace krino{
@@ -124,6 +131,17 @@ public:
     my_field->sync_to_host();
   }
 
+  // unified STK field API accessor (krino is host-only: Space defaults to HostSpace)
+  template <typename T,
+      stk::mesh::FieldAccessTag FieldAccess = stk::mesh::ReadOnly,
+      typename space_t = stk::ngp::HostSpace,
+      stk::mesh::Layout DataLayout = stk::mesh::DefaultLayoutSelector<space_t>::layout>
+  auto data(const char * file = STK_HOST_FILE, int line = STK_HOST_LINE) const
+  {
+    assert_valid();
+    return my_field->data<T, FieldAccess, space_t, DataLayout>(file, line);
+  }
+
   // testing
   bool operator ==(const FieldRef & rhs) const { return my_field == rhs.my_field; }
   bool operator !=(const FieldRef & rhs) const { return my_field != rhs.my_field; }
@@ -166,6 +184,7 @@ inline std::ostream & operator << (std::ostream & os, const FieldRef & field_ref
   return os;
 }
 
+// plato apparently calls krino::field_data<...>
 template< class pod_type >
 pod_type * field_data( const stk::mesh::FieldBase & field, stk::mesh::Entity entity )
 {
@@ -176,6 +195,32 @@ template< class pod_type >
 pod_type * field_data( const stk::mesh::FieldBase & field, const stk::mesh::Bucket & bucket )
 {
   return stk::mesh::field_data(static_cast< const stk::mesh::Field<pod_type>& >(field), bucket);
+}
+
+// Unified STK field API helpers (krino is host-only, so all use stk::ngp::HostSpace)
+
+template <int N, typename entity_values_t, typename T = double>
+KOKKOS_FUNCTION auto read_to_array(const entity_values_t & v)
+  requires(std::is_same_v<std::decay_t<typename entity_values_t::value_type>, T>)
+{
+  Kokkos::Array<T, N> arr{};
+  STK_NGP_ThrowAssert(v.num_scalars() <= N);
+  for (auto d : v.scalars())
+  {
+    arr[d()] = v(d);
+  }
+  return arr;
+}
+
+template <typename entity_values_t, typename T = double>
+void write_from_vec(const std::vector<T> & data, const entity_values_t & v)
+  requires(std::is_same_v<T, std::decay_t<typename entity_values_t::value_type>>)
+{
+  STK_ThrowAssert(v.num_scalars() <= static_cast<int>(data.size()));
+  for (auto d : v.scalars())
+  {
+    v(d) = data[d()];
+  }
 }
 
 inline bool has_field_data( const FieldRef fieldref, stk::mesh::Entity entity )

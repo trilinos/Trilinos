@@ -76,8 +76,8 @@ jobs:
           const baseRepoFullName = `${owner}/${repo}`;
 
           const sha = run.head_sha;
-          const { source_owner, source_repo } = run.head_repository;
           const headRepoFullName = run.head_repository?.full_name;
+          [ source_owner, source_repo ] = headRepoFullName.split('/');
           const headBranch = run.head_branch;
 
           core.info(`Workflow run id: ${run.id}`);
@@ -96,8 +96,8 @@ jobs:
           const prs = await github.paginate(
             github.rest.repos.listPullRequestsAssociatedWithCommit,
             {
-              source_owner,
-              source_repo,
+              owner: source_owner,
+              repo: source_repo,
               commit_sha: sha,
               per_page: 100
             }
@@ -145,7 +145,7 @@ jobs:
 
     - name: Process message
       run: |
-        MY_PR_NUMBER=${{ steps.pr.output.number }}
+        MY_PR_NUMBER=${{ steps.pr.outputs.number }}
         MY_COMMENT_ID=${{ steps.comment.outputs.comment-id }}
         cp ${{ runner.temp }}/artifacts/format_patch_message.txt processed_format_patch.txt  
         sed -i "s/PR_NUMBER/${MY_PR_NUMBER}/" processed_format_patch.txt
@@ -155,6 +155,6 @@ jobs:
       uses: peter-evans/create-or-update-comment@v5
       with:
         comment-id: ${{ steps.comment.outputs.comment-id }}
-        issue-number: ${{ steps.pr.output.number }}
+        issue-number: ${{ steps.pr.outputs.number }}
         body-path: processed_format_patch.txt
         edit-mode: replace
