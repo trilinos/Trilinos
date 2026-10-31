@@ -18,6 +18,7 @@ import kokkos.core;
 #include <type_traits>
 #include <cstdint>
 #include <cfloat>
+#include <limits>
 
 #include "KokkosTest_Utils.hpp"
 
@@ -1146,20 +1147,25 @@ TEST(TEST_CATEGORY, mathematical_functions_trigonometric_functions) {
   TEST_MATH_FUNCTION(tan)({.7l, .8l, .9l});
 #endif
 
-  TEST_MATH_FUNCTION(asin)({true, false});
-  TEST_MATH_FUNCTION(asin)({-1, 0, 1});
-  TEST_MATH_FUNCTION(asin)({-1l, 0l, 1l});
-  TEST_MATH_FUNCTION(asin)({-1ll, 0ll, 1ll});
-  TEST_MATH_FUNCTION(asin)({0u, 1u});
-  TEST_MATH_FUNCTION(asin)({0ul, 1ul});
-  TEST_MATH_FUNCTION(asin)({0ull, 1ull});
-  TEST_HALF_MATH_FUNCTION(asin, KE::half_t)({-1.f, .9f, -.8f, .7f, -.6f});
-  TEST_HALF_MATH_FUNCTION(asin, KE::bhalf_t)({-1.f, .9f, -.8f, .7f, -.6f});
-  TEST_MATH_FUNCTION(asin)({-1.f, .9f, -.8f, .7f, -.6f});
-  TEST_MATH_FUNCTION(asin)({-.5, .4, -.3, .2, -.1, 0.});
-#ifdef MATHEMATICAL_FUNCTIONS_HAVE_LONG_DOUBLE_OVERLOADS
-  TEST_MATH_FUNCTION(asin)({-.5l, .3l, 0.l, .2l, .4l, .6l});
+#ifdef KOKKOS_ENABLE_NEXTSILICON  // FIXME_NEXTSILICON missing asinf libcall
+  if (!std::is_same_v<TEST_EXECSPACE, Kokkos::Experimental::NextSilicon>)
 #endif
+  {
+    TEST_MATH_FUNCTION(asin)({true, false});
+    TEST_MATH_FUNCTION(asin)({-1, 0, 1});
+    TEST_MATH_FUNCTION(asin)({-1l, 0l, 1l});
+    TEST_MATH_FUNCTION(asin)({-1ll, 0ll, 1ll});
+    TEST_MATH_FUNCTION(asin)({0u, 1u});
+    TEST_MATH_FUNCTION(asin)({0ul, 1ul});
+    TEST_MATH_FUNCTION(asin)({0ull, 1ull});
+    TEST_HALF_MATH_FUNCTION(asin, KE::half_t)({-1.f, .9f, -.8f, .7f, -.6f});
+    TEST_HALF_MATH_FUNCTION(asin, KE::bhalf_t)({-1.f, .9f, -.8f, .7f, -.6f});
+    TEST_MATH_FUNCTION(asin)({-1.f, .9f, -.8f, .7f, -.6f});
+    TEST_MATH_FUNCTION(asin)({-.5, .4, -.3, .2, -.1, 0.});
+#ifdef MATHEMATICAL_FUNCTIONS_HAVE_LONG_DOUBLE_OVERLOADS
+    TEST_MATH_FUNCTION(asin)({-.5l, .3l, 0.l, .2l, .4l, .6l});
+#endif
+  }
 
   TEST_MATH_FUNCTION(acos)({true, false});
   TEST_MATH_FUNCTION(acos)({-1, 0, 1});
@@ -1356,6 +1362,11 @@ TEST(TEST_CATEGORY, mathematical_functions_fmax_fmin) {
 
 #ifndef KOKKOS_MATHEMATICAL_FUNCTIONS_SKIP_3
 TEST(TEST_CATEGORY, mathematical_functions_exponential_functions) {
+#ifdef KOKKOS_ENABLE_NEXTSILICON  // FIXME_NEXTSILICON
+  if (std::is_same_v<TEST_EXECSPACE, Kokkos::Experimental::NextSilicon>) {
+    GTEST_SKIP() << "incorrect results on 1.4.0-136";
+  }
+#endif
   TEST_MATH_FUNCTION(exp)({-9, -8, -7, -6, -5, 4, 3, 2, 1, 0});
   TEST_MATH_FUNCTION(exp)({-9l, -8l, -7l, -6l, -5l, 4l, 3l, 2l, 1l, 0l});
   TEST_MATH_FUNCTION(exp)({-9ll, -8ll, -7ll, -6ll, -5ll, 4ll, 3ll, 2ll, 1ll});
@@ -1613,33 +1624,45 @@ TEST(TEST_CATEGORY, mathematical_functions_error_and_gamma_functions) {
   TEST_MATH_FUNCTION(erfc)({.7l, .8l, .9l});
 #endif
 
-  TEST_MATH_FUNCTION(tgamma)({1, 2, 3, 4, 56, 78});
-  TEST_MATH_FUNCTION(tgamma)({1l, 2l, 3l, 4l, 56l, 78l});
-  TEST_MATH_FUNCTION(tgamma)({1ll, 2ll, 3ll, 4ll, 56ll, 78ll});
-  TEST_MATH_FUNCTION(tgamma)({1u, 2u, 3u, 4u, 56u, 78u});
-  TEST_MATH_FUNCTION(tgamma)({1ul, 2ul, 3ul, 4ul, 56ul, 78ul});
-  TEST_MATH_FUNCTION(tgamma)({1ull, 2ull, 3ull, 4ull, 56ull, 78ull});
-  TEST_HALF_MATH_FUNCTION(tgamma, KE::half_t)({.1f, -2.2f, 3.f});
-  TEST_HALF_MATH_FUNCTION(tgamma, KE::bhalf_t)({.1f, -2.2f, 3.f});
-  TEST_MATH_FUNCTION(tgamma)({.1f, -2.2f, 3.f});
-  TEST_MATH_FUNCTION(tgamma)({-4.4, .5, -.6});
-#ifdef MATHEMATICAL_FUNCTIONS_HAVE_LONG_DOUBLE_OVERLOADS
-  TEST_MATH_FUNCTION(tgamma)({.7l, .8l, .9l});
+// FIXME_NEXTSILICON: 1.4.0-136: fails in handoff
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+  if (!std::is_same_v<TEST_EXECSPACE, Kokkos::Experimental::NextSilicon>)
 #endif
+  {
+    TEST_MATH_FUNCTION(tgamma)({1, 2, 3, 4, 56, 78});
+    TEST_MATH_FUNCTION(tgamma)({1l, 2l, 3l, 4l, 56l, 78l});
+    TEST_MATH_FUNCTION(tgamma)({1ll, 2ll, 3ll, 4ll, 56ll, 78ll});
+    TEST_MATH_FUNCTION(tgamma)({1u, 2u, 3u, 4u, 56u, 78u});
+    TEST_MATH_FUNCTION(tgamma)({1ul, 2ul, 3ul, 4ul, 56ul, 78ul});
+    TEST_MATH_FUNCTION(tgamma)({1ull, 2ull, 3ull, 4ull, 56ull, 78ull});
+    TEST_HALF_MATH_FUNCTION(tgamma, KE::half_t)({.1f, -2.2f, 3.f});
+    TEST_HALF_MATH_FUNCTION(tgamma, KE::bhalf_t)({.1f, -2.2f, 3.f});
+    TEST_MATH_FUNCTION(tgamma)({.1f, -2.2f, 3.f});
+    TEST_MATH_FUNCTION(tgamma)({-4.4, .5, -.6});
+#ifdef MATHEMATICAL_FUNCTIONS_HAVE_LONG_DOUBLE_OVERLOADS
+    TEST_MATH_FUNCTION(tgamma)({.7l, .8l, .9l});
+#endif
+  }
 
-  TEST_MATH_FUNCTION(lgamma)({1, 2, 3, 4, 56, 78});
-  TEST_MATH_FUNCTION(lgamma)({1l, 2l, 3l, 4l, 56l, 78l});
-  TEST_MATH_FUNCTION(lgamma)({1ll, 2ll, 3ll, 4ll, 56ll, 78ll});
-  TEST_MATH_FUNCTION(lgamma)({1u, 2u, 3u, 4u, 56u, 78u});
-  TEST_MATH_FUNCTION(lgamma)({1ul, 2ul, 3ul, 4ul, 56ul, 78ul});
-  TEST_MATH_FUNCTION(lgamma)({1ull, 2ull, 3ull, 4ull, 56ull, 78ull});
-  TEST_HALF_MATH_FUNCTION(lgamma, KE::half_t)({.1f, -2.2f, 3.f});
-  TEST_HALF_MATH_FUNCTION(lgamma, KE::bhalf_t)({.1f, -2.2f, 3.f});
-  TEST_MATH_FUNCTION(lgamma)({.1f, -2.2f, 3.f});
-  TEST_MATH_FUNCTION(lgamma)({-4.4, .5, -.6});
-#ifdef MATHEMATICAL_FUNCTIONS_HAVE_LONG_DOUBLE_OVERLOADS
-  TEST_MATH_FUNCTION(lgamma)({.7l, .8l, .9l});
+// FIXME_NEXTSILICON: projection failure on 1.3.0-84
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+  if (!std::is_same_v<TEST_EXECSPACE, Kokkos::Experimental::NextSilicon>)
 #endif
+  {
+    TEST_MATH_FUNCTION(lgamma)({1, 2, 3, 4, 56, 78});
+    TEST_MATH_FUNCTION(lgamma)({1l, 2l, 3l, 4l, 56l, 78l});
+    TEST_MATH_FUNCTION(lgamma)({1ll, 2ll, 3ll, 4ll, 56ll, 78ll});
+    TEST_MATH_FUNCTION(lgamma)({1u, 2u, 3u, 4u, 56u, 78u});
+    TEST_MATH_FUNCTION(lgamma)({1ul, 2ul, 3ul, 4ul, 56ul, 78ul});
+    TEST_MATH_FUNCTION(lgamma)({1ull, 2ull, 3ull, 4ull, 56ull, 78ull});
+    TEST_HALF_MATH_FUNCTION(lgamma, KE::half_t)({.1f, -2.2f, 3.f});
+    TEST_HALF_MATH_FUNCTION(lgamma, KE::bhalf_t)({.1f, -2.2f, 3.f});
+    TEST_MATH_FUNCTION(lgamma)({.1f, -2.2f, 3.f});
+    TEST_MATH_FUNCTION(lgamma)({-4.4, .5, -.6});
+#ifdef MATHEMATICAL_FUNCTIONS_HAVE_LONG_DOUBLE_OVERLOADS
+    TEST_MATH_FUNCTION(lgamma)({.7l, .8l, .9l});
+#endif
+  }
 }
 
 TEST(TEST_CATEGORY,
@@ -2366,6 +2389,31 @@ TEST(TEST_CATEGORY, mathematical_functions_isinf) {
   TestIsInf<TEST_EXECSPACE>();
 }
 
+// Determine, at runtime, whether the floating-point environment flushes
+// subnormal (denormal) values to zero (FTZ/DAZ).
+//
+// This cannot be answered by the preprocessor: some compilers (notably
+// NVHPC/nvc++) enable FTZ/DAZ by default -- at every optimization level --
+// WITHOUT defining __FINITE_MATH_ONLY__ (and while __STDC_IEC_559__,
+// std::numeric_limits<T>::is_iec559, has_denorm, etc. all still report that
+// subnormals exist). Flushing is a property of the runtime FP environment, so
+// it must be detected by actually exercising it. The same reasoning applies to
+// device execution, so the probe runs wherever the test does.
+//
+// We probe once (thread-safe Meyers-singleton initialization) by forcing
+// subnormal values through 'volatile' storage -- which defeats constant folding
+// so the real runtime FP environment governs the result -- and checking whether
+// they read back as zero.
+KOKKOS_INLINE_FUNCTION bool runtime_fp_env_flushes_to_zero() {
+  volatile float fdenorm  = Kokkos::denorm_min_v<float>;
+  volatile double ddenorm = Kokkos::denorm_min_v<double>;
+  volatile float fmin     = Kokkos::norm_min_v<float>;
+  volatile double dmin    = Kokkos::norm_min_v<double>;
+  bool flushed            = (fdenorm == 0.0f) || (ddenorm == 0.0) ||
+                 ((fmin / 2.0f) == 0.0f) || ((dmin / 2.0) == 0.0);
+  return flushed;
+}
+
 template <class Space>
 struct TestFpClassify {
   TestFpClassify() { run(); }
@@ -2391,10 +2439,10 @@ struct TestFpClassify {
 #if !__FINITE_MATH_ONLY__
         || fpclassify(signaling_NaN<float>::value) != FP_NAN ||
         fpclassify(quiet_NaN<float>::value) != FP_NAN ||
-        fpclassify(infinity<float>::value) != FP_INFINITE ||
-        fpclassify(denorm_min<float>::value) != FP_SUBNORMAL
+        fpclassify(infinity<float>::value) != FP_INFINITE
 #endif
-    ) {
+        || (!runtime_fp_env_flushes_to_zero() &&
+            fpclassify(denorm_min<float>::value) != FP_SUBNORMAL)) {
       ++e;
       Kokkos::printf("failed fpclassify(float)\n");
     }
@@ -2404,10 +2452,10 @@ struct TestFpClassify {
 #if !__FINITE_MATH_ONLY__
         || fpclassify(signaling_NaN<double>::value) != FP_NAN ||
         fpclassify(quiet_NaN<double>::value) != FP_NAN ||
-        fpclassify(infinity<double>::value) != FP_INFINITE ||
-        fpclassify(denorm_min<double>::value) != FP_SUBNORMAL
+        fpclassify(infinity<double>::value) != FP_INFINITE
 #endif
-    ) {
+        || (!runtime_fp_env_flushes_to_zero() &&
+            fpclassify(denorm_min<double>::value) != FP_SUBNORMAL)) {
       ++e;
       Kokkos::printf("failed fpclassify(double)\n");
     }
@@ -2418,10 +2466,10 @@ struct TestFpClassify {
 #if !__FINITE_MATH_ONLY__
         || fpclassify(signaling_NaN<long double>::value) != FP_NAN ||
         fpclassify(quiet_NaN<long double>::value) != FP_NAN ||
-        fpclassify(infinity<long double>::value) != FP_INFINITE ||
-        fpclassify(denorm_min<long double>::value) != FP_SUBNORMAL
+        fpclassify(infinity<long double>::value) != FP_INFINITE
 #endif
-    ) {
+        || (!runtime_fp_env_flushes_to_zero() &&
+            fpclassify(denorm_min<long double>::value) != FP_SUBNORMAL)) {
       ++e;
       Kokkos::printf("failed fpclassify(long double)\n");
     }
@@ -2437,9 +2485,15 @@ struct TestFpClassify {
         // FIXME internal compiler error for Clang+Cuda and RDC
         || fpclassify(signaling_NaN<KE::half_t>::value) != FP_NAN ||
         fpclassify(quiet_NaN<KE::half_t>::value) != FP_NAN ||
-        fpclassify(infinity<KE::half_t>::value) != FP_INFINITE ||
-        fpclassify(denorm_min<KE::half_t>::value) != FP_SUBNORMAL
+        fpclassify(infinity<KE::half_t>::value) != FP_INFINITE
 #endif
+#endif
+#if !(defined(KOKKOS_ENABLE_CUDA) &&                         \
+      defined(KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE) && \
+      defined(KOKKOS_COMPILER_CLANG))
+        // FIXME_CUDA internal compiler error for Clang+Cuda and RDC
+        || (!runtime_fp_env_flushes_to_zero() &&
+            fpclassify(denorm_min<KE::half_t>::value) != FP_SUBNORMAL)
 #endif
     ) {
       ++e;
@@ -2452,10 +2506,10 @@ struct TestFpClassify {
 #if !__FINITE_MATH_ONLY__
         || fpclassify(signaling_NaN<KE::bhalf_t>::value) != FP_NAN ||
         fpclassify(quiet_NaN<KE::bhalf_t>::value) != FP_NAN ||
-        fpclassify(infinity<KE::bhalf_t>::value) != FP_INFINITE ||
-        fpclassify(denorm_min<KE::bhalf_t>::value) != FP_SUBNORMAL
+        fpclassify(infinity<KE::bhalf_t>::value) != FP_INFINITE
 #endif
-    ) {
+        || (!runtime_fp_env_flushes_to_zero() &&
+            fpclassify(denorm_min<KE::bhalf_t>::value) != FP_SUBNORMAL)) {
       ++e;
       Kokkos::printf("failed fpclassify(Kokkos::Experimental::bhalf_t)\n");
     }
@@ -2463,7 +2517,19 @@ struct TestFpClassify {
 };
 
 TEST(TEST_CATEGORY, mathematical_functions_fpclassify) {
+#if defined(KOKKOS_ENABLE_OPENACC) && (KOKKOS_COMPILER_NVHPC > 240500) && \
+    (KOKKOS_COMPILER_NVHPC <= 260500)
+  // FIXME_OPENACC: Test is known to fail if 24.5 < NVHPC version <= 26.5.
+  GTEST_SKIP() << "skipping since the OpenACC backend test fails if 24.5 < "
+                  "NVHPC version <= 26.5";
+#elif defined(KOKKOS_ENABLE_NEXTSILICON)  // FIXME_NEXTSILICON
+  if (std::is_same_v<TEST_EXECSPACE, Kokkos::Experimental::NextSilicon>) {
+    GTEST_SKIP() << "projection failure in 1.4.0-136";
+  }
   TestFpClassify<TEST_EXECSPACE>();
+#else
+  TestFpClassify<TEST_EXECSPACE>();
+#endif
 }
 
 template <class Space>
@@ -2845,6 +2911,8 @@ KE::half_t ref_test_fallback_half(KE::half_t) {
   } else {
     return KE::half_t(1.f);
   }
+#elif defined(KOKKOS_IMPL_HALF_TYPE_STANDARD_SUPPORT)
+  return KE::half_t(0.f);
 #else
   return KE::half_t(1.f);
 #endif
@@ -2870,6 +2938,8 @@ KE::bhalf_t ref_test_fallback_bhalf(KE::bhalf_t) {
   } else {
     return KE::bhalf_t(1.f);
   }
+#elif defined(KOKKOS_IMPL_BHALF_TYPE_STANDARD_SUPPORT)
+  return KE::bhalf_t(0.f);
 #else
   return KE::bhalf_t(1.f);
 #endif
