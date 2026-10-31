@@ -207,6 +207,8 @@ struct AVX {
 
 //////// Tags for BLAS ////////
 
+using KokkosBlas::is_trans;
+using KokkosBlas::is_trans_v;
 using KokkosBlas::Trans;
 
 struct Side {
@@ -231,6 +233,18 @@ struct Uplo {
   struct Lower {};
 };
 
+template <class T>
+struct is_uplo : std::false_type {};
+
+template <>
+struct is_uplo<Uplo::Upper> : std::true_type {};
+
+template <>
+struct is_uplo<Uplo::Lower> : std::true_type {};
+
+template <class T>
+constexpr bool is_uplo_v = is_uplo<T>::value;
+
 struct Diag {
   struct Unit {
     static const bool use_unit_diag = true;
@@ -240,11 +254,25 @@ struct Diag {
   };
 };
 
+template <class T>
+struct is_diag : std::false_type {};
+
+template <>
+struct is_diag<Diag::Unit> : std::true_type {};
+
+template <>
+struct is_diag<Diag::NonUnit> : std::true_type {};
+
+template <class T>
+constexpr bool is_diag_v = is_diag<T>::value;
+
 struct Norm {
   struct L1 {};
+  struct GenuineL1 {};
   struct L2 {};
-  struct LInf {};
   struct ScaledL2 {};
+  struct LInf {};
+  struct GenuineLInf {};
 };
 
 template <class T>
@@ -254,13 +282,19 @@ template <>
 struct is_norm<Norm::L1> : std::true_type {};
 
 template <>
+struct is_norm<Norm::GenuineL1> : std::true_type {};
+
+template <>
 struct is_norm<Norm::L2> : std::true_type {};
+
+template <>
+struct is_norm<Norm::ScaledL2> : std::true_type {};
 
 template <>
 struct is_norm<Norm::LInf> : std::true_type {};
 
 template <>
-struct is_norm<Norm::ScaledL2> : std::true_type {};
+struct is_norm<Norm::GenuineLInf> : std::true_type {};
 
 template <class T>
 constexpr bool is_norm_v = is_norm<T>::value;

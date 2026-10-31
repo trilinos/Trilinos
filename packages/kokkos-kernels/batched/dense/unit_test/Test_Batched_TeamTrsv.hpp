@@ -50,7 +50,7 @@ struct Functor_TestBatchedTeamTrsv {
   inline void run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamTrsv");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
 

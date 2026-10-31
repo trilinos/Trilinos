@@ -32,7 +32,7 @@ struct Functor_BatchedRotg {
   inline void run() {
     using value_type = typename SViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::Rotg");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space> policy(0, m_a.extent(0));
@@ -212,6 +212,13 @@ void impl_test_batched_rotg(const std::size_t Nb) {
   if constexpr (KokkosKernels::ArithTraits<SType>::is_complex) {
     b_in  = SType(3.0, 4.0);
     s_ref = SType(0.6, -0.8);  // s_ref should be conj(b_in) / |b_in| when a == 0
+  }
+  impl_test_batched_rotg_analytical<DeviceType, LayoutType, SType, MType>(Nb, a_in, b_in, c_ref, s_ref);
+
+  // With a == 0 and negative real b, r must retain the sign of b.
+  b_in = -b_in;
+  if constexpr (KokkosKernels::ArithTraits<SType>::is_complex) {
+    s_ref = -s_ref;
   }
   impl_test_batched_rotg_analytical<DeviceType, LayoutType, SType, MType>(Nb, a_in, b_in, c_ref, s_ref);
 

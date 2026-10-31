@@ -44,7 +44,7 @@ struct Functor_BatchedSerialTrsv {
   inline void run() {
     using value_type = typename AViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialTbsv");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, m_b.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
@@ -73,7 +73,7 @@ struct Functor_BatchedSerialTbsv {
   inline void run() {
     using value_type = typename AViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialTbsv");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, m_b.extent(0));
@@ -100,7 +100,7 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
   ScalarType randStart, randEnd;
-  Test::getRandomBounds(1.0, randStart, randEnd);
+  TestUtils::getRandomBounds(1.0, randStart, randEnd);
   Kokkos::fill_random(Ref, rand_pool, randStart, randEnd);
   Kokkos::fill_random(x0, rand_pool, randStart, randEnd);
 
@@ -130,7 +130,7 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   auto h_x1 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x1);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < BlkSize; j++) {
-      Test::EXPECT_NEAR_KK_REL(h_x0(i, j), h_x1(i, j), eps);
+      EXPECT_NEAR_KK_REL(h_x0(i, j), h_x1(i, j), eps);
     }
   }
 }

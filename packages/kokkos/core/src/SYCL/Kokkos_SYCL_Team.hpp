@@ -24,6 +24,7 @@ class SYCLTeamMember {
   using execution_space      = Kokkos::SYCL;
   using scratch_memory_space = execution_space::scratch_memory_space;
   using team_handle          = SYCLTeamMember;
+  using thread_handle        = ThreadHandleType<team_handle>;
 
  private:
   mutable sycl::local_ptr<void> m_team_reduce;
@@ -495,11 +496,23 @@ template <typename iType, class Closure>
 void parallel_for(const Impl::TeamThreadRangeBoundariesStruct<
                       iType, Impl::SYCLTeamMember>& loop_boundaries,
                   const Closure& closure) {
+  using thread_handle_t = Impl::ThreadHandleType<Impl::SYCLTeamMember>;
+
   for (iType i = loop_boundaries.start +
                  loop_boundaries.member.item().get_local_id(0);
        i < loop_boundaries.end;
-       i += loop_boundaries.member.item().get_local_range(0))
-    closure(i);
+       i += loop_boundaries.member.item().get_local_range(0)) {
+    if constexpr (std::is_invocable_v<Closure, iType>) {
+      closure(i);
+    } else if constexpr (std::is_invocable_v<Closure, thread_handle_t const&,
+                                             iType>) {
+      closure(thread_handle_t(loop_boundaries.member), i);
+    } else {
+      static_assert(Kokkos::Impl::always_false<Closure>::value,
+                    "Kokkos::parallel_for(TeamThreadRange) closure must be "
+                    "invocable with (iType) or (ThreadHandleType, iType)");
+    }
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -862,13 +875,14 @@ std::enable_if_t<Kokkos::is_reducer<ReducerType>::value> parallel_scan(
   const iType tidx1   = loop_boundaries.member.item().get_local_id(1);
   const iType grange1 = loop_boundaries.member.item().get_local_range(1);
 
-  const int mask          = grange1 - 1;
-  const int rem           = loop_boundaries.end & mask;  // == end % grange1
-  const int end           = loop_boundaries.end + (rem ? grange1 - rem : 0);
+  const int mask  = grange1 - 1;
+  const iType rem = (loop_boundaries.end - loop_boundaries.start) &
+                    mask;  // == (end - start) % grange1
+  const iType end         = loop_boundaries.end + (rem ? grange1 - rem : 0);
   const auto sg           = loop_boundaries.member.item().get_sub_group();
   const int vector_offset = (sg.get_local_id() / grange1) * grange1;
 
-  for (int i = tidx1; i < end; i += grange1) {
+  for (iType i = loop_boundaries.start + tidx1; i < end; i += grange1) {
     value_type val = identity;
 
     // First acquire per-lane contributions.

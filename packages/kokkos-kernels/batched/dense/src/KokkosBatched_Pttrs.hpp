@@ -34,7 +34,7 @@ namespace KokkosBatched {
 ///
 template <typename ArgUplo, typename ArgAlgo>
 struct SerialPttrs {
-  static_assert(std::is_same_v<ArgUplo, Uplo::Upper> || std::is_same_v<ArgUplo, Uplo::Lower>,
+  static_assert(is_uplo_v<ArgUplo>,
                 "KokkosBatched::pttrs: Use Uplo::Upper (or Lower) if vector E specifies the superdiagonal (or "
                 "subdiagonal) of a unit bidiagonal matrix U (or L)");
   static_assert(std::is_same_v<ArgAlgo, Algo::Pttrs::Unblocked>, "KokkosBatched::pttrs: Use Algo::Pttrs::Unblocked");
