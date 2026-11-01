@@ -4,8 +4,13 @@ IF(NOT BUILD_SHARED_LIBS)
   MESSAGE(FATAL_ERROR "PyROL can only be built with shared libraries. Building of shared libraries is currently set to OFF. To enable shared libraries please set the cache variable \"BUILD_SHARED_LIBS\" to ON")
 ENDIF()
 
-# Set the package version number
-SET(PyROL_VERSION ${Trilinos_VERSION})
+# Set the package version number: the version of the Python package when pip
+# builds PyROL (scikit-build-core), and Trilinos' version otherwise.
+IF(SKBUILD_PROJECT_VERSION_FULL)
+  SET(PyROL_VERSION ${SKBUILD_PROJECT_VERSION_FULL})
+ELSE()
+  SET(PyROL_VERSION ${Trilinos_VERSION})
+ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_PIP_INSTALL
   PYROL_SCIKIT
@@ -27,8 +32,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_BINDER_USE_ONE_FILE
   "Enable the use of one file by Binder."
   OFF )
 
-SET(PYROL_BINDER_NUM_FILES "100" CACHE STRING "Number of files to use when PYROL_USE_ONE_FILE=OFF.")
-
 TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_BINDER_CMAKE_ERROR
   PYROL_CMAKE_ERROR
   "Stop the configuration if Binder fails."
@@ -44,17 +47,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_ENABLE_BINDER_UPDATE
   "Enable the update of the generated source files with Binder."
   OFF )
 
-MESSAGE("-- Python3_EXECUTABLE:")
-IF(NOT DEFINED ${Python3_EXECUTABLE})
-  find_program(Python3_EXECUTABLE
-      NAMES python3 python
-      )
-  MESSAGE("  -- CMake has set: Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
-ELSE()
-  MESSAGE("  -- User has set: Python3_EXECUTABLE = ${Python3_EXECUTABLE}")
-ENDIF()
+##################################################
+# Helpers                                        #
+##################################################
 
-
+# Append the include directories of all targets that LIBRARY_NAME links to
+# (recursively, with $<BUILD_INTERFACE:...> unwrapped) to all_include_dirs.
 function(get_all_include_dirs  LIBRARY_NAME all_include_dirs all_visited_libs)
   if (TARGET ${LIBRARY_NAME})
     get_property(depend_libs TARGET ${LIBRARY_NAME} PROPERTY INTERFACE_LINK_LIBRARIES)
@@ -75,9 +73,74 @@ function(get_all_include_dirs  LIBRARY_NAME all_include_dirs all_visited_libs)
   endif()
 endfunction()
 
-# Python files to install
+# Set result to the list of subdirectories of curdir.
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+      LIST(APPEND dirlist ${curdir}/${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO()
+
+# Set result to the directories with headers among the given subdirectories
+# of root and the directories below them, sorted.
+function(get_header_dirs result root)
+  set(header_dirs "")
+  foreach(subdir IN LISTS ARGN)
+    file(GLOB_RECURSE headers "${root}/${subdir}/*.hpp")
+    foreach(header IN LISTS headers)
+      get_filename_component(header_dir "${header}" DIRECTORY)
+      list(APPEND header_dirs "${header_dir}")
+    endforeach()
+  endforeach()
+  list(REMOVE_DUPLICATES header_dirs)
+  list(SORT header_dirs)
+  set(${result} ${header_dirs} PARENT_SCOPE)
+endfunction()
+
+# Write the items of the list variable list_var to filename, one per line.
+function(write_lines filename list_var)
+  set(contents "")
+  foreach(line IN LISTS ${list_var})
+    string(APPEND contents "${line}\n")
+  endforeach()
+  file(WRITE ${filename} "${contents}")
+endfunction()
+
+##################################################
+# Python and pybind11                            #
+##################################################
+
+find_program(Python3_EXECUTABLE NAMES python3 python)
+MESSAGE(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
+
+# Interpreter lets FindPython match the interpreter's ABI; without it, CMake 4.4+
+# cannot find Development.Module for free-threaded Python (e.g. 3.14t).
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
+SET(PYTHON_VERSION ${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR})
+
+EXECUTE_PROCESS(COMMAND
+  ${Python3_EXECUTABLE} -c "import pybind11; print(pybind11.get_cmake_dir())"
+  OUTPUT_VARIABLE pybind11_DIR
+  ERROR_VARIABLE  pybind11_CMAKE_ERROR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+MESSAGE(STATUS "pybind11 CMake path: ${pybind11_DIR}")
+find_package(pybind11 REQUIRED)
+
+# The pure-Python part of the package: top-level modules and subpackages.
 FILE(GLOB PyROLPyFiles ${CMAKE_CURRENT_SOURCE_DIR}/python/*.py)
+SUBDIRLIST(PyROL_SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR}/python)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pyrol)
+# pyrol.__version__
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pyrol/_version.py "__version__ = '${PyROL_VERSION}'\n")
+
+##################################################
+# Include directories                            #
+##################################################
 
 GET_PROPERTY( PTR_IMPL             GLOBAL PROPERTY PTR_IMPL  )
 GET_PROPERTY( PTR_DIR              GLOBAL PROPERTY PTR_DIR  )
@@ -87,116 +150,62 @@ GET_PROPERTY( LA_DIR               GLOBAL PROPERTY LA_DIR  )
 GET_PROPERTY( LAPACK_DIR           GLOBAL PROPERTY LAPACK_DIR  )
 GET_PROPERTY( BLAS_DIR             GLOBAL PROPERTY BLAS_DIR  )
 
-set(ROL_all_include_dirs "")
-list(APPEND ROL_all_include_dirs "${CMAKE_CURRENT_BINARY_DIR}/../src")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeB")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeE")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeG")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeP")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeU")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeB/pqn")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeG/augmentedlagrangian/")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeG/fletcher")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeG/interiorpoint")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeG/moreauyosida")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeG/stabilizedlcl")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeU/bundle")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeU/linesearch")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeU/linesearch/descent")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/algorithm/TypeU/trustregion")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/elementwise")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function/dynamic")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function/boundconstraint")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function/constraint")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function/nlls")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function/projection")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function/objective")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function/operator")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function/simopt")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function/sketching")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/function/std")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/distribution")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/expectationquad")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/randvarfunctional")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/randvarfunctional/risk")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/randvarfunctional/risk/fdivergence")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/randvarfunctional/risk/spectral")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/randvarfunctional/error")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/randvarfunctional/regret")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/randvarfunctional/deviation")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/randvarfunctional/probability")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/function/progressivehedging")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/algorithm")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/algorithm/PrimalDual")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/vector")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/sampler")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/sampler/SROM")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/sol/status")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/status")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step/augmentedlagrangian")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step/bundle")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step/fletcher")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step/interiorpoint")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step/krylov")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step/linesearch")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step/moreauyosidapenalty")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step/nonlinearcg")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step/secant")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/step/trustregion")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/utils")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/utils/function_bindings")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/vector")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/zoo")
-list(APPEND ROL_all_include_dirs "${PTR_DIR}")
-list(APPEND ROL_all_include_dirs "${STACKTRACE_DIR}")
-list(APPEND ROL_all_include_dirs "${PARAMETERLIST_DIR}")
-list(APPEND ROL_all_include_dirs "${LA_DIR}")
-list(APPEND ROL_all_include_dirs "${LAPACK_DIR}")
-list(APPEND ROL_all_include_dirs "${BLAS_DIR}")
+# ROL's include directories, in search order. They are used to compile the
+# module and, when Binder runs, to collect the headers it may need. Those of
+# ROL's components are all their directories with headers.
+SET(ROL_SRC_DIR "${${PACKAGE_NAME}_SOURCE_DIR}/src")
+get_header_dirs(ROL_SRC_SUBDIRS ${ROL_SRC_DIR}
+  algorithm elementwise function sol status step utils vector zoo)
+get_header_dirs(ROL_OED_SUBDIRS ${ROL_SRC_DIR} oed)
 
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/algorithm")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/constraint")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/factors")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/objective")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/objective/het")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/objective/hom")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/utilities")
-list(APPEND ROL_all_include_dirs "${${PACKAGE_NAME}_SOURCE_DIR}/src/oed/vector")
+SET(ROL_all_include_dirs
+  "${CMAKE_CURRENT_BINARY_DIR}/../src"
+  "${ROL_SRC_DIR}"
+  ${ROL_SRC_SUBDIRS}
+  "${PTR_DIR}"
+  "${STACKTRACE_DIR}"
+  "${PARAMETERLIST_DIR}"
+  "${LA_DIR}"
+  "${LAPACK_DIR}"
+  "${BLAS_DIR}"
+  ${ROL_OED_SUBDIRS}
+  )
+
+##################################################
+# Binder-generated sources                       #
+##################################################
 
 IF (PYROL_GENERATE_SRC)
-  MESSAGE("-- PyROL_BINDER_EXECUTABLE:")
   IF(NOT DEFINED PyROL_BINDER_EXECUTABLE)
     find_program(PyROL_BINDER_EXECUTABLE
         NAMES binder
         )
-    MESSAGE("  -- CMake has set: PyROL_BINDER_EXECUTABLE = ${PyROL_BINDER_EXECUTABLE}")
-  ELSE()
-    MESSAGE("  -- User has set: PyROL_BINDER_EXECUTABLE = ${PyROL_BINDER_EXECUTABLE}")
   ENDIF()
+  MESSAGE(STATUS "PyROL_BINDER_EXECUTABLE: ${PyROL_BINDER_EXECUTABLE}")
   file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/include_tmp)
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include_tmp)
   file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/binder)
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/binder)
 
-  MESSAGE("PTR_IMPL = ${PTR_IMPL}")
+  MESSAGE(STATUS "PTR_IMPL: ${PTR_IMPL}")
   IF( PTR_IMPL STREQUAL "std::shared_ptr")
-    SET( BINDER_CFG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/PyROL_shared_ptr.cfg" )
+    SET( BINDER_PTR_CFG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/PyROL_shared_ptr.cfg" )
   ELSE()
-    SET( BINDER_CFG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/PyROL_RCP.cfg" )
+    SET( BINDER_PTR_CFG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/PyROL_RCP.cfg" )
   ENDIF()
+  # Binder reads a single configuration file: the common settings followed by
+  # those for the pointer type.
+  SET( BINDER_CFG "${CMAKE_CURRENT_BINARY_DIR}/PyROL.cfg" )
+  FILE(READ "${CMAKE_CURRENT_SOURCE_DIR}/scripts/PyROL_common.cfg" binder_common_cfg)
+  FILE(READ "${BINDER_PTR_CFG}" binder_ptr_cfg)
+  FILE(WRITE "${BINDER_CFG}" "${binder_common_cfg}\n${binder_ptr_cfg}")
 
   set(binder_include_name "${CMAKE_CURRENT_BINARY_DIR}/trilinos_includes.hpp")
   set(all_header_with_dir_list "${CMAKE_CURRENT_BINARY_DIR}/list_with_dir.txt")
   set(all_header_without_dir_list "${CMAKE_CURRENT_BINARY_DIR}/list_without_dir.txt")
-  set(all_ETI_classes_list "${CMAKE_CURRENT_BINARY_DIR}/all_ETI_classes_list.txt")
   set(all_include_list "${CMAKE_CURRENT_BINARY_DIR}/list_include.txt")
 
+  # Include directories of ROL's dependencies, followed by ROL's own.
   set(all_include_dirs "")
   set(all_visited_libs "")
   foreach(depPkg IN LISTS ROL_LIB_ENABLED_DEPENDENCIES)
@@ -209,8 +218,8 @@ IF (PYROL_GENERATE_SRC)
   FOREACH(include_dir IN LISTS ROL_all_include_dirs)
     list(APPEND all_include_dirs "${include_dir}")
   ENDFOREACH(include_dir)
-  #MESSAGE("all_include_dirs = ${all_include_dirs}")
 
+  # The headers in those directories, with and without the directory prefix.
   set(PyROL_all_include_files_with_dir "")
   set(PyROL_all_include_files_without_dir "")
   foreach(include_dir IN LISTS all_include_dirs)
@@ -233,30 +242,14 @@ IF (PYROL_GENERATE_SRC)
     endforeach()
   endforeach()
 
-  SET(CONTENTS "")
-  FOREACH(line IN LISTS all_include_dirs)
-    SET(CONTENTS "${CONTENTS}${line}\n")
-  ENDFOREACH(line)
-  file(WRITE ${all_include_list} ${CONTENTS})
+  write_lines(${all_include_list} all_include_dirs)
+  write_lines(${all_header_with_dir_list} PyROL_all_include_files_with_dir)
+  write_lines(${all_header_without_dir_list} PyROL_all_include_files_without_dir)
 
-  SET(CONTENTS "")
-  FOREACH(line IN LISTS PyROL_all_include_files_with_dir)
-    SET(CONTENTS "${CONTENTS}${line}\n")
-  ENDFOREACH(line)
-  file(WRITE ${all_header_with_dir_list} ${CONTENTS})
-
-  SET(CONTENTS "")
-  FOREACH(line IN LISTS PyROL_all_include_files_without_dir)
-    SET(CONTENTS "${CONTENTS}${line}\n")
-  ENDFOREACH(line)
-  file(WRITE ${all_header_without_dir_list} ${CONTENTS})
-
-  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/python)
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
 
-  file (GLOB PyROLPyFiles2 "${CMAKE_CURRENT_BINARY_DIR}/python/*.py")
-  list (APPEND PyROLPyFiles ${PyROLPyFiles2})
-
+  # Copy the headers to include_tmp with #include "..." rewritten to <...>,
+  # and write Binder's input file.
   EXECUTE_PROCESS(COMMAND
   ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/gather_includes.py ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${all_header_with_dir_list} ${all_header_without_dir_list} ${binder_include_name}
   )
@@ -286,28 +279,21 @@ IF (PYROL_GENERATE_SRC)
     list(APPEND BINDER_OPTIONS -x cuda --cuda-host-only)
   ENDIF()
   list(APPEND BINDER_OPTIONS ${PyROL_BINDER_FLAGS})
-  #list(APPEND BINDER_OPTIONS -std=c++${CMAKE_CXX_STANDARD})
   list(APPEND BINDER_OPTIONS -std=c++17)
   list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/include_tmp)
   list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_BINARY_DIR}/src)
   list(APPEND BINDER_OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-  list(APPEND BINDER_OPTIONS -I${PyROL_BINDER_clang_include_dirs})
-  list(APPEND BINDER_OPTIONS -iwithsysroot${PyROL_BINDER_LibClang_include_dir})
+  IF(PyROL_BINDER_clang_include_dirs)
+    list(APPEND BINDER_OPTIONS -I${PyROL_BINDER_clang_include_dirs})
+  ENDIF()
+  IF(PyROL_BINDER_LibClang_include_dir)
+    list(APPEND BINDER_OPTIONS -iwithsysroot${PyROL_BINDER_LibClang_include_dir})
+  ENDIF()
   IF(PyROL_BINDER_GCC_TOOLCHAIN)
     list(APPEND BINDER_OPTIONS --gcc-toolchain=${PyROL_BINDER_GCC_TOOLCHAIN})
   ENDIF()
   list(APPEND BINDER_OPTIONS -DNDEBUG)
-
-  message("BINDER_OPTIONS='${BINDER_OPTIONS}'")
-
-  IF(NOT PYROL_USE_ONE_FILE)
-    MATH(EXPR NUMBER_FILE "${PYROL_BINDER_NUM_FILES}")
-
-    foreach(index RANGE 0 ${NUMBER_FILE})
-      file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/binder/pyrol_${index}.cpp "")
-    endforeach()
-  ENDIF()
 
   EXECUTE_PROCESS(COMMAND
     ${PyROL_BINDER_EXECUTABLE} ${BINDER_OPTIONS}
@@ -315,7 +301,10 @@ IF (PYROL_GENERATE_SRC)
     OUTPUT_VARIABLE OUTPUT_BINDER
   )
 
+  # Binder's options and output are printed if it fails, and otherwise only
+  # with --log-level=VERBOSE.
   if(STATUS AND NOT STATUS EQUAL 0)
+    message("BINDER_OPTIONS='${BINDER_OPTIONS}'")
     message("${OUTPUT_BINDER}")
     if(PYROL_CMAKE_ERROR)
       message(FATAL_ERROR "BINDER FAILED: ${STATUS}")
@@ -323,8 +312,9 @@ IF (PYROL_GENERATE_SRC)
       message("BINDER FAILED: ${STATUS}")
     endif()
   else()
-    message(STATUS "BINDER SUCCESS:")
-    message("${OUTPUT_BINDER}")
+    message(STATUS "BINDER SUCCESS")
+    message(VERBOSE "BINDER_OPTIONS='${BINDER_OPTIONS}'")
+    message(VERBOSE "${OUTPUT_BINDER}")
   endif()
 
   IF(PYROL_UPDATE_GENERATED_SRC)
@@ -336,21 +326,9 @@ ELSE()
   FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/binder DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 ENDIF()
 
-# Get the python version
-EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -c
-                        "import sys; print(sys.version_info.major)"
-  OUTPUT_VARIABLE PYTHON_MAJOR_VERSION
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -c
-                        "import sys; print(sys.version_info.minor)"
-  OUTPUT_VARIABLE PYTHON_MINOR_VERSION
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-SET(PYTHON_VERSION ${PYTHON_MAJOR_VERSION}.${PYTHON_MINOR_VERSION})
-
-SET(PYBIND11_PYTHON_VERSION ${PYTHON_VERSION})
+##################################################
+# Module, installation and tests                 #
+##################################################
 
 # Determine the install directory
 IF(PYROL_SCIKIT)
@@ -377,20 +355,8 @@ MESSAGE(STATUS "PyROL installation path: ${PyROL_INSTALL_DIR_RELATIVE}")
 
 INSTALL(FILES
   ${PyROLPyFiles}
+  ${CMAKE_CURRENT_BINARY_DIR}/pyrol/_version.py
   DESTINATION ${PyROL_INSTALL_DIR})
-
-MACRO(SUBDIRLIST result curdir)
-  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
-  SET(dirlist "")
-  FOREACH(child ${children})
-    IF(IS_DIRECTORY ${curdir}/${child})
-      LIST(APPEND dirlist ${curdir}/${child})
-    ENDIF()
-  ENDFOREACH()
-  SET(${result} ${dirlist})
-ENDMACRO()
-
-SUBDIRLIST(PyROL_SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR}/python)
 
 FOREACH(PyROL_subdir ${PyROL_SUBDIRS})
   INSTALL(DIRECTORY
@@ -398,32 +364,13 @@ FOREACH(PyROL_subdir ${PyROL_SUBDIRS})
     DESTINATION ${PyROL_INSTALL_DIR})
 ENDFOREACH()
 
-# Find the pybind11 CMake module
-EXECUTE_PROCESS(COMMAND
-  ${Python3_EXECUTABLE} -c "import pybind11; print(pybind11.get_cmake_dir())"
-  OUTPUT_VARIABLE pybind11_DIR
-  ERROR_VARIABLE  pybind11_CMAKE_ERROR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-MESSAGE(STATUS "pybind11 CMake path: ${pybind11_DIR}")
-
-find_package(Python3 REQUIRED Development.Module)
-find_package(pybind11 REQUIRED)
-
-EXECUTE_PROCESS(COMMAND
-  ${Python3_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
-  OUTPUT_VARIABLE Mpi4Py_INCLUDE_DIR
-  ERROR_VARIABLE  Mpi4Py_INCLUDE_ERROR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-
 ADD_SUBDIRECTORY( src )
 
-file(COPY ${PyROLPyFiles} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/pyrol/.)
-
-FOREACH(PyROL_subdir ${PyROL_SUBDIRS})
-  FILE(COPY ${PyROL_subdir} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/pyrol)
-ENDFOREACH()
+# Lay out the package in the build tree too, so that tests can import it. The
+# Python files are copied whenever pyrol is built, so that edits reach the tests.
+ADD_CUSTOM_TARGET(pyrol_python_files
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/python ${CMAKE_CURRENT_BINARY_DIR}/pyrol)
+ADD_DEPENDENCIES(pyrol pyrol_python_files)
 
 SET(PyROL_PYTHONPATH "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}")
 

@@ -49,7 +49,7 @@ def main():
     
     # Set up vectors.  ##########################
     x = NumPyVector(np.array([-3., -4.]))
-    g = x.dual()
+    g = x.dual().clone()
     
     # Set up the problem.  ######################
     objective = RosenbrockObjective()

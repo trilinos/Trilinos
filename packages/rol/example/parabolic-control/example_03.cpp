@@ -249,7 +249,7 @@ private:
     return std::sqrt(norm);
   }
 
-  void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
+  void updateVector(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
     for (uint i=0; i<u.size(); i++) {
       u[i] += alpha*s[i];
     }
@@ -294,13 +294,13 @@ private:
       tmp = rnorm;
       alpha = 1.0;
       utmp.assign(u.begin(),u.end());
-      update(utmp,s,-alpha);
+      updateVector(utmp,s,-alpha);
       compute_residual(r,up,utmp,z);
       rnorm = compute_norm(r);
       while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON<Real>()) ) {
         alpha /= 2.0;
         utmp.assign(u.begin(),u.end());
-        update(utmp,s,-alpha);
+        updateVector(utmp,s,-alpha);
         compute_residual(r,up,utmp,z);
         rnorm = compute_norm(r);
       }
@@ -438,7 +438,7 @@ public:
         std::vector<Real> tmp(nx_,0.0);
         r.assign(nx_,0.0);
         apply_mass(tmp,sV[t-1]);
-        update(r,tmp,-1.0);
+        updateVector(r,tmp,-1.0);
       }
       else {
         apply_mass(r,Q[t]);
@@ -692,4 +692,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-
