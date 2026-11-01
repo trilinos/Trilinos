@@ -162,10 +162,10 @@ bool IntegratorAdjointSensitivity<Scalar>::advanceTime(const Scalar timeFinal)
 
   // The adjoint is integrated in the reversed time tau = t_final + t_init - t
   // (see AdjointAuxSensitivityModelEvaluator).
-  const Scalar t_init  = state_integrator_->getTimeStepControl()->getInitTime();
-  const Scalar t_final = state_integrator_->getTime();
-  const Scalar time_tol =
-      Scalar(1.0e-9) * std::max(std::abs(t_final - t_init), std::abs(t_final) + Scalar(1.0e-6));
+  const Scalar t_init   = state_integrator_->getTimeStepControl()->getInitTime();
+  const Scalar t_final  = state_integrator_->getTime();
+  const Scalar time_tol = AdjointSensitivityUtils::timeTolerance(
+      t_init, t_final, time_tolerance_pl_.get());
 
   // Times at which the response contributes to the adjoint with a jump
   //   y += df/dx_dot^{-T} * dg/dx^T,
@@ -732,11 +732,11 @@ void IntegratorAdjointSensitivity<Scalar>::buildSolutionHistory(
   spaces[1]                  = adjoint_space;
   RCP<const DPVS> prod_space = Thyra::productVectorSpace(spaces());
 
-  int num_states       = state_solution_history->getNumStates();
-  const Scalar t_init  = state_integrator_->getTimeStepControl()->getInitTime();
-  const Scalar t_final = state_integrator_->getTime();
-  const Scalar time_tol =
-      Scalar(1.0e-9) * std::max(std::abs(t_final - t_init), std::abs(t_final) + Scalar(1.0e-6));
+  int num_states        = state_solution_history->getNumStates();
+  const Scalar t_init   = state_integrator_->getTimeStepControl()->getInitTime();
+  const Scalar t_final  = state_integrator_->getTime();
+  const Scalar time_tol = AdjointSensitivityUtils::timeTolerance(
+      t_init, t_final, time_tolerance_pl_.get());
   for (int i = 0; i < num_states; ++i) {
     RCP<const SolutionState<Scalar>> forward_state =
         (*state_solution_history)[i];
@@ -814,6 +814,9 @@ createIntegratorAdjointSensitivity(
   // set the parameters
   Teuchos::RCP<Teuchos::ParameterList> spl = Teuchos::parameterList();
   if (inputPL != Teuchos::null) *spl = inputPL->sublist("Sensitivities");
+  // Tolerances for comparing times (see AdjointSensitivityUtils::timeTolerance)
+  const Teuchos::RCP<const Teuchos::ParameterList> time_tolerance_pl =
+      Teuchos::rcp(new Teuchos::ParameterList(*spl));
 
   int p_index          = spl->get<int>("Sensitivity Parameter Index", 0);
   int g_index          = spl->get<int>("Response Function Index", 0);
@@ -890,6 +893,7 @@ createIntegratorAdjointSensitivity(
           g_depends_on_p, f_depends_on_p, ic_depends_on_p,
           mass_matrix_is_identity, response_type, response_times,
           dae_structure, dae_jump_solver_pl));
+  integrator->setTimeToleranceParameters(time_tolerance_pl);
 
   return (integrator);
 }

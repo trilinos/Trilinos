@@ -10,7 +10,9 @@
 #ifndef PIRO_THYRAPRODUCTME_ROL_DYNAMICOBJECTIVE_HPP
 #define PIRO_THYRAPRODUCTME_ROL_DYNAMICOBJECTIVE_HPP
 
+#include <cmath>
 #include <string>
+#include <vector>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -20,6 +22,7 @@
 #include "Tempus_IntegratorAdjointSensitivity.hpp"
 #include "Tempus_IntegratorPseudoTransientForwardSensitivity.hpp"
 #include "Tempus_IntegratorPseudoTransientAdjointSensitivity.hpp"
+#include "Tempus_AdjointSensitivityUtils.hpp"
 
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_DefaultNominalBoundsOverrideModelEvaluator.hpp"
@@ -29,6 +32,9 @@
 #include "ROL_DynamicObjective.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_ThyraVector.hpp"
+
+#include "Piro_ProductModelEval.hpp"
+#include "Piro_ROL_ObserverBase.hpp"
 
 namespace Piro {
 
@@ -53,16 +59,24 @@ template <typename Real>
  *      \dot{u} = \frac{u_{new}-u_{old}}{dt}.
  * \f]
  *
- * If the response depends only on the final time, the last time stamp contributes
+ * The contribution of a time stamp is a weighted sum of the responses at its two ends,
  * \f[
- *      G = g(u_{new}, \dot{u}, z, t_{new})
+ *      G = w_{old}\, g(u_{old}, \dot{u}, z, t_{old}) + w_{new}\, g(u_{new}, \dot{u}, z, t_{new}),
  * \f]
- * and all other time stamps contribute zero.
+ * with weights given by the type of response:
  *
- * Otherwise the response is integrated in time with the trapezoidal rule
- * \f[
- *      G = \frac{dt}{2} \left[ g(u_{new}, \dot{u}, z, t_{new}) + g(u_{old}, \dot{u}, z, t_{old}) \right].
- * \f]
+ * - Final time (onlyFinalTime = true): \f$w_{new} = 1\f$ for the last time stamp,
+ * all other weights are zero.
+ *
+ * - Time integral (onlyFinalTime = false): the response is integrated in time with
+ * the trapezoidal rule, \f$w_{old} = w_{new} = dt/2\f$.
+ *
+ * - Sum over times (see setResponseTimes()): the response is the sum of the
+ * responses at the given times t_k, which must be the initial time or ends of time
+ * stamps. \f$w_{new}\f$ is the number of occurrences of \f$t_{new}\f$ in the list
+ * and, for the first time stamp (which starts at the initial time), \f$w_{old}\f$
+ * is the number of occurrences of the initial time; all other weights are zero.
+ * The model is evaluated exactly at the listed times t_k.
  *
  * The gradients are the exact derivatives of G, including the dependence of
  * \f$\dot{u}\f$ on both u_old (factor -1/dt) and u_new (factor 1/dt). Models that
@@ -87,6 +101,17 @@ public:
     Teuchos::RCP<ROL_ObserverBase<Real>> observer = Teuchos::null);
 
   virtual ~ThyraProductME_ROL_DynamicObjective() {}
+
+  /** \brief Use the sum of the responses at the given times as objective.
+   *
+   *  timeStamps are the Nt time stamps of ROL::ReducedDynamicObjective (time stamp 0,
+   *  which ends at the initial time, is not integrated). Each time must be, up to the
+   *  tolerance of Tempus::AdjointSensitivityUtils::timeTolerance (with the tolerances of
+   *  the Tempus "Sensitivities" parameters, as with the Tempus driver), the initial time
+   *  or the end of one of the time stamps 1, ..., Nt-1; otherwise an exception is thrown.
+   */
+  void setResponseTimes(const std::vector<Real>& responseTimes,
+                        const std::vector<ROL::TimeStamp<Real>>& timeStamps);
 
   //! Compute value of objective
   Real value( const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
@@ -136,10 +161,18 @@ public:
   }
 
 private:
-  //! Whether the time stamp contributes to the objective.
-  bool isActive(const ROL::TimeStamp<Real> &timeStamp) const {
-    return !onlyFinalTime_ || (int) timeStamp.k == Nt_-1;
-  }
+  enum class ResponseType { FinalTime, TimeIntegral, SumOverTimes };
+
+  //! Weights and times of the responses at the two ends of a time stamp:
+  //! G = w_old g(u_old, u_dot, z, t_old) + w_new g(u_new, u_dot, z, t_new)
+  struct EndWeights {
+    Real w_old, w_new;
+    Real t_old, t_new;
+    //! Whether the time stamp contributes to the objective
+    bool active() const { return w_old != Real(0) || w_new != Real(0); }
+  };
+
+  EndWeights endWeights(const ROL::TimeStamp<Real> &timeStamp) const;
 
   //! Partial derivatives dg/dx and dg/dx_dot (gradient form) at (x, x_dot, p, t).
   //! dgdx_dot is set to zero when the model does not support DgDx_dot.
@@ -156,7 +189,9 @@ private:
   std::string sensitivity_method_;
   const int g_index_;
   int Nt_;
-  const bool onlyFinalTime_;
+  ResponseType responseType_;
+  std::vector<Real> responseTimes_;
+  Real responseTimeTol_;
   const bool useTrapezoidalTimeIntegration_;
   bool supportsDgDxDot_;
   Real objectiveRecoveryValue_;
@@ -192,7 +227,8 @@ ThyraProductME_ROL_DynamicObjective(
   sensitivity_method_("Adjoint"),
   g_index_(g_index),
   Nt_(Nt),
-  onlyFinalTime_(onlyFinalTime),
+  responseType_(onlyFinalTime ? ResponseType::FinalTime : ResponseType::TimeIntegral),
+  responseTimeTol_(0),
   useTrapezoidalTimeIntegration_(useTrapezoidalTimeIntegration),
   supportsDgDxDot_(false),
   optParams_(piroParams.sublist("Optimization Status")),
@@ -203,7 +239,7 @@ ThyraProductME_ROL_DynamicObjective(
 {
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(!onlyFinalTime_ && !useTrapezoidalTimeIntegration_, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!onlyFinalTime && !useTrapezoidalTimeIntegration_, std::logic_error,
     std::endl << "Piro::ThyraProductME_ROL_DynamicObjective: time-integrated responses are "
     "only implemented with the trapezoidal rule." << std::endl);
 
@@ -229,6 +265,77 @@ ThyraProductME_ROL_DynamicObjective(
 }
 
 template <typename Real>
+void
+ThyraProductME_ROL_DynamicObjective<Real>::
+setResponseTimes(const std::vector<Real>& responseTimes, const std::vector<ROL::TimeStamp<Real>>& timeStamps)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(responseTimes.empty(), Teuchos::Exceptions::InvalidParameter,
+    std::endl << "Piro::ThyraProductME_ROL_DynamicObjective::setResponseTimes: the list of response times is empty." << std::endl);
+  TEUCHOS_TEST_FOR_EXCEPTION(Nt_ < 2 || static_cast<int>(timeStamps.size()) != Nt_, Teuchos::Exceptions::InvalidParameter,
+    std::endl << "Piro::ThyraProductME_ROL_DynamicObjective::setResponseTimes: " << timeStamps.size() <<
+    " time stamps are given, but the objective has Nt = " << Nt_ << " time stamps (at least 2, time stamp 0 "
+    "is not integrated)." << std::endl);
+
+  // The response times must be the initial time (the start of time stamp 1) or the end of
+  // one of the time stamps 1, ..., Nt-1
+  const Real t_init = timeStamps[1].t.front();
+  const Real t_final = timeStamps.back().t.back();
+  const Teuchos::ParameterList& tempusParams = *tempus_params_;
+  const Real tol = Tempus::AdjointSensitivityUtils::timeTolerance(t_init, t_final,
+    tempusParams.isSublist("Sensitivities") ? &tempusParams.sublist("Sensitivities") : nullptr);
+  for (const Real t_k : responseTimes) {
+    bool onGrid = std::abs(t_k - t_init) <= tol;
+    for (std::size_t k = 1; k < timeStamps.size() && !onGrid; ++k)
+      onGrid = std::abs(t_k - timeStamps[k].t.back()) <= tol;
+    TEUCHOS_TEST_FOR_EXCEPTION(!onGrid, Teuchos::Exceptions::InvalidParameter,
+      std::endl << "Piro::ThyraProductME_ROL_DynamicObjective::setResponseTimes: the response time " << t_k <<
+      " is not on the time grid of the ROL dynamic-constraint approach (\"Tempus Driver\" = false): the response " <<
+      "times must be in [" << t_init << ", " << t_final << "] and coincide with the initial time or the end of " <<
+      "a time step." << std::endl);
+  }
+
+  responseType_ = ResponseType::SumOverTimes;
+  responseTimes_ = responseTimes;
+  responseTimeTol_ = tol;
+}
+
+template <typename Real>
+typename ThyraProductME_ROL_DynamicObjective<Real>::EndWeights
+ThyraProductME_ROL_DynamicObjective<Real>::
+endWeights(const ROL::TimeStamp<Real> &timeStamp) const
+{
+  EndWeights w;
+  w.w_old = Real(0);
+  w.w_new = Real(0);
+  w.t_old = timeStamp.t.front();
+  w.t_new = timeStamp.t.back();
+  if (timeStamp.k == 0) return w;  // time stamp 0 is not integrated
+
+  switch (responseType_) {
+    case ResponseType::FinalTime:
+      if (static_cast<int>(timeStamp.k) == Nt_-1) w.w_new = Real(1);
+      break;
+    case ResponseType::TimeIntegral:
+      w.w_old = w.w_new = (w.t_new - w.t_old)/Real(2);
+      break;
+    case ResponseType::SumOverTimes:
+      for (const Real t_k : responseTimes_) {
+        if (std::abs(t_k - timeStamp.t.back()) <= responseTimeTol_) {
+          w.w_new += Real(1);
+          w.t_new = t_k;
+        }
+        else if (timeStamp.k == 1 && std::abs(t_k - timeStamp.t.front()) <= responseTimeTol_) {
+          // The initial time, i.e., the start of the first integrated time stamp
+          w.w_old += Real(1);
+          w.t_old = t_k;
+        }
+      }
+      break;
+  }
+  return w;
+}
+
+template <typename Real>
 Real
 ThyraProductME_ROL_DynamicObjective<Real>::
 value( const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
@@ -239,9 +346,10 @@ value( const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
   const Real t_old = timeStamp.t.front();
   const Real t_new = timeStamp.t.back();
 
-  if(!isActive(timeStamp)) {
+  const EndWeights w = endWeights(timeStamp);
+  if(!w.active()) {
     if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
-      *out_ << "Piro::ThyraProductME_ROL_DynamicObjective::value final time of the time stamp " << t_new << " is not the final time." << std::endl;
+      *out_ << "Piro::ThyraProductME_ROL_DynamicObjective::value the time stamp [" << t_old << ", " << t_new << "] does not contribute to the objective." << std::endl;
     return 0;
   }
   if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
@@ -260,12 +368,11 @@ value( const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
 
   RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
-  Real g = value( thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_new);
-
-  if (!onlyFinalTime_) {
-    g += value( thyra_u_old.getVector(), u_dot, thyra_p.getVector(), t_old);
-    g *= dt/2.;
-  }
+  Real g(0);
+  if (w.w_new != Real(0))
+    g += w.w_new * value( thyra_u_new.getVector(), u_dot, thyra_p.getVector(), w.t_new);
+  if (w.w_old != Real(0))
+    g += w.w_old * value( thyra_u_old.getVector(), u_dot, thyra_p.getVector(), w.t_old);
 
   return g;
 }
@@ -286,11 +393,11 @@ gradient_uo( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
   if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
     *out_ << "Piro::ThyraProductME_ROL_DynamicObjective::gradient_uo " << t_old << " " << t_new << " " << timeStamp.k << " " << Nt_ << std::endl;
 
-  // In the final-time case u_old enters only through u_dot.
-  if(!isActive(timeStamp) || (onlyFinalTime_ && !supportsDgDxDot_)) {
-    Thyra::assign(dgduo.ptr(), Teuchos::ScalarTraits<Real>::zero());
+  // u_old enters through u_dot, and through the response at the start of the time stamp
+  const EndWeights w = endWeights(timeStamp);
+  Thyra::assign(dgduo.ptr(), Teuchos::ScalarTraits<Real>::zero());
+  if(!w.active() || (w.w_old == Real(0) && !supportsDgDxDot_))
     return;
-  }
 
   const ROL::ThyraVector<Real>& thyra_p =
     Teuchos::dyn_cast<const ROL::ThyraVector<Real> >(p);
@@ -302,26 +409,22 @@ gradient_uo( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
     Teuchos::dyn_cast<const ROL::ThyraVector<Real> >(u_old);
 
   const Real dt = t_new - t_old;
-  const Real one(1.0), half(0.5);
 
   RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
-  RCP<Thyra::VectorBase<Real> > dgdx_new = dgduo->clone_v();
-  RCP<Thyra::VectorBase<Real> > dgdx_dot_new = dgduo->clone_v();
-  evalStateDerivatives(dgdx_new, dgdx_dot_new, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_new);
+  RCP<Thyra::VectorBase<Real> > dgdx = dgduo->clone_v();
+  RCP<Thyra::VectorBase<Real> > dgdx_dot = dgduo->clone_v();
 
-  if (onlyFinalTime_) {
-    // G = g(u_new, u_dot)  ==>  dG/du_old = -1/dt dg/dx_dot(new)
-    Thyra::V_StV(dgduo.ptr(), -one/dt, *dgdx_dot_new);
+  // G = w_new g(u_new, u_dot) + w_old g(u_old, u_dot)
+  // ==>  dG/du_old = -w_new/dt dg/dx_dot(new) + w_old [dg/dx(old) - 1/dt dg/dx_dot(old)]
+  if (w.w_new != Real(0) && supportsDgDxDot_) {
+    evalStateDerivatives(dgdx, dgdx_dot, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), w.t_new);
+    Thyra::Vp_StV(dgduo.ptr(), -w.w_new/dt, *dgdx_dot);
   }
-  else {
-    // G = dt/2 [g(u_new, u_dot) + g(u_old, u_dot)]
-    // ==>  dG/du_old = dt/2 dg/dx(old) - 1/2 [dg/dx_dot(new) + dg/dx_dot(old)]
-    RCP<Thyra::VectorBase<Real> > dgdx_old = dgduo->clone_v();
-    RCP<Thyra::VectorBase<Real> > dgdx_dot_old = dgduo->clone_v();
-    evalStateDerivatives(dgdx_old, dgdx_dot_old, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), t_old);
-    Thyra::V_StVpStV(dgduo.ptr(), dt/2., *dgdx_old, -half, *dgdx_dot_new);
-    Thyra::Vp_StV(dgduo.ptr(), -half, *dgdx_dot_old);
+  if (w.w_old != Real(0)) {
+    evalStateDerivatives(dgdx, dgdx_dot, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), w.t_old);
+    Thyra::Vp_StV(dgduo.ptr(), w.w_old, *dgdx);
+    Thyra::Vp_StV(dgduo.ptr(), -w.w_old/dt, *dgdx_dot);
   }
 }
 
@@ -338,10 +441,11 @@ gradient_un( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
   const Real t_old = timeStamp.t.front();
   const Real t_new = timeStamp.t.back();
 
-  if(!isActive(timeStamp)) {
+  const EndWeights w = endWeights(timeStamp);
+  Thyra::assign(dgdun.ptr(), Teuchos::ScalarTraits<Real>::zero());
+  if(!w.active()) {
     if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
-      *out_ << "Piro::ThyraProductME_ROL_DynamicObjective::gradient_un final time of the time stamp " << t_new << " is not the final time." << std::endl;
-    Thyra::assign(dgdun.ptr(), Teuchos::ScalarTraits<Real>::zero());
+      *out_ << "Piro::ThyraProductME_ROL_DynamicObjective::gradient_un the time stamp [" << t_old << ", " << t_new << "] does not contribute to the objective." << std::endl;
     return;
   }
   if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
@@ -357,26 +461,22 @@ gradient_un( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
     Teuchos::dyn_cast<const ROL::ThyraVector<Real> >(u_old);
 
   const Real dt = t_new - t_old;
-  const Real one(1.0), half(0.5);
 
   RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
-  RCP<Thyra::VectorBase<Real> > dgdx_new = dgdun->clone_v();
-  RCP<Thyra::VectorBase<Real> > dgdx_dot_new = dgdun->clone_v();
-  evalStateDerivatives(dgdx_new, dgdx_dot_new, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_new);
+  RCP<Thyra::VectorBase<Real> > dgdx = dgdun->clone_v();
+  RCP<Thyra::VectorBase<Real> > dgdx_dot = dgdun->clone_v();
 
-  if (onlyFinalTime_) {
-    // G = g(u_new, u_dot)  ==>  dG/du_new = dg/dx(new) + 1/dt dg/dx_dot(new)
-    Thyra::V_StVpStV(dgdun.ptr(), one, *dgdx_new, one/dt, *dgdx_dot_new);
+  // G = w_new g(u_new, u_dot) + w_old g(u_old, u_dot)
+  // ==>  dG/du_new = w_new [dg/dx(new) + 1/dt dg/dx_dot(new)] + w_old/dt dg/dx_dot(old)
+  if (w.w_new != Real(0)) {
+    evalStateDerivatives(dgdx, dgdx_dot, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), w.t_new);
+    Thyra::Vp_StV(dgdun.ptr(), w.w_new, *dgdx);
+    Thyra::Vp_StV(dgdun.ptr(), w.w_new/dt, *dgdx_dot);
   }
-  else {
-    // G = dt/2 [g(u_new, u_dot) + g(u_old, u_dot)]
-    // ==>  dG/du_new = dt/2 dg/dx(new) + 1/2 [dg/dx_dot(new) + dg/dx_dot(old)]
-    RCP<Thyra::VectorBase<Real> > dgdx_old = dgdun->clone_v();
-    RCP<Thyra::VectorBase<Real> > dgdx_dot_old = dgdun->clone_v();
-    evalStateDerivatives(dgdx_old, dgdx_dot_old, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), t_old);
-    Thyra::V_StVpStV(dgdun.ptr(), dt/2., *dgdx_new, half, *dgdx_dot_new);
-    Thyra::Vp_StV(dgdun.ptr(), half, *dgdx_dot_old);
+  if (w.w_old != Real(0) && supportsDgDxDot_) {
+    evalStateDerivatives(dgdx, dgdx_dot, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), w.t_old);
+    Thyra::Vp_StV(dgdun.ptr(), w.w_old/dt, *dgdx_dot);
   }
 }
 
@@ -391,9 +491,10 @@ gradient_z( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL::
   const Real t_old = timeStamp.t.front();
   const Real t_new = timeStamp.t.back();
 
-  if(!isActive(timeStamp)) {
+  const EndWeights w = endWeights(timeStamp);
+  if(!w.active()) {
     if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
-      *out_ << "Piro::ThyraProductME_ROL_DynamicObjective::gradient_z final time of the time stamp " << t_new << " is not the final time." << std::endl;
+      *out_ << "Piro::ThyraProductME_ROL_DynamicObjective::gradient_z the time stamp [" << t_old << ", " << t_new << "] does not contribute to the objective." << std::endl;
     Thyra::assign(Teuchos::dyn_cast<ROL::ThyraVector<Real> >(grad).getVector().ptr(), Teuchos::ScalarTraits<Real>::zero());
     return;
   }
@@ -416,14 +517,19 @@ gradient_z( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL::
   RCP<Thyra::VectorBase<Real> > u_dot = compute_u_dot(thyra_u_new.getVector(), thyra_u_old.getVector(), dt);
 
   RCP<Thyra::VectorBase<Real> > dgdp = thyra_dgdp.getVector();
-  gradient_z( dgdp, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), t_new);
 
-  if (!onlyFinalTime_) {
-    // G = dt/2 [g(u_new, u_dot) + g(u_old, u_dot)]  ==>  dG/dz = dt/2 [dg/dp(new) + dg/dp(old)]
-    RCP<Thyra::VectorBase<Real> > dgdp_old = thyra_dgdp.getVector()->clone_v();
-    gradient_z( dgdp_old, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), t_old);
-    Thyra::Vp_V(dgdp.ptr(), *dgdp_old);
-    Thyra::Vt_S(dgdp.ptr(), dt/2.);
+  // G = w_new g(u_new, u_dot) + w_old g(u_old, u_dot)  ==>  dG/dz = w_new dg/dp(new) + w_old dg/dp(old)
+  if (w.w_new != Real(0)) {
+    gradient_z( dgdp, thyra_u_new.getVector(), u_dot, thyra_p.getVector(), w.t_new);
+    if (w.w_new != Real(1)) Thyra::Vt_S(dgdp.ptr(), w.w_new);
+  }
+  if (w.w_old != Real(0)) {
+    RCP<Thyra::VectorBase<Real> > dgdp_old = dgdp->clone_v();
+    gradient_z( dgdp_old, thyra_u_old.getVector(), u_dot, thyra_p.getVector(), w.t_old);
+    if (w.w_new != Real(0))
+      Thyra::Vp_StV(dgdp.ptr(), w.w_old, *dgdp_old);
+    else
+      Thyra::V_StV(dgdp.ptr(), w.w_old, *dgdp_old);
   }
 }
 
