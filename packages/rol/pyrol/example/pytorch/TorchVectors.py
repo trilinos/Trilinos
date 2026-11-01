@@ -73,25 +73,24 @@ class TensorVector(PythonVector):
     @torch.no_grad()
     def reduce(self, op):
         reduction_type = op.reductionType()
-        match reduction_type:
-            case ROL.Elementwise.REDUCE_MIN:
-                ans = self.tensor.min()
-                ans = ans.item()
-            case ROL.Elementwise.REDUCE_MAX:
-                ans = self.tensor.max()
-                ans = ans.item()
-            case ROL.Elementwise.REDUCE_SUM:
-                ans = torch.sum(self.tensor)
-                ans = ans.item()
-            case ROL.Elementwise.REDUCE_AND:
-                ans = self.tensor.all()
-                ans = ans.item()
-            case ROL.Elementwise.REDUCE_BOR:
-                ans = 0
-                for i in range(self.dimension()):
-                    ans = ans | int(self[i].item())
-            case _:
-                raise NotImplementedError(reduction_type)
+        if reduction_type == ROL.Elementwise.REDUCE_MIN:
+            ans = self.tensor.min()
+            ans = ans.item()
+        elif reduction_type == ROL.Elementwise.REDUCE_MAX:
+            ans = self.tensor.max()
+            ans = ans.item()
+        elif reduction_type == ROL.Elementwise.REDUCE_SUM:
+            ans = torch.sum(self.tensor)
+            ans = ans.item()
+        elif reduction_type == ROL.Elementwise.REDUCE_AND:
+            ans = self.tensor.all()
+            ans = ans.item()
+        elif reduction_type == ROL.Elementwise.REDUCE_BOR:
+            ans = 0
+            for i in range(self.dimension()):
+                ans = ans | int(self[i].item())
+        else:
+            raise NotImplementedError(reduction_type)
         return ans
 
     @torch.no_grad()
@@ -202,32 +201,31 @@ class TensorDictVector(PythonVector):
     @torch.no_grad()
     def reduce(self, op):
         reduction_type = op.reductionType()
-        match reduction_type:
-            case ROL.Elementwise.REDUCE_MIN:
-                ans = float('+inf')
-                for _, v in self.tensor_dict.items():
-                    ans = min(ans, v.min().item())
-            case ROL.Elementwise.REDUCE_MAX:
-                ans = float('-inf')
-                for _, v in self.tensor_dict.items():
-                    ans = max(ans, v.max().item())
-            case ROL.Elementwise.REDUCE_SUM:
-                ans = 0
-                for _, v in self.tensor_dict.items():
-                    ans += torch.sum(v)
-                ans = ans.item()
-            case ROL.Elementwise.REDUCE_AND:
-                ans = True
-                for _, v in self.tensor_dict.items():
-                    ans = ans and v.all().item()
-                    if ans == False:
-                        break
-            case ROL.Elementwise.REDUCE_BOR:
-                ans = 0
-                for i in range(self.dimension()):
-                    ans = ans | int(self[i].item())
-            case _:
-                raise NotImplementedError(reduction_type)
+        if reduction_type == ROL.Elementwise.REDUCE_MIN:
+            ans = float('+inf')
+            for _, v in self.tensor_dict.items():
+                ans = min(ans, v.min().item())
+        elif reduction_type == ROL.Elementwise.REDUCE_MAX:
+            ans = float('-inf')
+            for _, v in self.tensor_dict.items():
+                ans = max(ans, v.max().item())
+        elif reduction_type == ROL.Elementwise.REDUCE_SUM:
+            ans = 0
+            for _, v in self.tensor_dict.items():
+                ans += torch.sum(v)
+            ans = ans.item()
+        elif reduction_type == ROL.Elementwise.REDUCE_AND:
+            ans = True
+            for _, v in self.tensor_dict.items():
+                ans = ans and v.all().item()
+                if ans == False:
+                    break
+        elif reduction_type == ROL.Elementwise.REDUCE_BOR:
+            ans = 0
+            for i in range(self.dimension()):
+                ans = ans | int(self[i].item())
+        else:
+            raise NotImplementedError(reduction_type)
         return ans
 
     @torch.no_grad()
