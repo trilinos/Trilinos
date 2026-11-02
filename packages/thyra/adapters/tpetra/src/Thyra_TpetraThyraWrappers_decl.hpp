@@ -11,6 +11,7 @@
 #define THYRA_TPETRA_THYRA_WRAPPERS_DECL_HPP
 
 
+#include <type_traits>
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_TpetraVectorSpace_decl.hpp"
 #include "Thyra_TpetraVector_decl.hpp"
@@ -19,6 +20,8 @@
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_ProductMultiVectorBase.hpp"
 
 namespace Thyra {
 
@@ -255,6 +258,18 @@ public:
   static RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   getConstTpetraVector(const RCP<const VectorBase<Scalar> > &v);
 
+  /** \brief Get a non-const Tpetra::Vector from a non-const
+   * Thyra::VectorBase object that is a Thyra::ProductVectorBase.
+   */
+  static RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getTpetraVectorBlock(const RCP<VectorBase<Scalar> > &v, const int k);
+
+  /** \brief Get a const Tpetra::Vector from a const
+   * Thyra::VectorBase object that is a Thyra::ProductVectorBase.
+   */
+  static RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getConstTpetraVectorBlock(const RCP<const VectorBase<Scalar> > &v, const int k);
+
   /** \brief Get a non-const Tpetra::MultiVector from a non-const
    * Thyra::MultiVectorBase object.
    */
@@ -266,6 +281,18 @@ public:
    */
   static RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> > &mv);
+
+  /** \brief Get a non-const Tpetra::MultiVector from a non-const
+   * Thyra::MultiVectorBase object that is a Thyra::ProductMultiVectorBase.
+   */
+  static RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getTpetraMultiVectorBlock(const RCP<MultiVectorBase<Scalar> > &mv, const int k);
+
+  /** \brief Get a const Tpetra::MultiVector from a const
+   * Thyra::MultiVectorBase object that is a Thyra::ProductMultiVectorBase.
+   */
+  static RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  getConstTpetraMultiVectorBlock(const RCP<const MultiVectorBase<Scalar> > &mv, const int k);
 
   /** \brief Get a non-const Tpetra::Operator from a non-const
    * Thyra::LinearOpBase object.
@@ -281,6 +308,87 @@ public:
 
 };
 
+
+namespace {
+
+template <typename Source, typename Target>
+struct match_const {
+  using type = std::remove_const_t<Target>;
+};
+
+template <typename Source, typename Target>
+struct match_const<const Source, Target> {
+  using type = const Target;
+};
+
+template <typename Source, typename Target>
+using match_const_t = typename match_const<Source, Target>::type;
+
+} // namespace
+
+
+/** \brief Get a const Tpetra::Map from a const Thyra::VectorSpaceBase object.
+ */
+template <class Scalar = Tpetra::Vector<>::scalar_type,
+          class LocalOrdinal = Tpetra::Vector<>::local_ordinal_type,
+          class GlobalOrdinal = Tpetra::Vector<>::global_ordinal_type,
+          class Node = Tpetra::Vector<>::node_type>
+RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
+toTpetra(const RCP<const Thyra::VectorSpaceBase<Scalar>> &vs);
+
+
+/** \brief Get a Tpetra::Vector or Tpetra::MultiVector from a
+ * Thyra::VectorBase or Thyra::MultiVectorBase object.
+ */
+template <class Scalar = Tpetra::Vector<>::scalar_type,
+          class LocalOrdinal = Tpetra::Vector<>::local_ordinal_type,
+          class GlobalOrdinal = Tpetra::Vector<>::global_ordinal_type,
+          class Node = Tpetra::Vector<>::node_type,
+          class thy_vec_type,
+          class tp_vec_type = std::conditional_t<
+              std::is_same_v<std::remove_const_t<thy_vec_type>,
+                             MultiVectorBase<Scalar>>,
+              Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
+              Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>,
+          class ret_type = match_const_t<thy_vec_type, tp_vec_type>>
+std::enable_if_t<
+    std::is_same_v<std::remove_const_t<thy_vec_type>, MultiVectorBase<Scalar >> ||
+    std::is_same_v<std::remove_const_t<thy_vec_type>, VectorBase<Scalar>>,
+    RCP<ret_type>>
+toTpetra(const RCP<thy_vec_type> &mv);
+
+
+/** \brief Get a Tpetra::Vector or Tpetra::MultiVector from a
+ * Thyra::ProductVectorBase or Thyra::ProductMultiVectorBase object.
+ */
+template <class Scalar = Tpetra::Vector<>::scalar_type,
+          class LocalOrdinal = Tpetra::Vector<>::local_ordinal_type,
+          class GlobalOrdinal = Tpetra::Vector<>::global_ordinal_type,
+          class Node = Tpetra::Vector<>::node_type,
+          class thy_vec_type,
+          class tp_vec_type = std::conditional_t<
+              std::is_same_v<std::remove_const_t<thy_vec_type>,
+                             MultiVectorBase<Scalar>>,
+              Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
+              Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>,
+          class ret_type = match_const_t<thy_vec_type, tp_vec_type>>
+RCP<ret_type>
+toTpetra(const RCP<thy_vec_type> &mv, const int k);
+
+
+/** \brief Get a Tpetra::Operator from a Thyra::LinearOpBase object.
+ */
+template <class Scalar = Tpetra::Vector<>::scalar_type,
+          class LocalOrdinal = Tpetra::Vector<>::local_ordinal_type,
+          class GlobalOrdinal = Tpetra::Vector<>::global_ordinal_type,
+          class Node = Tpetra::Vector<>::node_type,
+          class thy_op_type,
+          class ret_type = match_const_t<
+              thy_op_type,
+              Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>
+std::enable_if_t<std::is_same_v<std::remove_const_t<thy_op_type>,
+                                LinearOpBase<Scalar>>, RCP<ret_type>>
+toTpetra(const RCP<thy_op_type> &op);
 
 } // namespace Thyra
 
