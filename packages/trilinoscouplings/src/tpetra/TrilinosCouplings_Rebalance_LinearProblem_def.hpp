@@ -118,11 +118,21 @@ template <class Scalar,
           class Node>
 void
 Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::fwd() {
+  using cm_t  = Tpetra::CrsMatrix    <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
   auto origProblem = this->origObj_;
+  auto origMatrix = Teuchos::rcp_dynamic_cast<cm_t>(origProblem->getMatrix(), true);
   auto origRHS = origProblem->getRHS();
+
   TEUCHOS_ASSERT(this->isConstructed());
   auto rebalProblem = this->newObj_;
+  auto rebalMatrix = Teuchos::rcp_dynamic_cast<cm_t>(rebalProblem->getMatrix(), true);
   auto rebalRHS = rebalProblem->getRHS();
+
+  rebalMatrix->resumeFill();
+  rebalMatrix->doImport(*origMatrix, *importer_, Tpetra::INSERT);
+  rebalMatrix->fillComplete();
+
   rebalRHS->doImport(*origRHS, *importer_, Tpetra::INSERT);
 }
 
