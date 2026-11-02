@@ -5962,7 +5962,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // it in checkSizes().
   using RMT         = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   const RMT& srcMat = dynamic_cast<const RMT&>(srcObj);
-  if (isStaticGraph()) {
+  if (isStaticGraph() || isStorageOptimized()) {
     if (Details::Behavior::useNewCopyAndPermute()) {
       TEUCHOS_ASSERT(!permuteToLIDs.need_sync_device());
       auto permuteToLIDs_d = permuteToLIDs.view_device();
@@ -6674,7 +6674,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         const bool verbose) {
   const char tfecfFuncName[] = "combineGlobalValues: ";
 
-  if (isStaticGraph()) {
+  if (isStaticGraph() || isStorageOptimized()) {
     // INSERT doesn't make sense for a static graph, since you
     // aren't allowed to change the structure of the graph.
     // However, all the other combine modes work.
