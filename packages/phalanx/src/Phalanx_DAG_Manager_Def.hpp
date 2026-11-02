@@ -71,13 +71,24 @@ requireField(const PHX::FieldTag& t)
 //=======================================================================
 template<typename Traits>
 void PHX::DagManager<Traits>::
+setAddIndexToTimerNames(bool add_index)
+{
+  add_index_to_timer_names_ = add_index;
+}
+
+//=======================================================================
+template<typename Traits>
+void PHX::DagManager<Traits>::
 registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 {
 #ifdef PHX_TEUCHOS_TIME_MONITOR
-  // Add counter to name so that all timers have unique names
+  // Optionally add index to name so that all timers have unique names
   static int count=0;
   std::stringstream uniqueName;
-  uniqueName << "Phalanx: Evaluator " << count++ <<": [" << evaluation_type_name_ << "] ";
+  uniqueName << "Phalanx: Evaluator";
+  if (add_index_to_timer_names_)
+    uniqueName << " " << count++ ;
+  uniqueName << ": [" << evaluation_type_name_ << "] ";
   evalTimers.push_back(
      Teuchos::TimeMonitor::getNewTimer(uniqueName.str() + p->getName()));
 #endif
