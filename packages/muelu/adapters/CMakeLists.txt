@@ -83,6 +83,11 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
     ${DIR}/Xpetra_ThyraLinearOp.hpp
   )
 
+  IF(${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
+    APPEND_SET(HEADERS ${DIR}/MueLu_TekoMultiPhysBlockPreconditionerFactory.hpp)
+    APPEND_SET(SOURCES ${DIR}/MueLu_TekoMultiPhysBlockPreconditionerFactory.cpp)
+  ENDIF()
+
   # Tpetra specific extensions
   IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
     TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)

@@ -12,6 +12,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/stratimikos)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 TRIBITS_ADD_EXECUTABLE(
@@ -350,6 +351,21 @@ TRIBITS_ADD_TEST(
   COMM mpi
   PASS_REGULAR_EXPRESSION "Belos converged|Skipping test"
 )
+
+IF(${PACKAGE_NAME}_ENABLE_Stratimikos
+   AND ${PACKAGE_NAME}_ENABLE_Thyra
+   AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
+   AND ${PACKAGE_NAME}_ENABLE_Teko
+)
+  TRIBITS_ADD_TEST(
+    MultiphysicsDriver
+    NAME "MultiphysicsTestTekoBlockAMG"
+    ARGS "--xml=multiphys_blocked_smoother.xml --expected-iters=8 --path=teko"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "Belos converged|Skipping test"
+  )
+ENDIF()
 
 TRIBITS_ADD_TEST(
   Driver
