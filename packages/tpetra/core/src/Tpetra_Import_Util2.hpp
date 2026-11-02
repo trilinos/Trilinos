@@ -486,9 +486,11 @@ void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
                     const colind_array_type& CRS_colind,
                     const vals_array_type& CRS_vals) {
   KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
-  static constexpr bool is_cpu       = std::is_same_v<typename rowptr_array_type::memory_space, Kokkos::HostSpace>;
+#if KOKKOSKERNELS_VERSION >= 50100
+  static constexpr bool is_cpu = std::is_same_v<typename rowptr_array_type::memory_space, Kokkos::HostSpace>;
   if constexpr (is_cpu)
     option = KokkosSparse::SortAlgorithm::SHELL;
+#endif
   KokkosSparse::sort_crs_matrix(CRS_rowptr, CRS_colind, CRS_vals,
                                 KokkosKernels::ArithTraits<typename colind_array_type::non_const_value_type>::max(),
                                 option);
@@ -497,9 +499,11 @@ void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
 template <typename local_crs_matrix>
 void sortCrsMatrix(local_crs_matrix& lclMatrix) {
   KokkosSparse::SortAlgorithm option = KokkosSparse::SortAlgorithm::DEFAULT;
-  static constexpr bool is_cpu       = std::is_same_v<typename local_crs_matrix::device_type::memory_space, Kokkos::HostSpace>;
+#if KOKKOSKERNELS_VERSION >= 50100
+  static constexpr bool is_cpu = std::is_same_v<typename local_crs_matrix::device_type::memory_space, Kokkos::HostSpace>;
   if constexpr (is_cpu)
     option = KokkosSparse::SortAlgorithm::SHELL;
+#endif
   KokkosSparse::sort_crs_matrix(lclMatrix, option);
 }
 
