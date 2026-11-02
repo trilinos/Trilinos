@@ -67,7 +67,7 @@ using Scratch = Kokkos::View<typename ViewType::data_type,
 //
 // mdspan was controlled by KOKKOS_ENABLE_IMPL_MDSPAN before 5.3,
 // but after 5.3 is always available.
-#if defined(KOKKOS_ENABLE_IMPL_MDSPAN) || (KOKKOS_VERSION >= 50299)
+#if (defined(KOKKOS_ENABLE_IMPL_MDSPAN) && (KOKKOS_VERSION >= 50200)) || (KOKKOS_VERSION >= 50299)
 template <class OrigExtents, class NewIndexType, class Seq>
 struct ReplaceExtentsIndexType;
 

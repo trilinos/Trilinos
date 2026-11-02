@@ -4698,7 +4698,7 @@ struct SolveTridiags {
       // scratch View, to keep indices/strides 32-bit for the single-vector
       // solve. The middle dimension (num_vectors == 1 here) is elided since we
       // specialize for the single-vector case.
-#if defined(KOKKOS_ENABLE_IMPL_MDSPAN) || (KOKKOS_VERSION >= 50299)
+#if (defined(KOKKOS_ENABLE_IMPL_MDSPAN) && (KOKKOS_VERSION >= 50200)) || (KOKKOS_VERSION >= 50299)
       using WW_u32_view_type = Kokkos::View<
           internal_vector_type,
           Kokkos::extents<uint32_t, Kokkos::dynamic_extent, Kokkos::dynamic_extent>,
