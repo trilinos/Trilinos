@@ -846,6 +846,51 @@ TEUCHOS_UNIT_TEST(dag, missing_evaluators)
 }
 
 // *************************************************
+// Check that the static index can be removed from evaluator timer
+// names. Only active when configured with
+// Phalanx_ENABLE_TEUCHOS_TIME_MONITOR.
+// *************************************************
+TEUCHOS_UNIT_TEST(dag, add_index_to_evaluator_timer_name)
+{
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+
+  using Mock = PHX::MockDAG<PHX::MyTraits::Residual,MyTraits>;
+
+  // Index is disabled: timer names do not contain the index
+  {
+    DagManager<MyTraits>::setAddIndexToTimerNames(false);
+    DagManager<MyTraits> dm("TimerNoIndex");
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Eval_A");
+    e->evaluates("A");
+    dm.registerEvaluator(e);
+#ifdef PHX_TEUCHOS_TIME_MONITOR
+    TEST_ASSERT(nonnull(TimeMonitor::lookupCounter("Phalanx: Evaluator: [TimerNoIndex] Eval_A")));
+#endif
+  }
+
+  // Index is enabled (default): timer names contain the index
+  {
+    DagManager<MyTraits>::setAddIndexToTimerNames(true);
+    DagManager<MyTraits> dm("TimerWithIndex");
+    RCP<Mock> e = rcp(new Mock);
+    e->setName("Eval_A");
+    e->evaluates("A");
+    dm.registerEvaluator(e);
+#ifdef PHX_TEUCHOS_TIME_MONITOR
+    TEST_ASSERT(is_null(TimeMonitor::lookupCounter("Phalanx: Evaluator: [TimerWithIndex] Eval_A")));
+#endif
+  }
+
+  // In case the above tests change, make sure to restore the 
+  // default at the end of this test so that all other unit 
+  // tests continue to pass. 
+  DagManager<MyTraits>::setAddIndexToTimerNames(true);
+}
+
+// *************************************************
 // Checks that that required fields that are the starting node of a
 // dfs search that have both an evaluated and contributed components
 // in the DAG was failing to add the contributed part since it was
