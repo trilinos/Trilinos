@@ -194,7 +194,7 @@ namespace
       const int F2 = rightBasis->getCardinality();
       ScalarView<Scalar,DeviceType> expected("expected", numCells, F1, F2);
       auto expectedHost = Kokkos::create_mirror_view(expected);
-      std::vector<Scalar> MOT(F1 * F2);
+      std::vector<Scalar> MOT(size_t(F1) * F2);
       for (int c=0; c<numCells; c++)
       {
         for (int i=0; i<F1; i++)

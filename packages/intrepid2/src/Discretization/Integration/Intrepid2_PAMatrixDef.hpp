@@ -21,6 +21,7 @@
 #include "Intrepid2_DataTools.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 
+#include <Teuchos_Assert.hpp>
 #include <Teuchos_BLAS.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -158,8 +159,8 @@ namespace Impl
   {
     char *end = nullptr;
     const double result = std::strtod(value, &end);
-    INTREPID2_TEST_FOR_EXCEPTION((end == value) || (*end != '\0') || !(result > 0) || !(result < std::numeric_limits<double>::infinity()),
-                                 std::invalid_argument, std::string(name) + " must be a positive number; got '" + value + "'");
+    TEUCHOS_TEST_FOR_EXCEPTION((end == value) || (*end != '\0') || !(result > 0) || !(result < std::numeric_limits<double>::infinity()),
+                               std::invalid_argument, name << " must be a positive number; got '" << value << "'");
     return result;
   }
 
@@ -297,8 +298,8 @@ inline PAMatrixAssemblyOptions PAMatrixAssemblyOptions::defaultsWithEnvironmentO
       if      (algorithm == "automatic")    result.algorithm = Algorithm::Automatic;
       else if (algorithm == "unit-columns") result.algorithm = Algorithm::UnitColumns;
       else if (algorithm == "apply")        result.algorithm = Algorithm::ApplyToColumns;
-      else INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-                                        "INTREPID2_PAMATRIX_ASSEMBLE_ALGORITHM must be automatic, unit-columns, or apply; got '" + algorithm + "'");
+      else TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                                      "INTREPID2_PAMATRIX_ASSEMBLE_ALGORITHM must be automatic, unit-columns, or apply; got '" << algorithm << "'");
     }
     if (const char *value = std::getenv("INTREPID2_PAMATRIX_ASSEMBLE_WORKSPACE_MB"))
     {
@@ -310,8 +311,8 @@ inline PAMatrixAssemblyOptions PAMatrixAssemblyOptions::defaultsWithEnvironmentO
       if      (setting == "automatic") result.sparseLastStage = SparseLastStage::Automatic;
       else if (setting == "1")         result.sparseLastStage = SparseLastStage::Always;
       else if (setting == "0")         result.sparseLastStage = SparseLastStage::Never;
-      else INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-                                        "INTREPID2_PAMATRIX_ASSEMBLE_SPARSE_LAST must be automatic, 1, or 0; got '" + setting + "'");
+      else TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                                      "INTREPID2_PAMATRIX_ASSEMBLE_SPARSE_LAST must be automatic, 1, or 0; got '" << setting << "'");
     }
     return result;
   }();
