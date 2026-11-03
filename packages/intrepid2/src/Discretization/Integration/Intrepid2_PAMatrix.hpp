@@ -266,7 +266,11 @@ namespace Intrepid2 {
     */
     bool supportsDirectAssembly() const;
 
-  private:
+    /** \name Implementation details
+        These are not part of the supported interface.  They are public only because they define KOKKOS_LAMBDAs, and
+        CUDA does not allow extended __host__ __device__ lambdas in private or protected member functions.
+    */
+    //@{
     void init(const TransformedBasisValues<Scalar,DeviceType> basisValuesLeft,
               const TensorData<Scalar,DeviceType> cellMeasures,
               const TransformedBasisValues<Scalar,DeviceType> basisValuesRight,
@@ -299,7 +303,9 @@ namespace Intrepid2 {
                                 const InputViewType &input, const ordinal_type inputCellOffset,
                                 const ordinal_type startCell, const ordinal_type Cw, const ordinal_type N,
                                 Scalar *workspace1, Scalar *workspace2) const;
+    //@}
 
+  private:
     Data<Scalar,DeviceType> _composedWeightedTransform; // (C,P[,D1[,D2]]), used for general case
     std::map<PointDataSpec,View1D> _pointDataCache; // copies of appropriate slices of _composedWeightedTransform
     TensorData<Scalar,DeviceType> _cellMeasures; // (C,P)
