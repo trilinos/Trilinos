@@ -62,7 +62,17 @@ namespace Teuchos
   */
   template <> inline int hashCode(const int& x)
     {
-      return x;
+      int rtn = x;
+      if (rtn < 0)
+      {
+          /* Convert the largest -ve int to zero and -1 to
+           * std::numeric_limits<int>::max()
+           * */
+          size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+          maxIntBeforeWrap ++;
+          rtn += maxIntBeforeWrap;
+      }
+      return rtn;
     }
 
   /** \relates HashUtils
