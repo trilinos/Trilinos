@@ -21,6 +21,7 @@
 
 #include <Intrepid2_config.h>
 
+#include <array>
 #include <map>
 #include <set>
 #include <vector>
@@ -624,7 +625,9 @@ struct OperatorTensorDecomposition
     
     int numTensorialExtrusions_; // relative to cell topo returned by getBaseCellTopology().
     bool useShardsCellTopologyAndTags_; // if true, use shards topology/tag numbering for low-dimensional tensor products.
-    mutable typename BasisBase::OrdinalTypeArray2DHost dofTagScratch_; // one-row compatibility view for analytic getDofTag().
+    //! composite (subcell dim, subcell ordinal) -> component subcells (d1, s1, d2, s2); built lazily by getDofCount()/getDofOrdinal()
+    mutable std::map<std::pair<ordinal_type,ordinal_type>, std::array<ordinal_type,4>> compositeSubcellToComponents_;
+    mutable bool compositeSubcellMapBuilt_ = false;
   public:
     using DeviceType = typename BasisBase::DeviceType;
     using ExecutionSpace  = typename BasisBase::ExecutionSpace;
@@ -862,57 +865,75 @@ struct OperatorTensorDecomposition
         self->setTensorProductTags();
     }
 
+    //! builds compositeSubcellToComponents_ (once; thread-safe)
+    void requireCompositeSubcellMap() const
+    {
+      std::lock_guard<std::recursive_mutex> lock(*this->lazyInitializationMutex_);
+      if (compositeSubcellMapBuilt_) return;
+      const shards::CellTopology cellTopo1 = basis1_->getBaseCellTopology();
+      const ordinal_type spaceDim1 = basis1_->getDomainDimension();
+      const ordinal_type spaceDim2 = basis2_->getDomainDimension(); // 1 (checked at construction)
+      for (ordinal_type d1=0; d1<=spaceDim1; d1++)
+      {
+        // a component basis with tensorial extrusions has a base topology of lower dimension, so we count its subcells via
+        // CellTopology, which knows about extrusions
+        auto topo1 = CellTopology::cellTopology(cellTopo1, basis1_->getNumTensorialExtrusions());
+        const ordinal_type subcellCount1 = useShardsCellTopologyAndTags_ ? cellTopo1.getSubcellCount(d1) : topo1->getSubcellCount(d1);
+        for (ordinal_type s1=0; s1<subcellCount1; s1++)
+        {
+          for (ordinal_type d2=0; d2<=spaceDim2; d2++)
+          {
+            const ordinal_type subcellCount2 = (d2 == 0) ? 2 : 1; // line: two vertices and one edge
+            for (ordinal_type s2=0; s2<subcellCount2; s2++)
+            {
+              const ordinal_type compositeOrdinal = getCompositeSubcellOrdinal(d1, s1, d2, s2);
+              compositeSubcellToComponents_[{d1 + d2, compositeOrdinal}] = {d1, s1, d2, s2};
+            }
+          }
+        }
+      }
+      compositeSubcellMapBuilt_ = true;
+    }
+
+    /** \brief  DoF count for the specified subcell, computed from the component bases (without building dense tag tables).
+     */
     virtual ordinal_type getDofCount( const ordinal_type subcDim,
                                       const ordinal_type subcOrd ) const override
     {
-      if (useShardsCellTopologyAndTags_)
-      {
-        return BasisBase::getDofCount(subcDim, subcOrd);
-      }
-      for (ordinal_type tensorFieldOrdinal=0; tensorFieldOrdinal<this->basisCardinality_; tensorFieldOrdinal++)
-      {
-        auto tag = this->getDofTag(tensorFieldOrdinal);
-        if ((tag(0) == subcDim) && (tag(1) == subcOrd)) return tag(3);
-      }
-      return 0;
+      requireCompositeSubcellMap();
+      const auto entry = compositeSubcellToComponents_.find({subcDim, subcOrd});
+      if (entry == compositeSubcellToComponents_.end()) return 0;
+      const auto &c = entry->second;
+      return basis1_->getDofCount(c[0], c[1]) * basis2_->getDofCount(c[2], c[3]);
     }
 
+    /** \brief  DoF tag to ordinal lookup, computed from the component bases (without building dense tag tables).
+     */
     virtual ordinal_type getDofOrdinal( const ordinal_type subcDim,
                                         const ordinal_type subcOrd,
                                         const ordinal_type subcDofOrd ) const override
     {
-      if (useShardsCellTopologyAndTags_)
+      requireCompositeSubcellMap();
+      const auto entry = compositeSubcellToComponents_.find({subcDim, subcOrd});
+      ordinal_type result = -1;
+      if (entry != compositeSubcellToComponents_.end())
       {
-        return BasisBase::getDofOrdinal(subcDim, subcOrd, subcDofOrd);
-      }
-      for (ordinal_type tensorFieldOrdinal=0; tensorFieldOrdinal<this->basisCardinality_; tensorFieldOrdinal++)
-      {
-        auto tag = this->getDofTag(tensorFieldOrdinal);
-        if ((tag(0) == subcDim) && (tag(1) == subcOrd) && (tag(2) == subcDofOrd)) return tensorFieldOrdinal;
+        const auto &c = entry->second;
+        const ordinal_type count1 = basis1_->getDofCount(c[0], c[1]);
+        const ordinal_type count2 = basis2_->getDofCount(c[2], c[3]);
+        if ((count1 > 0) && (subcDofOrd >= 0) && (subcDofOrd < count1 * count2))
+        {
+          // local DoF ordinal is dofOrd2 * count1 + dofOrd1 (see fillDofTag())
+          const ordinal_type fieldOrdinal1 = basis1_->getDofOrdinal(c[0], c[1], subcDofOrd % count1);
+          const ordinal_type fieldOrdinal2 = basis2_->getDofOrdinal(c[2], c[3], subcDofOrd / count1);
+          result = fieldOrdinal2 * basis1_->getCardinality() + fieldOrdinal1;
+        }
       }
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error,
+      INTREPID2_TEST_FOR_EXCEPTION( result == -1, std::runtime_error,
                                     ">>> ERROR (Basis_TensorBasis::getDofOrdinal): Invalid DoF tag is found.");
 #endif
-      return -1;
-    }
-
-    virtual const OrdinalTypeArrayStride1DHost getDofTag( const ordinal_type dofOrd ) const override
-    {
-      if (useShardsCellTopologyAndTags_)
-      {
-        return BasisBase::getDofTag(dofOrd);
-      }
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= this->basisCardinality_, std::out_of_range,
-                                    ">>> ERROR (Basis_TensorBasis::getDofTag): dofOrd is out of range");
-#endif
-      if (dofTagScratch_.extent(0) == 0)
-      {
-        dofTagScratch_ = OrdinalTypeArray2DHost("TensorBasis dof tag scratch", 1, 4);
-      }
-      fillDofTag(dofOrd, dofTagScratch_, 0);
-      return Kokkos::subview(dofTagScratch_, 0, Kokkos::ALL());
+      return result;
     }
 
     virtual const OrdinalTypeArray2DHost getAllDofTags() const override

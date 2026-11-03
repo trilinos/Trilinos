@@ -28,6 +28,8 @@
 #include <Teuchos_RCPDecl.hpp>
 #include <Kokkos_Core.hpp>
 
+#include <memory>
+#include <mutex>
 #include <vector>
 
 namespace Intrepid2 {
@@ -220,9 +222,15 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
      */
     virtual void initializeTags() const {}
 
-    /** \brief  Materialize dense tag tables on demand for compatibility APIs.
+    /** \brief  Guards lazy initialization in const methods (e.g., of the tag tables), so that Basis objects shared between
+                host threads may be queried concurrently.  Held by pointer so that Basis remains copyable.
+     */
+    std::shared_ptr<std::recursive_mutex> lazyInitializationMutex_ = std::make_shared<std::recursive_mutex>();
+
+    /** \brief  Materialize dense tag tables on demand for compatibility APIs.  Thread-safe.
      */
     void requireTags() const {
+      std::lock_guard<std::recursive_mutex> lock(*lazyInitializationMutex_);
       if (ordinalToTag_.extent(0) == 0 || tagToOrdinal_.extent(0) == 0)
       {
         this->initializeTags();
