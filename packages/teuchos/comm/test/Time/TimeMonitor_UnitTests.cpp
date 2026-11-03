@@ -144,8 +144,10 @@ namespace Teuchos {
       out << oss.str () << std::endl;
 
       // Make sure that the timer's name shows up in the output.
-      const size_t substr_i = oss.str ().find ("FUNC_TIME_MONITOR1");
-      TEST_INEQUALITY(substr_i, std::string::npos);
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        const size_t substr_i = oss.str ().find ("FUNC_TIME_MONITOR1");
+        TEST_INEQUALITY(substr_i, std::string::npos);
+      }
     }
 
     { // Repeat test for YAML output, spacious style.
@@ -162,8 +164,50 @@ namespace Teuchos {
       out << oss.str () << std::endl;
 
       // Make sure that the timer's name shows up in the output.
-      const size_t substr_i = oss.str ().find ("FUNC_TIME_MONITOR1");
-      TEST_INEQUALITY(substr_i, std::string::npos);
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        const size_t substr_i = oss.str ().find ("FUNC_TIME_MONITOR1");
+        TEST_INEQUALITY(substr_i, std::string::npos);
+      }
+    }
+
+    // This sets up for the next unit test.
+    TimeMonitor::clearCounters ();
+  }
+
+  //
+  // Make sure that report() with YAML output writes only on the
+  // process with rank 0, like report() with table output.
+  //
+  TEUCHOS_UNIT_TEST( TimeMonitor, YamlReportOnlyOnRootProcess )
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    RCP<Time> timer = TimeMonitor::getNewCounter ("YAML_REPORT_TIMER");
+    {
+      TimeMonitor timeMon (*timer);
+    }
+
+    const char* yamlStyles[] = {"compact", "spacious"};
+    for (const char* yamlStyle : yamlStyles) {
+      std::ostringstream oss;
+      RCP<ParameterList> reportParams =
+        parameterList (* (TimeMonitor::getValidReportParameters ()));
+      reportParams->set ("Report format", "YAML");
+      reportParams->set ("YAML style", yamlStyle);
+      TimeMonitor::report (oss, reportParams);
+
+      out << "YAML style " << yamlStyle << ":" << std::endl
+          << oss.str () << std::endl;
+
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        const size_t substr_i = oss.str ().find ("YAML_REPORT_TIMER");
+        TEST_INEQUALITY(substr_i, std::string::npos);
+      }
+      else {
+        TEST_EQUALITY(oss.str (), std::string ());
+      }
     }
 
     // This sets up for the next unit test.
@@ -369,9 +413,11 @@ namespace Teuchos {
       out << oss.str () << std::endl;
 
       // Make sure that all timer labels appear correctly in the output.
-      for (size_type i = 0; i < inputLabels.size(); ++i) {
-        const size_t pos = oss.str ().find (outputLabels[i]);
-        TEST_INEQUALITY(pos, std::string::npos);
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        for (size_type i = 0; i < inputLabels.size(); ++i) {
+          const size_t pos = oss.str ().find (outputLabels[i]);
+          TEST_INEQUALITY(pos, std::string::npos);
+        }
       }
     }
 
@@ -389,9 +435,11 @@ namespace Teuchos {
       out << oss.str () << std::endl;
 
       // Make sure that all timer labels appear correctly in the output.
-      for (size_type i = 0; i < inputLabels.size(); ++i) {
-        const size_t pos = oss.str ().find (outputLabels[i]);
-        TEST_INEQUALITY(pos, std::string::npos);
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        for (size_type i = 0; i < inputLabels.size(); ++i) {
+          const size_t pos = oss.str ().find (outputLabels[i]);
+          TEST_INEQUALITY(pos, std::string::npos);
+        }
       }
     }
 
@@ -526,9 +574,11 @@ namespace Teuchos {
 
           // Check whether the labels that were supposed to be printed
           // were actually printed.
-          for (size_type j = 0; j < outLabels[i].size(); ++j) {
-            const size_t pos = oss.str ().find (outLabels[i][j]);
-            TEST_INEQUALITY(pos, std::string::npos);
+          if (Teuchos::GlobalMPISession::getRank() == 0) {
+            for (size_type j = 0; j < outLabels[i].size(); ++j) {
+              const size_t pos = oss.str ().find (outLabels[i][j]);
+              TEST_INEQUALITY(pos, std::string::npos);
+            }
           }
 
           // Check whether the labels that were _not_ supposed to be
@@ -567,9 +617,11 @@ namespace Teuchos {
 
           // Check whether the labels that were supposed to be printed
           // were actually printed.
-          for (size_type j = 0; j < outLabels[i].size(); ++j) {
-            const size_t pos = oss.str ().find (outLabels[i][j]);
-            TEST_INEQUALITY(pos, std::string::npos);
+          if (Teuchos::GlobalMPISession::getRank() == 0) {
+            for (size_type j = 0; j < outLabels[i].size(); ++j) {
+              const size_t pos = oss.str ().find (outLabels[i][j]);
+              TEST_INEQUALITY(pos, std::string::npos);
+            }
           }
 
           // Check whether the labels that were _not_ supposed to be
@@ -652,10 +704,12 @@ namespace Teuchos {
       // details" mode.
       out << oss.str () << std::endl;
 
-      const size_t substr_i = oss.str().find ("FUNC_TIME_MONITOR2");
-      TEST_INEQUALITY(substr_i, std::string::npos);
-      const size_t substr_inner_i = oss.str().find ("FUNC_TIME_MONITOR2_inner");
-      TEST_INEQUALITY(substr_inner_i, std::string::npos);
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        const size_t substr_i = oss.str().find ("FUNC_TIME_MONITOR2");
+        TEST_INEQUALITY(substr_i, std::string::npos);
+        const size_t substr_inner_i = oss.str().find ("FUNC_TIME_MONITOR2_inner");
+        TEST_INEQUALITY(substr_inner_i, std::string::npos);
+      }
     }
 
     { // Repeat test for YAML output, spacious style.
@@ -671,10 +725,12 @@ namespace Teuchos {
       // details" mode.
       out << oss.str () << std::endl;
 
-      const size_t substr_i = oss.str().find ("FUNC_TIME_MONITOR2");
-      TEST_INEQUALITY(substr_i, std::string::npos);
-      const size_t substr_inner_i = oss.str().find ("FUNC_TIME_MONITOR2_inner");
-      TEST_INEQUALITY(substr_inner_i, std::string::npos);
+      if (Teuchos::GlobalMPISession::getRank() == 0) {
+        const size_t substr_i = oss.str().find ("FUNC_TIME_MONITOR2");
+        TEST_INEQUALITY(substr_i, std::string::npos);
+        const size_t substr_inner_i = oss.str().find ("FUNC_TIME_MONITOR2_inner");
+        TEST_INEQUALITY(substr_inner_i, std::string::npos);
+      }
     }
 
     // This sets up for the next unit test.

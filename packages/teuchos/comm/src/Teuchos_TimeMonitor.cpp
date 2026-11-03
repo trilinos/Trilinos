@@ -1193,6 +1193,12 @@ namespace Teuchos {
     std::vector<std::string> statNames;
     computeGlobalTimerStatistics (statData, statNames, comm, setOp, filter);
 
+    // Computing the statistics is collective over comm, but only the
+    // process with rank 0 writes the report, as in summarize().
+    if (comm->getRank () != 0) {
+      return;
+    }
+
     const int numProcs = comm->getSize();
 
     // HACK (mfh 20 Aug 2012) For some reason, creating OSTab with "-
