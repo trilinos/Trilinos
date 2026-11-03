@@ -136,13 +136,24 @@ namespace Impl
       using Stride2D    = Kokkos::View<const Scalar**, Kokkos::LayoutStride, DeviceType, Kokkos::MemoryUnmanaged>;
       const ordinal_type rowsA = (transA == 'N') ? M : K;
       const ordinal_type colsA = (transA == 'N') ? K : M;
-      Kokkos::LayoutStride layoutA(rowsA, 1, colsA, LDA);
-      Stride2D AView(A, layoutA);
+      INTREPID2_TEST_FOR_EXCEPTION(LDA < rowsA, std::invalid_argument, "LDA must be at least the number of rows of A");
       ConstView2D BView = (transB != 'N') ? ConstView2D(B,N,K) : ConstView2D(B,K,N);
       View2D CView(C,M,N);
       const char tA[] = {transA, '\0'};
       const char tB[] = {transB, '\0'};
-      KokkosBlas::gemm(ExecutionSpace(), tA, tB, alpha, AView, BView, beta, CView);
+      if (LDA == rowsA)
+      {
+        // KokkosBlas::gemm dispatches to the TPL BLAS (e.g., cuBLAS, or the host BLAS) only when A, B, and C are all
+        // LayoutLeft (or all LayoutRight); with a LayoutStride A it uses its native implementation, which is much slower.
+        ConstView2D AView(A, rowsA, colsA);
+        KokkosBlas::gemm(ExecutionSpace(), tA, tB, alpha, AView, BView, beta, CView);
+      }
+      else
+      {
+        Kokkos::LayoutStride layoutA(rowsA, 1, colsA, LDA);
+        Stride2D AView(A, layoutA);
+        KokkosBlas::gemm(ExecutionSpace(), tA, tB, alpha, AView, BView, beta, CView);
+      }
 #endif
     }
 
