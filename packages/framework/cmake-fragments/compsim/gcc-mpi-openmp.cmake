@@ -97,6 +97,8 @@ set(Ifpack2_ENABLE_ShyLU_NodeFastILU ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_
 # depends_on(kokkos+wraper+cuda+cuda_relocatable_device_code+cuda_constexpr) from +cuda
 # manually changed to ~cuda
 set(Kokkos_ENABLE_CUDA OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+set(Kokkos_ENABLE_SERIAL ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+set(Kokkos_ENABLE_OPENMP OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(Kokkos_ENABLE_RELOCATABLE_DEVICE_CODE OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +disable_deprecated_code
 set(Tpetra_ENABLE_DEPRECATED_CODE OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
@@ -151,7 +153,7 @@ set(TPL_FIND_SHARED_LIBS ON CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(CMAKE_BUILD_TYPE RELEASE CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}")
 set(Trilinos_ENABLE_DEBUG OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # ~openmp
-set(Trilinos_ENABLE_OpenMP OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
+set(Trilinos_ENABLE_OPENMP OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}")
 # +cuda
 # manually changed to ~cuda
 set(TPL_ENABLE_CUDA OFF CACHE BOOL "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
