@@ -426,8 +426,10 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   ///   Needs to have the same number of elements on each rank as the column map of originalGraph.
   /// \param domainMap [in] Distribution of domain of the graph.
   ///   Needs to have the same number of elements on each rank as the domain map of originalGraph.
-  /// \param domainMap [in] Distribution of range of the graph.
+  ///   If domainMap is null the rowMap is used for the domain map of the constructed graph.
+  /// \param rangeMap [in] Distribution of range of the graph.
   ///   Needs to have the same number of elements on each rank as the range map of originalGraph.
+  ///   If rangeMap is null the rowMap is used for the range map of the constructed graph.
   /// \param originalGraph [in] The existing graph to view.
   ///
   /// \param params [in/out] Optional list of parameters.  If not
