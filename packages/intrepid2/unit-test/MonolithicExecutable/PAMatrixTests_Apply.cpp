@@ -53,7 +53,7 @@ template<typename DeviceType, typename Scalar>
 using PAMatrix = ::Intrepid2::PAMatrix<DeviceType,Scalar>;
 
 template<class Scalar, typename DeviceType>
-void testPAMatrixApply(PAMatrix<DeviceType,Scalar> &paMatrix, const double &relTol, const double &absTol, Teuchos::FancyOStream &out, bool &success)
+void testPAMatrixApply(PAMatrix<DeviceType,Scalar> &paMatrix, const int worksetSize, const double &relTol, const double &absTol, Teuchos::FancyOStream &out, bool &success)
 {
   // compare columns of the fully assembled matrix with the action of PAMatrix::apply() on unit vectors with a "1" in corresponding column position.
 
@@ -73,7 +73,8 @@ void testPAMatrixApply(PAMatrix<DeviceType,Scalar> &paMatrix, const double &relT
   ScalarView<Scalar, DeviceType> outputVector("outputVector",numCells,numRows); // C,F1
 
   Kokkos::deep_copy(inputVector,0.0);
-  auto workspace = paMatrix.allocateWorkspace(numCells);
+  auto workspace = paMatrix.allocateWorkspace((worksetSize > 0) ? worksetSize : numCells);
+  out << "Testing apply() with workset size " << worksetSize << " (" << numCells << " cells)\n";
 
   auto divideOutputVectorValuesByTwo = [&]()
   {
@@ -92,7 +93,7 @@ void testPAMatrixApply(PAMatrix<DeviceType,Scalar> &paMatrix, const double &relT
     auto colSubView = Kokkos::subview(inputVector, Kokkos::ALL(), colOrdinal);
     Kokkos::deep_copy(colSubView, 1.0);
 
-    paMatrix.apply(outputVector, inputVector, workspace);
+    paMatrix.apply(outputVector, inputVector, workspace, false, worksetSize);
 
     auto fullMatrixColumn = Kokkos::subview(fullMatrixView, Kokkos::ALL(), Kokkos::ALL(), colOrdinal);
 
@@ -101,7 +102,7 @@ void testPAMatrixApply(PAMatrix<DeviceType,Scalar> &paMatrix, const double &relT
 
     // now do it again but with sumInto = true
     const bool sumInto = true;
-    paMatrix.apply(outputVector, inputVector, workspace, sumInto);
+    paMatrix.apply(outputVector, inputVector, workspace, sumInto, worksetSize);
     // now we have double the correct value; divide by two
     divideOutputVectorValuesByTwo();
 
@@ -136,7 +137,12 @@ void testPAMatrixApply(const int &meshWidth, const int &worksetSize,
                                                         p1, fs1, op1, vectorWeight1,
                                                         p2, fs2, op2, vectorWeight2);
 
-  testPAMatrixApply<Scalar, DeviceType>(paMatrix, relTol, absTol, out, success);
+  // all cells at once; the requested workset size; and a workset size that does not divide the cell count
+  const int numCells = geometry.numCells();
+  for (const int w : {0, worksetSize, std::max(1, numCells / 2 + 1), 1})
+  {
+    testPAMatrixApply<Scalar, DeviceType>(paMatrix, w, relTol, absTol, out, success);
+  }
 }
 
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>

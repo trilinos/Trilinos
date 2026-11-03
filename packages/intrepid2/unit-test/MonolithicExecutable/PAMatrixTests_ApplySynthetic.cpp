@@ -51,7 +51,7 @@ template<typename DeviceType, typename Scalar>
 using PAMatrix = ::Intrepid2::PAMatrix<DeviceType,Scalar>;
 
 template<class Scalar, typename DeviceType>
-void testPAMatrixApply(PAMatrix<DeviceType,Scalar> &paMatrix, const double &relTol, const double &absTol, Teuchos::FancyOStream &out, bool &success)
+void testPAMatrixApply(PAMatrix<DeviceType,Scalar> &paMatrix, const int worksetSize, const double &relTol, const double &absTol, Teuchos::FancyOStream &out, bool &success)
 {
   // compare columns of the fully assembled matrix with the action of PAMatrix::apply() on unit vectors with a "1" in corresponding column position.
 
@@ -72,14 +72,15 @@ void testPAMatrixApply(PAMatrix<DeviceType,Scalar> &paMatrix, const double &relT
 
   Kokkos::deep_copy(inputVector,0.0);
 
-  auto workspace = paMatrix.allocateWorkspace(numCells);
+  auto workspace = paMatrix.allocateWorkspace((worksetSize > 0) ? worksetSize : numCells);
+  out << "Testing apply() with workset size " << worksetSize << " (" << numCells << " cells)\n";
 
   for (int colOrdinal=0; colOrdinal<numCols; colOrdinal++)
   {
     auto colSubView = Kokkos::subview(inputVector, Kokkos::ALL(), colOrdinal);
     Kokkos::deep_copy(colSubView, 1.0);
 
-    paMatrix.apply(outputVector, inputVector, workspace);
+    paMatrix.apply(outputVector, inputVector, workspace, false, worksetSize);
 
     auto fullMatrixColumn = Kokkos::subview(fullMatrixView, Kokkos::ALL(), Kokkos::ALL(), colOrdinal);
 
@@ -152,7 +153,11 @@ void testSyntheticPAMatrixApply(std::vector< std::vector< std::vector< Scalar > 
   Kokkos::deep_copy(pointWeightsView,pointWeightsViewHost);
   auto paMatrix = syntheticPAMatrix<DeviceType,Scalar>(basis1OpViews, basis2OpViews, pointWeightsView);;
 
-  testPAMatrixApply<Scalar, DeviceType>(paMatrix, relTol, absTol, out, success);
+  // all cells at once, and worksets of every size (the point weights vary by cell)
+  for (int worksetSize=0; worksetSize<=C; worksetSize++)
+  {
+    testPAMatrixApply<Scalar, DeviceType>(paMatrix, worksetSize, relTol, absTol, out, success);
+  }
 }
 
 // MARK: ApplySynthetic1
@@ -259,6 +264,30 @@ TEUCHOS_UNIT_TEST(PAMatrix, ApplySynthetic7)
   std::vector< std::vector< std::vector< Scalar > > > basisOps_y {xyValues, yyValues};
   out << "testing basisOps_y\n";
   testSyntheticPAMatrixApply<Scalar, DefaultTestDeviceType>(basisOps_y, pointWeights, basisOps_y, relTol, absTol, out, success);
+}
+
+// MARK: ApplySyntheticMultiCell
+TEUCHOS_UNIT_TEST(PAMatrix, ApplySyntheticMultiCell)
+{
+  // Two tensor components with distinct left and right operators, and point weights that differ from cell to cell, so that
+  // wrong cell indexing into the point weights (e.g., in worksets) is detected.
+  using Scalar = double;
+  double relTol = 1e-13;
+  double absTol = 1e-13;
+
+  using std::vector;
+  vector< vector< Scalar > > left0  { { 1.0, 0.5, 0.25}, { 0.0, 1.0, 2.0} };            // (F0,P0)
+  vector< vector< Scalar > > left1  { { 0.3, 0.7}, { 1.1, -0.4}, { 0.2, 0.9} };          // (F1,P1)
+  vector< vector< Scalar > > right0 { { 0.6, -1.0, 0.1}, { 0.2, 0.3, 0.4}, {1.0, 1.0, 1.0} }; // (G0,P0)
+  vector< vector< Scalar > > right1 { { 0.5, 0.5}, { -0.25, 1.5} };                     // (G1,P1)
+
+  const int numCells = 5, numPoints = 6;
+  vector< vector< Scalar > > pointWeights(numCells, vector<Scalar>(numPoints));
+  for (int c=0; c<numCells; c++)
+    for (int p=0; p<numPoints; p++)
+      pointWeights[c][p] = 1.0 + 0.1 * c + 0.01 * p * (c + 1);
+
+  testSyntheticPAMatrixApply<Scalar, DefaultTestDeviceType>({left0, left1}, pointWeights, {right0, right1}, relTol, absTol, out, success);
 }
 
 } // anonymous namespace

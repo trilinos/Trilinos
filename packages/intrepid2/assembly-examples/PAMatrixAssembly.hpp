@@ -35,7 +35,7 @@
 namespace {
   template<class Scalar, typename DeviceType>
   Intrepid2::TransformedBasisValues<Scalar,DeviceType>
-  transform(const Intrepid2::BasisValues<Scalar,DeviceType> &refValues,
+  transformForPAMatrix(const Intrepid2::BasisValues<Scalar,DeviceType> &refValues,
             const Intrepid2::EFunctionSpace &fs, const Intrepid2::EOperator &op,
             const Intrepid2::Data<Scalar,DeviceType> &jacobian,    const Intrepid2::Data<Scalar,DeviceType> &jacobianDet,
             const Intrepid2::Data<Scalar,DeviceType> &jacobianInv, const Intrepid2::Data<Scalar,DeviceType> &jacobianDetInv,
@@ -154,11 +154,9 @@ Intrepid2::PAMatrix<DeviceType,Scalar> constructPAMatrix(Intrepid2::CellGeometry
 
   BasisValues<Scalar,DeviceType> basis1Values = basis1->allocateBasisValues(tensorCubaturePoints, op1);
   basis1->getValues(basis1Values, tensorCubaturePoints, op1);
-  basis1Values.setBasis(basis1);
 
   BasisValues<Scalar,DeviceType> basis2Values = basis2->allocateBasisValues(tensorCubaturePoints, op2);
   basis2->getValues(basis2Values, tensorCubaturePoints, op2);
-  basis2Values.setBasis(basis2);
 
 
   auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
@@ -183,8 +181,8 @@ Intrepid2::PAMatrix<DeviceType,Scalar> constructPAMatrix(Intrepid2::CellGeometry
   CellTools<DeviceType>::setJacobianDividedByDet(jacobianDividedByJacobianDet, jacobian, jacobianDetInv);
 
   // lazily-evaluated transformed gradient values:
-  auto transformedBasis1Values = transform(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
-  auto transformedBasis2Values = transform(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
+  auto transformedBasis1Values = transformForPAMatrix(basis1Values, fs1, op1, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
+  auto transformedBasis2Values = transformForPAMatrix(basis2Values, fs2, op2, jacobian, jacobianDet, jacobianInv, jacobianDetInv, jacobianDividedByJacobianDet);
 
   if (vectorWeight1 != Teuchos::null)
   {
@@ -202,7 +200,7 @@ Intrepid2::PAMatrix<DeviceType,Scalar> constructPAMatrix(Intrepid2::CellGeometry
     Data<Scalar,DeviceType> au_data(auView, extents, variationTypes);
     auto uTransform = Data<Scalar,DeviceType>::allocateMatVecResult(transformedBasis1Values.transform(), au_data, true);
     uTransform.storeMatVec(transformedBasis1Values.transform(), au_data, true); // true: transpose basis transform when multiplying
-    transformedBasis1Values = Intrepid2::TransformedBasisValues<double, DeviceType>(uTransform, basis1Values);
+    transformedBasis1Values = Intrepid2::TransformedBasisValues<Scalar, DeviceType>(uTransform, basis1Values);
   }
 
   if (vectorWeight2 != Teuchos::null)
@@ -222,14 +220,14 @@ Intrepid2::PAMatrix<DeviceType,Scalar> constructPAMatrix(Intrepid2::CellGeometry
     Data<Scalar,DeviceType> av_data(avView, extents, variationTypes);
     auto vTransform = Data<Scalar,DeviceType>::allocateMatVecResult(transformedBasis2Values.transform(), av_data, true);
     vTransform.storeMatVec(transformedBasis2Values.transform(), av_data, true); // true: transpose basis transform when multiplying
-    transformedBasis2Values = Intrepid2::TransformedBasisValues<double, DeviceType>(vTransform, basis2Values);
+    transformedBasis2Values = Intrepid2::TransformedBasisValues<Scalar, DeviceType>(vTransform, basis2Values);
   }
 
   geometry.computeCellMeasure(cellMeasures, jacobianDet, tensorCubatureWeights);
   ExecutionSpace().fence();
   jacobianAndCellMeasureTimer->stop();
 
-  return PAMatrix<DeviceType,Scalar>(transformedBasis1Values, cellMeasures, transformedBasis2Values, orientations);
+  return PAMatrix<DeviceType,Scalar>(transformedBasis1Values, cellMeasures, transformedBasis2Values, orientations, basis1, basis2);
 }
 
 //! General assembly for two arbitrary bases and ops that takes advantage of the new structured integration support, including support for sum factorization.
@@ -287,7 +285,9 @@ Intrepid2::PAMatrix<DeviceType,Scalar> syntheticPAMatrix(std::vector<Kokkos::Vie
 }
 
 //! Assembles the matrix represented by paMatrix using the generic IntegrationTools::integrate() path (plus orientations),
-//! rather than PAMatrix's sum-factorized algorithms.  Intended as an independent reference in tests.
+//! rather than PAMatrix's sum-factorized algorithms.  Intended as a reference in tests.  (Note that this uses the same
+//! TransformedBasisValues and cell measures as paMatrix, so errors in constructing those are not detected by comparison
+//! with this; comparison with StandardAssembly.hpp is the independent check.)
 template<typename DeviceType, class Scalar>
 void referenceAssembly(const Intrepid2::PAMatrix<DeviceType,Scalar> &paMatrix, Intrepid2::Data<Scalar,DeviceType> &integrals)
 {
@@ -305,10 +305,10 @@ void referenceAssembly(const Intrepid2::PAMatrix<DeviceType,Scalar> &paMatrix, I
   ExecutionSpace().fence();
 
   const auto &orientations = paMatrix.orientations();
-  if (orientations.size() > 0)
+  if (paMatrix.hasNontrivialOrientations())
   {
-    auto leftBasis  = paMatrix.leftBasisValues() .basisValues().getBasis();
-    auto rightBasis = paMatrix.rightBasisValues().basisValues().getBasis();
+    auto leftBasis  = paMatrix.leftBasis();
+    auto rightBasis = paMatrix.rightBasis();
     // modifyMatrixByOrientation() requires distinct source and result views
     auto unorientedValues = Kokkos::create_mirror_view_and_copy(MemorySpace(), integrals.getUnderlyingView());
     OrientationTools<DeviceType>::modifyMatrixByOrientation(integrals.getUnderlyingView(), unorientedValues,

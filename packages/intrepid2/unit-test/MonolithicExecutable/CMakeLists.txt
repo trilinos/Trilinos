@@ -4,6 +4,18 @@
 #FILE(GLOB TEST_SOURCES "*.cpp" ${ETI_SOURCES} )
 FILE(GLOB TEST_SOURCES "*.cpp")
 
+# PAMatrix requires KokkosKernels for GEMMs on non-host devices (PAMatrix on host devices uses Teuchos::BLAS)
+SET(Intrepid2_PAMATRIX_TESTS_SUPPORTED ON)
+IF (NOT ${PACKAGE_NAME}_ENABLE_KokkosKernels)
+  IF (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL OR Kokkos_ENABLE_OPENMPTARGET OR Kokkos_ENABLE_OPENACC)
+    SET(Intrepid2_PAMATRIX_TESTS_SUPPORTED OFF)
+  ENDIF()
+ENDIF()
+IF (NOT Intrepid2_PAMATRIX_TESTS_SUPPORTED)
+  MESSAGE(STATUS "Intrepid2: PAMatrix tests disabled (a device execution space is enabled, and Intrepid2 is built without KokkosKernels)")
+  LIST(FILTER TEST_SOURCES EXCLUDE REGEX "PAMatrix")
+ENDIF()
+
 TRIBITS_INCLUDE_DIRECTORIES("../../assembly-examples")
 
 TRIBITS_ADD_EXECUTABLE (
@@ -82,7 +94,6 @@ SET( TestGroups
   IntegratedLegendre
   Jacobi
   Legendre
-  PAMatrix
   RealSpaceTools
   StructuredIntegration
   SubBasisInclusion
@@ -104,6 +115,36 @@ FOREACH( TestGroup IN LISTS TestGroups )
     PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
 ENDFOREACH()
+
+IF (Intrepid2_PAMATRIX_TESTS_SUPPORTED)
+  TRIBITS_ADD_TEST(
+    Monolithic
+    NOEXESUFFIX
+    NAME PAMatrix
+    ARGS "--group=PAMatrix*"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+  )
+  # assemble() algorithm selections, and a small workspace budget (forcing small worksets), via the environment
+  TRIBITS_ADD_TEST(
+    Monolithic
+    NOEXESUFFIX
+    NAME PAMatrix_AssembleUnitColumns
+    ARGS "--group=PAMatrix"
+    NUM_MPI_PROCS 1
+    ENVIRONMENT "INTREPID2_PAMATRIX_ASSEMBLE_ALGORITHM=unit-columns"
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+  )
+  TRIBITS_ADD_TEST(
+    Monolithic
+    NOEXESUFFIX
+    NAME PAMatrix_AssembleSparseLastSmallWorkspace
+    ARGS "--group=PAMatrix"
+    NUM_MPI_PROCS 1
+    ENVIRONMENT "INTREPID2_PAMATRIX_ASSEMBLE_SPARSE_LAST=1" "INTREPID2_PAMATRIX_ASSEMBLE_WORKSPACE_MB=0.01"
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+  )
+ENDIF()
 
 # add single-group tests; allows for easier targeted builds and debugging (especially useful under CUDA)
 # since each of these is redundant with Intrepid2_Tests above, we don't build them when all targets are built
@@ -150,8 +191,9 @@ IF (TARGET Intrepid2_StructuredQuadratureSynthetic )
   SET_TARGET_PROPERTIES( Intrepid2_StructuredQuadratureSynthetic PROPERTIES EXCLUDE_FROM_ALL TRUE)
 ENDIF()
 
+IF (Intrepid2_PAMATRIX_TESTS_SUPPORTED)
 # PAMatrixTests
-TRIBITS_ADD_EXECUTABLE( PAMatrixTests NOEXESUFFIX SOURCES PAMatrixTests_Apply.cpp  PAMatrix_Impl_Tests.cpp PAMatrixTests_PAMatrixVersusStandardIntegration.cpp PAMatrixTests_Serendipity.cpp UnitTestMain.cpp )
+TRIBITS_ADD_EXECUTABLE( PAMatrixTests NOEXESUFFIX SOURCES PAMatrixTests_Apply.cpp PAMatrixTests_ApplySynthetic.cpp PAMatrixTests_Features.cpp PAMatrix_Impl_Tests.cpp PAMatrixTests_Orientations.cpp PAMatrixTests_PAMatrixVersusStandardIntegration.cpp PAMatrixTests_Serendipity.cpp UnitTestMain.cpp )
 IF (TARGET Intrepid2_PAMatrixTests)
   SET_TARGET_PROPERTIES( Intrepid2_PAMatrixTests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 ENDIF()
@@ -166,9 +208,21 @@ IF (TARGET Intrepid2_PAMatrixApplySyntheticTests)
   SET_TARGET_PROPERTIES( Intrepid2_PAMatrixApplySyntheticTests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 ENDIF()
 
+TRIBITS_ADD_EXECUTABLE( PAMatrixOrientationTests NOEXESUFFIX SOURCES PAMatrixTests_Orientations.cpp  UnitTestMain.cpp )
+IF (TARGET Intrepid2_PAMatrixOrientationTests)
+  SET_TARGET_PROPERTIES( Intrepid2_PAMatrixOrientationTests PROPERTIES EXCLUDE_FROM_ALL TRUE)
+ENDIF()
+
 TRIBITS_ADD_EXECUTABLE( PAMatrixImplTests NOEXESUFFIX SOURCES PAMatrix_Impl_Tests.cpp  UnitTestMain.cpp )
 IF (TARGET Intrepid2_PAMatrixImplTests)
   SET_TARGET_PROPERTIES( Intrepid2_PAMatrixImplTests PROPERTIES EXCLUDE_FROM_ALL TRUE)
+ENDIF()
+ENDIF()
+
+# TensorBasisTagTests
+TRIBITS_ADD_EXECUTABLE( TensorBasisTagTests NOEXESUFFIX SOURCES TensorBasisTagTests.cpp UnitTestMain.cpp )
+IF (TARGET Intrepid2_TensorBasisTagTests)
+  SET_TARGET_PROPERTIES( Intrepid2_TensorBasisTagTests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 ENDIF()
 
 # StructuredVersusStandard integration

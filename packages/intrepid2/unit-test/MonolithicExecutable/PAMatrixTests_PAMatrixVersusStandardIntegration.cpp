@@ -71,21 +71,62 @@ void testStandardVersusPAMatrix(const int &meshWidth, const int &worksetSize,
   shards::CellTopology cellTopo = geometry.cellTopology();
 
   double flopCountIntegration = 0, flopCountJacobian = 0;
-  auto paMatrix = constructPAMatrix<Scalar,BasisFamily>(geometry,
-                                                        p1, fs1, op1, vectorWeight1,
-                                                        p2, fs2, op2, vectorWeight2);
-
   auto standardIntegrals = performStandardAssembly<Scalar,BasisFamily>(geometry, worksetSize,
                                                                        p1, fs1, op1, vectorWeight1,
                                                                        p2, fs2, op2, vectorWeight2,
                                                                        flopCountIntegration, flopCountJacobian);
 
-  // assemble() uses PAMatrix's sum-factorized (unit-column or apply()-based) algorithm, rather than IntegrationTools
-  auto sumFactorizedMatrix = paMatrix.allocateMatrixStorage();
-  paMatrix.assemble(sumFactorizedMatrix);
+  // With orientations, the reference is standard assembly, which orients the basis values before integrating.  Without
+  // them (the mesh's orientations are not all aligned to the reference: e.g., "side" orientations in 2D), the reference
+  // is the unoriented matrix from IntegrationTools; this exercises the direct path, which assemble() uses only when
+  // orientations are not needed, against code independent of PAMatrix's contractions.
+  for (const bool applyOrientations : {true, false})
+  {
+    auto paMatrix = constructPAMatrix<Scalar,BasisFamily>(geometry,
+                                                          p1, fs1, op1, vectorWeight1,
+                                                          p2, fs2, op2, vectorWeight2,
+                                                          applyOrientations);
+    ScalarView<Scalar,DeviceType> expected = standardIntegrals;
+    if (!applyOrientations)
+    {
+      auto reference = paMatrix.allocateMatrixStorage();
+      referenceAssembly(paMatrix, reference);
+      const int numCells = standardIntegrals.extent_int(0), F1 = standardIntegrals.extent_int(1), F2 = standardIntegrals.extent_int(2);
+      expected = ScalarView<Scalar,DeviceType>("unoriented reference", numCells, F1, F2);
+      using ExecutionSpace = typename DeviceType::execution_space;
+      Kokkos::parallel_for("expand reference", Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCells,F1,F2}),
+      KOKKOS_LAMBDA(const int &c, const int &i, const int &j) { expected(c,i,j) = reference(c,i,j); });
+      ExecutionSpace().fence();
+    }
+    using Algorithm = PAMatrixAssemblyOptions::Algorithm;
+    for (const auto algorithm : {Algorithm::Automatic, Algorithm::UnitColumns, Algorithm::ApplyToColumns})
+    {
+      PAMatrixAssemblyOptions options;
+      options.algorithm = algorithm;
+      auto sumFactorizedMatrix = paMatrix.allocateMatrixStorage();
+      paMatrix.assemble(sumFactorizedMatrix, options);
 
-  out << "Comparing general standard assembly to PAMatrix assemble()…\n";
-  testFloatingEquality3(standardIntegrals, sumFactorizedMatrix, relTol, absTol, out, success, "standard integral", "PAMatrix assemble");
+      out << "Comparing " << (applyOrientations ? "standard assembly" : "unoriented IntegrationTools assembly") << " to PAMatrix assemble() (algorithm: "
+          << int(algorithm) << ", direct supported: " << paMatrix.supportsDirectAssembly() << ")…\n";
+      testFloatingEquality3(expected, sumFactorizedMatrix, relTol, absTol, out, success, "reference integral", "PAMatrix assemble");
+    }
+
+    // extractDiagonal()
+    const int F1 = expected.extent_int(1), F2 = expected.extent_int(2);
+    if (F1 == F2)
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+      const int numCells = expected.extent_int(0);
+      auto diagonal = paMatrix.allocateDiagonalStorage();
+      paMatrix.extractDiagonal(diagonal);
+      ScalarView<Scalar,DeviceType> standardDiagonal("standard diagonal", numCells, F1);
+      Kokkos::parallel_for("standard diagonal", Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,F1}),
+      KOKKOS_LAMBDA(const int &c, const int &i) { standardDiagonal(c,i) = expected(c,i,i); });
+      ExecutionSpace().fence();
+      out << "Comparing standard assembly diagonal to PAMatrix extractDiagonal() (orientations: " << applyOrientations << ")…\n";
+      testFloatingEquality2(standardDiagonal, diagonal, relTol, absTol, out, success, "standard diagonal", "PAMatrix extractDiagonal");
+    }
+  }
 }
 
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>

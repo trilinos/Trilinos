@@ -20,6 +20,7 @@
 #include "Intrepid2_TestUtils.hpp"
 
 #include <chrono>
+#include <cstdlib>
 
 namespace
 {
@@ -132,10 +133,46 @@ namespace
       const Scalar beta  = 0.0;
       const ordinal_type LDA = M;
       const char trB = storeBTransposed ? 'T' : 'N';
-      Intrepid2::Impl::gemm<typename DeviceType::execution_space>('N', trB, M, N*cellCount, K, alpha, AView.data(), LDA, BView.data(), beta, CView.data());
+      Intrepid2::Impl::gemm<DeviceType,Scalar>('N', trB, M, N*cellCount, K, alpha, AView.data(), LDA, BView.data(), beta, CView.data());
 
       testFloatingEquality1(CView, CViewExpected, relTol, absTol, out, success);
     }
+  }
+
+  TEUCHOS_UNIT_TEST( PAMatrixImpl, GEMM_TransposeA_Accumulate )
+  {
+    // C = alpha * A^T * B + beta * C, with A stored K x M, as in the direct assembly path ('T','N', beta = 1)
+    using DeviceType = DefaultTestDeviceType;
+    using Scalar = double;
+    const int M = 37, N = 11, K = 5;
+    const Scalar alpha = 1.5, beta = 1.0;
+    auto formula_A = [](int k, int m) -> Scalar { return 0.1 * (k + 1) - 0.01 * m; };   // A(k,m), stored K x M
+    auto formula_B = [](int k, int n) -> Scalar { return 1.0 + 0.5 * k - 0.2 * n; };   // B(k,n), stored K x N
+    auto formula_C0 = [](int m, int n) -> Scalar { return 0.25 * m + n; };             // initial C(m,n)
+
+    using View1D = Kokkos::View<Scalar*,DeviceType>;
+    View1D A("A", K * M), B("B", K * N), C("C", M * N), CExpected("CExpected", M * N);
+    auto AHost = Kokkos::create_mirror_view(A);
+    auto BHost = Kokkos::create_mirror_view(B);
+    auto CHost = Kokkos::create_mirror_view(C);
+    auto CExpectedHost = Kokkos::create_mirror_view(CExpected);
+    for (int m=0; m<M; m++) for (int k=0; k<K; k++) AHost(k + m * K) = formula_A(k,m);
+    for (int n=0; n<N; n++) for (int k=0; k<K; k++) BHost(k + n * K) = formula_B(k,n);
+    for (int n=0; n<N; n++)
+      for (int m=0; m<M; m++)
+      {
+        CHost(m + n * M) = formula_C0(m,n);
+        Scalar value = 0;
+        for (int k=0; k<K; k++) value += formula_A(k,m) * formula_B(k,n);
+        CExpectedHost(m + n * M) = alpha * value + beta * formula_C0(m,n);
+      }
+    Kokkos::deep_copy(A, AHost);
+    Kokkos::deep_copy(B, BHost);
+    Kokkos::deep_copy(C, CHost);
+    Kokkos::deep_copy(CExpected, CExpectedHost);
+
+    Intrepid2::Impl::gemm<DeviceType,Scalar>('T', 'N', M, N, K, alpha, A.data(), K, B.data(), beta, C.data());
+    testFloatingEquality1(C, CExpected, 1e-13, 1e-13, out, success);
   }
 
   TEUCHOS_UNIT_TEST( PAMatrixImpl, GEMMPerformance )
@@ -155,7 +192,14 @@ namespace
 
     const int cellCount = 512;
 
-    std::vector<int> p_orders {1,2,4,6,8,10,12,20,50};
+    // p = 20 and 50 are expensive (at p = 50, B has about 68 million entries, and the host reference about 7e9 multiply-adds);
+    // they are run only if INTREPID2_PAMATRIX_GEMM_PERFORMANCE_HIGH_P is set
+    std::vector<int> p_orders {1,2,4,6,8,10,12};
+    if (std::getenv("INTREPID2_PAMATRIX_GEMM_PERFORMANCE_HIGH_P") != nullptr)
+    {
+      p_orders.push_back(20);
+      p_orders.push_back(50);
+    }
 
     for (auto p : p_orders)
     {
@@ -258,7 +302,7 @@ namespace
         auto start = std::chrono::high_resolution_clock::now();
         for (int i=0; i<numRuns; i++)
         {
-          Intrepid2::Impl::gemm<typename DeviceType::execution_space>('N', trB, M, N*cellCount, K, alpha, AView.data(), LDA, BView.data(), beta, CView.data());
+          Intrepid2::Impl::gemm<DeviceType,Scalar>('N', trB, M, N*cellCount, K, alpha, AView.data(), LDA, BView.data(), beta, CView.data());
         }
         auto end = std::chrono::high_resolution_clock::now();
 
