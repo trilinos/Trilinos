@@ -430,13 +430,10 @@ namespace Intrepid2
       {
         INTREPID2_TEST_FOR_EXCEPTION(nodeOrdering_ == HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS, std::invalid_argument,
                                      "Classic Shards node ordering is only defined for hypercubes through space dimension 3");
-        // Shards does not provide native topologies above 3D, but CellGeometry's
-        // uniform-grid path is affine and can still supply coordinates and
-        // Jacobians for higher-dimensional tensor-product cells.  Use a tensor
-        // product of linear HGRAD line bases for the node basis so callers that
-        // ask for basisForNodes() get a topology-compatible 2^D-node basis
-        // instead of attempting getBasis() on an invalid Shards topology.
-        cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >());
+        // Shards does not provide topologies above 3D, so cellTopology() is left invalid (a default-constructed
+        // shards::CellTopology), and operations that require it (e.g., orientations) fail.  The uniform-grid path is
+        // affine, and still supplies coordinates and Jacobians for higher-dimensional tensor-product cells; the node
+        // basis is a tensor product of linear H(grad) line bases.
         basisForNodes = getHypercubeBasis_HGRAD<BasisFamily>(linearPolyOrder, spaceDim);
       }
     }
@@ -996,6 +993,8 @@ namespace Intrepid2
   void CellGeometry<PointScalar,spaceDim,DeviceType>::initializeOrientations()
   {
     using HostExecSpace = Kokkos::DefaultHostExecutionSpace;
+    INTREPID2_TEST_FOR_EXCEPTION(this->cellTopology().getCellTopologyData() == nullptr, std::invalid_argument,
+                                 "CellGeometry: orientations require a cell topology, which is not defined for space dimensions above 3");
     
     const bool isGridType = (cellGeometryType_ == TENSOR_GRID) || (cellGeometryType_ == UNIFORM_GRID);
     const int numOrientations = isGridType ? numCellsPerGridCell(subdivisionStrategy_) : numCells();
