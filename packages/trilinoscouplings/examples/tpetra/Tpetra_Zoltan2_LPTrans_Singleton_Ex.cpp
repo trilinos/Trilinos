@@ -74,6 +74,11 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   // ****************************************************************
   CrsFilter_t SingletonTransform(run_on_host, verbose);
   RCP<Problem_t> postSingletonProblem = SingletonTransform(preSingletonProblem);
+
+  // Set matrix to zero to make sure fwd() is moving data from original linear system to singleton filtered system
+  Teuchos::rcp_dynamic_cast<Matrix_t>(postSingletonProblem->getMatrix())->setAllToScalar( Teuchos::ScalarTraits<Scalar_t>::zero() );
+  postSingletonProblem->getRHS()->putScalar( Teuchos::ScalarTraits<Scalar_t>::zero() );
+
   SingletonTransform.fwd();
 
   // ****************************************************************
@@ -108,6 +113,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
 
   // Set matrix to zero to make sure fwd() is moving data from original linear problem to rebalanced linear problem
   rebalancedMatrix->setAllToScalar( Teuchos::ScalarTraits<Scalar_t>::zero() );
+  rebalancedRhs->putScalar( Teuchos::ScalarTraits<Scalar_t>::zero() );
 
   RebalanceTransform.fwd();
 
