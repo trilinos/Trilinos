@@ -154,8 +154,15 @@ namespace
 
   TEUCHOS_UNIT_TEST( TensorBasisTags, ConcurrentQueries )
   {
+#ifdef KOKKOS_ENABLE_ATOMICS_BYPASS
+    // Kokkos atomics (including View reference counts) are not atomic in this build (Trilinos enables
+    // Kokkos_ENABLE_ATOMICS_BYPASS by default when Serial is the only Kokkos backend), so Views, including those returned by
+    // the tag queries, cannot be shared between host threads.
+    out << "Skipping: Kokkos is built with KOKKOS_ENABLE_ATOMICS_BYPASS, so Views cannot be shared between host threads.\n";
+#else
     const auto hex = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<> >());
     testConcurrentTagQueries(getBasis<HierarchicalFamily>(hex, FUNCTION_SPACE_HCURL, 3), out, success);
     testConcurrentTagQueries(getHypercubeBasis_HGRAD<HierarchicalFamily>(2, 4), out, success);
+#endif
   }
 } // namespace

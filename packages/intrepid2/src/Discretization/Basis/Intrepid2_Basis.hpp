@@ -223,7 +223,10 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     virtual void initializeTags() const {}
 
     /** \brief  Guards lazy initialization in const methods (e.g., of the tag tables), so that Basis objects shared between
-                host threads may be queried concurrently.  Held by pointer so that Basis remains copyable.
+                host threads may be queried concurrently.  Held by pointer so that Basis remains copyable.  (Concurrent
+                queries also require that Kokkos be built with real atomics, since the tag queries return
+                reference-counted Views; Trilinos enables Kokkos_ENABLE_ATOMICS_BYPASS by default when Serial is the only
+                Kokkos backend.)
      */
     std::shared_ptr<std::recursive_mutex> lazyInitializationMutex_ = std::make_shared<std::recursive_mutex>();
 
