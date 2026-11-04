@@ -36,6 +36,21 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
     (void)Bmerged;
 #endif
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  static void pre_spgemm(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode>& A) {
+#if KOKKOSKERNELS_VERSION >= 50299
+    (void)A;
+#elif defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && ((CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040))
+    if (A.getCrsGraph()->isSorted()) {
+      return;
+    }
+    auto localA = A.getLocalMatrixDevice();
+    pre_spgemm(localA);
+#else
+    (void)A;
+#endif
+  }
 };
 
 /*********************************************************************************************************/

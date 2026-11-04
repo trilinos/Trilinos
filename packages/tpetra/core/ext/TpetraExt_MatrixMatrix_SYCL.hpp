@@ -22,7 +22,16 @@ struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosSYCLWrapperNode> {
   static std::string algorithm_label() { return "SYCL"; }
 
   template <class MatrixType>
-  static void pre_spgemm(MatrixType&) {}
+  static void pre_spgemm(MatrixType&) {
+    // Note BMK: KokkosKernels as of 5.2.2 does not have oneAPI spgemm wrappers
+    // for SYCL, so no sorting is needed here
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  static void pre_spgemm(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSYCLWrapperNode>&) {
+    // Note BMK: KokkosKernels as of 5.2.2 does not have oneAPI spgemm wrappers
+    // for SYCL, so no sorting is needed here
+  }
 };
 
 /*********************************************************************************************************/
