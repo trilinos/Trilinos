@@ -43,6 +43,9 @@ void destroy_relations(stk::mesh::BulkData &bulk,
                        stk::mesh::Entity entity,
                        stk::mesh::EntityRank connectedRank)
 {
+  STK_ThrowRequireMsg(entity.is_local_offset_valid(),
+                      "stk::mesh::destroy_relations called with an invalid entity");
+
   const bool downward = bulk.entity_rank(entity) > connectedRank;
   const int numConn = bulk.num_connectivity(entity, connectedRank);
   for(int j = numConn - 1; j>= 0; --j) {

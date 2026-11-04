@@ -1,5 +1,40 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 17.2.2 Release Notes                      October 15, 2026 #
+#                                                                             #
+###############################################################################
+
+This is a patch release.
+
+
+Kokkos, KokkosKernels:
+
+  - Inclusion of version 5.2.2 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/15697
+    https://github.com/kokkos/kokkos/blob/develop/CHANGELOG.md
+    https://github.com/kokkos/kokkos-kernels/blob/develop/CHANGELOG.md
+
+
+MueLu:
+
+  - Bug fix for flat timers
+    https://github.com/trilinos/Trilinos/pull/15688
+
+
+STK:
+  - Inclusion of version 5.33.1
+    https://github.com/trilinos/Trilinos/pull/15739
+    https://github.com/trilinos/Trilinos/pull/15804
+    https://github.com/trilinos/Trilinos/pull/15816
+
+
+Tpetra:
+
+  - Bug fixes for SingletonFiltering
+  
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 17.2.1 Release Notes                       August 28, 2026 #
 #                                                                             #
 ###############################################################################

@@ -66,6 +66,13 @@ typedef MPI_Datatype ParallelDatatype ;
 inline ParallelMachine parallel_machine_null() { return MPI_COMM_NULL ; }
 
 /**
+ * @brief <b>parallel_machine_null</b> returns MPI_COMM_SELF if MPI is enabled.
+ *
+ * @return			a <b>ParallelMachine</b> ...
+ */
+inline ParallelMachine parallel_machine_self() { return MPI_COMM_SELF ; }
+
+/**
  * @brief <b>parallel_machine_init</b> calls MPI_Init.
  *
  * @return <b>ParallelMachine</b> (MPI_COMM_WORLD)
@@ -138,6 +145,8 @@ typedef int ParallelMachine ;
 typedef int ParallelDatatype ;
 
 inline ParallelMachine parallel_machine_null() { return 0 ; }
+
+inline ParallelMachine parallel_machine_self() { return 0 ; }
 
 inline ParallelMachine parallel_machine_init( int * , char *** )
 { return 0 ; }

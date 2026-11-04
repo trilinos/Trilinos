@@ -841,6 +841,28 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
             const Teuchos::RCP<Teuchos::ParameterList>& params =
                 Teuchos::null);
 
+  /// \brief Constructor specifying a CrsMatrix and row and column maps.
+  ///   The resulting CrsMatrix views the same local data, but uses different maps.
+  ///
+  /// Unlike most other CrsMatrix constructors, successful
+  /// completion of this constructor will result in a fill-complete
+  /// matrix.
+  ///
+  /// \param rowMap [in] Distribution of rows of the matrix.
+  ///   Needs to have the same number of elements on each rank as the row map of source.
+  /// \param colMap [in] Distribution of columns of the matrix.
+  ///   Needs to have the same number of elements on each rank as the column map of source.
+  ///
+  /// \param source [in] A CrsMatrix.
+  ///
+  /// \param params [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  CrsMatrix(const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
   /// \brief Copy constructor, with option to do deep or shallow copy.
   // This function in 'Copy' mode is only guaranteed to work correctly for matrices
   // which are fillComplete.
@@ -2956,7 +2978,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
 
  private:
   void
-  copyAndPermuteStaticGraph(
+  copyAndPermuteStorageOptimizedGraph(
       const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
       const size_t numSameIDs,
       const LocalOrdinal permuteToLIDs[],
@@ -2964,7 +2986,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
       const size_t numPermutes);
 
   void
-  copyAndPermuteNonStaticGraph(
+  copyAndPermuteNonStorageOptimizedGraph(
       const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
       const size_t numSameIDs,
       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs_dv,

@@ -1938,7 +1938,6 @@ TEST(DeviceField, checkSizeof)
 #else
   size_t expectedNumBytes = 88;
 #endif
-  std::cout << "sizeof(stk::mesh::DeviceField<double>): " << sizeof(stk::mesh::DeviceField<double>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::DeviceField<double>) <= expectedNumBytes);
 }
 
@@ -1949,16 +1948,12 @@ TEST(DeviceFieldData, checkSizeof)
 #else
   size_t expectedNumBytes = 72;
 #endif
-  std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::DeviceSpace>): "
-            << sizeof(stk::mesh::FieldData<double, stk::ngp::DeviceSpace>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::DeviceSpace>) <= expectedNumBytes);
 }
 
 TEST(HostFieldData, checkSizeof)
 {
   size_t expectedNumBytes = 72;
-  std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::HostSpace>): "
-            << sizeof(stk::mesh::FieldData<double, stk::ngp::HostSpace>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::HostSpace>) <= expectedNumBytes);
 }
 

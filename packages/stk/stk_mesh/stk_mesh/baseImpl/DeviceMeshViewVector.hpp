@@ -97,7 +97,12 @@ class ImplDeviceMeshViewVector : public ViewVector<T, MemSpace, SizeT> {
   KOKKOS_INLINE_FUNCTION void set_active_entries(SizeT size) { m_numActiveEntries() = size; }
   KOKKOS_INLINE_FUNCTION void clear_active_entries() { m_numActiveEntries() = 0; }
   KOKKOS_INLINE_FUNCTION void increment_num_active_entries() { ++m_numActiveEntries(); }
-  KOKKOS_INLINE_FUNCTION void decrement_num_active_entries() { --m_numActiveEntries(); }
+  KOKKOS_INLINE_FUNCTION void decrement_num_active_entries() {
+    // SizeT is unsigned, so decrementing past zero wraps to a huge value that propagates silently
+    // into every num_active_entries() consumer (loop bounds, resize targets).  Fail here instead.
+    STK_NGP_ThrowAssertMsg(m_numActiveEntries() > 0, "Decrementing num_active_entries below zero.");
+    --m_numActiveEntries();
+  }
 
  private:
   active_entries_size_view m_numActiveEntries;

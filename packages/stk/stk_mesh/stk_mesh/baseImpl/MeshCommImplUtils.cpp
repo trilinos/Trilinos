@@ -211,6 +211,50 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
     }
 }
 
+void unpack_induced_parts_from_sharers_by_key(OrdinalVector& induced_parts,
+                                   PairIterEntityComm entity_comm_info,
+                                   stk::CommSparse& comm,
+                                   EntityKey expected_key)
+{
+//  Element-death-only variant of unpack_induced_parts_from_sharers.
+//
+//  During element death the sender
+//  (pack_induced_memberships_for_entities_less_than_element_rank) only packs a
+//  record for a shared entity when that sharer's copy is in the Modified or
+//  Created state. A sharer whose copy is Unchanged sends nothing. Therefore the
+//  owner cannot assume there is exactly one record per shared proc in
+//  owner-iteration order; the positional unpack used elsewhere would read the
+//  next entity's record and either mismatch keys or exhaust the buffer.
+//
+//  This variant peeks the leading EntityKey of the next record from each
+//  sharer's buffer and only consumes a record when it matches expected_key, so
+//  it is robust to sharers that legitimately sent no record for this entity.
+
+    for(PairIterEntityComm ec = shared_comm_info_range(entity_comm_info); !ec.empty(); ++ec)
+    {
+        CommBuffer & buf = comm.recv_buffer(ec->proc);
+        if(!buf.remaining()) {
+            continue;
+        }
+
+        stk::mesh::EntityKey key;
+        buf.peek<stk::mesh::EntityKey>(key);
+        if(key != expected_key) {
+            continue;
+        }
+
+        buf.unpack<stk::mesh::EntityKey>(key);
+        unsigned count = 0;
+        buf.unpack<unsigned>(count);
+        for(unsigned j = 0; j < count; ++j)
+        {
+            unsigned part_ord = 0;
+            buf.unpack<unsigned>(part_ord);
+            stk::util::insert_keep_sorted_and_unique(part_ord, induced_parts);
+        }
+    }
+}
+
 void pack_and_send_induced_parts_from_sharers_to_owners(const BulkData& bulkData, stk::CommSparse& comm, const EntityCommListInfoVector& entity_comm_list)
 {
     pack_and_communicate(comm,[&bulkData, &comm, &entity_comm_list]()

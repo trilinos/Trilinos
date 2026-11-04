@@ -97,6 +97,7 @@ void assemble_field_data_bytes_on_device(const std::vector<FieldBase*>& fields, 
 struct BytePtr
 {
   std::byte* ptr;
+  int numBytes;
 };
 
 template<typename InitValsPtrViewType>
@@ -106,9 +107,28 @@ void assemble_field_init_vals_on_device(const std::vector<FieldBase*>& fields, I
   Kokkos::resize(initValsPtrsView, fields.size());
   for (unsigned fieldIdx = 0; fieldIdx < fields.size(); ++fieldIdx) {
     const auto& initVals = fields[fieldIdx]->get_initial_value_bytes();
-    initValsPtrsView(fieldIdx) = BytePtr{initVals.extent(0) > 0 ? initVals.data() : nullptr};
+    const int numInitValBytes = static_cast<int>(initVals.extent(0));
+    initValsPtrsView(fieldIdx) = BytePtr{numInitValBytes > 0 ? initVals.data() : nullptr, numInitValBytes};
   }
 }
+
+KOKKOS_INLINE_FUNCTION
+int compute_num_copy_bytes(int numSrcBytes, int numDestBytes)
+{
+  // A zero size on either side means the Field simply is not defined on that Bucket, which is legal:
+  // moving an entity to a Bucket where the Field is undefined copies nothing (the destination has no
+  // bytes to write), and moving from such a Bucket initializes the destination instead.  Only a move
+  // between two Buckets that both define the Field at *different* per-entity sizes is a real error.
+  // This mirrors the host invariant in BulkData::copy_entity_fields_callback(), which asserts
+  // dstSize == srcSize only inside its `if (dstSize)` / `if (srcSize)` guards.
+  STK_NGP_ThrowAssertMsg(numSrcBytes == 0 || numDestBytes == 0 || numSrcBytes == numDestBytes,
+                         "Incompatible field sizes: source and destination per-entity sizes must match");
+  return Kokkos::min(numSrcBytes, numDestBytes);
+}
+
+// The two overloads below share a body but must differ in their Kokkos annotation: the host-space
+// EntityBytes accessors are host-only, so instantiating a KOKKOS_INLINE_FUNCTION template with
+// host-space types makes nvcc warn about calling __host__ from __host__ __device__ (#20014-D).
 
 template<stk::mesh::Layout LayoutValue, typename SrcFieldBytesType, typename DestFieldBytesType>
 requires ngp::is_host_space<typename SrcFieldBytesType::space>
@@ -116,25 +136,30 @@ void copy_bytes_kernel(const SrcFieldBytesType& srcFieldBytes,
                              DestFieldBytesType& destFieldBytes,
                        const FastMeshIndex& srcIndex,
                        const FastMeshIndex& destIndex,
-                       const std::byte* initVals)
+                       const std::byte* initVals,
+                       int initValsLen)
 {
-  auto srcBytes = srcFieldBytes.template entity_bytes<LayoutValue>(srcIndex);
   auto destBytes = destFieldBytes.template entity_bytes<LayoutValue>(destIndex);
-  if (srcBytes.num_bytes() > 0) {
-    for(ByteIdx idx : destBytes.bytes()) {
+
+  if (destBytes.num_bytes() == 0) { return; }
+
+  using SrcEntityBytes = decltype(srcFieldBytes.template entity_bytes<LayoutValue>(srcIndex));
+  SrcEntityBytes srcBytes;
+  int numCopyBytes = 0;
+  if (srcIndex.bucket_id != INVALID_BUCKET_ID) {
+    srcBytes = srcFieldBytes.template entity_bytes<LayoutValue>(srcIndex);
+    numCopyBytes = compute_num_copy_bytes(srcBytes.num_bytes(), destBytes.num_bytes());
+  }
+
+  for (ByteIdx idx : destBytes.bytes()) {
+    if (idx() < numCopyBytes) {
       destBytes(idx) = srcBytes(idx);
     }
-  }
-  else {
-    if (initVals != nullptr) {
-      for(ByteIdx idx : destBytes.bytes()) {
-        destBytes(idx) = initVals[idx()];
-      }
+    else if (initVals != nullptr && idx() < initValsLen) {
+      destBytes(idx) = initVals[idx()];
     }
     else {
-      for(ByteIdx idx : destBytes.bytes()) {
-        destBytes(idx) = static_cast<std::byte>(0);
-      }
+      destBytes(idx) = static_cast<std::byte>(0);
     }
   }
 }
@@ -146,25 +171,30 @@ void copy_bytes_kernel(const SrcFieldBytesType& srcFieldBytes,
                              DestFieldBytesType& destFieldBytes,
                        const FastMeshIndex& srcIndex,
                        const FastMeshIndex& destIndex,
-                       const std::byte* initVals)
+                       const std::byte* initVals,
+                       int initValsLen)
 {
-  auto srcBytes = srcFieldBytes.template entity_bytes<LayoutValue>(srcIndex);
   auto destBytes = destFieldBytes.template entity_bytes<LayoutValue>(destIndex);
-  if (srcBytes.num_bytes() > 0) {
-    for(ByteIdx idx : destBytes.bytes()) {
+
+  if (destBytes.num_bytes() == 0) { return; }
+
+  using SrcEntityBytes = decltype(srcFieldBytes.template entity_bytes<LayoutValue>(srcIndex));
+  SrcEntityBytes srcBytes;
+  int numCopyBytes = 0;
+  if (srcIndex.bucket_id != INVALID_BUCKET_ID) {
+    srcBytes = srcFieldBytes.template entity_bytes<LayoutValue>(srcIndex);
+    numCopyBytes = compute_num_copy_bytes(srcBytes.num_bytes(), destBytes.num_bytes());
+  }
+
+  for (ByteIdx idx : destBytes.bytes()) {
+    if (idx() < numCopyBytes) {
       destBytes(idx) = srcBytes(idx);
     }
-  }
-  else {
-    if (initVals != nullptr) {
-      for(ByteIdx idx : destBytes.bytes()) {
-        destBytes(idx) = initVals[idx()];
-      }
+    else if (initVals != nullptr && idx() < initValsLen) {
+      destBytes(idx) = initVals[idx()];
     }
     else {
-      for(ByteIdx idx : destBytes.bytes()) {
-        destBytes(idx) = static_cast<std::byte>(0);
-      }
+      destBytes(idx) = static_cast<std::byte>(0);
     }
   }
 }
@@ -178,7 +208,7 @@ void copy_entity_bytes_kernel(DeviceFieldDataBytesViewType& deviceFieldDataBytes
                               const InitValsViewType& initValsView)
 {
   for(unsigned i=0; i<deviceFieldDataBytes.extent(0); ++i) {
-    copy_bytes_kernel<Layout::Left>(deviceFieldDataBytes(i), deviceFieldDataBytes(i), srcIndex, destIndex, initValsView(i).ptr);
+    copy_bytes_kernel<Layout::Left>(deviceFieldDataBytes(i), deviceFieldDataBytes(i), srcIndex, destIndex, initValsView(i).ptr, initValsView(i).numBytes);
   }
 }
 
@@ -198,12 +228,13 @@ void copy_entity_field_bytes<stk::ngp::HostSpace>(const std::vector<FieldBase*>&
     auto& srcFieldBytes = field->data_bytes<const std::byte,stk::ngp::HostSpace>();
     auto& destFieldBytes = field->data_bytes<std::byte,stk::ngp::HostSpace>();
     const auto& initVals = field->get_initial_value_bytes();
-    const std::byte* initValsPtr = initVals.extent(0) > 0 ? initVals.data() : nullptr;
+    const int initValsLen = static_cast<int>(initVals.extent(0));
+    const std::byte* initValsPtr = initValsLen > 0 ? initVals.data() : nullptr;
     if (field->host_data_layout() == Layout::Left) {
-      copy_bytes_kernel<Layout::Left>(srcFieldBytes, destFieldBytes, srcIndex, destIndex, initValsPtr);
+      copy_bytes_kernel<Layout::Left>(srcFieldBytes, destFieldBytes, srcIndex, destIndex, initValsPtr, initValsLen);
     }
     else if (field->host_data_layout() == Layout::Right) {
-      copy_bytes_kernel<Layout::Right>(srcFieldBytes, destFieldBytes, srcIndex, destIndex, initValsPtr);
+      copy_bytes_kernel<Layout::Right>(srcFieldBytes, destFieldBytes, srcIndex, destIndex, initValsPtr, initValsLen);
     }
     else {
       STK_ThrowErrorMsg("Unsupported host Field data layout: " << field->host_data_layout());
@@ -224,11 +255,12 @@ void copy_entity_field_bytes<stk::ngp::DeviceSpace>(const std::vector<FieldBase*
     auto& srcFieldBytes = field->data_bytes<const std::byte,stk::ngp::DeviceSpace>();
     auto& destFieldBytes = field->data_bytes<std::byte,stk::ngp::DeviceSpace>();
     const auto& initVals = field->get_initial_value_bytes();
-    const std::byte* initValsPtr = initVals.extent(0) > 0 ? initVals.data() : nullptr;
+    const int initValsLen = static_cast<int>(initVals.extent(0));
+    const std::byte* initValsPtr = initValsLen > 0 ? initVals.data() : nullptr;
     STK_ThrowAssertMsg(field->device_data_layout() == Layout::Left,"Device field layout must always be Left");
     Kokkos::parallel_for("copy_entity_fields Left", notParallel,
       KOKKOS_LAMBDA(const int) {
-        copy_bytes_kernel<Layout::Left>(srcFieldBytes, destFieldBytes, srcIndex, destIndex, initValsPtr);
+        copy_bytes_kernel<Layout::Left>(srcFieldBytes, destFieldBytes, srcIndex, destIndex, initValsPtr, initValsLen);
       }
     );
   }
@@ -278,7 +310,7 @@ template <typename ExecSpace, typename EntityBytesView, typename EntityView, typ
 inline void update_field_data_bytes(unsigned fieldIdx, unsigned maxNumBytesPerEntity,
                                     EntityBytesView fieldDataBytesView, EntityView allEntities,
                                     FmiView srcFmiView, FmiView dstFmiView,
-                                    BackupView backup)
+                                    BackupView backup, const std::byte* initVals, int initValsLen)
 {
   auto numEntities = allEntities.extent(0);
   auto policy = Kokkos::RangePolicy<ExecSpace>(0, numEntities);
@@ -291,6 +323,8 @@ inline void update_field_data_bytes(unsigned fieldIdx, unsigned maxNumBytesPerEn
 
       auto fieldDataBytes = fieldDataBytesView(fieldIdx);
       auto srcFmi = srcFmiView(entity.local_offset());
+      if (srcFmi.bucket_id == INVALID_BUCKET_ID) return;
+
       auto srcBytes = fieldDataBytes.entity_bytes(srcFmi);
       auto bytesPerEntityBytes = srcBytes.num_bytes();
 #ifndef NDEBUG
@@ -315,8 +349,22 @@ inline void update_field_data_bytes(unsigned fieldIdx, unsigned maxNumBytesPerEn
 #ifndef NDEBUG
       STK_NGP_ThrowRequire(static_cast<unsigned>(bytesPerEntityBytes) <= maxNumBytesPerEntity);
 #endif
+      auto srcFmi = srcFmiView(entity.local_offset());
+      int numCopyBytes = 0;
+      if (srcFmi.bucket_id != INVALID_BUCKET_ID) {
+        const int numSrcBytes = fieldDataBytes.entity_bytes(srcFmi).num_bytes();
+        numCopyBytes = compute_num_copy_bytes(numSrcBytes, bytesPerEntityBytes);
+      }
       for (int j = 0; j < bytesPerEntityBytes; ++j) {
-        dstBytes(ByteIdx(j)) = backup[eidx * maxNumBytesPerEntity + j];
+        if (j < numCopyBytes) {
+          dstBytes(ByteIdx(j)) = backup[eidx * maxNumBytesPerEntity + j];
+        }
+        else if (initVals != nullptr && j < initValsLen) {
+          dstBytes(ByteIdx(j)) = initVals[j];
+        }
+        else {
+          dstBytes(ByteIdx(j)) = static_cast<std::byte>(0);
+        }
       }
     }
   );

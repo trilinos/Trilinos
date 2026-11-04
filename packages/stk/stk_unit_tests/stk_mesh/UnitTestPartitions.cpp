@@ -219,7 +219,6 @@ bool check_bucket_ptrs(const stk::mesh::Bucket &bucket)
 {
   if (bucket.size() == 0 )
   {
-    std::cout << "Bucket has size zero!" << std::endl;
     return false;
   }
 
@@ -243,8 +242,6 @@ bool check_nonempty_strictly_ordered(Data_T data, bool reject_0_lt_0 = true )
   for (stk::mesh::EntityIdx i=0_entity; i<(data.num_entities()-1); ++i) {
     stk::mesh::EntityIdx iPlus1(i+1);
     if ((data(i,0_comp) >= data(iPlus1,0_comp) && reject_0_lt_0)) {
-      std::cout << "i = " << i << ": data(i) = " << data(i,0_comp)
-                   << ", data(i + 1) = " << data(iPlus1,0_comp) << std::endl;
       return false;
     }
   }

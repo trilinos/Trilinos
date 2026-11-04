@@ -10,6 +10,8 @@
 #ifndef adapt_sierra_element_StdMeshObjTopologies_hpp
 #define adapt_sierra_element_StdMeshObjTopologies_hpp
 
+#include <Shards_BasicTopologies.hpp>
+
   namespace percept {
     enum { END_UINT_ARRAY = 99999 };
 
@@ -42,6 +44,34 @@
         public:
           static RefTopoX refinement_topology;
         };
+
+        // Explicit instantiation declarations to suppress -Wundefined-var-template
+        // Definitions are provided in StdMeshObjTopologies.cpp via GeneratedRefinementTable.hpp
+        template<> RefTopoX RefinementTopologyExtra<shards::Line<2>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Beam<2>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::ShellLine<2>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::ShellLine<3>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Quadrilateral<4>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Triangle<3>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::ShellTriangle<3>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::ShellTriangle<6>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::ShellQuadrilateral<4>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::ShellQuadrilateral<8>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Tetrahedron<4>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Hexahedron<8>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Wedge<6>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Wedge<18>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Wedge<15>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Pyramid<5>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Pyramid<13>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Line<3>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Beam<3>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Triangle<6>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Quadrilateral<8>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Quadrilateral<9>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Hexahedron<27>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Hexahedron<20>>::refinement_topology;
+        template<> RefTopoX RefinementTopologyExtra<shards::Tetrahedron<10>>::refinement_topology;
 
         void bootstrap();
 

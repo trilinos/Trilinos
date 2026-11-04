@@ -10,11 +10,14 @@ endif()
 SET(HEADERS_NEED_IO
   ElemGraphMultipleSharedSidesUtils.hpp
   BulkDataTester.hpp
+  CorruptRestart.hpp
   DeviceBucketTestUtils.hpp
   FaceCreationTestUtils.hpp
   FaceTestingUtils.hpp
   GeneratedMeshToFile.hpp
+  MeshFileFixture.hpp
   MeshFixture.hpp
+  MeshUtilsForBoundingVolumes.hpp
   ReadWriteSidesetTester.hpp
   StkMeshFromGeneratedMesh.hpp
   TextMeshAdjacencyGraph.hpp
@@ -38,6 +41,7 @@ SET(HEADERS_NEED_IO
 SET(SOURCES_NEED_IO
   BulkDataTester.cpp
   ConstructedMesh.cpp
+  CorruptRestart.cpp
   DeviceBucketTestUtils.cpp
   FaceTestingUtils.cpp
   GenerateALefRAMesh.cpp
@@ -83,8 +87,6 @@ SET(HEADERS_NEED_MESH_BUT_NOT_IO
   BuildMesh.hpp
   BucketTester.hpp
   DebugWriter.hpp
-  MeshFileFixture.hpp
-  MeshUtilsForBoundingVolumes.hpp
   ParticleUtils.hpp
   unittestMeshUtils.hpp
   )
@@ -115,6 +117,7 @@ SET(HEADERS
   StkReportRedirector.hpp
   stringAndNumberComparisons.hpp
   timer.hpp
+  MockMasterElement.hpp
   MockMasterElementLine2.hpp
   MockMasterElementQuad4_2D.hpp
   MockMasterElementQuad4.hpp

@@ -74,7 +74,7 @@ template <typename MemSpace> using EntityRankViewType             = Kokkos::View
 using DeviceStringType = Kokkos::View<char*, stk::ngp::HostPinnedSpace>;
 
 template <typename MemSpace> using DeviceFieldMetaDataArrayType   = Kokkos::View<DeviceFieldMetaData*, MemSpace>;
-template <typename MemSpace> using HostFieldMetaDataArrayType     = typename DeviceFieldMetaDataArrayType<MemSpace>::host_mirror_type;
+template <typename MemSpace> using DeviceFieldMetaDataArrayTypeOnHost = typename DeviceFieldMetaDataArrayType<MemSpace>::host_mirror_type;
 template <typename MemSpace> using DeviceBucketsModifiedCollectionType = Kokkos::View<int**, Kokkos::LayoutRight, MemSpace>;
 
 using FieldMetaDataArrayType = impl::ViewVector<FieldMetaData, stk::ngp::HostMemSpace>;

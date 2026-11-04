@@ -311,11 +311,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SF2, fwd, LO, GO, Scalar, Node) {
       Comm, out, success);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SF2, Scale, LO, GO, Scalar, Node) {
+  if (Teuchos::ScalarTraits<Scalar>::isComplex) return;  // MatrixMarket reader does not work properly with complex.
+
+  auto Comm = Tpetra::getDefaultComm();
+
+  test_Singleton_Scale_fwd<Scalar, LO, GO, Node>(
+      "SF2_Matrix_Original.mm", "SF2_LHS_Original.mm", "SF2_RHS_Original.mm",
+      "SF2_Matrix_Reduced.mm", "SF2_LHS_Reduced.mm", "SF2_RHS_Reduced.mm",
+      Comm, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SF2, Reindex, LO, GO, Scalar, Node) {
+  if (Teuchos::ScalarTraits<Scalar>::isComplex) return;  // MatrixMarket reader does not work properly with complex.
+
+  auto Comm = Tpetra::getDefaultComm();
+
+  test_Singleton_Reindex_fwd<Scalar, LO, GO, Node>(
+      "SF2_Matrix_Original.mm", "SF2_LHS_Original.mm", "SF2_RHS_Original.mm",
+      "SF2_Matrix_Reduced.mm", "SF2_LHS_Reduced.mm", "SF2_RHS_Reduced.mm",
+      Comm, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SF2, Reindex_Scale, LO, GO, Scalar, Node) {
+  if (Teuchos::ScalarTraits<Scalar>::isComplex) return;  // MatrixMarket reader does not work properly with complex.
+
+  auto Comm = Tpetra::getDefaultComm();
+
+  test_Singleton_Reindex_Scale_fwd<Scalar, LO, GO, Node>(
+      "SF2_Matrix_Original.mm", "SF2_LHS_Original.mm", "SF2_RHS_Original.mm",
+      "SF2_Matrix_Reduced.mm", "SF2_LHS_Reduced.mm", "SF2_RHS_Reduced.mm",
+      Comm, out, success);
+}
+
 #define UNIT_TEST_GROUP(SCALAR, LO, GO, NODE)                                \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SF1, Functions, LO, GO, SCALAR, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SF1, Analyze, LO, GO, SCALAR, NODE)   \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SF1, Operator, LO, GO, SCALAR, NODE)  \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SF2, fwd, LO, GO, SCALAR, NODE)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SF2, fwd, LO, GO, SCALAR, NODE)       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SF2, Reindex, LO, GO, SCALAR, NODE)   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SF2, Reindex_Scale, LO, GO, SCALAR, NODE)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 

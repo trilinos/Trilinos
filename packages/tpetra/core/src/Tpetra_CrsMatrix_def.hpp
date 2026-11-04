@@ -715,6 +715,51 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    CrsMatrix(const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::RCP<const map_type>& colMap,
+              const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+              const Teuchos::RCP<Teuchos::ParameterList>& params)
+  : dist_object_type(rowMap)
+  , storageStatus_(Details::STORAGE_1D_PACKED)
+  , fillComplete_(true) {
+  const char tfecfFuncName[] =
+      "Tpetra::CrsMatrix(RCP<const Map>, "
+      "RCP<const Map>, CrsMatrix[, RCP<ParameterList>]): ";
+  const char suffix[] =
+      "  Please report this bug to the Tpetra developers.";
+
+  Teuchos::RCP<crs_graph_type> graph = Teuchos::rcp(new crs_graph_type(rowMap, colMap, *source.getCrsGraph(), params));
+  if (!graph->isFillComplete()) {
+    graph->fillComplete();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!graph->isFillComplete(), std::logic_error,
+                                          "CrsGraph constructor (RCP"
+                                          "<const Map>, RCP<const Map>, local_graph_device_type[, RCP<ParameterList>]) "
+                                          "did not produce a fill-complete graph.  Please report this bug to the "
+                                          "Tpetra developers.");
+  }
+  // myGraph_ not null means that the matrix owns the graph.  This
+  // is true because the column indices come in as nonconst through
+  // the matrix, implying shared ownership.
+  myGraph_     = graph;
+  staticGraph_ = graph;
+
+  valuesPacked_wdv   = values_wdv_type(source.valuesPacked_wdv);
+  valuesUnpacked_wdv = values_wdv_type(source.valuesUnpacked_wdv);
+
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive(), std::logic_error,
+                                        "At the end of a CrsMatrix constructor that should produce "
+                                        "a fillComplete matrix, isFillActive() is true."
+                                            << suffix);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(), std::logic_error,
+                                        "At the end of a "
+                                        "CrsMatrix constructor that should produce a fillComplete "
+                                        "matrix, isFillComplete() is false."
+                                            << suffix);
+  checkInternalState();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     CrsMatrix(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
               const Teuchos::DataAccess copyOrView)
   : dist_object_type(source.getCrsGraph()->getRowMap())
@@ -5440,7 +5485,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void copyAndPermuteStaticGraphNew(
+void copyAndPermuteStorageOptimizedGraphNew(
     const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& srcMat,
     RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tgtMat,
     const size_t numSameIDs,
@@ -5450,7 +5495,7 @@ void copyAndPermuteStaticGraphNew(
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    copyAndPermuteStaticGraph(
+    copyAndPermuteStorageOptimizedGraph(
         const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& srcMat,
         const size_t numSameIDs,
         const LocalOrdinal permuteToLIDs[],
@@ -5462,10 +5507,10 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using Teuchos::ArrayView;
   using LO                   = LocalOrdinal;
   using GO                   = GlobalOrdinal;
-  const char tfecfFuncName[] = "copyAndPermuteStaticGraph";
+  const char tfecfFuncName[] = "copyAndPermuteStorageOptimizedGraph";
   const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
-  ProfilingRegion regionCAP("Tpetra::CrsMatrix::copyAndPermuteStaticGraph");
+  ProfilingRegion regionCAP("Tpetra::CrsMatrix::copyAndPermuteStorageOptimizedGraph");
 
   const bool debug   = Details::Behavior::debug("CrsGraph");
   const bool verbose = Details::Behavior::verbose("CrsGraph");
@@ -5685,7 +5730,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    copyAndPermuteNonStaticGraph(
+    copyAndPermuteNonStorageOptimizedGraph(
         const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& srcMat,
         const size_t numSameIDs,
         const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs_dv,
@@ -5697,10 +5742,10 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using Teuchos::ArrayView;
   using LO                   = LocalOrdinal;
   using GO                   = GlobalOrdinal;
-  const char tfecfFuncName[] = "copyAndPermuteNonStaticGraph";
+  const char tfecfFuncName[] = "copyAndPermuteNonStorageOptimizedGraph";
   const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
-  ProfilingRegion regionCAP("Tpetra::CrsMatrix::copyAndPermuteNonStaticGraph");
+  ProfilingRegion regionCAP("Tpetra::CrsMatrix::copyAndPermuteNonStorageOptimizedGraph");
 
   const bool debug   = Details::Behavior::debug("CrsGraph");
   const bool verbose = Details::Behavior::verbose("CrsGraph");
@@ -5915,13 +5960,13 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // it in checkSizes().
   using RMT         = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   const RMT& srcMat = dynamic_cast<const RMT&>(srcObj);
-  if (isStaticGraph()) {
+  if (isStaticGraph() || isStorageOptimized()) {
     if (Details::Behavior::useNewCopyAndPermute()) {
       TEUCHOS_ASSERT(!permuteToLIDs.need_sync_device());
       auto permuteToLIDs_d = permuteToLIDs.view_device();
       TEUCHOS_ASSERT(!permuteFromLIDs.need_sync_device());
       auto permuteFromLIDs_d = permuteFromLIDs.view_device();
-      copyAndPermuteStaticGraphNew(
+      copyAndPermuteStorageOptimizedGraphNew(
           srcMat, *this, numSameIDs, permuteToLIDs_d.data(), permuteFromLIDs_d.data(), numPermute);
 
     } else {
@@ -5930,14 +5975,14 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       TEUCHOS_ASSERT(!permuteFromLIDs.need_sync_host());
       auto permuteFromLIDs_h = permuteFromLIDs.view_host();
 
-      copyAndPermuteStaticGraph(srcMat, numSameIDs,
-                                permuteToLIDs_h.data(),
-                                permuteFromLIDs_h.data(),
-                                numPermute);
+      copyAndPermuteStorageOptimizedGraph(srcMat, numSameIDs,
+                                          permuteToLIDs_h.data(),
+                                          permuteFromLIDs_h.data(),
+                                          numPermute);
     }
   } else {
-    copyAndPermuteNonStaticGraph(srcMat, numSameIDs, permuteToLIDs,
-                                 permuteFromLIDs, numPermute);
+    copyAndPermuteNonStorageOptimizedGraph(srcMat, numSameIDs, permuteToLIDs,
+                                           permuteFromLIDs, numPermute);
   }
 
   if (verbose) {
@@ -6627,7 +6672,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         const bool verbose) {
   const char tfecfFuncName[] = "combineGlobalValues: ";
 
-  if (isStaticGraph()) {
+  if (isStaticGraph() || isStorageOptimized()) {
     // INSERT doesn't make sense for a static graph, since you
     // aren't allowed to change the structure of the graph.
     // However, all the other combine modes work.
@@ -8822,7 +8867,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void copyAndPermuteStaticGraphNew(
+void copyAndPermuteStorageOptimizedGraphNew(
     const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& srcMat,
     RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tgtMat,
     const size_t numSameIDs,
@@ -8846,7 +8891,7 @@ void copyAndPermuteStaticGraphNew(
 
   const LocalOrdinal LINV = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
 
-  ProfilingRegion regionCAP("Tpetra::CrsMatrix::copyAndPermuteStaticGraphNew");
+  ProfilingRegion regionCAP("Tpetra::CrsMatrix::copyAndPermuteStorageOptimizedGraphNew");
 
   const crs_matrix_type* srcMatCrsPtr = dynamic_cast<const crs_matrix_type*>(&srcMat);
   TEUCHOS_TEST_FOR_EXCEPTION(srcMatCrsPtr == nullptr, std::runtime_error, "bad srcMatCrsPtr");
@@ -8916,7 +8961,7 @@ void copyAndPermuteStaticGraphNew(
     auto tvals = tgtMatCrs.getLocalValuesDevice(Access::ReadWrite);
 
     Kokkos::parallel_for(
-        "Tpetra_CrsMatrix::copyAndPermuteStaticGraph",
+        "Tpetra_CrsMatrix::copyAndPermuteStorageOptimizedGraph",
         range_type(0, numSameIDs_as_LID),
         KOKKOS_LAMBDA(const LO sourceLID) {
           local_inds_device_value_t start     = srcLocalRowPtrsDevice(sourceLID);

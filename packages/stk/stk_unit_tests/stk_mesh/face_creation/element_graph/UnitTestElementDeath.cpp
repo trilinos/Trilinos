@@ -357,18 +357,6 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
       }
 
       boundary_mesh_parts.push_back(&active);
-      std::ostringstream os;
-      for(auto elem : deactivated_elems){
-        os<<"P"<<bulkData.parallel_rank()<<" deact "<<bulkData.entity_key(elem)<<std::endl;
-        const stk::mesh::Entity* nodes = bulkData.begin_nodes(elem);
-        unsigned numNodes = bulkData.num_nodes(elem);
-        os<<"    nodes: ";
-        for(unsigned n=0; n<numNodes; ++n){
-          os<<bulkData.identifier(nodes[n])<<":o="<<bulkData.bucket(nodes[n]).owned()<<",s="<<bulkData.bucket(nodes[n]).shared()<<" ";
-        }
-        os<<std::endl;
-        std::cerr<<os.str();
-      }
       ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
       test_active_part_membership(bulkData, skin_faces_of_elem2, active);
@@ -571,6 +559,93 @@ void deactivate_elements(stk::mesh::BulkData& bulkData,
   ElemGraphTestUtils::deactivate_elements(deactivatedElems, bulkData, active);
 }
 
+void expect_remote_elements_inactive(const stk::mesh::ElemElemGraph& graph,
+                                     const stk::mesh::impl::ParallelSelectedInfo& remoteActiveSelector,
+                                     const stk::mesh::EntityIdVector& inactiveElementIds)
+{
+  for(const auto& entry : remoteActiveSelector) {
+    stk::mesh::EntityId remoteId = graph.convert_negative_local_id_to_global_id(entry.first);
+    if(std::find(inactiveElementIds.begin(), inactiveElementIds.end(), remoteId) != inactiveElementIds.end()) {
+      EXPECT_FALSE(entry.second) << "remote element " << remoteId << " unexpectedly marked active";
+    }
+  }
+}
+
+void run_four_proc_cross_shell_reproducer_with_empty_rank(stk::ParallelMachine comm,
+                                                          stk::mesh::BulkData::AutomaticAuraOption auraOption)
+{
+  if(stk::parallel_machine_size(comm) != 4) {
+    GTEST_SKIP();
+  }
+
+  unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, comm, auraOption);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkData = *bulkPtr;
+  stk::mesh::PartVector boundary_mesh_parts;
+
+  stk::mesh::Part& activePart = meta.declare_part("active");
+  ASSERT_TRUE(activePart.primary_entity_rank() == stk::topology::INVALID_RANK);
+  boundary_mesh_parts.push_back(&activePart);
+
+  stk::io::fill_mesh(get_abutting_cross_shell_element_death_mesh_desc(comm), bulkData);
+  stk::unit_test_util::put_mesh_into_part(bulkData, activePart);
+
+  stk::mesh::ElemElemGraph& graph = bulkData.get_face_adjacent_element_graph();
+  stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+  stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, activePart, remoteActiveSelector);
+  bulkData.register_observer(std::make_shared<stk::mesh::RemoteSelectorUpdater>(bulkData, remoteActiveSelector, activePart));
+
+  const stk::mesh::EntityIdVector step1KilledElementIds{1u, 2u, 10u};
+  const stk::mesh::EntityIdVector step2KilledElementIds{3u, 4u, 11u};
+  const stk::mesh::EntityIdVector step3KilledElementIds{5u, 6u, 12u};
+  const stk::mesh::EntityIdVector cumulativeKilledAfterStep2{1u, 2u, 3u, 4u, 10u, 11u};
+  const stk::mesh::EntityIdVector cumulativeKilledAfterStep3{1u, 2u, 3u, 4u, 5u, 6u, 10u, 11u, 12u};
+
+  stk::mesh::EntityVector killedElems;
+  std::vector<size_t> entityCounts;
+
+  deactivate_elements(bulkData, activePart, step1KilledElementIds, killedElems);
+  expect_remote_elements_inactive(graph, remoteActiveSelector, step1KilledElementIds);
+  EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData,
+                                                     killedElems,
+                                                     activePart,
+                                                     remoteActiveSelector,
+                                                     boundary_mesh_parts,
+                                                     &boundary_mesh_parts));
+  stk::mesh::comm_mesh_counts(bulkData, entityCounts);
+  EXPECT_EQ(1u, entityCounts[stk::topology::EDGE_RANK]);
+
+  deactivate_elements(bulkData, activePart, step2KilledElementIds, killedElems);
+  expect_remote_elements_inactive(graph, remoteActiveSelector, cumulativeKilledAfterStep2);
+  EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData,
+                                                     killedElems,
+                                                     activePart,
+                                                     remoteActiveSelector,
+                                                     boundary_mesh_parts,
+                                                     &boundary_mesh_parts));
+  stk::mesh::comm_mesh_counts(bulkData, entityCounts);
+  EXPECT_EQ(2u, entityCounts[stk::topology::EDGE_RANK]);
+
+  deactivate_elements(bulkData, activePart, step3KilledElementIds, killedElems);
+  expect_remote_elements_inactive(graph, remoteActiveSelector, cumulativeKilledAfterStep3);
+  EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData,
+                                                     killedElems,
+                                                     activePart,
+                                                     remoteActiveSelector,
+                                                     boundary_mesh_parts,
+                                                     &boundary_mesh_parts));
+  stk::mesh::comm_mesh_counts(bulkData, entityCounts);
+  EXPECT_EQ(4u, entityCounts[stk::topology::EDGE_RANK]);
+
+  const unsigned locallyOwnedActiveElems =
+      stk::mesh::count_selected_entities(bulkData.mesh_meta_data().locally_owned_part() & activePart,
+                                         bulkData.buckets(stk::topology::ELEM_RANK));
+  if(bulkData.parallel_rank() == 1) {
+    EXPECT_EQ(0u, locallyOwnedActiveElems);
+  }
+}
+
 void run_abutting_shell_element_death_case(stk::ParallelMachine comm,
                                            const std::string& meshDesc,
                                            const stk::mesh::EntityIdVector& killedElementIds,
@@ -719,6 +794,13 @@ TEST(ElementDeath, abutting_cross_shell_case_3)
   run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 2u, stk::mesh::BulkData::AUTO_AURA);
 }
 
+TEST(ElementDeathReproducer, four_proc_cross_shell_two_step_death_leaves_rank_empty)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  run_four_proc_cross_shell_reproducer_with_empty_rank(comm, stk::mesh::BulkData::NO_AUTO_AURA);
+  run_four_proc_cross_shell_reproducer_with_empty_rank(comm, stk::mesh::BulkData::AUTO_AURA);
+}
+
 TEST(ElementDeath, abutting_MGT_case)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -776,5 +858,3 @@ TEST(ElementDeath, single_shell_death_in_stack)
 }
 
 } // end namespace
-
-

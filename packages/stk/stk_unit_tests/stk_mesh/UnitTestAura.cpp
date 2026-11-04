@@ -448,11 +448,6 @@ TEST(BulkDataTest, disconnectReconnectElem_AddNewSharedSide_checkGraph)
     stk::unit_test::verify_graph_edge_between_elems(bulk, elem2, elem4);
   }
 
-{
-std::ostringstream os;
-os<<"P"<<bulk.parallel_rank()<<" beginning mesh-mod"<<std::endl;
-std::cerr<<os.str();
-}
   bulk.modification_begin();
 
   if(bulk.parallel_size()==1 || bulk.parallel_rank() == 0)
@@ -473,13 +468,6 @@ std::cerr<<os.str();
     bulk.declare_element_side<stk::mesh::ConstPartVector>(elem2, sideOrd);
   }
 
-{
-stk::parallel_machine_barrier(bulk.parallel());
-std::ostringstream os;
-os<<"P"<<bulk.parallel_rank()<<" calling mod-end"<<std::endl;
-std::cerr<<os.str();
-stk::parallel_machine_barrier(bulk.parallel());
-}
   bulk.modification_end();
 
   if (bulk.parallel_size()==1 || bulk.parallel_rank() == 1) {
@@ -1388,12 +1376,6 @@ public:
     EXPECT_TRUE(get_bulk().is_valid(face25872));
     const unsigned numNodes = get_bulk().num_nodes(face25872);
     EXPECT_EQ(3u, numNodes);
-    const stk::mesh::Entity* nodes = get_bulk().begin_nodes(face25872);
-    std::cerr<<" face 25872 nodes: ";
-    for(unsigned i=0; i<numNodes; ++i) {
-      std::cerr<<get_bulk().identifier(nodes[i])<<" ";
-    }
-    std::cerr<<std::endl;
   }
 
   void delete_aura_elem_on_p1_check_aura_nodes_deleted()

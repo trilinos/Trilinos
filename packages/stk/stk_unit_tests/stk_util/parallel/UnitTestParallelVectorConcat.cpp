@@ -36,6 +36,7 @@
 #include "stk_util/parallel/Parallel.hpp"              // for MPI_COMM_WORLD, MPI_SUCCESS, paral...
 #include "stk_util/parallel/ParallelVectorConcat.hpp"  // for parallel_vector_concat
 #include <iostream>                                    // for operator<<, ostringstream, basic_o...
+#include <limits>                                      // for numeric_limits
 #include <memory>                                      // for allocator_traits<>::value_type
 #include <string>                                      // for string, basic_string, char_traits
 #include <vector>                                      // for vector
@@ -179,5 +180,37 @@ TEST(UnitTestParallel, test_bool_ParallelVectorConcat)
       EXPECT_EQ(globalVec[i], expectedVec[i]);
     }
   }
+}
+
+TEST(UnitTestParallel, testParallelVectorConcat_largeByteVector)
+{
+  const int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  const int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  if (mpi_size != 2) { GTEST_SKIP(); }  // needs ~3 GB/rank; sum must exceed INT_MAX
+
+  //
+  //  Each rank contributes a byte vector below the per-rank INT_MAX limit, but the
+  //  concatenated total across the 2 ranks exceeds the 32-bit (~2.1 billion) limit.
+  //
+  const size_t intMax    = static_cast<size_t>(std::numeric_limits<int>::max());
+  const size_t localSize = intMax/2 + 1000000;   // 2 * localSize > INT_MAX, localSize < INT_MAX
+
+  std::vector<unsigned char> localVec(localSize, static_cast<unsigned char>(mpi_rank + 1));
+  std::vector<unsigned char> globalVec;
+
+  int status = stk::parallel_vector_concat(MPI_COMM_WORLD, localVec, globalVec);
+  EXPECT_EQ(status, MPI_SUCCESS);
+
+  const size_t expectedTotal = 2 * localSize;
+  ASSERT_EQ(globalVec.size(), expectedTotal);
+  EXPECT_GT(globalVec.size(), intMax);           // confirm we exceeded the 32-bit limit
+
+  //
+  //  Spot-check the rank boundaries (avoid touching all ~2 billion bytes).
+  //
+  EXPECT_EQ(globalVec.front(),          static_cast<unsigned char>(1)); // rank 0 data
+  EXPECT_EQ(globalVec[localSize - 1],   static_cast<unsigned char>(1));
+  EXPECT_EQ(globalVec[localSize],       static_cast<unsigned char>(2)); // rank 1 data
+  EXPECT_EQ(globalVec.back(),           static_cast<unsigned char>(2));
 }
 

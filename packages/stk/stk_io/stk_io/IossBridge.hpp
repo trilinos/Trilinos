@@ -591,6 +591,7 @@ void set_field_output_variable_type(stk::mesh::FieldBase & field, const Ioss::Va
 const Ioss::VariableType * get_field_output_variable_type(const stk::mesh::FieldBase & field);
 
 std::vector<std::string> get_assembly_names(const stk::mesh::MetaData& meta);
+std::vector<const stk::mesh::Part*> get_surface_assemblies(const stk::mesh::MetaData& meta);
 
 std::vector<std::string> get_sub_assembly_names(const stk::mesh::MetaData& meta, const std::string& assemblyName);
 
@@ -609,7 +610,11 @@ size_t db_api_int_size(const Ioss::GroupingEntity *entity);
 
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
 
-Ioss::DatabaseIO *create_database_for_subdomain(const std::string &baseFilename, int index_subdomain, int num_subdomains, bool use64Bit = false);
+Ioss::DatabaseIO *create_database_for_subdomain(const std::string &baseFilename,
+                                                int index_subdomain,
+                                                int num_subdomains,
+                                                bool use64Bit = false,
+                                                Ioss::DatabaseUsage databaseUsage = Ioss::WRITE_RESULTS);
 
 void add_properties_for_subdomain(stk::io::OutputParams& params, int index_subdomain,
                                   int num_subdomains, int global_num_nodes, int global_num_elems);

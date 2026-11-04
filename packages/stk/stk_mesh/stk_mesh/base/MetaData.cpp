@@ -1224,10 +1224,42 @@ private:
   unsigned m_rootFieldNumberOfStates;
 };
 
+class VerifyPropConsistency : public VerifyConsistency
+{
+public:
+  VerifyPropConsistency(const MetaData & meta, ParallelMachine pm)
+    : VerifyConsistency(meta, pm)
+  {}
+
+  virtual ~VerifyPropConsistency() = default;
+
+  void verify()
+  {
+    bool ok = false;
+
+    const unsigned spatialDim = m_meta.spatial_dimension();
+    auto dimMax = stk::get_global_max(m_parallelMachine, spatialDim);
+    auto dimMin = stk::get_global_min(m_parallelMachine, spatialDim);
+    ok = (dimMax == dimMin);
+
+    STK_ThrowRequireMsg(ok, "[p" << m_pRank << "] MetaData parallel consistency failure: spatial dimensions do not match");
+  }
+
+  void pack(CommBuffer &) {}
+
+  bool unpack_verify(CommBuffer &)
+  {
+    return false;
+  }
+};
+
 }
 
 void verify_parallel_consistency(const MetaData & meta, ParallelMachine pm)
 {
+  VerifyPropConsistency propConsistency(meta, pm);
+  propConsistency.verify();
+
   VerifyPartConsistency partConsistency(meta, pm);
   partConsistency.verify();
 

@@ -44,6 +44,9 @@ namespace stk { namespace mesh { class Selector; } }
 
 namespace stk {
 namespace tools {
+namespace impl {
+  void remove_io_attribute_from_empty_parts(stk::mesh::BulkData & bulk);
+}
 
 void extract_blocks_and_ns_from_file(const std::string &inFile,
                                      const std::string &outFile,
@@ -52,7 +55,6 @@ void extract_blocks_and_ns_from_file(const std::string &inFile,
                                      MPI_Comm comm);
 
 void extract_blocks(stk::mesh::BulkData &oldBulk, stk::mesh::BulkData &newBulk, const std::vector<std::string> &blockNames);
-
 
 
 std::vector<std::string> GetBlockNamesFromIDs(const stk::mesh::BulkData & meshBulk, const std::vector<int> & block_ids);

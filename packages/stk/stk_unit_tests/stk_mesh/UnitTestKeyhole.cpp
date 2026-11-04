@@ -76,10 +76,6 @@ TEST(UnitTestKeyhole, NodeParts_case1)
   for(size_t i=0; i<shared_node_buckets.size(); ++i) {
     num_shared_nodes += shared_node_buckets[i]->size();
     const stk::mesh::Bucket& bucket = *shared_node_buckets[i];
-    std::ostringstream oss;
-    oss<<"proc "<<bulk.parallel_rank()<<", shared node ids: ";
-    for(size_t j=0; j<bucket.size(); ++j) oss <<bulk.identifier(bucket[j])<<" ";
-    std::cerr<<oss.str()<<std::endl;
     bool in_both_blocks = bucket.member_all(blocksA);
     EXPECT_TRUE(in_both_blocks);
   }
@@ -134,9 +130,6 @@ TEST(UnitTestKeyhole, NodeParts_case2)
     for(size_t i=0; i<aura_node_buckets.size(); ++i) {
       num_aura_nodes += aura_node_buckets[i]->size();
       const stk::mesh::Bucket& bucket = *aura_node_buckets[i];
-      std::cerr<<"proc 0, aura node ids: ";
-      for(size_t j=0; j<bucket.size(); ++j) std::cerr<<bulk.identifier(bucket[j])<<" ";
-      std::cerr<<std::endl;
       bool in_both_blocks = bucket.member_all(blocks);
       EXPECT_TRUE(in_both_blocks);
     }
@@ -180,7 +173,6 @@ TEST(UnitTestKeyhole, EdgeParts_case1)
   }
 
   EXPECT_TRUE(bulk.is_valid(edge));
-  std::cerr<<"proc "<<bulk.parallel_rank()<<" found edge id="<<bulk.identifier(edge)<<" between nodes 2 and 3"<<std::endl;
 
   const stk::mesh::Part& block_1 = *meta.get_part("block_1");
   const stk::mesh::Part& block_2 = *meta.get_part("block_2");
@@ -204,7 +196,6 @@ TEST(UnitTestKeyhole, EdgeParts_case1)
   }
 
   EXPECT_TRUE(bulk.is_valid(edge));
-  std::cerr<<"proc "<<bulk.parallel_rank()<<" found edge id="<<bulk.identifier(edge)<<" between nodes 8 and 9"<<std::endl;
 
   const stk::mesh::Part& block_3 = *meta.get_part("block_3");
   EXPECT_TRUE(bulk.bucket(edge).member(block_2));
@@ -246,7 +237,6 @@ TEST(UnitTestKeyhole, EdgeParts_case2)
   }
 
   EXPECT_TRUE(bulk.is_valid(edge));
-  std::cerr<<"proc "<<bulk.parallel_rank()<<" found edge id="<<bulk.identifier(edge)<<" between nodes 5 and 6"<<std::endl;
 
   const stk::mesh::Part& block_2 = *meta.get_part("block_2");
   const stk::mesh::Part& block_3 = *meta.get_part("block_3");

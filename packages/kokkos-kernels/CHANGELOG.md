@@ -1,5 +1,15 @@
 # Change Log
 
+## [5.2.2](https://github.com/kokkos/kokkos-kernels/tree/5.2.2)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.2.1...5.2.2)
+
+### Bug fixes
+
+- Export enabled TPLs in KokkosKernelsConfig.cmake [\#3248](https://github.com/kokkos/kokkos-kernels/pull/3248)
+  - Fix typo KokkosKernels_TPL_ENABLE -> KokkosKernels_ENABLE_TPL [\#3251](https://github.com/kokkos/kokkos-kernels/pull/3251)
+- Indexing fixes for structured matrix generation in tests [\#3271](https://github.com/kokkos/kokkos-kernels/pull/3271)
+- Add missing <bit> header in KokkosBatched_HostLevel_Gemm_DblBuf_Impl.hpp [\#3286](https://github.com/kokkos/kokkos-kernels/pull/3286)
+
 ## [5.2.1](https://github.com/kokkos/kokkos-kernels/tree/5.2.1)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.2.0...5.2.1)
 

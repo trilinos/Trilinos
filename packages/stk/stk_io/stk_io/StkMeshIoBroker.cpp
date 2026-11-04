@@ -678,6 +678,7 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
       }
     }
     properties.add(Ioss::Property("MAXIMUM_NAME_LENGTH", maxNameLength));
+    properties.add(Ioss::Property("FLUSH_ON_FIRST_OUTPUT", 1));
 
     auto output_file = std::shared_ptr<impl::OutputFile>(new impl::OutputFile(out_filename,
                                                          m_communicator, db_type,

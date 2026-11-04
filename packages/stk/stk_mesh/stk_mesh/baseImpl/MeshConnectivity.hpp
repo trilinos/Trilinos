@@ -142,6 +142,178 @@ public:
   }
 
   template<typename PoolAllocator>
+  void reserve_for_additions(PoolAllocator& poolAlloc, unsigned numNew, bool needPermutations)
+  {
+    if (numNew == 0) {
+      return;
+    }
+    const uint16_t curSize = m_offsets[stk::topology::NUM_RANKS];
+    const uint16_t avail = m_capacity - curSize;
+    if (avail < numNew) {
+      const bool havePermNow = (m_perm != nullptr);
+      grow_capacity(poolAlloc, numNew, havePermNow);
+    }
+    if (needPermutations && m_perm == nullptr) {
+      add_permutations(poolAlloc);
+    }
+  }
+
+  template<typename AdditionType>
+  KOKKOS_FUNCTION
+  void insert_connectivities_no_grow(const AdditionType* adds, unsigned numAdds)
+  {
+    if (numAdds == 0) {
+      return;
+    }
+
+    const bool hasPermutations = (m_perm != nullptr);
+
+    // Walk the sorted adds one contiguous connRank-run at a time.  For each run we open a gap of
+    // `runLen` slots at the end of that rank's slice by shifting every higher-rank slice upward,
+    // then merge the run's new entries with the existing slice entries.  This is the per-rank form
+    // of the host add_connectivity block-shift, done without any allocation.
+    //
+    // The merge (rather than a plain append into the gap) is what preserves the sorted-by
+    // (ordinal, entity) invariant that the host BucketConnDynamic maintains via
+    // find_sorted_insertion_index.  Appending is only order-preserving when the destination slice
+    // is empty; declaring relations into a slice whose ordinals interleave the existing ones --
+    // e.g. re-declaring ordinals 0,2,4 alongside existing 1,3,5 -- would otherwise leave the
+    // device slice non-canonical until the next sync back to host healed it.  `adds` arrives
+    // sorted by (owner, connRank, ord, target), so each run is already in canonical order.
+    unsigned a = 0;
+    while (a < numAdds) {
+      const stk::mesh::EntityRank connRank = adds[a].connRank;
+      unsigned runEnd = a;
+      while (runEnd < numAdds && adds[runEnd].connRank == connRank) { ++runEnd; }
+      const uint16_t runLen = static_cast<uint16_t>(runEnd - a);
+
+      STK_NGP_ThrowAssert(m_offsets[stk::topology::NUM_RANKS] + runLen <= m_capacity);
+
+      const stk::mesh::EntityRank lastRank =
+          static_cast<stk::mesh::EntityRank>(stk::topology::NUM_RANKS-1);
+      for (stk::mesh::EntityRank rank = lastRank; rank > connRank; --rank) {
+        const uint16_t offset = m_offsets[rank];
+        const uint16_t num = m_offsets[rank+1] - offset;
+        // Copy backward (high index first) so an overlapping shift by runLen does not clobber
+        // not-yet-moved entries.
+        for (uint16_t i = num; i > 0; --i) {
+          const uint16_t src = offset + (i - 1);
+          m_conn[src + runLen] = m_conn[src];
+          m_ord[src + runLen] = m_ord[src];
+          if (hasPermutations) {
+            m_perm[src + runLen] = m_perm[src];
+          }
+        }
+        m_offsets[rank+1] += runLen;
+      }
+
+      const uint16_t sliceBegin = m_offsets[connRank];
+      const uint16_t existingEnd = m_offsets[connRank+1];
+      m_offsets[connRank+1] += runLen;
+
+      // Merge descending into the gap that now sits atop the slice.  Invariant: writeIdx ==
+      // existingIdx + numNewRemaining, so writeIdx > existingIdx while new entries remain and an
+      // unread existing entry is never overwritten.  Once the new entries run out the remaining
+      // existing prefix [sliceBegin, existingIdx) is already in place, so the loop stops early.
+      uint16_t writeIdx = existingEnd + runLen;
+      uint16_t existingIdx = existingEnd;
+      uint16_t numNewRemaining = runLen;
+
+      while (numNewRemaining > 0) {
+        const AdditionType& add = adds[a + numNewRemaining - 1];
+        bool takeExisting = false;
+        if (existingIdx > sliceBegin) {
+          const uint16_t e = existingIdx - 1;
+          takeExisting = (m_ord[e] > add.ord) ||
+                         (m_ord[e] == add.ord &&
+                          m_conn[e].local_offset() > add.target.local_offset());
+        }
+
+        --writeIdx;
+        if (takeExisting) {
+          const uint16_t e = existingIdx - 1;
+          m_conn[writeIdx] = m_conn[e];
+          m_ord[writeIdx] = m_ord[e];
+          if (hasPermutations) {
+            m_perm[writeIdx] = m_perm[e];
+          }
+          --existingIdx;
+        }
+        else {
+          m_conn[writeIdx] = add.target;
+          m_ord[writeIdx] = add.ord;
+          if (hasPermutations) {
+            m_perm[writeIdx] = add.perm;
+          }
+          --numNewRemaining;
+        }
+      }
+
+      a = runEnd;
+    }
+
+#ifndef NDEBUG
+    // Every touched slice must come out ascending in (ordinal, entity), matching the host.
+    for (unsigned r = 0; r < static_cast<unsigned>(stk::topology::NUM_RANKS); ++r) {
+      for (uint16_t i = m_offsets[r] + 1; i < m_offsets[r+1]; ++i) {
+        STK_NGP_ThrowAssert(m_ord[i-1] < m_ord[i] ||
+                            (m_ord[i-1] == m_ord[i] &&
+                             m_conn[i-1].local_offset() < m_conn[i].local_offset()));
+      }
+    }
+#endif
+  }
+
+  template<typename RemovalType>
+  KOKKOS_FUNCTION
+  void remove_connectivities(const RemovalType* removals, unsigned numRemovals)
+  {
+    if (numRemovals == 0) {
+      return;
+    }
+
+    const bool hasPermutations = (m_perm != nullptr);
+
+    uint16_t origOffsets[stk::topology::NUM_RANKS+1];
+    for(unsigned r=0; r<=static_cast<unsigned>(stk::topology::NUM_RANKS); ++r) {
+      origOffsets[r] = m_offsets[r];
+    }
+
+    uint16_t writeIdx = origOffsets[0];
+
+    for(unsigned r=0; r<static_cast<unsigned>(stk::topology::NUM_RANKS); ++r) {
+      const stk::mesh::EntityRank connRank = static_cast<stk::mesh::EntityRank>(r);
+
+      for(uint16_t i=origOffsets[r]; i<origOffsets[r+1]; ++i) {
+        bool removeEntry = false;
+        for(unsigned k=0; k<numRemovals; ++k) {
+          if (removals[k].connRank == connRank &&
+              removals[k].ord == m_ord[i] &&
+              removals[k].target == m_conn[i]) {
+            removeEntry = true;
+            break;
+          }
+        }
+
+        if (removeEntry) {
+          continue;
+        }
+
+        if (writeIdx != i) {
+          m_conn[writeIdx] = m_conn[i];
+          m_ord[writeIdx]  = m_ord[i];
+          if (hasPermutations) {
+            m_perm[writeIdx] = m_perm[i];
+          }
+        }
+        ++writeIdx;
+      }
+
+      m_offsets[r+1] = writeIdx;
+    }
+  }
+
+  template<typename PoolAllocator>
   void reset(PoolAllocator& poolAlloc, unsigned newCapacity, bool addPermutations)
   {
     if (newCapacity == 0) {
@@ -405,6 +577,12 @@ public:
     entConn.grow_capacity(m_pool, capacity, addPermutations);
   }
 
+  void reserve_for_additions(stk::mesh::Entity entity, unsigned numNew, bool needPermutations)
+  {
+    EntityConnectivity& entConn = m_entityConn(entity.local_offset());
+    entConn.reserve_for_additions(m_pool, numNew, needPermutations);
+  }
+
   void add_connectivity(stk::mesh::Entity entity,
                         stk::mesh::EntityRank rank,
                         unsigned numConnectivity,
@@ -415,6 +593,26 @@ public:
   {
     EntityConnectivity& entConn = m_entityConn(entity.local_offset());
     entConn.add_connectivity(m_pool, rank, numConnectivity, entities, ords, perms, addPermutations);
+  }
+
+  template<typename RemovalType>
+  KOKKOS_INLINE_FUNCTION
+  void remove_connectivities(stk::mesh::Entity entity,
+                             const RemovalType* removals,
+                             unsigned numRemovals) const
+  {
+    STK_NGP_ThrowAssert(entity.local_offset() < m_numEntities);
+    m_entityConn[entity.local_offset()].remove_connectivities(removals, numRemovals);
+  }
+
+  template<typename AdditionType>
+  KOKKOS_INLINE_FUNCTION
+  void insert_connectivities_no_grow(stk::mesh::Entity entity,
+                                     const AdditionType* adds,
+                                     unsigned numAdds) const
+  {
+    STK_NGP_ThrowAssert(entity.local_offset() < m_numEntities);
+    m_entityConn[entity.local_offset()].insert_connectivities_no_grow(adds, numAdds);
   }
 
   KOKKOS_INLINE_FUNCTION

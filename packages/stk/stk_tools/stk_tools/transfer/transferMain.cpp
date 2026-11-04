@@ -45,7 +45,7 @@ int main(int argc, const char** argv)
   stk::transfer_util::TransferMainHandler transfer(comm, argc, argv);
   if (transfer.exit_code() == stk::transfer_util::TransferMainStatus::SUCCESS) {
     Kokkos::ScopeGuard guard(argc, const_cast<char**>(argv));
-    
+
     transfer.run();
   }
 

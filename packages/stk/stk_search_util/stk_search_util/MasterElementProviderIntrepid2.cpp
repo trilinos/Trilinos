@@ -31,7 +31,8 @@ void MasterElementProviderIntrepid2::evaluate_field(const Topology& topo,
   check_consistent_topology(topo);
   stk::topology stkTopo = topo.get_topology();
   const unsigned numNodes = stkTopo.num_nodes();
-  unsigned numParCoords = num_parametric_coordinates(topo);
+  const unsigned numParCoordsOrig = num_parametric_coordinates(topo);
+  unsigned numParCoords = numParCoordsOrig;
   if (stkTopo.is_shell())
   {
     numParCoords -= 1;  // find_parametric_coords returns 3 parametric coords, the 3rd
@@ -47,15 +48,15 @@ void MasterElementProviderIntrepid2::evaluate_field(const Topology& topo,
     m_paramCoords = PointViewType("int_point", numEvalPoints, numParCoords);
   }
 
-  STK_ThrowRequireMsg(paramCoords.size() >= numParCoords*numEvalPoints,
-                      "Insufficient length for parametric coordinates: " << paramCoords.size() << " Expected: " << numParCoords*numEvalPoints);
+  STK_ThrowRequireMsg(paramCoords.size() >= numParCoordsOrig*numEvalPoints,
+                      "Insufficient length for parametric coordinates: " << paramCoords.size() << " Expected: " << numParCoordsOrig*numEvalPoints);
   STK_ThrowRequireMsg(fieldData.size() >= numNodes*numFieldComponents,
                         "Insufficient length for fieldData: " << fieldData.size() << " Expected: " << numNodes*numFieldComponents);
 
   for (unsigned p=0; p < numEvalPoints; ++p){
-    for (unsigned d=0; d < stkTopo.dimension(); ++d)
+    for (unsigned d=0; d < numParCoords; ++d)
     {
-      m_paramCoords(p, d) = paramCoords[p*numParCoords + d];
+      m_paramCoords(p, d) = paramCoords[p*numParCoordsOrig + d];
     }
   }
 
