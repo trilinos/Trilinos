@@ -105,6 +105,18 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
       NUM_MPI_PROCS 4
     )
 
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
+      UnitTests
+      NAME "StructuredRAPKernel" DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../unit_tests"
+      POSTFIX_AND_ARGS_0 "Constant_Laplace1D" --linAlgebra=Tpetra --group=StructuredKernel* --test=ConstantLaplace1DMatchesXpetra
+      POSTFIX_AND_ARGS_1 "Constant_Laplace2D" --linAlgebra=Tpetra --group=StructuredKernel* --test=ConstantLaplace2DMatchesXpetra
+      POSTFIX_AND_ARGS_2 "Constant_Laplace3D" --linAlgebra=Tpetra --group=StructuredKernel* --test=ConstantLaplace3DMatchesXpetra
+      POSTFIX_AND_ARGS_3 "Constant_Elasticity2D" --linAlgebra=Tpetra --group=StructuredKernel* --test=ConstantElasticity2DMatchesXpetra
+      POSTFIX_AND_ARGS_4 "Constant_Elasticity3D" --linAlgebra=Tpetra --group=StructuredKernel* --test=ConstantElasticity3DMatchesXpetra
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 4
+    )
+
     TRIBITS_COPY_FILES_TO_BINARY_DIR(
       StructuredRAPFactory_cp
       SOURCE_FILES
