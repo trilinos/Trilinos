@@ -1222,7 +1222,7 @@ namespace BaskerNS
       {
         if(M.row_idx(k) != i)
         {
-          BASKER_ASSERT(sptr < M.nnz);
+          BASKER_ASSERT(sptr < M.nnz, "scotch M.nnz");
           sg.Ai[sptr++] = M.row_idx(k);
           sj++;
         }
