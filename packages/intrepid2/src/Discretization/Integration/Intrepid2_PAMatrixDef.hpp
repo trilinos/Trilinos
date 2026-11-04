@@ -63,21 +63,14 @@ namespace Impl
         && Kokkos::SpaceAccessibility<ExecutionSpace, Kokkos::HostSpace>::accessible;
   }
 
-  //! True if PAMatrix<DeviceType,...> issues its GEMMs through Teuchos::BLAS: host devices without KokkosKernels, and
-  //! serial host devices with it.  (With KokkosKernels, threaded host execution spaces such as OpenMP use
-  //! KokkosBlas::gemm, which calls the TPL BLAS where one is enabled.)
+  //! True if PAMatrix<DeviceType,...> issues its GEMMs through Teuchos::BLAS: all host devices, serial or threaded (e.g.,
+  //! OpenMP), with or without KokkosKernels.  The host BLAS is the fastest host GEMM available, and calling it directly
+  //! does not depend on KokkosBlas::gemm's view-layout conditions for using it (a LayoutStride A falls back to the
+  //! native KokkosKernels implementation, which is several times slower).
   template<typename DeviceType>
   constexpr bool gemmUsesTeuchosBLAS()
   {
-#ifdef HAVE_INTREPID2_KOKKOSKERNELS
-  #ifdef KOKKOS_ENABLE_SERIAL
-    return isHostDevice<DeviceType>() && std::is_same<typename DeviceType::execution_space, Kokkos::Serial>::value;
-  #else
-    return false;
-  #endif
-#else
     return isHostDevice<DeviceType>();
-#endif
   }
 
   //! True if PAMatrix<DeviceType,...> supports GEMMs, i.e., its operations can be used in this build.  Non-host devices
@@ -94,8 +87,8 @@ namespace Impl
 
   /** \brief Column-major GEMM, C = alpha * op(A) * op(B) + beta * C, with op(A) of size M x K and op(B) of size K x N, on
              data accessible from DeviceType.  LDA is the leading dimension of A; B and C are packed (LDB = K or N, LDC = M).
-             The backend is chosen from DeviceType: Teuchos::BLAS for host devices (without KokkosKernels, or serial with
-             it), and KokkosBlas::gemm on DeviceType's execution space otherwise.  Returns once the result is available to
+             The backend is chosen from DeviceType: Teuchos::BLAS for host devices, and KokkosBlas::gemm on DeviceType's
+             execution space otherwise (e.g., CUDA, HIP).  Returns once the result is available to
              subsequent kernels on DeviceType's execution space, and to the host if DeviceType is a host device.
   */
   template<typename DeviceType,typename Scalar>
@@ -143,8 +136,8 @@ namespace Impl
       const char tB[] = {transB, '\0'};
       if (LDA == rowsA)
       {
-        // KokkosBlas::gemm dispatches to the TPL BLAS (e.g., cuBLAS, or the host BLAS) only when A, B, and C are all
-        // LayoutLeft (or all LayoutRight); with a LayoutStride A it uses its native implementation, which is much slower.
+        // KokkosBlas::gemm dispatches to the TPL BLAS (e.g., cuBLAS) only when A, B, and C are all LayoutLeft (or all
+        // LayoutRight); with a LayoutStride A it uses its native implementation, which is much slower.
         ConstView2D AView(A, rowsA, colsA);
         KokkosBlas::gemm(ExecutionSpace(), tA, tB, alpha, AView, BView, beta, CView);
       }
