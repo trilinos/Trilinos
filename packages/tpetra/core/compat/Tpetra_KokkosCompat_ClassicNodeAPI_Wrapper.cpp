@@ -76,5 +76,19 @@ std::string KokkosDeviceWrapperNode<Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace>::n
 #endif
 #endif  // KOKKOS_ENABLE_SYCL
 
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+template <>
+std::string KokkosDeviceWrapperNode<Kokkos::Experimental::NextSilicon, Kokkos::Experimental::NextSiliconSharedSpace>::name() {
+  return std::string("NextSilicon/Wrapper");
+}
+#else
+template <>
+std::string KokkosDeviceWrapperNode<Kokkos::Experimental::NextSilicon, Kokkos::Experimental::NextSiliconSpace>::name() {
+  return std::string("NextSilicon/Wrapper");
+}
+#endif
+#endif  // KOKKOS_ENABLE_NEXTSILICON
+
 }  // namespace KokkosCompat
 }  // namespace Tpetra

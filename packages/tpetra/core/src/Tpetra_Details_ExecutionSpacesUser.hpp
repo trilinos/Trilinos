@@ -122,6 +122,20 @@ class User {
   }
 #endif  // KOKKOS_ENABLE_SYCL
 
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+  template <typename ExecSpace,
+            Spaces::Priority priority        = Spaces::Priority::medium,
+            Spaces::IsNextSilicon<ExecSpace> = true>
+  Teuchos::RCP<const ExecSpace> space_instance() const {
+    return NextSiliconSlot.space_instance<priority>();
+  }
+  template <typename ExecSpace, Spaces::IsNextSilicon<ExecSpace> = true>
+  Teuchos::RCP<const ExecSpace>
+  space_instance(const Spaces::Priority &priority) const {
+    return NextSiliconSlot.space_instance(priority);
+  }
+#endif  // KOKKOS_ENABLE_NEXTSILICON
+
 #ifdef KOKKOS_ENABLE_SERIAL
   Slot<Kokkos::Serial> serialSlot;
 #endif
@@ -136,6 +150,9 @@ class User {
 #endif
 #ifdef KOKKOS_ENABLE_SYCL
   Slot<Kokkos::SYCL> SYCLSlot;
+#endif
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+  Slot<Kokkos::Experimental::NextSilicon> NextSiliconSlot;
 #endif
 
 };  // User

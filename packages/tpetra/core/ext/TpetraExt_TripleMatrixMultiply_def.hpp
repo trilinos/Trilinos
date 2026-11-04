@@ -41,6 +41,7 @@
 #include "TpetraExt_MatrixMatrix_Cuda.hpp"
 #include "TpetraExt_MatrixMatrix_HIP.hpp"
 #include "TpetraExt_MatrixMatrix_SYCL.hpp"
+#include "TpetraExt_MatrixMatrix_NextSilicon.hpp"
 
 namespace Tpetra {
 

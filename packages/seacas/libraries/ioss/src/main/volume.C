@@ -5,6 +5,7 @@
 // See packages/seacas/LICENSE for details
 
 #include <cstddef> // for size_t, nullptr
+#include <cstdlib> // for malloc, free (used by fmt/format.h)
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <stdint.h>

@@ -106,6 +106,8 @@ std::string get_label(int i) {
     device_label = "Threats";
   else if (i_type == DeviceType::SYCL)
     device_label = "SYCL";
+  else if (i_type == DeviceType::NextSilicon)
+    device_label = "NextSilicon";
   else if (i_type == DeviceType::OpenACC)
     device_label = "OpenACC";
   else if (i_type == DeviceType::Unknown)
