@@ -42,7 +42,7 @@ static_assert(false, "Do not include simd impl files directly. Only include stk_
 #ifndef STK_SIMD_AVX512SPECIALIZATIONS_HPP
 #define STK_SIMD_AVX512SPECIALIZATIONS_HPP
 
-#if defined(__AVX512F__) && !defined(USE_STK_SIMD_NONE)
+#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(__HIPCC__) && !defined(USE_STK_SIMD_NONE)
 #define STK_USE_AVX512_SPECIALIZATION
 #endif
 
