@@ -477,22 +477,6 @@ namespace Intrepid2 {
   } //Impl namespace
 
   
-  //! \brief Creates and returns a view that matches the provided view in Kokkos Layout. DEPRECATED, use Impl::createMatchingDynRankView instead
-  //! \param [in] view  - the view to match
-  //! \param [in] label - a string label for the view to be created
-  //! \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
-  //!
-  //! This method is particularly useful because we use LayoutStride as the Kokkos Layout in a number of places, and LayoutStride
-  //! views cannot be instantiated without also providing stride information.
-  //!
-  template<class ViewType, class ... DimArgs>
-  inline
-  Kokkos::DynRankView<typename ViewType::value_type, typename DeduceLayout< ViewType >::result_layout, typename ViewType::device_type >
-  getMatchingViewWithLabel(const ViewType &view, const std::string &label, DimArgs... dims)
-  {
-    return Impl::createMatchingDynRankView(view, label, dims...);
-  }
-
   using std::enable_if_t;
 
   /**
