@@ -1222,7 +1222,7 @@ namespace BaskerNS
       {
         if(M.row_idx(k) != i)
         {
-          BASKER_ASSERT(sptr < M.nnz);
+          BASKER_ASSERT(sptr < M.nnz, "scotch M.nnz");
           sg.Ai[sptr++] = M.row_idx(k);
           sj++;
         }
@@ -1251,12 +1251,12 @@ namespace BaskerNS
       sg.permtab[i] = 0;
       sg.peritab[i] = 0;
     }
-    for(Int i =0; i < num_doms; i++)
+    for(Int i =0; i < num_domains; i++)
     {
       sg.rangtab[i] = 0;
       sg.treetab[i] = 0;
     }
-    sg.rangtab[num_doms] = 0;
+    sg.rangtab[num_domains] = 0;
 
     SCOTCH_Strat strdat;
     SCOTCH_Graph cgrafptr;
@@ -1280,12 +1280,12 @@ namespace BaskerNS
     Int flagval = SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE;
     double balrat = 0.2;
     SCOTCH_stratInit(&strdat);
-    err = SCOTCH_stratGraphOrderBuild(&strdat, flagval, num_levels, balrat);
+    err = SCOTCH_stratGraphOrderBuild(&strdat, flagval, num_domains, balrat);
 
     /*
     err = SCOTCH_stratGraphOrderBuild(&strdat, 
                                       SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN,
-                                      num_levels, 0.2);
+                                      num_domains, 0.2);
     */
 
     if(err != 0)
