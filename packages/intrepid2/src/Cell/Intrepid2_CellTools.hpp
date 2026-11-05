@@ -1449,50 +1449,6 @@ public:
                          const BasisPtr<DeviceType, refPointValueType, refPointValueType>         basis,
                          const physPointValueType                                                 shellThickness = -1.0 );
 
-    /** \brief  [Deprecated] Computation of \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
-        using user-supplied initial guess.
-
-        Applies \f$ F^{-1}_{c} \f$ for \b all cells in a cell workset to \b multiple point sets
-        having the same number of points, indexed by cell ordinal, and stored in a rank-3
-        (C,P,D) array. Returns a rank-3 (C,P,D) array such that
-        \f[
-        \mbox{refPoints}(c,p,d) = \Big(F^{-1}_c(physPoint(c,p,*)) \Big)_d
-        \f]
-
-        Requires pointer to HGrad basis that defines reference to physical cell mapping.
-        See Section \ref sec_cell_topology_ref_map for definition of the mapping function.
-
-        \warning
-        The array \c physPoints represents an arbitrary set (or sets) of points in the physical
-        frame that are not required to belong in the physical cell (cells) that define(s) the reference
-        to physical mapping. As a result, the images of these points in the reference frame
-        are not necessarily contained in the reference cell corresponding to the specified
-        cell topology.
-
-        \param  refPoints         [out] - rank-3 array with dimensions (C,P,D) with the images of the physical points
-        \param  initGuess         [in]  - rank-3 array with dimensions (C,P,D) with the initial guesses for each point
-        \param  physPoints        [in]  - rank-3 array with dimensions (C,P,D) with points in physical frame
-        \param  worksetCell       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
-        \param  basis             [in]  - pointer to HGrad basis used for reference to physical cell mapping
-    */
-    template<typename refPointValueType,    class ...refPointProperties,
-             typename initGuessValueType,   class ...initGuessProperties,
-             typename physPointValueType,   class ...physPointProperties,
-             typename worksetCellValueType, class ...worksetCellProperties,
-             typename HGradBasisPtrType>
-    [[deprecated("Deprecated, use mapToReferenceFrame instead with refPoints initialized with initGuess.")]]
-    static bool
-    mapToReferenceFrameInitGuess(       Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
-                                  const Kokkos::DynRankView<initGuessValueType,initGuessProperties...>     initGuess,
-                                  const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
-                                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
-                                  const HGradBasisPtrType basis,
-                                  const physPointValueType shellThickness = -1.0 ){
-                                    Kokkos::deep_copy(refPoints,initGuess);
-                                    return mapToReferenceFrame(refPoints,physPoints,worksetCell,basis,shellThickness);
-                                  }
-
-
     /** \brief  Computation of \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
         using user-supplied initial guess.
 
@@ -1627,44 +1583,6 @@ public:
     //                                        Inclusion tests                                     //
     //                                                                                            //
     //============================================================================================//
-
-
-    /** \brief  Compute the parametric distance of the point in the specified reference cell.
-        The parametric distance is a continuous piecewise linear function that it is
-        (a) 0 at the centroid of the reference cell,
-        (b) less than 1 for points inside the cell
-        (c) 1 on the cell boundary
-        (d) greater than 1 for points outside the cell
-
-        Requires cell topology with a reference cell.
-
-        \param  refPoint          [in]  - rank-1 view (D) of the reference point tested for inclusion
-        \param  cellTopo          [in]  - cell topology
-        \return the parametric distance of the point in the specified reference cell.
-    */
-    template<typename PointViewType>
-    [[deprecated("Deprecated, use the templated ParametricDistance struct directly.")]]
-    static typename ScalarTraits<typename PointViewType::value_type>::scalar_type
-    parametricDistance( const PointViewType         refPoint,
-                        const shards::CellTopology  cellTopo);
-
-    /** \brief  Checks if a point belongs to a reference cell.
-
-        Requires cell topology with a reference cell.
-
-        \param  refPoint          [in]  - rank-1 view (D) of the reference point tested for inclusion
-        \param  cellTopo          [in]  - cell topology
-        \param  threshold         [in]  - "tightness" of the inclusion test
-        \return true if the point is in the closure of the specified reference cell and false otherwise.
-    */
-    template<typename PointViewType>
-    [[deprecated("Deprecated, use checkPointwiseInclusion, or the templated ParametricDistance struct directly.")]]
-    static bool
-    checkPointInclusion( const PointViewType        refPoint,
-                         const shards::CellTopology cellTopo,
-                         const typename ScalarTraits<typename PointViewType::value_type>::scalar_type thres =
-                               threshold<typename ScalarTraits<typename PointViewType::value_type>::scalar_type>() );
-
 
 
     /** \brief  Checks every point for inclusion in the reference cell of a given topology.

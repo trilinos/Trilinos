@@ -340,24 +340,7 @@ template<unsigned CellTopologyKey>
 struct ParametricDistance;
 
 
-/** \class  Intrepid2::PointInclusion
-    \brief  This [deprecated] class implements a <var>check</var> function that determines whether a given point is 
-            inside or outside the reference cell for a specific topology.
-            The class has a template argument for the key of the shards topology
- */
-
-template<unsigned CellTopologyKey>
-struct [[deprecated("Deprecated, use ParametricDistance.")]] PointInclusion {
-  
-  template<typename PointViewType, typename ScalarType>
-  KOKKOS_INLINE_FUNCTION
-  static bool
-  check(const PointViewType &point, const ScalarType threshold){
-    return ParametricDistance<CellTopologyKey>::distance(point) <= 1.0 + threshold;
-  } 
-};
-
-/** 
+/**
  \brief Line topology
 */
 template<>
