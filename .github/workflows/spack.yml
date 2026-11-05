@@ -28,7 +28,7 @@ jobs:
         shell: bash -l {0}
         run: |
           cd /home/runner/spack
-          git checkout develop && git pull --quiet
+          git checkout . && git checkout develop && git pull --quiet
           echo -n "Spack version is: "
           git rev-parse HEAD
           spack repo update builtin --branch develop
