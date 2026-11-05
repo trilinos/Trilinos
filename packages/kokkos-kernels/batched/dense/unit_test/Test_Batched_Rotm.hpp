@@ -33,7 +33,7 @@ struct Functor_BatchedSerialRotm {
   inline int run() {
     using value_type = typename XViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialRotm");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
@@ -72,7 +72,7 @@ struct Functor_BatchedTeamRotm {
     std::string name_region           = std::is_same_v<ArgMode, KokkosBatched::Mode::Team>
                                             ? "KokkosBatched::Test::TeamRotm"
                                             : "KokkosBatched::Test::TeamVectorRotm";
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = m_x.extent_int(0);

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #if !defined(TEST_HIP_SPARSE_CPP) && !defined(TEST_SYCL_SPARSE_CPP) && \
-    !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP) &&                   \
     (!defined(TEST_CUDA_SPARSE_CPP) || (defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOS_ENABLE_CUDA_UVM)))
 
 #include <gtest/gtest.h>
@@ -23,18 +22,19 @@ namespace Test {
 
 template <typename Crs, typename LUType, typename size_type,
           typename std::enable_if<is_crs_matrix<LUType>::value>::type* = nullptr>
-LUType get_LU(char l_or_u, int n, size_type& nnz, int row_size_variance, int bandwidth, int) {
-  auto LU =
-      KokkosSparse::Impl::kk_generate_triangular_sparse_matrix<Crs>(l_or_u, n, n, nnz, row_size_variance, bandwidth);
+LUType get_LU(char l_or_u, int n, size_type& nnz, int row_size_variance, int bandwidth, int, bool unit_diag) {
+  auto LU = KokkosSparse::Impl::kk_generate_triangular_sparse_matrix<Crs>(l_or_u, unit_diag, n, n, nnz,
+                                                                          row_size_variance, bandwidth);
 
   return LU;
 }
 
 template <typename Crs, typename LUType, typename size_type,
           typename std::enable_if<is_bsr_matrix<LUType>::value>::type* = nullptr>
-LUType get_LU(char l_or_u, int n, size_type& nnz, int row_size_variance, int bandwidth, int block_size) {
-  auto LU_unblocked =
-      KokkosSparse::Impl::kk_generate_triangular_sparse_matrix<Crs>(l_or_u, n, n, nnz, row_size_variance, bandwidth);
+LUType get_LU(char l_or_u, int n, size_type& nnz, int row_size_variance, int bandwidth, int block_size,
+              bool unit_diag) {
+  auto LU_unblocked = KokkosSparse::Impl::kk_generate_triangular_sparse_matrix<Crs>(l_or_u, unit_diag, n, n, nnz,
+                                                                                    row_size_variance, bandwidth);
 
   // Convert to BSR
   LUType LU(LU_unblocked, block_size);
@@ -54,7 +54,7 @@ struct TrsvTest {
   // The below functionolity exists in SparseUtils.
   template <bool UseBlocks, typename sp_matrix_type>
   static void check_trsv_mv(sp_matrix_type input_mat, View2D x, View2D b, View2D expected_x, int numMV,
-                            const char uplo[], const char trans[]) {
+                            const char uplo[], const char trans[], const char diag[]) {
     double eps =
         (std::is_same<scalar_t, float>::value ? 2 * 1e-2
          : (std::is_same<scalar_t, std::complex<float>>::value || std::is_same<scalar_t, Kokkos::complex<float>>::value)
@@ -62,7 +62,7 @@ struct TrsvTest {
              : 1e-7);
 
     Kokkos::fence();
-    KokkosSparse::trsv(uplo, trans, "N", input_mat, b, x);
+    KokkosSparse::trsv(uplo, trans, diag, input_mat, b, x);
 
     for (int i = 0; i < numMV; ++i) {
       auto x_i = Kokkos::subview(x, Kokkos::ALL(), i);
@@ -92,30 +92,58 @@ struct TrsvTest {
     scalar_t beta  = 0;
 
     // this function creates a dense lower and upper triangular matrix.
+    // Non-unit diagonal: test with diag="N"
     auto lower_part =
-        get_LU<Crs, sp_matrix_type, size_type>('L', numRows, nnz, row_size_variance, bandwidth, block_size);
+        get_LU<Crs, sp_matrix_type, size_type>('L', numRows, nnz, row_size_variance, bandwidth, block_size, false);
 
-    Test::shuffleMatrixEntries(lower_part.graph.row_map, lower_part.graph.entries, lower_part.values, block_size);
+    TestUtils::shuffleMatrixEntries(lower_part.graph.row_map, lower_part.graph.entries, lower_part.values, block_size);
 
     KokkosSparse::spmv("N", alpha, lower_part, b_x_copy, beta, b_y);
-    check_trsv_mv<UseBlocks>(lower_part, b_x, b_y, b_x_copy, numMV, "L", "N");
+    check_trsv_mv<UseBlocks>(lower_part, b_x, b_y, b_x_copy, numMV, "L", "N", "N");
 
     if (!UseBlocks) {
       KokkosSparse::spmv("T", alpha, lower_part, b_x_copy, beta, b_y);
-      check_trsv_mv<UseBlocks>(lower_part, b_x, b_y, b_x_copy, numMV, "L", "T");
+      check_trsv_mv<UseBlocks>(lower_part, b_x, b_y, b_x_copy, numMV, "L", "T", "N");
     }
 
     auto upper_part =
-        get_LU<Crs, sp_matrix_type, size_type>('U', numRows, nnz, row_size_variance, bandwidth, block_size);
+        get_LU<Crs, sp_matrix_type, size_type>('U', numRows, nnz, row_size_variance, bandwidth, block_size, false);
 
-    Test::shuffleMatrixEntries(upper_part.graph.row_map, upper_part.graph.entries, upper_part.values, block_size);
+    TestUtils::shuffleMatrixEntries(upper_part.graph.row_map, upper_part.graph.entries, upper_part.values, block_size);
 
     KokkosSparse::spmv("N", alpha, upper_part, b_x_copy, beta, b_y);
-    check_trsv_mv<UseBlocks>(upper_part, b_x, b_y, b_x_copy, numMV, "U", "N");
+    check_trsv_mv<UseBlocks>(upper_part, b_x, b_y, b_x_copy, numMV, "U", "N", "N");
 
     if (!UseBlocks) {
       KokkosSparse::spmv("T", alpha, upper_part, b_x_copy, beta, b_y);
-      check_trsv_mv<UseBlocks>(upper_part, b_x, b_y, b_x_copy, numMV, "U", "T");
+      check_trsv_mv<UseBlocks>(upper_part, b_x, b_y, b_x_copy, numMV, "U", "T", "N");
+    }
+
+    // Unit diagonal: test with diag="U"
+    if (!UseBlocks) {
+      auto lower_part_unit =
+          get_LU<Crs, sp_matrix_type, size_type>('L', numRows, nnz, row_size_variance, bandwidth, block_size, true);
+
+      TestUtils::shuffleMatrixEntries(lower_part_unit.graph.row_map, lower_part_unit.graph.entries,
+                                      lower_part_unit.values, block_size);
+
+      KokkosSparse::spmv("N", alpha, lower_part_unit, b_x_copy, beta, b_y);
+      check_trsv_mv<UseBlocks>(lower_part_unit, b_x, b_y, b_x_copy, numMV, "L", "N", "U");
+
+      KokkosSparse::spmv("T", alpha, lower_part_unit, b_x_copy, beta, b_y);
+      check_trsv_mv<UseBlocks>(lower_part_unit, b_x, b_y, b_x_copy, numMV, "L", "T", "U");
+
+      auto upper_part_unit =
+          get_LU<Crs, sp_matrix_type, size_type>('U', numRows, nnz, row_size_variance, bandwidth, block_size, true);
+
+      TestUtils::shuffleMatrixEntries(upper_part_unit.graph.row_map, upper_part_unit.graph.entries,
+                                      upper_part_unit.values, block_size);
+
+      KokkosSparse::spmv("N", alpha, upper_part_unit, b_x_copy, beta, b_y);
+      check_trsv_mv<UseBlocks>(upper_part_unit, b_x, b_y, b_x_copy, numMV, "U", "N", "U");
+
+      KokkosSparse::spmv("T", alpha, upper_part_unit, b_x_copy, beta, b_y);
+      check_trsv_mv<UseBlocks>(upper_part_unit, b_x, b_y, b_x_copy, numMV, "U", "T", "U");
     }
   }
 };

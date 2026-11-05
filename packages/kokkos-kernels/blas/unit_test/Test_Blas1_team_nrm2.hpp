@@ -20,7 +20,7 @@ void impl_test_team_nrm2(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
-  view_stride_adapter<ViewTypeA> a("A", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> a("A", N, K);
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 

@@ -37,13 +37,7 @@ if(KOKKOS_ENABLE_SYCL)
     COMPONENTS blas)
 endif()
 
-if(KOKKOS_ENABLE_OPENMPTARGET)
-  # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   blas_openmptarget
-  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Blas.cpp
-  #   COMPONENTS blas
-  # )
-endif()
+
 
 #####################
 #                   #

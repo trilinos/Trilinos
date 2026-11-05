@@ -71,7 +71,7 @@ struct Functor_TestBatchedTeamVectorSpmv {
   inline void run() {
     typedef typename ValuesViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamVectorSpmv");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::TeamPolicy<execution_space, ParamTagType> policy(ceil(static_cast<double>(_D.extent(0)) / _N_team),

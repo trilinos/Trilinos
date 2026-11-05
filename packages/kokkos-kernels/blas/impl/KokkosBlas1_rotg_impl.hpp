@@ -36,7 +36,7 @@ KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* KOKKOS_RESTRICT a, Scalar* KOKKOS_
   if (anorm == zero) {
     *c = zero;
     *s = one;
-    *a = bnorm;
+    *a = *b;
     *b = one;
     return;
   }

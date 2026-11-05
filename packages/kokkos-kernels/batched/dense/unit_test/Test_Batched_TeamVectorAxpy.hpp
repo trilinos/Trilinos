@@ -54,7 +54,7 @@ struct Functor_TestBatchedTeamVectorAxpy {
   inline void run() {
     using value_type = typename ViewType::value_type;
     std::string name_region("KokkosBatched::Test::TeamVectorAxpy");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     Kokkos::TeamPolicy<execution_space> policy(m_X.extent(0) / m_N_team, Kokkos::AUTO(), Kokkos::AUTO());
