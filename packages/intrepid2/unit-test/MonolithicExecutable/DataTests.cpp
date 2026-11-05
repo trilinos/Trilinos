@@ -895,6 +895,74 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     testFloatingEquality1(expectedResultView, actualResultData.getUnderlyingView1(), relTol, absTol, out, success);
   }
   
+  // tests DataTools::transposeMatrix() on (C,P,D,D) data: a general (nonsymmetric) matrix in each entry, and a cell-varying matrix constant across points
+  TEUCHOS_UNIT_TEST( Data, TransposeMatrix_CPDD )
+  {
+    using Scalar = double;
+    using DeviceType = DefaultTestDeviceType;
+
+    const double relTol = 1e-13;
+    const double absTol = 1e-13;
+
+    const int numCells  = 2;
+    const int numPoints = 3;
+    const int spaceDim  = 3;
+
+    // general case: full (C,P,D,D) data
+    {
+      auto matView         = getView<Scalar,DeviceType>("mat", numCells, numPoints, spaceDim, spaceDim);
+      auto transposeView   = getView<Scalar,DeviceType>("mat^T", numCells, numPoints, spaceDim, spaceDim);
+      auto matViewHost       = Kokkos::create_mirror(matView);
+      auto transposeViewHost = Kokkos::create_mirror(transposeView);
+      for (int c=0; c<numCells; c++)
+        for (int p=0; p<numPoints; p++)
+          for (int i=0; i<spaceDim; i++)
+            for (int j=0; j<spaceDim; j++)
+            {
+              const Scalar value = 1000.0 * c + 100.0 * p + 10.0 * i + j;
+              matViewHost(c,p,i,j)       = value;
+              transposeViewHost(c,p,j,i) = value;
+            }
+      Kokkos::deep_copy(matView,       matViewHost);
+      Kokkos::deep_copy(transposeView, transposeViewHost);
+
+      Data<Scalar,DeviceType> matData(matView);
+      Data<Scalar,DeviceType> expected(transposeView);
+
+      auto actual = DataTools::transposeMatrix(matData);
+      TEST_EQUALITY(actual.rank(), 4);
+      testFloatingEquality4(actual, expected, relTol, absTol, out, success);
+    }
+
+    // cell-varying, constant across points: (C,D,D) underlying data, logically (C,P,D,D)
+    {
+      auto matView         = getView<Scalar,DeviceType>("mat", numCells, spaceDim, spaceDim);
+      auto transposeView   = getView<Scalar,DeviceType>("mat^T", numCells, spaceDim, spaceDim);
+      auto matViewHost       = Kokkos::create_mirror(matView);
+      auto transposeViewHost = Kokkos::create_mirror(transposeView);
+      for (int c=0; c<numCells; c++)
+        for (int i=0; i<spaceDim; i++)
+          for (int j=0; j<spaceDim; j++)
+          {
+            const Scalar value = 100.0 * c + 10.0 * i + j;
+            matViewHost(c,i,j)       = value;
+            transposeViewHost(c,j,i) = value;
+          }
+      Kokkos::deep_copy(matView,       matViewHost);
+      Kokkos::deep_copy(transposeView, transposeViewHost);
+
+      Kokkos::Array<int,4> extents {numCells, numPoints, spaceDim, spaceDim};
+      Kokkos::Array<DataVariationType,4> variationTypes {GENERAL, CONSTANT, GENERAL, GENERAL};
+      Data<Scalar,DeviceType> matData(matView, extents, variationTypes);
+      Data<Scalar,DeviceType> expected(transposeView, extents, variationTypes);
+
+      auto actual = DataTools::transposeMatrix(matData);
+      TEST_EQUALITY(actual.rank(), 4);
+      TEST_EQUALITY(actual.getVariationTypes()[1], CONSTANT); // transpose should preserve the lack of pointwise variation
+      testFloatingEquality4(actual, expected, relTol, absTol, out, success);
+    }
+  }
+
   // test statically that Data supports all 7 rank operators
   static_assert(supports_rank<Data<double,DefaultTestDeviceType>,1>::value, "Data is expected to support up to rank 7");
   static_assert(supports_rank<Data<double,DefaultTestDeviceType>,2>::value, "Data is expected to support up to rank 7");
