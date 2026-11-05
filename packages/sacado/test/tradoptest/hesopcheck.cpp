@@ -192,6 +192,7 @@ main(int argc, char **argv)
 				verbose = 1;
 				break;
 				}
+			[[fallthrough]];
 		 default:
 			return usage(1);
 		 }
