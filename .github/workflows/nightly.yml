@@ -43,7 +43,7 @@ jobs:
       dashboard-build-name: ${AT2_IMAGE}_debug_shared_address-sanitizer${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 29
       num-concurrent-tests: 16
-      extra-pr-driver-args: --extra-configure-args=-D;CTEST_TEST_TIMEOUT=1200
+      extra-configure-args: -D;CTEST_TEST_TIMEOUT=1200
 
   coverage-check:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
@@ -57,7 +57,7 @@ jobs:
       dashboard-build-name: ${AT2_IMAGE}_debug_shared_coverage${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 29
       num-concurrent-tests: 16
-      extra-pr-driver-args: --extra-configure-args=-D;CTEST_TEST_TIMEOUT=1200
+      extra-configure-args: -D;CTEST_TEST_TIMEOUT=1200
 
   cxx23:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
@@ -71,7 +71,7 @@ jobs:
       dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_cxx23${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 29
       num-concurrent-tests: 16
-      extra-pr-driver-args: --extra-configure-args=-D;CMAKE_CXX_STANDARD=23
+      extra-configure-args: -D;CMAKE_CXX_STANDARD=23
 
   deprecated_off:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
@@ -98,4 +98,4 @@ jobs:
       dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_experimental${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 29
       num-concurrent-tests: 16
-      extra-pr-driver-args: --extra-configure-args=-DTpetra_ENABLE_Experimental=ON;-DAmesos2_ENABLE_Experimental=ON;-DBelos_ENABLE_Experimental=ON;-DIfpack2_ENABLE_Experimental=ON;-DXpetra_ENABLE_Experimental=ON;-DMueLu_ENABLE_Experimental=ON;-DStokhos_ENABLE_Experimental=ON;-DZoltan2Core_ENABLE_Experimental=ON
+      extra-configure-args: -DTpetra_ENABLE_Experimental=ON;-DAmesos2_ENABLE_Experimental=ON;-DBelos_ENABLE_Experimental=ON;-DIfpack2_ENABLE_Experimental=ON;-DXpetra_ENABLE_Experimental=ON;-DMueLu_ENABLE_Experimental=ON;-DStokhos_ENABLE_Experimental=ON;-DZoltan2Core_ENABLE_Experimental=ON

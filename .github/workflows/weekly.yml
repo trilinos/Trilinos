@@ -24,4 +24,4 @@ jobs:
       max-cores-allowed: 29
       num-concurrent-tests: 16
       skip-run-tests: true
-      extra-pr-driver-args: --extra-configure-args=-D;Trilinos_WARNINGS_MODE=ERROR
+      extra-configure-args: -D;Trilinos_WARNINGS_MODE=ERROR

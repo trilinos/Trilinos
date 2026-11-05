@@ -57,6 +57,14 @@ on:
         description: 'Extra arguments to be used when calling PullRequestLinuxDriverTest.py'
         required: false
         type: string
+      extra-configure-args:
+        description: 'Extra CMake arguments'
+        required: false
+        type: string  
+      kokkos-version:
+        required: false
+        type: string
+        default: internal
 
 jobs:
   build-test:
@@ -67,6 +75,22 @@ jobs:
         with:
           fetch-depth: 1
           ref: ${{ github.event.pull_request && github.ref || inputs.target-branch }}
+      - name: Clone Kokkos
+        if: ${{ inputs.kokkos-version != 'internal' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: kokkos/kokkos
+          path: external/kokkos
+          fetch-depth: 1
+          ref: ${{ inputs.kokkos-version }}
+      - name: Clone Kokkos-Kernels
+        if: ${{ inputs.kokkos-version != 'internal' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: kokkos/kokkos-kernels
+          path: external/kokkos-kernels
+          fetch-depth: 1
+          ref: ${{ inputs.kokkos-version }}
       - name: Print debug outputs
         shell: bash -l {0}
         env:
@@ -163,6 +187,34 @@ jobs:
             extra_pr_driver_args=""
           fi
 
+          if [ -n "${{ inputs.extra-configure-args }}" ]
+          then
+            if [ "${{ inputs.kokkos-version }}" == "internal" ]
+            then
+              extra_configure_args="--extra-configure-args=${{ inputs.extra-configure-args }}"
+            else
+              extra_configure_args="--extra-configure-args=-D;Kokkos_SOURCE_DIR_OVERRIDE=external/kokkos;-D;KokkosKernels_SOURCE_DIR_OVERRIDE=external/kokkos-kernels;-D;Tpetra_IGNORE_KOKKOS_COMPATIBILITY=ON;${{ inputs.extra-configure-args }}"
+            fi
+          else
+            if [ "${{ inputs.kokkos-version }}" == "internal" ]
+            then
+              extra_configure_args=""
+            else
+              extra_configure_args="--extra-configure-args=-D;Kokkos_SOURCE_DIR_OVERRIDE=external/kokkos;-D;KokkosKernels_SOURCE_DIR_OVERRIDE=external/kokkos-kernels;-D;Tpetra_IGNORE_KOKKOS_COMPATIBILITY=ON"
+            fi
+          fi
+
+          if [ -n "${{ inputs.dashboard-build-name }}" ]
+          then
+            dashboard_build_name_arg="--dashboard-build-name ${{ inputs.dashboard-build-name }}"
+            if [ "${{ inputs.kokkos-version }}" != "internal" ]
+            then
+              dashboard_build_name_arg="${dashboard_build_name_arg}_Kokkos_${{ inputs.kokkos-version }}"
+            fi
+          else
+            dashboard_build_name_arg=""
+          fi
+
           export no_proxy=my.cdash.org
 
           python3 ${TRILINOS_DIR}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
@@ -174,7 +226,7 @@ jobs:
             --workspace-dir ${TRILINOS_DIR}/../ \
             --source-dir ${TRILINOS_DIR} \
             --build-dir ${BUILD_DIR} \
-            ${{ inputs.dashboard-build-name && '--dashboard-build-name ' || '' }}${{ inputs.dashboard-build-name }} \
+            ${dashboard_build_name_arg} \
             --ctest-driver ${TRILINOS_DIR}/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site ${{ inputs.ctest-drop-site }} \
             --pullrequest-cdash-track "${{ inputs.cdash-track }}" \
@@ -185,6 +237,7 @@ jobs:
             ${slots_per_gpu} \
             ${skip_create_packageenables} \
             ${skip_run_tests} \
+            ${extra_configure_args}
             ${extra_pr_driver_args}
       - name: Filtered build error logs
         if: success() || failure()
