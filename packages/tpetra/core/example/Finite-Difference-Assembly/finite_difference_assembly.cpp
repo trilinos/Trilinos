@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
   using global_ordinal_type = typename map_type::global_ordinal_type;
   Tpetra::ScopeGuard scope(&argc, &argv);
   const auto comm = Tpetra::getDefaultComm();
-  auto out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  auto out        = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
 
   global_ordinal_type nx = 20;
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
     TEUCHOS_TEST_FOR_EXCEPTION(
         nx % procsX != 0 || ny % procsY != 0, std::invalid_argument,
         "nx and ny must be divisible by the " << procsX << " x " << procsY
-                                               << " process grid");
+                                              << " process grid");
 
     const global_ordinal_type indexBase = 0;
     const Teuchos::RCP<const map_type> rowMap =
@@ -86,8 +86,8 @@ int main(int argc, char* argv[]) {
         {0, 0, 0}, {-1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, 1, 0}};
     const local_ordinal_type dofsPerNode = 1;
     const bool debug                     = true;
-    const auto graph = Tpetra::Experimental::createCrsGraphFromStencil(
-        rowMap, localGridDimensions(), stencilOffsets(), dofsPerNode, debug);
+    const auto graph                     = Tpetra::Experimental::createCrsGraphFromStencil(
+                            rowMap, localGridDimensions(), stencilOffsets(), dofsPerNode, debug);
 
     // A rectangular nx-by-ny grid has nx*ny diagonal entries, two directed
     // entries per horizontal edge, and two per vertical edge.
@@ -104,16 +104,16 @@ int main(int argc, char* argv[]) {
 
     const global_ordinal_type localNx = localGridDimensions[0];
     const global_ordinal_type localNy = localGridDimensions[1];
-    const int procX = comm->getRank() % procsX;
-    const int procY = comm->getRank() / procsX;
+    const int procX                   = comm->getRank() % procsX;
+    const int procY                   = comm->getRank() / procsX;
     for (size_t localRow = 0; localRow < rowMap->getLocalNumElements();
          ++localRow) {
       const auto row = rowMap->getGlobalElement(
           static_cast<local_ordinal_type>(localRow));
       const global_ordinal_type localX = localRow % localNx;
       const global_ordinal_type localY = localRow / localNx;
-      const global_ordinal_type x = procX * localNx + localX;
-      const global_ordinal_type y = procY * localNy + localY;
+      const global_ordinal_type x      = procX * localNx + localX;
+      const global_ordinal_type y      = procY * localNy + localY;
       const size_t expectedRowLength =
           1 + static_cast<size_t>(x > 0) + static_cast<size_t>(x + 1 < nx) +
           static_cast<size_t>(y > 0) + static_cast<size_t>(y + 1 < ny);

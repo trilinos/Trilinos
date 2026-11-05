@@ -24,12 +24,12 @@
 namespace {
 
 using scalar_type = double;
-using map_type = Tpetra::Map<>;
+using map_type    = Tpetra::Map<>;
 using matrix_type = Tpetra::CrsMatrix<>;
 using vector_type = Tpetra::MultiVector<>;
-using graph_type = Tpetra::CrsGraph<>;
-using LO = typename map_type::local_ordinal_type;
-using GO = typename map_type::global_ordinal_type;
+using graph_type  = Tpetra::CrsGraph<>;
+using LO          = typename map_type::local_ordinal_type;
+using GO          = typename map_type::global_ordinal_type;
 using offset_type = Tpetra::Experimental::StencilOffset;
 
 struct TestCase {
@@ -76,17 +76,14 @@ TestCase getTestCase(const std::string& name) {
   if (name == "Mpi3D27PointThreeDofs")
     return {"Elasticity3D", {6, 4, 4}, box(3), 3, 4};
   if (name == "Mpi2DBigStarRadiusTwo")
-    return {"BigStar2D", {14, 12},
-            {{0, 0, 0}, {-1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, 1, 0},
-             {-1, -1, 0}, {1, -1, 0}, {-1, 1, 0}, {1, 1, 0},
-             {-2, 0, 0}, {2, 0, 0}, {0, -2, 0}, {0, 2, 0}}, 1, 4};
+    return {"BigStar2D", {14, 12}, {{0, 0, 0}, {-1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, 1, 0}, {-1, -1, 0}, {1, -1, 0}, {-1, 1, 0}, {1, 1, 0}, {-2, 0, 0}, {2, 0, 0}, {0, -2, 0}, {0, 2, 0}}, 1, 4};
   throw std::invalid_argument("Unknown test case: " + name);
 }
 
 Teuchos::RCP<const map_type> expandMap(
     const Teuchos::RCP<const map_type>& nodeMap, const LO dofsPerNode) {
   Teuchos::Array<GO> gids(nodeMap->getLocalNumElements() * dofsPerNode);
-  size_t output = 0;
+  size_t output       = 0;
   const auto nodeGids = nodeMap->getMyGlobalIndices();
   for (size_t i = 0; i < nodeGids.extent(0); ++i) {
     const GO node = nodeGids(i);
@@ -130,16 +127,16 @@ void runTest(const TestCase& test,
   parameters.set("nx", test.globalDimensions[0]);
   if (dimensions > 1) parameters.set("ny", test.globalDimensions[1]);
   if (dimensions > 2) parameters.set("nz", test.globalDimensions[2]);
-  const std::string mapType = dimensions == 1 ? "Cartesian1D" :
-                              dimensions == 2 ? "Cartesian2D" : "Cartesian3D";
-  auto nodeMap = Galeri::Xpetra::CreateMap<LO, GO, map_type>(
+  const std::string mapType = dimensions == 1 ? "Cartesian1D" : dimensions == 2 ? "Cartesian2D"
+                                                                                : "Cartesian3D";
+  auto nodeMap              = Galeri::Xpetra::CreateMap<LO, GO, map_type>(
       mapType, comm, parameters);
   Teuchos::RCP<const map_type> rowMap = nodeMap;
   if (test.dofsPerNode != 1)
     rowMap = expandMap(nodeMap, test.dofsPerNode);
   auto problem = Galeri::Xpetra::BuildProblem<
       scalar_type, LO, GO, map_type, matrix_type, vector_type>(
-          test.problem, rowMap, parameters);
+      test.problem, rowMap, parameters);
   auto reference = problem->BuildMatrix()->getCrsGraph();
 
   Teuchos::Array<LO> localDimensions(dimensions);
@@ -147,8 +144,8 @@ void runTest(const TestCase& test,
   if (dimensions > 1) localDimensions[1] = parameters.get<LO>("lny");
   if (dimensions > 2) localDimensions[2] = parameters.get<LO>("lnz");
   const Teuchos::Array<LO>& constLocalDimensions = localDimensions;
-  auto actual = Tpetra::Experimental::createCrsGraphFromStencil(
-      rowMap, constLocalDimensions(), test.offsets(), test.dofsPerNode, true);
+  auto actual                                    = Tpetra::Experimental::createCrsGraphFromStencil(
+                                         rowMap, constLocalDimensions(), test.offsets(), test.dofsPerNode, true);
   compareGraphs(*actual, *reference);
 }
 
@@ -157,7 +154,7 @@ void runTest(const TestCase& test,
 int main(int argc, char* argv[]) {
   Tpetra::ScopeGuard scope(&argc, &argv);
   const auto comm = Tpetra::getDefaultComm();
-  int success = argc == 2;
+  int success     = argc == 2;
   try {
     if (success) runTest(getTestCase(argv[1]), comm);
   } catch (const std::exception& error) {
