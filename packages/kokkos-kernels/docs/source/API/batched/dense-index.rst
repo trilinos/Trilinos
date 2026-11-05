@@ -17,9 +17,12 @@ API: Batched Dense (DLA)
    dense/batched_trsv
    dense/batched_tbsv
    dense/batched_ger
+   dense/batched_spr
    dense/batched_swap
    dense/batched_syr
    dense/batched_syr2
+   dense/batched_syrk
+   dense/batched_symv
    dense/batched_getrf
    dense/batched_getrs
    dense/batched_gbtrf
@@ -186,9 +189,13 @@ BLAS 2
      - --
      - --
    * - SYMV
-     - --
-     - --
-     - --
+     - :doc:`SerialSymv <dense/batched_symv>`
+     - :doc:`TeamSymv <dense/batched_symv>`
+     - :doc:`TeamVectorSymv <dense/batched_symv>`
+   * - HEMV
+     - :doc:`SerialSymv <dense/batched_symv>`
+     - :doc:`TeamSymv <dense/batched_symv>`
+     - :doc:`TeamVectorSymv <dense/batched_symv>`
    * - SBMV
      - --
      - --
@@ -242,9 +249,13 @@ BLAS 2
      - --
      - --
    * - SPR
-     - --
-     - --
-     - --
+     - :doc:`SerialSpr <dense/batched_spr>`
+     - :doc:`TeamSpr <dense/batched_spr>`
+     - :doc:`TeamVectorSpr <dense/batched_spr>`
+   * - HPR
+     - :doc:`SerialSpr <dense/batched_spr>`
+     - :doc:`TeamSpr <dense/batched_spr>`
+     - :doc:`TeamVectorSpr <dense/batched_spr>`
    * - SYR2
      - :doc:`SerialSyr2 <dense/batched_syr2>`
      - --
@@ -274,9 +285,9 @@ BLAS 3
      - --
      - --
    * - SYRK
-     - --
-     - --
-     - --
+     - :doc:`SerialSyrk <dense/batched_syrk>`
+     - :doc:`TeamSyrk <dense/batched_syrk>`
+     - :doc:`TeamVectorSyrk <dense/batched_syrk>`
    * - SYRK2
      - --
      - --
@@ -286,9 +297,9 @@ BLAS 3
      - --
      - --
    * - HERK
-     - --
-     - --
-     - --
+     - :doc:`SerialSyrk <dense/batched_syrk>`
+     - :doc:`TeamSyrk <dense/batched_syrk>`
+     - :doc:`TeamVectorSyrk <dense/batched_syrk>`
    * - HERK2
      - --
      - --

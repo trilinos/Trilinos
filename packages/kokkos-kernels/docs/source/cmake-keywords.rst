@@ -209,8 +209,6 @@ ETI Options
 - ``KokkosKernels_INST_MEMSPACE_HIPSPACE``: BOOL
 - ``KokkosKernels_INST_EXECSPACE_SYCL``: BOOL
 - ``KokkosKernels_INST_MEMSPACE_SYCLSPACE``: BOOL
-- ``KokkosKernels_INST_EXECSPACE_OPENMPTARGET``: BOOL
-- ``KokkosKernels_INST_MEMSPACE_OPENMPTARGETSPACE``: BOOL
 - ``KokkosKernels_INST_MEMSPACE_HBWSPACE``: BOOL
 
 Documentation Options
