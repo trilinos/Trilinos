@@ -56,6 +56,203 @@ namespace {
     "2 1 21.0\n"
     "5 1 51.0\n";
 
+  void runTolerantMetadataRegressionTests (const bool verbose,
+                                           const bool debug)
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::MatrixMarket::Raw::Reader;
+
+    typedef double scalar_type;
+    typedef int ordinal_type;
+    typedef Reader<scalar_type, ordinal_type> reader_type;
+
+    {
+      if (verbose) {
+        std::cout << "Testing tolerant MatrixMarket read with overstated row "
+                  << "metadata" << std::endl;
+      }
+
+      const char overstatedRowsMatrixMarketFile[] =
+        "%%MatrixMarket matrix coordinate real general\n"
+        "5 1 1\n"
+        "1 1 7.0\n";
+
+      reader_type tolerantReader (true, debug);
+      ArrayRCP<ordinal_type> ptr, ind;
+      ArrayRCP<scalar_type> val;
+      ordinal_type numRows = 0;
+      ordinal_type numCols = 0;
+
+      std::istringstream inStr (overstatedRowsMatrixMarketFile);
+      const bool ok = tolerantReader.read (ptr, ind, val,
+                                           numRows, numCols, inStr);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(! ok, std::logic_error,
+        "Tolerant MatrixMarket reader failed on overstated row metadata.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(numRows != 5, std::logic_error,
+        "Expected numRows == 5, got " << numRows << ".");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(numCols != 1, std::logic_error,
+        "Expected numCols == 1, got " << numCols << ".");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(ptr.size() != numRows + 1, std::logic_error,
+        "Expected ptr.size() == numRows + 1, but ptr.size() = "
+        << ptr.size() << " and numRows = " << numRows << ".");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(ind.size() != 1 || val.size() != 1,
+        std::logic_error, "Expected exactly one matrix entry.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(ind[0] != 0 || val[0] != 7.0,
+        std::logic_error, "Unexpected matrix entry after tolerant read.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(ptr[0] != 0 || ptr[1] != 1,
+        std::logic_error, "Unexpected row pointer entries for populated row.");
+
+      for (ordinal_type row = 1; row < numRows; ++row) {
+        TEUCHOS_TEST_FOR_EXCEPTION(ptr[row+1] != 1, std::logic_error,
+          "Expected empty trailing row " << row
+          << " to have row pointer value 1, got " << ptr[row+1] << ".");
+      }
+    }
+
+    {
+      if (verbose) {
+        std::cout << "Testing tolerant MatrixMarket read with understated "
+                  << "row and column metadata" << std::endl;
+      }
+
+      const char understatedDimsMatrixMarketFile[] =
+        "%%MatrixMarket matrix coordinate real general\n"
+        "1 1 1\n"
+        "3 4 9.0\n";
+
+      reader_type tolerantReader (true, debug);
+      ArrayRCP<ordinal_type> ptr, ind;
+      ArrayRCP<scalar_type> val;
+      ordinal_type numRows = 0;
+      ordinal_type numCols = 0;
+
+      std::istringstream inStr (understatedDimsMatrixMarketFile);
+      const bool ok = tolerantReader.read (ptr, ind, val,
+                                           numRows, numCols, inStr);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(! ok, std::logic_error,
+        "Tolerant MatrixMarket reader failed on understated dimensions.");
+
+      /*
+       * The tolerant-mode fix is that CSR allocation and column validation use
+       * the maximum of the MatrixMarket header dimensions and the dimensions
+       * implied by seen entries.  Some reader paths preserve the header values
+       * in numRows / numCols, so do not require numRows >= 3 or numCols >= 4
+       * here.  Instead, require that the returned storage can represent row 3.
+       */
+      TEUCHOS_TEST_FOR_EXCEPTION(ptr.size() < 4, std::logic_error,
+        "Expected ptr.size() >= 4 so that seen row 3 is representable, got "
+        << ptr.size() << ".  Reported numRows = " << numRows
+        << ", reported numCols = " << numCols << ".");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(ind.size() != 1 || val.size() != 1,
+        std::logic_error, "Expected exactly one matrix entry.");
+
+      // MatrixMarket indices are one-based; CSR stores zero-based indices.
+      TEUCHOS_TEST_FOR_EXCEPTION(ind[0] != 3, std::logic_error,
+        "Expected zero-based column index 3 for MatrixMarket column 4, got "
+        << ind[0] << ".");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(val[0] != 9.0, std::logic_error,
+        "Unexpected matrix value after tolerant read.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(ptr[3] != 1, std::logic_error,
+        "Expected row 3 to contain the single entry, but ptr[3] = "
+        << ptr[3] << ".");
+    }
+
+    {
+      if (verbose) {
+        std::cout << "Testing strict MatrixMarket read rejects understated "
+                  << "metadata" << std::endl;
+      }
+
+      const char understatedDimsMatrixMarketFile[] =
+        "%%MatrixMarket matrix coordinate real general\n"
+        "1 1 1\n"
+        "3 4 9.0\n";
+
+      reader_type strictReader (false, debug);
+      ArrayRCP<ordinal_type> ptr, ind;
+      ArrayRCP<scalar_type> val;
+      ordinal_type numRows = 0;
+      ordinal_type numCols = 0;
+
+      bool accepted = false;
+      try {
+        std::istringstream inStr (understatedDimsMatrixMarketFile);
+        accepted = strictReader.read (ptr, ind, val, numRows, numCols, inStr);
+      }
+      catch (const std::exception&) {
+        accepted = false;
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(accepted, std::logic_error,
+        "Strict MatrixMarket reader unexpectedly accepted understated "
+        "metadata.");
+    }
+
+    {
+      if (verbose) {
+        std::cout << "Testing MatrixMarket tolerant metadata round-trip"
+                  << std::endl;
+      }
+
+      const char overstatedRowsMatrixMarketFile[] =
+        "%%MatrixMarket matrix coordinate real general\n"
+        "5 1 1\n"
+        "1 1 7.0\n";
+
+      reader_type tolerantReader (true, debug);
+      ArrayRCP<ordinal_type> ptr, ind;
+      ArrayRCP<scalar_type> val;
+      ordinal_type numRows = 0;
+      ordinal_type numCols = 0;
+
+      {
+        std::istringstream inStr (overstatedRowsMatrixMarketFile);
+        const bool ok = tolerantReader.read (ptr, ind, val,
+                                             numRows, numCols, inStr);
+        TEUCHOS_TEST_FOR_EXCEPTION(! ok, std::logic_error,
+          "Tolerant reader failed before round-trip test.");
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(ptr.size() != numRows + 1, std::logic_error,
+        "Invalid CSR row pointer size before round-trip.");
+
+      std::ostringstream outStr;
+      Teuchos::MatrixMarket::Raw::Writer<scalar_type, ordinal_type> writer;
+      writer.write (outStr, ptr (), ind (), val (), numRows, numCols);
+
+      ArrayRCP<ordinal_type> newptr, newind;
+      ArrayRCP<scalar_type> newval;
+      ordinal_type newNumRows = 0;
+      ordinal_type newNumCols = 0;
+
+      reader_type strictReader (false, debug);
+      std::istringstream roundTripIn (outStr.str ());
+      const bool ok = strictReader.read (newptr, newind, newval,
+                                         newNumRows, newNumCols, roundTripIn);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(! ok, std::logic_error,
+        "Reader failed to read its own MatrixMarket output.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(newNumRows != numRows ||
+                                 newNumCols != numCols,
+        std::logic_error, "Round-tripped dimensions differ.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(newptr.size() != newNumRows + 1,
+        std::logic_error, "Round-tripped ptr.size() != newNumRows + 1.");
+    }
+  }
+
 } // namespace (anonymous)
 
 // Benchmark driver
@@ -432,6 +629,10 @@ main (int argc, char *argv[])
             "Incorrect number of entries after symmetrization: There should be "
             << correctNumEntries << ", but there are " << val.size() << " entries "
             "instead.");
+      }
+
+      if (filename == "") {
+        runTolerantMetadataRegressionTests (verbose, debug);
       }
     } // end of the file / string Reader tests
 
