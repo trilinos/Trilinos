@@ -87,7 +87,8 @@ int main(int argc, char* argv[]) {
     const local_ordinal_type dofsPerNode = 1;
     const bool debug                     = true;
     const auto graph                     = Tpetra::Experimental::createCrsGraphFromStencil(
-                            rowMap, localGridDimensions(), stencilOffsets(), dofsPerNode, debug);
+                            rowMap, localGridDimensions(), stencilOffsets(), dofsPerNode,
+                            Tpetra::Experimental::StencilNumbering::rankBlocked, debug);
 
     // A rectangular nx-by-ny grid has nx*ny diagonal entries, two directed
     // entries per horizontal edge, and two per vertical edge.

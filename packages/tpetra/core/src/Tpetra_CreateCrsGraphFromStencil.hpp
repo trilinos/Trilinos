@@ -42,6 +42,11 @@ struct StencilOffset {
   int z = 0;
 };
 
+enum class StencilNumbering {
+  globalLexicographic,
+  rankBlocked
+};
+
 namespace Details {
 
 enum class StencilAction : unsigned char {
@@ -109,6 +114,7 @@ KOKKOS_INLINE_FUNCTION bool resolveNeighbor(
     const GlobalNodes& globalNodes, const GlobalNodes& globalNodeStart,
     const ProcGrid& procGrid, const RankData& rankData,
     const int myProcX, const int myProcY, const int myProcZ,
+    const StencilNumbering numbering,
     int& neighborRank, GlobalOrdinal& neighborNode) {
   GlobalOrdinal coordinates[3] = {
       x + static_cast<GlobalOrdinal>(offset.x),
@@ -152,9 +158,14 @@ KOKKOS_INLINE_FUNCTION bool resolveNeighbor(
 
   updateNeighborDimensions(procCoordinates, procGrid, rankData, neighborRank,
                            dimensions);
-  neighborNode = rankData(4 * neighborRank + 3) +
-                 coordinates[2] * dimensions[0] * dimensions[1] +
-                 coordinates[1] * dimensions[0] + coordinates[0];
+  if (numbering == StencilNumbering::globalLexicographic) {
+    neighborNode = globalCoordinates[2] * globalNodes[0] * globalNodes[1] +
+                   globalCoordinates[1] * globalNodes[0] + globalCoordinates[0];
+  } else {
+    neighborNode = rankData(4 * neighborRank + 3) +
+                   coordinates[2] * dimensions[0] * dimensions[1] +
+                   coordinates[1] * dimensions[0] + coordinates[0];
+  }
   return true;
 }
 
@@ -169,7 +180,8 @@ createCrsGraphFromStencil(
     const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& rowMap,
     const Teuchos::ArrayView<const LocalOrdinal>& localGridDimensions,
     const Teuchos::ArrayView<const StencilOffset>& stencilOffsets,
-    const LocalOrdinal dofsPerNode, const bool debug) {
+    const LocalOrdinal dofsPerNode, const StencilNumbering numbering,
+    const bool debug) {
   using graph_type       = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
   using import_type      = Import<LocalOrdinal, GlobalOrdinal, Node>;
   using local_graph_type = typename graph_type::local_graph_device_type;
@@ -609,7 +621,8 @@ createCrsGraphFromStencil(
             const bool valid           = Details::resolveNeighbor(
                           sourceX, sourceY, sourceZ, offsets[stencil], localNodes,
                           globalNodes, globalNodeStart, procGrid, rankDataDevice,
-                          myProcX, myProcY, myProcZ, neighborRank, neighborNode);
+                          myProcX, myProcY, myProcZ, numbering, neighborRank,
+                          neighborNode);
             if (valid) {
               remoteNodes.insert(neighborNode, neighborRank);
               break;
@@ -690,6 +703,7 @@ createCrsGraphFromStencil(
           if (columnDof == 0)
             orderedRemoteNodePids(remoteNode) = remoteNodePids(source);
         });
+    executionSpace.fence("Tpetra stencil column map ready");
 
     auto mapParams = Teuchos::rcp(new Teuchos::ParameterList);
     mapParams->set("compute global constants", false);
@@ -802,7 +816,8 @@ createCrsGraphFromStencil(
             const bool valid = Details::resolveNeighbor(
                 x, y, z, offsets[stencil], localNodes,
                 globalNodes, globalNodeStart, procGrid, rankDataDevice,
-                myProcX, myProcY, myProcZ, neighborRank, neighborNode);
+                myProcX, myProcY, myProcZ, numbering, neighborRank,
+                neighborNode);
             if (debug)
               KOKKOS_ASSERT(valid);
             (void)valid;

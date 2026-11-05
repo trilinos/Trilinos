@@ -491,7 +491,9 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
       Tpetra::Experimental::createCrsGraphFromStencil(
           tpetraRowMap,
           lCoarseNodesPerDim(0, graphSpec.numDimensions),
-          stencilOffsets(), graphSpec.dofsPerNode, Behavior::debug());
+          stencilOffsets(), graphSpec.dofsPerNode,
+          Tpetra::Experimental::StencilNumbering::rankBlocked,
+          Behavior::debug());
   RCP<CrsGraph> graph = Teuchos::rcp_const_cast<CrsGraph>(
       Xpetra::toXpetra(tpetraGraph));
 

@@ -145,7 +145,8 @@ void runTest(const TestCase& test,
   if (dimensions > 2) localDimensions[2] = parameters.get<LO>("lnz");
   const Teuchos::Array<LO>& constLocalDimensions = localDimensions;
   auto actual                                    = Tpetra::Experimental::createCrsGraphFromStencil(
-                                         rowMap, constLocalDimensions(), test.offsets(), test.dofsPerNode, true);
+                                         rowMap, constLocalDimensions(), test.offsets(), test.dofsPerNode,
+                                         Tpetra::Experimental::StencilNumbering::globalLexicographic, true);
   compareGraphs(*actual, *reference);
 }
 
