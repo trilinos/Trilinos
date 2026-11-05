@@ -579,6 +579,9 @@ namespace Intrepid2 {
     
     
     /** \brief  Modify an assembled (C,F1,F2) matrix according to orientation of the cells.
+
+        If O_L and O_R are the operators applied by modifyBasisByOrientation() to the left and right bases, and M is the
+        matrix assembled from unoriented bases, the output is the matrix assembled from the oriented bases, O_L M O_R^T.
         \param  output           [out]  - output array, shape (C,F1,F2)
         \param  input             [in]  - input array, shape (C,F1,F2)
         \param  orts               [in]  - orientations, shape (C)
