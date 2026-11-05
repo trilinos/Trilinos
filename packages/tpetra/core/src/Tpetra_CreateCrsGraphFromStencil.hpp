@@ -215,7 +215,7 @@ createCrsGraphFromStencil(
   Kokkos::View<StencilOffset*, device_type> offsets(
       Kokkos::ViewAllocateWithoutInitializing("Tpetra stencil offsets"),
       stencilOffsets.size());
-  auto offsetsHost = Kokkos::create_mirror_view(offsets);
+  auto offsetsHost     = Kokkos::create_mirror_view(offsets);
   int stencilRadius[3] = {0, 0, 0};
   for (size_t entry = 0; entry < Teuchos::as<size_t>(stencilOffsets.size());
        ++entry) {
@@ -240,7 +240,7 @@ createCrsGraphFromStencil(
     offsetsHost(entry) = offset;
   }
   Kokkos::deep_copy(offsets, offsetsHost);
-  
+
   Teuchos::Array<size_t> interiorStencilOrder(stencilOffsets.size());
   for (size_t stencil = 0; stencil < Teuchos::as<size_t>(stencilOffsets.size());
        ++stencil)
@@ -292,9 +292,9 @@ createCrsGraphFromStencil(
       std::invalid_argument,
       "createCrsGraphFromStencil: row-map GIDs must form a contiguous range.");
 
-  const auto comm       = rowMap->getComm();
-  const int myRank      = comm->getRank();
-  const int numRanks    = comm->getSize();
+  const auto comm                 = rowMap->getComm();
+  const int myRank                = comm->getRank();
+  const int numRanks              = comm->getSize();
   const GlobalOrdinal localMinGid = rowMap->getMinGlobalIndex();
   TEUCHOS_TEST_FOR_EXCEPTION(
       (localMinGid - globalMinGid) % dofsPerNodeGO != 0,
@@ -330,9 +330,9 @@ createCrsGraphFromStencil(
     procGrid[0] = procGrid[1] = procGrid[2] = cubeRoot;
     if (procGrid[0] * procGrid[1] * procGrid[2] != numRanks) {
       procGrid[0] = procGrid[1] = procGrid[2] = 1;
-      int remainingRanks = numRanks;
-      constexpr int factorLimit = 50;
-      int factors[factorLimit]   = {};
+      int remainingRanks                      = numRanks;
+      constexpr int factorLimit               = 50;
+      int factors[factorLimit]                = {};
       for (int factor = 2; factor < factorLimit; ++factor) {
         while (remainingRanks % factor == 0) {
           ++factors[factor];
@@ -411,7 +411,7 @@ createCrsGraphFromStencil(
     Details::getBoundaryRegionGeometry(
         regionZ, localNodes[2], stencilRadius[2], z, unusedCount);
     for (size_t stencil = 0; stencil < stencilSize; ++stencil) {
-      const auto offset = stencilOffsets[stencil];
+      const auto offset                   = stencilOffsets[stencil];
       const GlobalOrdinal neighborGlobalX = globalNodeStart[0] + x + offset.x;
       const GlobalOrdinal neighborGlobalY = globalNodeStart[1] + y + offset.y;
       const GlobalOrdinal neighborGlobalZ = globalNodeStart[2] + z + offset.z;
@@ -422,7 +422,7 @@ createCrsGraphFromStencil(
       const GlobalOrdinal neighborLocalX = x + offset.x;
       const GlobalOrdinal neighborLocalY = y + offset.y;
       const GlobalOrdinal neighborLocalZ = z + offset.z;
-      const bool local = neighborLocalX >= 0 && neighborLocalX < localNodes[0] &&
+      const bool local                   = neighborLocalX >= 0 && neighborLocalX < localNodes[0] &&
                          neighborLocalY >= 0 && neighborLocalY < localNodes[1] &&
                          neighborLocalZ >= 0 && neighborLocalZ < localNodes[2];
       planActionsHost[region * stencilSize + stencil] =
@@ -461,13 +461,13 @@ createCrsGraphFromStencil(
   size_t totalRowLengths = 0;
   for (size_t regionZ = 0; regionZ < regionDimensions[2]; ++regionZ) {
     regionZPrefixesHost[regionZ] = totalRowLengths;
-    size_t planeLength = 0;
+    size_t planeLength           = 0;
     for (size_t regionY = 0; regionY < regionDimensions[1]; ++regionY) {
-      const size_t line = regionY + regionDimensions[1] * regionZ;
+      const size_t line         = regionY + regionDimensions[1] * regionZ;
       regionYPrefixesHost[line] = planeLength;
-      size_t lineLength = 0;
+      size_t lineLength         = 0;
       for (size_t regionX = 0; regionX < regionDimensions[0]; ++regionX) {
-        const size_t region = regionX + regionDimensions[0] * line;
+        const size_t region         = regionX + regionDimensions[0] * line;
         regionXPrefixesHost[region] = lineLength;
         lineLength += regionCountsX[regionX] *
                       planRowLengthsHost[region];
@@ -520,9 +520,9 @@ createCrsGraphFromStencil(
   row_map_type rowptr(
       Kokkos::ViewAllocateWithoutInitializing("Tpetra stencil row pointers"),
       localNumRows + 1);
-  const size_t localNnz = totalRowLengths * rowsPerNode;
+  const size_t localNnz      = totalRowLengths * rowsPerNode;
   const size_t localNumNodes = localNumRows / rowsPerNode;
-  size_t expandedNodes = 1;
+  size_t expandedNodes       = 1;
   for (int dim = 0; dim < 3; ++dim)
     expandedNodes *= Teuchos::as<size_t>(
         localNodes[dim] + 2 * stencilRadius[dim]);
@@ -532,7 +532,7 @@ createCrsGraphFromStencil(
       maxRemoteNodes == 0 ? 1 : maxRemoteNodes);
 
   Teuchos::Array<GlobalOrdinal> haloCoordinatesHost(3 * maxRemoteNodes);
-  size_t haloEntry = 0;
+  size_t haloEntry                = 0;
   const auto appendHaloCoordinate = [&](const GlobalOrdinal x,
                                         const GlobalOrdinal y,
                                         const GlobalOrdinal z) {
@@ -589,9 +589,9 @@ createCrsGraphFromStencil(
           const GlobalOrdinal neighborX = haloCoordinates(3 * candidate);
           const GlobalOrdinal neighborY = haloCoordinates(3 * candidate + 1);
           const GlobalOrdinal neighborZ = haloCoordinates(3 * candidate + 2);
-          const GlobalOrdinal globalX = globalNodeStart[0] + neighborX;
-          const GlobalOrdinal globalY = globalNodeStart[1] + neighborY;
-          const GlobalOrdinal globalZ = globalNodeStart[2] + neighborZ;
+          const GlobalOrdinal globalX   = globalNodeStart[0] + neighborX;
+          const GlobalOrdinal globalY   = globalNodeStart[1] + neighborY;
+          const GlobalOrdinal globalZ   = globalNodeStart[2] + neighborZ;
           if (globalX < 0 || globalX >= globalNodes[0] ||
               globalY < 0 || globalY >= globalNodes[1] ||
               globalZ < 0 || globalZ >= globalNodes[2])
@@ -604,12 +604,12 @@ createCrsGraphFromStencil(
                 sourceY < 0 || sourceY >= localNodes[1] ||
                 sourceZ < 0 || sourceZ >= localNodes[2])
               continue;
-            int neighborRank = myRank;
+            int neighborRank           = myRank;
             GlobalOrdinal neighborNode = 0;
-            const bool valid = Details::resolveNeighbor(
-                sourceX, sourceY, sourceZ, offsets[stencil], localNodes,
-                globalNodes, globalNodeStart, procGrid, rankDataDevice,
-                myProcX, myProcY, myProcZ, neighborRank, neighborNode);
+            const bool valid           = Details::resolveNeighbor(
+                          sourceX, sourceY, sourceZ, offsets[stencil], localNodes,
+                          globalNodes, globalNodeStart, procGrid, rankDataDevice,
+                          myProcX, myProcY, myProcZ, neighborRank, neighborNode);
             if (valid) {
               remoteNodes.insert(neighborNode, neighborRank);
               break;
@@ -655,12 +655,13 @@ createCrsGraphFromStencil(
         "Tpetra stencil initialize halo permutation",
         range_policy(executionSpace, 0, numRemoteNodes),
         KOKKOS_LAMBDA(const size_t entry) { permutation(entry) = entry; });
-    Kokkos::sort(executionSpace, permutation,
-                 KOKKOS_LAMBDA(const size_t left, const size_t right) {
-                   return remoteNodePids(left) != remoteNodePids(right)
-                              ? remoteNodePids(left) < remoteNodePids(right)
-                              : remoteNodeGids(left) < remoteNodeGids(right);
-                 });
+    Kokkos::sort(
+        executionSpace, permutation,
+        KOKKOS_LAMBDA(const size_t left, const size_t right) {
+          return remoteNodePids(left) != remoteNodePids(right)
+                     ? remoteNodePids(left) < remoteNodePids(right)
+                     : remoteNodeGids(left) < remoteNodeGids(right);
+        });
 
     const size_t numRemoteColumns = numRemoteNodes * rowsPerNode;
     Kokkos::View<GlobalOrdinal*, device_type> columnGids(
@@ -683,7 +684,7 @@ createCrsGraphFromStencil(
           const size_t remoteNode   = remoteColumn / rowsPerNode;
           const size_t columnDof    = remoteColumn % rowsPerNode;
           const size_t source       = permutation(remoteNode);
-          columnGids(column) = globalMinGid +
+          columnGids(column)        = globalMinGid +
                                remoteNodeGids(source) * dofsPerNodeGO +
                                static_cast<GlobalOrdinal>(columnDof);
           if (columnDof == 0)
@@ -735,8 +736,8 @@ createCrsGraphFromStencil(
             y, localNodes[1], stencilRadius[1]);
         const size_t regionZ = Details::getBoundaryRegionCoordinate(
             z, localNodes[2], stencilRadius[2]);
-        const size_t line = regionY + regionDimensions[1] * regionZ;
-        const size_t region = regionX + regionDimensions[0] * line;
+        const size_t line             = regionY + regionDimensions[1] * regionZ;
+        const size_t region           = regionX + regionDimensions[0] * line;
         const size_t plannedRowLength = planRowLengths(region);
         const size_t precedingRowLengths =
             regionZPrefixes(regionZ) +
@@ -778,7 +779,7 @@ createCrsGraphFromStencil(
           return;
         }
 
-        size_t output         = begin;
+        size_t output = begin;
         for (size_t stencil = 0; stencil < stencilSize; ++stencil) {
           const Details::StencilAction action =
               planActions(region * stencilSize + stencil);
@@ -788,9 +789,9 @@ createCrsGraphFromStencil(
           const GlobalOrdinal neighborLocalX = x + offsets[stencil].x;
           const GlobalOrdinal neighborLocalY = y + offsets[stencil].y;
           const GlobalOrdinal neighborLocalZ = z + offsets[stencil].z;
-          int neighborRank = myRank;
-          GlobalOrdinal neighborNode = 0;
-          LocalOrdinal firstColumn = 0;
+          int neighborRank                   = myRank;
+          GlobalOrdinal neighborNode         = 0;
+          LocalOrdinal firstColumn           = 0;
           if (action == Details::StencilAction::local) {
             const GlobalOrdinal neighborLocalNode =
                 neighborLocalZ * localNodes[0] * localNodes[1] +
