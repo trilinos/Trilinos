@@ -168,8 +168,10 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {
         if (sz > len_) {
-          if (len_ != 0)
+          if (len_ != 0) {
             ds_array<U>::destroy_and_release(dx_, len_);
+            dx_ = nullptr;
+          }
           dx_ = ds_array<U>::get_and_fill(sz);
           len_ = sz;
         }
