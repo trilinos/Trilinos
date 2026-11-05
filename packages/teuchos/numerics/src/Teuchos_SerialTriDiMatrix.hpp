@@ -507,6 +507,12 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::shape( OrdinalType numRowsCols_i
 {
   deleteArrays(); // Get rid of anything that might be already allocated
   numRowsCols_ = numRowsCols_in;
+  if (numRowsCols_ <= 0) {
+    values_ = 0;
+    DL_ = D_ = DU_ = DU2_ = 0;
+    valuesCopied_ = true;
+    return(0);
+  }
   const OrdinalType numvals = ( numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
   values_ = new ScalarType[numvals];
   DL_  = values_;
@@ -524,6 +530,12 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::shapeUninitialized(  OrdinalType
 {
   deleteArrays(); // Get rid of anything that might be already allocated
   numRowsCols_ = numRowsCols_in;
+  if (numRowsCols_ <= 0) {
+    values_ = 0;
+    DL_ = D_ = DU_ = DU2_ = 0;
+    valuesCopied_ = true;
+    return(0);
+  }
   const OrdinalType numvals = ( numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
   values_ = new ScalarType[numvals];
   DL_  = values_;

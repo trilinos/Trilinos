@@ -68,9 +68,8 @@ namespace Teuchos
           /* Convert the largest -ve int to zero and -1 to
            * std::numeric_limits<int>::max()
            * */
-          size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
-          maxIntBeforeWrap ++;
-          rtn += maxIntBeforeWrap;
+          long long offset = static_cast<long long>(std::numeric_limits<int>::max()) + 1LL;
+          rtn = static_cast<int>(static_cast<long long>(rtn) + offset);
       }
       return rtn;
     }
@@ -146,9 +145,8 @@ namespace Teuchos
           /* Convert the largest -ve int to zero and -1 to
            * std::numeric_limits<int>::max()
            * */
-          size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
-          maxIntBeforeWrap ++;
-          rtn += maxIntBeforeWrap;
+          long long offset = static_cast<long long>(std::numeric_limits<int>::max()) + 1LL;
+          rtn = static_cast<int>(static_cast<long long>(rtn) + offset);
       }
       return rtn;
     }
