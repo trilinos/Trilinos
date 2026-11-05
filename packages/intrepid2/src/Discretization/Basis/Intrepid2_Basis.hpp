@@ -29,7 +29,6 @@
 #include <Kokkos_Core.hpp>
 
 #include <memory>
-#include <mutex>
 #include <vector>
 
 namespace Intrepid2 {
@@ -218,27 +217,16 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     */
     mutable OrdinalTypeArray3DHost tagToOrdinal_;
 
-    /** \brief  Hook for derived classes that can defer construction of dense tag tables.
-     */
-    virtual void initializeTags() const {}
+    /** \brief  Ensures that the dense tag tables (<var>ordinalToTag_</var>, <var>tagToOrdinal_</var>) are filled.
 
-    /** \brief  Guards lazy initialization in const methods (e.g., of the tag tables), so that Basis objects shared between
-                host threads may be queried concurrently.  Held by pointer so that Basis remains copyable.  (Concurrent
-                queries also require that Kokkos be built with real atomics, since the tag queries return
-                reference-counted Views; Trilinos enables Kokkos_ENABLE_ATOMICS_BYPASS by default when Serial is the only
-                Kokkos backend.)
-     */
-    std::shared_ptr<std::recursive_mutex> lazyInitializationMutex_ = std::make_shared<std::recursive_mutex>();
+        The default does nothing: most bases fill the tables at construction.  Derived classes that defer construction of
+        the tables (e.g., Basis_TensorBasis) override this; they are responsible for making it thread-safe.
 
-    /** \brief  Materialize dense tag tables on demand for compatibility APIs.  Thread-safe.
+        Basis itself must not hold host-only members (e.g., std::shared_ptr or std::mutex): bases are copy-constructed on
+        device for team-level getValues() (see copy_virtual_class_to_device()), and the implicit copy constructor of such
+        a member cannot run there.  State for lazy initialization therefore lives in the derived classes that need it.
      */
-    void requireTags() const {
-      std::lock_guard<std::recursive_mutex> lock(*lazyInitializationMutex_);
-      if (ordinalToTag_.extent(0) == 0 || tagToOrdinal_.extent(0) == 0)
-      {
-        this->initializeTags();
-      }
-    }
+    virtual void requireTags() const {}
 
     /** \brief  Fills <var>ordinalToTag_</var> and <var>tagToOrdinal_</var> by basis-specific tag data
 

@@ -23,6 +23,8 @@
 
 #include <array>
 #include <map>
+#include <memory>
+#include <mutex>
 #include <set>
 #include <vector>
 
@@ -628,6 +630,15 @@ struct OperatorTensorDecomposition
     //! composite (subcell dim, subcell ordinal) -> component subcells (d1, s1, d2, s2); built lazily by getDofCount()/getDofOrdinal()
     mutable std::map<std::pair<ordinal_type,ordinal_type>, std::array<ordinal_type,4>> compositeSubcellToComponents_;
     mutable bool compositeSubcellMapBuilt_ = false;
+
+    /** \brief  Guards lazy initialization in const methods (of the tag tables and of compositeSubcellToComponents_), so
+                that TensorBasis objects shared between host threads may be queried concurrently.  Held by pointer so that
+                TensorBasis remains copyable.  (Concurrent queries also require that Kokkos be built with real atomics, since
+                the tag queries return reference-counted Views; Trilinos enables Kokkos_ENABLE_ATOMICS_BYPASS by default when
+                Serial is the only Kokkos backend.)  This lives here rather than in Basis because Basis must remain copyable
+                on device; see Basis::requireTags().
+     */
+    std::shared_ptr<std::recursive_mutex> lazyInitializationMutex_ = std::make_shared<std::recursive_mutex>();
   public:
     using DeviceType = typename BasisBase::DeviceType;
     using ExecutionSpace  = typename BasisBase::ExecutionSpace;
@@ -856,19 +867,24 @@ struct OperatorTensorDecomposition
                               posDfOrd);
     }
 
-    virtual void initializeTags() const override
+    //! materializes the dense tag tables on first request (thread-safe)
+    virtual void requireTags() const override
     {
-      TensorBasis* self = const_cast<TensorBasis*>(this);
-      if (useShardsCellTopologyAndTags_)
-        self->setShardsTopologyAndTags();
-      else
-        self->setTensorProductTags();
+      std::lock_guard<std::recursive_mutex> lock(*lazyInitializationMutex_);
+      if (this->ordinalToTag_.extent(0) == 0 || this->tagToOrdinal_.extent(0) == 0)
+      {
+        TensorBasis* self = const_cast<TensorBasis*>(this);
+        if (useShardsCellTopologyAndTags_)
+          self->setShardsTopologyAndTags();
+        else
+          self->setTensorProductTags();
+      }
     }
 
     //! builds compositeSubcellToComponents_ (once; thread-safe)
     void requireCompositeSubcellMap() const
     {
-      std::lock_guard<std::recursive_mutex> lock(*this->lazyInitializationMutex_);
+      std::lock_guard<std::recursive_mutex> lock(*lazyInitializationMutex_);
       if (compositeSubcellMapBuilt_) return;
       const shards::CellTopology cellTopo1 = basis1_->getBaseCellTopology();
       const ordinal_type spaceDim1 = basis1_->getDomainDimension();
