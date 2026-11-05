@@ -218,8 +218,16 @@ namespace Teuchos
     std::string rtn = "[";
     for (int i=0; i<keys.length(); i++)
       {
+        #if defined(__GNUC__) && __GNUC__ == 12
+        // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
         rtn += "{" + Teuchos::toString(keys[i]) + ", " + Teuchos::toString(values[i])
           + "}";
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic pop
+#endif
         if (i < keys.length()-1) rtn += ", ";
       }
     rtn += "]";
