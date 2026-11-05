@@ -17,6 +17,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosCGIteration.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 
 #include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
@@ -123,7 +124,8 @@ namespace Belos {
   };
 
 template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
-class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
+class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP,DM>,
+                        public CurrentSolutionProvider<ScalarType,MV,OP,DM> {
 
   public:
 

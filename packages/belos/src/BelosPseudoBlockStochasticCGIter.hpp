@@ -16,6 +16,7 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosStochasticCGIteration.hpp"
 
 #include "BelosLinearProblem.hpp"
@@ -49,7 +50,8 @@
 namespace Belos {
   
   template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
-  class PseudoBlockStochasticCGIter : virtual public StochasticCGIteration<ScalarType,MV,OP,DM> {
+  class PseudoBlockStochasticCGIter : virtual public StochasticCGIteration<ScalarType,MV,OP,DM>,
+                                      public CurrentSolutionProvider<ScalarType,MV,OP,DM> {
     
   public:
     

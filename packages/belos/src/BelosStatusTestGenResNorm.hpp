@@ -16,6 +16,7 @@
 */
 
 #include "BelosStatusTestResNorm.hpp"
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosMultiVecTraits.hpp"
 
@@ -486,8 +487,15 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP,DM>::checkStatus( Iteration<Sca
     //
     // Request the true residual for this block of right-hand sides.
     //
-    Teuchos::RCP<MV> cur_update = iSolver->getCurrentUpdate();
-    curSoln_ = lp.updateSolution( cur_update );
+    CurrentSolutionProvider<ScalarType,MV,OP,DM>* solProvider =
+      dynamic_cast<CurrentSolutionProvider<ScalarType,MV,OP,DM>*>(iSolver);
+    if (solProvider != NULL && solProvider->hasCurrentSolution()) {
+      curSoln_ = solProvider->getCurrentSolution();
+    }
+    else {
+      Teuchos::RCP<MV> cur_update = iSolver->getCurrentUpdate();
+      curSoln_ = lp.updateSolution( cur_update );
+    }
     Teuchos::RCP<MV> cur_res = MVT::Clone( *curSoln_, MVT::GetNumberVecs( *curSoln_ ) );
     lp.computeCurrResVec( &*cur_res, &*curSoln_ );
     std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );

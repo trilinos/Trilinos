@@ -17,6 +17,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 
+#include "BelosCurrentSolutionProvider.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
@@ -98,7 +99,8 @@ namespace Belos {
   //@}
   
   template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
-  class PCPGIter : virtual public Iteration<ScalarType,MV,OP,DM> {
+  class PCPGIter : virtual public Iteration<ScalarType,MV,OP,DM>,
+                   public CurrentSolutionProvider<ScalarType,MV,OP,DM> {
     
   public:
     
