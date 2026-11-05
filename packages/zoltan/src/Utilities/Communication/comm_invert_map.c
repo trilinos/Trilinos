@@ -85,8 +85,16 @@ MPI_Comm  comm)			/* communicator */
 	msg_count[i] = 0;
 	counts[i] = 1;
     }
-    for (i = 0; i < nsends + self_msg; i++)
+    for (i = 0; i < nsends + self_msg; i++) {
+	if (procs_to[i] < 0 || procs_to[i] >= nprocs) {
+	    ZOLTAN_COMM_ERROR("Invalid processor in procs_to array.",
+			      "Zoltan_Comm_Invert_Map", my_proc);
+	    ZOLTAN_FREE(&counts);
+	    ZOLTAN_FREE(&msg_count);
+	    return(ZOLTAN_FATAL);
+	}
 	msg_count[procs_to[i]] = 1;
+    }
 
 /*  
  *  KDDKDD:  Replaced MPI_Reduce_scatter with MPI_Reduce and MPI_Scatter

@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "zoltan_dd_const.h"
 #include "zoltan_align.h"
@@ -73,7 +74,15 @@ int Zoltan_DD_Create (
    }
 
    /* input sanity check */
-   if (dd == NULL || num_gid < 1 || table_length < 0 || num_lid < 0)  {
+   if (dd == NULL || num_gid < 1 || table_length < 0 || num_lid < 0
+    || user_length < 0)  {
+      ZOLTAN_PRINT_ERROR (my_proc, yo, "Invalid input argument");
+      return ZOLTAN_FATAL;
+   }
+
+   /* guard the int size computations below against overflow/wrap */
+   if (((size_t)num_gid + (size_t)num_lid) * sizeof(ZOLTAN_ID_TYPE)
+      + (size_t)user_length > (size_t)INT_MAX / 2)  {
       ZOLTAN_PRINT_ERROR (my_proc, yo, "Invalid input argument");
       return ZOLTAN_FATAL;
    }

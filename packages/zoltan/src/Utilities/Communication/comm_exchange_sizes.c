@@ -8,6 +8,7 @@
 // @HEADER
 
 #include <stdio.h>
+#include <limits.h>
 #include <mpi.h>
 #include "comm.h"
 #include "zoltan_mem.h"
@@ -56,6 +57,11 @@ MPI_Comm  comm) {		/* communicator */
 	else 
 	    sizes_from[i] = sizes_to[self_index_to];
 
+	if (sizes_from[i] < 0 || sizes_from[i] > INT_MAX - *total_recv_size) {
+	    ZOLTAN_COMM_ERROR("Total receive size overflow.",
+			      "Zoltan_Comm_Exchange_Sizes", my_proc);
+	    return(ZOLTAN_FATAL);
+	}
 	*total_recv_size += sizes_from[i];
     }
 
