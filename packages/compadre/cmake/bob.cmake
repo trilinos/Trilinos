@@ -458,7 +458,7 @@ endmacro(latest_find_dependency)"
   # PK added this
   set(FIND_EXT_DEPS_CONTENT)
   foreach(dep IN LISTS ${PROJECT_NAME}_EXT_DEPS)
-      set(FIND_EXT_DEPS_CONTENT "${FIND_EXT_DEPS_CONTENT}find_package(${dep} REQUIRED NO_DEFAULT_PATH HINTS ${${dep}_PREFIX})\n")
+      set(FIND_EXT_DEPS_CONTENT "${FIND_EXT_DEPS_CONTENT}find_package(${dep} REQUIRED NO_DEFAULT_PATH HINTS ${${dep}_ROOT})\n")
   endforeach()
   set(FIND_DEPS_CONTENT)
   foreach(dep IN LISTS ${PROJECT_NAME}_DEPS)
