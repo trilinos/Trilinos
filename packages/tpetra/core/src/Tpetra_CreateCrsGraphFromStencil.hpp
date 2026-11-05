@@ -96,9 +96,9 @@ KOKKOS_INLINE_FUNCTION void updateNeighborDimensions(
     GlobalOrdinal dimensions[3]) {
   neighborRank = procCoordinates[2] * procGrid[0] * procGrid[1] +
                  procCoordinates[1] * procGrid[0] + procCoordinates[0];
-  dimensions[0] = rankData(3 * neighborRank);
-  dimensions[1] = rankData(3 * neighborRank + 1);
-  dimensions[2] = rankData(3 * neighborRank + 2);
+  dimensions[0] = rankData(4 * neighborRank);
+  dimensions[1] = rankData(4 * neighborRank + 1);
+  dimensions[2] = rankData(4 * neighborRank + 2);
 }
 
 template <class GlobalOrdinal, class LocalNodes, class GlobalNodes,
@@ -152,9 +152,9 @@ KOKKOS_INLINE_FUNCTION bool resolveNeighbor(
 
   updateNeighborDimensions(procCoordinates, procGrid, rankData, neighborRank,
                            dimensions);
-  neighborNode = globalCoordinates[2] * globalNodes[0] * globalNodes[1] +
-                 globalCoordinates[1] * globalNodes[0] +
-                 globalCoordinates[0];
+  neighborNode = rankData(4 * neighborRank + 3) +
+                 coordinates[2] * dimensions[0] * dimensions[1] +
+                 coordinates[1] * dimensions[0] + coordinates[0];
   return true;
 }
 
@@ -301,12 +301,16 @@ createCrsGraphFromStencil(
       std::invalid_argument,
       "createCrsGraphFromStencil: a local row range does not begin at a "
       "grid-point boundary.");
-  Teuchos::Array<GlobalOrdinal> localRankData(3);
+  const GlobalOrdinal firstLocalNode =
+      (localMinGid - globalMinGid) / dofsPerNodeGO;
+  // Store dimensions followed by the rank's first node in row-map order.
+  Teuchos::Array<GlobalOrdinal> localRankData(4);
   localRankData[0] = localNodes[0];
   localRankData[1] = localNodes[1];
   localRankData[2] = localNodes[2];
-  Teuchos::Array<GlobalOrdinal> rankData(3 * numRanks);
-  Teuchos::gatherAll(*comm, 3, localRankData.getRawPtr(), 3 * numRanks,
+  localRankData[3] = firstLocalNode;
+  Teuchos::Array<GlobalOrdinal> rankData(4 * numRanks);
+  Teuchos::gatherAll(*comm, 4, localRankData.getRawPtr(), 4 * numRanks,
                      rankData.getRawPtr());
 
   // Infer the same Cartesian process grid used by Galeri's map construction.
@@ -363,18 +367,18 @@ createCrsGraphFromStencil(
 
   Kokkos::Array<GlobalOrdinal, 3> globalNodes{{0, 0, 0}};
   for (int px = 0; px < procGrid[0]; ++px)
-    globalNodes[0] += rankData[3 * px];
+    globalNodes[0] += rankData[4 * px];
   for (int py = 0; py < procGrid[1]; ++py)
-    globalNodes[1] += rankData[3 * py * procGrid[0] + 1];
+    globalNodes[1] += rankData[4 * py * procGrid[0] + 1];
   for (int pz = 0; pz < procGrid[2]; ++pz)
-    globalNodes[2] += rankData[3 * pz * procXY + 2];
+    globalNodes[2] += rankData[4 * pz * procXY + 2];
   Kokkos::Array<GlobalOrdinal, 3> globalNodeStart{{0, 0, 0}};
   for (int px = 0; px < myProcX; ++px)
-    globalNodeStart[0] += rankData[3 * px];
+    globalNodeStart[0] += rankData[4 * px];
   for (int py = 0; py < myProcY; ++py)
-    globalNodeStart[1] += rankData[3 * py * procGrid[0] + 1];
+    globalNodeStart[1] += rankData[4 * py * procGrid[0] + 1];
   for (int pz = 0; pz < myProcZ; ++pz)
-    globalNodeStart[2] += rankData[3 * pz * procXY + 2];
+    globalNodeStart[2] += rankData[4 * pz * procXY + 2];
   TEUCHOS_TEST_FOR_EXCEPTION(
       globalNodes[0] * globalNodes[1] * globalNodes[2] != numGlobalNodes,
       std::invalid_argument,
