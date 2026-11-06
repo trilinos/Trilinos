@@ -171,6 +171,53 @@ namespace Teuchos {
   }
 
   //
+  // Make sure that report() with YAML output writes only on the
+  // process with rank 0 when the stream is a FancyOStream set to
+  // write only on rank 0.
+  //
+  TEUCHOS_UNIT_TEST( TimeMonitor, YamlReportToRootOnlyStream )
+  {
+    using Teuchos::FancyOStream;
+    using Teuchos::getFancyOStream;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcpFromRef;
+
+    RCP<Time> timer = TimeMonitor::getNewCounter ("YAML_REPORT_TIMER");
+    {
+      TimeMonitor timeMon (*timer);
+    }
+
+    const char* yamlStyles[] = {"compact", "spacious"};
+    for (const char* yamlStyle : yamlStyles) {
+      std::ostringstream oss;
+      RCP<FancyOStream> fos = getFancyOStream (rcpFromRef (oss));
+      fos->setOutputToRootOnly (0);
+      RCP<ParameterList> reportParams =
+        parameterList (* (TimeMonitor::getValidReportParameters ()));
+      reportParams->set ("Report format", "YAML");
+      reportParams->set ("YAML style", yamlStyle);
+      TimeMonitor::report (*fos, reportParams);
+      fos->flush ();
+
+      out << "YAML style " << yamlStyle << ":" << std::endl
+          << oss.str () << std::endl;
+
+      if (Teuchos::GlobalMPISession::getRank () == 0) {
+        const size_t substr_i = oss.str ().find ("YAML_REPORT_TIMER");
+        TEST_INEQUALITY(substr_i, std::string::npos);
+      }
+      else {
+        TEST_EQUALITY(oss.str (), std::string ());
+      }
+    }
+
+    // This sets up for the next unit test.
+    TimeMonitor::clearCounters ();
+  }
+
+  //
   // Test for TimeMonitor's enableTimer and disableTimer methods.
   //
   TEUCHOS_UNIT_TEST( TimeMonitor, enableTimer )
