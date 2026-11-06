@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include <ctype.h>
+#include <limits.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
 #include "all_allo_const.h"
@@ -97,6 +98,12 @@ ZOLTAN_ID_PTR lid;
 
       for (i = 0; i < num_obj; i++) {
         nedges = (*edges_per_obj)[i];
+        if (nedges < 0 || nedges > INT_MAX - *num_edges) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                             "Invalid edge count from Get_Num_Edges_Multi.");
+          ierr = ZOLTAN_FATAL;
+          goto End;
+        }
         *num_edges += nedges;
         if (nedges > *max_edges) *max_edges = nedges;
       }
@@ -111,6 +118,12 @@ ZOLTAN_ID_PTR lid;
         if (ierr) {
           /* Return error */
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Get_Num_Edges.");
+          goto End;
+        }
+        if (nedges < 0 || nedges > INT_MAX - *num_edges) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                             "Invalid edge count from Get_Num_Edges.");
+          ierr = ZOLTAN_FATAL;
           goto End;
         }
         *num_edges += nedges;

@@ -395,6 +395,11 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
   edim = MAX(zz->Edge_Weight_Dim,1);
 
   if (gr->obj_wgt_dim < FOMAXDIM && zz->Edge_Weight_Dim < FOMAXDIM) {
+    for (i = 0; i < gr->num_obj; i++)
+      if (prt->part[i] < 0 || prt->part[i] >= zz->LB.Num_Global_Parts){
+        ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
+			 "Invalid partition number in Zoltan_Postprocess_FinalOutput");
+      }
     if (gr->xadj[gr->num_obj]){
       adjpart = (int *) ZOLTAN_MALLOC(gr->xadj[gr->num_obj] * sizeof(int));
       if (!adjpart){
@@ -412,6 +417,12 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR,
 			 "Error 2 returned from Zoltan_Postprocess_FinalOutput");
     }
+    for (i = 0; i < gr->xadj[gr->num_obj]; i++)
+      if (adjpart[i] < 0 || adjpart[i] >= zz->LB.Num_Global_Parts){
+        ZOLTAN_FREE(&adjpart);
+        ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
+			 "Invalid neighbor partition number in Zoltan_Postprocess_FinalOutput");
+      }
     Compute_EdgeCut(zz, gr->num_obj, gr->xadj, gr->float_ewgts,
                     prt->part, adjpart, cute);
     cutl = Compute_ConCut(zz, gr->num_obj, gr->xadj,  gr->float_ewgts,
@@ -653,6 +664,10 @@ indextype *used = NULL;
 int dim = zz->Edge_Weight_Dim;
 
   used = (indextype *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(indextype));
+  if (!used) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, "Compute_ConCut", "Insufficient memory.");
+    return -1.;
+  }
   for (i = 0; i < zz->LB.Num_Global_Parts; i++) used[i] = -1;
 
   for (i = 0; i < nvtx; i++) {
