@@ -457,8 +457,10 @@ hypergraph_callbacks=0;
     /* TODO : support local graphs */
     /* TODO : support weights ! */
     /* Get edge data */
-    Zoltan_Get_Num_Edges_Per_Obj(zz, matrix->nY, *xGID, *xLID,
+    ierr = Zoltan_Get_Num_Edges_Per_Obj(zz, matrix->nY, *xGID, *xLID,
 				 &edgeSize, &max_edges, &matrix->nPins);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+      FATAL_ERROR("Error returned from Zoltan_Get_Num_Edges_Per_Obj");
 
     (*pinID) = ZOLTAN_MALLOC_GID_ARRAY(zz, matrix->nPins);
     nbors_proc = (int *)ZOLTAN_MALLOC(matrix->nPins * sizeof(int));
