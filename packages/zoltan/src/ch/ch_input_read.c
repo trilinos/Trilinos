@@ -76,7 +76,9 @@ double    read_val(
 	    save_pnt = break_pnt;
 	    white_seen = FALSE;
 	    done = FALSE;
-	    while (!done) {
+	    /* Guard break_pnt: a line with no safe break point must not
+	       scan below the start of the buffer. */
+	    while (!done && break_pnt > 0) {
 		--break_pnt;
 		if (line[break_pnt] != '\0') {
 		    if (isspace((int)(line[break_pnt]))) {
@@ -167,7 +169,9 @@ int      *end_flag 		/* 0 => OK, 1 => EOL, -1 => EOF */
 	    save_pnt = break_pnt;
 	    white_seen = FALSE;
 	    done = FALSE;
-	    while (!done) {
+	    /* Guard break_pnt: a line with no safe break point must not
+	       scan below the start of the buffer. */
+	    while (!done && break_pnt > 0) {
 		--break_pnt;
 		if (line[break_pnt] != '\0') {
 		    if (isspace((int)(line[break_pnt]))) {

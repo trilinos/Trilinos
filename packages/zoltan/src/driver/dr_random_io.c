@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 
 #ifndef M_PI
 # define M_PI           3.14159265358979323846  /* pi */
@@ -95,10 +96,17 @@ int create_random_triangles(
 
     /* read the array in on processor 0 */
     ntri = (int)pio_info->init_size;
-    nvtxs = ntri * 3;
     ndim = pio_info->init_dim;
     vwgt_dim = pio_info->init_vwgt_dim;
     if (vwgt_dim<1) vwgt_dim=1; /* For now, insist on 1 or more weights. */
+
+    /* Guard the int size arithmetic below against overflow. */
+    if ((ntri < 0) || (ntri > (INT_MAX / 3) / 2) ||
+        ((ntri > 0) && (vwgt_dim > INT_MAX / (3 * ntri)))) {
+      Gen_Error(0, "fatal: Random input size and/or weight dimension too large.");
+      return 0;
+    }
+    nvtxs = ntri * 3;
 
     if (ntri <= OUTPUT_FILES_MAX_NVTXS) {
       sprintf(filename, "%s.graph", pio_info->pexo_fname);
@@ -291,10 +299,18 @@ int create_random_input(
      * and then let random input be distributed as a Chaco graph would be. */
 
     /* read the array in on processor 0 */
-    nvtxs = pio_info->init_size*Num_Proc;
     ndim = pio_info->init_dim;
     vwgt_dim = pio_info->init_vwgt_dim;
     if (vwgt_dim<1) vwgt_dim=1; /* For now, insist on 1 or more weights. */
+
+    /* Guard the int size arithmetic below against overflow. */
+    if ((pio_info->init_size > (ZOLTAN_ID_TYPE)(INT_MAX / Num_Proc)) ||
+        ((pio_info->init_size > 0) &&
+         (vwgt_dim > INT_MAX / ((int)pio_info->init_size * Num_Proc)))) {
+      Gen_Error(0, "fatal: Random input size and/or weight dimension too large.");
+      return 0;
+    }
+    nvtxs = pio_info->init_size*Num_Proc;
 
     if (nvtxs <= OUTPUT_FILES_MAX_NVTXS) {
       sprintf(filename, "%s.graph", pio_info->pexo_fname);
@@ -506,6 +522,12 @@ int create_a_graph(
   }
 
   gnvtxs = (ZOLTAN_ID_TYPE)nvtxs * Num_Proc;
+
+  /* Guard the vwgt_dim*nvtxs size arithmetic below against overflow. */
+  if ((ZOLTAN_ID_TYPE)vwgt_dim > (ZOLTAN_ID_TYPE)INT_MAX / nvtxs) {
+    Gen_Error(0, "fatal: Graph size and/or weight dimension too large.");
+    return 0;
+  }
 
   if (Proc == 0){
     printf("create_a_graph: Graph will have " ZOLTAN_ID_SPEC " vertices, " ZOLTAN_ID_SPEC " on each process\n",
