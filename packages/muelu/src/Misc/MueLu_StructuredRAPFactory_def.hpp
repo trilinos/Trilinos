@@ -24,7 +24,10 @@
 #include <Xpetra_TpetraCrsGraph.hpp>
 #include <Xpetra_TpetraMap.hpp>
 
-#include <Tpetra_CreateCrsGraphFromStencil.hpp>
+#include <Tpetra_CreateCrsGraphFromStencil_decl.hpp>
+#ifndef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include <Tpetra_CreateCrsGraphFromStencil_def.hpp>
+#endif
 
 #include "MueLu_StructuredRAPFactory_decl.hpp"
 #include "MueLu_StructuredRAPKernel.hpp"

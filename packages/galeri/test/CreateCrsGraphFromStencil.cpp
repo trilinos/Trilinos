@@ -12,7 +12,10 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
-#include "Tpetra_CreateCrsGraphFromStencil.hpp"
+#include "Tpetra_CreateCrsGraphFromStencil_decl.hpp"
+#ifndef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include "Tpetra_CreateCrsGraphFromStencil_def.hpp"
+#endif
 
 #include <algorithm>
 #include <cstdlib>
