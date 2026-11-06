@@ -1179,7 +1179,7 @@ Taylor<T>
 acosh(const Base< Taylor<T> >& aa)
 {
   const Taylor<T>& a = aa.derived();
-  Taylor<T> b = -1.0 / sqrt(1.0 - a*a);
+  Taylor<T> b = 1.0 / sqrt(a*a - 1.0);
   return quad(acosh(a.coeff(0)), a, b);
 }
 
@@ -1188,7 +1188,7 @@ Taylor<T>
 asinh(const Base< Taylor<T> >& aa)
 {
   const Taylor<T>& a = aa.derived();
-  Taylor<T> b = 1.0 / sqrt(a*a - 1.0);
+  Taylor<T> b = 1.0 / sqrt(1.0 + a*a);
   return quad(asinh(a.coeff(0)), a, b);
 }
 
