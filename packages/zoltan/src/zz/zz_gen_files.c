@@ -114,6 +114,13 @@ int gen_geom, int gen_graph, int gen_hg)
   /* Assign default file name if none was given. */
   if (fname==NULL) fname = "noname";
 
+  /* Reject base names too long for full_fname plus the longest suffix. */
+  if (strlen(fname) >= sizeof(full_fname) - 8){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "File name too long.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return ZOLTAN_FATAL;
+  }
+
   /* Zoltan_Get_Obj_List allocates memory for all return lists. */
   error = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids,
                               zz->Obj_Weight_Dim, &float_vwgt, &part);
@@ -273,7 +280,7 @@ int gen_geom, int gen_graph, int gen_hg)
    */
   /* Write object assignments to file. */
   /* For now, only write partition number. */
-  sprintf(full_fname, "%s.assign", fname);
+  snprintf(full_fname, sizeof(full_fname), "%s.assign", fname);
   if (zz->Proc == 0)
     fp = fopen(full_fname, "w");
   else
@@ -289,7 +296,7 @@ int gen_geom, int gen_graph, int gen_hg)
   fflush(fp);
   fclose(fp);
 
-  sprintf(full_fname, "%s.gids", fname);
+  snprintf(full_fname, sizeof(full_fname), "%s.gids", fname);
   if (zz->Proc == 0)
     fp = fopen(full_fname, "w");
   else
@@ -309,7 +316,7 @@ int gen_geom, int gen_graph, int gen_hg)
 
   /* Write geometry to file, if applicable. */
   if (gen_geom){
-    sprintf(full_fname, "%s.coords", fname);
+    snprintf(full_fname, sizeof(full_fname), "%s.coords", fname);
     if (zz->Proc == 0)
       fp = fopen(full_fname, "w");
     else
@@ -331,7 +338,7 @@ int gen_geom, int gen_graph, int gen_hg)
   /* Write graph to file, if applicable. */
   /* Also create a minimal .graph file with no edges for geometric methods. */
   if (gen_geom || gen_graph){
-    sprintf(full_fname, "%s.graph", fname);
+    snprintf(full_fname, sizeof(full_fname), "%s.graph", fname);
     if (zz->Proc == 0)
       fp = fopen(full_fname, "w");
     else
@@ -403,7 +410,7 @@ int gen_geom, int gen_graph, int gen_hg)
      *  6. character data may be upper or lower case. 
      */
 
-    sprintf(full_fname, "%s.mtxp", fname);  /* matrixmarket plus */
+    snprintf(full_fname, sizeof(full_fname), "%s.mtxp", fname);  /* matrixmarket plus */
 
     Zoltan_Print_Sync_Start(zz->Communicator, 0); 
     if (zz->Proc == 0)
