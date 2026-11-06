@@ -15,6 +15,7 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Map.hpp"
 #include "Tpetra_Operator.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -25,6 +26,9 @@
 #include "Galeri_XpetraParameters.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_Array.hpp"
+
+#include <cmath>
 
 
 namespace Thyra {
@@ -276,6 +280,136 @@ TEUCHOS_UNIT_TEST( GeneralSolveCriteriaBelosStatusTest, norm_inf_r_over_1 )
 
 }
 
+
+
+TEUCHOS_UNIT_TEST( BelosLinearOpWithSolve, pseudoBlockCGConditionEstimate )
+{
+  /* 1) Test whether a condition number estimate from Belos' PseudoBlockCG is
+   *    computed and propagated correctly via the solve status.
+   * 2) Reuse the same solver, disable condition number estimation,
+   *    and check whether no condition number estimate is returned.
+   *    This makes sure that the estimate from the previous run is not exposed.
+   * - Do not use a preconditioner.
+   * - This test does not verify if the condition number estimate was
+   *   computed correctly. It does, however, check whether the estimate
+   *   is >= 1 and if it is finite.
+   */
+  using crs_type = Tpetra::CrsMatrix<double>;
+  using map_type = crs_type::map_type;
+  using GO = crs_type::global_ordinal_type;
+  using op_type = Tpetra::Operator<double>;
+
+  // Create a small symmetric, positive definite, tridiagonal matrix (discrete Laplacian)
+  // (  2  -1                  )
+  // ( -1   2  -1              )
+  // (     -1   2  -1          )
+  // (       ..........        )
+  // (              -1   2  -1 )
+  // (                  -1   2 )
+  const GO numRows = 10;
+  const auto map = Teuchos::rcp(new map_type(numRows, 0, Tpetra::getDefaultComm()));
+  const auto matrix = Teuchos::rcp(new crs_type(map, 3));
+  for (const GO row : map->getLocalElementList()) {
+    Teuchos::Array<GO> columns;
+    Teuchos::Array<double> values;
+
+    // -1 on subdiaonal
+    if (row > 0) {
+      columns.push_back(row - 1);
+      values.push_back(-1.0);
+    }
+
+    // 2 on main diagonal
+    columns.push_back(row);
+    values.push_back(2.0);
+
+    // -1 on superdiagonal
+    if (row + 1 < numRows) {
+      columns.push_back(row + 1);
+      values.push_back(-1.0);
+    }
+
+    matrix->insertGlobalValues(row, columns(), values());
+  }
+  matrix->fillComplete();
+
+  // Create operator from matrix
+  const RCP<const LinearOpBase<double> > fwdOp =
+    createLinearOp(Teuchos::rcp_dynamic_cast<op_type>(matrix, true));
+
+  // Create right-hand side b of A*x = b with b = ( 1 , ... , 1 )
+  const auto b = createMember(fwdOp->range());
+  V_S(b.ptr(), 1.0);
+
+  // Initialize solution from A*x = b with x = ( 0 , ... , 0 )
+  const auto x = createMember(fwdOp->domain());
+  V_S(x.ptr(), 0.0);
+
+  // Set up parameter list for Pseudo Block CG
+  const auto paramlist = Teuchos::parameterList();
+  paramlist->set("Solver Type", "Pseudo Block CG");
+  auto& cgParams = paramlist->sublist("Solver Types").sublist("Pseudo Block CG");
+  cgParams.set("Estimate Condition Number", true);
+  cgParams.set("Convergence Tolerance", 1e-6);
+  cgParams.set("Maximum Iterations", 20);
+
+  // Create solver
+  BelosLinearOpWithSolveFactory<double> lowsFactory;
+  lowsFactory.setParameterList(paramlist);
+  lowsFactory.setOStream(Teuchos::rcpFromRef(out));
+  const auto lows = linearOpWithSolve<double>(lowsFactory, fwdOp);
+
+  // Solve A*x = b
+  const auto status = solve<double>(*lows, NOTRANS, *b, x.ptr());
+
+  out << "\nCondition number estimation enabled\n";
+  out <<   "-----------------------------------\n";
+  out << "\nSolve status:\n" << status;
+  TEST_EQUALITY(status.solveStatus, SOLVE_STATUS_CONVERGED);
+
+  // The condition number estimate should have been written to parameter list.
+  TEST_ASSERT(Teuchos::nonnull(status.extraParameters));
+  if (Teuchos::is_null(status.extraParameters)) return;
+
+  // Verify that the two following keys are in the parameter list.
+  const char* belosKey = "Belos/Condition Number Estimate";
+  const char* genericKey = "Condition Number Estimate";
+  TEST_ASSERT(status.extraParameters->isType<double>(belosKey));
+  TEST_ASSERT(status.extraParameters->isType<double>(genericKey));
+  if (!status.extraParameters->isType<double>(belosKey) ||
+      !status.extraParameters->isType<double>(genericKey)) return;
+
+  // Extract the estimate, which is stored in two locations.
+  // Make sure the estimates match and check that
+  //    1.0 <= condition number estimate < infinity
+  const double estimate = status.extraParameters->get<double>(belosKey);
+  TEST_EQUALITY(estimate, status.extraParameters->get<double>(genericKey));
+  TEST_ASSERT(std::isfinite(estimate));
+  TEST_COMPARE(estimate, >=, 1.0);
+
+  // Reinitialize the same LOWS object and reuse Belos' solver manager.
+  // Disable condition number estimation.
+  // The solver should reset the condition number estimate and not
+  // expose the estimate from the previous solve.
+  cgParams.set("Estimate Condition Number", false);
+  lowsFactory.setParameterList(paramlist);
+  initializeOp<double>(lowsFactory, fwdOp, lows.ptr());
+  V_S(x.ptr(), 0.0);
+
+  // Solve A*x = b
+  const auto status_rerun = solve<double>(*lows, NOTRANS, *b, x.ptr());
+
+  out << "\nCondition number estimation disabled\n";
+  out <<   "------------------------------------\n";
+  out << "\nSolve status:\n" << status_rerun;
+  TEST_EQUALITY(status_rerun.solveStatus, SOLVE_STATUS_CONVERGED);
+
+  // Make sure that condition number estimates have not been returned.
+  if (Teuchos::nonnull(status_rerun.extraParameters)) {
+    TEST_ASSERT(!status_rerun.extraParameters->isParameter(belosKey));
+    TEST_ASSERT(!status_rerun.extraParameters->isParameter(genericKey));
+  }
+}
 
 
 } // namespace Thyra

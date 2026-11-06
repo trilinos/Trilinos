@@ -528,6 +528,9 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // Condition estimate
   if (params->isParameter ("Estimate Condition Number")) {
     genCondEst_ = params->get ("Estimate Condition Number", genCondEst_default_);
+
+    // Update parameter in our list.
+    params_->set("Estimate Condition Number", genCondEst_);
   }
 
   // Create output manager if we need to.
@@ -730,6 +733,9 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::getValidParameters() const
 template<class ScalarType, class MV, class OP, class DM>
 ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,DM,true>::solve ()
 {
+  // Re-initialize the condition number estimate in case of consecutive runs.
+  condEstimate_ = -Teuchos::ScalarTraits<ScalarType>::one();
+
   const char prefix[] = "Belos::PseudoBlockCGSolMgr::solve: ";
 
   ReturnType retType = Undetermined;

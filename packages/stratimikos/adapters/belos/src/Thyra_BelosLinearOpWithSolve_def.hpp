@@ -10,6 +10,7 @@
 #ifndef THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP
 #define THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP
 
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #include "Thyra_BelosLinearOpWithSolve_decl.hpp"
 #include "Thyra_GeneralSolveCriteriaBelosStatusTest.hpp"
 #include "Thyra_LinearOpWithSolveHelpers.hpp"
@@ -760,6 +761,50 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
 //  is not set to Teuchos::VERB_NONE, so I'm commenting this out for now.
 //  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
 //    *out << "\nTotal solve time in Belos = "<<totalTimer.totalElapsedTime()<<" sec\n";
+
+  //
+  // PseudoBlockCG
+  // The following gives access to the condition number estimate if the request was given to Belos' PseudoBlockCG.
+  //
+
+  using CGSolver = Belos::PseudoBlockCGSolMgr<Scalar, MV_t, LO_t>;
+  // If a scalar type is not supported, the CG solver will not contain the function getConditionEstimate(),
+  // so we do a compile-time check for its existence.
+  if constexpr ( requires(const CGSolver& solver) {solver.getConditionEstimate();} ) {
+    auto cgSolver = Teuchos::rcp_dynamic_cast<CGSolver>(iterativeSolver_, false);
+    // Check if the solver is a pseudo block CG solver.
+    if (Teuchos::nonnull(cgSolver)) {
+      // Check if the user requested the condition number estimate.
+      const Teuchos::RCP<const Teuchos::ParameterList>& params = cgSolver->getCurrentParameters();
+      const bool estimateRequested = Teuchos::nonnull(params) &&
+                                     params->isParameter("Estimate Condition Number") &&
+                                     params->get<bool>("Estimate Condition Number");
+
+      if (estimateRequested) {
+        const Scalar condEstimate = cgSolver->getConditionEstimate();
+
+        // Normally, if the condition number was requested, it should be >= 1.
+        // If something goes wrong, it is initialized to -1, so we make this additional check.
+        if (condEstimate == -Teuchos::ScalarTraits<Scalar>::one()) {
+          if (out.get() && verbLevel != Teuchos::VERB_NONE) {
+            *out << "Warning: Belos PseudoBlockCG condition number estimation "
+                    "was requested, but no estimate is available.\n";
+          }
+        } else {
+          // Return the condition number estimate as a solver status.
+          if (solveStatus.extraParameters.is_null()) {
+            solveStatus.extraParameters = parameterList();
+          }
+          solveStatus.extraParameters->set(
+            "Belos/Condition Number Estimate",
+            condEstimate);
+          solveStatus.extraParameters->set(
+            "Condition Number Estimate",
+            condEstimate);
+        }
+      }
+    }
+  }
 
   return solveStatus;
 
