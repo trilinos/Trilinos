@@ -35,7 +35,7 @@ struct SerialLeftHouseholderInternal {
     mag_type norm_x2_square = zero;
     for (int i = 0; i < m_x2; ++i) {
       const auto x2_at_i = x2[i * x2s];
-      norm_x2_square += KAT::real(KAT::conj(x2_at_i) * x2_at_i);
+      norm_x2_square += KAT::abs(KAT::conj(x2_at_i) * x2_at_i);
     }
 
     /// if norm_x2 is zero, return with trivial values

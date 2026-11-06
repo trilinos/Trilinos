@@ -13,8 +13,8 @@ void impl_test_nrm2w(int N) {
   using AT         = KokkosKernels::ArithTraits<ScalarA>;
   using MagnitudeA = typename AT::mag_type;
 
-  view_stride_adapter<ViewTypeA> a("A", N);
-  view_stride_adapter<ViewTypeA> w("W", N);
+  TestUtils::view_stride_adapter<ViewTypeA> a("A", N);
+  TestUtils::view_stride_adapter<ViewTypeA> w("W", N);
 
   constexpr MagnitudeA max_val = 10;
   const MagnitudeA eps         = AT::epsilon();
@@ -23,7 +23,7 @@ void impl_test_nrm2w(int N) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  Test::getRandomBounds(max_val, randStart, randEnd);
+  TestUtils::getRandomBounds(max_val, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   Kokkos::fill_random(w.d_view, rand_pool, AT::one(),
                       randEnd);  // Avoid divide by 0
@@ -48,8 +48,8 @@ void impl_test_nrm2w_mv(int N, int K) {
   using AT         = KokkosKernels::ArithTraits<ScalarA>;
   using MagnitudeA = typename AT::mag_type;
 
-  view_stride_adapter<ViewTypeA> a("A", N, K);
-  view_stride_adapter<ViewTypeA> w("W", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> a("A", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> w("W", N, K);
 
   constexpr MagnitudeA max_val = 10;
   const MagnitudeA eps         = AT::epsilon();
@@ -58,7 +58,7 @@ void impl_test_nrm2w_mv(int N, int K) {
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  Test::getRandomBounds(max_val, randStart, randEnd);
+  TestUtils::getRandomBounds(max_val, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   Kokkos::fill_random(w.d_view, rand_pool, AT::one(),
                       randEnd);  // Avoid dividing by 0

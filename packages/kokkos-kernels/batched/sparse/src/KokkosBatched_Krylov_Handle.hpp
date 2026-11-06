@@ -74,7 +74,7 @@ class KrylovHandle {
         monitor_residual(_monitor_residual) {
     tolerance     = KokkosKernels::ArithTraits<norm_type>::epsilon();
     max_tolerance = 1e-30;
-    if (std::is_same<norm_type, double>::value) max_tolerance = 1e-50;
+    if constexpr (std::is_same_v<norm_type, double>) max_tolerance = 1e-50;
     if (monitor_residual) {
       residual_norms = NormViewType("", batched_size, max_iteration + 2);
     }

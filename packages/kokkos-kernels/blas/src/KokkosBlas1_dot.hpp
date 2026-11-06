@@ -23,8 +23,8 @@ namespace KokkosBlas {
 /// \param y [in] Input 1-D View.
 ///
 /// \return The dot product result; a single value.
-template <class execution_space, class XVector, class YVector,
-          typename std::enable_if<Kokkos::is_execution_space_v<execution_space>, int>::type = 0>
+template <class execution_space, class XVector, class YVector>
+  requires Kokkos::is_execution_space_v<execution_space>
 typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type dot(
     const execution_space& space, const XVector& x, const YVector& y) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
@@ -52,49 +52,24 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 
   using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
                                         typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-                                        typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                                        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using YVector_Internal = Kokkos::View<typename YVector::const_value_type*,
                                         typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
-                                        typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+                                        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   using dot_type =
       typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type;
-  // result_type is usually just dot_type, except:
-  //  if dot_type is float, result_type is double
-  //  if dot_type is complex<float>, result_type is complex<double>
-  // These special cases are to maintain accuracy.
-  using result_type = typename KokkosBlas::Impl::DotAccumulatingScalar<dot_type>::type;
   using RVector_Internal =
       Kokkos::View<dot_type, KokkosKernels::default_layout, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using RVector_Result = Kokkos::View<result_type, KokkosKernels::default_layout, Kokkos::HostSpace,
-                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   XVector_Internal X = x;
   YVector_Internal Y = y;
 
-  bool useFallback = false;
-  if (useFallback) {
-    // Even though RVector is the template parameter, Dot::dot has an overload
-    // that accepts RVector_Internal (with the special accumulator, if dot_type
-    // is 32-bit precision). Impl::Dot needs to support both cases, and it's
-    // easier to do this with overloading than by extending the ETI to deal with
-    // two different scalar types.
-    result_type result{};
-    RVector_Result R = RVector_Result(&result);
-    Impl::DotSpecialAccumulator<execution_space, RVector_Internal, XVector_Internal, YVector_Internal>::dot(space, R, X,
-                                                                                                            Y);
-    space.fence();
-    // mfh 22 Jan 2020: We need the line below because
-    // Kokkos::complex<T> lacks a constructor that takes a
-    // Kokkos::complex<U> with U != T.
-    return KokkosKernels::Details::CastPossiblyComplex<dot_type, result_type>::cast(result);
-  } else {
-    dot_type result{};
-    RVector_Internal R = RVector_Internal(&result);
-    Impl::Dot<execution_space, RVector_Internal, XVector_Internal, YVector_Internal>::dot(space, R, X, Y);
-    space.fence();
-    return KokkosKernels::Details::CastPossiblyComplex<dot_type, result_type>::cast(result);
-  }
+  dot_type result{};
+  RVector_Internal R = RVector_Internal(&result);
+  Impl::Dot<execution_space, RVector_Internal, XVector_Internal, YVector_Internal>::dot(space, R, X, Y);
+  space.fence();
+  return result;
 }
 
 /// \brief Return the dot product of the two vectors x and y.
@@ -144,12 +119,12 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
 ///   product X with each column of Y, in turn.  R must be 1-D. </li>
 /// </ul>
 ///
-/// \note To implementers: We use enable_if here so that the compiler
+/// \note To implementers: We use 'requires' here so that the compiler
 ///   doesn't confuse this version of dot() with the three-argument
 ///   version of dot() in Kokkos_Blas1.hpp.
 template <class execution_space, class RV, class XMV, class YMV>
-void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
-         typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  requires Kokkos::is_view_v<RV>
+void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::dot: excution_space must be a valid Kokkos "
                 "execution space.");
@@ -184,48 +159,64 @@ void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
 
   // Regardless of ranks of X and Y, their numbers of rows must match.
   bool dimsMatch = true;
-  if (X.extent(0) != Y.extent(0)) {
-    dimsMatch = false;
-  } else if (X.extent(1) != Y.extent(1) && X.extent(1) != 1 && Y.extent(1) != 1) {
-    // Numbers of columns don't match, and neither X nor Y have one column.
-    dimsMatch = false;
-  }
-  const auto maxNumCols = X.extent(1) > Y.extent(1) ? X.extent(1) : Y.extent(1);
-  if (RV::rank == 1 && R.extent(0) != maxNumCols) {
-    dimsMatch = false;
-  }
-
-  if (!dimsMatch) {
-    std::ostringstream os;
-    os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
-    if (RV::rank == 1) {
-      os << "R: " << R.extent(0) << " x " << X.extent(1) << ", ";
+  if constexpr (XMV::rank == 2 && YMV::rank == 2) {
+    if (X.extent(0) != Y.extent(0)) {
+      dimsMatch = false;
+    } else if (X.extent(1) != Y.extent(1) && X.extent(1) != 1 && Y.extent(1) != 1) {
+      // Numbers of columns don't match, and neither X nor Y have one column.
+      dimsMatch = false;
     }
-    os << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+    if constexpr (RV::rank == 1) {
+      const auto maxNumCols = X.extent(1) > Y.extent(1) ? X.extent(1) : Y.extent(1);
+      if (R.extent(0) != maxNumCols) {
+        dimsMatch = false;
+      }
+      if (!dimsMatch) {
+        std::ostringstream os;
+        os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
+        os << "R: " << R.extent(0) << " x " << X.extent(1) << ", ";
+        os << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else {
+      if (!dimsMatch) {
+        std::ostringstream os;
+        os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
+        os << "X: " << X.extent(0) << " x " << X.extent(1) << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    }
+  } else {
+    if (X.extent(0) != Y.extent(0)) {
+      dimsMatch = false;
+    }
+    if (!dimsMatch) {
+      std::ostringstream os;
+      os << "KokkosBlas::dot: Dimensions of R, X, and Y do not match: ";
+      os << "X: " << X.extent(0) << ", Y: " << Y.extent(0);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   // Create unmanaged versions of the input Views.
   using UnifiedXLayout  = typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
   using UnifiedRVLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<RV, UnifiedXLayout>::array_layout;
+  using UnifiedRVDevice =
+      std::conditional_t<Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename RV::memory_space>::assignable,
+                         Kokkos::HostSpace, execution_space>;
 
-  typedef Kokkos::View<typename std::conditional<RV::rank == 0, typename RV::non_const_value_type,
-                                                 typename RV::non_const_value_type*>::type,
-                       UnifiedRVLayout, typename RV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      RV_Internal;
-  typedef Kokkos::View<typename std::conditional<XMV::rank == 1, typename XMV::const_value_type*,
-                                                 typename XMV::const_value_type**>::type,
-                       UnifiedXLayout, typename XMV::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      XMV_Internal;
-  typedef Kokkos::View<typename std::conditional<YMV::rank == 1, typename YMV::const_value_type*,
-                                                 typename YMV::const_value_type**>::type,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout, typename YMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      YMV_Internal;
+  using RV_Internal  = Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, UnifiedRVDevice,
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using YMV_Internal =
+      Kokkos::View<typename YMV::const_data_type,
+                   typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YMV, UnifiedXLayout>::array_layout,
+                   execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  RV_Internal R_internal  = R;
-  XMV_Internal X_internal = X;
-  YMV_Internal Y_internal = Y;
+  RV_Internal R_internal  = KokkosKernels::Impl::unificationCast<RV_Internal>(R);
+  XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);
+  YMV_Internal Y_internal = KokkosKernels::Impl::unificationCast<YMV_Internal>(Y);
 
   Impl::Dot<execution_space, RV_Internal, XMV_Internal, YMV_Internal>::dot(space, R_internal, X_internal, Y_internal);
 }
@@ -257,11 +248,12 @@ void dot(const execution_space& space, const RV& R, const XMV& X, const YMV& Y,
 ///   product X with each column of Y, in turn.  R must be 1-D. </li>
 /// </ul>
 ///
-/// \note To implementers: We use enable_if here so that the compiler
+/// \note To implementers: We use 'requires' here so that the compiler
 ///   doesn't confuse this version of dot() with the three-argument
 ///   version of dot() in Kokkos_Blas1.hpp.
 template <class RV, class XMV, class YMV>
-void dot(const RV& R, const XMV& X, const YMV& Y, typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  requires Kokkos::is_view_v<RV>
+void dot(const RV& R, const XMV& X, const YMV& Y) {
   dot(typename XMV::execution_space{}, R, X, Y);
 }
 }  // namespace KokkosBlas

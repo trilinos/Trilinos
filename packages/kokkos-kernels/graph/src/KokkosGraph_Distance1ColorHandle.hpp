@@ -406,8 +406,7 @@ class GraphColoringHandle {
                              clt  //, new_num_edge
         );
 
-        KokkosKernels::Impl::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, ExecutionSpace>(nv + 1,
-                                                                                                       lower_count);
+        KokkosKernels::inclusive_parallel_prefix_sum(ExecutionSpace(), lower_count);
         // Kokkos::parallel_scan (my_exec_space(0, nv + 1),
         // PPS<row_lno_temp_work_view_t>(lower_count));
         ExecutionSpace().fence();
@@ -441,8 +440,7 @@ class GraphColoringHandle {
         // Kokkos::parallel_scan (my_exec_space(0, nv + 1),
         // PPS<row_lno_temp_work_view_t>(lower_count));
 
-        KokkosKernels::Impl::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, ExecutionSpace>(nv + 1,
-                                                                                                       lower_count);
+        KokkosKernels::inclusive_parallel_prefix_sum(ExecutionSpace(), lower_count);
         nnz_lno_persistent_work_view_t half_src(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HALF SRC"),
                                                 new_num_edge);
         nnz_lno_persistent_work_view_t half_dst(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HALF DST"),

@@ -59,7 +59,7 @@ struct Functor_TestBatchedTeamGemm {
     std::string name_region           = std::is_same_v<typename ParamTagType::mode, KokkosBatched::Mode::Team>
                                             ? "KokkosBatched::Test::TeamGemm"
                                             : "KokkosBatched::Test::TeamVectorGemm";
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = m_c.extent(0);

@@ -40,7 +40,7 @@ namespace KokkosBatched {
 template <typename ArgUplo, typename ArgTrans, typename ArgDiag, typename ArgAlgo>
 struct SerialTbsv {
   static_assert(
-      std::is_same_v<ArgUplo, Uplo::Upper> || std::is_same_v<ArgUplo, Uplo::Lower>,
+      is_uplo_v<ArgUplo>,
       "KokkosBatched::tbsv: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
   static_assert(std::is_same_v<ArgTrans, Trans::NoTranspose> || std::is_same_v<ArgTrans, Trans::Transpose> ||
                     std::is_same_v<ArgTrans, Trans::ConjTranspose>,

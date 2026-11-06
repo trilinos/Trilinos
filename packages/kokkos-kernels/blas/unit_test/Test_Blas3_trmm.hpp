@@ -7,6 +7,8 @@
 #include <KokkosKernels_TestUtils.hpp>
 
 #include <chrono>
+#include <vector>
+#include <sstream>
 
 namespace Test {
 
@@ -81,8 +83,7 @@ struct trmm_VanillaGEMM {
 };
 
 template <class Scalar, class ViewTypeA, class ViewTypeB, class Device>
-void impl_test_trmm(const char* side, const char* uplo, const char* trans, const char* diag, int M, int N,
-                    Scalar alpha) {
+void impl_test_trmm(char side, char uplo, char trans, char diag, int M, int N, Scalar alpha) {
   using execution_space = typename ViewTypeA::device_type::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
   using APT             = KokkosKernels::ArithTraits<ScalarA>;
@@ -90,7 +91,7 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans, const
 
   double machine_eps = APT::epsilon();
   const mag_type eps = 1.0e8 * machine_eps;  //~1e-13 for double
-  bool A_l           = (side[0] == 'L') || (side[0] == 'l');
+  bool A_l           = (side == 'L') || (side == 'l');
   int K              = A_l ? M : N;
   ViewTypeA A("A", K, K);
   ViewTypeB B("B", M, N);
@@ -108,14 +109,14 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans, const
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
 
-  if ((diag[0] == 'U') || (diag[0] == 'u')) {
+  if ((diag == 'U') || (diag == 'u')) {
     // Initialize A with deterministic random numbers
     Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
     using functor_type = UnitDiagTRMM<ViewTypeA, execution_space>;
     functor_type udtrmm(A);
     // Initialize As diag with 1s
     Kokkos::parallel_for("KokkosBlas::Test::UnitDiagTRMM", Kokkos::RangePolicy<execution_space>(0, K), udtrmm);
-  } else {  //(diag[0]=='N')||(diag[0]=='n')
+  } else {  //(diag=='N')||(diag=='n')
     // Initialize A with random numbers
     Kokkos::fill_random(A, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
     using functor_type = NonUnitDiagTRMM<ViewTypeA, execution_space>;
@@ -127,7 +128,7 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans, const
 
   Kokkos::deep_copy(host_A, A);
   // Make host_A a lower triangle
-  if ((uplo[0] == 'L') || (uplo[0] == 'l')) {
+  if ((uplo == 'L') || (uplo == 'l')) {
     for (int i = 0; i < K - 1; i++)
       for (int j = i + 1; j < K; j++) host_A(i, j) = ScalarA(0);
   } else {
@@ -140,18 +141,18 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans, const
   struct trmm_VanillaGEMM<ViewTypeB, ViewTypeA, ViewTypeB, execution_space> vgemm;
   if (A_l) {
     // B_expected = alpha * op(A) * B + beta * C = 1 * op(A) * B + 0 * C
-    vgemm.A_t = (trans[0] != 'N') && (trans[0] != 'n');
+    vgemm.A_t = (trans != 'N') && (trans != 'n');
     vgemm.B_t = false;
-    vgemm.A_c = (trans[0] == 'C') || (trans[0] == 'c');
+    vgemm.A_c = (trans == 'C') || (trans == 'c');
     vgemm.B_c = false;
     vgemm.A   = A;
     vgemm.B   = B;
   } else {
     // B_expected = alpha * B * op(A) + beta * C = 1 * B * op(A) + 0 * C
     vgemm.A_t = false;
-    vgemm.B_t = (trans[0] != 'N') && (trans[0] != 'n');
+    vgemm.B_t = (trans != 'N') && (trans != 'n');
     vgemm.A_c = false;
-    vgemm.B_c = (trans[0] == 'C') || (trans[0] == 'c');
+    vgemm.B_c = (trans == 'C') || (trans == 'c');
     vgemm.A   = B;
     vgemm.B   = A;
   }
@@ -167,7 +168,7 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans, const
   Kokkos::fence();
   Kokkos::deep_copy(host_B_expected, B_expected);
 
-  KokkosBlas::trmm(side, uplo, trans, diag, alpha, A, B);
+  KokkosBlas::trmm(&side, &uplo, &trans, &diag, alpha, A, B);
   Kokkos::deep_copy(host_B_actual, B);
 
   bool test_flag = true;
@@ -189,33 +190,25 @@ void impl_test_trmm(const char* side, const char* uplo, const char* trans, const
 }  // namespace Test
 
 template <class ScalarA, class ScalarB, class Device>
-int test_trmm(const char* mode, ScalarA alpha) {
+int test_trmm(char side, char uplo, char trans, char diag, ScalarA alpha) {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   using view_type_a_ll = Kokkos::View<ScalarA**, Kokkos::LayoutLeft, Device>;
   using view_type_b_ll = Kokkos::View<ScalarB**, Kokkos::LayoutLeft, Device>;
-  Test::impl_test_trmm<ScalarA, view_type_a_ll, view_type_b_ll, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 0, 0,
-                                                                        alpha);
-  Test::impl_test_trmm<ScalarA, view_type_a_ll, view_type_b_ll, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 101, 19,
-                                                                        alpha);
-  Test::impl_test_trmm<ScalarA, view_type_a_ll, view_type_b_ll, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 19, 101,
-                                                                        alpha);
-  Test::impl_test_trmm<ScalarA, view_type_a_ll, view_type_b_ll, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 12, 731,
-                                                                        alpha);
+  Test::impl_test_trmm<ScalarA, view_type_a_ll, view_type_b_ll, Device>(side, uplo, trans, diag, 0, 0, alpha);
+  Test::impl_test_trmm<ScalarA, view_type_a_ll, view_type_b_ll, Device>(side, uplo, trans, diag, 101, 19, alpha);
+  Test::impl_test_trmm<ScalarA, view_type_a_ll, view_type_b_ll, Device>(side, uplo, trans, diag, 19, 101, alpha);
+  Test::impl_test_trmm<ScalarA, view_type_a_ll, view_type_b_ll, Device>(side, uplo, trans, diag, 12, 731, alpha);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   using view_type_a_lr = Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
   using view_type_b_lr = Kokkos::View<ScalarB**, Kokkos::LayoutRight, Device>;
-  Test::impl_test_trmm<ScalarA, view_type_a_lr, view_type_b_lr, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 0, 0,
-                                                                        alpha);
-  Test::impl_test_trmm<ScalarA, view_type_a_lr, view_type_b_lr, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 101, 19,
-                                                                        alpha);
-  Test::impl_test_trmm<ScalarA, view_type_a_lr, view_type_b_lr, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 19, 101,
-                                                                        alpha);
-  Test::impl_test_trmm<ScalarA, view_type_a_lr, view_type_b_lr, Device>(&mode[0], &mode[1], &mode[2], &mode[3], 12, 731,
-                                                                        alpha);
+  Test::impl_test_trmm<ScalarA, view_type_a_lr, view_type_b_lr, Device>(side, uplo, trans, diag, 0, 0, alpha);
+  Test::impl_test_trmm<ScalarA, view_type_a_lr, view_type_b_lr, Device>(side, uplo, trans, diag, 101, 19, alpha);
+  Test::impl_test_trmm<ScalarA, view_type_a_lr, view_type_b_lr, Device>(side, uplo, trans, diag, 19, 101, alpha);
+  Test::impl_test_trmm<ScalarA, view_type_a_lr, view_type_b_lr, Device>(side, uplo, trans, diag, 12, 731, alpha);
 #endif
 
   return 1;
@@ -225,43 +218,18 @@ int test_trmm(const char* mode, ScalarA alpha) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trmm_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_float");
-  float alpha = 1.0f;
-  test_trmm<float, float, TestDevice>("LLNN", alpha);
-  test_trmm<float, float, TestDevice>("LLNU", alpha);
-  test_trmm<float, float, TestDevice>("LLTN", alpha);
-  test_trmm<float, float, TestDevice>("LLTU", alpha);
-  test_trmm<float, float, TestDevice>("LUNN", alpha);
-  test_trmm<float, float, TestDevice>("LUNU", alpha);
-  test_trmm<float, float, TestDevice>("LUTN", alpha);
-  test_trmm<float, float, TestDevice>("LUTU", alpha);
-
-  test_trmm<float, float, TestDevice>("RLNN", alpha);
-  test_trmm<float, float, TestDevice>("RLNU", alpha);
-  test_trmm<float, float, TestDevice>("RLTN", alpha);
-  test_trmm<float, float, TestDevice>("RLTU", alpha);
-  test_trmm<float, float, TestDevice>("RUNN", alpha);
-  test_trmm<float, float, TestDevice>("RUNU", alpha);
-  test_trmm<float, float, TestDevice>("RUTN", alpha);
-  test_trmm<float, float, TestDevice>("RUTU", alpha);
-
-  alpha = 4.5f;
-  test_trmm<float, float, TestDevice>("LLNN", alpha);
-  test_trmm<float, float, TestDevice>("LLNU", alpha);
-  test_trmm<float, float, TestDevice>("LLTN", alpha);
-  test_trmm<float, float, TestDevice>("LLTU", alpha);
-  test_trmm<float, float, TestDevice>("LUNN", alpha);
-  test_trmm<float, float, TestDevice>("LUNU", alpha);
-  test_trmm<float, float, TestDevice>("LUTN", alpha);
-  test_trmm<float, float, TestDevice>("LUTU", alpha);
-
-  test_trmm<float, float, TestDevice>("RLNN", alpha);
-  test_trmm<float, float, TestDevice>("RLNU", alpha);
-  test_trmm<float, float, TestDevice>("RLTN", alpha);
-  test_trmm<float, float, TestDevice>("RLTU", alpha);
-  test_trmm<float, float, TestDevice>("RUNN", alpha);
-  test_trmm<float, float, TestDevice>("RUNU", alpha);
-  test_trmm<float, float, TestDevice>("RUTN", alpha);
-  test_trmm<float, float, TestDevice>("RUTU", alpha);
+  std::vector<float> alphas = {1.0f, 4.5f};
+  for (float alpha : alphas) {
+    for (char side : {'L', 'R'}) {
+      for (char uplo : {'L', 'U'}) {
+        for (char trans : {'N', 'T'}) {
+          for (char diag : {'N', 'U'}) {
+            test_trmm<float, float, TestDevice>(side, uplo, trans, diag, alpha);
+          }
+        }
+      }
+    }
+  }
   Kokkos::Profiling::popRegion();
 }
 #endif
@@ -270,375 +238,62 @@ TEST_F(TestCategory, trmm_float) {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, trmm_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_double");
-  double alpha = 1.0;
-  test_trmm<double, double, TestDevice>("LLNN", alpha);
-  test_trmm<double, double, TestDevice>("LLNU", alpha);
-  test_trmm<double, double, TestDevice>("LLTN", alpha);
-  test_trmm<double, double, TestDevice>("LLTU", alpha);
-  test_trmm<double, double, TestDevice>("LUNN", alpha);
-  test_trmm<double, double, TestDevice>("LUNU", alpha);
-  test_trmm<double, double, TestDevice>("LUTN", alpha);
-  test_trmm<double, double, TestDevice>("LUTU", alpha);
-
-  test_trmm<double, double, TestDevice>("RLNN", alpha);
-  test_trmm<double, double, TestDevice>("RLNU", alpha);
-  test_trmm<double, double, TestDevice>("RLTN", alpha);
-  test_trmm<double, double, TestDevice>("RLTU", alpha);
-  test_trmm<double, double, TestDevice>("RUNN", alpha);
-  test_trmm<double, double, TestDevice>("RUNU", alpha);
-  test_trmm<double, double, TestDevice>("RUTN", alpha);
-  test_trmm<double, double, TestDevice>("RUTU", alpha);
-
-  alpha = 4.5;
-  test_trmm<double, double, TestDevice>("LLNN", alpha);
-  test_trmm<double, double, TestDevice>("LLNU", alpha);
-  test_trmm<double, double, TestDevice>("LLTN", alpha);
-  test_trmm<double, double, TestDevice>("LLTU", alpha);
-  test_trmm<double, double, TestDevice>("LUNN", alpha);
-  test_trmm<double, double, TestDevice>("LUNU", alpha);
-  test_trmm<double, double, TestDevice>("LUTN", alpha);
-  test_trmm<double, double, TestDevice>("LUTU", alpha);
-
-  test_trmm<double, double, TestDevice>("RLNN", alpha);
-  test_trmm<double, double, TestDevice>("RLNU", alpha);
-  test_trmm<double, double, TestDevice>("RLTN", alpha);
-  test_trmm<double, double, TestDevice>("RLTU", alpha);
-  test_trmm<double, double, TestDevice>("RUNN", alpha);
-  test_trmm<double, double, TestDevice>("RUNU", alpha);
-  test_trmm<double, double, TestDevice>("RUTN", alpha);
-  test_trmm<double, double, TestDevice>("RUTU", alpha);
+  std::vector<double> alphas = {1.0, 4.5};
+  for (double alpha : alphas) {
+    for (char side : {'L', 'R'}) {
+      for (char uplo : {'L', 'U'}) {
+        for (char trans : {'N', 'T'}) {
+          for (char diag : {'N', 'U'}) {
+            test_trmm<double, double, TestDevice>(side, uplo, trans, diag, alpha);
+          }
+        }
+      }
+    }
+  }
   Kokkos::Profiling::popRegion();
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-///////////////// alpha 1.0 /////////////////
-TEST_F(TestCategory, trmm_complex_double_LLNN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LLNN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLNN", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LLNU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LLNU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLNU", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LLCN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LLCN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLCN", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LLCU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LLCU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLCU", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LUNN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LUNN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUNN", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LUNU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LUNU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUNU", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LUCN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LUCN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUCN", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LUCU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LUCU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUCU", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RLNN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RLNN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLNN", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RLNU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RLNU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLNU", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RLCN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RLCN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLCN", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RLCU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RLCU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLCU", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RUNN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RUNN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUNN", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RUNU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RUNU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUNU", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RUCN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RUCN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUCN", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RUCU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RUCU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUCU", 1.0);
-  Kokkos::Profiling::popRegion();
-}
-///////////////// alpha 4.5 /////////////////
-TEST_F(TestCategory, trmm_complex_double_LLNN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LLNN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLNN", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LLNU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LLNU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLNU", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LLCN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LLCN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLCN", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LLCU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LLCU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LLCU", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LUNN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LUNN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUNN", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LUNU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LUNU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUNU", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LUCN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LUCN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUCN", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_LUCU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_LUCU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("LUCU", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RLNN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RLNN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLNN", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RLNU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RLNU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLNU", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RLCN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RLCN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLCN", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RLCU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RLCU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RLCU", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RUNN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RUNN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUNN", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RUNU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RUNU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUNU", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RUCN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RUCN");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUCN", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_double_RUCU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_double_RUCU");
-  test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>("RUCU", Kokkos::complex<double>(4.5, 0.0));
-  Kokkos::Profiling::popRegion();
+TEST_F(TestCategory, trmm_complex_double) {
+  std::vector<Kokkos::complex<double>> alphas = {Kokkos::complex<double>(1.0, 0.0), Kokkos::complex<double>(4.5, 0.0)};
+  for (Kokkos::complex<double> alpha : alphas) {
+    for (char side : {'L', 'R'}) {
+      for (char uplo : {'L', 'U'}) {
+        for (char trans : {'N', 'C'}) {
+          for (char diag : {'N', 'U'}) {
+            std::ostringstream oss;
+            oss << "KokkosBlas::Test::trmm_complex_double_" << side << uplo << trans << diag;
+            Kokkos::Profiling::pushRegion(oss.str());
+            test_trmm<Kokkos::complex<double>, Kokkos::complex<double>, TestDevice>(side, uplo, trans, diag, alpha);
+            Kokkos::Profiling::popRegion();
+          }
+        }
+      }
+    }
+  }
 }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-///////////////// alpha 1.0 /////////////////
-TEST_F(TestCategory, trmm_complex_float_LLNN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LLNN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNN", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LLNU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LLNU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNU", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LLCN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LLCN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCN", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LLCU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LLCU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCU", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LUNN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LUNN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNN", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LUNU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LUNU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNU", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LUCN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LUCN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCN", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LUCU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LUCU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCU", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RLNN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RLNN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNN", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RLNU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RLNU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNU", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RLCN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RLCN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCN", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RLCU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RLCU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCU", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RUNN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RUNN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNN", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RUNU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RUNU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNU", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RUCN_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RUCN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCN", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RUCU_one) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RUCU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCU", 1.0f);
-  Kokkos::Profiling::popRegion();
-}
-///////////////// alpha 4.5 /////////////////
-TEST_F(TestCategory, trmm_complex_float_LLNN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LLNN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNN", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LLNU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LLNU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLNU", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LLCN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LLCN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCN", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LLCU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LLCU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LLCU", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LUNN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LUNN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNN", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LUNU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LUNU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUNU", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LUCN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LUCN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCN", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_LUCU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_LUCU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("LUCU", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RLNN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RLNN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNN", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RLNU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RLNU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLNU", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RLCN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RLCN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCN", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RLCU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RLCU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RLCU", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RUNN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RUNN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNN", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RUNU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RUNU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUNU", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RUCN_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RUCN");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCN", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
-}
-TEST_F(TestCategory, trmm_complex_float_RUCU_fourfive) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::trmm_complex_float_RUCU");
-  test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>("RUCU", Kokkos::complex<float>(4.5f, 0.0f));
-  Kokkos::Profiling::popRegion();
+TEST_F(TestCategory, trmm_complex_float) {
+  std::vector<Kokkos::complex<float>> alphas = {Kokkos::complex<float>(1.0f, 0.0f), Kokkos::complex<float>(4.5f, 0.0f)};
+  for (Kokkos::complex<float> alpha : alphas) {
+    for (char side : {'L', 'R'}) {
+      for (char uplo : {'L', 'U'}) {
+        for (char trans : {'N', 'C'}) {
+          for (char diag : {'N', 'U'}) {
+            std::ostringstream oss;
+            oss << "KokkosBlas::Test::trmm_complex_float_" << side << uplo << trans << diag;
+            Kokkos::Profiling::pushRegion(oss.str());
+            test_trmm<Kokkos::complex<float>, Kokkos::complex<float>, TestDevice>(side, uplo, trans, diag, alpha);
+            Kokkos::Profiling::popRegion();
+          }
+        }
+      }
+    }
+  }
 }
 #endif
