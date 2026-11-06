@@ -2,7 +2,7 @@
 # KokkosKernels may enable fewer execution spaces than
 # Kokkos enables.  This can reduce build and test times.
 
-set(EXEC_SPACES
+set(ALL_EXEC_SPACES
     EXECSPACE_CUDA
     EXECSPACE_HIP
     EXECSPACE_SYCL
@@ -149,9 +149,13 @@ set(EXECSPACE_SYCL_VALID_MEM_SPACES          SYCLSPACE SYCLSHAREDSPACE)
 set(EXECSPACE_SERIAL_VALID_MEM_SPACES        HOSTSPACE)
 set(EXECSPACE_OPENMP_VALID_MEM_SPACES        HOSTSPACE)
 set(EXECSPACE_THREADS_VALID_MEM_SPACES       HOSTSPACE)
+
+# Make lists of instantiated execution spaces and devices (exec/mem space combinations)
+set(EXEC_SPACES)
 set(DEVICES)
-foreach(EXEC ${EXEC_SPACES})
+foreach(EXEC ${ALL_EXEC_SPACES})
   if(KOKKOSKERNELS_INST_${EXEC})
+    list(APPEND EXEC_SPACES ${EXEC})
     foreach(MEM ${${EXEC}_VALID_MEM_SPACES})
       if(KOKKOSKERNELS_INST_MEMSPACE_${MEM})
         list(APPEND DEVICES ${EXEC}_MEMSPACE_${MEM})

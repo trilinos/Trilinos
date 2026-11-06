@@ -52,8 +52,8 @@ int test_rot() {
 
   Scalar const tol = 10 * KokkosKernels::ArithTraits<Scalar>::eps();
   for (int idx = 0; idx < 4; ++idx) {
-    Test::EXPECT_NEAR_KK_REL(X_h(idx), Xref(idx), tol);
-    Test::EXPECT_NEAR_KK_REL(Y_h(idx), Yref(idx), tol);
+    EXPECT_NEAR_KK_REL(X_h(idx), Xref(idx), tol);
+    EXPECT_NEAR_KK_REL(Y_h(idx), Yref(idx), tol);
   }
 
   return 1;

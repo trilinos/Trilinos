@@ -111,8 +111,8 @@ void check_results(vector_view_type &X, vector_view_type &Y, vector_ref_type &Xr
 
   Scalar const tol = 10 * KokkosKernels::ArithTraits<Scalar>::eps();
   for (int idx = 0; idx < 4; ++idx) {
-    Test::EXPECT_NEAR_KK_REL(X_h(idx), Xref(idx), tol);
-    Test::EXPECT_NEAR_KK_REL(Y_h(idx), Yref(idx), tol);
+    EXPECT_NEAR_KK_REL(X_h(idx), Xref(idx), tol);
+    EXPECT_NEAR_KK_REL(Y_h(idx), Yref(idx), tol);
   }
 
   return;
