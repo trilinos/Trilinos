@@ -158,10 +158,7 @@ int output_gnu(const char *cmd_file,
   }
 
   /* generate the parallel filename for this processor */
-  strcpy(ctemp, pio_info->pexo_fname);
-  strcat(ctemp, ".");
-  strcat(ctemp, tag);
-  strcat(ctemp, ".gnu");
+  snprintf(ctemp, sizeof(ctemp), "%s.%s.gnu", pio_info->pexo_fname, tag);
 
 
   if (pio_info->file_type == CHACO_FILE ||
@@ -292,10 +289,7 @@ int output_gnu(const char *cmd_file,
 
   if (Proc == 0) {
     /* Write gnu master file with gnu commands for plotting */
-    strcpy(ctemp, pio_info->pexo_fname);
-    strcat(ctemp, ".");
-    strcat(ctemp, tag);
-    strcat(ctemp, ".gnuload");
+    snprintf(ctemp, sizeof(ctemp), "%s.%s.gnuload", pio_info->pexo_fname, tag);
     fp = fopen(ctemp, "w");
     fprintf(fp, "set nokey\n");
     fprintf(fp, "set nolabel\n");
@@ -317,10 +311,7 @@ int output_gnu(const char *cmd_file,
     else
       fprintf(fp, "splot ");
 
-    strcpy(ctemp, pio_info->pexo_fname);
-    strcat(ctemp, ".");
-    strcat(ctemp, tag);
-    strcat(ctemp, ".gnu");
+    snprintf(ctemp, sizeof(ctemp), "%s.%s.gnu", pio_info->pexo_fname, tag);
     for (i = 0; i < gnum_part; i++) {
       gen_par_filename(ctemp, par_out_fname, pio_info, i, Num_Proc);
       fprintf(fp, "\"%s\"", par_out_fname);
