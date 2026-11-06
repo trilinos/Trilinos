@@ -11,7 +11,10 @@
 // stencil on a rectangular grid using Tpetra::Experimental::createCrsGraphFromStencil
 
 #include "Tpetra_Core.hpp"
-#include "Tpetra_CreateCrsGraphFromStencil.hpp"
+#include "Tpetra_CreateCrsGraphFromStencil_decl.hpp"
+#ifndef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include "Tpetra_CreateCrsGraphFromStencil_def.hpp"
+#endif
 #include "Tpetra_Map.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"

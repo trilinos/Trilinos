@@ -7,8 +7,10 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef TPETRA_CREATECRSGRAPHFROMSTENCIL_HPP
-#define TPETRA_CREATECRSGRAPHFROMSTENCIL_HPP
+#ifndef TPETRA_CREATECRSGRAPHFROMSTENCIL_DEF_HPP
+#define TPETRA_CREATECRSGRAPHFROMSTENCIL_DEF_HPP
+
+#include "Tpetra_CreateCrsGraphFromStencil_decl.hpp"
 
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Import.hpp"
@@ -32,20 +34,6 @@
 
 namespace Tpetra {
 namespace Experimental {
-
-/// \brief A relative Cartesian grid position in at most three dimensions.
-///
-/// Components belonging to dimensions not present in the grid must be zero.
-struct StencilOffset {
-  int x = 0;
-  int y = 0;
-  int z = 0;
-};
-
-enum class StencilNumbering {
-  globalLexicographic,
-  rankBlocked
-};
 
 namespace Details {
 
@@ -859,4 +847,12 @@ createCrsGraphFromStencil(
 }  // namespace Experimental
 }  // namespace Tpetra
 
-#endif  // TPETRA_CREATECRSGRAPHFROMSTENCIL_HPP
+#define TPETRA_CREATECRSGRAPHFROMSTENCIL_INSTANT(LO, GO, NODE)            \
+  template Teuchos::RCP<const CrsGraph<LO, GO, NODE>>                     \
+  Experimental::createCrsGraphFromStencil<LO, GO, NODE>(                 \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&,                       \
+      const Teuchos::ArrayView<const LO>&,                                \
+      const Teuchos::ArrayView<const Experimental::StencilOffset>&,       \
+      const LO, const Experimental::StencilNumbering, const bool);
+
+#endif  // TPETRA_CREATECRSGRAPHFROMSTENCIL_DEF_HPP
