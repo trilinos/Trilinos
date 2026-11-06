@@ -37,10 +37,11 @@ namespace Experimental {
 
 namespace Details {
 
-enum class StencilAction : unsigned char {
-  invalid = 0,
-  local   = 1,
-  remote  = 2
+enum class StencilAction
+{
+  invalid,
+  local,
+  remote
 };
 
 template <class GlobalOrdinal, class LocalNodes>
