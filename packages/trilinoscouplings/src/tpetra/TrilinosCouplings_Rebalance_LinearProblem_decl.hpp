@@ -47,8 +47,16 @@ using OriginalType = typename Tpetra::ViewTransform< Tpetra::LinearProblem<Scala
    */
   NewType operator()( OriginalType const & origProblem );
 
+  void fwd();
+
+  void rvs();
+
 private:
   Teuchos::RCP< Teuchos::ParameterList > paramListForZoltan2PartitioningProblem_;
+
+  using import_t = Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
+
+  Teuchos::RCP<import_t> importer_;
 };
 
 } // namespace TrilinosCouplings

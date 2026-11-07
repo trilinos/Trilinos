@@ -518,7 +518,15 @@ template <typename Integral>
     IntegerRangeListValidator<Integral>::getXMLTypeName() const 
 {
   std::string className("IntegerRangeListValidator");
+  // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
   std::string classType("("+Teuchos::TypeNameTraits<Integral>::name()+")");
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic pop
+#endif
   return std::string(className + classType);
 }
 

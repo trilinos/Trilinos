@@ -1,6 +1,129 @@
 ###############################################################################
 #                                                                             #
-# Trilinos Release 17.2 Release Notes                         August XX, 2026 #
+# Trilinos Release 17.3.0 Release Notes                     November XX, 2026 #
+#                                                                             #
+###############################################################################
+
+
+Belos:
+
+  - Belos now supports using Kokkos::DualView for its dense matrices via an
+    optional template argument. The default behavior (for now) is to continue
+    using host-only Teuchos::SerialDenseMatrix.
+    https://github.com/trilinos/Trilinos/pull/15475
+
+  - Addition of a flexible variant of GCRODR
+    https://github.com/trilinos/Trilinos/pull/15601
+
+  - Add a utility that allows to do Fischer-style projection.
+    https://github.com/trilinos/Trilinos/pull/15621
+
+
+Kokkos, KokkosKernels:
+
+  - Inclusion of version 5.2.2
+    https://github.com/trilinos/Trilinos/pull/15697
+
+
+MueLu:
+
+  - Ongoing work on fast triple matrix products for structured problems.
+    https://github.com/trilinos/Trilinos/pull/15476
+    https://github.com/trilinos/Trilinos/pull/15718
+
+  - Add methods to query before setup what additional linear algebra objects will
+    need to be supplied (e.g. coordinates, nullspace, mass matrices, material
+    information, ...).
+    https://github.com/trilinos/Trilinos/pull/15659
+
+  - New symmetrization option for dropping decisions
+    https://github.com/trilinos/Trilinos/pull/15714
+
+
+Panzer:
+
+  - Use Tpetra's FECrsMatrix in assembly.
+    https://github.com/trilinos/Trilinos/pull/15662
+
+
+Phalanx:
+
+  - Support of Kokkos::SharedSpace and transition of PHX::Device to be a
+    true Kokkos::Device. 
+    https://github.com/trilinos/Trilinos/pull/15744
+
+
+Sacado:
+
+  - Remove support for Kokkos legacy view implementation
+    https://github.com/trilinos/Trilinos/pull/15632
+    
+  - Support for SYCL
+    https://github.com/trilinos/Trilinos/pull/15711
+
+
+ShyLU:
+
+  - Improve FastILU setup performance on GPUs
+    https://github.com/trilinos/Trilinos/pull/15590
+
+
+STK:
+
+  - Inclusion of version 5.33.1
+    https://github.com/trilinos/Trilinos/pull/15739
+    https://github.com/trilinos/Trilinos/pull/15804
+    https://github.com/trilinos/Trilinos/pull/15816
+    
+
+Teko:
+
+  - Add a user guide and improved documentation.
+    https://github.com/trilinos/Trilinos/pull/15666
+    
+
+Tpetra:
+
+  - Allow skipping of some global communication in the construction of maps and
+    graphs. Used in Ifpack2 and MueLu.
+    https://github.com/trilinos/Trilinos/pull/15613
+    
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 17.2.1 Release Notes                       August 28, 2026 #
+#                                                                             #
+###############################################################################
+
+This is a patch release with no new features.
+
+
+Amesos2:
+
+  - Fix compilation issues in Basker
+    https://github.com/trilinos/Trilinos/pull/15628
+
+Tpetra:
+
+  - Add a missing header.
+    https://github.com/trilinos/Trilinos/pull/15618
+
+
+Krino:
+
+  - Latest snapshot
+    https://github.com/trilinos/Trilinos/pull/15526
+
+
+Piro:
+
+  - Fix a compile error
+    https://github.com/trilinos/Trilinos/pull/15637
+
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 17.2 Release Notes                         August 19, 2026 #
 #                                                                             #
 ###############################################################################
 
@@ -38,6 +161,7 @@ Kokkos, KokkosKernels:
 
   - Inclusion of version 5.2.1 of Kokkos and Kokkos Kernels
     https://github.com/trilinos/Trilinos/pull/15453
+    https://github.com/trilinos/Trilinos/pull/15593
     https://github.com/kokkos/kokkos/blob/develop/CHANGELOG.md
     https://github.com/kokkos/kokkos-kernels/blob/develop/CHANGELOG.md
 

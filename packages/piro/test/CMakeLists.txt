@@ -176,6 +176,47 @@ IF (Piro_ENABLE_NOX)
         ARGS input_Analysis_ROL_Tempus_Transient_2_parameters.xml
         PASS_REGULAR_EXPRESSION "TEST PASSED"
       )
+      # Time-integrated and time-sampled (sum over response times) objectives with the Tempus driver,
+      # compared with the minimizers of the continuous problems, with SDIRK 2 Stage 2nd order (and
+      # variable time steps landing on the response times). With Backward Euler, the O(dt) error of the
+      # Tempus adjoint gradient, dominated for this model by the last adjoint step (at the initial time),
+      # is too large near the optimum for the optimization to converge, and a dt small enough for it to
+      # converge would make the test time out. Backward Euler is tested with the ROL dynamic constraint,
+      # whose gradient is the exact gradient of the discrete objective.
+      TRIBITS_ADD_TEST(
+        AnalysisDriverTranstientTempus_MSD
+        NAME AnalysisDriverTranstientTempus_MSD_TimeIntegral_SDIRK
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_Tempus_Transient_MSD_TimeIntegral_SDIRK.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+      )
+      TRIBITS_ADD_TEST(
+        AnalysisDriverTranstientTempus_MSD
+        NAME AnalysisDriverTranstientTempus_MSD_SumOverTimes_SDIRK_Variable
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_Tempus_Transient_MSD_SumOverTimes_SDIRK_Variable.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+      )
+      # Sum over response times with the ROL dynamic-constraint approach
+      TRIBITS_ADD_TEST(
+        AnalysisDriverTranstientROL_MSD
+        NAME AnalysisDriverTranstientROL_MSD_SumOverTimes
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Teko
+        EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+        EXCLUDE_IF_NOT_TRUE Ifpack2_ENABLE_Amesos2
+        NUM_MPI_PROCS 1
+        ARGS input_Analysis_ROL_ReducedSpace_Transient_MSD_SumOverTimes.xml
+        PASS_REGULAR_EXPRESSION "TEST PASSED"
+      )
     #ENDIF()
     #TRIBITS_ADD_EXECUTABLE_AND_TEST(
     #  AnalysisDriverTempus
@@ -294,6 +335,37 @@ IF (Piro_ENABLE_Tempus)
     STANDARD_PASS_OUTPUT
   )
 
+  # The mass-spring-damper model has locally replicated maps: one process
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ThyraProductME_Tempus_FinalObjective_UnitTests
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    EXCLUDE_IF_NOT_TRUE Stratimikos_ENABLE_Belos
+    SOURCES
+    Piro_ThyraProductME_Tempus_FinalObjective_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    MassSpringDamperModel.cpp
+    MassSpringDamperModel.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ThyraProductME_ROL_DynamicObjective_UnitTests
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    SOURCES
+    Piro_ThyraProductME_ROL_DynamicObjective_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    MassSpringDamperModel.cpp
+    MassSpringDamperModel.hpp
+    MatrixBased_LOWS.cpp
+    MatrixBased_LOWS.hpp
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TempusSolverForwardOnly_UnitTests_Tpetra
     SOURCES
@@ -402,6 +474,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_ROL_Tempus_Transient_MSD.xml
         input_Analysis_ROL_Tempus_Transient_MSD_StateDriven.xml
         input_Analysis_ROL_Tempus_Transient_2_parameters.xml
+        input_Analysis_ROL_Tempus_Transient_MSD_TimeIntegral_SDIRK.xml
+        input_Analysis_ROL_Tempus_Transient_MSD_SumOverTimes_SDIRK_Variable.xml
         input_Analysis_ROL_ReducedSpace_LineSearch.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_AdjointSensitivities_CheckGradients.xml
         input_Analysis_ROL_ReducedSpace_LineSearch_HessianBasedDotProduct.xml
@@ -412,6 +486,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_ROL_ReducedSpace_Transient_Integrated_Response_MSD_StateDriven.xml
         input_Analysis_ROL_ReducedSpace_Transient_MSD_StateDriven.xml
         input_Analysis_ROL_ReducedSpace_Transient_MSD_StateDriven_ImplicitAdjoint.xml
+        input_Analysis_ROL_ReducedSpace_Transient_MSD_SumOverTimes.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_HessianBasedDotProduct_2_parameters.xml
         input_Analysis_ROL_ReducedSpace_TrustRegion_BoundConstrained_NOXSolver.xml

@@ -14,10 +14,9 @@
 
 #include "KokkosBatched_Util.hpp"
 
-#include "KokkosBatched_Gemv_TeamVector_Internal.hpp"
-#include "KokkosBatched_Trsv_TeamVector_Internal.hpp"
-
-#include "KokkosBatched_Gemm_TeamVector_Internal.hpp"
+#include <type_traits>
+#include <KokkosBatched_Gemm_Decl.hpp>
+#include <KokkosBatched_Gemm_TeamVector_Impl.hpp>
 #include "KokkosBatched_Trsm_TeamVector_Internal.hpp"
 
 namespace KokkosBatched {
@@ -51,8 +50,26 @@ namespace KokkosBatched {
            /* */ ValueType * w, ValueType * wq, 
            const bool implicit_RHS) {
     
-        typedef ValueType value_type;
+        using member_type = MemberType;
+        using exec_space  = typename member_type::execution_space;
+        using device_type = Kokkos::Device<exec_space, typename exec_space::memory_space>;
+        
+        using unmanaged   = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
+        using layout_type = Kokkos::LayoutStride;
+        
+        using const_view_type =
+            Kokkos::View<const ValueType**,
+                         layout_type,
+                         device_type,
+                         unmanaged>;
+        
+        using view_type =
+            Kokkos::View<ValueType**,
+                         layout_type,
+                         device_type,
+                         unmanaged>;
     
+        typedef ValueType value_type;
         const value_type one(1), zero(0);
     
         value_type * W = w; /// m x nrhs
@@ -83,26 +100,46 @@ namespace KokkosBatched {
             // V is matrix_rank x n
             // W = U^T B
             if (!implicit_RHS) { // LU case
-                TeamVectorGemmInternal<Algo::Gemm::Unblocked>
-                  ::invoke(member,
-                       matrix_rank, nrhs, m,
-                       one,
-                       U, us1, us0,
-                       B, bs0, bs1,
-                       zero,
-                       W, ws0, ws1);
+            
+                // A represents U^T without copying.
+                //   A = U with strides us1, us0
+                //   A(i,k) = U[k*us0 + i*us1]
+                const_view_type A_view(
+                    U,
+                    layout_type(matrix_rank, us1,
+                                m,           us0));
+            
+                // B is m x nrhs.
+                view_type B_view(
+                    B,
+                    layout_type(m,    bs0,
+                                nrhs, bs1));
+            
+                // W is matrix_rank x nrhs.
+                view_type C_view(
+                    W,
+                    layout_type(matrix_rank, ws0,
+                                nrhs,        ws1));
+            
+                KokkosBatched::TeamVectorGemm<
+                    member_type,
+                    KokkosBatched::Trans::NoTranspose,
+                    KokkosBatched::Trans::NoTranspose,
+                    KokkosBatched::Algo::Gemm::Unblocked>
+                ::invoke(member, one, A_view, B_view, zero, C_view);
+            
             } else {
                 Kokkos::parallel_for
                 (Kokkos::ThreadVectorRange(member,nrhs),
                  [&](const int &j) {
                   Kokkos::parallel_for
                     (Kokkos::TeamThreadRange(member,matrix_rank),
-                      [&](const int &i) {                                   
+                      [&](const int &i) {
                         W[i*ws0+j*ws1] = U[j*us0+i*us1] * B[j];
                   });
-    
+            
                });
-    
+            
             }
             member.team_barrier();
     
@@ -147,14 +184,35 @@ namespace KokkosBatched {
             }
             
             /// X = V^T W
-            TeamVectorGemmInternal<Algo::Gemm::Unblocked>
-              ::invoke(member,
-                   n, nrhs, matrix_rank, 
-                   one,
-                   V, vs1, vs0,
-                   W, ws0, ws1,
-                   zero,
-                   X, xs0, xs1);
+            {
+            
+                // A represents V^T without copying.
+                //   V[row*vs0 + col*vs1]
+                //   A(i,k) = V[k*vs0 + i*vs1]
+                const_view_type A_view(
+                    V,
+                    layout_type(n,           vs1,
+                                matrix_rank, vs0));
+            
+                // W is matrix_rank x nrhs.
+                view_type B_view(
+                    W,
+                    layout_type(matrix_rank, ws0,
+                                nrhs,        ws1));
+            
+                // X is n x nrhs.
+                view_type C_view(
+                    X,
+                    layout_type(n,    xs0,
+                                nrhs, xs1));
+            
+                KokkosBatched::TeamVectorGemm<
+                    member_type,
+                    KokkosBatched::Trans::NoTranspose,
+                    KokkosBatched::Trans::NoTranspose,
+                    KokkosBatched::Algo::Gemm::Unblocked>
+                ::invoke(member, one, A_view, B_view, zero, C_view);
+            }
             member.team_barrier();
     
             if (do_print) {
@@ -171,14 +229,34 @@ namespace KokkosBatched {
         } else {
             if (!implicit_RHS) { // LU case
                 /// W = U^T B
-                TeamVectorGemmInternal<Algo::Gemm::Unblocked>
-                  ::invoke(member,
-                       matrix_rank, nrhs, m, 
-                       one,
-                       U, us1, us0,
-                       B, bs0, bs1,
-                       zero,
-                       W, ws0, ws1);
+                {
+                
+                    // A represents U^T without copying.
+                    //   A(i,k) = U[k*us0 + i*us1]
+                    const_view_type A_view(
+                        U,
+                        layout_type(matrix_rank, us1,
+                                    m,           us0));
+                
+                    // B is m x nrhs.
+                    view_type B_view(
+                        B,
+                        layout_type(m,    bs0,
+                                    nrhs, bs1));
+                
+                    // W is matrix_rank x nrhs.
+                    view_type C_view(
+                        W,
+                        layout_type(matrix_rank, ws0,
+                                    nrhs,        ws1));
+                
+                    KokkosBatched::TeamVectorGemm<
+                        member_type,
+                        KokkosBatched::Trans::NoTranspose,
+                        KokkosBatched::Trans::NoTranspose,
+                        KokkosBatched::Algo::Gemm::Unblocked>
+                    ::invoke(member, one, A_view, B_view, zero, C_view);
+                }
                 member.team_barrier();
                 // copy W to X
                 Kokkos::parallel_for

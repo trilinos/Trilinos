@@ -88,7 +88,6 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
     StencilOffset offset;
     LocalOrdinal rowDof;
     LocalOrdinal columnDof;
-    LocalOrdinal entryOrdinal;
   };
 
   struct FineStencilSpec {
@@ -105,7 +104,7 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
     std::string description;
   };
 
-  void GetStructuredGraph(RCP<Matrix>& Ac, const RCP<Matrix> P,
+  void GetStructuredGraph(RCP<Matrix>& Ac, const RCP<Matrix>& P,
                           const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
                           const StructuredGraphSpec& graphSpec) const;
 
@@ -132,11 +131,6 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
   //@}
 
   //@{
-
-  StructuredGraphSpec GetStructuredGraphSpec(
-      const Matrix& A, const Matrix& P, int numDimensions,
-      const Teuchos::Array<LocalOrdinal>& lFineNodesPerDim,
-      int interpolationOrder) const;
 
   void ConfigureRAPFactoryDelegate() const;
 

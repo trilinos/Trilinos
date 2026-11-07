@@ -31,7 +31,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_InverseApproximationFactory_decl.hpp"
 
-#if KOKKOSKERNELS_VERSION < 50102
+#if KOKKOSKERNELS_VERSION < 50200
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialQRDenseSolver.hpp"
@@ -94,7 +94,13 @@ void InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     const auto diag           = Utilities::GetLumpedMatrixDiagonal(*A);
     const RCP<const Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, tol, one));
     Ainv                      = MatrixFactory::Build(D);
+#if KOKKOSKERNELS_VERSION >= 50200
   } else if (method == "sparseapproxinverse") {
+#else
+  } else if ((method == "sparseapproxinverse") || (method == "factoredsparseapproxinverse")) {
+    if (method == "factoredsparseapproxinverse")
+      GetOStream(Warnings) << "Method \"factoredsparseapproxinverse\" requires KokkosKernels >= 5.2. Falling back to \"sparseapproxinverse\".";
+#endif
     RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedGraph(A, tol, true);
     if (IsPrint(Statistics1)) {
       sparsityPattern->computeGlobalConstants();
@@ -109,7 +115,9 @@ void InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
       rcp_const_cast<CrsGraph>(Ainv->getCrsGraph())->computeGlobalConstants();
       GetOStream(Statistics1) << "NNZ Ainv: " << pAinv->getGlobalNumEntries() << ", NNZ Tresholded Ainv (parameter: " << tol << "): " << Ainv->getGlobalNumEntries() << std::endl;
     }
-  } else if (method == "factoredsparseapproxinverse") {
+  }
+#if KOKKOSKERNELS_VERSION >= 50200
+  else if (method == "factoredsparseapproxinverse") {
     RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedLowerTriangularGraph(A, tol, true);
     if (IsPrint(Statistics1)) {
       sparsityPattern->computeGlobalConstants();
@@ -135,6 +143,7 @@ void InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
       GetOStream(Statistics1) << "NNZ Linv: " << LinvFactor->getGlobalNumEntries() << ", NNZ Tresholded Linv (parameter: " << tol << "): " << pLinvFactor->getGlobalNumEntries() << std::endl;
     }
   }
+#endif
 
   GetOStream(Statistics1) << "Approximate inverse calculated by: " << method << "." << std::endl;
   GetOStream(Statistics1) << "Ainv has " << Ainv->getGlobalNumRows() << "x" << Ainv->getGlobalNumCols() << " rows and columns." << std::endl;
@@ -142,7 +151,7 @@ void InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   Set(currentLevel, "Ainv", Ainv);
 }
 
-#if KOKKOSKERNELS_VERSION >= 50102
+#if KOKKOSKERNELS_VERSION >= 50200
 
 template <class local_matrix_type>
 class LocalSPAIFunctor {
@@ -314,79 +323,6 @@ InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetSpars
 
   return Ainv;
 }
-
-#else
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetSparseInverse(const RCP<Matrix>& Aorg, const RCP<const CrsGraph>& sparsityPattern) const {
-  // construct the inverse matrix with the given sparsity pattern
-  RCP<Matrix> Ainv = MatrixFactory::Build(sparsityPattern);
-  Ainv->resumeFill();
-
-  // gather missing rows from other procs to generate an overlapping map
-  RCP<Import> rowImport = ImportFactory::Build(sparsityPattern->getRowMap(), sparsityPattern->getColMap());
-  RCP<Matrix> A         = MatrixFactory::Build(Aorg, *rowImport);
-
-  // loop over all rows of the inverse sparsity pattern (this can be done in parallel)
-  for (size_t k = 0; k < sparsityPattern->getLocalNumRows(); k++) {
-    // 1. get column indices Ik of local row k
-    ArrayView<const LO> Ik;
-    sparsityPattern->getLocalRowView(k, Ik);
-
-    // 2. get all local A(Ik,:) rows
-    Array<ArrayView<const LO>> J(Ik.size());
-    Array<ArrayView<const SC>> Ak(Ik.size());
-    Array<LO> Jk;
-    for (LO i = 0; i < Ik.size(); i++) {
-      A->getLocalRowView(Ik[i], J[i], Ak[i]);
-      for (LO j = 0; j < J[i].size(); j++)
-        Jk.append(J[i][j]);
-    }
-    // set of unique column indices Jk
-    std::sort(Jk.begin(), Jk.end());
-    Jk.erase(std::unique(Jk.begin(), Jk.end()), Jk.end());
-    // create map
-    std::map<LO, LO> G;
-    for (LO i = 0; i < Jk.size(); i++) G.insert(std::pair<LO, LO>(Jk[i], i));
-
-    // 3. merge rows together
-    Teuchos::SerialDenseMatrix<LO, SC> localA(Jk.size(), Ik.size(), true);
-    for (LO i = 0; i < Ik.size(); i++) {
-      for (LO j = 0; j < J[i].size(); j++) {
-        localA(G.at(J[i][j]), i) = Ak[i][j];
-      }
-    }
-
-    // 4. get direction-vector
-    // diagonal needs an entry!
-    Teuchos::SerialDenseVector<LO, SC> ek(Jk.size(), true);
-    ek[std::find(Jk.begin(), Jk.end(), k) - Jk.begin()] = Teuchos::ScalarTraits<Scalar>::one();
-    ;
-
-    // 5. solve linear system for x
-    Teuchos::SerialDenseVector<LO, SC> localX(Ik.size());
-    Teuchos::SerialQRDenseSolver<LO, SC> qrSolver;
-    qrSolver.setMatrix(Teuchos::rcp(&localA, false));
-    qrSolver.setVectors(Teuchos::rcp(&localX, false), Teuchos::rcp(&ek, false));
-    const int err = qrSolver.solve();
-    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, Exceptions::RuntimeError,
-                               "MueLu::InverseApproximationFactory::GetSparseInverse: Error in serial QR solve.");
-
-    // 6. set calculated row into Ainv
-    ArrayView<const SC> Mk(localX.values(), localX.length());
-    Ainv->replaceLocalValues(k, Ik, Mk);
-  }
-  Ainv->fillComplete();
-
-  // Transpose needed to match published paper algorithms as the inverse is not symmetric
-  // However, non-transposed version seems to work better in row-oriented MinvA algorithm
-  // RCP<Matrix> actualSpai = Utilities::Transpose(*Ainv, true); // , label, Tparams);
-
-  return Ainv;
-}
-
-#endif
 
 template <class local_matrix_type, typename global_ordinal_type>
 class LocalFSAIFunctor {
@@ -609,6 +545,79 @@ InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetFacto
 
   return Ainv;
 }
+
+#else
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetSparseInverse(const RCP<Matrix>& Aorg, const RCP<const CrsGraph>& sparsityPattern) const {
+  // construct the inverse matrix with the given sparsity pattern
+  RCP<Matrix> Ainv = MatrixFactory::Build(sparsityPattern);
+  Ainv->resumeFill();
+
+  // gather missing rows from other procs to generate an overlapping map
+  RCP<Import> rowImport = ImportFactory::Build(sparsityPattern->getRowMap(), sparsityPattern->getColMap());
+  RCP<Matrix> A = MatrixFactory::Build(Aorg, *rowImport);
+
+  // loop over all rows of the inverse sparsity pattern (this can be done in parallel)
+  for (size_t k = 0; k < sparsityPattern->getLocalNumRows(); k++) {
+    // 1. get column indices Ik of local row k
+    ArrayView<const LO> Ik;
+    sparsityPattern->getLocalRowView(k, Ik);
+
+    // 2. get all local A(Ik,:) rows
+    Array<ArrayView<const LO>> J(Ik.size());
+    Array<ArrayView<const SC>> Ak(Ik.size());
+    Array<LO> Jk;
+    for (LO i = 0; i < Ik.size(); i++) {
+      A->getLocalRowView(Ik[i], J[i], Ak[i]);
+      for (LO j = 0; j < J[i].size(); j++)
+        Jk.append(J[i][j]);
+    }
+    // set of unique column indices Jk
+    std::sort(Jk.begin(), Jk.end());
+    Jk.erase(std::unique(Jk.begin(), Jk.end()), Jk.end());
+    // create map
+    std::map<LO, LO> G;
+    for (LO i = 0; i < Jk.size(); i++) G.insert(std::pair<LO, LO>(Jk[i], i));
+
+    // 3. merge rows together
+    Teuchos::SerialDenseMatrix<LO, SC> localA(Jk.size(), Ik.size(), true);
+    for (LO i = 0; i < Ik.size(); i++) {
+      for (LO j = 0; j < J[i].size(); j++) {
+        localA(G.at(J[i][j]), i) = Ak[i][j];
+      }
+    }
+
+    // 4. get direction-vector
+    // diagonal needs an entry!
+    Teuchos::SerialDenseVector<LO, SC> ek(Jk.size(), true);
+    ek[std::find(Jk.begin(), Jk.end(), k) - Jk.begin()] = Teuchos::ScalarTraits<Scalar>::one();
+    ;
+
+    // 5. solve linear system for x
+    Teuchos::SerialDenseVector<LO, SC> localX(Ik.size());
+    Teuchos::SerialQRDenseSolver<LO, SC> qrSolver;
+    qrSolver.setMatrix(Teuchos::rcp(&localA, false));
+    qrSolver.setVectors(Teuchos::rcp(&localX, false), Teuchos::rcp(&ek, false));
+    const int err = qrSolver.solve();
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, Exceptions::RuntimeError,
+                               "MueLu::InverseApproximationFactory::GetSparseInverse: Error in serial QR solve.");
+
+    // 6. set calculated row into Ainv
+    ArrayView<const SC> Mk(localX.values(), localX.length());
+    Ainv->replaceLocalValues(k, Ik, Mk);
+  }
+  Ainv->fillComplete();
+
+  // Transpose needed to match published paper algorithms as the inverse is not symmetric
+  // However, non-transposed version seems to work better in row-oriented MinvA algorithm
+  // RCP<Matrix> actualSpai = Utilities::Transpose(*Ainv, true); // , label, Tparams);
+
+  return Ainv;
+}
+
+#endif
 
 }  // namespace MueLu
 

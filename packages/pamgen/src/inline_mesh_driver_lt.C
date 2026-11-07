@@ -131,11 +131,19 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
 
   std::string *coord_names = nemesis_db->getMSPSA(ms_lt::Mesh_Specification::COORDINATE_NAMES);
+  // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
   coord_names[0] = "X";
   coord_names[1] = "Y";
   if(dim ==3){
     coord_names[2] = "Z";
   }
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic pop
+#endif
 
   imd->Calc_Serial_Component(global_el_ids,
       global_node_vector);

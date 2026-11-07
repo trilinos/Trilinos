@@ -20,6 +20,7 @@
 #include "Piro_TransientSolver.hpp"
 #include "Piro_Helpers.hpp" 
 
+#include <functional>
 #include <map>
 #include <string>
 
@@ -118,6 +119,62 @@ public:
   //! Set initial guess for Newton method
   void setInitialGuess( Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess = Teuchos::null); 
 
+  /** \brief Function that makes the initial state consistent.
+   *
+   *  model is the model of the Piro::TempusSolver (getSubModel()), and inArgs are InArgs
+   *  of this model, in its own parameter layout, with the parameters of the time
+   *  integration and the initial time. This holds for both callers: evalModel, and the
+   *  Tempus-driven transient optimization (Piro::ThyraProductME_TempusFinalObjective),
+   *  which unpacks the product parameter of the Piro::ProductModelEvaluator it optimizes
+   *  into the parameters of this model. (Only an objective built on a model that is
+   *  neither this model nor a Piro::ProductModelEvaluator around it passes its own model
+   *  and InArgs instead.)
+   *
+   *  On input, x0 is the initial state of the model (its nominal value); on output, it
+   *  must be the consistent initial state for these parameters and initial time. For
+   *  instance, for a semi-explicit index-1 DAE, the algebraic components of x0 are
+   *  computed from the differential ones by solving the algebraic equations at the
+   *  initial time.
+   */
+  typedef std::function<void(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+                             const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+                             Thyra::VectorBase<Scalar>& x0)> ConsistentInitialStateFunction;
+
+  /** \brief Set a function that makes the initial state consistent with the parameters,
+   *  before each time integration.
+   *
+   *  It is called by evalModel, unless the initial state was set with setInitialState,
+   *  and before each forward integration of the Tempus-driven transient optimization
+   *  (Piro::ThyraProductME_TempusFinalObjective), which integrates from the nominal
+   *  initial state for each value of the parameters. In particular, the adjoint
+   *  sensitivities of Tempus are not accurate for DAEs whose initial state has
+   *  inconsistent algebraic components: the last step of the adjoint integration
+   *  uses the initial state. An empty function (the default) leaves the initial
+   *  state unchanged.
+   *
+   *  The transient optimization with the ROL dynamic constraint ("Tempus Driver" =
+   *  false) does not call it (Piro::PerformROLTransientAnalysis prints a warning): ROL
+   *  integrates from the nominal initial state for all parameters. Its gradient is the
+   *  exact gradient of its time discretization, so it does not need a consistent
+   *  initial state, but a response at the initial time uses the nominal one.
+   *
+   *  Only x0 is made consistent: the initial time derivative is the nominal one, unless
+   *  the Tempus stepper recomputes it ("Initial Condition Consistency"; note that
+   *  "Consistent" solves the residual for x_dot with x fixed, which requires a
+   *  nonsingular mass matrix, so it does not apply to DAEs). Steppers that do not use
+   *  the time derivative of the previous time step (e.g., Backward Euler) do not use the
+   *  initial x_dot to advance in time, but the adjoint integration evaluates the model
+   *  derivatives at the initial x_dot: an inconsistent x_dot affects the gradient if
+   *  df/dx or df/dp depends on x_dot (e.g., a mass matrix that depends on the state, or
+   *  a parameter that multiplies x_dot).
+   */
+  void setConsistentInitialStateFunction(const ConsistentInitialStateFunction& f)
+  { consistentInitialStateFunction_ = f; }
+
+  //! Function that makes the initial state consistent (empty if not set)
+  const ConsistentInitialStateFunction& getConsistentInitialStateFunction() const
+  { return consistentInitialStateFunction_; }
+
   //! Return RCP to Tempus::SolutionHistory
   Teuchos::RCP<Tempus::SolutionHistory<Scalar> > 
   getSolutionHistory() const; 
@@ -196,10 +253,13 @@ private:
   SENS_METHOD sens_method_;
 
   //Boolean to mark whether initial state was reset using setInitialState routine
-  bool initial_state_reset_;
+  bool initial_state_reset_ = false;
 
   //Boolean marking whether stepper is explicit
   bool is_explicit_ = false;  
+
+  //Function that makes the initial state consistent (empty: unchanged initial state)
+  ConsistentInitialStateFunction consistentInitialStateFunction_;
 };
 
 /** \brief Non-member constructor function */

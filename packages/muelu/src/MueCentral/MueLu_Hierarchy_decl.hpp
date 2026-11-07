@@ -257,6 +257,9 @@ class Hierarchy : public BaseClass {
 
   void SetLabel(const std::string& hierarchyLabel) {
     hierarchyLabel_ = hierarchyLabel;
+    setObjectLabel(hierarchyLabel);
+    for (auto& level : Levels_)
+      level->setObjectLabel(hierarchyLabel);
   }
 
   std::string GetLabel() const {

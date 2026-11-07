@@ -15,6 +15,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 // Xpetra
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -171,9 +172,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
 
   comm->barrier();
-  Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
-  RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
-  RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
+  RCP<Teuchos::StackedTimer> stackedTimer =
+      rcp(new Teuchos::StackedTimer("MueLu_Structured"));
+  Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
 
   RCP<Matrix> A;
   RCP<const Map> map;
@@ -384,14 +386,15 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     tm = Teuchos::null;
   }  // Rerun loop
 
-  globalTimeMonitor = Teuchos::null;
-
-  RCP<ParameterList> reportParams = rcp(new ParameterList);
-  const std::string filter        = "";
   std::ios_base::fmtflags ff(out.flags());
-  TimeMonitor::report(comm.ptr(), out, filter, reportParams);
+  stackedTimer->stopBaseTimer();
+  Teuchos::StackedTimer::OutputOptions timerOptions;
+  timerOptions.output_fraction = true;
+  timerOptions.output_minmax   = true;
+  stackedTimer->report(out, comm, timerOptions);
   out << std::setiosflags(ff);
 
+  Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
   TimeMonitor::clearCounters();
 
   return EXIT_SUCCESS;

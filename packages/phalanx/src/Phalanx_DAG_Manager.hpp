@@ -63,6 +63,14 @@ namespace PHX {
     //! If set to true, a graphviz file will be written during for DAG construction errors.
     void setWriteGraphvizFileOnError(bool write_file);
 
+    /*! When configured with Phalanx_ENABLE_TEUCHOS_TIME_MONITOR, a
+        static index is added to evaluator timer names to make them
+        unique. Set to false to drop the index from the timer
+        names. Default is true for backwards compatibility. Applies
+        to all DagManager objects with the same Traits.
+    */
+    static void setAddIndexToTimerNames(bool add_index);
+
     /*! Builds the evaluation DAG.  This should only be called after
       all required fields and evaluators are registered. Must be
       called prior to making calls to postRegistrationSetup(),
@@ -328,6 +336,9 @@ namespace PHX {
 
     //! True if the unshared fields have been evaluated.
     bool unshared_evaluated_;
+
+    //! If true, a static counter index is added to evaluator timer names to make them unique.
+    inline static bool add_index_to_timer_names_ = true;
   };
   
   template<typename Traits>

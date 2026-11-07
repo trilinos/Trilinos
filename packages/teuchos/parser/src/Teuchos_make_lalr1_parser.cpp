@@ -431,7 +431,15 @@ static std::string escape_dot(std::string const& s) {
       out.push_back('\\');
       out.push_back(c);
     } else if (c == '.') {
+      // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
       out = "'";
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic pop
+#endif
       out += s;
       out += "'";
       return out;

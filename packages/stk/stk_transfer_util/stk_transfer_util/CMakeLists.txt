@@ -51,18 +51,6 @@ endif()
     NOINSTALLHEADERS ${HEADERS} ${HEADERS_SPMD}
     SOURCES ${SOURCES} ${SOURCES_SPMD}
   )
-
-  if (TPL_LAPACK_LIBRARIES)
-    message("STKTransferUtil: TPL_LAPACK_LIBRARIES already set, don't need to find_package.")
-    target_link_libraries(stk_transfer_util PUBLIC ${TPL_LAPACK_LIBRARIES})
-  else()
-    find_package(LAPACK REQUIRED)
-    if (TARGET LAPACK::LAPACK)
-      target_link_libraries(stk_transfer_util PUBLIC LAPACK::LAPACK)
-    else()
-      target_link_libraries(stk_transfer_util PUBLIC ${LAPACK_LIBRARIES})
-    endif()
-  endif()
 else()
   add_library(stk_transfer_util ${SOURCES} ${SOURCES_SPMD})
   target_link_libraries(stk_transfer_util PUBLIC stk_transfer_lib)
