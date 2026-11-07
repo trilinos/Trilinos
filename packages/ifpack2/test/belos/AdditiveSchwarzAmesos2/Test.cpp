@@ -14,7 +14,6 @@
 #include "Solve.hpp"
 
 int main(int argc, char** argv) {
-
   typedef Tpetra::MatrixMarket::Reader<Ifpack2::Test::sparse_mat_type> reader_type;
 
   // global_size_t: Tpetra defines this unsigned integer type big
@@ -38,9 +37,9 @@ int main(int argc, char** argv) {
 
   Teuchos::RCP<Ifpack2::Test::sparse_mat_type> A   = reader_type::readSparseFile("opamp_mtx1.mm", comm);
   Teuchos::RCP<Ifpack2::Test::sparse_mat_type> A2  = reader_type::readSparseFile("opamp_mtx2.mm", comm);
-  RCP<const Ifpack2::Test::map_type> map = A->getRangeMap();
-  Teuchos::RCP<Ifpack2::Test::multivector_type> b  = reader_type::readDenseFile("opamp_rhs1.mm", comm, map); 
-  Teuchos::RCP<Ifpack2::Test::multivector_type> b2 = reader_type::readDenseFile("opamp_rhs2.mm", comm, map); 
+  RCP<const Ifpack2::Test::map_type> map           = A->getRangeMap();
+  Teuchos::RCP<Ifpack2::Test::multivector_type> b  = reader_type::readDenseFile("opamp_rhs1.mm", comm, map);
+  Teuchos::RCP<Ifpack2::Test::multivector_type> b2 = reader_type::readDenseFile("opamp_rhs2.mm", comm, map);
 
   // Attempt to solve the linear system, with the following parameters:
   //   - Amesos2 - KLU subdomain solver
@@ -52,15 +51,15 @@ int main(int argc, char** argv) {
   using Teuchos::outArg;
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
-  int lclSuccess = 1;
-  int gblSuccess = 1;
-  int overlapLevel = ((numProcs==1)? 0 : 1);
+  int lclSuccess   = 1;
+  int gblSuccess   = 1;
+  int overlapLevel = ((numProcs == 1) ? 0 : 1);
   std::ostringstream errStrm;
-  bool expectOneIteration = ((numProcs==1)? true : false);
-  bool success = false;
+  bool expectOneIteration = ((numProcs == 1) ? true : false);
+  bool success            = false;
   try {
     success = Ifpack2::Test::solveTwice(*A, *A2, *b, *b2, overlapLevel, 100, 1000,
-                                        1.0e-8, false, "AMESOS2", 
+                                        1.0e-8, false, "AMESOS2",
                                         expectOneIteration);
   } catch (std::exception& e) {
     lclSuccess = 0;

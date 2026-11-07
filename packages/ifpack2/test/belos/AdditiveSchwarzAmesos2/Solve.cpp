@@ -39,18 +39,17 @@ bool solveTwice(const sparse_mat_type& A,
   typedef Ifpack2::AdditiveSchwarz<row_matrix_type> outer_prec_type;
   typedef Tpetra::Operator<scalar_type, LO, GO, node_type> op_type;
 
-  bool success = true;
+  bool success                        = true;
   RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
   const int myRank                    = comm->getRank();
 
-  RCP<sparse_mat_type> A_ptr = Teuchos::rcp( new sparse_mat_type(A, Teuchos::Copy) );
-  RCP<multivector_type> b_ptr = Teuchos::rcp( new multivector_type(b, Teuchos::Copy) );
-  RCP<multivector_type> x_ptr = Teuchos::rcp( new multivector_type(A.getRowMap(), b.getNumVectors()) );
+  RCP<sparse_mat_type> A_ptr  = Teuchos::rcp(new sparse_mat_type(A, Teuchos::Copy));
+  RCP<multivector_type> b_ptr = Teuchos::rcp(new multivector_type(b, Teuchos::Copy));
+  RCP<multivector_type> x_ptr = Teuchos::rcp(new multivector_type(A.getRowMap(), b.getNumVectors()));
 
   // Set parameters
   ParameterList innerPlist;
-  if (innerPrecondType == "AMESOS2")
-  {
+  if (innerPrecondType == "AMESOS2") {
     // Create the nested parameter list specifically for Amesos2
     innerPlist.setName("Amesos2");
     Teuchos::ParameterList& amesos2List = innerPlist.sublist("KLU2");
@@ -73,7 +72,7 @@ bool solveTwice(const sparse_mat_type& A,
   additiveSchwarz->initialize();
   additiveSchwarz->compute();
 
-  int verbosity = Belos::FinalSummary; 
+  int verbosity = Belos::FinalSummary;
   // Set GMRES (iterative linear solver) parameters
   RCP<ParameterList> solverParams = parameterList();
   solverParams->set("Num Blocks", numBlocks);
@@ -121,17 +120,18 @@ bool solveTwice(const sparse_mat_type& A,
       cout << ", but did not converge." << endl;
       success = false;
     }
-    cout << "It achieved a tolerance of: " << solver->achievedTol() << endl << endl;
+    cout << "It achieved a tolerance of: " << solver->achievedTol() << endl
+         << endl;
   }
 
   // -----------------------------------------------------------------------
   // Copy the values from A2 to A and b2 to b and perform second solve reusing preconditioner object
   // -----------------------------------------------------------------------
   Tpetra::MatrixMatrix::Add(A2, false, STS::one(), A2, false, STS::zero(), A_ptr);
-  b_ptr->update( STS::one(), b2, STS::zero() ); 
-  x_ptr->putScalar( 0.0 );
+  b_ptr->update(STS::one(), b2, STS::zero());
+  x_ptr->putScalar(0.0);
 
-  additiveSchwarz->compute(); 
+  additiveSchwarz->compute();
 
   // Reset the iterative solver.
   if (myRank == 0)
@@ -156,24 +156,25 @@ bool solveTwice(const sparse_mat_type& A,
       cout << ", but did not converge." << endl;
       success = false;
     }
-    cout << "It achieved a tolerance of: " << solver->achievedTol() << endl << endl;
+    cout << "It achieved a tolerance of: " << solver->achievedTol() << endl
+         << endl;
   }
 
   // -----------------------------------------------------------------------
   // Now recreate the preconditioner to check if the number of iterations is the same
   // -----------------------------------------------------------------------
-  additiveSchwarz = Teuchos::rcp( new outer_prec_type(A_ptr) );
+  additiveSchwarz = Teuchos::rcp(new outer_prec_type(A_ptr));
   additiveSchwarz->setParameters(ASlist);
 
   // Compute (set up) the (outer) preconditioner
   additiveSchwarz->initialize();
-  additiveSchwarz->compute(); 
+  additiveSchwarz->compute();
   problem->setRightPrec(additiveSchwarz);
 
   // Reset the iterative solver.
   if (myRank == 0)
     cout << "Perform second solve with new Ifpack2 AdditiveSchwarz Amesos2 preconditioner" << endl;
-  x_ptr->putScalar( 0.0 );
+  x_ptr->putScalar(0.0);
   solver->reset(Belos::Problem);
   result = solver->solve();
 
@@ -181,22 +182,23 @@ bool solveTwice(const sparse_mat_type& A,
   int numIters3 = solver->getNumIters();
   if ((numIters3 != 1) && expectOneIter)
     success = false;
-  
+
   if (myRank == 0) {
-    if (solver->isLOADetected()) { 
+    if (solver->isLOADetected()) {
       cout << "Detected a loss of accuracy!" << endl;
     }
     cout << "The Belos solve took " << numIters3 << " iteration"
          << (numIters3 != 1 ? "s" : "");
     if (result == Belos::Converged) {
       cout << " to converge." << endl;
-    } else { 
+    } else {
       cout << ", but did not converge." << endl;
       success = false;
     }
-    cout << "It achieved a tolerance of: " << solver->achievedTol() << endl << endl;
+    cout << "It achieved a tolerance of: " << solver->achievedTol() << endl
+         << endl;
     if (numIters2 != numIters3) {
-      cout << "Ifpack2::AdditiveSchwarz::Amesos2 preconditioner resulted in different iteration count: " 
+      cout << "Ifpack2::AdditiveSchwarz::Amesos2 preconditioner resulted in different iteration count: "
            << numIters2 << " vs. " << numIters3 << endl;
     }
   }

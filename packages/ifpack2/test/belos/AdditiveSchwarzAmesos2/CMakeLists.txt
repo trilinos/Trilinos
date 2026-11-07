@@ -13,11 +13,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   Ifpack2Amesos2BelosCopyFiles
   DEST_FILES opamp_mtx1.mm
-             opamp_rhs1.mm
              opamp_mtx2.mm
+             opamp_rhs1.mm
              opamp_rhs2.mm
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-)            
+)
 
 #    ${TEUCHOS_STD_UNIT_TEST_MAIN}
