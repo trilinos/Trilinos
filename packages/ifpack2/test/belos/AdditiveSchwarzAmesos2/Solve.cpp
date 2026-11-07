@@ -53,7 +53,7 @@ bool solveTwice(const sparse_mat_type& A,
     // Create the nested parameter list specifically for Amesos2
     innerPlist.setName("Amesos2");
     Teuchos::ParameterList& amesos2List = innerPlist.sublist("KLU2");
-    amesos2List.set("Trans",0);
+    amesos2List.set("Trans", 0);
   }
 
   // Create (outer) Additive Schwarz preconditioner
