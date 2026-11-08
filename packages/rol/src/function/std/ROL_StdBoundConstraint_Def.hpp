@@ -39,7 +39,7 @@ StdBoundConstraint<Real>::StdBoundConstraint(std::vector<Real> &x, bool isLower,
 
 template<class Real>
 StdBoundConstraint<Real>::StdBoundConstraint(std::vector<Real> &l, std::vector<Real> &u, Real scale, Real feasTol)
-  : x_lo_(l), x_up_(u), scale_(scale), feasTol_(feasTol) {
+  : x_lo_(l), x_up_(u), scale_(scale), feasTol_(feasTol), min_diff_(ROL_INF<Real>()) {
   BoundConstraint<Real>::activate();
   dim_ = x_lo_.size();
   for ( int i = 0; i < dim_; i++ ) {

@@ -15,8 +15,7 @@ std::shared_ptr<A> customClone(const trampoline_A *ptr_to_this, const std::strin
     pybind11::gil_scoped_acquire gil;
     pybind11::function overload = pybind11::get_overload(static_cast<const A *>(ptr_to_this), function_name.c_str());
     if (overload) {
-        auto self = pybind11::cast(ptr_to_this);
-        auto cloned = self.attr("clone")();
+        auto cloned = overload.operator()<pybind11::return_value_policy::reference>();
 
         auto keep_python_state_alive = std::make_shared<pybind11::object>(cloned);
         auto ptr = pybind11::cast<trampoline_A *>(cloned);
