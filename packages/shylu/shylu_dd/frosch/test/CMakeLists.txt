@@ -1,4 +1,5 @@
 ADD_SUBDIRECTORIES(
+    GeometricPreconditioner
     Import_Tpetra
     InterfacePartitionOfUnity
     InterfaceSets
