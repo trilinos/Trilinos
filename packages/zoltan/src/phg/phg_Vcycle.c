@@ -591,8 +591,17 @@ Refine:
 	for (i = 0; i < 2 * finer->LevelSndCnt;)  {
 	  int lno, partition;
 	  lno       = rbuffer[i++];
-	  partition = rbuffer[i++];      
-	  finer->Part[lno] = partition;         
+	  partition = rbuffer[i++];
+	  if (lno < 0 || lno >= finer->hg->nVtx
+	   || partition < 0 || partition >= p) {
+	    ZOLTAN_PRINT_ERROR (zz->Proc, yo,
+	     "Received out-of-range vertex or partition number.");
+	    ZOLTAN_FREE (&rbuffer);
+	    Zoltan_Comm_Destroy (&finer->comm_plan);
+            ZOLTAN_TRACE_EXIT(zz, yo);
+	    return ZOLTAN_FATAL;
+	  }
+	  finer->Part[lno] = partition;
 	}
 
 	ZOLTAN_FREE (&rbuffer);                  
@@ -661,6 +670,17 @@ Refine:
 	  int lno, partition;
 	  lno       = rbuffer[i++];
 	  partition = rbuffer[i++];
+	  if (lno < 0 || lno >= finer->hg->nVtx
+	   || partition < 0 || partition >= p) {
+	    ZOLTAN_PRINT_ERROR (zz->Proc, yo,
+	     "Received out-of-range vertex or partition number.");
+	    if (finer->vlno)
+	      ZOLTAN_FREE (&sendbuf);
+	    ZOLTAN_FREE (&rbuffer);
+	    Zoltan_Comm_Destroy (&finer->comm_plan);
+            ZOLTAN_TRACE_EXIT(zz, yo);
+	    return ZOLTAN_FATAL;
+	  }
 	  finer->Part[lno] = partition;
 	}
 
