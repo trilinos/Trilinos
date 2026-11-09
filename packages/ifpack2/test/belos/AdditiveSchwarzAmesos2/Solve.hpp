@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-#ifndef __IFPACK2_TEST_ADDITIVESCHWARZ_RILUK_SOLVE_HPP
-#define __IFPACK2_TEST_ADDITIVESCHWARZ_RILUK_SOLVE_HPP
+#ifndef __IFPACK2_TEST_ADDITIVESCHWARZ_AMESOS2_SOLVE_HPP
+#define __IFPACK2_TEST_ADDITIVESCHWARZ_AMESOS2_SOLVE_HPP
 
 #include "TypedefsAndIncludes.hpp"
 
@@ -29,4 +29,4 @@ bool solveTwice(const sparse_mat_type& A,
 }  // namespace Test
 }  // namespace Ifpack2
 
-#endif  // __IFPACK2_TEST_ADDITIVESCHWARZ_RILUK_SOLVE_HPP
+#endif  // __IFPACK2_TEST_ADDITIVESCHWARZ_AMESOS2_SOLVE_HPP

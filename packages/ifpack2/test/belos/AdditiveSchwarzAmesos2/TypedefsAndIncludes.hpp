@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-#ifndef __IFPACK2_TEST_ADDITIVESCHWARZ_RILUK_TYPEDEFS_AND_INCLUDES_HPP
-#define __IFPACK2_TEST_ADDITIVESCHWARZ_RILUK_TYPEDEFS_AND_INCLUDES_HPP
+#ifndef __IFPACK2_TEST_ADDITIVESCHWARZ_AMESOS2_TYPEDEFS_AND_INCLUDES_HPP
+#define __IFPACK2_TEST_ADDITIVESCHWARZ_AMESOS2_TYPEDEFS_AND_INCLUDES_HPP
 
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
@@ -33,4 +33,4 @@ typedef Tpetra::CrsMatrix<scalar_type, LO, GO, node_type> sparse_mat_type;
 }  // namespace Test
 }  // namespace Ifpack2
 
-#endif  // __IFPACK2_TEST_ADDITIVESCHWARZ_RILUK_TYPEDEFS_AND_INCLUDES_HPP
+#endif  // __IFPACK2_TEST_ADDITIVESCHWARZ_AMESOS2_TYPEDEFS_AND_INCLUDES_HPP
