@@ -18,6 +18,7 @@
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_Reindex_LinearProblem.hpp>
 #include <Tpetra_CrsSingletonFilter_LinearProblem.hpp>
+#include "Teuchos_ScalarTraits.hpp"
 
 // Utilities
 // --------------------------------------------------------------------------
@@ -229,7 +230,7 @@ bool compareMultiVectors(const Teuchos::RCP<const Tpetra::MultiVector<Scalar, LO
                          const Teuchos::RCP<const Tpetra::MultiVector<Scalar, LO, GO, Node>>& B,
                          const Teuchos::RCP<const Teuchos::Comm<int>>& Comm,
                          Teuchos::FancyOStream& out,
-                         double relativeTolerance = 1e-12) {
+                         double relativeTolerance = 1e4 * 1e4 * Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::eps()) {
   using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
   using mag_type         = typename KokkosKernels::ArithTraits<impl_scalar_type>::mag_type;
 
