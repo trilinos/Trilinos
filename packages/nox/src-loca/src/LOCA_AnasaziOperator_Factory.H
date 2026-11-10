@@ -16,6 +16,11 @@
 namespace Teuchos {
   class ParameterList;
 }
+namespace NOX {
+  namespace Abstract {
+    class Group;
+  }
+}
 namespace LOCA {
   class GlobalData;
   namespace Parameter {
