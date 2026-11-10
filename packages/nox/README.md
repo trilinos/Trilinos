@@ -11,11 +11,11 @@ The User’s Guide and Developer’s Manual are built using doxygen and can be a
 ## Overview
 
 **NOX**  
-NOX is short for Object-Oriented Nonlinear Solutions. NOX is an object-oriented C++ library designed to solve large-scale systems of nonlinear equations. It implements Newton-based globalization techniques including line search and trust region algorithms. NOX defines interfaces to users codes through the abstract group and vector pure virtual classes. In this way, NOX allows the use of any linear algebra format (such as lapack, epetra, or petsc) and any linear solver compatible with the linear algebra format.
+NOX is short for Object-Oriented Nonlinear Solutions. NOX is an object-oriented C++ library designed to solve large-scale systems of nonlinear equations. It implements Newton-based globalization techniques including line search and trust region algorithms. NOX defines interfaces to users codes through the abstract group and vector pure virtual classes. In this way, NOX allows the use of multiple linear algebra formats, including LAPACK, Thyra/Tpetra, and PETSc, together with compatible linear solvers.
 
 Models alternative to Newon-based techniques are also supplied in the form of lower order Broyden approximations and a higher-order Tensor-based model.
 
-The native linear algebra format for Trilinos (and thus for NOX) is the epetra package. If using this format, NOX requires only the residual equaitons (optionally the user can provide the Jacobian, and preconditioner too). NOX’s epetra support can evaluate the Jacobian so users don’t have to code up derivatives of their nonlinear equation system. This includes brute force finite differencing, a much more efficient colored finite differencing, and a Jacobian-Free Newton-Krylov (JFNK) algorithm.
+Current Trilinos integrations in `packages/nox` include LAPACK, Thyra/Tpetra, and PETSc-based paths. The Thyra/Tpetra stack provides the primary current Trilinos abstraction layer for package-local nonlinear solve integrations.
 
 **LOCA**  
 LOCA is generic continuation and bifurcation analysis package that is designed for large-scale applications. The algorithms are designed with minimal additional interface requirements over that needed for a Newton method to reach an equilibrium solution. LOCA is built upon the NOX nonlinear solver package. The algorithms in NOX are generic and written to the NOX::Abstract::Group and NOX::Abstract::Vector, which provide abstract interfaces to the linear algebra, data structures, and nonlinear equations to be solved. LOCA uses the NOX interface and extends it via additional abstract groups that provide the interface needed for continuation and bifurcation tracking, such as setting parameters and computing derivatives with respect to parameters.
@@ -24,14 +24,13 @@ LOCA provides several generic groups that take the NOX group representing the eq
 
 Finally, LOCA provides a stepper class that repeatedly calls the NOX nonlinear solver to compute points along a continuation curve. The design allows for continuation of bifurcations so two-parameter bifurcation sets can be generated. The stepper class relies on several support classes that compute predictors, step sizes, etc. Each of these are discussed in more detail in the LOCA Class Overview.
 
-Unlike NOX which can provide a range of nonlinear solvers using a single abstract interface to the nonlinear equations and linear algebra, LOCA provides several different levels of functionality, each requiring additional information from the underlying problem. Therefore, the interface to LOCA is split among several abstract classes each encapsulating a different level of functionality. To interface to LOCA, the user need only provide implementations of those abstract classes for the functionality the user is interested in. LOCA provides two complete interfaces:
+Unlike NOX which can provide a range of nonlinear solvers using a single abstract interface to the nonlinear equations and linear algebra, LOCA provides several different levels of functionality, each requiring additional information from the underlying problem. Therefore, the interface to LOCA is split among several abstract classes each encapsulating a different level of functionality. To interface to LOCA, the user need only provide implementations of those abstract classes for the functionality the user is interested in. LOCA provides one complete package-local interface:
 
 ```
-LOCA::LAPACK::Group  
-LOCA::Epetra::Group    
+LOCA::LAPACK::Group
 ```
 
-both of which implement the interface required for all levels of functionality provided by LOCA.
+Additional LOCA integrations are available through the abstract interfaces and package-local factories.
 
 ## Documentation
 
