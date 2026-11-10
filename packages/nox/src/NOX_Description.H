@@ -1349,7 +1349,7 @@ immediately before the word that is causing the link. For example,
   method.
 
   \note These parameters are valid for the general %NOX library.  The
-  LAPACK, Epetra, Thyra, and PETSc Group/Vector support objects have
+  LAPACK, Thyra, and PETSc Group/Vector support objects have
   their own set of parameters that are documented on each object's
   doxygen page.
 
@@ -1591,125 +1591,6 @@ A user can build a set of status tests from an independent parameter list using 
 
 */
 
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-/*! \page epetra_interface The Epetra Interface
-
- \section epetra_interface_derived Implementing the Interfaces
-
- The Epetra support code in %NOX implements a concrete Group and
- Vector class using Epetra objects.  The user only needs to write an
- interface that supplies the nonlinear equations in residual form, \f$
- F(x)=0 \f$.  Additionally, the user may provide details such as the
- Jacobian and Preconditioner if using an iterative linear solver.
- Below, we describe each of these interfaces.
-
- To link your code to %NOX using the epetra interface, you must write a
- concrete class derived from the NOX::Epetra::Interface::Required
- object.  This object defines the method for evaluating the set of
- nonlinear equations to be solved:
-
- <li> computeF(const Epetra_Vector& x, Epetra_Vector& RHS, const FillType flag) -
-      Computes the set of nonlinear equations, \f$ F \f$, to be solved
-      by %NOX. This method must be supplied by the user.
-      - x - solution vector specified from %NOX.
-      - RHS - the Epetra_Vector to be filled with the \f$ F \f$ values that
-        correspond to the input solution vector x.
-      - flag - enumerated type (see NOX::Epetra::FillType) that
-        tells a users interface why computeF() was called.  %NOX
-        has the ability to generate Jacobians based on numerical
-        differencing using calls to computeF().  In this case, the
-    user may want to compute an inexact (and hopefully cheaper)
-        \f$ F \f$ since it is only used in the Jacobian (or preconditioner).
-
- Additonally if the user wishes to provide a Jacobian operator, they
- will need to implement a concrete class derived from the
- NOX::Epetra::Interface::Jacobian object.  This object defined the
- method for evaluating the Jacobian:
-
- <li> computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac) - this
-      is an optional method that the user can implement if they wish to
-      supply their own evaluation of the Jacobian. If the user does not
-      wish to supply their own Jacobian, they should implement this method
-      so that it throws an error if it is called.  This method should update
-      the Jac operator so that subsequent Epetra_Operator::Apply() calls
-      on that operator correspond to the Jacobian at the current solution
-      vector x.
-      - x - solution vector specified from %NOX.
-      - Jac - a reference to the Jacobian operator that the user supplied
-        in the NOX::Epetra::Group constructor.
-
- Additonally if the user wishes to provide a preconditioner operator,
- they will need to implement a concrete class derived from the
- NOX::Epetra::Interface::Preconditioner object.  This object defined
- the method for evaluating the Preconditioner or a Matrix to be used
- with an interal preconditioner:
-
- <li> computePreconditioner(const Epetra_Vector& x, Epetra_Operator&
-      M, Teuchos::ParameterList* precParams) - This method allows a user to supply their own preconditioner.
-      The method should compute a preconditioner based upon the solution
-      vector x and store it in the Epetra_Operator M.  Subsequent calls to
-      the Epetra_Operator::Apply method will apply this user supplied
-      preconditioner to epetra vectors. The Epetra_Operator M can also be
-      an Epetra_RowMatrix that can be used by internally constructed
-      preconditioner objects such as AztecOO, Ipfack, and ML.
-
-      - x - solution vector specified from %NOX.
-      - M - a reference to the operator that is to be filled.  This operator
-    should be updated to correspond to the current solution vector x.
-      - precParams - a pointer to a parameter list that can be used by
-        the preconditioner.
-
- \section epetra_interface_operators Optional Operators
-
-  The user can write their own operators for the Jacobian or
-  preconditioner as discussed above, or they can use one of the %NOX
-  pre-supplied operators.  Available Operators include:
-
-  - Jacobian-Free Newton-Krylov Operator (see NOX::Epetra::MatrixFree)
-  - Finite Difference Operator (see NOX::Epetra::FiniteDifference)
-  - Colored Finite Difference Operator (see NOX::Epetra::FiniteDifferenceColoring)
-  - Broyden Operator (see NOX::Epetra::BroydenOperator)
-
-  These operators are built automatically by the linear system object
-  depending on the constuctor used.
-
- \section epetra_interface_notes Notes on NOX/Epetra:
-
-  - The concrete Epetra implementations for the %NOX Group and Vector
-    are in a separate library from the nox solver algorithms.  To build
-    the library for nox epetra support use the flag --enable-nox-epetra
-    in NOX's configure script.  This will generate a separate library called
-    libnoxepetra.a
-
-  - In addition to the %NOX headers, be sure to include the %NOX %Epetra
-    support specific headers in your interface:
-    \verbatim
-    // NOX headers for an epetra interface
-    #include "NOX.H"
-    #include "NOX_Epetra.H"
-    \endverbatim
-
-  \section epetra_features Special Epetra Features
-
-  The %Epetra support in %NOX provides a number of tools that allow users to perform complex algorithms.  This section lists some of the important features.
-
-  <ul>
-  <li>  Multivector Support.  %NOX has an implementation of multivector support that is typically used for solving multiple RHS vectors in an efficeint manner.  See NOX::Abstract::Multivector for more information.
-  <li>  Scaling.  %NOX supports a scaling object that allows users to specify diagonal scaling matrices as Epetra_Vectors that will scale the linear system using either right or left scaling.  See NOX::Epetra::Scaling for more information.
-  <li> Arbitrary vector space.  The %NOX algorithms were written to support arbitrary vectors spaces.  This allows users to define scaled norms and dot products and have them used consistently throughout the code.  See NOX::Epetra::VectorSpace for more details.
-  <li> Model evaluator interface.  %NOX supports a concrete implementation of the NOX::Epetra::Interface objects that wraps an EpetraExt::ModelEvaluator.  If a code implements their residual evaluation, Jacobian, or preconditioner via the EpetraExt::ModelEvaluator class, then it can be automatically used by the %NOX's %Epetra Group. See NOX::Epetra::ModelEvaluatorInterface for more details.
-  <li> The NOX::Epetra::Group implementation allows users to define their own linear solver via the NOX::Epetra::LinearSystem pure virtual class.  %NOX comes with the concrete NOX::Epetra::LinearSystemAztecOO class the uses iterative Krylov subspace methods. See NOX::Epetra::LinearSystem for more details.
-  </ul>
-
-  \section nox_tutorial_link NOX Epetra Tutorial
-
-  Legacy Epetra examples are no longer shipped in `packages/nox`.
-
-*/
 
 /* ************************************************************************ */
 /* ************************************************************************ */

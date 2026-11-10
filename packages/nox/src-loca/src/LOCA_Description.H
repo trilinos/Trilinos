@@ -400,7 +400,7 @@ abstract vector interface to implement to use %LOCA.
 
 \subsection loca_user_info_step_2_loca_implementations Implementations provided with LOCA
 
-%LOCA provides two ready-made implementations:
+%LOCA provides one ready-made implementation:
 
 <ul>
 <li>
