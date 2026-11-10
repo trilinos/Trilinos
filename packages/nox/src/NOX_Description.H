@@ -230,21 +230,6 @@ Go on to \ref step2.
   "NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON" option to enable.
   The NOX::LAPACK instatiation is serial only.
   <li>
-  The NOX::Epetra instantiation is an interface to the Trilinos/Epetra
-  linear algebra library.  It is Sandia's workhorse code for parallel
-  applications.  For more information see the <a
-  href="http://trilinos.sandia.gov/packages/epetra">Epetra Home
-  Page</a>. The epetra support interface actually requires four
-  Trilinos libraries: %Epetra, %EpetraExt, %AztecOO, and %Ifpack.  The
-  NOX::Epetra library is automatically enabled if you configure
-  Trilinos with the four required packages enabled.  Alternatively,
-  you can force epetra support to be enabled with the CMake flag
-  "NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA=ON".  The configure will
-  fail if you do not have the required packages (%Epetra, %EpetraExt,
-  %AztecOO, and %Ifpack) enabled.  For instructions on interfacing
-  your code to the epetra implementation see \ref epetra_interface.
-  Optionally, the epetra support can also use the %ML library.
-  <li>
   The NOX::Thyra instantiation is an interface to the Trilinos/Thyra
   package.  The Thyra package contains a set of interfaces and
   supporting code that defines basic interoperability mechanisms
@@ -437,17 +422,6 @@ Compiling with LAPACK support:
 NOX_PREFIX = /usr/local
 LDFLAGS = -L$(NOX_PREFIX)/lib
 LIBS = -lnox -lnoxlapack -llapack -lblas
-CXXFLAGS = -I$(NOX_PREFIX)/include/
-\endverbatim
-
-Compiling with Epetra support:
-
-We assume that Epetra, EpetraExt, Aztec, and Ifpack are installed in the same directory as %NOX.
-
-\verbatim
-NOX_PREFIX = /usr/local
-LDFLAGS = -L$(NOX_PREFIX)/lib
-LIBS = -lnox -lnoxepetra -laztecoo -lifpack -lepetraext -lepetra  -llapack -lblas
 CXXFLAGS = -I$(NOX_PREFIX)/include/
 \endverbatim
 
@@ -656,15 +630,6 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
   <li> \c  NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON
     <ul>
       <li> Compile noxlapack library (libnoxlapack.a). Default is not to compile the library.
-    </ul>
-</ul>
-
-\section epetra_options Epetra-Related Options
-
-<ul>
-  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA=ON
-    <ul>
-      <li> Compile noxepetra library (libnoxepetra.a). Default is not to compile the library unless Epetra, EpetraExt, Ifpack, and AztecOO are enabled.
     </ul>
 </ul>
 
