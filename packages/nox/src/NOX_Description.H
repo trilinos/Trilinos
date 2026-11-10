@@ -1285,22 +1285,15 @@ immediately before the word that is causing the link. For example,
   optionally, the Jacobian. Complete details are provided in
   the class description.
 
-  Included with %NOX are four such interfaces:
+  Included with %NOX are three such interfaces:
 
   - NOX::LAPACK
-  - NOX::Epetra
   - NOX::Thyra
   - NOX::Petsc
 
   The \b LAPACK interface is an interface to the BLAS/LAPACK library.
   It is not intended for large-scale computations, but to serve as an
   easy-to-understand example of how one might interface to %NOX.
-
-  The \b Epetra interface is an interface to the
-  Trilinos/Epetra library developed by
-  <a href="http://www.sandia.gov">Sandia National Labs</a>;
-  for more information see the
-  <a href="http://trilinos.sandia.gov/trilinos">Trilinos Home Page</a>.
 
   The \b Thyra interface is an interface to the
   Trilinos/Thyra library developed by
@@ -1713,9 +1706,6 @@ A user can build a set of status tests from an independent parameter list using 
   </ul>
 
   \section nox_tutorial_link NOX Epetra Tutorial
-
-  See the page \ref nox_epetra_tutorial for more information on how to
-  use the epetra support group.
 
   Legacy Epetra examples are no longer shipped in `packages/nox`.
 

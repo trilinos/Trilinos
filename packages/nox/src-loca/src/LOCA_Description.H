@@ -18,12 +18,11 @@
 
 Finally, %LOCA provides a stepper class that repeatedly calls the %NOX nonlinear solver to compute points along a continuation curve. The design allows for continuation of bifurcations so two-parameter bifurcation sets can be generated. The stepper class relies on several support classes that compute predictors, step sizes, etc.  Each of these are discussed in more detail n the \ref loca_class_overview.
 
-Unlike %NOX which can provide a range of nonlinear solvers using a single abstract interface to the nonlinear equations and linear algebra, %LOCA provides several different levels of functionality, each requiring additional information from the underlying problem.  Therefore, the interface to %LOCA is split among several abstract classes each encapsulating a different level of functionality.  To interface to %LOCA, the user need only provide implementations of those abstract classes for the functionality the user is interested in.  %LOCA provides two complete interfaces:
+Unlike %NOX which can provide a range of nonlinear solvers using a single abstract interface to the nonlinear equations and linear algebra, %LOCA provides several different levels of functionality, each requiring additional information from the underlying problem.  Therefore, the interface to %LOCA is split among several abstract classes each encapsulating a different level of functionality.  To interface to %LOCA, the user need only provide implementations of those abstract classes for the functionality the user is interested in.  %LOCA provides one complete package-local interface:
 
  - LOCA::LAPACK::Group
- - LOCA::Epetra::Group
 
-both of which implement the interface required for all levels of functionality provided by %LOCA.
+Additional integrations are available through the abstract interfaces and package-local factories.
 
 \section loca_user LOCA User Information
 
@@ -370,7 +369,7 @@ is dependent on some Trilinos packages (namely %Teuchos), and greatly benefits
 from others (in particular, %Anasazi).  Therefore %LOCA can only be configured
 and built inside of Trilinos.  To enable %LOCA
 during configuration and compilation, supply the --enable-loca configuration
-option.  %LOCA %LAPACK and %Epetra support and examples are automatically
+option.  %LOCA %LAPACK support and examples are automatically
 enabled if they are enabled in %NOX (see \ref nox_configuration_options). In
 addition, Trilinos must be configured with --enable-teuchos, and if %LAPACK
 support is enabled, --enable-teuchos-complex.  %LOCA is capable of using the
