@@ -353,7 +353,7 @@ UF_long trilinos_ccolamd_l_post_tree
 ) ;
 
 #ifndef EXTERN
-#define EXTERN extern
+#define EXTERN extern TRILINOSSS_LIB_DLL_EXPORT
 #endif
 
 EXTERN int (*trilinos_ccolamd_printf) (const char *, ...) ;

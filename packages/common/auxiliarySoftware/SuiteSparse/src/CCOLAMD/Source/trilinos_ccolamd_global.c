@@ -11,15 +11,19 @@
 
 /* Global variables for CCOLAMD */
 
+/* For TRILINOSSS_LIB_DLL_EXPORT: dllexport'd from trilinosss.dll, dllimport'd by
+ * consumers on Windows shared builds. */
+#include "trilinos_UFconfig.h"
+
 #ifndef NPRINT
 #ifdef MATLAB_MEX_FILE
 #include "mex.h"
-int (*trilinos_ccolamd_printf) (const char *, ...) = mexPrintf ;
+TRILINOSSS_LIB_DLL_EXPORT int (*trilinos_ccolamd_printf) (const char *, ...) = mexPrintf ;
 #else
 #include <stdio.h>
-int (*trilinos_ccolamd_printf) (const char *, ...) = printf ;
+TRILINOSSS_LIB_DLL_EXPORT int (*trilinos_ccolamd_printf) (const char *, ...) = printf ;
 #endif
 #else
-int (*trilinos_ccolamd_printf) (const char *, ...) = ((void *) 0) ;
+TRILINOSSS_LIB_DLL_EXPORT int (*trilinos_ccolamd_printf) (const char *, ...) = ((void *) 0) ;
 #endif
 

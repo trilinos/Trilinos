@@ -305,7 +305,7 @@ size_t amesos_cholmod_l_mult_size_t (size_t a, size_t k, int *ok) ;
  * workspace if they need it. */
 
 #ifndef EXTERN
-#define EXTERN extern
+#define EXTERN extern TRILINOSSS_LIB_DLL_EXPORT
 #endif
 
 /* double, int */

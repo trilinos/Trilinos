@@ -2169,8 +2169,8 @@ int CHOLMOD(print_triplet)
 #ifndef NDEBUG
 
 /* The global variables present only when debugging enabled. */
-int CHOLMOD(dump) = 0 ;
-int CHOLMOD(dump_malloc) = -1 ;
+TRILINOSSS_LIB_DLL_EXPORT int CHOLMOD(dump) = 0 ;
+TRILINOSSS_LIB_DLL_EXPORT int CHOLMOD(dump_malloc) = -1 ;
 
 /* workspace: no debug routines use workspace in Common */
 
