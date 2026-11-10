@@ -191,9 +191,6 @@ namespace LOCA {
      *      Method for preconditioning the \f$P\f$ operator.  Choices are:
      *      <ul>
      *      <li> "Jacobian" (default) -- Use the preconditioner for \f$J\f$
-     *      <li> "SMW" -- Use the Sherman-Morrison-Woodbury formula for the
-     *           inverse of \f$P\f$, replacing the inverse of \f$J\f$ with
-     *           the preconditioner for \f$J\f$.
      *      </ul>
      * <li> "Scale Augmented Rows" -- [bool] (default: true) -
      *      Scale augmented rows to unit 2-norm before computing QR
@@ -414,8 +411,7 @@ namespace LOCA {
 
       //! Enumerated type indicating preconditioner method
       enum PRECONDITIONER_METHOD {
-        JACOBIAN,
-        SMW
+        JACOBIAN
       };
 
       //! Global data object

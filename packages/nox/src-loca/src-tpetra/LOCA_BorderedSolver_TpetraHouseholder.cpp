@@ -133,27 +133,20 @@ TpetraHouseholder(const Teuchos::RCP<LOCA::GlobalData>& global_data,
   validParams.set("Constraint Parameter Names",Teuchos::RCP<std::vector<std::string>>(Teuchos::null));
   validParams.set("Scale Augmented Rows", true);
   validParams.set("Preconditioner Method", "Jacobian", "Matrix to use for Preconditioning",
-    rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("Jacobian","SWM"))));
+    rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("Jacobian"))));
   validParams.set("Include UV In Preconditioner", false);
   validParams.set("Use P For Preconditioner", false);
   solverParams->validateParametersAndSetDefaults(validParams);
 
   scale_rows = solverParams->get<bool>("Scale Augmented Rows");
-  std::string prec_method =
-    solverParams->get<std::string>("Preconditioner Method");
-  if (prec_method == "Jacobian")
-    precMethod = JACOBIAN;
-  else if (prec_method == "SMW")
-    precMethod = SMW;
-  else
-    globalData->locaErrorCheck->throwError(
-        "LOCA::BorderedSolver::TpetraHouseholder::TpetraHouseholder()",
-        "Unknown preconditioner method!  Choices are Jacobian, SMW");
+  precMethod = JACOBIAN;
 
   includeUV =
     solverParams->get<bool>("Include UV In Preconditioner");
   use_P_For_Prec =
     solverParams->get<bool>("Use P For Preconditioner");
+  TEUCHOS_TEST_FOR_EXCEPTION(use_P_For_Prec, std::runtime_error,
+                             "ERROR: LOCA::BorderedSolver::TpetraHouseholder does not support \"Use P For Preconditioner\".");
 }
 
 LOCA::BorderedSolver::TpetraHouseholder::~TpetraHouseholder()
