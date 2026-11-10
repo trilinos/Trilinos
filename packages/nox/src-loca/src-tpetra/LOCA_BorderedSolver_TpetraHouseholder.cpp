@@ -755,20 +755,6 @@ LOCA::BorderedSolver::TpetraHouseholder::solve(
   P_thyra->initialize(range_space,domain_space,tmpOp);
   grp->setJacobianOperator(P_thyra);
 
-  /*
-  // Set preconditioner
-  Teuchos::RCP<Epetra_Operator> prec_op;
-  Teuchos::RCP<Epetra_Operator> epetraPrecOp;
-  if (precMethod == SMW) {
-    epetraPrecOp = linSys->getGeneratedPrecOperator();
-    prec_op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData,
-                                                             epetraPrecOp,
-                                                             epetra_U,
-                                                             epetra_V,
-                                                             true));
-    linSys->setPrecOperatorForSolve(prec_op);
-  }
-  */
 
   // Solve for each RHS
   int m = X.numVectors();
@@ -788,10 +774,6 @@ LOCA::BorderedSolver::TpetraHouseholder::solve(
 
   qrFact.applyCompactWY(house_p, *house_x, T, Y, X, isZeroG, false, false);
 
-  // Set original operators in linear system
-  // if (precMethod == SMW)
-  //   linSys->setPrecOperatorForSolve(epetraPrecOp);
-  // linSys->destroyPreconditioner();
 
   grp->setJacobianOperator(save_original_jacobian);
 
