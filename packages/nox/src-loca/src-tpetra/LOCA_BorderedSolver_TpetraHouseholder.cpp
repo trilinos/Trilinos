@@ -675,6 +675,7 @@ LOCA::BorderedSolver::TpetraHouseholder::solve(
   // corrupt J with U*V^T if not using P for Prec (we can't for
   // tpetra).  Copy J values and add in U*V^T if it's a CRS matrix
   // and we aren't using P for the preconditioner
+  auto save_original_prec_matrix = grp->getPreconditionerMatrix();
   if (includeUV && !use_P_For_Prec) {
     auto jac_crs = Teuchos::rcp_dynamic_cast<NOX::TCrsMatrix>(tpetraOp,true);
     if (tpetraPrecMatrix.is_null()) {
@@ -755,27 +756,33 @@ LOCA::BorderedSolver::TpetraHouseholder::solve(
   P_thyra->initialize(range_space,domain_space,tmpOp);
   grp->setJacobianOperator(P_thyra);
 
+  try {
+    // Solve for each RHS
+    int m = X.numVectors();
+    X.init(0.0);
+    for (int i=0; i<m; i++) {
+      status =
+        grp->applyJacobianInverse(
+               params,
+               dynamic_cast<const NOX::Thyra::Vector&>((*cRHS)[i]),
+               dynamic_cast<NOX::Thyra::Vector&>(X[i]));
 
-  // Solve for each RHS
-  int m = X.numVectors();
-  X.init(0.0);
-  for (int i=0; i<m; i++) {
-    status =
-      grp->applyJacobianInverse(
-             params,
-             dynamic_cast<const NOX::Thyra::Vector&>((*cRHS)[i]),
-             dynamic_cast<NOX::Thyra::Vector&>(X[i]));
+      finalStatus =
+        globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                                               finalStatus,
+                                                               callingFunction);
+    }
 
-    finalStatus =
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
-                                                             finalStatus,
-                                                             callingFunction);
+    qrFact.applyCompactWY(house_p, *house_x, T, Y, X, isZeroG, false, false);
+  }
+  catch (...) {
+    grp->setJacobianOperator(save_original_jacobian);
+    grp->setPreconditionerMatrix(save_original_prec_matrix);
+    throw;
   }
 
-  qrFact.applyCompactWY(house_p, *house_x, T, Y, X, isZeroG, false, false);
-
-
   grp->setJacobianOperator(save_original_jacobian);
+  grp->setPreconditionerMatrix(save_original_prec_matrix);
 
   return finalStatus;
 }
