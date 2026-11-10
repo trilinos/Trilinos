@@ -164,7 +164,7 @@ namespace LOCA {
      * where \f$U = A*Y_1 + J*Y_2\f$, \f$V = Y_2*T^T\f$ and
      * \f$Y = [Y_1 ; Y_2]\f$.
      * The equation \f$P Z_X = \tilde{F}\f$ is solved using an iterative solver
-     * using the definition of \f$P Z_X\f$ above, in this case AztecOO.  The
+     * using the definition of \f$P Z_X\f$ above.  The
      * system is preconditioned using the preconditioner for \f$J\f$.  The
      * operator \f$Q\f$ is generated using the standard Householder QR
      * algorithm (Algorithm 5.2.1, G. Golub and C. Van Loan, "Matrix
@@ -200,11 +200,7 @@ namespace LOCA {
      *      in the preconditioner for \f$P\f$ when using the "Jacobian"
      *      preconditioner method.
      * <li> "Use P For Preconditioner" -- [bool] (default: false) -
-     *      Flag indicating whether to use the representation of \f$P\f$ as
-     *      a LOCA::Tpetra::LowRankUpdateRowMatrix for computing the
-     *      preconditioner when using the "Jacobian" preconditioner method.
-     *      This is valid only for preconditioners that accept an
-     *      Tpetra::RowMatrix interface.
+     *      The Tpetra Householder path rejects this option.
      * <li> "Transpose Solver Method" -- [string]
      *      (default: "Transpose Preconditioner") Method for preconditioning
      *      the transpose linear system.  See
