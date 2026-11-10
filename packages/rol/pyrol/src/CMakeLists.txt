@@ -1,42 +1,19 @@
 FILE(GLOB PYROL_SRC "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
-MESSAGE("PYROL_SRC = ${PYROL_SRC}")
-FILE(COPY ${PYROL_SRC} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-MESSAGE("CMAKE_CURRENT_BINARY_DIR = ${CMAKE_CURRENT_BINARY_DIR}")
-
-# file(STRINGS ${CMAKE_CURRENT_BINARY_DIR}/../binder/pyrol.sources BINDER_SRCS)
-list(TRANSFORM BINDER_SRCS PREPEND "${CMAKE_CURRENT_BINARY_DIR}/../binder/")
-list(APPEND PYROL_SRC ${BINDER_SRCS})
-
-list(APPEND PYROL_SRC ${CMAKE_CURRENT_BINARY_DIR}/../binder/pyrol.cpp)
-
-IF(NOT PYROL_USE_ONE_FILE)
-  MATH(EXPR NUMBER_FILE "${PYROL_BINDER_NUM_FILES}")
-
-  foreach(index RANGE 0 ${NUMBER_FILE})
-    list(APPEND PYROL_SRC ${CMAKE_CURRENT_BINARY_DIR}/../binder/pyrol_${index}.cpp)
-  endforeach()
-
-  MATH(EXPR NUMBER_FILE "${NUMBER_FILE}+1")
-
-  EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}"
-    -D "NUMBER_FILE=${NUMBER_FILE}"
-    -P "${CMAKE_CURRENT_SOURCE_DIR}/checkNumberFiles.cmake"
-    RESULT_VARIABLE STATUS
-    OUTPUT_VARIABLE OUTPUT_CHECKNUMBERFILES
-  )
-
-  if(STATUS AND NOT STATUS EQUAL 0)
-    message("${OUTPUT_CHECKNUMBERFILES}")
-    message(FATAL_ERROR "checkNumberFiles FAILED: ${STATUS}")
-  endif()
+# The generated sources: pyrol.cpp alone with PYROL_BINDER_USE_ONE_FILE, and
+# otherwise the files Binder lists in pyrol.sources.
+SET(PYROL_BINDER_DIR ${CMAKE_CURRENT_BINARY_DIR}/../binder)
+IF(PYROL_USE_ONE_FILE)
+  SET(PYROL_BINDER_SRC pyrol.cpp)
+ELSE()
+  FILE(STRINGS ${PYROL_BINDER_DIR}/pyrol.sources PYROL_BINDER_SRC)
 ENDIF()
-
-MESSAGE("PYROL_SRC with Binder = ${PYROL_SRC}")
+list(TRANSFORM PYROL_BINDER_SRC PREPEND "${PYROL_BINDER_DIR}/")
+list(APPEND PYROL_SRC ${PYROL_BINDER_SRC})
 
 pybind11_add_module(pyrol ${PYROL_SRC})
-target_include_directories(pyrol PUBLIC ${Mpi4Py_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/../binder "$<BUILD_INTERFACE:${ROL_all_include_dirs}>")
-target_compile_features(pyrol PUBLIC cxx_std_14)
+target_include_directories(pyrol PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${PYROL_BINDER_DIR} "$<BUILD_INTERFACE:${ROL_all_include_dirs}>")
+target_compile_features(pyrol PUBLIC cxx_std_17)
 
 foreach(depPkg IN LISTS ROL_LIB_ENABLED_DEPENDENCIES)
     target_link_libraries(pyrol PUBLIC ${depPkg}::all_libs)
@@ -49,5 +26,5 @@ INSTALL(TARGETS pyrol
 
 add_custom_command(TARGET pyrol POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/pyrol.so ${CMAKE_CURRENT_BINARY_DIR}/../pyrol/.
-    COMMENT "Copy ${PROJECT_BINARY_DIR}/src/pyrol.so"
+    COMMENT "Copy pyrol.so into the build tree's pyrol package"
 )

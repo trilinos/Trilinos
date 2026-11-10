@@ -1,5 +1,8 @@
 # Rapid Optimization Library
 
+# Make the PR fail on purpose to test notification settings
+ASSERT_DEFINED(THIS_VARIABLE_IS_DEFINITELY_NOT_DEFINED)
+
 if( COMMAND TRIBITS_PACKAGE )
   set( STANDALONE_ROL FALSE )
 else()

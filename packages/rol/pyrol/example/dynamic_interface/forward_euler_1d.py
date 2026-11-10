@@ -114,7 +114,6 @@ class SquaredLoss(DynamicObjective):
 # TO-DO: put in separate file #################################################
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from pyrol.vectors import NumPyVector
 from pyrol import getCout, Problem, Solver
@@ -151,6 +150,7 @@ def get_trajectory(constraint, u0, z, timestamps):
 
 
 def plot_trajectory(constraint, u0, z, timestamps):
+    import matplotlib.pyplot as plt
     t, u = get_trajectory(constraint, u0, z, timestamps)
     plt.plot(t, np.exp(-t), label='continuous')
     plt.plot(t, u, '.-', label='numerical solution')

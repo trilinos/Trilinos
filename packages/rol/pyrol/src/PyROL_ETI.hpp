@@ -10,8 +10,6 @@
 #ifndef PYROL_ETI
 #define PYROL_ETI
 
-#include <PyROL_ETI_helper.hpp>
-
 #include <ROL_BoundConstraint_SimOpt.hpp>
 #include <ROL_Constraint.hpp>
 #include <ROL_DynamicConstraintCheck.hpp>
@@ -37,10 +35,6 @@
 
 #define BINDER_ETI_ABSTRACT(CLASS_NAME) \
   template class CLASS_NAME;
-
-// #define BINDER_ETI_WITH_FOO(CLASS_NAME) \
-//   template class CLASS_NAME; \
-//   template <> inline void PyROL::foo(CLASS_NAME a){}
 
 #define BINDER_ROL_CORE(SCALAR) \
   BINDER_ETI_ABSTRACT(Constraint<SCALAR>) \

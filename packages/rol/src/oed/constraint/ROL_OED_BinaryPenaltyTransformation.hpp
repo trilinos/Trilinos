@@ -11,6 +11,7 @@
 #define ROL_OED_BINARYPENALTYTRANSFORMATION_HPP
 
 #include "ROL_StdConstraint.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_OED_ProfiledClass.hpp"
 
 namespace ROL::OED {

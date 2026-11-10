@@ -5,7 +5,7 @@ from pyrol.getTypeName import *
 
 
 class NumPyVector(getTypeName('Vector')):
-    def __init__(self, array=None):
+    def __init__(self, array):
         assert isinstance(array, np.ndarray)
         assert array.ndim == 1
         self.array = array
@@ -36,11 +36,7 @@ class NumPyVector(getTypeName('Vector')):
         return tmp
 
     def axpy(self, scale_factor, x):
-        ax = x.clone()
-        ax.zero()
-        ax.plus(x)
-        ax.scale(scale_factor)
-        self.plus(ax)
+        self.array += scale_factor * x.array
 
     def dimension(self):
         return len(self.array)
@@ -82,5 +78,4 @@ class NumPyVector(getTypeName('Vector')):
         b = self.clone()
         b.array[:] = 0.
         b.array[i] = 1.
-        self._basis = b
         return b
