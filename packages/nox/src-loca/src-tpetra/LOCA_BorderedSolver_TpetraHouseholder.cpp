@@ -235,7 +235,7 @@ setMatrixBlocks(const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>
     if (constGrp.get() == NULL)
       globalData->locaErrorCheck->throwError(
                     callingFunction,
-                    "Group object must be an Epetra group");
+                    "Group object must be a Thyra group");
 
     // Get A block
     Ablock = A;
