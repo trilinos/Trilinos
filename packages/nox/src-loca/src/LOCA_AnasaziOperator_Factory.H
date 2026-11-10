@@ -42,13 +42,14 @@ namespace LOCA {
      *   <li> "Jacobian Inverse" (LOCA::AnasaziOperator::JacobianInverse)
      *        [Default]
      *   <li> "Shift-Invert" (LOCA::AnasaziOperator::ShiftInvert)
+     *   <li> "Shift-Invert 2 Matrix" (LOCA::AnasaziOperator::ShiftInvert2Matrix)
      *   <li> "Cayley" (LOCA::AnasaziOperator::Cayley)
+     *   <li> "Cayley 2 Matrix" (LOCA::AnasaziOperator::Cayley2Matrix)
      *   </ul>
      * </ul>
      *
-     * There is also an %Epetra specific strategy that can
-     * be instantiated by the LOCA::Epetra::Factory.  See
-     * LOCA::Epetra::AnasaziOperator::Floquet.
+     * Additional strategies may be provided by package-specific
+     * factories.
      */
     class Factory {
 
