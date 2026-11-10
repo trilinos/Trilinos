@@ -237,9 +237,7 @@ Go on to \ref step2.
   the interfaces related to abstract numerical algorithms (ANAs) are
   the mathematical concepts of vectors, vector spaces, and linear
   operators. All other ANA interfaces and support software are built
-  on these fundamental operator/vector interfaces.  We expect this
-  interface to supersceed the Epetra interface above when all
-  functionality is moved into the Trilinos/Stratimikos layer.  For
+  on these fundamental operator/vector interfaces. For
   more information see the <a
   href="http://trilinos.sandia.gov/packages/thyra">Thyra Home
   Page</a>. Thyra will automatically be enabled if the Trilinos
@@ -485,7 +483,7 @@ The following artice by Herb Sutter explains this issue:
  %NOX/%LOCA version 8.0 will be release as part of Trilinos 8.0 in early September 2007.  Current changes/additions:
 <ul>
   <li> All %Manager classes have been replaced with Factories.  This change clarifies what occurs during reset calls and simplifies object management.  No more handles.  The factories return "Generic" base class objects.
-  <li> A new concrete implementation of the group/vector has been added to support %Thyra objects.  %Thyra is a set of abstract interfaces designed to provide developers of abstract numerical algorithms a single point of contact with codes.  It plays the same role as the NOX::Abstract::Group and NOX::Abstract::Vector play in NOX. More information on %Thyra can be found at <A HREF="http://trilinos.sandia.gov/packages/thyra">Thyra</A>.  The group leverages the <A HREF="http://trilinos.sandia.gov/packages/stratimikos">Stratimikos library</A> to build the linear solver and preconditioner.  In the future, we plan to move away from the direct Epetra support class as the %Thyra wrappers gain more functionality.  Examples can be found in nox/test/epetra/Thyra_2Dsim directory.
+  <li> A new concrete implementation of the group/vector has been added to support %Thyra objects.  %Thyra is a set of abstract interfaces designed to provide developers of abstract numerical algorithms a single point of contact with codes.  It plays the same role as the NOX::Abstract::Group and NOX::Abstract::Vector play in NOX. More information on %Thyra can be found at <A HREF="http://trilinos.sandia.gov/packages/thyra">Thyra</A>.  The group leverages the <A HREF="http://trilinos.sandia.gov/packages/stratimikos">Stratimikos library</A> to build the linear solver and preconditioner.  In the future, we plan to move away from the direct Epetra support class as the %Thyra wrappers gain more functionality.
   <li> A wrapper called Thyra::NOXNonlinearSolver has been added that derives from the Thyra::NonlinearSolverBase class.  This allows abstract numerical agorithms to use NOX as the nonlinear solver through a Thyra abstract interface.  In particular, NOX can now be used by Rythmos.
   <li> A NOX::StatusTest::Factory has been added to allow for the construction of an entire status test set via a parameter list.  Please use the nonmember functions to build parameter lists instead of using the Factory object directly.
   <li> The NOX::Utils object can now take a parameter sublist to enable the print options specified with the "Output Information" parameter.  Previously the user had to sum the print options into an integer that was set in the parameter list.  Now the user can just specify a sublist of print options for the "Output Information" parameter.  Setting the integer still works.  Here is an example:
@@ -582,7 +580,7 @@ NOX release 4.0 notes:
 <li> A new Tensor based solver that is independent of the linear solver is now implemented (in the prerelease section).
 <li> Inexact Trust Region Techniques are fully supported (also in the prerelease section).
 <li> Improved support for Epetra objects - The NOX::EpetraNew::Group should be used in place of the NOX::Epetra::Group.  In the future we will be phasing out the NOX::Epetra::Group and replace it with NOX::EpetraNew::Group.
-<li> A multi-physics technique for code coupling has been demonstrated in the test/epetra/Multiphysics directory.  This will be expanded to a generic capability in the next year.
+<li> A multi-physics technique for code coupling has been demonstrated in older package-local tests.  This will be expanded to a generic capability in the next year.
 </ul>
 
 */
@@ -1719,8 +1717,7 @@ A user can build a set of status tests from an independent parameter list using 
   See the page \ref nox_epetra_tutorial for more information on how to
   use the epetra support group.
 
-  The directory Trilinos/packages/nox/test/epetra/1Dfem contains many
-  examples and is the best resource on how to use %NOX with %Epetra.
+  Legacy Epetra examples are no longer shipped in `packages/nox`.
 
 */
 
@@ -1742,8 +1739,8 @@ A user can build a set of status tests from an independent parameter list using 
  concrete class derived from the Thyra::ModelEvaluator
  object.
 
-  The directory Trilinos/packages/nox/test/epetra/Thyra_2Dsim contains
-  examples and is the best resource on how to use %NOX with %Thyra.
+  See the active Thyra/Tpetra tests under `packages/nox/test` for current
+  examples of the Thyra interface.
 */
 
 /* ************************************************************************ */
@@ -1817,7 +1814,8 @@ setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib_${PETSC_BOPT}/${PETSC_ARCH}
  This page describes how to write the main file for using %NOX's
  Epetra implementation of the Group and Vector.
 
- This example can be found in Trilinos/packages/nox/test/epetra/1Dfem/1Dfem.C
+ This tutorial describes a legacy Epetra-based example that is no longer
+ shipped in `packages/nox`.
 
  Begin by including the %NOX library header files and any other headers
  needed by your application:
