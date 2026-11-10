@@ -664,11 +664,6 @@ LOCA::BorderedSolver::TpetraHouseholder::solve(
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                "ERROR - LOCA::BorderedSolver::TpetraHouseholder::solve(): LowRankUpdateOp NOT IMPLEMENTED YET!");
-    // tmpOp = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateOp(globalData,
-    //                                                        epetraOp,
-    //                                                        epetra_U,
-    //                                                        epetra_V,
-    //                                                        false));
   }
 
   // Allocate a separate matrix for the preconditioner. Don't want to
@@ -879,62 +874,6 @@ updateCrsMatrixForPreconditioner(const NOX::Abstract::MultiVector& UU,
   Kokkos::fence();
   matrix.fillComplete();
 
-  /*
-  // Get number of rows on this processor
-  int numMyRows = jac.NumMyRows();
-
-  int numEntries;
-  int U_LDA;
-  int V_LDA;
-  int *row_indices;
-  double *row_values;
-  double *U_values;
-  double *V_values;
-  double val;
-
-  // Get pointers to U & V values
-  const NOX::Epetra::MultiVector nox_epetra_U =
-    dynamic_cast<const NOX::Epetra::MultiVector&>(UU);
-  const Epetra_MultiVector& epetra_U = nox_epetra_U.getEpetraMultiVector();
-  const NOX::Epetra::MultiVector& nox_epetra_V =
-    dynamic_cast<const NOX::Epetra::MultiVector&>(VV);
-  const Epetra_MultiVector& epetra_V = nox_epetra_V.getEpetraMultiVector();
-  epetra_U.ExtractView(&U_values, &U_LDA);
-  epetra_V.ExtractView(&V_values, &V_LDA);
-
-  const Epetra_BlockMap& v_map = epetra_V.Map();
-  const Epetra_BlockMap& u_map = epetra_V.Map();
-  const Epetra_BlockMap& row_map = jac.RowMap();
-  const Epetra_BlockMap& col_map = jac.ColMap();
-
-  for (int row=0; row<numMyRows; row++) {
-
-    // extract view of row
-    jac.ExtractMyRowView(row, numEntries, row_values, row_indices);
-
-    int row_gid = row_map.GID(row);
-    int u_row_lid = u_map.LID(row_gid);
-
-    for (int col=0; col<numEntries; col++) {
-
-      // Only included contributions from U*V^T on this proc
-      int col_gid = col_map.GID(row_indices[col]);
-      if (v_map.MyGID(col_gid)) {
-    int v_row_lid = v_map.LID(col_gid);
-
-    // val = sum_{k=0}^m U(i,k)*V(j,k)
-    val = 0;
-    for (int k=0; k<numConstraints; k++)
-      val += U_values[k*U_LDA+u_row_lid]*V_values[k*V_LDA+v_row_lid];
-
-    // replace J(row,col) with J(row,col) + val
-    row_values[col] += val;
-
-      }
-
-    }
-  }
-  */
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
