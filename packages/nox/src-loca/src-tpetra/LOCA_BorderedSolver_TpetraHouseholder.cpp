@@ -436,11 +436,11 @@ LOCA::BorderedSolver::TpetraHouseholder::applyTranspose(
   NOX::Abstract::Group::ReturnType status = op->applyTranspose(X, inU);
 
   // Compute J*X + B*Y
-  if (!isZeroA)
+  if (!isZeroB)
     constraints->addDX(Teuchos::NO_TRANS, 1.0, Y, 1.0, inU);
 
   // Compute A^T*X
-  if (!isZeroB)
+  if (!isZeroA)
     X.multiply(1.0, *A, inV);
 
   // Compute A^T*X + C^T*Y
