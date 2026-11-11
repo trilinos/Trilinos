@@ -31,7 +31,7 @@ class LWGraph_kokkos : public MueLu::LWGraphBase<LocalOrdinal, GlobalOrdinal, No
   using LWGraphBase<LocalOrdinal, GlobalOrdinal, Node, false>::LWGraphBase;
 
  public:
-  RCP<MueLu::LWGraph<LocalOrdinal, GlobalOrdinal, Node> > copyToHost();
+  RCP<MueLu::LWGraph<LocalOrdinal, GlobalOrdinal, Node> > copyToHost() const;
 };
 
 }  // namespace MueLu

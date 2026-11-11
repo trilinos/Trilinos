@@ -19,10 +19,9 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_ClassicalMapFactory_fwd.hpp"
 #include "MueLu_LWGraph_fwd.hpp"
+#include "MueLu_LWGraph_kokkos_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
-
-#include "MueLu_LWGraph_kokkos_fwd.hpp"
 
 namespace MueLu {
 
@@ -96,6 +95,10 @@ class ClassicalMapFactory : public SingleLevelFactoryBase {
   virtual void GenerateCoarseMap(const Map &fineMap, LO num_c_points, Teuchos::RCP<const Map> &coarseMap) const;
 
   virtual void DoGraphColoring(const LWGraph &graph, Teuchos::ArrayRCP<LO> &myColors, LO &numColors) const;
+
+  using LWGraphDevice = MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
+
+  virtual void DoGraphColoring(const LWGraphDevice &graph, Teuchos::ArrayRCP<LO> &myColors, LO &numColors) const;
 
   virtual void DoMISNaive(const LWGraph &graph, Teuchos::ArrayRCP<LO> &myColors, LO &numColors) const;
 

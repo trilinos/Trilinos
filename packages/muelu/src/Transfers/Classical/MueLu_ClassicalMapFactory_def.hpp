@@ -79,11 +79,13 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   RCP<const Matrix> A     = Get<RCP<Matrix> >(currentLevel, "A");
 
   RCP<const LWGraph> graph;
-  bool use_color_graph = pL.get<bool>("aggregation: coloring: use color graph");
-  if (use_color_graph)
-    graph = Get<RCP<LWGraph> >(currentLevel, "Coloring Graph");
+  RCP<const LWGraphDevice> graphKokkos;
+  bool use_color_graph        = pL.get<bool>("aggregation: coloring: use color graph");
+  const std::string graphName = use_color_graph ? "Coloring Graph" : "Graph";
+  if (IsType<RCP<LWGraphDevice> >(currentLevel, graphName))
+    graphKokkos = Get<RCP<LWGraphDevice> >(currentLevel, graphName);
   else
-    graph = Get<RCP<LWGraph> >(currentLevel, "Graph");
+    graph = Get<RCP<LWGraph> >(currentLevel, graphName);
 
   /* ============================================================= */
   /* Phase 1 : Compute an initial MIS                              */
@@ -96,8 +98,9 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
   // Switch to Zoltan2 if we're parallel and Tpetra (and not file)
 #ifdef HAVE_MUELU_ZOLTAN2
-  int numProcs = A->getRowMap()->getComm()->getSize();
-  if (coloringAlgo != "file" && numProcs > 1 && graph->GetDomainMap()->lib() == Xpetra::UseTpetra)
+  int numProcs                         = A->getRowMap()->getComm()->getSize();
+  const Xpetra::UnderlyingLib graphLib = graph.is_null() ? graphKokkos->GetDomainMap()->lib() : graph->GetDomainMap()->lib();
+  if (coloringAlgo != "file" && numProcs > 1 && graphLib == Xpetra::UseTpetra)
     coloringAlgo = "Zoltan2";
 #endif
 
@@ -156,19 +159,26 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     }
   }
 #ifdef HAVE_MUELU_ZOLTAN2
-  else if (coloringAlgo.find("Zoltan2") != std::string::npos && graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
+  else if (coloringAlgo.find("Zoltan2") != std::string::npos && graphLib == Xpetra::UseTpetra) {
     SubFactoryMonitor sfm(*this, "DistributedGraphColoring", currentLevel);
+    if (graph.is_null())
+      graph = graphKokkos->copyToHost();
     DoDistributedGraphColoring(graph, myColors, numColors);
   }
 #endif
-  else if (coloringAlgo == "MIS" || graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
+  else if (coloringAlgo == "MIS" || graphLib == Xpetra::UseTpetra) {
     SubFactoryMonitor sfm(*this, "MIS", currentLevel);
     TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() != 1, std::invalid_argument, "MIS on more than 1 MPI rank is not supported");
+    if (graph.is_null())
+      graph = graphKokkos->copyToHost();
     DoMISNaive(*graph, myColors, numColors);
   } else {
     SubFactoryMonitor sfm(*this, "GraphColoring", currentLevel);
     TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() != 1, std::invalid_argument, "KokkosKernels graph coloring on more than 1 MPI rank is not supported");
-    DoGraphColoring(*graph, myColors, numColors);
+    if (!graphKokkos.is_null())
+      DoGraphColoring(*graphKokkos, myColors, numColors);
+    else
+      DoGraphColoring(*graph, myColors, numColors);
   }
 
 #ifdef CMS_DUMP
@@ -264,8 +274,16 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     DoGraphColoring(const LWGraph& graph, ArrayRCP<LO>& myColors_out, LO& numColors) const {
+  RCP<LWGraphDevice> graphKokkos = graph.copyToDevice();
+  DoGraphColoring(*graphKokkos, myColors_out, numColors);
+}
+
+/* ************************************************************************* */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    DoGraphColoring(const LWGraphDevice& graph, ArrayRCP<LO>& myColors_out, LO& numColors) const {
   const ParameterList& pL = GetParameterList();
-  using graph_t           = typename LWGraph_kokkos::local_graph_type;
+  using graph_t           = typename LWGraphDevice::local_graph_type;
   using KernelHandle      = KokkosKernels::Experimental::
       KokkosKernelsHandle<typename graph_t::row_map_type::value_type,
                           typename graph_t::entries_type::value_type,
@@ -312,30 +330,17 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Create device views for graph rowptrs/colinds
   size_t numRows = graph.GetNodeNumVertices();
-  // auto graphLWK  = dynamic_cast<const LWGraph_kokkos*>(&graph);
-  auto graphLW = dynamic_cast<const LWGraph*>(&graph);
-  TEUCHOS_TEST_FOR_EXCEPTION(!graphLW, std::invalid_argument, "Graph is not a LWGraph object");
+
   // Run d1 graph coloring
   // Assume that the graph is symmetric so row map/entries and col map/entries are the same
-
-  // if (graphLWK) {
-  //   KokkosGraph::Experimental::graph_color(&kh,
-  //                                          numRows,
-  //                                          numRows,  // FIXME: This should be the number of columns
-  //                                          graphLWK->getRowPtrs(),
-  //                                          graphLWK->getEntries(),
-  //                                          true);
-  // } else
-  if (graphLW) {
-    auto rowptrs = graphLW->getRowPtrs();
-    auto entries = graphLW->getEntries();
-    KokkosGraph::Experimental::graph_color(&kh,
-                                           numRows,
-                                           numRows,  // FIXME: This should be the number of columns
-                                           rowptrs,
-                                           entries,
-                                           true);
-  }
+  auto rowptrs = graph.getRowPtrs();
+  auto entries = graph.getEntries();
+  KokkosGraph::Experimental::graph_color(&kh,
+                                         numRows,
+                                         numRows,  // FIXME: This should be the number of columns
+                                         rowptrs,
+                                         entries,
+                                         true);
 
   // Extract the colors and store them in the aggregates
   auto myColors_d = coloringHandle->get_vertex_colors();
