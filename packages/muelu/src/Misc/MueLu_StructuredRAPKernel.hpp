@@ -259,9 +259,9 @@ class StructuredRAPKernel {
       throw std::runtime_error(
           "StructuredRAPKernel supports only 1D, 2D, or 3D order-zero structured RAP.");
 
-    const auto localA = A.getLocalMatrixDevice();
-    auto localAc      = Ac.getLocalMatrixDevice();
-    using local_scalar_type = typename decltype(localA.values)::non_const_value_type;
+    const auto localA            = A.getLocalMatrixDevice();
+    auto localAc                 = Ac.getLocalMatrixDevice();
+    using local_scalar_type      = typename decltype(localA.values)::non_const_value_type;
     const local_scalar_type zero = Kokkos::ArithTraits<local_scalar_type>::zero();
 
     using GOVector = Xpetra::Vector<GlobalOrdinal, LO, GlobalOrdinal, Node>;
