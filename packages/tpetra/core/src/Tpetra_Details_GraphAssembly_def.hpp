@@ -46,18 +46,14 @@ namespace Impl {
 //
 // Multiple mesh blocks
 // --------------------
-// A Tpetra::Geometry holds one or more element-to-node views ("blocks"), each
+// A Tpetra::Geometry holds any number of element-to-node views ("blocks"), each
 // possibly with a different number of nodes per element.  We assemble them all
-// into one graph.  To keep the node->element traversal a flat, block-agnostic
-// loop, every owned element across every block is given a single "flat element
-// index".  Two small helper views map a flat element index back to its block
-// and to that block's local element index:
-//   - flatElemBlock(f)      -> block id b of flat element f
-//   - flatElemLocalId(f)    -> local element index within block b
-// (equivalently, block b owns the contiguous flat range
-//  [blockElemOffsets(b), blockElemOffsets(b+1)) ).
-// The Geometry itself is captured by value (it is device-friendly) so that the
-// functors can look up nodesPerElement and the node GIDs of any (block,element).
+// into one graph.  Before running the kernels, the blocks are combined into a
+// single CRS element-to-node structure (rows = owned elements across all
+// blocks, concatenated in block order; entries = global node IDs):
+//   - elemToNodeRowptrs(e) .. elemToNodeRowptrs(e+1) delimit element e's nodes
+//   - elemToNodeEntries(k) is a global node ID
+// so the functors are completely block-agnostic.
 // ---------------------------------------------------------------------------
 
 /// COUNT pass: one team per row (owned+shared node).  Walk the adjacent owned
@@ -66,8 +62,7 @@ namespace Impl {
 /// set for overflow.  The hash table stores LOCAL column IDs (LIDs) rather than
 /// global IDs, since LIDs are typically a narrower type -- this conserves
 /// scratch (shared) memory.
-template <class Geometry, class RowptrsType, class EntriesType,
-          class FlatBlockView, class FlatLocalView,
+template <class ElemRowptrsType, class ElemEntriesType, class RowptrsType, class EntriesType,
           class LocalMapType, class ScratchHashTable, class GlobalEdgeSet,
           class FlagView, class TeamMember, class LocalOrdinal, class GlobalOrdinal>
 struct FECountEntriesFunctor {
@@ -75,9 +70,8 @@ struct FECountEntriesFunctor {
 
   FECountEntriesFunctor(
       const RowptrsType& counts_,
-      const Geometry& geometry_,
-      const FlatBlockView& flatElemBlock_,
-      const FlatLocalView& flatElemLocalId_,
+      const ElemRowptrsType& elemToNodeRowptrs_,
+      const ElemEntriesType& elemToNodeEntries_,
       const RowptrsType& nodeToElementRowptrs_,
       const EntriesType& nodeToElementEntries_,
       const LocalMapType& columnMap_,
@@ -85,9 +79,8 @@ struct FECountEntriesFunctor {
       const FlagView& globalFailFlag_,
       LocalOrdinal hashSize_)
     : counts(counts_)
-    , geometry(geometry_)
-    , flatElemBlock(flatElemBlock_)
-    , flatElemLocalId(flatElemLocalId_)
+    , elemToNodeRowptrs(elemToNodeRowptrs_)
+    , elemToNodeEntries(elemToNodeEntries_)
     , nodeToElementRowptrs(nodeToElementRowptrs_)
     , nodeToElementEntries(nodeToElementEntries_)
     , columnMap(columnMap_)
@@ -107,21 +100,19 @@ struct FECountEntriesFunctor {
     size_type elementBegin           = nodeToElementRowptrs(localRow);
     size_type elementEnd             = nodeToElementRowptrs(localRow + 1);
     size_type numEntries;
-    // Iterate over the (flat) elements adjacent to this node.
+    // Iterate over the elements adjacent to this node.
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(t, elementBegin, elementEnd),
         [&](size_type i, size_type& lTeamCount) {
-          LocalOrdinal flatElement = nodeToElementEntries(i);
-          const int block          = flatElemBlock(flatElement);
-          const LocalOrdinal localElement = flatElemLocalId(flatElement);
-          const auto blockE2N      = geometry.getBlock(block);
-          const int nodesThisElem  = static_cast<int>(blockE2N.extent(1));
+          LocalOrdinal element = nodeToElementEntries(i);
+          auto nodeBegin       = elemToNodeRowptrs(element);
+          auto nodeEnd         = elemToNodeRowptrs(element + 1);
           size_type numThreadEntries;
-          // Iterate over the nodes adjacent to localElement in this block.
+          // Iterate over the nodes adjacent to element.
           Kokkos::parallel_reduce(
-              Kokkos::ThreadVectorRange(t, nodesThisElem),
-              [&](int j, size_type& lThreadCount) {
-                GlobalOrdinal nei = blockE2N(localElement, j);
+              Kokkos::ThreadVectorRange(t, nodeBegin, nodeEnd),
+              [&](decltype(nodeBegin) j, size_type& lThreadCount) {
+                GlobalOrdinal nei = elemToNodeEntries(j);
                 // Work with the LOCAL column ID; the hash table stores LIDs.
                 LocalOrdinal neiLid = columnMap.getLocalElement(nei);
                 // Try to insert neiLid into the scratch hash table, if it's not
@@ -173,9 +164,8 @@ struct FECountEntriesFunctor {
   }
 
   RowptrsType counts;
-  Geometry geometry;
-  FlatBlockView flatElemBlock;
-  FlatLocalView flatElemLocalId;
+  ElemRowptrsType elemToNodeRowptrs;
+  ElemEntriesType elemToNodeEntries;
   RowptrsType nodeToElementRowptrs;
   EntriesType nodeToElementEntries;
   LocalMapType columnMap;
@@ -195,9 +185,8 @@ struct FECountEntriesFunctor {
 ///     output column map outColMap is written (path 1: colMap supplied).
 ///   - StoreGlobal == true:  the global node ID is written directly, producing a
 ///     globally-indexed local graph (path 2: no colMap; makeColMap later).
-template <bool StoreGlobal, class Geometry, class RowptrsType,
-          class EntriesType, class FlatBlockView, class FlatLocalView,
-          class NodeToElemEntriesType, class KeyMapType,
+template <bool StoreGlobal, class ElemRowptrsType, class ElemEntriesType, class RowptrsType,
+          class EntriesType, class NodeToElemEntriesType, class KeyMapType,
           class OutColMapType, class ScratchHashTable, class ScratchCounter,
           class GlobalEdgeSet, class FlagView, class TeamMember,
           class LocalOrdinal, class GlobalOrdinal>
@@ -208,9 +197,8 @@ struct FEFillEntriesFunctor {
   FEFillEntriesFunctor(
       const RowptrsType& rowptrs_,
       const EntriesType& entries_,
-      const Geometry& geometry_,
-      const FlatBlockView& flatElemBlock_,
-      const FlatLocalView& flatElemLocalId_,
+      const ElemRowptrsType& elemToNodeRowptrs_,
+      const ElemEntriesType& elemToNodeEntries_,
       const RowptrsType& nodeToElementRowptrs_,
       const NodeToElemEntriesType& nodeToElementEntries_,
       const KeyMapType& keyMap_,
@@ -220,9 +208,8 @@ struct FEFillEntriesFunctor {
       LocalOrdinal hashSize_)
     : rowptrs(rowptrs_)
     , entries(entries_)
-    , geometry(geometry_)
-    , flatElemBlock(flatElemBlock_)
-    , flatElemLocalId(flatElemLocalId_)
+    , elemToNodeRowptrs(elemToNodeRowptrs_)
+    , elemToNodeEntries(elemToNodeEntries_)
     , nodeToElementRowptrs(nodeToElementRowptrs_)
     , nodeToElementEntries(nodeToElementEntries_)
     , keyMap(keyMap_)
@@ -254,20 +241,18 @@ struct FEFillEntriesFunctor {
     LocalOrdinal localRow            = t.league_rank();
     size_type elementBegin           = nodeToElementRowptrs(localRow);
     size_type elementEnd             = nodeToElementRowptrs(localRow + 1);
-    // Iterate over the (flat) elements adjacent to this node.
+    // Iterate over the elements adjacent to this node.
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(t, elementBegin, elementEnd),
         [&](size_type i) {
-          LocalOrdinal flatElement = nodeToElementEntries(i);
-          const int block          = flatElemBlock(flatElement);
-          const LocalOrdinal localElement = flatElemLocalId(flatElement);
-          const auto blockE2N      = geometry.getBlock(block);
-          const int nodesThisElem  = static_cast<int>(blockE2N.extent(1));
-          // Iterate over the nodes adjacent to localElement in this block.
+          LocalOrdinal element = nodeToElementEntries(i);
+          auto nodeBegin       = elemToNodeRowptrs(element);
+          auto nodeEnd         = elemToNodeRowptrs(element + 1);
+          // Iterate over the nodes adjacent to element.
           Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange(t, nodesThisElem),
-              [&](int j) {
-                GlobalOrdinal nei = blockE2N(localElement, j);
+              Kokkos::ThreadVectorRange(t, nodeBegin, nodeEnd),
+              [&](decltype(nodeBegin) j) {
+                GlobalOrdinal nei = elemToNodeEntries(j);
                 // The hash table keys on the owned+shared LID (compact and
                 // dedup-correct); the value written to entries is computed by
                 // outputValue (either an output-colMap LID or the GID).
@@ -314,9 +299,8 @@ struct FEFillEntriesFunctor {
 
   RowptrsType rowptrs;
   EntriesType entries;
-  Geometry geometry;
-  FlatBlockView flatElemBlock;
-  FlatLocalView flatElemLocalId;
+  ElemRowptrsType elemToNodeRowptrs;
+  ElemEntriesType elemToNodeEntries;
   RowptrsType nodeToElementRowptrs;
   NodeToElemEntriesType nodeToElementEntries;
   KeyMapType keyMap;
@@ -381,42 +365,42 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
   // local graph, call makeColMap, and remap to local indices.
   const bool haveColMap = !ownedPlusSharedColMap_.is_null();
 
-  // Multi-block geometry.  Each block is an element-to-node view (possibly with
-  // a different number of nodes per element).  We flatten all owned elements
-  // across all blocks into a single "flat element index" space so that the
-  // node->element traversal below is a single block-agnostic loop.
-  auto geometry               = geometry_;
-  const int numBlocks         = geometry.getNumBlocks();
-  const int maxNodesPerElement = geometry.getMaxNodesPerElement();
+  // Combine all mesh blocks of the Geometry (any number of them, each possibly
+  // with a different number of nodes per element) into a single CRS
+  // element-to-node structure: rows are the owned elements of every block,
+  // concatenated in block order; entries are global node IDs.  The kernels
+  // below are then completely block-agnostic.
+  using elem_entries_t = Kokkos::View<global_ordinal_type*, device_type>;
+  const auto& blocks           = geometry_.getBlocks();
+  const int maxNodesPerElement = geometry_.getMaxNodesPerElement();
+  const size_t numElements     = geometry_.getTotalNumElements();
+  size_t numIncidences         = 0;
+  for (const auto& block : blocks) numIncidences += block.size();
 
-  // Per-block prefix sum of element counts (host side; numBlocks is tiny), plus
-  // the total number of flat elements across all blocks.
-  std::vector<size_t> blockElemOffsetsHost(numBlocks + 1, 0);
-  for (int b = 0; b < numBlocks; ++b) {
-    blockElemOffsetsHost[b + 1] =
-        blockElemOffsetsHost[b] + geometry.getNumElements(b);
-  }
-  const size_t numFlatElements = blockElemOffsetsHost[numBlocks];
-
-  // Device views mapping a flat element index to its block and its local
-  // element index within that block.
-  using flat_block_view = Kokkos::View<int*, device_type>;
-  using flat_local_view = Kokkos::View<local_ordinal_type*, device_type>;
-  flat_block_view flatElemBlock(Kokkos::ViewAllocateWithoutInitializing("flatElemBlock"), numFlatElements);
-  flat_local_view flatElemLocalId(Kokkos::ViewAllocateWithoutInitializing("flatElemLocalId"), numFlatElements);
+  rowptrs_t elemToNodeRowptrs(Kokkos::ViewAllocateWithoutInitializing("elemToNodeRowptrs"), numElements + 1);
+  elem_entries_t elemToNodeEntries(Kokkos::ViewAllocateWithoutInitializing("elemToNodeEntries"), numIncidences);
   {
-    auto flatElemBlockHost   = Kokkos::create_mirror_view(flatElemBlock);
-    auto flatElemLocalIdHost = Kokkos::create_mirror_view(flatElemLocalId);
-    for (int b = 0; b < numBlocks; ++b) {
-      const size_t begin = blockElemOffsetsHost[b];
-      const size_t nElem = geometry.getNumElements(b);
-      for (size_t e = 0; e < nElem; ++e) {
-        flatElemBlockHost(begin + e)   = b;
-        flatElemLocalIdHost(begin + e) = static_cast<local_ordinal_type>(e);
-      }
+    size_t elemOffset  = 0;
+    size_t entryOffset = 0;
+    for (const auto& block : blocks) {
+      const size_t numBlockElements = block.extent(0);
+      const size_t nodesPerElement  = block.extent(1);
+      const size_type entryBase     = entryOffset;
+      auto blockE2N                 = block;
+      auto blockRowptrs             = Kokkos::subview(elemToNodeRowptrs,
+                                                      Kokkos::make_pair(elemOffset, elemOffset + numBlockElements));
+      Kokkos::parallel_for(
+          range_policy(0, numBlockElements),
+          KOKKOS_LAMBDA(size_t e) {
+            const size_type rowBegin = entryBase + e * nodesPerElement;
+            blockRowptrs(e)          = rowBegin;
+            for (size_t n = 0; n < nodesPerElement; ++n)
+              elemToNodeEntries(rowBegin + n) = blockE2N(e, n);
+          });
+      elemOffset += numBlockElements;
+      entryOffset += blockE2N.size();
     }
-    Kokkos::deep_copy(flatElemBlock, flatElemBlockHost);
-    Kokkos::deep_copy(flatElemLocalId, flatElemLocalIdHost);
+    Kokkos::deep_copy(Kokkos::subview(elemToNodeRowptrs, numElements), size_type(numIncidences));
   }
 
   // The hash table always keys on the owned+shared map's LIDs (compact and
@@ -429,21 +413,14 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
   auto failFlagHost = Kokkos::create_mirror_view(failFlag);
 
   // -- Step 1: build the node -> element graph (transpose of element -> node) --
-  // Rows are the local (owned+shared) nodes; entries are FLAT element indices
-  // (spanning every block).  We iterate over the flat incidence space
-  // [0, totalIncidences): each incidence maps to a (flat element, node-of-elem)
-  // pair, which we resolve to a block + local element via the flat-element
-  // metadata, then read the global node ID from that block's view.
+  // Rows are the local (owned+shared) nodes; entries are element indices
+  // (rows of the combined element-to-node structure, spanning every block).
   rowptrs_t nodeToElementRowptrs("nodeToElementRowptrs", numLocalNodes + 1);
   Kokkos::parallel_for(
-      range_policy(0, numFlatElements),
-      KOKKOS_LAMBDA(size_t flatElem) {
-        const int b                     = flatElemBlock(flatElem);
-        const local_ordinal_type le     = flatElemLocalId(flatElem);
-        const auto blockE2N             = geometry.getBlock(b);
-        const int nodesPerElement       = static_cast<int>(blockE2N.extent(1));
-        for (int nodeOfElem = 0; nodeOfElem < nodesPerElement; ++nodeOfElem) {
-          global_ordinal_type globalNode = blockE2N(le, nodeOfElem);
+      range_policy(0, numElements),
+      KOKKOS_LAMBDA(size_t element) {
+        for (size_type k = elemToNodeRowptrs(element); k < elemToNodeRowptrs(element + 1); ++k) {
+          global_ordinal_type globalNode = elemToNodeEntries(k);
           local_ordinal_type localNode   = localOwnedPlusSharedMap.getLocalElement(globalNode);
           if (localNode != LO_INVALID)
             Kokkos::atomic_inc(&nodeToElementRowptrs(localNode));
@@ -464,18 +441,14 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
     rowptrs_t insertPos(Kokkos::ViewAllocateWithoutInitializing("insertPos"), numLocalNodes + 1);
     Kokkos::deep_copy(insertPos, nodeToElementRowptrs);
     Kokkos::parallel_for(
-        range_policy(0, numFlatElements),
-        KOKKOS_LAMBDA(size_t flatElem) {
-          const int b                 = flatElemBlock(flatElem);
-          const local_ordinal_type le = flatElemLocalId(flatElem);
-          const auto blockE2N         = geometry.getBlock(b);
-          const int nodesPerElement   = static_cast<int>(blockE2N.extent(1));
-          for (int nodeOfElem = 0; nodeOfElem < nodesPerElement; ++nodeOfElem) {
-            global_ordinal_type globalNode = blockE2N(le, nodeOfElem);
+        range_policy(0, numElements),
+        KOKKOS_LAMBDA(size_t element) {
+          for (size_type k = elemToNodeRowptrs(element); k < elemToNodeRowptrs(element + 1); ++k) {
+            global_ordinal_type globalNode = elemToNodeEntries(k);
             local_ordinal_type localNode   = localOwnedPlusSharedMap.getLocalElement(globalNode);
             if (localNode != LO_INVALID)
               nodeToElementEntries(Kokkos::atomic_fetch_add(&insertPos(localNode), size_type(1))) =
-                  static_cast<local_ordinal_type>(flatElem);
+                  static_cast<local_ordinal_type>(element);
           }
         });
   }
@@ -502,14 +475,13 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
   size_t fallbackSetSize = 8 * numLocalNodes + 1;
   {
     using count_functor_type =
-        Impl::FECountEntriesFunctor<geometry_type, rowptrs_t, entries_t,
-                                    flat_block_view, flat_local_view,
+        Impl::FECountEntriesFunctor<rowptrs_t, elem_entries_t, rowptrs_t, entries_t,
                                     local_map_type, scratch_hash_table, global_edge_set,
                                     flag_view, team_member, local_ordinal_type, global_ordinal_type>;
     while (true) {
       global_edge_set fallbackSet(fallbackSetSize);
       count_functor_type functor(
-          localRowptrs, geometry, flatElemBlock, flatElemLocalId,
+          localRowptrs, elemToNodeRowptrs, elemToNodeEntries,
           nodeToElementRowptrs, nodeToElementEntries,
           localOwnedPlusSharedMap, fallbackSet, failFlag, hashTableSize);
       int scratchPerTeam      = scratch_hash_table::shmem_size(hashTableSize);
@@ -549,9 +521,8 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
     using out_col_map_type  = decltype(outColLocalMap);
     constexpr bool StoreGlobal = decltype(storeGlobalTag)::value;
     using fill_functor_type =
-        Impl::FEFillEntriesFunctor<StoreGlobal, geometry_type, rowptrs_t,
-                                   entries_view_type, flat_block_view, flat_local_view,
-                                   entries_t, local_map_type, out_col_map_type,
+        Impl::FEFillEntriesFunctor<StoreGlobal, rowptrs_t, elem_entries_t, rowptrs_t,
+                                   entries_view_type, entries_t, local_map_type, out_col_map_type,
                                    scratch_hash_table, scratch_counter,
                                    global_edge_set, flag_view, team_member,
                                    local_ordinal_type, global_ordinal_type>;
@@ -559,7 +530,7 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
     while (true) {
       global_edge_set fallbackSet(localFallbackSetSize);
       fill_functor_type functor(
-          localRowptrs, entriesView, geometry, flatElemBlock, flatElemLocalId,
+          localRowptrs, entriesView, elemToNodeRowptrs, elemToNodeEntries,
           nodeToElementRowptrs, nodeToElementEntries,
           localOwnedPlusSharedMap, outColLocalMap, fallbackSet, failFlag, hashTableSize);
       int scratchPerTeam      = scratch_hash_table::shmem_size(hashTableSize) + scratch_counter::shmem_size();

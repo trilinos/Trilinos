@@ -15,13 +15,15 @@
 
 #include "Tpetra_Details_DefaultTypes.hpp"
 #include "Kokkos_Core.hpp"
-#include <initializer_list>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace Tpetra {
 
 /// \class Geometry
-/// \brief A device-compatible collection of one or more finite-element mesh
-///   blocks, each described by an element-to-node connectivity view.
+/// \brief A collection of one or more finite-element mesh blocks, each
+///   described by an element-to-node connectivity view.
 ///
 /// \tparam GlobalOrdinal Type of global node indices; matches CrsGraph.
 /// \tparam Node          Kokkos Node type; matches CrsGraph.
@@ -33,26 +35,30 @@ namespace Tpetra {
 /// several element types (mesh "blocks") -- for instance some triangles and
 /// some quadrilaterals -- that are assembled into a single graph.
 ///
-/// Geometry bundles a variadic number of these element-to-node views into one
-/// object.  Each block may have a different number of nodes per element (the
-/// second extent of its view).  The blocks are assembled together into a single
+/// Geometry bundles any number of these element-to-node views into one object.
+/// Each block may have a different number of nodes per element (the second
+/// extent of its view).  The blocks are assembled together into a single
 /// CrsGraph.
 ///
-/// Geometry is trivially copyable and captures its blocks by (reference-counted
-/// Kokkos::View) value, so it can be captured by value in a KOKKOS_LAMBDA and
-/// used inside device kernels.  A fixed compile-time capacity
-/// (\c maxNumBlocks) is used so that the block views can be stored in a
-/// Kokkos::Array (which is device-friendly), avoiding any host-only container.
+/// Geometry is a host-side object: the block views are held in a
+/// std::vector, so there is no limit on the number of blocks.  The views
+/// themselves live in device memory.  Graph assembly (see
+/// Tpetra::Details::GraphAssembly) combines all blocks into a single
+/// device-resident element-to-node sparse structure (rows = elements,
+/// columns = nodes) before running its device kernels.
 ///
 /// Typical usage:
 /// \code
 /// using geom_type = Tpetra::Geometry<GO, Node>;
 /// // Two blocks: triangles and quads.
 /// geom_type geom(triElementToNode, quadElementToNode);
+/// // or, from a runtime-sized list of blocks:
+/// std::vector<geom_type::element_to_node_type> blocks = ...;
+/// geom_type geom2(blocks);
 /// // or, equivalently, add blocks one at a time:
-/// geom_type geom2;
-/// geom2.addBlock(triElementToNode);
-/// geom2.addBlock(quadElementToNode);
+/// geom_type geom3;
+/// geom3.addBlock(triElementToNode);
+/// geom3.addBlock(quadElementToNode);
 /// \endcode
 template <class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
           class Node          = ::Tpetra::Details::DefaultTypes::node_type>
@@ -72,86 +78,71 @@ class Geometry {
   using element_to_node_type =
       Kokkos::View<const global_ordinal_type**, device_type>;
 
-  /// \brief Maximum number of mesh blocks a Geometry can hold.
-  ///
-  /// A compile-time capacity so that the blocks can live in a device-friendly
-  /// Kokkos::Array.  Increase this if more element types are needed.
-  static constexpr int maxNumBlocks = 8;
-
   //! Default constructor: an empty Geometry with no blocks.
-  KOKKOS_DEFAULTED_FUNCTION
   Geometry() = default;
 
   /// \brief Variadic constructor from one or more element-to-node views.
   ///
-  /// Each argument must be convertible to #element_to_node_type.  There must be
-  /// at least one, and no more than #maxNumBlocks arguments.
+  /// Each argument must be convertible to #element_to_node_type.
   template <class... Views,
-            class = typename std::enable_if<(sizeof...(Views) >= 1)>::type>
+            class = std::enable_if_t<
+                (sizeof...(Views) >= 1) &&
+                (std::is_convertible_v<const Views&, element_to_node_type> && ...)>>
   Geometry(const Views&... views) {
-    static_assert(sizeof...(Views) <= static_cast<size_t>(maxNumBlocks),
-                  "Tpetra::Geometry: too many mesh blocks (exceeds maxNumBlocks).");
-    addBlocks(views...);
+    blocks_.reserve(sizeof...(Views));
+    (addBlock(element_to_node_type(views)), ...);
   }
+
+  //! Constructor from a runtime-sized list of element-to-node views.
+  explicit Geometry(const std::vector<element_to_node_type>& blocks)
+    : blocks_(blocks) {}
+
+  //! Constructor from a runtime-sized list of element-to-node views.
+  explicit Geometry(std::vector<element_to_node_type>&& blocks)
+    : blocks_(std::move(blocks)) {}
 
   //! Add a mesh block (element-to-node connectivity view) to the Geometry.
   void addBlock(const element_to_node_type& elementToNode) {
-    if (numBlocks_ < maxNumBlocks) {
-      blocks_[numBlocks_] = elementToNode;
-      ++numBlocks_;
-    }
+    blocks_.push_back(elementToNode);
   }
 
   //! The number of mesh blocks currently held.
-  KOKKOS_INLINE_FUNCTION
-  int getNumBlocks() const { return numBlocks_; }
+  int getNumBlocks() const { return static_cast<int>(blocks_.size()); }
+
+  //! All mesh blocks' element-to-node connectivity views.
+  const std::vector<element_to_node_type>& getBlocks() const { return blocks_; }
 
   //! The element-to-node connectivity view of block \c b.
-  KOKKOS_INLINE_FUNCTION
   const element_to_node_type& getBlock(const int b) const { return blocks_[b]; }
 
   //! The number of owned elements in block \c b.
-  KOKKOS_INLINE_FUNCTION
   size_t getNumElements(const int b) const { return blocks_[b].extent(0); }
 
   //! The number of nodes per element of block \c b.
-  KOKKOS_INLINE_FUNCTION
   int getNodesPerElement(const int b) const {
     return static_cast<int>(blocks_[b].extent(1));
   }
 
   //! The total number of owned elements across all blocks.
-  KOKKOS_INLINE_FUNCTION
   size_t getTotalNumElements() const {
     size_t total = 0;
-    for (int b = 0; b < numBlocks_; ++b) total += blocks_[b].extent(0);
+    for (const auto& block : blocks_) total += block.extent(0);
     return total;
   }
 
   //! The maximum number of nodes per element across all blocks.
-  KOKKOS_INLINE_FUNCTION
   int getMaxNodesPerElement() const {
     int m = 0;
-    for (int b = 0; b < numBlocks_; ++b) {
-      const int npe = static_cast<int>(blocks_[b].extent(1));
+    for (const auto& block : blocks_) {
+      const int npe = static_cast<int>(block.extent(1));
       if (npe > m) m = npe;
     }
     return m;
   }
 
  private:
-  //! Recursively add a parameter pack of views.
-  void addBlocks() {}
-  template <class First, class... Rest>
-  void addBlocks(const First& first, const Rest&... rest) {
-    addBlock(element_to_node_type(first));
-    addBlocks(rest...);
-  }
-
-  //! Fixed-capacity, device-friendly storage of the block views.
-  Kokkos::Array<element_to_node_type, maxNumBlocks> blocks_;
-  //! The number of blocks actually stored.
-  int numBlocks_ = 0;
+  //! The block views (host-side container of device views).
+  std::vector<element_to_node_type> blocks_;
 };
 
 }  // namespace Tpetra

@@ -219,6 +219,26 @@ MultiBlockMesh<GO> makeMixedTriQuadMesh(int nx, int ny) {
   return mesh;
 }
 
+// Split each block of a multi-block mesh into numSplits smaller blocks of the
+// same element type (assigning elements round-robin).  This produces a mesh
+// with many blocks, some of which may have no elements on a given rank.
+template <class GO>
+MultiBlockMesh<GO> splitBlocks(const MultiBlockMesh<GO>& mesh, int numSplits) {
+  MultiBlockMesh<GO> split;
+  split.numGlobalNodes = mesh.numGlobalNodes;
+  for (const auto& block : mesh.blocks) {
+    std::vector<GlobalMesh<GO>> pieces(numSplits);
+    for (auto& piece : pieces) {
+      piece.nodesPerElement = block.nodesPerElement;
+      piece.numGlobalNodes  = block.numGlobalNodes;
+    }
+    for (size_t e = 0; e < block.element_to_node.size(); ++e)
+      pieces[e % numSplits].element_to_node.push_back(block.element_to_node[e]);
+    for (auto& piece : pieces) split.blocks.push_back(piece);
+  }
+  return split;
+}
+
 // Ground-truth connectivity of a multi-block mesh: the union over all blocks.
 template <class GO>
 std::vector<std::set<GO>> expectedConnectivity(const MultiBlockMesh<GO>& mesh) {
@@ -377,8 +397,13 @@ void testMesh(const GlobalMesh<GO>& mesh, Teuchos::FancyOStream& out,
 //   1: Tpetra::assembleFECrsGraph(geometry, ownedRowMap, ownedPlusSharedMap)
 //   2: Tpetra::assembleFECrsGraph(geometry, ownedPlusSharedMap)  [simplified]
 //   3: Tpetra::assembleFECrsGraph(geometry, ownedPlusSharedGIDs, comm) [simplified]
+//
+// If geometryFromVector is true, the Geometry is constructed from a
+// std::vector of element-to-node views; otherwise blocks are added one at a
+// time with addBlock.
 template <class LO, class GO, class NT>
 void testMultiBlockMesh(const MultiBlockMesh<GO>& mesh, int mode,
+                        bool geometryFromVector,
                         Teuchos::FancyOStream& out, bool& success,
                         const std::string& label) {
   using map_type      = Tpetra::Map<LO, GO, NT>;
@@ -386,7 +411,8 @@ void testMultiBlockMesh(const MultiBlockMesh<GO>& mesh, int mode,
   using e2n_type      = typename geometry_type::element_to_node_type;
 
   out << "=== Multi-block GraphAssembly test: " << label
-      << " (mode " << mode << ") ===" << endl;
+      << " (mode " << mode << ", geometry from "
+      << (geometryFromVector ? "std::vector" : "addBlock") << ") ===" << endl;
   Teuchos::OSTab tab1(out);
 
   auto comm              = getDefaultComm();
@@ -407,10 +433,8 @@ void testMultiBlockMesh(const MultiBlockMesh<GO>& mesh, int mode,
   for (size_t i = 0; i < numOwnedNodes; ++i)
     ownedPlusSharedSet.insert(ownedMap->getGlobalElement(i));
 
-  geometry_type geometry;
   const int numBlocks = static_cast<int>(mesh.blocks.size());
-  // Keep the device views alive for the duration of the test.
-  std::vector<typename e2n_type::non_const_type> ownedE2N(numBlocks);
+  std::vector<e2n_type> ownedE2N(numBlocks);
 
   for (int b = 0; b < numBlocks; ++b) {
     const auto& block                = mesh.blocks[b];
@@ -435,7 +459,13 @@ void testMultiBlockMesh(const MultiBlockMesh<GO>& mesh, int mode,
     }
     Kokkos::deep_copy(e2n, e2nHost);
     ownedE2N[b] = e2n;
-    geometry.addBlock(e2n_type(e2n));
+  }
+
+  geometry_type geometry;
+  if (geometryFromVector) {
+    geometry = geometry_type(ownedE2N);
+  } else {
+    for (const auto& e2n : ownedE2N) geometry.addBlock(e2n);
   }
 
   TEST_EQUALITY_CONST(geometry.getNumBlocks(), numBlocks);
@@ -554,7 +584,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_MultiBlock, LO, GO, NT
   // right 2 columns are quads (8 quads).  25 nodes total.
   const auto mesh = makeMixedTriQuadMesh<GO>(4, 4);
   for (int mode = 0; mode <= 3; ++mode) {
-    testMultiBlockMesh<LO, GO, NT>(mesh, mode, out, success, "mixed tri+quad (2D)");
+    testMultiBlockMesh<LO, GO, NT>(mesh, mode, false, out, success, "mixed tri+quad (2D)");
+  }
+}
+
+// Many-block mesh: the mixed tri+quad mesh with each block split into several
+// smaller blocks, giving a runtime number of blocks (some empty on some ranks).
+// The Geometry is built from a std::vector of element-to-node views.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_ManyBlocks, LO, GO, NT) {
+  // 2 blocks x 7 splits = 14 blocks: 16 tris and 8 quads spread round-robin.
+  const auto mesh = splitBlocks(makeMixedTriQuadMesh<GO>(4, 4), 7);
+  for (int mode = 0; mode <= 3; ++mode) {
+    testMultiBlockMesh<LO, GO, NT>(mesh, mode, true, out, success, "many-block tri+quad (2D)");
   }
 }
 
@@ -570,6 +611,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_MultiBlock, LO, GO, NT
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tet, LO, GO,  \
                                        NT)                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_MultiBlock,   \
+                                       LO, GO, NT)                           \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_ManyBlocks,   \
                                        LO, GO, NT)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()

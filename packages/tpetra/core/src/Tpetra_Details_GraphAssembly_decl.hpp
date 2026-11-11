@@ -100,9 +100,10 @@ class GraphAssembly {
 
   /// \brief Type of the multi-block mesh geometry.
   ///
-  /// A Geometry bundles one or more element-to-node views (mesh "blocks"),
-  /// possibly with different numbers of nodes per element, into a single
-  /// device-compatible object.  See Tpetra::Geometry.
+  /// A Geometry bundles any number of element-to-node views (mesh "blocks"),
+  /// possibly with different numbers of nodes per element.  build() combines
+  /// them into a single element-to-node sparse structure on device.  See
+  /// Tpetra::Geometry.
   using geometry_type = ::Tpetra::Geometry<GlobalOrdinal, Node>;
   //@}
 
