@@ -31,6 +31,22 @@ jobs:
       num-concurrent-tests: 112
       slots-per-gpu: 8
 
+  kokkos-integration-hip:
+    if: ${{ github.repository == 'trilinos/Trilinos' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'rocm-6.2.1-openblas-0.3.28-openmpi-4.1.5-zen3-gfx90a']"
+      image: "unknown"
+      genconfig-string: "rhel_rocm-clang-openmpi_release_static_AMDgfx90a_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_kokkos-integration"
+      target-branch: ${{ inputs.target_branch }}
+      cdash-track: "Nightly"
+      dashboard-build-name: rocm-6.2.1-openblas-0.3.28-openmpi-4.1.5-gfx90a_release_static_kokkos-integration-hip${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
+      skip-create-packageenables: true
+      extra-pr-driver-args: --extra-configure-args=-C;${GITHUB_WORKSPACE}/packages/framework/cmake-fragments/kokkos-integration/hip.cmake
+      max-cores-allowed: 128
+      num-concurrent-tests: 16
+      slots-per-gpu: 8
+
   address-sanitizer:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
     uses: ./.github/workflows/ci.yml
