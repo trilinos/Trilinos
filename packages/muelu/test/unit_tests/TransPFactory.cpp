@@ -79,13 +79,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TransPFactory, Correctness, Scalar, LocalOrdin
   // Calculate R * X
   R->apply(*X, *result2, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
 
-  Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> normX(1), normResult1(1), normResult2(1);
+  using magnitudeType = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  Teuchos::Array<magnitudeType> normX(1), normResult1(1), normResult2(1);
   X->norm2(normX);
   out << "This test checks the correctness of the R created by TransPFactory." << std::endl;
   out << "||X||_2 = " << normX << std::endl;
   result1->norm2(normResult1);
   result2->norm2(normResult2);
-  TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
+  TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e4 * Teuchos::ScalarTraits<magnitudeType>::eps());
 
 }  // Correctness test
 
