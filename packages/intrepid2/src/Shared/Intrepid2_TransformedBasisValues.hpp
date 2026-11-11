@@ -297,7 +297,12 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     unsigned rank() const
     {
-      if ((transform_.rank() == 4) && (basisValues_.rank() == 3))
+      if (!transform_.isValid())
+      {
+        // identity transform
+        return basisValues_.rank() + 1; // transformation adds a cell dimension
+      }
+      else if ((transform_.rank() == 4) && (basisValues_.rank() == 3))
       {
         return 4; // (C,F,P,D)
       }
