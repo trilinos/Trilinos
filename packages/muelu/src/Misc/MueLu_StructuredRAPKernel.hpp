@@ -259,9 +259,10 @@ class StructuredRAPKernel {
       throw std::runtime_error(
           "StructuredRAPKernel supports only 1D, 2D, or 3D order-zero structured RAP.");
 
-    const SC zero     = Teuchos::ScalarTraits<SC>::zero();
     const auto localA = A.getLocalMatrixDevice();
     auto localAc      = Ac.getLocalMatrixDevice();
+    using local_scalar_type = typename decltype(localA.values)::non_const_value_type;
+    const local_scalar_type zero = Kokkos::ArithTraits<local_scalar_type>::zero();
 
     using GOVector = Xpetra::Vector<GlobalOrdinal, LO, GlobalOrdinal, Node>;
     Teuchos::RCP<const Xpetra::Map<LO, GlobalOrdinal, Node>> remoteFineMap;
@@ -859,7 +860,7 @@ class StructuredRAPKernel {
                     reversePlanRow * maxAcEntriesPerRow + acOffset;
                 const size_t contributionBegin = reverseContributionOffsets(bucket);
                 const size_t contributionEnd   = reverseContributionOffsets(bucket + 1);
-                SC sum0 = zero, sum1 = zero, sum2 = zero, sum3 = zero;
+                local_scalar_type sum0 = zero, sum1 = zero, sum2 = zero, sum3 = zero;
                 size_t contribution = contributionBegin;
                 if (useDirectOffsets) {
                   for (; contribution + 3 < contributionEnd; contribution += 4) {
@@ -872,7 +873,7 @@ class StructuredRAPKernel {
                     sum3 += localA.values(
                         firstAValue + reverseDirectAValueOffsets(contribution + 3));
                   }
-                  SC sum = (sum0 + sum1) + (sum2 + sum3);
+                  local_scalar_type sum = (sum0 + sum1) + (sum2 + sum3);
                   for (; contribution < contributionEnd; ++contribution)
                     sum += localA.values(
                         firstAValue + reverseDirectAValueOffsets(contribution));
@@ -904,7 +905,7 @@ class StructuredRAPKernel {
                     sum3 += localA.values(localA.graph.row_map(aRow3) +
                                           reverseARowEntryOffsets(contribution + 3));
                   }
-                  SC sum = (sum0 + sum1) + (sum2 + sum3);
+                  local_scalar_type sum = (sum0 + sum1) + (sum2 + sum3);
                   for (; contribution < contributionEnd; ++contribution) {
                     const size_t aRow =
                         (firstFineNode + reverseFineNodeOffsets(contribution)) *
