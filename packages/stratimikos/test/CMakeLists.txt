@@ -76,6 +76,20 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
     NUM_MPI_PROCS 4
     )
 
+
+  ASSERT_DEFINED(
+    Tpetra_INST_DOUBLE
+    Tpetra_INST_FLOAT
+    Tpetra_INST_COMPLEX_DOUBLE
+    Tpetra_INST_COMPLEX_FLOAT
+  )
+  IF(((NOT Tpetra_INST_DOUBLE) OR (Tpetra_INST_DOUBLE AND Tpetra_INST_FLOAT)) AND
+    ((NOT Tpetra_INST_COMPLEX_DOUBLE) OR (Tpetra_INST_COMPLEX_DOUBLE AND Tpetra_INST_COMPLEX_FLOAT)))
+    SET(enable_stratimikos_mixed_precision ON)
+  ELSE()
+    SET(enable_stratimikos_mixed_precision OFF)
+  ENDIF()
+
   TRIBITS_ADD_TEST(
     test_tpetra_belos
     NAME test_tpetra_belos_half_prec
@@ -83,7 +97,7 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
       "--input-file=stratimikos_HalfBelosPrec_ParameterList.xml --show-timer-summary"
     COMM serial mpi
     NUM_MPI_PROCS 4
-    EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_FLOAT
+    EXCLUDE_IF_NOT_TRUE enable_stratimikos_mixed_precision
     )
 
   TRIBITS_ADD_TEST(
@@ -93,7 +107,7 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
       "--input-file=stratimikos_GMRES_IR_ParameterList.xml --show-timer-summary"
     COMM serial mpi
     NUM_MPI_PROCS 4
-    EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_FLOAT
+    EXCLUDE_IF_NOT_TRUE enable_stratimikos_mixed_precision
     )
 
   ASSERT_DEFINED(Belos_SOURCE_DIR)
