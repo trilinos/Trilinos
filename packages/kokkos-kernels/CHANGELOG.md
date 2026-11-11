@@ -1,5 +1,147 @@
 # Change Log
 
+## [5.3.0](https://github.com/kokkos/kokkos-kernels/tree/5.3.0)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.2.2...5.3.0)
+
+### New Features
+
+#### Batched updates
+
+- Add genuine linf norm [\#3217](https://github.com/kokkos/kokkos-kernels/pull/3217)
+- Add genuine l1 norm [\#3150](https://github.com/kokkos/kokkos-kernels/pull/3150)
+- Implement batched spr [\#3282](https://github.com/kokkos/kokkos-kernels/pull/3282)
+- Implement right-transpose SerialApplyQ [\#3274](https://github.com/kokkos/kokkos-kernels/pull/3274)
+- Implement batched symv [\#3272](https://github.com/kokkos/kokkos-kernels/pull/3272)
+- Add batched syrk [\#3255](https://github.com/kokkos/kokkos-kernels/pull/3255)
+
+#### Sparse updates
+
+#### Lapack updates
+
+- Add getrs [\#3313](https://github.com/kokkos/kokkos-kernels/pull/3313)
+- Add getrf [\#3197](https://github.com/kokkos/kokkos-kernels/pull/3197)
+
+### Enhancements
+
+#### BLAS
+
+- GEMM: has been further optimized for multiple special cases: when beta = 0, use deep_copy to set the value directly, when alpha = 0 bypass the call to gemm and just scale C by beta, finally, we are removing the explicit instantiation of GEMM on combinations of layout left and right, these are still possible but will only be compile by the application if required
+  - BLAS - GEMM: add bypass when alpha is zero [\#3336](https://github.com/kokkos/kokkos-kernels/pull/3336)
+  - Reduce layout combinations instantiated for GEMM [\#3245](https://github.com/kokkos/kokkos-kernels/pull/3245)
+  - Use Kokkos to assign scalars in KokkosBlas3_gemm_dotbased_impl.hpp [\#3218](https://github.com/kokkos/kokkos-kernels/pull/3218)
+- Change alpha type in KokkosBlas1_mult_spec [\#3334](https://github.com/kokkos/kokkos-kernels/pull/3334)
+- KokkosBlas::scal: allow alpha to be rank 0 view [\#3199](https://github.com/kokkos/kokkos-kernels/pull/3199)
+- BLAS ETI refactor to align the behavior of CudaSpace and CudaUVMSpace:
+  - BLAS level 2,3: remove MEM_SPACE from ETI [\#3233](https://github.com/kokkos/kokkos-kernels/pull/3233)
+  - BLAS level 1: refactor to not ETI on MemSpace [\#3183](https://github.com/kokkos/kokkos-kernels/pull/3183)
+  - BLAS ETI/TPL refactor: core changes [\#3171](https://github.com/kokkos/kokkos-kernels/pull/3171)
+
+#### Batched
+
+- Avoid specialization of TeamVectorGemm [\#3216](https://github.com/kokkos/kokkos-kernels/pull/3216)
+- Half support in KokkosBatched_Vector.hpp [\#3215](https://github.com/kokkos/kokkos-kernels/pull/3215)
+- Avoid specialization of TeamGemm [\#3213](https://github.com/kokkos/kokkos-kernels/pull/3213)
+
+#### Sparse
+
+- Trsv fixes and perf improvement [\#3359](https://github.com/kokkos/kokkos-kernels/pull/3359)
+- SpGEMM TPL improvements [\#3316](https://github.com/kokkos/kokkos-kernels/pull/3316)
+- SpGEMM input/output sortedness [\#3270](https://github.com/kokkos/kokkos-kernels/pull/3270)
+- Sort crs: remove redundant fences [\#3243](https://github.com/kokkos/kokkos-kernels/pull/3243)
+- KokkosSparse: improve ParILUT reuse-path numeric performance [\#3210](https://github.com/kokkos/kokkos-kernels/pull/3210)
+- Improve par_ilut performance by providing caching option [\#3175](https://github.com/kokkos/kokkos-kernels/pull/3175)
+- Improve performance of RCB and diagonal blocks extraction with device implementations [\#3149](https://github.com/kokkos/kokkos-kernels/pull/3149)
+
+#### Common utilities
+
+- Make prefix sums public; common util cleanup [\#3254](https://github.com/kokkos/kokkos-kernels/pull/3254)
+
+#### TPL support
+
+- BLAS - Iamax: enabling 64 bit code path in cuBLAS [\#3383](https://github.com/kokkos/kokkos-kernels/pull/3383)
+- Adjustments to allow KokkosKernels_ENABLE_TPL_MKL to compile on Aurora [\#3253](https://github.com/kokkos/kokkos-kernels/pull/3253)
+- Make all TPL specializations partial [\#3247](https://github.com/kokkos/kokkos-kernels/pull/3247)
+- Add oneMKL SYCL TPL binding for KokkosBlas::gemm [\#3212](https://github.com/kokkos/kokkos-kernels/pull/3212)
+
+### Build System
+
+- Easy build speedups [\#3321](https://github.com/kokkos/kokkos-kernels/pull/3321)
+
+### Documentation and Testing
+
+- [Docs] Batched Spr [\#3346](https://github.com/kokkos/kokkos-kernels/pull/3346)
+- [Docs] batched Syrk [\#3337](https://github.com/kokkos/kokkos-kernels/pull/3337)
+- [Docs] Batched Symv [\#3303](https://github.com/kokkos/kokkos-kernels/pull/3303)
+- Citation: adding our initial citation file [\#3314](https://github.com/kokkos/kokkos-kernels/pull/3314)
+- Fix(doxygen): fix a few commands in a graph header [\#3326](https://github.com/kokkos/kokkos-kernels/pull/3326)
+- Add clique test for D2 coloring [\#3312](https://github.com/kokkos/kokkos-kernels/pull/3312)
+- CodeQL: grouping dependabot updates of CodeQL [\#3227](https://github.com/kokkos/kokkos-kernels/pull/3227)
+- CI: adding warning as error in one Kumquat build [\#3223](https://github.com/kokkos/kokkos-kernels/pull/3223)
+- CI: add rocm-7.2.1 job [\#3200](https://github.com/kokkos/kokkos-kernels/pull/3200)
+- Batched - GEMM: adjusting unit-test to reduce runtime [\#3188](https://github.com/kokkos/kokkos-kernels/pull/3188)
+
+### Benchmarks
+
+- Fix par_ilut benchmark in debug [\#3350](https://github.com/kokkos/kokkos-kernels/pull/3350)
+- Benchmarks: fixing failure observed in Frontier nightly [\#3308](https://github.com/kokkos/kokkos-kernels/pull/3308)
+- Perf Tests: removing perf tests for Benchmarks [\#3230](https://github.com/kokkos/kokkos-kernels/pull/3230)
+
+### Cleanup
+
+- EXPECT*KK macro rework [\#3258](https://github.com/kokkos/kokkos-kernels/pull/3258)
+- Test utils and misc improvements [\#3232](https://github.com/kokkos/kokkos-kernels/pull/3232)
+- BLAS unit tests: remove leading underscores from ger/syr/syr2 identifiers [\#3364](https://github.com/kokkos/kokkos-kernels/pull/3364)
+- README cleanup [\#3246](https://github.com/kokkos/kokkos-kernels/pull/3246)
+- Remove all uses of KOKKOS_ENABLE_OPENMPTARGET [\#3327](https://github.com/kokkos/kokkos-kernels/pull/3327)
+- chore: expand gitignore to include many other commonly ignored files [\#3268](https://github.com/kokkos/kokkos-kernels/pull/3268)
+
+### Bug Fixes
+
+
+- Sparse - SpMV Sell: increasing tolerance check [\#3366](https://github.com/kokkos/kokkos-kernels/pull/3366)
+- Fix sell testmtx gen [\#3172](https://github.com/kokkos/kokkos-kernels/pull/3172)
+- Lapack - GETRF: fixing test for Intel compiler [\#3211](https://github.com/kokkos/kokkos-kernels/pull/3211)
+- Fix namespace in Blas1_scal test [\#3256](https://github.com/kokkos/kokkos-kernels/pull/3256)
+- Fix values types in batched syrk [\#3361](https://github.com/kokkos/kokkos-kernels/pull/3361)
+- Fix undefined reference linker issues in KokkosBlas3_gemm.hpp with Tpetra [\#3339](https://github.com/kokkos/kokkos-kernels/pull/3339)
+- Fix rotg sign when the first input is zero [\#3333](https://github.com/kokkos/kokkos-kernels/pull/3333)
+- Fix: correct GMRES residual norm calculation to prevent negative values [\#3322](https://github.com/kokkos/kokkos-kernels/pull/3322)
+- Fix out-of-rank extent access in Blas1 dot, sum and Utils permute vector [\#3310](https://github.com/kokkos/kokkos-kernels/pull/3310)
+- Fix bugs in graph distance 2 color [\#3307](https://github.com/kokkos/kokkos-kernels/pull/3307)
+- Fix for rocsparse with rocm 10.0 [\#3305](https://github.com/kokkos/kokkos-kernels/pull/3305)
+
+#### ODE Backward Difference Formula
+A lot of problems in the implementation of the implicit adaptive time integrator have been identified and fixed leading to improved robustness. A few more changes did not merge in time for this release but will make it in 5.4, if you use these, please send feedback in the slack channel or on github.
+
+- Fix(ode): applying `rtol` transformation twice [\#3301](https://github.com/kokkos/kokkos-kernels/pull/3301)
+- Fix(ode): initialize `coeffs` to zero in `compute_coeffs` [\#3300](https://github.com/kokkos/kokkos-kernels/pull/3300)
+- Fix(ode): use `max_step` provided to `BDFSolve` [\#3296](https://github.com/kokkos/kokkos-kernels/pull/3296)
+- Fix(ode): `param.iters` never set so `safety` was constant [\#3295](https://github.com/kokkos/kokkos-kernels/pull/3295)
+- Fix(ode): reorder NewtonSolver to avoid updating with unconverged values [\#3283](https://github.com/kokkos/kokkos-kernels/pull/3283)
+- Fix(ode): reject all newton solves that don't succeed [\#3277](https://github.com/kokkos/kokkos-kernels/pull/3277)
+- Fix(ode): norm was not accumulating or resetting [\#3315](https://github.com/kokkos/kokkos-kernels/pull/3315)
+
+## [5.2.2](https://github.com/kokkos/kokkos-kernels/tree/5.2.2)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.2.1...5.2.2)
+
+### Bug fixes
+
+- Export enabled TPLs in KokkosKernelsConfig.cmake [\#3248](https://github.com/kokkos/kokkos-kernels/pull/3248)
+  - Fix typo KokkosKernels_TPL_ENABLE -> KokkosKernels_ENABLE_TPL [\#3251](https://github.com/kokkos/kokkos-kernels/pull/3251)
+- Indexing fixes for structured matrix generation in tests [\#3271](https://github.com/kokkos/kokkos-kernels/pull/3271)
+- Add missing `<bit>` header in KokkosBatched_HostLevel_Gemm_DblBuf_Impl.hpp [\#3286](https://github.com/kokkos/kokkos-kernels/pull/3286)
+
+## [5.2.1](https://github.com/kokkos/kokkos-kernels/tree/5.2.1)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.2.0...5.2.1)
+
+### Bug fixes
+
+- Remove raja submodule [\#3234](https://github.com/kokkos/kokkos-kernels/pull/3234)
+- Treat gtest includes as SYSTEM [\#3226](https://github.com/kokkos/kokkos-kernels/pull/3226)
+- Fixing spgemm due to hash spilling [\#3209](https://github.com/kokkos/kokkos-kernels/pull/3209)
+- Add ODE to list of valid entries for KokkosKernels_ENABLED_COMPONENTS [\#3198](https://github.com/kokkos/kokkos-kernels/pull/3198)
+- Purge KOKKOS_ENABLE_DEPRECATED_CODE_4 guarded code [\#3250](https://github.com/kokkos/kokkos-kernels/pull/3250)
+
 ## [5.2.0](https://github.com/kokkos/kokkos-kernels/tree/5.2.0)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.1.1...5.2.0)
 
