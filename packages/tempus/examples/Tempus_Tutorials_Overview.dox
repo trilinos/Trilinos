@@ -68,9 +68,15 @@
  *  </div>
  *
  *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
- *    <b>Example 7: Time integrator orchestration</b><br>
- *    Utilize IntegratorBasic - use \ref Tempus::IntegratorBasic to manage the
- *    overall time integration process.
+ *    <b>Example 7: Observers</b><br>
+ *    \ref example-07 "Introduce Observers" - introduce the observer callback
+ *    structure used to provide application access during time integration.
+ *  </div>
+ *
+ *  <div style="margin:0.5em 0; padding:0.6em 0.8em; border:1px solid #ddd; border-radius:6px;">
+ *    <b>Example 8: Time integrator orchestration</b><br>
+ *    \ref example-08 "Utilize IntegratorBasic" - use \ref Tempus::IntegratorBasic to manage
+ *    the stepper, timestep control, solution history, and observer infrastructure.
  *  </div>
  *
  *  This progression is intended to show how applications can adopt
