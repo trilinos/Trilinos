@@ -15,6 +15,7 @@
 #include <vector>
 
 #include <Kokkos_Core.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 #include <Teuchos_Array.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -262,7 +263,7 @@ class StructuredRAPKernel {
     const auto localA            = A.getLocalMatrixDevice();
     auto localAc                 = Ac.getLocalMatrixDevice();
     using local_scalar_type      = typename decltype(localA.values)::non_const_value_type;
-    const local_scalar_type zero = Kokkos::ArithTraits<local_scalar_type>::zero();
+    const local_scalar_type zero = KokkosKernels::ArithTraits<local_scalar_type>::zero();
 
     using GOVector = Xpetra::Vector<GlobalOrdinal, LO, GlobalOrdinal, Node>;
     Teuchos::RCP<const Xpetra::Map<LO, GlobalOrdinal, Node>> remoteFineMap;
