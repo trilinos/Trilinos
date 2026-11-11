@@ -16,6 +16,7 @@
 
 #include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_Map_fwd.hpp"
+#include "Tpetra_Import_fwd.hpp"
 #include "Tpetra_Export_fwd.hpp"
 #include "Tpetra_Details_DefaultTypes.hpp"
 #include "Tpetra_Geometry.hpp"
@@ -26,50 +27,47 @@ namespace Tpetra {
 namespace Details {
 
 /// \class GraphAssembly
-/// \brief Assemble a Tpetra::CrsGraph for a finite-element problem entirely
-///   with Kokkos kernels, from a locally-owned element-to-node connectivity.
+/// \brief Assemble the graph of a finite-element operator with Kokkos kernels,
+///   from the element connectivity of the locally-owned elements.
 ///
 /// \tparam LocalOrdinal  Type of local indices; matches CrsGraph.
 /// \tparam GlobalOrdinal Type of global indices; matches CrsGraph.
 /// \tparam Node          Kokkos Node type; matches CrsGraph.
 ///
-/// Given the distribution of the mesh nodes (an "owned" row map and an
-/// "owned+shared" map) and the connectivity of the locally-owned elements
-/// (element -> global node IDs), this class builds the sparse graph of the
-/// finite-element operator.  The local owned+shared graph is built entirely on device.
-/// The owned+shared -> owned communication is performed explicitly with a fused
-/// Export + fillComplete.
+/// This is the implementation of Tpetra::assembleFECrsGraph and
+/// Tpetra::assembleFECrsGraphWithMaps; most users should call those instead.
 ///
-/// There are two codepaths, selected by whether an owned+shared column map is
-/// provided to the constructor:
-///   - If a column map is provided, the global node IDs are mapped to local
-///     column indices directly inside the Fill functor, using that column map.
-///   - If no column map is provided, the owned+shared map itself is used as the
-///     assembly column map (an owned element only touches owned or shared
-///     nodes, so no remote columns can appear at this stage).
+/// The maps have the same meaning as the corresponding arguments of the
+/// FECrsGraph constructors.  The result is <i>identical</i> to what FECrsGraph
+/// produces when each element's (row, column) couplings are inserted with
+/// insertGlobalIndices between beginAssembly() and endAssembly(): the same
+/// column map (same global indices in the same order), and the same local row
+/// offsets and local column indices, in the same order, for both the
+/// owned+shared graph and the owned graph.
 ///
-/// In the parallel case, a fused Export + fillComplete then builds the owned
-/// graph and its column map (owned GIDs first, then remote GIDs grouped by
-/// owning process -- matching CrsGraph::makeColMap(ownedDomainMap)).  The
-/// owned+shared graph is finalized to share that same column map, with its
-/// owned rows carrying the merged structure and its shared rows keeping this
-/// process' partial contributions, so that the owned graph is a proper
-/// first-chunk subview of the owned+shared graph (as FECrsMatrix requires).
+/// Algorithm:
+///   1. The Geometry's blocks are combined into one element-to-row and one
+///      element-to-column structure, translating every index to a local index
+///      exactly once.  Rows are local indices of the owned+shared row map;
+///      columns are local indices of the "assembly column map": the
+///      owned+shared column map if given, else the owned+shared domain map if
+///      given, else the owned+shared row map.  Every index must be found in its
+///      map (an exception is thrown otherwise).
+///   2. The local owned+shared graph is assembled on device (one team per row,
+///      using a scratch hash table to deduplicate columns).
+///   3. In parallel, a fused Export + fillComplete merges each owned row with
+///      the contributions of other processes.
+///   4. The final column map is built exactly as FECrsGraph builds it (if no
+///      column map was given), and all column indices are translated to it and
+///      sorted.
 ///
 /// Typical usage:
 /// \code
-/// using Assembly = Tpetra::Details::GraphAssembly<>;
-/// Assembly assembly(rowMap, ownedPlusSharedMap, ownedElementToNode);
+/// Tpetra::Details::GraphAssembly<LO, GO, NT> assembly(geometry, ownedRowMap, ownedPlusSharedRowMap);
 /// assembly.build();
-/// RCP<CrsGraph> graph = assembly.getGraph();                   // owned CrsGraph
-/// RCP<CrsGraph> asmGraph = assembly.getOwnedPlusSharedGraph(); // for matrix fill
-/// RCP<Export> exporter = assembly.getExporter();               // may be null (serial)
+/// RCP<CrsGraph> ownedPlusSharedGraph = assembly.getOwnedPlusSharedGraph();
+/// RCP<CrsGraph> ownedGraph           = assembly.getGraph();
 /// \endcode
-///
-/// The owned+shared assembly graph and the Export object are also exposed so
-/// that a caller can assemble the matrix values / right-hand side into
-/// owned+shared objects sharing this packed structure and then Export them to
-/// the owned objects with the same communication pattern.
 template <class LocalOrdinal  = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
           class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
           class Node          = ::Tpetra::Details::DefaultTypes::node_type>
@@ -83,65 +81,44 @@ class GraphAssembly {
 
   using map_type       = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   using crs_graph_type = ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+  using import_type    = ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
   using export_type    = ::Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>;
+  using geometry_type  = ::Tpetra::Geometry<LocalOrdinal, GlobalOrdinal, Node>;
 
   using device_type     = typename Node::device_type;
   using execution_space = typename device_type::execution_space;
-
-  /// \brief Type of the element-to-node connectivity view.
-  ///
-  /// A rank-2 Kokkos::View, indexed as (localElementIndex, nodeOfElement),
-  /// holding the GLOBAL node IDs of the nodes adjacent to each locally-owned
-  /// element.  The first extent is the number of owned elements; the second
-  /// extent is the number of nodes per element.  It must be accessible from
-  /// the graph's execution space.
-  using element_to_node_type =
-      Kokkos::View<const global_ordinal_type**, device_type>;
-
-  /// \brief Type of the multi-block mesh geometry.
-  ///
-  /// A Geometry bundles any number of element-to-node views (mesh "blocks"),
-  /// possibly with different numbers of nodes per element.  build() combines
-  /// them into a single element-to-node sparse structure on device.  See
-  /// Tpetra::Geometry.
-  using geometry_type = ::Tpetra::Geometry<GlobalOrdinal, Node>;
   //@}
 
-  //! @name Constructors/destructor
+  //! @name Constructor/destructor
   //@{
 
-  /// \brief Constructor (single mesh block).
+  /// \brief Constructor.
   ///
-  /// \param rowMap [in] The one-to-one ("owned") map of the mesh nodes.  This
-  ///   becomes the row, domain and range map of the assembled graph.
-  /// \param ownedPlusSharedMap [in] The overlapping ("owned+shared") map: every
-  ///   node touched by a locally-owned element must be in this map.  Used as
-  ///   both the row and column map of the intermediate assembly graph.
-  /// \param ownedElementToNode [in] The element-to-node connectivity of the
-  ///   locally-owned elements (global node IDs).  See #element_to_node_type.
-  /// \param ownedPlusSharedColMap [in] Optional owned+shared column map.  If
-  ///   provided, it is used to map global column IDs to local column indices
-  ///   inside the Fill functor.  If null, the owned+shared map is used as the
-  ///   assembly column map.
-  GraphAssembly(const Teuchos::RCP<const map_type>& rowMap,
-                const Teuchos::RCP<const map_type>& ownedPlusSharedMap,
-                const element_to_node_type& ownedElementToNode,
-                const Teuchos::RCP<const map_type>& ownedPlusSharedColMap = Teuchos::null);
-
-  /// \brief Constructor (multiple mesh blocks).
-  ///
-  /// Identical to the single-block constructor, but takes a Geometry describing
-  /// one or more mesh blocks (element types).  All blocks are assembled into a
-  /// single graph.
-  ///
-  /// \param rowMap [in] The one-to-one ("owned") map of the mesh nodes.
-  /// \param ownedPlusSharedMap [in] The overlapping ("owned+shared") map.
-  /// \param geometry [in] The multi-block mesh geometry.  See Tpetra::Geometry.
-  /// \param ownedPlusSharedColMap [in] Optional owned+shared column map.
-  GraphAssembly(const Teuchos::RCP<const map_type>& rowMap,
-                const Teuchos::RCP<const map_type>& ownedPlusSharedMap,
-                const geometry_type& geometry,
-                const Teuchos::RCP<const map_type>& ownedPlusSharedColMap = Teuchos::null);
+  /// \param geometry [in] The element connectivity of the locally-owned
+  ///   elements.  See Tpetra::Geometry.
+  /// \param ownedRowMap [in] The one-to-one ("owned") row map.
+  /// \param ownedPlusSharedRowMap [in] The owned rows, followed by the shared
+  ///   rows (rows that locally-owned elements contribute to but this process
+  ///   does not own).  Must be locally fitted to ownedRowMap.
+  /// \param ownedPlusSharedColMap [in] Optional column map.  If null, a column
+  ///   map is built.
+  /// \param ownedPlusSharedDomainMap [in] Optional domain map of the
+  ///   owned+shared graph.  If null, ownedDomainMap is used.
+  /// \param ownedDomainMap [in] Optional domain map of the owned graph.  If
+  ///   null, ownedRowMap is used.
+  /// \param ownedRangeMap [in] Optional range map of the owned graph.  If null,
+  ///   ownedRowMap is used.
+  /// \param ownedPlusSharedToOwnedImporter [in] Optional Import from
+  ///   ownedRowMap to ownedPlusSharedRowMap.  Reused (reversed) for the
+  ///   owned+shared -> owned communication if given.
+  GraphAssembly(const geometry_type& geometry,
+                const Teuchos::RCP<const map_type>& ownedRowMap,
+                const Teuchos::RCP<const map_type>& ownedPlusSharedRowMap,
+                const Teuchos::RCP<const map_type>& ownedPlusSharedColMap       = Teuchos::null,
+                const Teuchos::RCP<const map_type>& ownedPlusSharedDomainMap    = Teuchos::null,
+                const Teuchos::RCP<const map_type>& ownedDomainMap              = Teuchos::null,
+                const Teuchos::RCP<const map_type>& ownedRangeMap               = Teuchos::null,
+                const Teuchos::RCP<const import_type>& ownedPlusSharedToOwnedImporter = Teuchos::null);
 
   //! Destructor.
   ~GraphAssembly() = default;
@@ -150,58 +127,43 @@ class GraphAssembly {
   //! @name Assembly
   //@{
 
-  /// \brief Build the graph.
-  ///
-  /// This performs the local assembly, export and fillComplete to produce the
-  /// owned graph (as well as the owned+shared graph and the exporter).
+  /// \brief Build the graph.  Collective over the maps' communicator.
   void build();
 
   //@}
   //! @name Accessors
   //@{
 
-  /// \brief Get the owned graph. Returns null if build() has not been called yet.
-  Teuchos::RCP<crs_graph_type> getGraph() const;
-
-  /// \brief Get the owned+shared graph.
+  /// \brief The owned+shared graph.  Null before build().
   ///
-  /// It will be packed, locally indexed and fillComplete. row map == column map == owned+shared map,
-  /// domain map == owned map. Used for filling matrix values and RHS on the
-  /// owned+shared map (using owned elements) before Exporting to the owned matrix/vector.
-  /// Returns null if build() has not been called yet.
+  /// Fill complete and locally indexed.  Row map: ownedPlusSharedRowMap.  Its
+  /// owned rows (the leading rows) hold the complete, merged structure; its
+  /// shared rows hold only this process' contributions.
   Teuchos::RCP<crs_graph_type> getOwnedPlusSharedGraph() const;
 
-  /// \brief The Export object for (owned+shared -> owned) communication.
+  /// \brief The owned graph.  Null before build().
   ///
-  /// Null in the serial / single-rank case, where no communication is needed.
-  /// Useful for exporting the owned+shared matrix to owned.
-  Teuchos::RCP<const export_type> getExporter() const;
-
-  /// \brief Get the owned+shared column map used by the assembled graph.
-  ///
-  /// If a column map was provided to the constructor, this returns it.
-  /// Otherwise, it returns the column map built by makeColMap during build().
-  /// Returns null if build() has not been called yet.
-  Teuchos::RCP<const map_type> getOwnedPlusSharedColMap() const;
+  /// Fill complete; its row map is ownedRowMap.  It is a view of the leading
+  /// (owned) rows of the owned+shared graph, sharing its column map.  Built on
+  /// the first call.
+  Teuchos::RCP<crs_graph_type> getGraph() const;
 
   //@}
 
  private:
-  //! The owned (one-to-one) row/domain/range map.
-  Teuchos::RCP<const map_type> rowMap_;
-  //! The owned+shared (overlapping) map.
-  Teuchos::RCP<const map_type> ownedPlusSharedMap_;
-  //! Multi-block mesh geometry (global node IDs) of the owned elements.
   geometry_type geometry_;
-  //! Optional user-provided owned+shared column map (may be null).
+  Teuchos::RCP<const map_type> ownedRowMap_;
+  Teuchos::RCP<const map_type> ownedPlusSharedRowMap_;
   Teuchos::RCP<const map_type> ownedPlusSharedColMap_;
+  Teuchos::RCP<const map_type> ownedPlusSharedDomainMap_;
+  Teuchos::RCP<const map_type> ownedDomainMap_;
+  Teuchos::RCP<const map_type> ownedRangeMap_;
+  Teuchos::RCP<const import_type> importer_;
 
-  //! The assembled owned graph (result of build()).
-  Teuchos::RCP<crs_graph_type> graph_;
-  //! The intermediate owned+shared assembly graph (result of build()).
+  //! The assembled owned+shared graph (result of build()).
   Teuchos::RCP<crs_graph_type> ownedPlusSharedGraph_;
-  //! The Export used for the owned+shared -> owned communication (may be null).
-  Teuchos::RCP<const export_type> exporter_;
+  //! The owned graph (built lazily by getGraph()).
+  mutable Teuchos::RCP<crs_graph_type> graph_;
 };
 
 }  // namespace Details

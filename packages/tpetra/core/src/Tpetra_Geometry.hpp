@@ -14,7 +14,9 @@
 /// \brief Declaration and definition of the Tpetra::Geometry class.
 
 #include "Tpetra_Details_DefaultTypes.hpp"
+#include "Tpetra_Map_fwd.hpp"
 #include "Kokkos_Core.hpp"
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -22,127 +24,210 @@
 namespace Tpetra {
 
 /// \class Geometry
-/// \brief A collection of one or more finite-element mesh blocks, each
-///   described by an element-to-node connectivity view.
+/// \brief The element connectivity of a finite-element mesh: one or more
+///   mesh blocks, each described by element-to-node views.
 ///
-/// \tparam GlobalOrdinal Type of global node indices; matches CrsGraph.
+/// \tparam LocalOrdinal  Type of local indices; matches CrsGraph.
+/// \tparam GlobalOrdinal Type of global indices; matches CrsGraph.
 /// \tparam Node          Kokkos Node type; matches CrsGraph.
 ///
-/// A single \c ownedElementToNode view (a rank-2 Kokkos::View indexed as
-/// (localElementIndex, nodeOfElement) of GLOBAL node IDs) can only describe a
-/// single element type, because all elements in one non-ragged 2D view have the
-/// same number of adjacent nodes.  A finite-element mesh may however contain
-/// several element types (mesh "blocks") -- for instance some triangles and
-/// some quadrilaterals -- that are assembled into a single graph.
+/// Geometry is the input to Tpetra::assembleFECrsGraph and
+/// Tpetra::assembleFECrsGraphWithMaps, which build the sparse graph of a
+/// finite-element operator from it.
 ///
-/// Geometry bundles any number of these element-to-node views into one object.
-/// Each block may have a different number of nodes per element (the second
-/// extent of its view).  The blocks are assembled together into a single
-/// CrsGraph.
+/// <b>Blocks.</b>  A block is a rank-2 Kokkos::View indexed as
+/// (localElementIndex, nodeOfElement) that lists the nodes (or, more generally,
+/// degrees of freedom) of each locally-owned element.  All elements of one view
+/// have the same number of nodes, so a mesh with several element types (e.g.
+/// triangles and quadrilaterals) or several element blocks is described by
+/// adding one block per type.  There is no limit on the number of blocks.
 ///
-/// Geometry is a host-side object: the block views are held in a
-/// std::vector, so there is no limit on the number of blocks.  The views
-/// themselves live in device memory.  Graph assembly (see
-/// Tpetra::Details::GraphAssembly) combines all blocks into a single
-/// device-resident element-to-node sparse structure (rows = elements,
-/// columns = nodes) before running its device kernels.
+/// <b>Square and rectangular blocks.</b>  A block added with one view is
+/// "square": each element contributes a dense clique, coupling every node of the
+/// element (row) with every node of the element (column).  A block added with
+/// two views, \c elementToRow and \c elementToCol, is "rectangular": each
+/// element couples every node in its \c elementToRow row with every node in its
+/// \c elementToCol row.  Both views must have the same number of elements
+/// (extent 0), but may have different numbers of nodes per element (extent 1).
+/// Use this when the row and column degrees of freedom differ (e.g. an
+/// off-diagonal block of a multiphysics operator), or when an element's columns
+/// extend beyond its own nodes (e.g. coupling to a neighboring element's
+/// nodes).
+///
+/// <b>Padding.</b>  Entries equal to
+/// Teuchos::OrdinalTraits<GlobalOrdinal>::invalid() (for global blocks) or
+/// Teuchos::OrdinalTraits<LocalOrdinal>::invalid() (for local blocks) are
+/// ignored.  This allows elements with fewer nodes than the view's extent(1).
+///
+/// <b>Global or local indices.</b>  Blocks hold either global indices (added
+/// with addGlobalBlock) or local indices (added with addLocalBlock).  All blocks
+/// of one Geometry must use the same kind of index.  Local indices refer to the
+/// maps passed to the assembly function:
+///   - row indices (the single view of a square block, or \c elementToRow of a
+///     rectangular block) are local indices of the owned+shared row map;
+///   - column indices of a rectangular block (\c elementToCol) are local indices
+///     of the owned+shared column map if one is given, else of the owned+shared
+///     domain map if one is given, else of the owned+shared row map.
+///
+/// The views are held by reference-counted shallow copy, and must remain
+/// unmodified until assembly is done.  They are stored with
+/// Kokkos::LayoutStride, so a view of any layout (or a strided subview) can be
+/// passed in without a copy.
 ///
 /// Typical usage:
 /// \code
-/// using geom_type = Tpetra::Geometry<GO, Node>;
-/// // Two blocks: triangles and quads.
-/// geom_type geom(triElementToNode, quadElementToNode);
-/// // or, from a runtime-sized list of blocks:
-/// std::vector<geom_type::element_to_node_type> blocks = ...;
-/// geom_type geom2(blocks);
-/// // or, equivalently, add blocks one at a time:
-/// geom_type geom3;
-/// geom3.addBlock(triElementToNode);
-/// geom3.addBlock(quadElementToNode);
+/// Tpetra::Geometry<LO, GO, Node> geom;
+/// geom.addGlobalBlock(triElementToNode);   // triangles
+/// geom.addGlobalBlock(quadElementToNode);  // quadrilaterals
+/// auto graph = Tpetra::assembleFECrsGraph(geom, ownedPlusSharedMap);
 /// \endcode
-template <class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+template <class LocalOrdinal  = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
           class Node          = ::Tpetra::Details::DefaultTypes::node_type>
 class Geometry {
  public:
+  using local_ordinal_type  = LocalOrdinal;
   using global_ordinal_type = GlobalOrdinal;
   using node_type           = Node;
   using device_type         = typename Node::device_type;
+  using map_type            = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
 
-  /// \brief Type of a single block's element-to-node connectivity view.
-  ///
-  /// A rank-2 Kokkos::View, indexed as (localElementIndex, nodeOfElement),
-  /// holding the GLOBAL node IDs of the nodes adjacent to each locally-owned
-  /// element of the block.  The first extent is the number of owned elements in
-  /// the block; the second extent is the number of nodes per element of the
-  /// block.
-  using element_to_node_type =
-      Kokkos::View<const global_ordinal_type**, device_type>;
+  //! Type of a block view holding global indices.
+  using global_block_type =
+      Kokkos::View<const global_ordinal_type**, Kokkos::LayoutStride, device_type>;
+  //! Type of a block view holding local indices.
+  using local_block_type =
+      Kokkos::View<const local_ordinal_type**, Kokkos::LayoutStride, device_type>;
 
   //! Default constructor: an empty Geometry with no blocks.
   Geometry() = default;
 
-  /// \brief Variadic constructor from one or more element-to-node views.
+  /// \brief Construct from one or more square blocks of global indices.
   ///
-  /// Each argument must be convertible to #element_to_node_type.
+  /// Equivalent to calling addGlobalBlock(view) for each argument, in order.
   template <class... Views,
             class = std::enable_if_t<
                 (sizeof...(Views) >= 1) &&
-                (std::is_convertible_v<const Views&, element_to_node_type> && ...)>>
-  Geometry(const Views&... views) {
+                (std::is_convertible_v<const Views&, global_block_type> && ...)>>
+  explicit Geometry(const Views&... views) {
     blocks_.reserve(sizeof...(Views));
-    (addBlock(element_to_node_type(views)), ...);
+    (addGlobalBlock(global_block_type(views)), ...);
   }
 
-  //! Constructor from a runtime-sized list of element-to-node views.
-  explicit Geometry(const std::vector<element_to_node_type>& blocks)
-    : blocks_(blocks) {}
+  //! @name Adding blocks
+  //@{
 
-  //! Constructor from a runtime-sized list of element-to-node views.
-  explicit Geometry(std::vector<element_to_node_type>&& blocks)
-    : blocks_(std::move(blocks)) {}
-
-  //! Add a mesh block (element-to-node connectivity view) to the Geometry.
-  void addBlock(const element_to_node_type& elementToNode) {
-    blocks_.push_back(elementToNode);
+  //! Add a square block of global indices (each element is a clique).
+  void addGlobalBlock(const global_block_type& elementToNode) {
+    setIndexKind(IndexKind::Global);
+    Block block;
+    block.globalRows = elementToNode;
+    blocks_.push_back(block);
   }
 
-  //! The number of mesh blocks currently held.
+  //! Add a rectangular block of global indices.
+  void addGlobalBlock(const global_block_type& elementToRow,
+                      const global_block_type& elementToCol) {
+    setIndexKind(IndexKind::Global);
+    checkSameNumElements(elementToRow.extent(0), elementToCol.extent(0));
+    Block block;
+    block.globalRows = elementToRow;
+    block.globalCols = elementToCol;
+    block.hasCols    = true;
+    blocks_.push_back(block);
+  }
+
+  //! Add a square block of local indices (each element is a clique).
+  void addLocalBlock(const local_block_type& elementToNode) {
+    setIndexKind(IndexKind::Local);
+    Block block;
+    block.localRows = elementToNode;
+    blocks_.push_back(block);
+  }
+
+  //! Add a rectangular block of local indices.
+  void addLocalBlock(const local_block_type& elementToRow,
+                     const local_block_type& elementToCol) {
+    setIndexKind(IndexKind::Local);
+    checkSameNumElements(elementToRow.extent(0), elementToCol.extent(0));
+    Block block;
+    block.localRows = elementToRow;
+    block.localCols = elementToCol;
+    block.hasCols   = true;
+    blocks_.push_back(block);
+  }
+
+  //@}
+  //! @name Queries
+  //@{
+
+  //! Whether the blocks hold local indices (false if global, or if there are no blocks).
+  bool hasLocalIndices() const { return kind_ == IndexKind::Local; }
+
+  //! Whether the blocks hold global indices (true if there are no blocks).
+  bool hasGlobalIndices() const { return kind_ != IndexKind::Local; }
+
+  //! The number of mesh blocks.
   int getNumBlocks() const { return static_cast<int>(blocks_.size()); }
 
-  //! All mesh blocks' element-to-node connectivity views.
-  const std::vector<element_to_node_type>& getBlocks() const { return blocks_; }
-
-  //! The element-to-node connectivity view of block \c b.
-  const element_to_node_type& getBlock(const int b) const { return blocks_[b]; }
+  //! Whether block \c b is rectangular (has separate column connectivity).
+  bool isRectangular(const int b) const { return blocks_[b].hasCols; }
 
   //! The number of owned elements in block \c b.
-  size_t getNumElements(const int b) const { return blocks_[b].extent(0); }
-
-  //! The number of nodes per element of block \c b.
-  int getNodesPerElement(const int b) const {
-    return static_cast<int>(blocks_[b].extent(1));
+  size_t getNumElements(const int b) const {
+    return hasLocalIndices() ? blocks_[b].localRows.extent(0) : blocks_[b].globalRows.extent(0);
   }
 
   //! The total number of owned elements across all blocks.
   size_t getTotalNumElements() const {
     size_t total = 0;
-    for (const auto& block : blocks_) total += block.extent(0);
+    for (int b = 0; b < getNumBlocks(); ++b) total += getNumElements(b);
     return total;
   }
 
-  //! The maximum number of nodes per element across all blocks.
-  int getMaxNodesPerElement() const {
-    int m = 0;
-    for (const auto& block : blocks_) {
-      const int npe = static_cast<int>(block.extent(1));
-      if (npe > m) m = npe;
-    }
-    return m;
+  //! The row view of block \c b (requires global indices).
+  const global_block_type& getGlobalRows(const int b) const { return blocks_[b].globalRows; }
+  //! The column view of block \c b; the row view if the block is square (requires global indices).
+  const global_block_type& getGlobalCols(const int b) const {
+    return blocks_[b].hasCols ? blocks_[b].globalCols : blocks_[b].globalRows;
+  }
+  //! The row view of block \c b (requires local indices).
+  const local_block_type& getLocalRows(const int b) const { return blocks_[b].localRows; }
+  //! The column view of block \c b; the row view if the block is square (requires local indices).
+  const local_block_type& getLocalCols(const int b) const {
+    return blocks_[b].hasCols ? blocks_[b].localCols : blocks_[b].localRows;
   }
 
+  //@}
+
  private:
-  //! The block views (host-side container of device views).
-  std::vector<element_to_node_type> blocks_;
+  enum class IndexKind { None,
+                         Global,
+                         Local };
+
+  struct Block {
+    global_block_type globalRows, globalCols;
+    local_block_type localRows, localCols;
+    bool hasCols = false;
+  };
+
+  void setIndexKind(const IndexKind kind) {
+    if (kind_ != IndexKind::None && kind_ != kind)
+      throw std::invalid_argument(
+          "Tpetra::Geometry: all blocks must use the same kind of index (all "
+          "addGlobalBlock, or all addLocalBlock).");
+    kind_ = kind;
+  }
+
+  static void checkSameNumElements(const size_t numRowElements, const size_t numColElements) {
+    if (numRowElements != numColElements)
+      throw std::invalid_argument(
+          "Tpetra::Geometry: the row and column views of a rectangular block must "
+          "have the same number of elements (extent(0)).");
+  }
+
+  IndexKind kind_ = IndexKind::None;
+  std::vector<Block> blocks_;
 };
 
 }  // namespace Tpetra

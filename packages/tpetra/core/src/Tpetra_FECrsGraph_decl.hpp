@@ -399,46 +399,37 @@ class FECrsGraph : public CrsGraph<LocalOrdinal, GlobalOrdinal, Node> {
              const Teuchos::RCP<const map_type>& ownedRangeMap                     = Teuchos::null,
              const Teuchos::RCP<Teuchos::ParameterList>& params                    = Teuchos::null);
 
-  /// \brief Expert-mode constructor that wraps already-assembled owned and
-  ///   owned+shared graphs into an FECrsGraph, in FE::ACTIVE_OWNED mode.
+  /// \brief Expert-mode constructor that wraps an already-assembled
+  ///   owned+shared graph into an FECrsGraph, in FE::ACTIVE_OWNED mode.
   ///
-  /// This constructor is used by the free-standing assembleFECrsGraph()
-  /// functions.  Unlike the other constructors, the resulting FECrsGraph is
-  /// already fully assembled: it is in FE::ACTIVE_OWNED mode, so
-  /// beginAssembly()/endAssembly() cannot be called on it.  The owned graph is
-  /// used to construct the CrsGraph parent of this FECrsGraph (a cheap
-  /// shallow-copy), and the owned+shared graph becomes the inactive graph.
+  /// This constructor is used by Tpetra::assembleFECrsGraph and
+  /// Tpetra::assembleFECrsGraphWithMaps.  Unlike the other constructors, the
+  /// resulting FECrsGraph is already fully assembled: it is in FE::ACTIVE_OWNED
+  /// mode, so beginAssembly()/endAssembly() cannot be called on it.  The owned
+  /// graph is a view of the leading (owned) rows of the owned+shared graph,
+  /// sharing its column map, exactly as endAssembly() makes it.
   ///
-  /// \param ownedGraph [in] The fully-assembled, fillComplete owned CrsGraph.
-  ///   Its row map is the ownedRowMap.
-  ///
-  /// \param ownedPlusSharedGraph [in] The fully-assembled, fillComplete
-  ///   owned+shared CrsGraph.  Its row map is the ownedPlusSharedRowMap.
+  /// \param ownedPlusSharedGraph [in] The fill-complete owned+shared graph.
+  ///   Its row map is the owned+shared row map, which must be locally fitted to
+  ///   ownedRowMap.  Its owned rows must hold the complete (merged) structure.
   ///
   /// \param ownedRowMap [in] Distribution of rows of the owned graph.
   ///
-  /// \param ownedPlusSharedRowMap [in] ownedMap plus the list of shared rows.
-  ///
-  /// \param ownedPlusSharedColMap [in] The column map shared by both graphs.
-  ///
   /// \param ownedPlusSharedToOwnedimporter [in] Optional importer between the
-  ///   ownedMap and ownedPlusSharedMap.  Calculated by FECrsGraph if not
-  ///   provided.
+  ///   ownedRowMap and the owned+shared row map.  Calculated by FECrsGraph if
+  ///   not provided.
   ///
-  /// \param domainMap [in] Optional domain map for the owned graph.  If null,
-  ///   ownedRowMap is used.
+  /// \param ownedDomainMap [in] Optional domain map for the owned graph.  If
+  ///   null, ownedRowMap is used.
   ///
   /// \param ownedRangeMap [in] Optional range map for the owned graph.  If null,
   ///   ownedRowMap is used.
   ///
   /// \param params [in/out] Optional list of parameters.
-  FECrsGraph(const Teuchos::RCP<crs_graph_type>& ownedGraph,
-             const Teuchos::RCP<crs_graph_type>& ownedPlusSharedGraph,
+  FECrsGraph(const Teuchos::RCP<crs_graph_type>& ownedPlusSharedGraph,
              const Teuchos::RCP<const map_type>& ownedRowMap,
-             const Teuchos::RCP<const map_type>& ownedPlusSharedRowMap,
-             const Teuchos::RCP<const map_type>& ownedPlusSharedColMap,
              const Teuchos::RCP<const import_type>& ownedPlusSharedToOwnedimporter = Teuchos::null,
-             const Teuchos::RCP<const map_type>& domainMap                         = Teuchos::null,
+             const Teuchos::RCP<const map_type>& ownedDomainMap                    = Teuchos::null,
              const Teuchos::RCP<const map_type>& ownedRangeMap                     = Teuchos::null,
              const Teuchos::RCP<Teuchos::ParameterList>& params                    = Teuchos::null);
 
@@ -654,181 +645,120 @@ class FECrsGraph : public CrsGraph<LocalOrdinal, GlobalOrdinal, Node> {
 
 };  // class FECrsGraph
 
-/// \brief Build and return a fully-assembled FECrsGraph for a finite-element
-///   problem from a locally-owned element-to-node connectivity, entirely on
-///   device.
+namespace Details {
+namespace Impl {
+//! Makes T a non-deduced context, so that a function template's parameters are
+//! deduced only from the Geometry argument (and arguments convert implicitly).
+template <class T>
+struct NonDeduced {
+  using type = T;
+};
+}  // namespace Impl
+}  // namespace Details
+
+/// \name Assemble an FECrsGraph from a Geometry
 ///
 /// \relatesalso FECrsGraph
 ///
-/// These free-standing functions perform, in one call, everything that a caller
-/// would otherwise do with an FECrsGraph: construction, beginAssembly(), entry
-/// insertion (from the element-to-node connectivity), and endAssembly().  The
-/// returned FECrsGraph is already in FE::ACTIVE_OWNED mode (so
-/// beginAssembly()/endAssembly() cannot be called on it).
+/// These free functions build a fully-assembled FECrsGraph for a
+/// finite-element problem from the element connectivity of the locally-owned
+/// elements (a Tpetra::Geometry), in parallel on device.  In one call they do
+/// everything a caller would otherwise do with an FECrsGraph: construction,
+/// beginAssembly(), inserting each element's (row, column) couplings, and
+/// endAssembly().  The returned FECrsGraph is in FE::ACTIVE_OWNED mode (so
+/// beginAssembly()/endAssembly() cannot be called on it), ready to construct an
+/// FECrsMatrix.
 ///
-/// There is one overload for each family of FECrsGraph constructors, but the
-/// numEntriesPerRow / numEntPerRow argument is removed (the sparsity pattern is
-/// determined by the mesh), and an \c elementToNode argument is added.
+/// The result is <i>identical</i> to the FECrsGraph built by insertion with the
+/// same maps: the same column map (same global indices, in the same order),
+/// and the same local row offsets and local column indices, in the same order,
+/// for both the owned and the owned+shared graphs.
 ///
-/// \c elementToNode is a rank-2 Kokkos::View, indexed as
-/// (localElementIndex, nodeOfElement), holding the GLOBAL node IDs of the nodes
-/// adjacent to each locally-owned element (same type as used by
-/// Tpetra::Details::GraphAssembly).
-///
-/// If an owned+shared column map is provided, the global column IDs are mapped
-/// to local column indices using it.  Otherwise, a column map is built
-/// automatically with Tpetra::Details::makeColMap.
+/// The Geometry may hold global or local indices.  Local indices refer to the
+/// maps passed here; see Tpetra::Geometry.
 //@{
 
-//! Overload with no column map and a single (owned) domain map (V1).
+/// \brief Assemble an FECrsGraph from a Geometry and an owned+shared map.
 ///
-/// \note There is deliberately no separate no-column-map overload with a
-/// distinct owned+shared domain map: when no column map is provided, the column
-/// map is built with Tpetra::Details::makeColMap, which locally-fits the owned
-/// domain map, so the owned+shared domain map would be unused.
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-assembleFECrsGraph(
-    const Kokkos::View<const GlobalOrdinal**, typename Node::device_type>& elementToNode,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRowMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedRowMap,
-    const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedToOwnedimporter = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap                         = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap                     = Teuchos::null,
-    const Teuchos::RCP<Teuchos::ParameterList>& params                                                  = Teuchos::null);
-
-//! Overload with an owned+shared column map and a single (owned) domain map (V1).
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-assembleFECrsGraph(
-    const Kokkos::View<const GlobalOrdinal**, typename Node::device_type>& elementToNode,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRowMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedRowMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedColMap,
-    const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedToOwnedimporter = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap                         = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap                     = Teuchos::null,
-    const Teuchos::RCP<Teuchos::ParameterList>& params                                                  = Teuchos::null);
-
-//! Overload with an owned+shared column map and separate owned+shared / owned domain maps (V2).
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-assembleFECrsGraph(
-    const Kokkos::View<const GlobalOrdinal**, typename Node::device_type>& elementToNode,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRowMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedRowMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedColMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedDomainMap,
-    const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedToOwnedimporter = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedDomainMap                    = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap                     = Teuchos::null,
-    const Teuchos::RCP<Teuchos::ParameterList>& params                                                  = Teuchos::null);
-//@}
-
-/// \name Multiple-mesh-block assembleFECrsGraph overloads (Feature 1)
+/// This is the simplest interface.  The owned (row, domain and range) map is
+/// built from the owned+shared map with Tpetra::createOneToOne.  If the
+/// owned+shared map is not locally fitted to the owned map (the owned global
+/// indices first, in the owned map's order), a locally fitted copy is made and
+/// used as the owned+shared row map.  Local indices in the Geometry always
+/// refer to the given \c ownedPlusSharedMap.
 ///
-/// These mirror the single-view overloads above, but take a Tpetra::Geometry
-/// instead of a single \c elementToNode view.  A Geometry bundles one or more
-/// element-to-node views ("mesh blocks"), possibly describing different element
-/// types (e.g. a mix of triangles and quadrilaterals), that are all assembled
-/// into a single graph.  A single \c elementToNode view can describe only one
-/// element type (all elements have the same number of adjacent nodes), so a
-/// Geometry is required to assemble a mesh with more than one element type.
-//@{
-
-//! Multi-block, no column map, single (owned) domain map (V1).
+/// \param geometry [in] The element connectivity of the locally-owned elements.
+/// \param ownedPlusSharedMap [in] Every row and column index of a
+///   locally-owned element.
+/// \param params [in/out] Optional list of parameters for the FECrsGraph.
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
 assembleFECrsGraph(
-    const Geometry<GlobalOrdinal, Node>& geometry,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRowMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedRowMap,
-    const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedToOwnedimporter = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap                         = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap                     = Teuchos::null,
-    const Teuchos::RCP<Teuchos::ParameterList>& params                                                  = Teuchos::null);
-
-//! Multi-block, with owned+shared column map, single (owned) domain map (V1).
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-assembleFECrsGraph(
-    const Geometry<GlobalOrdinal, Node>& geometry,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRowMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedRowMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedColMap,
-    const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedToOwnedimporter = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap                         = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap                     = Teuchos::null,
-    const Teuchos::RCP<Teuchos::ParameterList>& params                                                  = Teuchos::null);
-
-//! Multi-block, with owned+shared column map and separate domain maps (V2).
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-assembleFECrsGraph(
-    const Geometry<GlobalOrdinal, Node>& geometry,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRowMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedRowMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedColMap,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedDomainMap,
-    const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedToOwnedimporter = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedDomainMap                    = Teuchos::null,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedRangeMap                     = Teuchos::null,
-    const Teuchos::RCP<Teuchos::ParameterList>& params                                                  = Teuchos::null);
-//@}
-
-/// \name Simplified assembleFECrsGraph overloads (Feature 2)
-///
-/// These provide the minimal-input, user-friendly interfaces requested by
-/// prospective users.  They construct the maps that the other overloads
-/// require, so that a user needs almost no understanding of Tpetra's map
-/// machinery.
-///
-/// - The <b>ownedPlusSharedMap + elementToNode</b> overload constructs the
-///   owned (row/domain/range) map from the given owned+shared map by calling
-///   Tpetra::createOneToOne, so that the owned+shared map works as the
-///   column map.
-///
-/// - The <b>comm + ownedPlusSharedGIDs + elementToNode</b> overload first
-///   constructs the owned+shared map from the given global IDs and
-///   communicator, then does the same as above.
-///
-/// Both are provided for a single \c elementToNode view (single element type)
-/// and for a Geometry (multiple mesh blocks).
-//@{
-
-//! Simplified: owned+shared map + single element-to-node view.
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-assembleFECrsGraph(
-    const Kokkos::View<const GlobalOrdinal**, typename Node::device_type>& elementToNode,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedMap,
+    const Geometry<LocalOrdinal, GlobalOrdinal, Node>& geometry,
+    const typename Details::Impl::NonDeduced<Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>>::type& ownedPlusSharedMap,
     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-//! Simplified: owned+shared map + Geometry (multiple mesh blocks).
+/// \brief Assemble an FECrsGraph from a Geometry and a list of owned+shared
+///   global indices.
+///
+/// Same as the version taking an owned+shared map, with the owned+shared map
+/// built from \c ownedPlusSharedGIDs (index base 0) on \c comm.
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
 assembleFECrsGraph(
-    const Geometry<GlobalOrdinal, Node>& geometry,
-    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& ownedPlusSharedMap,
-    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-
-//! Simplified: comm + owned+shared GIDs + single element-to-node view.
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-assembleFECrsGraph(
-    const Kokkos::View<const GlobalOrdinal**, typename Node::device_type>& elementToNode,
-    const Teuchos::ArrayView<const GlobalOrdinal>& ownedPlusSharedGIDs,
+    const Geometry<LocalOrdinal, GlobalOrdinal, Node>& geometry,
+    const typename Details::Impl::NonDeduced<Teuchos::ArrayView<const GlobalOrdinal>>::type& ownedPlusSharedGIDs,
     const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-//! Simplified: comm + owned+shared GIDs + Geometry (multiple mesh blocks).
+/// \brief Assemble an FECrsGraph from a Geometry, with full control of the
+///   maps.
+///
+/// The maps have the same meaning as the corresponding arguments of the
+/// FECrsGraph constructors, and every map other than the two row maps is
+/// optional (pass Teuchos::null to use the default).  This one function
+/// covers every FECrsGraph constructor:
+/// \code
+/// // FECrsGraph(ownedRowMap, ownedPlusSharedRowMap, numEnt, importer, domainMap, rangeMap):
+/// assembleFECrsGraphWithMaps(geom, ownedRowMap, ownedPlusSharedRowMap, null, null, importer, domainMap, rangeMap);
+/// // FECrsGraph(ownedRowMap, ownedPlusSharedRowMap, ownedPlusSharedColMap, numEnt, ...):
+/// assembleFECrsGraphWithMaps(geom, ownedRowMap, ownedPlusSharedRowMap, ownedPlusSharedColMap);
+/// // FECrsGraph(ownedRowMap, ownedPlusSharedRowMap, numEnt, ownedPlusSharedDomainMap, importer, ownedDomainMap, ...):
+/// assembleFECrsGraphWithMaps(geom, ownedRowMap, ownedPlusSharedRowMap, null, ownedPlusSharedDomainMap,
+///                            importer, ownedDomainMap);
+/// \endcode
+///
+/// \param geometry [in] The element connectivity of the locally-owned elements.
+/// \param ownedRowMap [in] Distribution of rows of the owned graph.
+/// \param ownedPlusSharedRowMap [in] The owned rows, followed by the shared
+///   rows (rows that locally-owned elements contribute to, but this process
+///   does not own).  Must be locally fitted to ownedRowMap.
+/// \param ownedPlusSharedColMap [in] Optional column map.  If null, the column
+///   map is built as FECrsGraph builds it.  If given, every column index in the
+///   Geometry must be in it.
+/// \param ownedPlusSharedDomainMap [in] Optional domain map of the owned+shared
+///   graph, which determines the order of the column map.  If null,
+///   ownedDomainMap is used.  If neither it nor ownedPlusSharedColMap is given,
+///   every column index in the Geometry must be in ownedPlusSharedRowMap.
+/// \param ownedPlusSharedToOwnedImporter [in] Optional Import from ownedRowMap
+///   to ownedPlusSharedRowMap.
+/// \param ownedDomainMap [in] Optional domain map of the owned graph.  If null,
+///   ownedRowMap is used.
+/// \param ownedRangeMap [in] Optional range map of the owned graph.  If null,
+///   ownedRowMap is used.
+/// \param params [in/out] Optional list of parameters for the FECrsGraph.
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-assembleFECrsGraph(
-    const Geometry<GlobalOrdinal, Node>& geometry,
-    const Teuchos::ArrayView<const GlobalOrdinal>& ownedPlusSharedGIDs,
-    const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
-    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+assembleFECrsGraphWithMaps(
+    const Geometry<LocalOrdinal, GlobalOrdinal, Node>& geometry,
+    const typename Details::Impl::NonDeduced<Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>>::type& ownedRowMap,
+    const typename Details::Impl::NonDeduced<Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>>::type& ownedPlusSharedRowMap,
+    const typename Details::Impl::NonDeduced<Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>>::type& ownedPlusSharedColMap                  = Teuchos::null,
+    const typename Details::Impl::NonDeduced<Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>>::type& ownedPlusSharedDomainMap               = Teuchos::null,
+    const typename Details::Impl::NonDeduced<Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>>::type& ownedPlusSharedToOwnedImporter = Teuchos::null,
+    const typename Details::Impl::NonDeduced<Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>>::type& ownedDomainMap                         = Teuchos::null,
+    const typename Details::Impl::NonDeduced<Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>>::type& ownedRangeMap                          = Teuchos::null,
+    const Teuchos::RCP<Teuchos::ParameterList>& params                                                                                                 = Teuchos::null);
 //@}
 
 }  // namespace Tpetra

@@ -9,38 +9,43 @@
 
 /// \file CrsGraph_GraphAssembly.cpp
 ///
-/// Unit tests for Tpetra::Details::GraphAssembly.
+/// Unit tests for Tpetra::Details::GraphAssembly, Tpetra::Geometry and the
+/// Tpetra::assembleFECrsGraph / Tpetra::assembleFECrsGraphWithMaps functions.
 ///
-/// The finite-element example directory
-/// (core/example/Finite-Element-Assembly) only exercises GraphAssembly on a 2D
-/// structured quad mesh.  GraphAssembly itself is written generically over the
-/// number of nodes per element, so these tests check that it produces the
-/// correct sparse graph for three different element geometries:
+/// There are two kinds of tests:
 ///
-///   1. quads       (2D, 4 nodes per element)
-///   2. triangles   (2D, 3 nodes per element)
-///   3. tetrahedra  (3D, 4 nodes per element)
+///   - Ground truth: build a small global mesh (quads, triangles, tetrahedra,
+///     or a mix of element types in several blocks), distribute it, assemble
+///     the graph, and check every owned row against the connectivity computed
+///     independently from the global mesh.
 ///
-/// Each test builds a small global mesh, assigns
-/// nodes and elements to MPI ranks, and then the inputs required by GraphAssembly:
-/// - the owned map
-/// - ownedElementToNode, a 2D view describing element-to-node connectivity of the owned elements
-/// - the owned+shared map
-/// It then uses GraphAssembly to generate the graph, and checks it has the expected connectivity
-/// based on the mesh structure.
+///   - Identical to insertion: assemble the graph, and also build the
+///     FECrsGraph the traditional way (insertGlobalIndices between
+///     beginAssembly() and endAssembly()) with the same maps.  The two must be
+///     identical: same row, column, domain and range maps (the column map
+///     compared index by index), and the same local row offsets and column
+///     indices, in the same order, for both the owned and the owned+shared
+///     graphs.  These tests cover node ownerships where an element may own
+///     none of its nodes, rectangular blocks (different row and column
+///     spaces), padded blocks (elements coupled to a neighbor's nodes), every
+///     combination of optional maps, and Geometries with local indices.
 ///
-/// The tests are written to run correctly on either 1 or 4 MPI ranks (like most
-/// Tpetra tests).
+/// The tests are written to run correctly on 1 to 4 MPI ranks.
 
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_GraphAssembly.hpp"
 #include "Tpetra_Geometry.hpp"
 #include "Tpetra_FECrsGraph.hpp"
+#include "Tpetra_Assembly_Helpers.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"  // REDUCE_MIN, reduceAll
 #include "Tpetra_TestingUtilities.hpp"
 
 #include <algorithm>
+#include <functional>
+#include <map>
 #include <set>
 #include <vector>
 
@@ -255,284 +260,117 @@ std::vector<std::set<GO>> expectedConnectivity(const MultiBlockMesh<GO>& mesh) {
   return adj;
 }
 
-// The core of the test: distribute the given global mesh over the
-// communicator, run GraphAssembly, and verify.
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+// Copy a list of rows (each a list of indices) into a rank-2 device view, padding
+// short rows with Tpetra's invalid index (which Geometry ignores).
+template <class T, class DeviceType>
+Kokkos::View<T**, DeviceType> toPaddedDeviceView(const std::vector<std::vector<T>>& rows,
+                                                 const std::string& label) {
+  size_t width = 0;
+  for (const auto& r : rows) width = std::max(width, r.size());
+  Kokkos::View<T**, DeviceType> view(label, rows.size(), width);
+  auto host = Kokkos::create_mirror_view(view);
+  for (size_t i = 0; i < rows.size(); ++i)
+    for (size_t j = 0; j < width; ++j)
+      host(i, j) = j < rows[i].size() ? rows[i][j] : Teuchos::OrdinalTraits<T>::invalid();
+  Kokkos::deep_copy(view, host);
+  return view;
+}
+
+// Make a map with the given global indices, in the given order, on this process.
 template <class LO, class GO, class NT>
-void testMesh(const GlobalMesh<GO>& mesh, Teuchos::FancyOStream& out,
-              bool& success, const std::string& label) {
-  using map_type            = Tpetra::Map<LO, GO, NT>;
-  using graph_assembly_type = Tpetra::Details::GraphAssembly<LO, GO, NT>;
+RCP<const Tpetra::Map<LO, GO, NT>> makeMap(const std::vector<GO>& gids) {
+  const Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  return rcp(new Tpetra::Map<LO, GO, NT>(INVALID, gids.data(), gids.size(), GO(0), getDefaultComm()));
+}
 
-  out << "=== GraphAssembly test: " << label << " ===" << endl;
-  Teuchos::OSTab tab1(out);
-
-  auto comm              = getDefaultComm();
-  const int myRank       = comm->getRank();
-  const int numProcs     = comm->getSize();
-  constexpr GO indexBase = 0;
-
-  const size_t numGlobalNodes    = mesh.numGlobalNodes;
-  const size_t numGlobalElements = mesh.numGlobalElements();
-
-  // ---- Decide which nodes this rank owns (simple contiguous 1-to-1 map). ----
-  RCP<const map_type> ownedMap(
-      new map_type(numGlobalNodes, indexBase, comm));
-  const size_t numOwnedNodes = ownedMap->getLocalNumElements();
-
-  // ---- Decide which elements this rank owns (contiguous block split). ----
-  // Rank r owns the global elements in [elemBegin, elemEnd).
-  const size_t base      = numGlobalElements / numProcs;
-  const size_t remainder = numGlobalElements % numProcs;
-  auto elemsOnRank       = [&](size_t r) -> size_t {
-    return base + (r < remainder ? 1 : 0);
-  };
-  size_t elemBegin = 0;
-  for (int r = 0; r < myRank; ++r) elemBegin += elemsOnRank(r);
-  const size_t elemEnd          = elemBegin + elemsOnRank(myRank);
-  const size_t numOwnedElements = elemEnd - elemBegin;
-
-  // ---- Build the element-to-node connectivity of the owned elements. ----
-  typename graph_assembly_type::element_to_node_type::non_const_type
-      ownedElementToNode(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "ownedElementToNode"),
-          numOwnedElements, mesh.nodesPerElement);
-  auto ownedElementToNodeHost =
-      Kokkos::create_mirror_view(ownedElementToNode);
-  for (size_t e = 0; e < numOwnedElements; ++e) {
-    const size_t globalElem = elemBegin + e;
-    const auto& elemNodes   = mesh.element_to_node[globalElem];
-    for (int n = 0; n < mesh.nodesPerElement; ++n) {
-      ownedElementToNodeHost(e, n) = elemNodes[n];
-    }
-  }
-  Kokkos::deep_copy(ownedElementToNode, ownedElementToNodeHost);
-
-  // ---- Build the owned+shared map: every node adjacent to an owned element. --
-  // Loop over all nodes of this rank's owned elements, collect the unique set.
-  std::set<GO> ownedPlusSharedSet;
-  // Seed with the owned nodes so they always come first / are always present.
-  for (size_t i = 0; i < numOwnedNodes; ++i) {
-    ownedPlusSharedSet.insert(ownedMap->getGlobalElement(i));
-  }
-  for (size_t e = 0; e < numOwnedElements; ++e) {
-    const size_t globalElem = elemBegin + e;
-    const auto& elemNodes   = mesh.element_to_node[globalElem];
-    for (const GO node : elemNodes) ownedPlusSharedSet.insert(node);
-  }
-  std::vector<GO> ownedPlusSharedGIDs(ownedPlusSharedSet.begin(),
-                                      ownedPlusSharedSet.end());
-  const Tpetra::global_size_t INVALID =
-      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  RCP<const map_type> ownedPlusSharedMap(
-      new map_type(INVALID, ownedPlusSharedGIDs.data(),
-                   ownedPlusSharedGIDs.size(), indexBase,
-                   comm));
-
-  // ---- Run the assembly. ----
-  typename graph_assembly_type::element_to_node_type ownedElementToNodeConst =
-      ownedElementToNode;
-  graph_assembly_type assembler(ownedMap, ownedPlusSharedMap,
-                                ownedElementToNodeConst);
-  assembler.build();
-  auto graph = assembler.getGraph();
-  TEST_ASSERT(!graph.is_null());
-  if (graph.is_null()) return;
-  TEST_ASSERT(graph->isFillComplete());
-
-  // The assembled graph's row map must be the owned map.
-  TEST_ASSERT(graph->getRowMap()->isSameAs(*ownedMap));
-
-  // ---- Verify each owned row against the independently-computed ground truth.
-  const std::vector<std::set<GO>> expected = expectedConnectivity(mesh);
-
-  using nonconst_global_inds_host_view_type =
-      typename Tpetra::CrsGraph<LO, GO, NT>::nonconst_global_inds_host_view_type;
-
-  for (size_t i = 0; i < numOwnedNodes; ++i) {
-    const GO gblRow                  = ownedMap->getGlobalElement(i);
-    const std::set<GO>& expectedCols = expected[gblRow];
-
-    const size_t expectedNumEntries = expectedCols.size();
-    const size_t reportedNumEntries =
-        graph->getNumEntriesInGlobalRow(gblRow);
-    TEST_EQUALITY(reportedNumEntries, expectedNumEntries);
-
-    nonconst_global_inds_host_view_type gblColInds("gblColInds",
-                                                   reportedNumEntries);
-    size_t numColInds = 0;
-    graph->getGlobalRowCopy(gblRow, gblColInds, numColInds);
-    TEST_EQUALITY(numColInds, expectedNumEntries);
-
-    // Collect the reported columns into a set and compare against expected.
-    std::set<GO> reportedCols;
-    for (size_t k = 0; k < numColInds; ++k) {
-      reportedCols.insert(gblColInds(k));
-    }
-    TEST_EQUALITY(reportedCols.size(), expectedNumEntries);
-    const bool colsMatch = (reportedCols == expectedCols);
-    TEST_ASSERT(colsMatch);
-    if (!colsMatch) {
-      out << "Row " << gblRow << " mismatch.\n  expected: {";
-      for (const GO c : expectedCols) out << c << " ";
-      out << "}\n  got:      {";
-      for (const GO c : reportedCols) out << c << " ";
-      out << "}" << endl;
-    }
-  }
-
-  // Make the pass/fail collective across all ranks.
+// Make the pass/fail state of a test collective across all processes.
+inline void collectiveSuccess(bool& success, Teuchos::FancyOStream& out) {
   int lclSuccess = success ? 1 : 0;
   int gblSuccess = 0;
-  reduceAll<int, int>(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
+  reduceAll<int, int>(*getDefaultComm(), REDUCE_MIN, lclSuccess, outArg(gblSuccess));
   TEST_EQUALITY_CONST(gblSuccess, 1);
 }
 
-// The core of the multi-block test: distribute a multi-block global mesh over
-// the communicator, run the assembly (either via GraphAssembly directly with a
-// Geometry, or via the free-standing Tpetra::assembleFECrsGraph overloads), and
-// verify against the ground-truth connectivity.
-//
-// mode selects which assembly entry point is exercised:
-//   0: Tpetra::Details::GraphAssembly(rowMap, ownedPlusSharedMap, geometry)
-//   1: Tpetra::assembleFECrsGraph(geometry, ownedRowMap, ownedPlusSharedMap)
-//   2: Tpetra::assembleFECrsGraph(geometry, ownedPlusSharedMap)  [simplified]
-//   3: Tpetra::assembleFECrsGraph(geometry, ownedPlusSharedGIDs, comm) [simplified]
-//
-// If geometryFromVector is true, the Geometry is constructed from a
-// std::vector of element-to-node views; otherwise blocks are added one at a
-// time with addBlock.
-template <class LO, class GO, class NT>
-void testMultiBlockMesh(const MultiBlockMesh<GO>& mesh, int mode,
-                        bool geometryFromVector,
-                        Teuchos::FancyOStream& out, bool& success,
-                        const std::string& label) {
-  using map_type      = Tpetra::Map<LO, GO, NT>;
-  using geometry_type = Tpetra::Geometry<GO, NT>;
-  using e2n_type      = typename geometry_type::element_to_node_type;
+// ---------------------------------------------------------------------------
+// Comparing graphs
+// ---------------------------------------------------------------------------
 
-  out << "=== Multi-block GraphAssembly test: " << label
-      << " (mode " << mode << ", geometry from "
-      << (geometryFromVector ? "std::vector" : "addBlock") << ") ===" << endl;
-  Teuchos::OSTab tab1(out);
+// Whether two maps have the same global indices in the same order on this process.
+template <class MapType>
+bool sameLocalGIDs(const MapType& a, const MapType& b) {
+  if (a.getLocalNumElements() != b.getLocalNumElements()) return false;
+  auto aGIDs = a.getMyGlobalIndices();
+  auto bGIDs = b.getMyGlobalIndices();
+  for (size_t i = 0; i < aGIDs.extent(0); ++i)
+    if (aGIDs(i) != bGIDs(i)) return false;
+  return true;
+}
 
-  auto comm              = getDefaultComm();
-  const int myRank       = comm->getRank();
-  const int numProcs     = comm->getSize();
-  constexpr GO indexBase = 0;
+// Whether two fill-complete graphs are identical on this process: same maps
+// (index by index) and same local row offsets and column indices, in order.
+template <class GraphType>
+bool identicalLocalGraphs(const GraphType& ref, const GraphType& test, const std::string& label) {
+  const int myRank = getDefaultComm()->getRank();
+  auto report      = [&](const std::string& what) {
+    std::cerr << "Proc " << myRank << ": " << label << ": " << what << std::endl;
+    return false;
+  };
+  if (!ref.isFillComplete() || !test.isFillComplete()) return report("not fill complete");
+  if (!sameLocalGIDs(*ref.getRowMap(), *test.getRowMap())) return report("row maps differ");
+  if (!sameLocalGIDs(*ref.getColMap(), *test.getColMap())) return report("column maps differ");
+  if (!sameLocalGIDs(*ref.getDomainMap(), *test.getDomainMap())) return report("domain maps differ");
+  if (!sameLocalGIDs(*ref.getRangeMap(), *test.getRangeMap())) return report("range maps differ");
+  auto refGraph  = ref.getLocalGraphHost();
+  auto testGraph = test.getLocalGraphHost();
+  if (refGraph.row_map.extent(0) != testGraph.row_map.extent(0)) return report("number of rows differs");
+  for (size_t i = 0; i < refGraph.row_map.extent(0); ++i)
+    if (refGraph.row_map(i) != testGraph.row_map(i))
+      return report("row offsets differ at local row " + std::to_string(i));
+  const size_t nnz = refGraph.row_map.extent(0) ? refGraph.row_map(refGraph.row_map.extent(0) - 1) : 0;
+  for (size_t k = 0; k < nnz; ++k)
+    if (refGraph.entries(k) != testGraph.entries(k))
+      return report("column indices differ at local entry " + std::to_string(k));
+  return true;
+}
 
-  const size_t numGlobalNodes = mesh.numGlobalNodes;
+// Whether two fully-assembled FECrsGraphs have identical owned and owned+shared
+// graphs on every process.  Collective.
+template <class FEGraphType>
+bool identicalFEGraphs(FEGraphType& ref, FEGraphType& test) {
+  bool ok = identicalLocalGraphs(ref, test, "owned graph");
+  ref.switchActiveCrsGraph();
+  test.switchActiveCrsGraph();
+  ok = identicalLocalGraphs(ref, test, "owned+shared graph") && ok;
+  ref.switchActiveCrsGraph();
+  test.switchActiveCrsGraph();
+  int lclOK = ok ? 1 : 0;
+  int gblOK = 0;
+  reduceAll<int, int>(*getDefaultComm(), REDUCE_MIN, lclOK, outArg(gblOK));
+  return gblOK == 1;
+}
 
-  // Owned nodes: simple contiguous 1-to-1 map.
-  RCP<const map_type> ownedMap(new map_type(numGlobalNodes, indexBase, comm));
-  const size_t numOwnedNodes = ownedMap->getLocalNumElements();
+// ---------------------------------------------------------------------------
+// Ground-truth tests
+// ---------------------------------------------------------------------------
 
-  // Build, per block, the element-to-node connectivity of this rank's owned
-  // elements (contiguous block split of each block's elements), and collect the
-  // owned+shared node set.
-  std::set<GO> ownedPlusSharedSet;
-  for (size_t i = 0; i < numOwnedNodes; ++i)
-    ownedPlusSharedSet.insert(ownedMap->getGlobalElement(i));
-
-  const int numBlocks = static_cast<int>(mesh.blocks.size());
-  std::vector<e2n_type> ownedE2N(numBlocks);
-
-  for (int b = 0; b < numBlocks; ++b) {
-    const auto& block                = mesh.blocks[b];
-    const size_t numGlobalBlockElems = block.element_to_node.size();
-    const size_t base                = numGlobalBlockElems / numProcs;
-    const size_t remainder           = numGlobalBlockElems % numProcs;
-    auto elemsOnRank = [&](size_t r) -> size_t { return base + (r < remainder ? 1 : 0); };
-    size_t elemBegin = 0;
-    for (int r = 0; r < myRank; ++r) elemBegin += elemsOnRank(r);
-    const size_t numOwnedElements = elemsOnRank(myRank);
-
-    typename e2n_type::non_const_type e2n(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "ownedE2N"),
-        numOwnedElements, block.nodesPerElement);
-    auto e2nHost = Kokkos::create_mirror_view(e2n);
-    for (size_t e = 0; e < numOwnedElements; ++e) {
-      const auto& elemNodes = block.element_to_node[elemBegin + e];
-      for (int n = 0; n < block.nodesPerElement; ++n) {
-        e2nHost(e, n) = elemNodes[n];
-        ownedPlusSharedSet.insert(elemNodes[n]);
-      }
-    }
-    Kokkos::deep_copy(e2n, e2nHost);
-    ownedE2N[b] = e2n;
-  }
-
-  geometry_type geometry;
-  if (geometryFromVector) {
-    geometry = geometry_type(ownedE2N);
-  } else {
-    for (const auto& e2n : ownedE2N) geometry.addBlock(e2n);
-  }
-
-  TEST_EQUALITY_CONST(geometry.getNumBlocks(), numBlocks);
-
-  // Build the owned+shared GID list so that it is LOCALLY FITTED to the owned
-  // map: the owned GIDs come first (in the owned map's local order), followed by
-  // the remaining (shared) GIDs.  This is required by GraphAssembly /
-  // FECrsGraph (the owned rows must be the leading chunk of the owned+shared
-  // rows), and a mixed-element mesh can have shared nodes with smaller GIDs than
-  // some owned nodes, so we cannot rely on a plain sorted set here.
-  std::vector<GO> ownedPlusSharedGIDs;
-  ownedPlusSharedGIDs.reserve(ownedPlusSharedSet.size());
-  for (size_t i = 0; i < numOwnedNodes; ++i)
-    ownedPlusSharedGIDs.push_back(ownedMap->getGlobalElement(i));
-  for (const GO gid : ownedPlusSharedSet)
-    if (!ownedMap->isNodeGlobalElement(gid))
-      ownedPlusSharedGIDs.push_back(gid);
-
-  const Tpetra::global_size_t INVALID =
-      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  RCP<const map_type> ownedPlusSharedMap(
-      new map_type(INVALID, ownedPlusSharedGIDs.data(),
-                   ownedPlusSharedGIDs.size(), indexBase, comm));
-
-  // Run the requested assembly path and obtain the owned graph.
-  RCP<Tpetra::CrsGraph<LO, GO, NT>> graph;
-  if (mode == 0) {
-    Tpetra::Details::GraphAssembly<LO, GO, NT> assembler(ownedMap, ownedPlusSharedMap, geometry);
-    assembler.build();
-    graph = assembler.getGraph();
-  } else if (mode == 1) {
-    graph = Tpetra::assembleFECrsGraph<LO, GO, NT>(geometry, ownedMap, ownedPlusSharedMap);
-  } else if (mode == 2) {
-    graph = Tpetra::assembleFECrsGraph<LO, GO, NT>(geometry, ownedPlusSharedMap);
-  } else {  // mode == 3
-    Teuchos::ArrayView<const GO> gidView(ownedPlusSharedGIDs.data(),
-                                         ownedPlusSharedGIDs.size());
-    graph = Tpetra::assembleFECrsGraph<LO, GO, NT>(geometry, gidView, comm);
-  }
-
-  TEST_ASSERT(!graph.is_null());
-  if (graph.is_null()) return;
-  TEST_ASSERT(graph->isFillComplete());
-
-  // For modes 0 and 1 the owned row map is the contiguous ownedMap.  For the
-  // simplified modes 2 and 3 the owned map is built internally by
-  // createOneToOne, so we don't assume it equals ownedMap; we instead verify
-  // each owned row against the ground truth using the graph's own row map.
-  const std::vector<std::set<GO>> expected = expectedConnectivity(mesh);
-
-  using nonconst_global_inds_host_view_type =
-      typename Tpetra::CrsGraph<LO, GO, NT>::nonconst_global_inds_host_view_type;
-
-  auto rowMap = graph->getRowMap();
+// Check every row of graph (in its row map) against the expected connectivity.
+template <class GraphType, class GO>
+void checkAgainstGroundTruth(const GraphType& graph, const std::vector<std::set<GO>>& expected,
+                             Teuchos::FancyOStream& out, bool& success) {
+  using global_inds_type = typename GraphType::nonconst_global_inds_host_view_type;
+  auto rowMap            = graph.getRowMap();
   for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
     const GO gblRow                  = rowMap->getGlobalElement(i);
     const std::set<GO>& expectedCols = expected[gblRow];
-
-    const size_t expectedNumEntries = expectedCols.size();
-    const size_t reportedNumEntries = graph->getNumEntriesInGlobalRow(gblRow);
-    TEST_EQUALITY(reportedNumEntries, expectedNumEntries);
-
-    nonconst_global_inds_host_view_type gblColInds("gblColInds", reportedNumEntries);
+    const size_t numEntries          = graph.getNumEntriesInGlobalRow(gblRow);
+    TEST_EQUALITY(numEntries, expectedCols.size());
+    global_inds_type gblColInds("gblColInds", numEntries);
     size_t numColInds = 0;
-    graph->getGlobalRowCopy(gblRow, gblColInds, numColInds);
-    TEST_EQUALITY(numColInds, expectedNumEntries);
-
+    graph.getGlobalRowCopy(gblRow, gblColInds, numColInds);
     std::set<GO> reportedCols;
     for (size_t k = 0; k < numColInds; ++k) reportedCols.insert(gblColInds(k));
     const bool colsMatch = (reportedCols == expectedCols);
@@ -545,11 +383,462 @@ void testMultiBlockMesh(const MultiBlockMesh<GO>& mesh, int mode,
       out << "}" << endl;
     }
   }
+}
 
-  int lclSuccess = success ? 1 : 0;
-  int gblSuccess = 0;
-  reduceAll<int, int>(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
-  TEST_EQUALITY_CONST(gblSuccess, 1);
+// The owned+shared GIDs of a process: the owned GIDs (in owned map order) then
+// the other GIDs of nodeSet in ascending order -- locally fitted to the owned
+// map.  If fitted is false, all GIDs in ascending order instead (generally not
+// locally fitted).
+template <class LO, class GO, class NT>
+std::vector<GO> ownedPlusSharedGIDs(const Tpetra::Map<LO, GO, NT>& ownedMap, const std::set<GO>& nodeSet,
+                                    const bool fitted) {
+  std::vector<GO> gids;
+  if (fitted) {
+    for (size_t i = 0; i < ownedMap.getLocalNumElements(); ++i) gids.push_back(ownedMap.getGlobalElement(i));
+    for (const GO gid : nodeSet)
+      if (!ownedMap.isNodeGlobalElement(gid)) gids.push_back(gid);
+  } else {
+    std::set<GO> all(nodeSet);
+    for (size_t i = 0; i < ownedMap.getLocalNumElements(); ++i) all.insert(ownedMap.getGlobalElement(i));
+    gids.assign(all.begin(), all.end());
+  }
+  return gids;
+}
+
+// Distribute a single-block mesh, assemble it with GraphAssembly, and check it.
+template <class LO, class GO, class NT>
+void testMesh(const GlobalMesh<GO>& mesh, Teuchos::FancyOStream& out, bool& success, const std::string& label) {
+  using map_type      = Tpetra::Map<LO, GO, NT>;
+  using geometry_type = Tpetra::Geometry<LO, GO, NT>;
+
+  out << "=== GraphAssembly test: " << label << " ===" << endl;
+  Teuchos::OSTab tab1(out);
+
+  auto comm          = getDefaultComm();
+  const int myRank   = comm->getRank();
+  const int numProcs = comm->getSize();
+
+  // Owned nodes: a contiguous 1-to-1 map.  Owned elements: a contiguous split.
+  RCP<const map_type> ownedMap(new map_type(mesh.numGlobalNodes, GO(0), comm));
+  const size_t numGlobalElements = mesh.numGlobalElements();
+  const size_t base              = numGlobalElements / numProcs;
+  const size_t remainder         = numGlobalElements % numProcs;
+  auto elemsOnRank               = [&](size_t r) -> size_t { return base + (r < remainder ? 1 : 0); };
+  size_t elemBegin               = 0;
+  for (int r = 0; r < myRank; ++r) elemBegin += elemsOnRank(r);
+  std::vector<std::vector<GO>> ownedElements(mesh.element_to_node.begin() + elemBegin,
+                                             mesh.element_to_node.begin() + elemBegin + elemsOnRank(myRank));
+  std::set<GO> nodeSet;
+  for (const auto& elem : ownedElements) nodeSet.insert(elem.begin(), elem.end());
+  auto ownedPlusSharedMap = makeMap<LO, GO, NT>(ownedPlusSharedGIDs(*ownedMap, nodeSet, true));
+
+  geometry_type geometry;
+  geometry.addGlobalBlock(toPaddedDeviceView<GO, typename NT::device_type>(ownedElements, "e2n"));
+  Tpetra::Details::GraphAssembly<LO, GO, NT> assembly(geometry, ownedMap, ownedPlusSharedMap);
+  assembly.build();
+  auto graph = assembly.getGraph();
+  TEST_ASSERT(!graph.is_null());
+  if (!graph.is_null()) {
+    TEST_ASSERT(graph->isFillComplete());
+    TEST_ASSERT(graph->getRowMap()->isSameAs(*ownedMap));
+    checkAgainstGroundTruth(*graph, expectedConnectivity(mesh), out, success);
+  }
+  collectiveSuccess(success, out);
+}
+
+// Distribute a multi-block mesh, assemble it, and check it against the ground
+// truth.  mode selects the entry point:
+//   0: Tpetra::Details::GraphAssembly
+//   1: Tpetra::assembleFECrsGraphWithMaps(geometry, ownedMap, ownedPlusSharedMap)
+//   2: Tpetra::assembleFECrsGraph(geometry, ownedPlusSharedMap)
+//   3: Tpetra::assembleFECrsGraph(geometry, ownedPlusSharedGIDs, comm)
+// For modes 2 and 3, the owned+shared GIDs are in ascending order, which is
+// generally not locally fitted to the owned map, so these modes also exercise
+// the fitting done by the simplified interface.  If localIndices is true, the
+// Geometry holds local indices of the owned+shared map passed in.
+template <class LO, class GO, class NT>
+void testMultiBlockMesh(const MultiBlockMesh<GO>& mesh, const int mode, const bool localIndices,
+                        Teuchos::FancyOStream& out, bool& success, const std::string& label) {
+  using map_type      = Tpetra::Map<LO, GO, NT>;
+  using geometry_type = Tpetra::Geometry<LO, GO, NT>;
+  using device_type   = typename NT::device_type;
+
+  out << "=== Multi-block test: " << label << " (mode " << mode << ", "
+      << (localIndices ? "local" : "global") << " indices) ===" << endl;
+  Teuchos::OSTab tab1(out);
+
+  auto comm          = getDefaultComm();
+  const int myRank   = comm->getRank();
+  const int numProcs = comm->getSize();
+
+  RCP<const map_type> ownedMap(new map_type(mesh.numGlobalNodes, GO(0), comm));
+
+  // Each block's elements are split contiguously over the processes.
+  std::vector<std::vector<std::vector<GO>>> ownedBlocks;
+  std::set<GO> nodeSet;
+  for (const auto& block : mesh.blocks) {
+    const size_t n         = block.element_to_node.size();
+    const size_t base      = n / numProcs;
+    const size_t remainder = n % numProcs;
+    auto elemsOnRank       = [&](size_t r) -> size_t { return base + (r < remainder ? 1 : 0); };
+    size_t elemBegin       = 0;
+    for (int r = 0; r < myRank; ++r) elemBegin += elemsOnRank(r);
+    ownedBlocks.emplace_back(block.element_to_node.begin() + elemBegin,
+                             block.element_to_node.begin() + elemBegin + elemsOnRank(myRank));
+    for (const auto& elem : ownedBlocks.back()) nodeSet.insert(elem.begin(), elem.end());
+  }
+  const std::vector<GO> opsGIDs = ownedPlusSharedGIDs(*ownedMap, nodeSet, mode <= 1);
+  auto ownedPlusSharedMap       = makeMap<LO, GO, NT>(opsGIDs);
+
+  geometry_type geometry;
+  for (const auto& block : ownedBlocks) {
+    if (localIndices) {
+      std::vector<std::vector<LO>> lids;
+      for (const auto& elem : block) {
+        lids.emplace_back();
+        for (const GO gid : elem) lids.back().push_back(ownedPlusSharedMap->getLocalElement(gid));
+      }
+      geometry.addLocalBlock(toPaddedDeviceView<LO, device_type>(lids, "e2n"));
+    } else {
+      geometry.addGlobalBlock(toPaddedDeviceView<GO, device_type>(block, "e2n"));
+    }
+  }
+  TEST_EQUALITY(geometry.getNumBlocks(), static_cast<int>(mesh.blocks.size()));
+  TEST_EQUALITY(geometry.hasLocalIndices(), localIndices);
+
+  RCP<const Tpetra::CrsGraph<LO, GO, NT>> graph;
+  if (mode == 0) {
+    Tpetra::Details::GraphAssembly<LO, GO, NT> assembly(geometry, ownedMap, ownedPlusSharedMap);
+    assembly.build();
+    graph = assembly.getGraph();
+  } else if (mode == 1) {
+    graph = Tpetra::assembleFECrsGraphWithMaps(geometry, ownedMap, ownedPlusSharedMap);
+  } else if (mode == 2) {
+    graph = Tpetra::assembleFECrsGraph(geometry, ownedPlusSharedMap);
+  } else {
+    graph = Tpetra::assembleFECrsGraph(geometry, Teuchos::ArrayView<const GO>(opsGIDs), comm);
+  }
+  TEST_ASSERT(!graph.is_null());
+  if (!graph.is_null()) {
+    TEST_ASSERT(graph->isFillComplete());
+    // The simplified modes build their own owned map (with createOneToOne), so
+    // check each row of the graph's own row map.
+    checkAgainstGroundTruth(*graph, expectedConnectivity(mesh), out, success);
+  }
+  collectiveSuccess(success, out);
+}
+
+// ---------------------------------------------------------------------------
+// Identical-to-insertion tests
+// ---------------------------------------------------------------------------
+
+// A global finite-element problem: blocks of elements, each element with its
+// row indices and (for rectangular problems) column indices; and the owning
+// process of each element, row index, and column index.
+template <class GO>
+struct FEProblem {
+  struct Element {
+    std::vector<GO> rows;
+    std::vector<GO> cols;  // unused unless rectangular
+  };
+  std::vector<std::vector<Element>> blocks;
+  bool rectangular = false;
+  std::function<int(size_t globalElement, int numProcs)> elementOwner;
+  std::function<int(GO gid, int numProcs)> rowOwner;
+  std::function<int(GO gid, int numProcs)> colOwner;  // rectangular only
+
+  const std::vector<GO>& colsOf(const Element& e) const { return rectangular ? e.cols : e.rows; }
+};
+
+// Options for which optional maps are given to the assembly.
+struct MapOptions {
+  bool giveColMap       = false;  // the owned+shared column map
+  bool giveDomainMap    = false;  // the owned+shared domain map
+  bool localIndices     = false;  // Geometry with local indices
+  std::string describe() const {
+    return std::string(giveColMap ? "colMap" : "no colMap") + ", " +
+           (giveDomainMap ? "ownedPlusSharedDomainMap" : "no ownedPlusSharedDomainMap") + ", " +
+           (localIndices ? "local" : "global") + " indices";
+  }
+};
+
+// Distribute the problem, assemble its graph with assembleFECrsGraphWithMaps,
+// build the same graph by insertion, and check that the two are identical.
+template <class LO, class GO, class NT>
+void testIdenticalToInsertion(const FEProblem<GO>& problem, const MapOptions& opts,
+                              Teuchos::FancyOStream& out, bool& success, const std::string& label) {
+  using map_type      = Tpetra::Map<LO, GO, NT>;
+  using import_type   = Tpetra::Import<LO, GO, NT>;
+  using fe_graph_type = Tpetra::FECrsGraph<LO, GO, NT>;
+  using geometry_type = Tpetra::Geometry<LO, GO, NT>;
+  using device_type   = typename NT::device_type;
+  using Element       = typename FEProblem<GO>::Element;
+
+  out << "=== Identical to insertion: " << label << " (" << opts.describe() << ") ===" << endl;
+  Teuchos::OSTab tab1(out);
+
+  auto comm          = getDefaultComm();
+  const int myRank   = comm->getRank();
+  const int numProcs = comm->getSize();
+  auto rowOwner      = problem.rowOwner;
+  auto colOwner      = problem.rectangular ? problem.colOwner : problem.rowOwner;
+
+  // This process' elements, and the global row and column index sets.
+  std::vector<std::vector<Element>> myBlocks;
+  std::set<GO> allRows, allCols, myRows, myCols, mergedCols;
+  size_t globalElement = 0, numGlobalElements = 0, maxCols = 1;
+  for (const auto& block : problem.blocks) {
+    myBlocks.emplace_back();
+    for (const auto& elem : block) {
+      const auto& cols = problem.colsOf(elem);
+      allRows.insert(elem.rows.begin(), elem.rows.end());
+      allCols.insert(cols.begin(), cols.end());
+      maxCols = std::max(maxCols, cols.size());
+      if (problem.elementOwner(globalElement++, numProcs) == myRank) {
+        myBlocks.back().push_back(elem);
+        myRows.insert(elem.rows.begin(), elem.rows.end());
+        myCols.insert(cols.begin(), cols.end());
+      }
+      // The columns of the owned rows, after merging all processes' contributions.
+      for (const GO row : elem.rows)
+        if (rowOwner(row, numProcs) == myRank) mergedCols.insert(cols.begin(), cols.end());
+      ++numGlobalElements;
+    }
+  }
+
+  // The maps.  Owned+shared maps: owned indices first, then the others, sorted.
+  std::vector<GO> ownedRowGIDs, ownedColGIDs;
+  for (const GO gid : allRows)
+    if (rowOwner(gid, numProcs) == myRank) ownedRowGIDs.push_back(gid);
+  for (const GO gid : allCols)
+    if (colOwner(gid, numProcs) == myRank) ownedColGIDs.push_back(gid);
+  auto withOthers = [](std::vector<GO> gids, const std::set<GO>& others) {
+    const std::set<GO> first(gids.begin(), gids.end());
+    for (const GO gid : others)
+      if (!first.count(gid)) gids.push_back(gid);
+    return gids;
+  };
+  const std::vector<GO> opsColGIDs = withOthers(ownedColGIDs, myCols);
+  auto ownedRowMap                 = makeMap<LO, GO, NT>(ownedRowGIDs);
+  auto ownedPlusSharedRowMap       = makeMap<LO, GO, NT>(withOthers(ownedRowGIDs, myRows));
+  auto ownedColMap                 = makeMap<LO, GO, NT>(ownedColGIDs);
+  auto ownedPlusSharedColGIDsMap   = makeMap<LO, GO, NT>(opsColGIDs);
+  // A column map must also hold the columns that other processes contribute to
+  // the owned rows.
+  RCP<const map_type> colMap =
+      opts.giveColMap ? makeMap<LO, GO, NT>(withOthers(opsColGIDs, mergedCols)) : Teuchos::null;
+  RCP<const map_type> ownedPlusSharedDomainMap = opts.giveDomainMap ? ownedPlusSharedColGIDsMap : Teuchos::null;
+  // The owned domain map: the owned columns (the default, ownedRowMap, if square).
+  RCP<const map_type> ownedDomainMap = problem.rectangular ? ownedColMap : Teuchos::null;
+
+  // The reference: an FECrsGraph built by insertion, with the same maps.
+  RCP<fe_graph_type> ref;
+  const size_t maxEntries = numGlobalElements * maxCols;
+  const RCP<const import_type> noImporter;
+  if (colMap.is_null()) {
+    if (ownedPlusSharedDomainMap.is_null())
+      ref = rcp(new fe_graph_type(ownedRowMap, ownedPlusSharedRowMap, maxEntries, noImporter, ownedDomainMap));
+    else
+      ref = rcp(new fe_graph_type(ownedRowMap, ownedPlusSharedRowMap, maxEntries, ownedPlusSharedDomainMap,
+                                  noImporter, ownedDomainMap));
+  } else {
+    if (ownedPlusSharedDomainMap.is_null())
+      ref = rcp(new fe_graph_type(ownedRowMap, ownedPlusSharedRowMap, colMap, maxEntries, noImporter, ownedDomainMap));
+    else
+      ref = rcp(new fe_graph_type(ownedRowMap, ownedPlusSharedRowMap, colMap, maxEntries, ownedPlusSharedDomainMap,
+                                  noImporter, ownedDomainMap));
+  }
+  {
+    // Elements may own none of their nodes.
+    auto params = Teuchos::parameterList();
+    params->set("Check Col GIDs In At Least One Owned Row", false);
+    ref->setParameterList(params);
+  }
+  Tpetra::beginAssembly(*ref);
+  for (const auto& block : myBlocks)
+    for (const auto& elem : block) {
+      const auto& cols = problem.colsOf(elem);
+      if (colMap.is_null()) {
+        for (const GO row : elem.rows)
+          ref->insertGlobalIndices(row, Teuchos::ArrayView<const GO>(cols));
+      } else {
+        // With a column map, the graph is locally indexed.
+        std::vector<LO> lclCols;
+        for (const GO col : cols) lclCols.push_back(colMap->getLocalElement(col));
+        for (const GO row : elem.rows)
+          ref->insertLocalIndices(ownedPlusSharedRowMap->getLocalElement(row), Teuchos::ArrayView<const LO>(lclCols));
+      }
+    }
+  Tpetra::endAssembly(*ref);
+
+  // The Geometry.
+  RCP<const map_type> asmColMap = !colMap.is_null()                     ? colMap
+                                  : !ownedPlusSharedDomainMap.is_null() ? ownedPlusSharedDomainMap
+                                                                        : ownedPlusSharedRowMap;
+  geometry_type geometry;
+  for (const auto& block : myBlocks) {
+    std::vector<std::vector<GO>> rows, cols;
+    for (const auto& elem : block) {
+      rows.push_back(elem.rows);
+      cols.push_back(elem.cols);
+    }
+    if (opts.localIndices) {
+      auto toLocal = [](const std::vector<std::vector<GO>>& gids, const map_type& map) {
+        std::vector<std::vector<LO>> lids;
+        for (const auto& r : gids) {
+          lids.emplace_back();
+          for (const GO gid : r) lids.back().push_back(map.getLocalElement(gid));
+        }
+        return lids;
+      };
+      auto localRows = toPaddedDeviceView<LO, device_type>(toLocal(rows, *ownedPlusSharedRowMap), "rows");
+      if (problem.rectangular) {
+        // Pass the columns as a strided subview of a wider array, to exercise
+        // LayoutStride.
+        auto padded = toPaddedDeviceView<LO, device_type>(toLocal(cols, *asmColMap), "cols");
+        Kokkos::View<LO**, Kokkos::LayoutRight, device_type> wide("wide", padded.extent(0), padded.extent(1) + 1);
+        auto strided = Kokkos::subview(wide, Kokkos::ALL(), Kokkos::make_pair(size_t(0), size_t(padded.extent(1))));
+        Kokkos::deep_copy(strided, padded);
+        geometry.addLocalBlock(localRows, strided);
+      } else {
+        geometry.addLocalBlock(localRows);
+      }
+    } else {
+      auto globalRows = toPaddedDeviceView<GO, device_type>(rows, "rows");
+      if (problem.rectangular)
+        geometry.addGlobalBlock(globalRows, toPaddedDeviceView<GO, device_type>(cols, "cols"));
+      else
+        geometry.addGlobalBlock(globalRows);
+    }
+  }
+
+  auto assembled = Tpetra::assembleFECrsGraphWithMaps(geometry, ownedRowMap, ownedPlusSharedRowMap, colMap,
+                                                      ownedPlusSharedDomainMap, Teuchos::null, ownedDomainMap);
+  TEST_ASSERT(!assembled.is_null());
+  if (!assembled.is_null()) {
+    const bool identical = identicalFEGraphs(*ref, *assembled);
+    TEST_ASSERT(identical);
+  }
+  collectiveSuccess(success, out);
+}
+
+// Run testIdenticalToInsertion with every valid combination of options.
+template <class LO, class GO, class NT>
+void testIdenticalAllOptions(const FEProblem<GO>& problem, Teuchos::FancyOStream& out, bool& success,
+                             const std::string& label) {
+  for (const bool giveColMap : {false, true})
+    for (const bool giveDomainMap : {false, true})
+      for (const bool localIndices : {false, true}) {
+        // A rectangular problem's columns are not in the owned+shared row map.
+        if (problem.rectangular && !giveColMap && !giveDomainMap) continue;
+        MapOptions opts;
+        opts.giveColMap    = giveColMap;
+        opts.giveDomainMap = giveDomainMap;
+        opts.localIndices  = localIndices;
+        testIdenticalToInsertion<LO, GO, NT>(problem, opts, out, success, label);
+      }
+}
+
+// Square problems from a multi-block mesh.  Nodes and elements are assigned to
+// processes round-robin, so that elements often own none of their nodes, and
+// processes own nodes that none of their elements touch.
+template <class GO>
+FEProblem<GO> squareProblem(const MultiBlockMesh<GO>& mesh, const bool roundRobin) {
+  FEProblem<GO> problem;
+  size_t numElements = 0;
+  for (const auto& block : mesh.blocks) {
+    problem.blocks.emplace_back();
+    for (const auto& elem : block.element_to_node) problem.blocks.back().push_back({elem, {}});
+    numElements += block.element_to_node.size();
+  }
+  const GO numNodes = mesh.numGlobalNodes;
+  if (roundRobin) {
+    problem.elementOwner = [](size_t e, int p) { return int(e % p); };
+    problem.rowOwner     = [](GO gid, int p) { return int((gid * 7 + 3) % p); };
+  } else {
+    problem.elementOwner = [numElements](size_t e, int p) { return int(e * p / numElements); };
+    problem.rowOwner     = [numNodes](GO gid, int p) { return int(gid * p / numNodes); };
+  }
+  return problem;
+}
+
+template <class GO>
+MultiBlockMesh<GO> singleBlock(const GlobalMesh<GO>& mesh) {
+  MultiBlockMesh<GO> multi;
+  multi.numGlobalNodes = mesh.numGlobalNodes;
+  multi.blocks.push_back(mesh);
+  return multi;
+}
+
+// A rectangular "two-field" problem on a quad mesh: the rows are the nodes; the
+// columns are the nodes and one cell-centered unknown per element (column
+// numNodes + element), owned by the element's process.  Each process' owned
+// rows receive cell-centered columns of other processes' elements.
+template <class GO>
+FEProblem<GO> twoFieldProblem(int nx, int ny) {
+  const auto mesh = makeQuadMesh<GO>(nx, ny);
+  const GO numNodes = mesh.numGlobalNodes;
+  FEProblem<GO> problem;
+  problem.rectangular = true;
+  problem.blocks.emplace_back();
+  for (size_t e = 0; e < mesh.element_to_node.size(); ++e) {
+    auto cols = mesh.element_to_node[e];
+    cols.push_back(numNodes + GO(e));
+    problem.blocks.back().push_back({mesh.element_to_node[e], cols});
+  }
+  problem.elementOwner = [](size_t e, int p) { return int(e % p); };
+  problem.rowOwner     = [](GO gid, int p) { return int((gid * 7 + 3) % p); };
+  problem.colOwner     = [numNodes](GO gid, int p) {
+    return gid < numNodes ? int((gid * 7 + 3) % p) : int((gid - numNodes) % p);
+  };
+  return problem;
+}
+
+// A neighbor-coupled problem on a quad mesh: each element's rows are its nodes;
+// its columns are its nodes and the nodes of the element to its right, if any
+// (so the column lists have different lengths, and the column block is padded).
+// This models e.g. Panzer's "associated neighbors".
+template <class GO>
+FEProblem<GO> neighborProblem(int nx, int ny) {
+  const auto mesh = makeQuadMesh<GO>(nx, ny);
+  FEProblem<GO> problem;
+  problem.rectangular = true;
+  problem.blocks.emplace_back();
+  for (int j = 0; j < ny; ++j)
+    for (int i = 0; i < nx; ++i) {
+      const auto& nodes = mesh.element_to_node[j * nx + i];
+      auto cols         = nodes;
+      if (i + 1 < nx) {
+        const auto& right = mesh.element_to_node[j * nx + i + 1];
+        cols.insert(cols.end(), right.begin(), right.end());
+      }
+      problem.blocks.back().push_back({nodes, cols});
+    }
+  problem.elementOwner = [](size_t e, int p) { return int((e / 3) % p); };
+  problem.rowOwner     = [](GO gid, int p) { return int((gid * 5 + 1) % p); };
+  problem.colOwner     = problem.rowOwner;
+  return problem;
+}
+
+// A square block whose elements have different numbers of nodes (triangles and
+// quads in one block, padded to 4 nodes).
+template <class GO>
+MultiBlockMesh<GO> paddedTriQuadMesh(int nx, int ny) {
+  const auto mixed = makeMixedTriQuadMesh<GO>(nx, ny);
+  MultiBlockMesh<GO> mesh;
+  mesh.numGlobalNodes = mixed.numGlobalNodes;
+  GlobalMesh<GO> block;
+  block.numGlobalNodes  = mixed.numGlobalNodes;
+  block.nodesPerElement = 4;
+  // Interleave the triangles and quads.
+  const auto& tris  = mixed.blocks[0].element_to_node;
+  const auto& quads = mixed.blocks[1].element_to_node;
+  for (size_t k = 0; k < std::max(tris.size(), quads.size()); ++k) {
+    if (k < tris.size()) block.element_to_node.push_back(tris[k]);
+    if (k < quads.size()) block.element_to_node.push_back(quads[k]);
+  }
+  mesh.blocks.push_back(block);
+  return mesh;
 }
 
 //
@@ -557,63 +846,157 @@ void testMultiBlockMesh(const MultiBlockMesh<GO>& mesh, int mode,
 //
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_Quad, LO, GO, NT) {
-  // 4 x 4 grid of quads: 16 elements, 25 nodes.  16 / 4 = 4 elements per rank.
-  const auto mesh = makeQuadMesh<GO>(4, 4);
-  testMesh<LO, GO, NT>(mesh, out, success, "quads (2D)");
+  testMesh<LO, GO, NT>(makeQuadMesh<GO>(4, 4), out, success, "quads (2D)");
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_Tri, LO, GO, NT) {
-  // 2 x 4 grid of cells split into triangles: 16 triangles, 15 nodes.
-  // 16 / 4 = 4 elements per rank.
-  const auto mesh = makeTriMesh<GO>(2, 4);
-  testMesh<LO, GO, NT>(mesh, out, success, "triangles (2D)");
+  testMesh<LO, GO, NT>(makeTriMesh<GO>(2, 4), out, success, "triangles (2D)");
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_Tet, LO, GO, NT) {
-  // 2 x 2 x 1 grid of hexes, each split into 6 tets: 24 tets, 18 nodes.
-  // 24 / 4 = 6 elements per rank.
-  const auto mesh = makeTetMesh<GO>(2, 2, 1);
-  testMesh<LO, GO, NT>(mesh, out, success, "tetrahedra (3D)");
+  testMesh<LO, GO, NT>(makeTetMesh<GO>(2, 2, 1), out, success, "tetrahedra (3D)");
 }
 
-// Multi-block (mixed triangle + quad) mesh, exercised through each assembly
-// entry point (GraphAssembly with a Geometry, and the various free-standing
-// assembleFECrsGraph overloads including the simplified Feature-2 ones).
+// Mixed triangle + quad mesh in two blocks, through every entry point, with
+// global and local indices.
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_MultiBlock, LO, GO, NT) {
-  // 4 x 4 grid: left 2 columns of cells are triangles (2 per cell = 16 tris),
-  // right 2 columns are quads (8 quads).  25 nodes total.
   const auto mesh = makeMixedTriQuadMesh<GO>(4, 4);
-  for (int mode = 0; mode <= 3; ++mode) {
-    testMultiBlockMesh<LO, GO, NT>(mesh, mode, false, out, success, "mixed tri+quad (2D)");
-  }
+  for (int mode = 0; mode <= 3; ++mode)
+    for (const bool localIndices : {false, true})
+      testMultiBlockMesh<LO, GO, NT>(mesh, mode, localIndices, out, success, "mixed tri+quad (2D)");
 }
 
-// Many-block mesh: the mixed tri+quad mesh with each block split into several
-// smaller blocks, giving a runtime number of blocks (some empty on some ranks).
-// The Geometry is built from a std::vector of element-to-node views.
+// Many blocks (some empty on some processes).
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_ManyBlocks, LO, GO, NT) {
-  // 2 blocks x 7 splits = 14 blocks: 16 tris and 8 quads spread round-robin.
   const auto mesh = splitBlocks(makeMixedTriQuadMesh<GO>(4, 4), 7);
-  for (int mode = 0; mode <= 3; ++mode) {
-    testMultiBlockMesh<LO, GO, NT>(mesh, mode, true, out, success, "many-block tri+quad (2D)");
+  for (int mode = 0; mode <= 3; ++mode)
+    for (const bool localIndices : {false, true})
+      testMultiBlockMesh<LO, GO, NT>(mesh, mode, localIndices, out, success, "many-block tri+quad (2D)");
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_IdenticalQuad, LO, GO, NT) {
+  for (const bool roundRobin : {false, true})
+    testIdenticalAllOptions<LO, GO, NT>(squareProblem(singleBlock(makeQuadMesh<GO>(5, 4)), roundRobin), out, success,
+                                        roundRobin ? "quads, round-robin" : "quads, contiguous");
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_IdenticalTet, LO, GO, NT) {
+  for (const bool roundRobin : {false, true})
+    testIdenticalAllOptions<LO, GO, NT>(squareProblem(singleBlock(makeTetMesh<GO>(2, 2, 2)), roundRobin), out, success,
+                                        roundRobin ? "tets, round-robin" : "tets, contiguous");
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_IdenticalManyBlocks, LO, GO, NT) {
+  testIdenticalAllOptions<LO, GO, NT>(squareProblem(splitBlocks(makeMixedTriQuadMesh<GO>(4, 4), 3), true), out,
+                                      success, "many-block tri+quad, round-robin");
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_IdenticalPadded, LO, GO, NT) {
+  testIdenticalAllOptions<LO, GO, NT>(squareProblem(paddedTriQuadMesh<GO>(4, 4), true), out, success,
+                                      "tri+quad padded in one block, round-robin");
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_IdenticalRectangular, LO, GO, NT) {
+  testIdenticalAllOptions<LO, GO, NT>(twoFieldProblem<GO>(5, 3), out, success, "two fields (rectangular)");
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_IdenticalNeighbors, LO, GO, NT) {
+  testIdenticalAllOptions<LO, GO, NT>(neighborProblem<GO>(5, 3), out, success, "neighbor-coupled (padded columns)");
+}
+
+// The comparison used by the tests above must detect a different graph.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_ComparisonDetectsDifferences, LO, GO, NT) {
+  using map_type      = Tpetra::Map<LO, GO, NT>;
+  using geometry_type = Tpetra::Geometry<LO, GO, NT>;
+  using device_type   = typename NT::device_type;
+  auto comm           = getDefaultComm();
+  // Assemble a quad mesh and a triangle mesh on the same nodes, with the same maps.
+  const auto quads = makeQuadMesh<GO>(2, 4);
+  const auto tris  = makeTriMesh<GO>(2, 4);
+  RCP<const map_type> ownedMap(new map_type(quads.numGlobalNodes, GO(0), comm));
+  auto assemble = [&](const GlobalMesh<GO>& mesh) {
+    // Every process has every element, so the owned+shared map has every node.
+    std::set<GO> nodes;
+    for (GO n = 0; n < GO(mesh.numGlobalNodes); ++n) nodes.insert(n);
+    auto ops = makeMap<LO, GO, NT>(ownedPlusSharedGIDs(*ownedMap, nodes, true));
+    geometry_type geometry;
+    geometry.addGlobalBlock(toPaddedDeviceView<GO, device_type>(mesh.element_to_node, "e2n"));
+    return Tpetra::assembleFECrsGraphWithMaps(geometry, ownedMap, ops);
+  };
+  auto quadGraph = assemble(quads);
+  auto triGraph  = assemble(tris);
+  auto quadAgain = assemble(quads);
+  TEST_ASSERT(identicalFEGraphs(*quadGraph, *quadAgain));
+  TEST_ASSERT(!identicalFEGraphs(*quadGraph, *triGraph));
+}
+
+// Errors: mixing kinds of index, mismatched rectangular views, indices not in
+// the maps, and an owned+shared row map that is not locally fitted.
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_Errors, LO, GO, NT) {
+  using map_type      = Tpetra::Map<LO, GO, NT>;
+  using geometry_type = Tpetra::Geometry<LO, GO, NT>;
+  using device_type   = typename NT::device_type;
+  auto comm           = getDefaultComm();
+
+  Kokkos::View<GO**, device_type> globalBlock("g", 2, 3);
+  Kokkos::View<GO**, device_type> globalBlock3("g3", 3, 3);
+  Kokkos::View<LO**, device_type> localBlock("l", 2, 3);
+  {
+    geometry_type geometry;
+    geometry.addGlobalBlock(globalBlock);
+    TEST_THROW(geometry.addLocalBlock(localBlock), std::invalid_argument);
+    TEST_THROW(geometry.addGlobalBlock(globalBlock, globalBlock3), std::invalid_argument);
   }
+
+  // Every process has one triangle of nodes {0, 1, 2}; the owned+shared map is
+  // {0, 1, 2} (owned first).
+  const GO numNodes = 3;
+  RCP<const map_type> ownedMap(new map_type(numNodes, GO(0), comm));
+  std::set<GO> nodes{0, 1, 2};
+  auto ops = makeMap<LO, GO, NT>(ownedPlusSharedGIDs(*ownedMap, nodes, true));
+  {
+    // A node that is not in the owned+shared map.
+    geometry_type geometry;
+    geometry.addGlobalBlock(toPaddedDeviceView<GO, device_type>({{0, 1, numNodes + 5}}, "e2n"));
+    TEST_THROW(Tpetra::assembleFECrsGraphWithMaps(geometry, ownedMap, ops), std::invalid_argument);
+  }
+  {
+    // A local index out of range.
+    geometry_type geometry;
+    geometry.addLocalBlock(toPaddedDeviceView<LO, device_type>({{0, 1, LO(numNodes + 5)}}, "e2n"));
+    TEST_THROW(Tpetra::assembleFECrsGraphWithMaps(geometry, ownedMap, ops), std::invalid_argument);
+  }
+  if (comm->getSize() > 1) {
+    // An owned+shared row map that is not locally fitted on some process: the
+    // shared indices first.
+    std::vector<GO> reversed = ownedPlusSharedGIDs(*ownedMap, nodes, true);
+    std::reverse(reversed.begin(), reversed.end());
+    auto notFitted = makeMap<LO, GO, NT>(reversed);
+    geometry_type geometry;
+    geometry.addGlobalBlock(toPaddedDeviceView<GO, device_type>({{0, 1, 2}}, "e2n"));
+    TEST_THROW(Tpetra::assembleFECrsGraphWithMaps(geometry, ownedMap, notFitted), std::invalid_argument);
+  }
+  collectiveSuccess(success, out);
 }
 
 //
 // INSTANTIATIONS
 //
 
-#define UNIT_TEST_GROUP(LO, GO, NT)                                          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Quad, LO, GO, \
-                                       NT)                                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tri, LO, GO,  \
-                                       NT)                                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tet, LO, GO,  \
-                                       NT)                                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_MultiBlock,   \
-                                       LO, GO, NT)                           \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_ManyBlocks,   \
-                                       LO, GO, NT)
+#define UNIT_TEST_GROUP(LO, GO, NT)                                                                    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Quad, LO, GO, NT)                       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tri, LO, GO, NT)                        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tet, LO, GO, NT)                        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_MultiBlock, LO, GO, NT)                 \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_ManyBlocks, LO, GO, NT)                 \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_IdenticalQuad, LO, GO, NT)              \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_IdenticalTet, LO, GO, NT)               \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_IdenticalManyBlocks, LO, GO, NT)        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_IdenticalPadded, LO, GO, NT)            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_IdenticalRectangular, LO, GO, NT)       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_IdenticalNeighbors, LO, GO, NT)         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_ComparisonDetectsDifferences, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Errors, LO, GO, NT)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
