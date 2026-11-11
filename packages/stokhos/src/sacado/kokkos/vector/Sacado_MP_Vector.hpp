@@ -1813,7 +1813,7 @@ namespace Sacado{
      * since they are an argument to the expression.
      */
     template <typename S> struct const_expr_ref< Vector<S> > {
-      typedef const Vector<S>& type;
+      typedef const Vector<S> type;
     };
 
     //! Type for storing nodes in expression graph
@@ -1822,7 +1822,7 @@ namespace Sacado{
      * since they are an argument to the expression.
      */
     template <typename S> struct const_expr_ref< volatile Vector<S> > {
-      typedef const volatile Vector<S>& type;
+      typedef const volatile Vector<S> type;
     };
 
     //! Traits class for removing volatile from type
