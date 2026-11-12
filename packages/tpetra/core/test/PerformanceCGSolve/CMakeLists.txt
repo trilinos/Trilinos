@@ -54,6 +54,18 @@ IF(Tpetra_INST_DOUBLE)
         CATEGORIES PERFORMANCE
       )
 
+      TRIBITS_ADD_TEST(
+        Performance-CGSolve
+        NAME Performance_StrongScaling_CGSolve_RangeShuffleSpMV
+        ARGS "--size=200"
+        COMM mpi
+        NUM_MPI_PROCS ${NP}
+        ENVIRONMENT TPETRA_USE_RANGE_SHUFFLE_SPMV=1
+        STANDARD_PASS_OUTPUT
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
+
       MATH(EXPR COUNTER "${COUNTER} + 1")
     ENDWHILE()
 

@@ -49,6 +49,7 @@
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosSparse_getDiagCopy.hpp"
 #include "KokkosSparse_spmv.hpp"
+#include "Tpetra_Details_RangeShuffleSpMV.hpp"
 #include "Tpetra_computeRowAndColumnOneNorms_decl.hpp"
 
 #include <memory>
@@ -4971,7 +4972,14 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       throw std::invalid_argument("Tpetra::CrsMatrix::localApply: invalid mode");
   }
 
-  if (applyHelper->shouldUseIntRowptrs()) {
+#if defined(KOKKOS_ENABLE_CUDA)
+  if ((modeKK == KokkosSparse::NoTranspose) && (X_lcl.extent(1) == 1) && Details::Behavior::useRangeShuffleSpMV()) {
+    Details::spmv_range_shuffle(
+        modeKK,
+        impl_scalar_type(alpha), A_lcl, Kokkos::subview(X_lcl, Kokkos::ALL(), 0), impl_scalar_type(beta), Kokkos::subview(Y_lcl, Kokkos::ALL(), 0));
+  } else
+#endif
+      if (applyHelper->shouldUseIntRowptrs()) {
     auto A_lcl_int_rowptrs = applyHelper->getIntRowptrMatrix(A_lcl);
     KokkosSparse::spmv(
         &applyHelper->handle_int, modeKK,
