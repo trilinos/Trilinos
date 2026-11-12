@@ -365,6 +365,15 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos
     COMM mpi
     PASS_REGULAR_EXPRESSION "Belos converged|Skipping test"
   )
+
+  TRIBITS_ADD_TEST(
+    MultiphysicsDriver
+    NAME "MultiphysicsTestTekoMonolithic"
+    ARGS "--xml=multiphys_monolithic_smoother.xml --expected-iters=5 --path=teko"
+    NUM_MPI_PROCS 4
+    COMM mpi
+    PASS_REGULAR_EXPRESSION "Belos converged|Skipping test"
+  )
 ENDIF()
 
 TRIBITS_ADD_TEST(

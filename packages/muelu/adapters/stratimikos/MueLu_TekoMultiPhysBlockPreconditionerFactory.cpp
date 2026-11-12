@@ -20,15 +20,19 @@
 #include "Teko_TpetraOperatorWrapper.hpp"
 #include "Teko_TpetraThyraConverter.hpp"
 
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 #include "Xpetra_BlockedCrsMatrix_decl.hpp"
+#include "Xpetra_BlockedMap_decl.hpp"
+#include "Xpetra_BlockedMultiVector_decl.hpp"
 #include "Xpetra_MapExtractor_decl.hpp"
 #include "Xpetra_MultiVectorFactory_decl.hpp"
 #include "Xpetra_ThyraUtils.hpp"
@@ -51,19 +55,21 @@
 namespace MueLu {
 
 namespace {
-using ST                  = Teko::ST;
-using LO                  = Teko::LO;
-using GO                  = Teko::GO;
-using NT                  = Teko::NT;
-using TpetraMatrix        = Tpetra::CrsMatrix<ST, LO, GO, NT>;
-using TpetraMultiVector   = Tpetra::MultiVector<ST, LO, GO, NT>;
-using XpetraMatrix        = Xpetra::Matrix<ST, LO, GO, NT>;
-using XpetraMultiVector   = Xpetra::MultiVector<ST, LO, GO, NT>;
-using XpetraBlockedMatrix = Xpetra::BlockedCrsMatrix<ST, LO, GO, NT>;
-using XpetraMapExtractor  = Xpetra::MapExtractor<ST, LO, GO, NT>;
-using XpetraMap           = Xpetra::Map<LO, GO, NT>;
-using MueLuHierarchy      = MueLu::Hierarchy<ST, LO, GO, NT>;
-using MultiPhysOperator   = MueLu::MultiPhys<ST, LO, GO, NT>;
+using ST                       = Teko::ST;
+using LO                       = Teko::LO;
+using GO                       = Teko::GO;
+using NT                       = Teko::NT;
+using TpetraMatrix             = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+using TpetraMultiVector        = Tpetra::MultiVector<ST, LO, GO, NT>;
+using XpetraMatrix             = Xpetra::Matrix<ST, LO, GO, NT>;
+using XpetraMultiVector        = Xpetra::MultiVector<ST, LO, GO, NT>;
+using XpetraBlockedMatrix      = Xpetra::BlockedCrsMatrix<ST, LO, GO, NT>;
+using XpetraBlockedMultiVector = Xpetra::BlockedMultiVector<ST, LO, GO, NT>;
+using XpetraMapExtractor       = Xpetra::MapExtractor<ST, LO, GO, NT>;
+using XpetraMap                = Xpetra::Map<LO, GO, NT>;
+using XpetraBlockedMap         = Xpetra::BlockedMap<LO, GO, NT>;
+using MueLuHierarchy           = MueLu::Hierarchy<ST, LO, GO, NT>;
+using MultiPhysOperator        = MueLu::MultiPhys<ST, LO, GO, NT>;
 using Teuchos::RCP;
 
 struct AMGComplexityStats {
@@ -138,21 +144,21 @@ auto computeBlockOffsets(const Teko::BlockedLinearOp& blocked) {
   using device_type    = typename NT::device_type;
   const int nBlockRows = Teko::blockRowCount(blocked);
 
-  size_t numLocalRows = 0;
-  GO numGlobalRows    = 0;
-  std::vector<GO> scanLocalBlockOffset(nBlockRows + 1, 0);
+  LO numLocalRows  = 0;
+  GO numGlobalRows = 0;
+  std::vector<LO> scanLocalBlockOffset(nBlockRows + 1, 0);
   std::vector<GO> scanGlobalBlockOffset(nBlockRows + 1, 0);
 
   for (int row = 0; row < nBlockRows; ++row) {
     auto Aii    = getCrsMatrix(row, row, blocked);
     auto rowMap = Aii->getRowMap();
     numGlobalRows += rowMap->getGlobalNumElements();
-    numLocalRows += rowMap->getLocalNumElements();
+    numLocalRows += static_cast<LO>(rowMap->getLocalNumElements());
     scanLocalBlockOffset[row + 1]  = numLocalRows;
     scanGlobalBlockOffset[row + 1] = numGlobalRows;
   }
 
-  Kokkos::View<GO*, device_type> scanLocalBlockOffsetView(
+  Kokkos::View<LO*, device_type> scanLocalBlockOffsetView(
       Kokkos::ViewAllocateWithoutInitializing("scanLocalBlockOffsetView"), nBlockRows + 1);
   {
     auto hostMirror = Kokkos::create_mirror_view(scanLocalBlockOffsetView);
@@ -193,6 +199,7 @@ auto extractViewOfLocalSubblockMatricesAndMaps(const Teko::BlockedLinearOp& bloc
   return std::make_tuple(subblockMatrices, subblockColMaps);
 }
 
+// localRow always lies in [0, scanOffsetView(nBlockRows)), so a block row is always found.
 template <class OffsetViewType>
 KOKKOS_INLINE_FUNCTION int computeBlockRow(const OffsetViewType& scanOffsetView, LO localRow) {
   int blockRow          = -1;
@@ -214,20 +221,21 @@ RCP<TpetraMatrix> convertBlockMatrixToCrsMatrix(const Teko::BlockedLinearOp& blo
   using row_map_type      = typename local_matrix_type::row_map_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
   using index_type        = typename local_matrix_type::index_type::non_const_type;
+  using size_type         = typename row_map_type::non_const_value_type;
   using execution_space   = typename local_matrix_type::execution_space;
   using device_type       = typename NT::device_type;
 
   const int nBlockCols = Teko::blockColCount(blocked);
 
-  GO numLocalRows{0};
+  LO numLocalRows{0};
   GO numGlobalRows{0};
-  Kokkos::View<GO*, device_type> scanLocalBlockOffsetView;
+  Kokkos::View<LO*, device_type> scanLocalBlockOffsetView;
   Kokkos::View<GO*, device_type> scanGlobalBlockOffsetView;
   std::tie(numLocalRows, numGlobalRows, scanLocalBlockOffsetView, scanGlobalBlockOffsetView) =
       computeBlockOffsets(blocked);
 
   const auto invalidLO = Teuchos::OrdinalTraits<LO>::invalid();
-  const int numRows    = numLocalRows;
+  const LO numRows     = numLocalRows;
   auto nEntriesPerRow  = Kokkos::View<LO*, device_type>(Kokkos::ViewAllocateWithoutInitializing("nEntriesPerRow"), numRows);
   Kokkos::deep_copy(nEntriesPerRow, invalidLO);
   auto prefixSumEntriesPerRow = row_map_type(
@@ -237,10 +245,10 @@ RCP<TpetraMatrix> convertBlockMatrixToCrsMatrix(const Teko::BlockedLinearOp& blo
   Kokkos::View<local_map_type**, Kokkos::SharedSpace> subblockColMaps;
   std::tie(subblockMatrices, subblockColMaps) = extractViewOfLocalSubblockMatricesAndMaps(blocked);
 
-  LO totalNumOwnedCols = 0;
+  size_type totalNumOwnedCols = 0;
   Kokkos::parallel_scan(
       Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, execution_space>(0, numRows),
-      KOKKOS_LAMBDA(const LO localRow, LO& sumNumEntries, bool finalPass) {
+      KOKKOS_LAMBDA(const LO localRow, size_type& sumNumEntries, bool finalPass) {
         auto numOwnedCols = nEntriesPerRow(localRow);
         if (numOwnedCols == invalidLO) {
           const auto blockRow = computeBlockRow(scanLocalBlockOffsetView, localRow);
@@ -260,29 +268,25 @@ RCP<TpetraMatrix> convertBlockMatrixToCrsMatrix(const Teko::BlockedLinearOp& blo
   auto columnIndices = Kokkos::View<GO*, device_type>(Kokkos::ViewAllocateWithoutInitializing("columnIndices"), totalNumOwnedCols);
   auto values        = values_type(Kokkos::ViewAllocateWithoutInitializing("values"), totalNumOwnedCols);
 
-  LO maxNumEntriesSubblock = 0;
-  Kokkos::parallel_reduce(
+  Kokkos::parallel_for(
       Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, execution_space>(0, numRows),
-      KOKKOS_LAMBDA(const LO localRow, LO& maxNumEntries) {
-        const auto blockRow = computeBlockRow(scanLocalBlockOffsetView, localRow);
-        LO colId            = 0;
-        LO colIdStart       = prefixSumEntriesPerRow[localRow];
-        const auto lid      = localRow - scanLocalBlockOffsetView(blockRow);
+      KOKKOS_LAMBDA(const LO localRow) {
+        const auto blockRow        = computeBlockRow(scanLocalBlockOffsetView, localRow);
+        const size_type colIdStart = prefixSumEntriesPerRow(localRow);
+        LO colId                   = 0;
+        const auto lid             = localRow - scanLocalBlockOffsetView(blockRow);
         for (int blockCol = 0; blockCol < nBlockCols; ++blockCol) {
           auto colMap              = subblockColMaps(blockRow, blockCol);
           const auto gidStart      = scanGlobalBlockOffsetView(blockCol);
           const auto sparseRowView = subblockMatrices(blockRow, blockCol).row(lid);
-          for (int col = 0; col < static_cast<int>(sparseRowView.length); ++col) {
+          for (LO col = 0; col < sparseRowView.length; ++col) {
             auto colidx                       = colMap.getGlobalElement(sparseRowView.colidx(col));
-            values[colId + colIdStart]        = sparseRowView.value(col);
-            columnIndices[colId + colIdStart] = colidx + gidStart;
+            values[colIdStart + colId]        = sparseRowView.value(col);
+            columnIndices[colIdStart + colId] = colidx + gidStart;
             ++colId;
           }
         }
-        const auto numOwnedCols = nEntriesPerRow(localRow);
-        maxNumEntries           = Kokkos::max(maxNumEntries, numOwnedCols);
-      },
-      Kokkos::Max<LO>(maxNumEntriesSubblock));
+      });
 
   Teko::LinearOp blockedOpLo = blocked;
   auto blockedOpTpetra       = Teuchos::rcp(new Teko::TpetraHelpers::TpetraOperatorWrapper(blockedOpLo));
@@ -296,19 +300,23 @@ RCP<TpetraMatrix> convertBlockMatrixToCrsMatrix(const Teko::BlockedLinearOp& blo
   auto colMapDev          = colMap->getLocalMap();
   auto localColumnIndices = index_type(Kokkos::ViewAllocateWithoutInitializing("localColumnIndices"), totalNumOwnedCols);
   Kokkos::parallel_for(
-      Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, execution_space>(0, totalNumOwnedCols),
-      KOKKOS_LAMBDA(const LO index) { localColumnIndices(index) = colMapDev.getLocalElement(columnIndices(index)); });
+      Kokkos::RangePolicy<execution_space, Kokkos::IndexType<size_type> >(0, totalNumOwnedCols),
+      KOKKOS_LAMBDA(const size_type index) { localColumnIndices(index) = colMapDev.getLocalElement(columnIndices(index)); });
 
   KokkosSparse::sort_crs_matrix<execution_space, row_map_type, index_type, values_type>(
       prefixSumEntriesPerRow, localColumnIndices, values);
 
-  auto localMatrix = typename TpetraMatrix::local_matrix_device_type(
-      "localMat", numRows, maxNumEntriesSubblock, totalNumOwnedCols, values, prefixSumEntriesPerRow, localColumnIndices);
+  const LO numCols = static_cast<LO>(colMap->getLocalNumElements());
+  auto localMatrix  = local_matrix_type(
+      "localMat", numRows, numCols, totalNumOwnedCols, values, prefixSumEntriesPerRow, localColumnIndices);
 
   return Teuchos::rcp(new TpetraMatrix(localMatrix, rangeMap, colMap, domainMap, rangeMap));
 }
 
-void updateBlockMatrixToCrsMatrix(const Teko::BlockedLinearOp& blocked,
+// Update the values of a matrix previously built by convertBlockMatrixToCrsMatrix in place.
+// Returns false if the row layout or sparsity pattern of the blocks changed, in which case
+// the matrix must be rebuilt.
+bool updateBlockMatrixToCrsMatrix(const Teko::BlockedLinearOp& blocked,
                                   Teuchos::RCP<TpetraMatrix>& matrix) {
   using local_matrix_type = typename TpetraMatrix::local_matrix_device_type;
   using local_map_type    = typename Tpetra::Map<LO, GO, NT>::local_map_type;
@@ -317,46 +325,58 @@ void updateBlockMatrixToCrsMatrix(const Teko::BlockedLinearOp& blocked,
 
   const int nBlockCols = Teko::blockColCount(blocked);
 
-  GO numLocalRows{0};
+  LO numLocalRows{0};
   GO numGlobalRows{0};
-  Kokkos::View<GO*, device_type> scanLocalBlockOffsetView;
+  Kokkos::View<LO*, device_type> scanLocalBlockOffsetView;
   Kokkos::View<GO*, device_type> scanGlobalBlockOffsetView;
   std::tie(numLocalRows, numGlobalRows, scanLocalBlockOffsetView, scanGlobalBlockOffsetView) =
       computeBlockOffsets(blocked);
 
-  matrix->resumeFill();
-  matrix->setAllToScalar(0.0);
+  // A nonzero count means the row layout or sparsity pattern changed on this rank.
+  const LO numRows     = static_cast<LO>(matrix->getRowMap()->getLocalNumElements());
+  LO numMissingEntries = (numRows == numLocalRows) ? 0 : 1;
 
-  const LO numRows  = matrix->getRowMap()->getLocalNumElements();
-  auto matrixDevice = matrix->getLocalMatrixDevice();
-  auto colMapDev    = matrix->getColMap()->getLocalMap();
+  if (numMissingEntries == 0) {
+    matrix->resumeFill();
+    matrix->setAllToScalar(0.0);
 
-  Kokkos::View<local_matrix_type**, Kokkos::SharedSpace> subblockMatrices;
-  Kokkos::View<local_map_type**, Kokkos::SharedSpace> subblockColMaps;
-  std::tie(subblockMatrices, subblockColMaps) = extractViewOfLocalSubblockMatricesAndMaps(blocked);
+    auto matrixDevice = matrix->getLocalMatrixDevice();
+    auto colMapDev    = matrix->getColMap()->getLocalMap();
 
-  Kokkos::parallel_for(
-      Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, execution_space>(0, numRows),
-      KOKKOS_LAMBDA(const LO localRow) {
-        const auto blockRow = computeBlockRow(scanLocalBlockOffsetView, localRow);
-        const auto lid      = localRow - scanLocalBlockOffsetView(blockRow);
-        for (int blockCol = 0; blockCol < nBlockCols; ++blockCol) {
-          const GO gidStart        = scanGlobalBlockOffsetView(blockCol);
-          const auto sparseRowView = subblockMatrices(blockRow, blockCol).row(lid);
-          const auto mapij         = subblockColMaps(blockRow, blockCol);
-          for (int col = 0; col < static_cast<int>(sparseRowView.length); ++col) {
-            auto value       = sparseRowView.value(col);
-            const auto gidij = mapij.getGlobalElement(sparseRowView.colidx(col));
-            const auto gid   = gidij + gidStart;
-            auto colId       = colMapDev.getLocalElement(gid);
-            matrixDevice.sumIntoValues(localRow, &colId, 1, &value, true, false);
+    Kokkos::View<local_matrix_type**, Kokkos::SharedSpace> subblockMatrices;
+    Kokkos::View<local_map_type**, Kokkos::SharedSpace> subblockColMaps;
+    std::tie(subblockMatrices, subblockColMaps) = extractViewOfLocalSubblockMatricesAndMaps(blocked);
+
+    Kokkos::parallel_reduce(
+        Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, execution_space>(0, numRows),
+        KOKKOS_LAMBDA(const LO localRow, LO& numMissing) {
+          const auto blockRow = computeBlockRow(scanLocalBlockOffsetView, localRow);
+          const auto lid      = localRow - scanLocalBlockOffsetView(blockRow);
+          for (int blockCol = 0; blockCol < nBlockCols; ++blockCol) {
+            const GO gidStart        = scanGlobalBlockOffsetView(blockCol);
+            const auto sparseRowView = subblockMatrices(blockRow, blockCol).row(lid);
+            const auto mapij         = subblockColMaps(blockRow, blockCol);
+            for (LO col = 0; col < sparseRowView.length; ++col) {
+              auto value       = sparseRowView.value(col);
+              const auto gidij = mapij.getGlobalElement(sparseRowView.colidx(col));
+              const auto gid   = gidij + gidStart;
+              auto colId       = colMapDev.getLocalElement(gid);
+              if (matrixDevice.sumIntoValues(localRow, &colId, 1, &value, true, false) != 1) ++numMissing;
+            }
           }
-        }
-      });
+        },
+        numMissingEntries);
+  }
+
+  // The layout may only have changed on some ranks; agree globally before the collective fillComplete.
+  LO globalNumMissingEntries = 0;
+  Teuchos::reduceAll(*matrix->getRowMap()->getComm(), Teuchos::REDUCE_MAX, numMissingEntries, Teuchos::outArg(globalNumMissingEntries));
+  if (globalNumMissingEntries > 0) return false;
 
   Teko::LinearOp blockedOpLo = blocked;
   auto blockedOpTpetra       = Teuchos::rcp(new Teko::TpetraHelpers::TpetraOperatorWrapper(blockedOpLo));
   matrix->fillComplete(blockedOpTpetra->getDomainMap(), blockedOpTpetra->getRangeMap());
+  return true;
 }
 
 RCP<const Teuchos::Comm<int> > extractCommunicator(const Teko::BlockedMultiVector& blocked) {
@@ -421,7 +441,18 @@ class WrapMultiPhysAsTekoBlockOperator : public Teko::BlockImplicitLinearOp {
     , productDomain_(A->productDomain())
     , useBlockSmoothers_(useBlockSmoothers)
     , comm_(comm)
-    , domainMapExtractor_(domainMapExtractor) {}
+    , domainMapExtractor_(domainMapExtractor) {
+    if (useBlockSmoothers_) {
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(comm_), MueLu::Exceptions::RuntimeError,
+                                 "MueLu::TekoMultiPhysBlockPreconditionerFactory: comm is null for blocked apply.");
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(domainMapExtractor_), MueLu::Exceptions::RuntimeError,
+                                 "MueLu::TekoMultiPhysBlockPreconditionerFactory: domain map extractor is null for blocked apply.");
+      // The vector spaces are fixed for the lifetime of this operator, so build the Xpetra blocked maps once
+      // instead of on every apply (which is collective and allocates).
+      rBlockedMap_ = Teuchos::rcp_dynamic_cast<const XpetraBlockedMap>(Xpetra::ThyraUtils<ST, LO, GO, NT>::toXpetra(productDomain_, comm_), true);
+      zBlockedMap_ = Teuchos::rcp_dynamic_cast<const XpetraBlockedMap>(Xpetra::ThyraUtils<ST, LO, GO, NT>::toXpetra(productRange_, comm_), true);
+    }
+  }
 
   Teko::VectorSpace range() const override { return productRange_; }
   Teko::VectorSpace domain() const override { return productDomain_; }
@@ -430,42 +461,19 @@ class WrapMultiPhysAsTekoBlockOperator : public Teko::BlockImplicitLinearOp {
                      Teko::BlockedMultiVector& z,
                      const double alpha = 1.0,
                      const double beta  = 0.0) const override {
-    if (useBlockSmoothers_) {
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(comm_), MueLu::Exceptions::RuntimeError,
-                                 "MueLu::TekoMultiPhysBlockPreconditionerFactory: comm is null for blocked apply.");
-      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(domainMapExtractor_), MueLu::Exceptions::RuntimeError,
-                                 "MueLu::TekoMultiPhysBlockPreconditionerFactory: domain map extractor is null for blocked apply.");
-
-      Teuchos::RCP<const Thyra::MultiVectorBase<ST> > rThyra = Teuchos::rcp_implicit_cast<const Thyra::MultiVectorBase<ST> >(r);
-      Teuchos::RCP<Thyra::MultiVectorBase<ST> > zThyra       = Teuchos::rcp_implicit_cast<Thyra::MultiVectorBase<ST> >(z);
-      auto zProduct                                          = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<ST> >(zThyra, true);
-
-      auto rXpetra = Xpetra::ThyraUtils<ST, LO, GO, NT>::toXpetra(rThyra, comm_);
-      auto zConst  = Xpetra::ThyraUtils<ST, LO, GO, NT>::toXpetra(Teuchos::rcp_implicit_cast<const Thyra::MultiVectorBase<ST> >(zThyra), comm_);
-      auto zXpetra = Teuchos::rcp_const_cast<XpetraMultiVector>(zConst);
-
-      Minv_->apply(*rXpetra, *zXpetra, Teuchos::NO_TRANS, alpha, beta);
-      Xpetra::ThyraUtils<ST, LO, GO, NT>::updateThyra(
-          Teuchos::rcp_implicit_cast<const XpetraMultiVector>(zXpetra), domainMapExtractor_, zProduct);
-      return;
-    }
-
-    if (flattenedR_.is_null()) {
-      flattenedR_ = convertBlockVectorToVector(r);
-      flattenedZ_ = convertBlockVectorToVector(z);
+    // MultiPhys::apply ignores alpha and beta and always uses a zero initial guess,
+    // so compute M r separately and form z = alpha * M r + beta * z here.
+    const Teuchos::Ptr<Thyra::MultiVectorBase<ST> > zPtr = z.ptr();
+    if (beta == 0.0) {
+      applyMultiPhys(r, z);
+      if (alpha != 1.0) Thyra::scale(alpha, zPtr);
     } else {
-      auto zMv = Thyra::TpetraOperatorVectorExtraction<ST, LO, GO, NT>::getTpetraMultiVector(flattenedZ_);
-      auto rMv = Thyra::TpetraOperatorVectorExtraction<ST, LO, GO, NT>::getTpetraMultiVector(flattenedR_);
-      Teko::TpetraHelpers::blockThyraToTpetra(z, *zMv);
-      Teko::TpetraHelpers::blockThyraToTpetra(r, *rMv);
+      auto Mr = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<ST> >(
+          Thyra::createMembers(z->range(), z->domain()->dim()), true);
+      applyMultiPhys(r, Mr);
+      Thyra::scale(beta, zPtr);
+      Thyra::update(alpha, *Mr, zPtr);
     }
-
-    auto zMv = Thyra::TpetraOperatorVectorExtraction<ST, LO, GO, NT>::getTpetraMultiVector(flattenedZ_);
-    auto rMv = Thyra::TpetraOperatorVectorExtraction<ST, LO, GO, NT>::getTpetraMultiVector(flattenedR_);
-    auto zXp = Xpetra::toXpetra(zMv);
-    auto rXp = Xpetra::toXpetra(rMv);
-    Minv_->apply(*rXp, *zXp, Teuchos::NO_TRANS, alpha, beta);
-    Teko::TpetraHelpers::blockTpetraToThyra(*zMv, z.ptr());
   }
 
   void implicitApply(const Thyra::EOpTransp M_trans,
@@ -479,6 +487,47 @@ class WrapMultiPhysAsTekoBlockOperator : public Teko::BlockImplicitLinearOp {
   }
 
  private:
+  // Computes z = M r.
+  void applyMultiPhys(const Teko::BlockedMultiVector& r, const Teko::BlockedMultiVector& z) const {
+    using TpetraExtraction = Thyra::TpetraOperatorVectorExtraction<ST, LO, GO, NT>;
+
+    if (useBlockSmoothers_) {
+      // Wrap the Thyra blocks without copying them.
+      const int numBlocks = r->productSpace()->numBlocks();
+      std::vector<RCP<XpetraMultiVector> > rBlocks(numBlocks);
+      std::vector<RCP<XpetraMultiVector> > zBlocks(numBlocks);
+      for (int block = 0; block < numBlocks; ++block) {
+        rBlocks[block] = Xpetra::toXpetra(Teuchos::rcp_const_cast<TpetraMultiVector>(
+            TpetraExtraction::getConstTpetraMultiVector(r->getMultiVectorBlock(block))));
+        zBlocks[block] = Xpetra::toXpetra(TpetraExtraction::getTpetraMultiVector(z->getNonconstMultiVectorBlock(block)));
+      }
+      auto rXpetra = Teuchos::rcp(new XpetraBlockedMultiVector(rBlockedMap_, rBlocks));
+      auto zXpetra = Teuchos::rcp(new XpetraBlockedMultiVector(zBlockedMap_, zBlocks));
+
+      Minv_->apply(*rXpetra, *zXpetra, Teuchos::NO_TRANS);
+      Xpetra::ThyraUtils<ST, LO, GO, NT>::updateThyra(
+          Teuchos::rcp_implicit_cast<const XpetraMultiVector>(zXpetra), domainMapExtractor_,
+          Teuchos::rcp_implicit_cast<Thyra::MultiVectorBase<ST> >(z));
+      return;
+    }
+
+    // Reuse the flat scratch vectors unless the number of columns changed. The previous contents of z
+    // do not need to be copied since MultiPhys::apply uses a zero initial guess.
+    if (flattenedR_.is_null() || flattenedR_->domain()->dim() != r->domain()->dim()) {
+      flattenedR_ = convertBlockVectorToVector(r);
+      flattenedZ_ = convertBlockVectorToVector(z);
+    } else {
+      Teko::TpetraHelpers::blockThyraToTpetra(r, *TpetraExtraction::getTpetraMultiVector(flattenedR_));
+    }
+
+    auto zMv = TpetraExtraction::getTpetraMultiVector(flattenedZ_);
+    auto rMv = TpetraExtraction::getTpetraMultiVector(flattenedR_);
+    auto zXp = Xpetra::toXpetra(zMv);
+    auto rXp = Xpetra::toXpetra(rMv);
+    Minv_->apply(*rXp, *zXp, Teuchos::NO_TRANS);
+    Teko::TpetraHelpers::blockTpetraToThyra(*zMv, z.ptr());
+  }
+
   Teko::BlockedLinearOp A_;
   RCP<MultiPhysOperator> Minv_;
   Teko::VectorSpace productRange_;
@@ -486,6 +535,8 @@ class WrapMultiPhysAsTekoBlockOperator : public Teko::BlockImplicitLinearOp {
   bool useBlockSmoothers_;
   RCP<const Teuchos::Comm<int> > comm_;
   RCP<const XpetraMapExtractor> domainMapExtractor_;
+  RCP<const XpetraBlockedMap> rBlockedMap_;
+  RCP<const XpetraBlockedMap> zBlockedMap_;
   mutable Teko::MultiVector flattenedR_;
   mutable Teko::MultiVector flattenedZ_;
 };
@@ -618,10 +669,15 @@ TekoMultiPhysBlockPreconditionerFactory::buildPreconditionerOperator(Teko::Block
     localNullspace.resize(numBlockRows);
   }
 
-  for (int block = 0; block < numBlockRows; ++block) amgSettings_->sublist("subblockList" + std::to_string(block), true);
+  for (int block = 0; block < numBlockRows; ++block)
+    TEUCHOS_TEST_FOR_EXCEPTION(!amgSettings_->isSublist("subblockList" + std::to_string(block)), MueLu::Exceptions::RuntimeError,
+                               "MueLu::TekoMultiPhysBlockPreconditionerFactory: missing parameter sublist subblockList" << block << ".");
+
+  const bool sameNumBlocks = concreteState->numBlocks == numBlockRows;
+  bool reuseMultiPhys      = sameNumBlocks && !Teuchos::is_null(concreteState->multiphysPreconditioner);
 
   if (useBlockSmoothers_) {
-    if (Teuchos::is_null(concreteState->blockedMatrix) || concreteState->numBlocks != numBlockRows) {
+    if (Teuchos::is_null(concreteState->blockedMatrix) || !sameNumBlocks) {
       concreteState->blockedMatrix = Teuchos::rcp(new XpetraBlockedMatrix(blo, comm));
     } else {
       for (int row = 0; row < numBlockRows; ++row)
@@ -632,10 +688,11 @@ TekoMultiPhysBlockPreconditionerFactory::buildPreconditionerOperator(Teko::Block
     }
     concreteState->monolithicMatrix = Teuchos::null;
   } else {
-    if (Teuchos::is_null(concreteState->monolithicMatrix) || concreteState->numBlocks != numBlockRows) {
+    if (Teuchos::is_null(concreteState->monolithicMatrix) || !sameNumBlocks ||
+        !updateBlockMatrixToCrsMatrix(blo, concreteState->monolithicMatrix)) {
+      // First build, or the layout/sparsity pattern of the blocks changed: rebuild from scratch.
       concreteState->monolithicMatrix = convertBlockMatrixToCrsMatrix(blo);
-    } else {
-      updateBlockMatrixToCrsMatrix(blo, concreteState->monolithicMatrix);
+      reuseMultiPhys                  = false;
     }
     concreteState->blockedMatrix = Teuchos::null;
   }
@@ -656,7 +713,7 @@ TekoMultiPhysBlockPreconditionerFactory::buildPreconditionerOperator(Teko::Block
                             ? Teuchos::rcp_implicit_cast<XpetraMatrix>(concreteState->blockedMatrix)
                             : Xpetra::toXpetra(concreteState->monolithicMatrix);
 
-  if (!Teuchos::is_null(concreteState->multiphysPreconditioner) && concreteState->numBlocks == numBlockRows) {
+  if (reuseMultiPhys) {
     concreteState->multiphysPreconditioner->resetMatrix(A, true);
   } else {
     concreteState->multiphysPreconditioner = Teuchos::rcp(new MultiPhysOperator(

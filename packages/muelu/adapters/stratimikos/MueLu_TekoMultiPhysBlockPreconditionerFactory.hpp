@@ -85,6 +85,8 @@ class TekoMultiPhysBlockPreconditionerFactory : public Teko::BlockPreconditioner
   bool printComplexity_;
 };
 
+//! Register the factory with Teko under \p name (used as "Type" in a Teko inverse library sublist).
+//! Registering under a name that is already taken replaces the previously registered factory.
 void registerTekoMultiPhysBlockPreconditionerFactory(const std::string& name = "Block AMG");
 
 }  // namespace MueLu
