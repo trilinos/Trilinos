@@ -12,8 +12,10 @@
 
 #include <fstream>
 #include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_Exceptions.hpp"
 
 #include <MatrixMarket_Tpetra.hpp>
+#include <Tpetra_BinaryIO_Legacy.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
@@ -187,6 +189,32 @@ class IO {
   template <class T>
   static std::string toString(const T& what);
 };
+
+namespace experimental {
+
+/*! @brief Convert a legacy Xpetra binary matrix file to the current Tpetra binary format.
+
+  This is part of the experimental scalable binary I/O capability; its interface may change.
+
+  @param oldFileName Name of the legacy binary file to read
+  @param newFileName Name of the binary file to write in the current Tpetra format
+  @param lib Underlying type of linear algebra package (only Xpetra::UseTpetra is supported)
+  @param comm Communicator
+*/
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ConvertLegacyBinaryToBinary(const std::string& oldFileName,
+                                 const std::string& newFileName,
+                                 Xpetra::UnderlyingLib lib,
+                                 const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
+  if (lib == Xpetra::UseTpetra) {
+    Tpetra::experimental::Details::convertLegacyBinaryToBinary<Scalar, LocalOrdinal, GlobalOrdinal, Node>(oldFileName, newFileName, comm);
+    return;
+  }
+
+  throw Exceptions::RuntimeError("Xpetra::experimental::ConvertLegacyBinaryToBinary : binary mode is only implemented for Xpetra::UseTpetra.");
+}
+
+}  // namespace experimental
 
 }  // end namespace Xpetra
 
