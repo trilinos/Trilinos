@@ -1,0 +1,13 @@
+diff --git a/tpls/mdspan/include/experimental/__p0009_bits/macros.hpp b/tpls/mdspan/include/experimental/__p0009_bits/macros.hpp
+index 7f288dc90..ac15fb77e 100644
+--- a/tpls/mdspan/include/experimental/__p0009_bits/macros.hpp
++++ b/tpls/mdspan/include/experimental/__p0009_bits/macros.hpp
+@@ -147,7 +147,7 @@ MDSPAN_FUNCTION inline void default_precondition_violation_handler(const char* c
+ #endif
+ 
+ #ifndef MDSPAN_IMPL_CHECK_PRECONDITION
+-  #ifndef NDEBUG
++  #ifdef NDEBUG
+     #define MDSPAN_IMPL_CHECK_PRECONDITION 0
+   #else
+     #define MDSPAN_IMPL_CHECK_PRECONDITION 1
