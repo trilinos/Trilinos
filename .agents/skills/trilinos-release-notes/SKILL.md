@@ -236,11 +236,19 @@ Used for both minor and patch targets.
   ambiguous, fall back to the top-level `packages/<pkg>` directories touched,
   via `git diff --stat <sha>^1 <sha>` (or `<sha>^ <sha>` for a squash commit).
 
-- **Already-documented PRs**: drop any candidate whose `/pull/<N>` URL
-  already appears in `RELEASE_NOTES`, anywhere between the `<BASE>` section
-  and the top of the file. For a minor `<TARGET>`, this covers PRs already
-  recorded in a patch release that shipped between `<BASE>` and `<TARGET>`,
-  without having to name that release.
+- **Already-documented PRs**: a PR belongs to exactly one release. It may
+  be cited more than once *within* that release's section (several bullets
+  or packages), but never in two different release sections.
+  - Drop any candidate whose `/pull/<N>` URL appears in any release section
+    *other than* the `<TARGET>` section -- anywhere in the file, not just
+    since `<BASE>`. This covers PRs already recorded in `<BASE>` itself, in
+    a patch release that shipped between `<BASE>` and `<TARGET>`, or in
+    another branch's patch release. No exceptions: don't re-add such a PR
+    later (Step 5 or 7), even to extend an existing bullet or because the
+    change looks new relative to `<BASE_COMMIT>`.
+  - A candidate already cited in the `<TARGET>` draft section is already
+    documented; don't propose it again unless it deserves a mention under
+    another package in the same release.
 
 ## Step 4: Optional GitHub cross-check (read-only)
 
@@ -292,6 +300,9 @@ When the title and body aren't enough to decide, look at the diff (`git show
 --stat <sha>` or a scoped diff) before excluding or including.
 
 ## Step 6: Confirm with the user before writing anything
+
+Before presenting, re-check that no proposed PR URL appears in any release
+section of `RELEASE_NOTES` other than the `<TARGET>` section.
 
 Present the findings and wait for confirmation, edits, or trims:
 
@@ -364,19 +375,38 @@ Rules:
 3. Save the result as `release-notes-<TARGET>.patch` in the repository root
    (sibling to `RELEASE_NOTES`).
 4. Sanity-check it with `git apply --check release-notes-<TARGET>.patch`.
+   Then verify that no PR spans two releases: no `/pull/<N>` on an added
+   (`+`) line may appear in any *other* release section of the current
+   `RELEASE_NOTES`. Repeats within the `<TARGET>` section are allowed.
+   ```
+   # OTHER = RELEASE_NOTES minus the <TARGET> section (the whole file when
+   # <TARGET> is a new section).
+   grep '^+' release-notes-<TARGET>.patch | grep -oE 'pull/[0-9]+' | sort -u |
+     while read u; do grep -q "$u\b" OTHER && echo "$u"; done
+   ```
+   This must print nothing; if not, fix the scratch copy and regenerate the
+   patch. Cross-release duplicates already in `RELEASE_NOTES` before this
+   run are not this skill's to fix -- mention them to the user instead.
 5. Never modify the real `RELEASE_NOTES`, and never `git add`/`commit`/push
    anything. Tell the user the patch is ready and how to apply it:
    `git apply release-notes-<TARGET>.patch`.
 
 ## Pitfalls
 
-- Backports/cherry-picks can appear twice (once on a release branch, once on
-  develop) -- Step 3's "already-documented" check only catches the ones
-  already written into `RELEASE_NOTES`; watch for duplicate PR numbers
-  within your own candidate list too.
-- A PR touching several packages may deserve a bullet under more than one
-  package heading if the change is significant in each; otherwise list it
-  once under the primary package.
+- A PR or change note belongs to exactly one release in `RELEASE_NOTES`.
+  Backports/cherry-picks can show up twice in git (once on a release
+  branch, once on develop) and snapshot PRs can be reachable from more than
+  one release; the already-documented check (Step 3) and the final check
+  (Step 8) catch these.
+- Within the release being documented, a PR may be cited more than once: a
+  PR touching several packages may get a bullet under each package where
+  the change is significant; otherwise list it once under the primary
+  package.
+- Version-bump reasoning is a common way to put a PR in two releases:
+  e.g. a Kokkos snapshot PR can look new because the `<BASE_COMMIT>` fork
+  point predates it, while `<BASE>`'s notes already list it because it was
+  merged into the `<BASE>` release branch after the fork. Trust the
+  already-documented check over version comparisons.
 - `master_merge_*` PRs (and merges of `master` or other release branches)
   are plumbing, not changes -- skip them, but do scan the PRs they carry.
   This is why Step 3 must not use `--first-parent`.
