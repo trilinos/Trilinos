@@ -10,6 +10,10 @@
 #ifndef SACADO_FAD_EXPRASSIGN_HPP
 #define SACADO_FAD_EXPRASSIGN_HPP
 
+#if defined(HAVE_SACADO_KOKKOS)
+#include "Kokkos_Assert.hpp"
+#endif
+
 namespace Sacado {
   namespace Fad {
 
@@ -82,6 +86,17 @@ namespace Sacado {
         // assignment below
 
         if (sz) {
+          // dst and x are guaranteed to have the same size.
+          // GCC warns that the loop below might access unitialized memory. We can silence the warning by adding an
+          //  if (i < xsz)
+          // but that is clearly unnecessary. Instead, we ignore the warning.
+#if defined(HAVE_SACADO_KOKKOS) && defined(SACADO_DEBUG)
+          KOKKOS_ASSERT((dst.size() == x.size()) || (dst.size() == 0) || (x.size() == 0));
+#endif
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
           if (x.hasFastAccess()) {
             SACADO_FAD_DERIV_LOOP(i,sz)
               dst.fastAccessDx(i) = x.fastAccessDx(i);
@@ -89,6 +104,9 @@ namespace Sacado {
           else
             SACADO_FAD_DERIV_LOOP(i,sz)
               dst.fastAccessDx(i) = x.dx(i);
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
         }
 
         dst.val() = x.val();
