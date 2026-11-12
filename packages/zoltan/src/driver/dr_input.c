@@ -289,6 +289,10 @@ int read_cmd_file (
 	    return 0;
 	  }
 	}
+	if (pio_info->init_vwgt_dim > MAX_CPU_WGTS) {
+	  Gen_Error(0, "fatal: obj_weight_dim exceeds MAX_CPU_WGTS");
+	  return 0;
+	}
       }
       else if (strcmp(value, "nemesisi") == 0)  {
 	pio_info->file_type      = NEMESIS_FILE;
@@ -327,6 +331,10 @@ int read_cmd_file (
 	    Gen_Error(0, "fatal: bad file type = random file parameters");
 	    return 0;
 	  }
+	}
+	if (pio_info->init_vwgt_dim > MAX_CPU_WGTS) {
+	  Gen_Error(0, "fatal: obj_weight_dim exceeds MAX_CPU_WGTS");
+	  return 0;
 	}
       }
       else  {
@@ -521,7 +529,9 @@ int read_cmd_file (
 
     else if (sscanf(line, " zoltan parameter%*[^=]%[=]%n", string, &n) == 1)  {
       pline = line;
-      while (pline+n < pmax && sscanf(pline += n, NEXTARG LASTARG "%n",
+      /* width-limited forms of NEXTARG LASTARG; Name and Val are char[128] */
+      while (pline+n < pmax && sscanf(pline += n,
+				   "%*[,\t ]%127[^=\t ]" SKIPEQ "%127[^,=\t\n ]%n",
 				   prob->params[prob->num_params].Name,
 				   prob->params[prob->num_params].Val, &n)==2) {
 	prob->params[prob->num_params++].Index = -1;
@@ -541,10 +551,14 @@ int read_cmd_file (
     {
       pline = line;
       i = 0;
-      while (pline+n < pmax && sscanf(pline += n, BIGSKIP "%[^,\t\n) ]%n",
+      while (pline+n < pmax && sscanf(pline += n, BIGSKIP "%127[^,\t\n) ]%n",
 			       prob->params[prob->num_params].Val, &n)==1) {
 	prob->params[prob->num_params].Index = i++;
-	strcpy(prob->params[prob->num_params++].Name, string);
+	strncpy(prob->params[prob->num_params].Name, string,
+		sizeof(prob->params[prob->num_params].Name) - 1);
+	prob->params[prob->num_params].Name[
+		sizeof(prob->params[prob->num_params].Name) - 1] = '\0';
+	prob->num_params++;
 
 	prob->params = (Parameter_Pair*) realloc(prob->params,
 		       (prob->num_params+1) * sizeof(Parameter_Pair));
@@ -815,16 +829,20 @@ void gen_par_filename (
   double dnprocs = (double)nprocs;
   double dndisks = (double)pio_info->num_dsk_ctrlrs;
 
+  /* All callers pass par_fname buffers of FILENAME_MAX+1 chars; truncate
+   * rather than overflow the caller's stack buffer. */
   if (pio_info->num_dsk_ctrlrs <= 0)
-    sprintf(par_fname, "%s/%s.%d.%0*d", pio_info->pdsk_root, scalar_fname,
-	    nprocs, 1+(int)log10(dnprocs), myproc);
+    snprintf(par_fname, FILENAME_MAX+1, "%s/%s.%d.%0*d", pio_info->pdsk_root,
+	    scalar_fname, nprocs, 1+(int)log10(dnprocs), myproc);
   else if (pio_info->zeros)
-    sprintf(par_fname, "%s%0*d/%s%s.%d.%0*d", pio_info->pdsk_root,
+    snprintf(par_fname, FILENAME_MAX+1, "%s%0*d/%s%s.%d.%0*d",
+	    pio_info->pdsk_root,
 	    pio_info->num_dsk_ctrlrs<9 ? 2 : 1+(int)log10(dndisks),
 	    pio_info->rdisk, pio_info->pdsk_subdir, scalar_fname, nprocs,
 	    1 + (int) log10(dnprocs), myproc);
   else
-    sprintf(par_fname, "%s%d/%s/%s.%d.%0*d", pio_info->pdsk_root,
+    snprintf(par_fname, FILENAME_MAX+1, "%s%d/%s/%s.%d.%0*d",
+	    pio_info->pdsk_root,
 	    pio_info->rdisk, pio_info->pdsk_subdir, scalar_fname, nprocs,
 	    1 + (int) log10(dnprocs), myproc);
 }

@@ -1054,6 +1054,12 @@ endif
 inp_line = adjustl(inp_line)
 num = 1
 do
+! don't write past the end of the caller's array
+   if (num > size(ints)) then
+      print *,"ERROR: too many values on graph file input line"
+      num = 1
+      exit
+   endif
 ! read the next integer
    read(inp_line,*,iostat=iostat) ints(num)
    if (iostat /= 0) exit
@@ -1099,6 +1105,12 @@ endif
 inp_line = adjustl(inp_line)
 num = 1
 do
+! don't write past the end of the caller's array
+   if (num > size(floats)) then
+      print *,"ERROR: too many values on input line"
+      num = 1
+      exit
+   endif
 ! read the next float
    read(inp_line,*,iostat=iostat) floats(num)
    if (iostat /= 0) exit

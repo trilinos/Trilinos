@@ -1898,7 +1898,12 @@ int found;
   found = 0;     /* null terminate last token */
 
   while (*c1){
-    loc[found++] = c1++;
+    loc[found % 10] = c1++;  /* ring buffer of the last 10 token starts;
+                                never write past loc[] however many tokens
+                                the line contains */
+    found++;
+    if ((direction == 1) && (found > nth))
+      break;                 /* already saw the nth token from the front */
     while (*c1 && !IS_BLANK(*c1)) c1++;
     while (*c1 && IS_BLANK(*c1)) c1++;
   }
@@ -1907,7 +1912,7 @@ int found;
     if (direction == 1)
       c1 = loc[nth];
     else
-      c1 = loc[found - nth - 1];
+      c1 = loc[(found - nth - 1) % 10];
   }
   else
     c1 = NULL;
@@ -1929,11 +1934,15 @@ size_t sanity = 0;
 
 static void make_string(char *buf, char *str)
 {
+  size_t len = 0;
+
   *str = 0;
 
   /* replace new line character with NULL character */
+  /* every destination is a MATRIX_MARKET_MAX_LINE+1 char buffer;
+     truncate overlong lines rather than overflow it */
 
-  while (*buf && (*buf != '\n')){
+  while (*buf && (*buf != '\n') && (len++ < MATRIX_MARKET_MAX_LINE)){
     *str++ = *buf++;
   }
 

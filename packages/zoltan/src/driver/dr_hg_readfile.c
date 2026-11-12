@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <limits.h>
 #include "zoltan.h"
 
 #include "dr_const.h"
@@ -29,7 +30,7 @@ extern "C" {
 static int   readfile  (int, ZOLTAN_FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);
 
-static int nextstr (ZOLTAN_FILE* f, char *string);
+static int nextstr (ZOLTAN_FILE* f, char *string, int size);
 
 
 /* These routines work with multiple (vector) vertex and hyperedge weights */
@@ -130,16 +131,26 @@ static int readfile (
   float *p;
   const char *yo = "readfile";
 
-  if (!(*index  = (int*) malloc ((*nEdge+1) * sizeof(int)))
-   || !(*vertex = (int*) malloc ((*nPins    * sizeof(int)))))
+  /* Validate header counts before using them to size allocations:
+   * negative counts underallocate (e.g. nEdge=-1 gives malloc(0)) and
+   * large counts can overflow the int size arithmetic. */
+  if (*nVtx < 0 || *nEdge < 0 || *nPins < 0
+   || *vwgt_dim < 0 || *ewgt_dim < 0
+   || *nEdge == INT_MAX
+   || (*vwgt_dim > 0 && *nVtx  > INT_MAX / *vwgt_dim)
+   || (*ewgt_dim > 0 && *nEdge > INT_MAX / *ewgt_dim))
+      ERROR (Proc, yo, "Invalid counts in file header.", ZOLTAN_FATAL);
+
+  if (!(*index  = (int*) malloc (((size_t)*nEdge+1) * sizeof(int)))
+   || !(*vertex = (int*) malloc (((size_t)*nPins    * sizeof(int)))))
       ERROR (Proc, yo, "Insufficient memory", ZOLTAN_MEMERR);
 
   if (*vwgt_dim > 0
-   && !(*vwgt = (float*) malloc (*nVtx * *vwgt_dim * sizeof (float))))
+   && !(*vwgt = (float*) malloc ((size_t)*nVtx * *vwgt_dim * sizeof (float))))
       ERROR (Proc, yo, "Insufficient memory", ZOLTAN_MEMERR)
 
   if (*ewgt_dim > 0
-   && !(*ewgt = (float*) malloc (*nEdge * *ewgt_dim * sizeof (float))))
+   && !(*ewgt = (float*) malloc ((size_t)*nEdge * *ewgt_dim * sizeof (float))))
       ERROR (Proc, yo, "Insufficient memory", ZOLTAN_MEMERR)
 
   pin = 0;
@@ -147,12 +158,16 @@ static int readfile (
   for (i = 0; i < *nEdge; i++) {
      (*index)[i] = pin;
      for (j = 0; j < *ewgt_dim; j++) {
-        if (nextstr (f, string) != 1)
+        if (nextstr (f, string, BUF_LEN) != 1)
            ERROR (Proc, yo, "Wrong number of edge weights", ZOLTAN_FATAL)
         *p++ = atof (string);
      }
-     while (nextstr (f,string) == 1)
+     while (nextstr (f,string,BUF_LEN) == 1) {
+        if (pin >= *nPins)
+           ERROR (Proc, yo, "More pins in file than declared in header.",
+                  ZOLTAN_FATAL);
         (*vertex)[pin++] = atoi(string);
+     }
   }
   (*index)[i] = pin;
   if (pin != *nPins)
@@ -161,13 +176,13 @@ static int readfile (
   p = *vwgt;
   if (*vwgt_dim > 0)
      for (i = 0; i < *nVtx; i++) {
-        for (j = 0; nextstr (f, string) == 1 && j < *vwgt_dim; j++)
+        for (j = 0; nextstr (f, string, BUF_LEN) == 1 && j < *vwgt_dim; j++)
            *p++ = atof (string);
         if (j != *vwgt_dim)
 	  ERROR (Proc, yo, "Wrong number of vertex weights", ZOLTAN_FATAL)
      }
 
-  if (nextstr (f, string) == 1)
+  if (nextstr (f, string, BUF_LEN) == 1)
      ERROR (Proc, yo, "Input file is longer than expected", ZOLTAN_FATAL)
   return ZOLTAN_OK;
 }
@@ -175,7 +190,9 @@ static int readfile (
 
 /*****************************************************************************/
 /* Uses character reads to read arbitrary long hyperedge definition lines.   */
-static int nextstr (ZOLTAN_FILE* f, char *string)
+/* Stores at most size-1 characters plus a terminating NUL in string;        */
+/* characters beyond that are consumed but not stored.                       */
+static int nextstr (ZOLTAN_FILE* f, char *string, int size)
 {
   char ch;
 
@@ -193,7 +210,10 @@ static int nextstr (ZOLTAN_FILE* f, char *string)
       ZOLTAN_FILE_ungetc (ch, f);  /* ??? */
       return 1;
     }
-    *string++ = ch;
+    if (size > 1) {
+      *string++ = ch;
+      size--;
+    }
     ch = ZOLTAN_FILE_getc(f);
   }
 }
