@@ -104,7 +104,6 @@ class MatrixFreeRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Globa
   PAMatrix paValueValue_;
 
   //! @name Constructor/Destructor
-  //@{
 
   //! Constructor
   MatrixFreeRowMatrix(Teuchos::RCP<const map_type> &ownedMap,
@@ -130,10 +129,7 @@ class MatrixFreeRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Globa
 
     // partial assembly: compute basis values, allocate storage
 
-    int basisCardinality = int(basis_->getCardinality());
     LocalOrdinal numOwnedElems = elemOrts_.extent_int(0);
-    DynRankView elemsRHS("elemsRHS", numOwnedElems, basisCardinality);
-    const std::string blockId = "eblock-0_0_0";
 
     {
       // ************************************ ASSEMBLY OF LOCAL ELEMENT MATRICES **************************************
@@ -146,10 +142,8 @@ class MatrixFreeRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Globa
       // compute oriented basis functions at quadrature points
       auto basisValuesAtQPoints = basis_->allocateBasisValues(tensorQuadPoints, Intrepid2::OPERATOR_VALUE);
       basis_->getValues(basisValuesAtQPoints, tensorQuadPoints, Intrepid2::OPERATOR_VALUE);
-      basisValuesAtQPoints.setBasis(basis_);
       auto basisGradsAtQPoints = basis_->allocateBasisValues(tensorQuadPoints, Intrepid2::OPERATOR_GRAD);
       basis_->getValues(basisGradsAtQPoints, tensorQuadPoints, Intrepid2::OPERATOR_GRAD);
-      basisGradsAtQPoints.setBasis(basis_);
 
       auto jacobian = geometry_->allocateJacobianData(tensorQuadPoints);
       auto jacobianDet = ct::allocateJacobianDet(jacobian);
@@ -167,8 +161,8 @@ class MatrixFreeRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Globa
       transformedBasisValues_ = fst::getHGRADtransformVALUE(numOwnedElems, basisValuesAtQPoints);
       transformedBasisGradients_ = fst::getHGRADtransformGRAD(jacobianInv_, basisGradsAtQPoints);
 
-      paGradGrad_   = PAMatrix(transformedBasisGradients_, cellMeasures_, transformedBasisGradients_, elemOrts_);
-      paValueValue_ = PAMatrix(transformedBasisValues_,    cellMeasures_, transformedBasisValues_,    elemOrts_);
+      paGradGrad_   = PAMatrix(transformedBasisGradients_, cellMeasures_, transformedBasisGradients_, elemOrts_, basis_, basis_);
+      paValueValue_ = PAMatrix(transformedBasisValues_,    cellMeasures_, transformedBasisValues_,    elemOrts_, basis_, basis_);
     }
   };
 
@@ -196,21 +190,7 @@ class MatrixFreeRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Globa
 
     auto basisCardinality = basis_->getCardinality();
     LocalOrdinal numOwnedElems = elemOrts_.extent(0);
-    //    DynRankView elemsMat("elemsMat", numOwnedElems, basisCardinality, basisCardinality);
-    //    DynRankView elemsRHS("elemsRHS", numOwnedElems, basisCardinality);
     const std::string blockId = "eblock-0_0_0";
-
-    //    {
-    //      // assemble the matrix: integrate and apply orientation
-    //      auto integralData = its::allocateIntegralData(transformedBasisGradients_, cellMeasures_, transformedBasisGradients_);
-    //
-    //      bool sumInto = false;
-    //      its::integrate(integralData, transformedBasisValues_, cellMeasures_, transformedBasisValues_, sumInto);
-    //      sumInto = true;
-    //      its::integrate(integralData, transformedBasisGradients_, cellMeasures_, transformedBasisGradients_, sumInto);
-    //
-    //      ots::modifyMatrixByOrientation(elemsMat, integralData.getUnderlyingView(), elemOrts_, basis_.get(), basis_.get());
-    //    }
 
     X_ownedAndGhosted_->doImport(X, *importer_, Tpetra::INSERT);
     Y_ownedAndGhosted_->putScalar(0.);
@@ -235,16 +215,6 @@ class MatrixFreeRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Globa
         X_3D(c,f,n) = alpha * lclX(localColId, n);
       });
       ExecutionSpace().fence();
-
-//      using namespace std;
-//      cout << "MF: elementLIDs:\n";
-//      Intrepid2::printFunctor2(elementLIDs, cout);
-//      cout << "MF: elmtOffsetKokkos:\n";
-//      Intrepid2::printFunctor2(elmtOffsetKokkos, cout);
-//      cout << "MF: lclX:\n";
-//      Intrepid2::printFunctor2(lclX, cout);
-//      cout << "MF: X_3D:\n";
-//      Intrepid2::printFunctor3(X_3D, cout);
 
       {
         //MARK: Grad-Grad
@@ -272,38 +242,9 @@ class MatrixFreeRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Globa
                            KOKKOS_LAMBDA(const local_ordinal_t &c, const local_ordinal_t &f, const local_ordinal_t &n)
                            {
         const local_ordinal_t & localRowId = elementLIDs(c,elmtOffsetKokkos(f));
-        lclY(localRowId, n) += Y_3D(c,f,n);
+        Kokkos::atomic_add(&lclY(localRowId, n), Y_3D(c,f,n)); // cells share DOFs
       });
       ExecutionSpace().fence();
-
-//      cout << "MF: lclY:\n";
-//      Intrepid2::printFunctor2(lclY, std::cout);
-//      cout << "MF: Y_3D:\n";
-//      Intrepid2::printFunctor3(Y_3D, std::cout);
-
-      //      Kokkos::parallel_for
-      //        ("Matrix-free apply",
-      //         Kokkos::RangePolicy<typename DeviceType::execution_space, int> (0, numOwnedElems),
-      //         KOKKOS_LAMBDA (const size_t elemId) {
-      //          // Get subviews
-      //          auto elemMat = Kokkos::subview(elemsMat,elemId, Kokkos::ALL(), Kokkos::ALL());
-      //          auto elemLIds  = Kokkos::subview(elementLIDs,elemId, Kokkos::ALL());
-      //
-      //          // For each DoF (row) on the current element
-      //          for (local_ordinal_t rowId = 0; rowId < basisCardinality; ++rowId) {
-      //            const local_ordinal_t localRowId = elemLIds(elmtOffsetKokkos(rowId));
-      //
-      //            // For each DoF (column) on the current element
-      //            for (local_ordinal_t colId = 0; colId < basisCardinality; ++colId) {
-      //              const local_ordinal_t localColId = elemLIds(elmtOffsetKokkos(colId));
-      //
-      //              // For each column of the multivector
-      //              for (size_t noVector = 0; noVector < lclX.extent(1); ++noVector)
-      //                Kokkos::atomic_add (&(lclY(localRowId, noVector)), alpha * elemMat(rowId, colId) * lclX(localColId, noVector));
-      //            }
-      //          }
-      //        });
-      //      Kokkos::fence();
     }
 
     Y.scale(beta);
@@ -311,27 +252,16 @@ class MatrixFreeRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Globa
   }
 
   void computeDiagonal(Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& diagonal) const {
-
-    Teuchos::TimeMonitor computeDiagonalTimer =  *Teuchos::TimeMonitor::getNewTimer("matrix-free computeDiagonal (not really matrix-free yet)");
-    auto basisCardinality = basis_->getCardinality();
-    LocalOrdinal numOwnedElems = elemOrts_.extent(0);
-    DynRankView elemsMat("elemsMat", numOwnedElems, basisCardinality, basisCardinality);
-    DynRankView elemsRHS("elemsRHS", numOwnedElems, basisCardinality);
+    Teuchos::TimeMonitor computeDiagonalTimer =  *Teuchos::TimeMonitor::getNewTimer("matrix-free computeDiagonal");
+    const auto basisCardinality = basis_->getCardinality();
+    const LocalOrdinal numOwnedElems = elemOrts_.extent(0);
     const std::string blockId = "eblock-0_0_0";
 
-    {
-      // ************************************ ASSEMBLY OF LOCAL ELEMENT MATRICES **************************************
-
-      // assemble the matrix: integrate and apply orientation
-      auto integralData = its::allocateIntegralData(transformedBasisGradients_, cellMeasures_, transformedBasisGradients_);
-
-      bool sumInto = false;
-      its::integrate(integralData, transformedBasisValues_, cellMeasures_, transformedBasisValues_, sumInto);
-      sumInto = true;
-      its::integrate(integralData, transformedBasisGradients_, cellMeasures_, transformedBasisGradients_, sumInto);
-
-      ots::modifyMatrixByOrientation(elemsMat, integralData.getUnderlyingView(), elemOrts_, basis_.get(), basis_.get());
-    }
+    // from the sum-factorized assembled matrix)
+    auto gradGradDiagonal   = paGradGrad_.allocateDiagonalStorage();
+    auto valueValueDiagonal = paValueValue_.allocateDiagonalStorage();
+    paGradGrad_.extractDiagonal(gradGradDiagonal);
+    paValueValue_.extractDiagonal(valueValueDiagonal);
 
     diagonal.putScalar(0.);
     Y_ownedAndGhosted_->putScalar(0.);
@@ -342,18 +272,12 @@ class MatrixFreeRowMatrix : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Globa
       auto lclDiag = Y_ownedAndGhosted_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
       Kokkos::parallel_for
-        ("Matrix-free apply",
+        ("Matrix-free diagonal: sum element diagonals",
          Kokkos::RangePolicy<typename DeviceType::execution_space, int> (0, numOwnedElems),
-         KOKKOS_LAMBDA (const size_t elemId) {
-          // Get subviews
-          auto elemMat = Kokkos::subview(elemsMat,elemId, Kokkos::ALL(), Kokkos::ALL());
-          auto elemLIds  = Kokkos::subview(elementLIDs,elemId, Kokkos::ALL());
-
-          // For each DoF (row) on the current element
+         KOKKOS_LAMBDA (const int elemId) {
           for (local_ordinal_t rowId = 0; rowId < basisCardinality; ++rowId) {
-            const local_ordinal_t localRowId = elemLIds(elmtOffsetKokkos(rowId));
-
-            Kokkos::atomic_add (&(lclDiag(localRowId, 0)), elemMat(rowId, rowId));
+            const local_ordinal_t localRowId = elementLIDs(elemId, elmtOffsetKokkos(rowId));
+            Kokkos::atomic_add (&(lclDiag(localRowId, 0)), gradGradDiagonal(elemId, rowId) + valueValueDiagonal(elemId, rowId));
           }
         });
       Kokkos::fence();

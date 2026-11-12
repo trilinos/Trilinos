@@ -99,6 +99,7 @@
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_StackedTimer.hpp"
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -192,23 +193,25 @@ namespace Example {
 
   struct SolveMetrics
   {
-    double matrixFreeTotalTime;      // time in seconds for all matrix-free-specific operations (setup + solve)
-    double assembledTotalTime;       // time in seconds for all assembled-matrix-specific operations (setup + solve)
+    double matrixFreeTotalTime = 0;      // time in seconds for all matrix-free-specific operations (setup + solve)
+    double assembledTotalTime = 0;       // time in seconds for all assembled-matrix-specific operations (setup + solve)
     
-    double assembledSolveTime;       // time in seconds for assembled-matrix solve (neglecting setup time)
-    double matrixFreeSolveTime;      // time in seconds for matrix-free solve (neglecting setup time)
+    double assembledSolveTime = 0;       // time in seconds for assembled-matrix solve (neglecting setup time)
+    double matrixFreeSolveTime = 0;      // time in seconds for matrix-free solve (neglecting setup time)
     
-    double matrixFreeGemmFlops;      // estimated total operation count (multiplies and adds) involved in gemm() calls from PAMatrix
-    double matrixFreeGemmTime;       // time in seconds spent in gemm() calls from PAMatrix
-    double matrixFreeGemmThroughput; // estimated throughput in Gigaflops involved in gemm() calls from PAMatrix
+    double matrixFreeGemmFlops = 0;      // estimated total operation count (multiplies and adds) involved in gemm() calls from PAMatrix
+    double matrixFreeGemmTime = 0;       // time in seconds spent in gemm() calls from PAMatrix
+    double matrixFreeGemmThroughput = 0; // estimated throughput in Gigaflops involved in gemm() calls from PAMatrix
     
-    double matrixFreeExtractDiagonalTime; // time in seconds spent in PAMatrix::extractDiagonal()
+    double matrixFreeExtractDiagonalTime = 0; // time in seconds spent in PAMatrix::extractDiagonal()
     
-    int assembledIterationCount;
-    int matrixFreeIterationCount;
+    int assembledIterationCount  = -1;
+    int matrixFreeIterationCount = -1;
     
-    bool assembledSolveSuccess;  // true indicates that the iterative solver converged
-    bool matrixFreeSolveSuccess; // true indicates that the iterative solver converged
+    bool assembledSolveSuccess  = false; // true indicates that the iterative solver converged
+    bool matrixFreeSolveSuccess = false; // true indicates that the iterative solver converged
+
+    int errorFlag = 0; // nonzero if the driver failed on this rank (verification failure, exception, or no convergence)
   };
 
 
@@ -415,6 +418,8 @@ SolveMetrics feAssemblyHex(const int &degree,
 {
   SolveMetrics solveMetrics;
   
+  // PAMatrix's GEMM statistics are opt-in (process-wide; each recorded GEMM is followed by a fence)
+  Intrepid2::PAMatrix<DeviceType,double>::setGEMMStatisticsEnabled(true);
   double gemmBaseFlops = Intrepid2::PAMatrix<DeviceType,double>::gemmFlopCount();
   double gemmBaseTime  = Intrepid2::PAMatrix<DeviceType,double>::gemmTimeSeconds();
   
@@ -517,7 +522,7 @@ SolveMetrics feAssemblyHex(const int &degree,
       getFancyOStream(Teuchos::rcpFromRef (std::cout)) :
       getFancyOStream(Teuchos::rcp (new Teuchos::oblackholestream ()));
 
-    *outStream << "DeviceSpace::  "; DeviceType().print_configuration(*outStream, false);
+    *outStream << "DeviceSpace::  "; typename DeviceType::execution_space().print_configuration(*outStream, false);
     *outStream << "HostSpace::    "; HostSpaceType().print_configuration(*outStream, false);
     *outStream << "\n";
     stacked_timer->setVerboseOstream(outStream);
@@ -788,7 +793,7 @@ SolveMetrics feAssemblyHex(const int &degree,
       std::string fieldName = "order"+std::to_string(degree);
       auto maps = buildMaps(dofManager, fieldName);
       ownedMap = std::get<0>(maps);
-      ownedAndGhostedMap = std::get<0>(maps);
+      ownedAndGhostedMap = std::get<1>(maps);
       feGraph = buildFEGraph(dofManager, fieldName, ownedMap, ownedAndGhostedMap);
     }
 
@@ -941,6 +946,7 @@ SolveMetrics feAssemblyHex(const int &degree,
             coarseNullspace->putScalar(1.);
             auto thyra_coarseNullspace = Thyra::createMultiVector(coarseNullspace);
             strat_params->sublist("Preconditioner Types").sublist("MueLu").sublist("level " + std::to_string(mueluLevel+1)+" user data").set("Nullspace", thyra_coarseNullspace);
+            strat_params_mf->sublist("Preconditioner Types").sublist("MueLu").sublist("level " + std::to_string(mueluLevel+1)+" user data").set("Nullspace", thyra_coarseNullspace);
           }
           { // Set up coordinates for problem
 
@@ -958,6 +964,7 @@ SolveMetrics feAssemblyHex(const int &degree,
 
             auto thyra_coarseCoords = Thyra::createMultiVector(coarseCoords);
             strat_params->sublist("Preconditioner Types").sublist("MueLu").sublist("level " + std::to_string(mueluLevel+1)+" user data").set("Coordinates", thyra_coarseCoords);
+            strat_params_mf->sublist("Preconditioner Types").sublist("MueLu").sublist("level " + std::to_string(mueluLevel+1)+" user data").set("Coordinates", thyra_coarseCoords);
           }
         }
 
@@ -970,6 +977,7 @@ SolveMetrics feAssemblyHex(const int &degree,
       if (strat_params->sublist("Preconditioner Types").sublist("MueLu").isParameter("coarse: max size"))
         maxCoarseGridSize = std::min(strat_params->sublist("Preconditioner Types").sublist("MueLu").get<int>("coarse: max size"), maxCoarseGridSize);
       strat_params->sublist("Preconditioner Types").sublist("MueLu").set("coarse: max size", maxCoarseGridSize);
+      strat_params_mf->sublist("Preconditioner Types").sublist("MueLu").set("coarse: max size", maxCoarseGridSize);
     }
 
     // ************************************ CODE VERIFICATION **************************************
@@ -1166,7 +1174,7 @@ SolveMetrics feAssemblyHex(const int &degree,
   stacked_timer->stop("Matrix-free driver");
   
   {
-    std::string computeDiagonalTimerLabel = "matrix-free computeDiagonal (not really matrix-free yet)";
+    std::string computeDiagonalTimerLabel = "matrix-free computeDiagonal";
     Teuchos::stat_map_type statData;
     std::vector<std::string> statNames;
     Teuchos::TimeMonitor::computeGlobalTimerStatistics(statData, statNames, Teuchos::Intersection, computeDiagonalTimerLabel);
@@ -1189,7 +1197,7 @@ SolveMetrics feAssemblyHex(const int &degree,
   solveMetrics.matrixFreeSolveTime = matrixFreeSolveTime;
   
   solveMetrics.matrixFreeGemmFlops      = Intrepid2::PAMatrix<DeviceType,double>::gemmFlopCount() - gemmBaseFlops;
-  solveMetrics.matrixFreeGemmTime       = Intrepid2::PAMatrix<DeviceType,double>::gemmTimeSeconds();
+  solveMetrics.matrixFreeGemmTime       = Intrepid2::PAMatrix<DeviceType,double>::gemmTimeSeconds() - gemmBaseTime;
   solveMetrics.matrixFreeGemmThroughput = gemmThroughput;
   
   Teuchos::StackedTimer::OutputOptions options;
@@ -1227,7 +1235,8 @@ SolveMetrics feAssemblyHex(const int &degree,
   {
     *outStream << "Matrix-free solve converged after " << solveMetrics.matrixFreeIterationCount << " iterations.\n";
   }
-  
+
+  solveMetrics.errorFlag = errorFlag;
   return solveMetrics;
 }
 
@@ -1268,7 +1277,7 @@ int feAssemblyHex(int argc, char *argv[]) {
   clp.setOption("timings-file",&timingsFile);
   clp.setOption("test-name", &test_name, "Name of test (for Watchr output)");
   clp.setOption("verbose", &verbose);
-  std::string stratFileName = "stratimikos.xml";
+  std::string stratFileName = "stratimikos-chebyshev.xml";
   clp.setOption("stratimikosParams", &stratFileName);
   auto cmdResult = clp.parse(argc,argv);
   cubDegree = (cubDegree == -1) ? 2*degree : cubDegree;
@@ -1288,16 +1297,21 @@ int feAssemblyHex(int argc, char *argv[]) {
                                                         stratFileName, timingsFile, test_name,
                                                         verbose);
     errorFlag += !(solveMetrics.assembledSolveSuccess && solveMetrics.matrixFreeSolveSuccess);
+    if (solveMetrics.errorFlag != 0) errorFlag++;
   }
 
-  Teuchos::RCP<Teuchos::FancyOStream> outStream = getFancyOStream(Teuchos::rcpFromRef(std::cout));
+  // the test fails if it failed on any rank; rank 0 reports
+  int localFailure = (errorFlag != 0) ? 1 : 0, numFailedRanks = 0;
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, localFailure, Teuchos::outArg(numFailedRanks));
+  if (comm->getRank() == 0)
+  {
+    if (numFailedRanks != 0)
+      std::cout << "End Result: TEST FAILED on " << numFailedRanks << " rank(s)\n";
+    else
+      std::cout << "End Result: TEST PASSED\n";
+  }
 
-  if (errorFlag != 0)
-    *outStream << "End Result: TEST FAILED = " << errorFlag << "\n";
-  else
-    *outStream << "End Result: TEST PASSED\n";
-
-  return errorFlag;
+  return (numFailedRanks != 0) ? 1 : 0;
 }
 }
 }
