@@ -55,7 +55,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   )
   LIST(APPEND SOURCES ${MATRIXMARKET_OUTPUT_FILES})
 
-  # Generate ETI .cpp files for Tpetra::BinaryIO.
+  # Generate ETI .cpp files for Tpetra::experimental::BinaryIO.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(
     BINARYIO_OUTPUT_FILES
     "TpetraInOut_ETI_SC_LO_GO_NT.tmpl"
@@ -69,7 +69,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   )
   LIST(APPEND SOURCES ${BINARYIO_OUTPUT_FILES})
 
-  # Generate ETI .cpp files for Tpetra::readBinaryMapFile.  This free function
+  # Generate ETI .cpp files for Tpetra::experimental::readBinaryMapFile.  This free function
   # is templated only on LocalOrdinal, GlobalOrdinal, and Node (the LGN scheme),
   # so it lives in its own translation unit (Tpetra_ReadBinaryMapFile) with its
   # own instantiation macro, independent of the Scalar-templated BinaryIO class.

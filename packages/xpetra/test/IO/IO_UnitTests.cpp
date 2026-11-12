@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryMissingRows, M, MA, Scalar, LO, GO, 
   const std::string filename = makeBinaryFilename("xpetra_io_binary_missing_rows", *comm);
 
   using tpetra_map_type = Tpetra::Map<LO, GO, Node>;
-  using binary_io_type  = Tpetra::BinaryIO<Scalar, LO, GO, Node>;
+  using binary_io_type  = Tpetra::experimental::BinaryIO<Scalar, LO, GO, Node>;
 
   auto tpetraRowMap = Teuchos::rcp(new tpetra_map_type(5, static_cast<GO>(0), comm));
   auto tpetraAWrite = makeBinaryMissingRowsMatrix<Scalar, LO, GO, Node>(tpetraRowMap, tpetraRowMap);
@@ -207,7 +207,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryLegacyConversion, M, MA, Scalar, LO,
   const std::string convertedFilename = makeBinaryFilename("xpetra_io_legacy_missing_rows_converted", *comm);
 
   writeLegacyBinaryMissingRowsFile(legacyFilename, comm, true);
-  Xpetra::IO<Scalar, LO, GO, Node>::ConvertLegacyBinaryToBinary(legacyFilename, convertedFilename, lib, comm);
+  Xpetra::experimental::ConvertLegacyBinaryToBinary<Scalar, LO, GO, Node>(legacyFilename, convertedFilename, lib, comm);
 
   auto A = Xpetra::IO<Scalar, LO, GO, Node>::Read(convertedFilename, lib, comm, true);
   TEUCHOS_ASSERT_EQUALITY(A->getGlobalNumRows(), 5);
@@ -291,7 +291,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryCustomColMap, M, MA, Scalar, LO, GO,
 
   using tpetra_map_type = Tpetra::Map<LO, GO, Node>;
   using device_type     = typename tpetra_map_type::device_type;
-  using binary_io_type  = Tpetra::BinaryIO<Scalar, LO, GO, Node>;
+  using binary_io_type  = Tpetra::experimental::BinaryIO<Scalar, LO, GO, Node>;
 
   auto tpetraRowMap = Teuchos::rcp(new tpetra_map_type(5, static_cast<GO>(0), comm));
   Kokkos::View<GO*, device_type> colGids("Xpetra_IO_UnitTests::customColGids", 3);

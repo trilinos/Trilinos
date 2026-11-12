@@ -14,9 +14,9 @@
 /// \brief Inline utilities shared by Tpetra's binary I/O readers and writers.
 ///
 /// These helpers are intentionally header-only and free of explicit template
-/// instantiation.  They are shared between the \c Tpetra::BinaryIO class
+/// instantiation.  They are shared between the \c Tpetra::experimental::BinaryIO class
 /// (see Tpetra_BinaryIO_decl.hpp) and the free function
-/// \c Tpetra::readBinaryMapFile (see Tpetra_ReadBinaryMapFile_decl.hpp), which
+/// \c Tpetra::experimental::readBinaryMapFile (see Tpetra_ReadBinaryMapFile_decl.hpp), which
 /// live in separate translation units so that their explicit template
 /// instantiations stay independent.
 
@@ -35,6 +35,7 @@
 #include <string>
 
 namespace Tpetra {
+namespace experimental {
 namespace Details {
 
 /// \brief Cast an unsigned 64-bit count to \c size_t, throwing if it does not fit.
@@ -204,8 +205,8 @@ void binaryIOWriteArrayFromRoot(const std::string& filename,
     binaryIOCheckedAddByteOffset(dataOffset, byteCount - 1ull);
   }
 #ifdef HAVE_TPETRACORE_MPI
-  if (teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = extractMpiCommFromTeuchos(*comm);
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Tpetra::Details::extractMpiCommFromTeuchos(*comm);
     MPI_File file;
     const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
     TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
@@ -270,8 +271,8 @@ void binaryIOReadArrayFromRoot(const std::string& filename,
     binaryIOCheckedAddByteOffset(dataOffset, byteCount - 1ull);
   }
 #ifdef HAVE_TPETRACORE_MPI
-  if (teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = extractMpiCommFromTeuchos(*comm);
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Tpetra::Details::extractMpiCommFromTeuchos(*comm);
     MPI_File file;
     const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
     TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
@@ -346,8 +347,8 @@ void binaryIOWriteArrayCollective(const std::string& filename,
   const unsigned long long byteOffset = binaryIOCheckedByteOffset(dataOffset, globalOffset, sizeof(T));
   binaryIOCheckedAddByteOffset(byteOffset, byteCount);
 #ifdef HAVE_TPETRACORE_MPI
-  if (teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = extractMpiCommFromTeuchos(*comm);
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Tpetra::Details::extractMpiCommFromTeuchos(*comm);
     MPI_File file;
     const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
     TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
@@ -419,8 +420,8 @@ void binaryIOReadArrayCollective(const std::string& filename,
   const unsigned long long byteOffset = binaryIOCheckedByteOffset(dataOffset, globalOffset, sizeof(T));
   binaryIOCheckedAddByteOffset(byteOffset, byteCount);
 #ifdef HAVE_TPETRACORE_MPI
-  if (teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = extractMpiCommFromTeuchos(*comm);
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Tpetra::Details::extractMpiCommFromTeuchos(*comm);
     MPI_File file;
     const int openErr = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
     TEUCHOS_TEST_FOR_EXCEPTION(openErr != MPI_SUCCESS, std::runtime_error,
@@ -480,6 +481,7 @@ void binaryIOReadArrayCollective(const std::string& filename,
 }
 
 }  // namespace Details
+}  // namespace experimental
 }  // namespace Tpetra
 
 #endif  // TPETRA_BINARYIO_HELPERS_HPP

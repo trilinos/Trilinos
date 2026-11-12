@@ -40,6 +40,7 @@
 #include <type_traits>
 
 namespace Tpetra {
+namespace experimental {
 
 namespace Details {
 
@@ -223,7 +224,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::validateHeader(const F
                              std::runtime_error,
                              "Tpetra::BinaryIO: File does not have a recognized Tpetra binary I/O header. "
                                  << "Legacy Xpetra binary matrix files must be converted with "
-                                 << "Xpetra::IO::ConvertLegacyBinaryToBinary before reading with Tpetra::BinaryIO.");
+                                 << "Xpetra::experimental::ConvertLegacyBinaryToBinary before reading with Tpetra::experimental::BinaryIO.");
   TEUCHOS_TEST_FOR_EXCEPTION(header.version != fileVersion,
                              std::runtime_error,
                              "Tpetra::BinaryIO: Unsupported file version " << header.version << ".");
@@ -304,7 +305,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeHeaderToNewFile(c
                                                                                const FileHeader& header,
                                                                                const trcp_tcomm_t& comm) {
 #ifdef HAVE_TPETRACORE_MPI
-  if (Details::teuchosCommIsAnMpiComm(*comm)) {
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
     // Rank 0 alone creates, truncates, and writes the header.  A collective
     // MPI_File_set_size followed by rank 0's write conflicts under MPI's default
     // consistency semantics: without sync-barrier-sync, another process's
@@ -356,8 +357,8 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readHeaderFromFile(const st
   FileHeader header;
   std::memset(&header, 0, sizeof(FileHeader));
 #ifdef HAVE_TPETRACORE_MPI
-  if (Details::teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = Details::extractMpiCommFromTeuchos(*comm);
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Tpetra::Details::extractMpiCommFromTeuchos(*comm);
     MPI_File file;
     const int err = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()),
                                   MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
@@ -419,8 +420,8 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeMapSectionHeader(
                                                                                 const MapSectionHeader& header,
                                                                                 const trcp_tcomm_t& comm) {
 #ifdef HAVE_TPETRACORE_MPI
-  if (Details::teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = Details::extractMpiCommFromTeuchos(*comm);
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Tpetra::Details::extractMpiCommFromTeuchos(*comm);
     MPI_File file;
     const int err = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
@@ -457,8 +458,8 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapSectionHeader(const 
   MapSectionHeader header;
   std::memset(&header, 0, sizeof(MapSectionHeader));
 #ifdef HAVE_TPETRACORE_MPI
-  if (Details::teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = Details::extractMpiCommFromTeuchos(*comm);
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Tpetra::Details::extractMpiCommFromTeuchos(*comm);
     MPI_File file;
     const int err = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
@@ -489,8 +490,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 unsigned long long BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::exclusiveScanUnsignedLongLong(const unsigned long long localValue,
                                                                                                       const trcp_tcomm_t& comm) {
 #ifdef HAVE_TPETRACORE_MPI
-  if (Details::teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm          = Details::extractMpiCommFromTeuchos(*comm);
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm          = Tpetra::Details::extractMpiCommFromTeuchos(*comm);
     unsigned long long result = 0;
     const int err             = MPI_Exscan(const_cast<unsigned long long*>(&localValue), &result, 1,
                                            MPI_UNSIGNED_LONG_LONG, MPI_SUM, rawComm);
@@ -597,7 +598,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const typename BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>
 BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapFile(const std::string& filename,
                                                                  const trcp_tcomm_t& comm) {
-  return Tpetra::readBinaryMapFile<LocalOrdinal, GlobalOrdinal, Node>(filename, comm);
+  return Tpetra::experimental::readBinaryMapFile<LocalOrdinal, GlobalOrdinal, Node>(filename, comm);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -937,16 +938,17 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
   return readSparseFile(filename, rowMap, Teuchos::null, domainMap, rangeMap, callFillComplete);
 }
 
+}  // namespace experimental
 }  // namespace Tpetra
 
 //
-// Explicit template instantiation macro for the Tpetra::BinaryIO class.
+// Explicit template instantiation macro for the Tpetra::experimental::BinaryIO class.
 // BinaryIO is templated on Scalar, LocalOrdinal, GlobalOrdinal, and Node (the
-// SC-LO-GO-Node scheme).  The scalar-free Tpetra::readBinaryMapFile reader is
+// SC-LO-GO-Node scheme).  The scalar-free Tpetra::experimental::readBinaryMapFile reader is
 // instantiated separately (see Tpetra_ReadBinaryMapFile_def.hpp); BinaryIO only
 // sees its declaration, so no cross-scheme extern-template coupling is needed.
 //
 #define TPETRA_BINARYIO_INSTANT(SCALAR, LO, GO, NODE) \
-  template class BinaryIO<SCALAR, LO, GO, NODE>;
+  template class experimental::BinaryIO<SCALAR, LO, GO, NODE>;
 
 #endif  // TPETRA_BINARYIO_DEF_HPP

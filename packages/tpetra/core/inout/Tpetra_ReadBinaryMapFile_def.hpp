@@ -27,14 +27,15 @@
 #include <type_traits>
 
 namespace Tpetra {
+namespace experimental {
 
 namespace Details {
 
 /// \brief On-disk header shared by every Tpetra binary I/O file.
 ///
-/// This mirrors \c Tpetra::BinaryIO::FileHeader.  It is duplicated here (rather
+/// This mirrors \c Tpetra::experimental::BinaryIO::FileHeader.  It is duplicated here (rather
 /// than shared) so that the scalar-free map reader does not depend on the
-/// Scalar-templated \c Tpetra::BinaryIO class.
+/// Scalar-templated \c Tpetra::experimental::BinaryIO class.
 struct BinaryIOFileHeader {
   char magic[8];
   unsigned long long version;
@@ -105,8 +106,8 @@ inline BinaryIOFileHeader binaryIOReadHeaderFromFile(const std::string& filename
   BinaryIOFileHeader header;
   std::memset(&header, 0, sizeof(BinaryIOFileHeader));
 #ifdef HAVE_TPETRACORE_MPI
-  if (teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = extractMpiCommFromTeuchos(*comm);
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Tpetra::Details::extractMpiCommFromTeuchos(*comm);
     MPI_File file;
     const int err = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
@@ -140,7 +141,7 @@ void binaryIOValidateMapHeader(const BinaryIOFileHeader& header) {
                              std::runtime_error,
                              "Tpetra::BinaryIO: File does not have a recognized Tpetra binary I/O header. "
                                  << "Legacy Xpetra binary matrix files must be converted with "
-                                 << "Xpetra::IO::ConvertLegacyBinaryToBinary before reading with Tpetra::BinaryIO.");
+                                 << "Xpetra::experimental::ConvertLegacyBinaryToBinary before reading with Tpetra::experimental::BinaryIO.");
   TEUCHOS_TEST_FOR_EXCEPTION(header.version != binaryIOFileVersion,
                              std::runtime_error,
                              "Tpetra::BinaryIO: Unsupported file version " << header.version << ".");
@@ -171,8 +172,8 @@ inline BinaryIOMapSectionHeader binaryIOReadMapSectionHeader(const std::string& 
   BinaryIOMapSectionHeader header;
   std::memset(&header, 0, sizeof(BinaryIOMapSectionHeader));
 #ifdef HAVE_TPETRACORE_MPI
-  if (teuchosCommIsAnMpiComm(*comm)) {
-    MPI_Comm rawComm = extractMpiCommFromTeuchos(*comm);
+  if (Tpetra::Details::teuchosCommIsAnMpiComm(*comm)) {
+    MPI_Comm rawComm = Tpetra::Details::extractMpiCommFromTeuchos(*comm);
     MPI_File file;
     const int err = MPI_File_open(rawComm, const_cast<char*>(filename.c_str()), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
     TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
@@ -258,16 +259,17 @@ readBinaryMapFile(const std::string& filename,
   return Details::binaryIOReadMapSection<LocalOrdinal, GlobalOrdinal, Node>(filename, header.rowMapOffset, comm);
 }
 
+}  // namespace experimental
 }  // namespace Tpetra
 
 //
-// Explicit template instantiation macro for Tpetra::readBinaryMapFile.
+// Explicit template instantiation macro for Tpetra::experimental::readBinaryMapFile.
 // This function is templated only on LocalOrdinal, GlobalOrdinal, and Node
-// (the LGN scheme), so it is instantiated separately from Tpetra::BinaryIO.
+// (the LGN scheme), so it is instantiated separately from Tpetra::experimental::BinaryIO.
 //
 #define TPETRA_READBINARYMAPFILE_INSTANT(LO, GO, NODE)   \
   template Teuchos::RCP<const Tpetra::Map<LO, GO, NODE>> \
-  readBinaryMapFile<LO, GO, NODE>(                       \
+  experimental::readBinaryMapFile<LO, GO, NODE>(         \
       const std::string&,                                \
       const Teuchos::RCP<const Teuchos::Comm<int>>&);
 

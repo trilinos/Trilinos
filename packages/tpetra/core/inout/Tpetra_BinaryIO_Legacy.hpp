@@ -17,10 +17,10 @@
 /// This header holds functionality that used to live in Xpetra::IO but is
 /// really Tpetra-level.  It is header-only and SFINAE-gated so that it compiles
 /// for every Scalar type (including Sacado/Stokhos ensemble scalars), even
-/// though the underlying \c Tpetra::BinaryIO reader is only explicitly
+/// though the underlying \c Tpetra::experimental::BinaryIO reader is only explicitly
 /// instantiated for native Tpetra scalar types.
 ///
-/// The entry points (all in \c Tpetra::Details) are:
+/// The entry points (all in \c Tpetra::experimental::Details) are:
 ///   - \c binaryIOAvailableForScalar / \c binaryIOAvailableForLocalOrdinalScalar
 ///     — traits describing which Scalar types have a usable BinaryIO reader.
 ///   - \c hasTpetraBinaryHeader — sniff whether a file is in the current Tpetra
@@ -61,11 +61,12 @@
 #include <type_traits>
 
 namespace Tpetra {
+namespace experimental {
 namespace Details {
 
-/// \brief Whether \c Tpetra::BinaryIO is explicitly instantiated for \c Scalar.
+/// \brief Whether \c Tpetra::experimental::BinaryIO is explicitly instantiated for \c Scalar.
 ///
-/// Tpetra::BinaryIO is only ETI'd for native Tpetra scalar types, not for
+/// Tpetra::experimental::BinaryIO is only ETI'd for native Tpetra scalar types, not for
 /// Sacado/Stokhos ensemble scalars.  Reading binary files for other scalar
 /// types therefore throws rather than failing to link.
 template <class Scalar>
@@ -96,7 +97,7 @@ template <>
 struct binaryIOAvailableForScalar<__float128> : std::true_type {};
 #endif
 
-/// \brief Whether \c Tpetra::BinaryIO is instantiated with Scalar = LocalOrdinal.
+/// \brief Whether \c Tpetra::experimental::BinaryIO is instantiated with Scalar = LocalOrdinal.
 ///
 /// This gates the "read a MultiVector whose Scalar is LocalOrdinal" path.
 template <class LocalOrdinal>
@@ -430,7 +431,7 @@ readLegacyBinarySparseFile(const std::string&,
   TEUCHOS_TEST_FOR_EXCEPTION(true,
                              std::runtime_error,
                              "Tpetra::BinaryIO: legacy binary matrix input is not available for this Scalar type. "
-                                 << "Tpetra::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
+                                 << "Tpetra::experimental::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
                                  << "not for Sacado/Stokhos ensemble scalars.");
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
@@ -442,7 +443,7 @@ typename std::enable_if<binaryIOAvailableForScalar<Scalar>::value, void>::type
 convertLegacyBinaryToBinary(const std::string& oldFileName,
                             const std::string& newFileName,
                             const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
-  using binary_io_type = Tpetra::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using binary_io_type = Tpetra::experimental::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   auto matrix          = readLegacyBinarySparseFile<Scalar, LocalOrdinal, GlobalOrdinal, Node>(oldFileName,
                                                                                       Teuchos::null,
                                                                                       Teuchos::null,
@@ -464,7 +465,7 @@ convertLegacyBinaryToBinary(const std::string&, const std::string&, const Teucho
   TEUCHOS_TEST_FOR_EXCEPTION(true,
                              std::runtime_error,
                              "Tpetra::BinaryIO: legacy binary conversion is not available for this Scalar type. "
-                                 << "Tpetra::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
+                                 << "Tpetra::experimental::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
                                  << "not for Sacado/Stokhos ensemble scalars.");
 }
 
@@ -475,7 +476,7 @@ typename std::enable_if<binaryIOAvailableForScalar<Scalar>::value,
                         Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>::type
 readBinarySparseFile(const std::string& fileName,
                      const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
-  using binary_reader_type = Tpetra::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using binary_reader_type = Tpetra::experimental::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   if (hasTpetraBinaryHeader(fileName, comm)) {
     return binary_reader_type::readSparseFile(fileName, comm);
   }
@@ -497,7 +498,7 @@ readBinarySparseFile(const std::string&,
   TEUCHOS_TEST_FOR_EXCEPTION(true,
                              std::runtime_error,
                              "Tpetra::BinaryIO: binary Tpetra matrix input is not available for this Scalar type. "
-                                 << "Tpetra::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
+                                 << "Tpetra::experimental::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
                                  << "not for Sacado/Stokhos ensemble scalars.");
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
@@ -511,7 +512,7 @@ readBinarySparseFile(const std::string& fileName,
                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap,
                      const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& rangeMap,
                      const bool callFillComplete) {
-  using binary_reader_type = Tpetra::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using binary_reader_type = Tpetra::experimental::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   if (hasTpetraBinaryHeader(fileName, rowMap->getComm())) {
     return binary_reader_type::readSparseFile(fileName, rowMap, colMap, domainMap, rangeMap, callFillComplete);
   }
@@ -537,7 +538,7 @@ readBinarySparseFile(const std::string&,
   TEUCHOS_TEST_FOR_EXCEPTION(true,
                              std::runtime_error,
                              "Tpetra::BinaryIO: binary Tpetra matrix input is not available for this Scalar type. "
-                                 << "Tpetra::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
+                                 << "Tpetra::experimental::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
                                  << "not for Sacado/Stokhos ensemble scalars.");
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
@@ -549,7 +550,7 @@ typename std::enable_if<binaryIOAvailableForScalar<Scalar>::value,
                         Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>::type
 readBinaryDenseFile(const std::string& fileName,
                     const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map) {
-  using binary_reader_type = Tpetra::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using binary_reader_type = Tpetra::experimental::BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   return binary_reader_type::readDenseFile(fileName, map);
 }
 
@@ -561,7 +562,7 @@ readBinaryDenseFile(const std::string&,
   TEUCHOS_TEST_FOR_EXCEPTION(true,
                              std::runtime_error,
                              "Tpetra::BinaryIO: binary Tpetra multivector input is not available for this Scalar type. "
-                                 << "Tpetra::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
+                                 << "Tpetra::experimental::BinaryIO is only explicitly instantiated for native Tpetra scalar types, "
                                  << "not for Sacado/Stokhos ensemble scalars.");
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
@@ -573,7 +574,7 @@ typename std::enable_if<binaryIOAvailableForLocalOrdinalScalar<LocalOrdinal>::va
                         Teuchos::RCP<Tpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>>::type
 readBinaryDenseFileLocalOrdinal(const std::string& fileName,
                                 const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map) {
-  using binary_reader_type = Tpetra::BinaryIO<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+  using binary_reader_type = Tpetra::experimental::BinaryIO<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
   return binary_reader_type::readDenseFile(fileName, map);
 }
 
@@ -585,11 +586,12 @@ readBinaryDenseFileLocalOrdinal(const std::string&,
   TEUCHOS_TEST_FOR_EXCEPTION(true,
                              std::runtime_error,
                              "Tpetra::BinaryIO: binary Tpetra local-ordinal multivector input is not available for this build. "
-                                 << "That path requires a matching Tpetra::BinaryIO<LocalOrdinal,...> explicit instantiation.");
+                                 << "That path requires a matching Tpetra::experimental::BinaryIO<LocalOrdinal,...> explicit instantiation.");
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 }  // namespace Details
+}  // namespace experimental
 }  // namespace Tpetra
 
 #endif  // TPETRA_BINARYIO_LEGACY_HPP

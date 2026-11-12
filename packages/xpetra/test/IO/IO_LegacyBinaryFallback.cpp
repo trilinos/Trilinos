@@ -127,7 +127,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IO, LegacyBinaryConversionDistributed, Scalar,
   const std::string convertedFilename          = makeBinaryFilename("xpetra_io_legacy_conversion_distributed_converted", *comm);
 
   writeLegacyBinaryMissingRowsFile(legacyFilename, comm, true);
-  Xpetra::IO<Scalar, LO, GO, Node>::ConvertLegacyBinaryToBinary(legacyFilename, convertedFilename, lib, comm);
+  Xpetra::experimental::ConvertLegacyBinaryToBinary<Scalar, LO, GO, Node>(legacyFilename, convertedFilename, lib, comm);
 
   auto A = Xpetra::IO<Scalar, LO, GO, Node>::Read(convertedFilename, lib, comm, true);
   TEUCHOS_ASSERT_EQUALITY(A->getGlobalNumRows(), 5);

@@ -352,7 +352,7 @@ void runDenseCase(const Config& config,
   using map_type         = Tpetra::Map<LO, GO, Node>;
   using multivector_type = Tpetra::MultiVector<ST, LO, GO, Node>;
   using import_type      = Tpetra::Import<LO, GO, Node>;
-  using binary_io_type   = Tpetra::BinaryIO<ST, LO, GO, Node>;
+  using binary_io_type   = Tpetra::experimental::BinaryIO<ST, LO, GO, Node>;
 
   const global_size_t globalNumRows = static_cast<global_size_t>(config.globalNumRows);
   auto fileMap                      = rcp(new map_type(globalNumRows,
@@ -407,7 +407,7 @@ void runSparseCase(const Config& config,
   using map_type       = Tpetra::Map<LO, GO, Node>;
   using matrix_type    = Tpetra::CrsMatrix<ST, LO, GO, Node>;
   using import_type    = Tpetra::Import<LO, GO, Node>;
-  using binary_io_type = Tpetra::BinaryIO<ST, LO, GO, Node>;
+  using binary_io_type = Tpetra::experimental::BinaryIO<ST, LO, GO, Node>;
 
   const global_size_t globalNumRows = static_cast<global_size_t>(config.globalNumRows);
   auto fileMap                      = rcp(new map_type(globalNumRows,
