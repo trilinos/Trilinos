@@ -46,6 +46,9 @@ jobs:
       max-cores-allowed: 128
       num-concurrent-tests: 16
       slots-per-gpu: 8
+      setup-commands: |
+        source /spack/share/spack/setup-env.sh
+        spack env activate my_env
 
   address-sanitizer:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
