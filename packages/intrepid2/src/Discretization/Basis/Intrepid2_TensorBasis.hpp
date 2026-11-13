@@ -636,7 +636,8 @@ struct OperatorTensorDecomposition
                 TensorBasis remains copyable.  (Concurrent queries also require that Kokkos be built with real atomics, since
                 the tag queries return reference-counted Views; Trilinos enables Kokkos_ENABLE_ATOMICS_BYPASS by default when
                 Serial is the only Kokkos backend.)  This lives here rather than in Basis because Basis must remain copyable
-                on device; see Basis::requireTags().
+                on device; see Basis::requireTags().  The lazy initialization must not dispatch Kokkos kernels, so that it
+                may run inside an OpenMP parallel region.
      */
     std::shared_ptr<std::recursive_mutex> lazyInitializationMutex_ = std::make_shared<std::recursive_mutex>();
   public:

@@ -21,9 +21,12 @@
 #include "Intrepid2_TestUtils.hpp"
 
 #include <map>
-#include <thread>
 #include <tuple>
 #include <vector>
+
+#ifdef KOKKOS_ENABLE_OPENMP
+#include <omp.h>
+#endif
 
 namespace
 {
@@ -92,33 +95,35 @@ namespace
     }
   }
 
-  //! Checks that concurrent tag queries from several host threads, on a basis whose tag tables have not been built, agree.
+#ifdef KOKKOS_ENABLE_OPENMP
+  //! Checks that concurrent tag queries from several OpenMP threads, on a basis whose tag tables have not been built, agree.
   template<class BasisPtrType>
   void testConcurrentTagQueries(const BasisPtrType &basis, Teuchos::FancyOStream &out, bool &success)
   {
     const int cardinality = basis->getCardinality();
-    const int numThreads = 4;
-    std::vector<std::vector<int>> results(numThreads, std::vector<int>(4 * cardinality + 1));
-    std::vector<std::thread> threads;
-    for (int t=0; t<numThreads; t++)
+    const int maxThreads = 4;
+    std::vector<std::vector<int>> results(maxThreads, std::vector<int>(4 * cardinality + 1, -1));
+    int numThreads = 0;
+#pragma omp parallel num_threads(maxThreads)
     {
-      threads.emplace_back([&basis, &results, t, cardinality]()
-      {
-        // alternate between the scalar queries and the tag tables, so that both lazy paths race
-        if (t % 2 == 0) results[t][4 * cardinality] = basis->getDofCount(0,0);
-        auto allTags = basis->getAllDofTags();
-        for (int i=0; i<cardinality; i++)
-          for (int k=0; k<4; k++)
-            results[t][4*i+k] = allTags(i,k);
-        if (t % 2 == 1) results[t][4 * cardinality] = basis->getDofCount(0,0);
-      });
+      const int t = omp_get_thread_num();
+#pragma omp single nowait
+      numThreads = omp_get_num_threads();
+      // alternate between the scalar queries and the tag tables, so that both lazy paths race
+      if (t % 2 == 0) results[t][4 * cardinality] = basis->getDofCount(0,0);
+      auto allTags = basis->getAllDofTags();
+      for (int i=0; i<cardinality; i++)
+        for (int k=0; k<4; k++)
+          results[t][4*i+k] = allTags(i,k);
+      if (t % 2 == 1) results[t][4 * cardinality] = basis->getDofCount(0,0);
     }
-    for (auto &thread : threads) thread.join();
+    out << basis->getName() << ": queried concurrently from " << numThreads << " OpenMP threads\n";
     for (int t=1; t<numThreads; t++)
     {
       TEST_COMPARE_ARRAYS(results[t], results[0]);
     }
   }
+#endif
 
   using HierarchicalFamily = HierarchicalBasisFamily<Kokkos::DefaultHostExecutionSpace>;
   using NodalFamily        = DerivedNodalBasisFamily<Kokkos::DefaultHostExecutionSpace>;
@@ -154,15 +159,15 @@ namespace
 
   TEUCHOS_UNIT_TEST( TensorBasisTags, ConcurrentQueries )
   {
-#ifdef KOKKOS_ENABLE_ATOMICS_BYPASS
-    // Kokkos atomics (including View reference counts) are not atomic in this build (Trilinos enables
-    // Kokkos_ENABLE_ATOMICS_BYPASS by default when Serial is the only Kokkos backend), so Views, including those returned by
-    // the tag queries, cannot be shared between host threads.
-    out << "Skipping: Kokkos is built with KOKKOS_ENABLE_ATOMICS_BYPASS, so Views cannot be shared between host threads.\n";
-#else
+#ifdef KOKKOS_ENABLE_OPENMP
+    // Host-thread concurrency in Trilinos comes from OpenMP, so that is what we test.  (Kokkos does not allow
+    // Kokkos_ENABLE_ATOMICS_BYPASS alongside a host-parallel backend, so View reference counts are atomic here, as
+    // sharing the returned tag Views between threads requires.)
     const auto hex = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<> >());
     testConcurrentTagQueries(getBasis<HierarchicalFamily>(hex, FUNCTION_SPACE_HCURL, 3), out, success);
     testConcurrentTagQueries(getHypercubeBasis_HGRAD<HierarchicalFamily>(2, 4), out, success);
+#else
+    out << "Skipping: concurrent tag queries are tested only when Kokkos is built with OpenMP.\n";
 #endif
   }
 } // namespace
