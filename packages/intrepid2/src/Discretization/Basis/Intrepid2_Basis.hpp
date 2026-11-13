@@ -250,11 +250,12 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
                             const ordinal_type       posScDim,
                             const ordinal_type       posScOrd,
                             const ordinal_type       posDfOrd ) {
-      // Create ordinalToTag
-      ordinalToTag = OrdinalTypeView2D("ordinalToTag", basisCard, tagSize);
+      // The tables are host views, filled here with plain loops rather than with Kokkos::deep_copy(): Basis_TensorBasis
+      // calls this lazily from const queries, which may come from inside an OpenMP parallel region, where dispatching a
+      // kernel on the OpenMP execution space (as deep_copy() of a nonzero value does) aborts.
 
-      // Initialize with -1
-      Kokkos::deep_copy( ordinalToTag, -1 );
+      // Create ordinalToTag; every entry is set below
+      ordinalToTag = OrdinalTypeView2D(Kokkos::view_alloc("ordinalToTag", Kokkos::WithoutInitializing), basisCard, tagSize);
 
       // Copy tags
       for (ordinal_type i=0;i<basisCard;++i)
@@ -280,11 +281,12 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
           maxDfOrd = tags(i*tagSize + posDfOrd);
       ++maxDfOrd;
 
-      // Create tagToOrdinal
-      tagToOrdinal = OrdinalTypeView3D("tagToOrdinal", maxScDim, maxScOrd, maxDfOrd);
-
-      // Initialize with -1
-      Kokkos::deep_copy( tagToOrdinal, -1 );
+      // Create tagToOrdinal, and initialize with -1
+      tagToOrdinal = OrdinalTypeView3D(Kokkos::view_alloc("tagToOrdinal", Kokkos::WithoutInitializing), maxScDim, maxScOrd, maxDfOrd);
+      for (ordinal_type i=0;i<maxScDim;++i)
+        for (ordinal_type j=0;j<maxScOrd;++j)
+          for (ordinal_type k=0;k<maxDfOrd;++k)
+            tagToOrdinal(i, j, k) = -1;
 
       // Overwrite elements of the array corresponding to tags with local DoF Id's, leave all other = -1
       for (ordinal_type i=0;i<basisCard;++i)
