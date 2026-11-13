@@ -18,6 +18,7 @@ class KokkosKernels(BuiltinKokkosKernels):
     version("4.7.03", sha256="902701e3481b2c535925a02e0918baed6f82186a25297e45314712b0905d9780")
     version("4.7.02", sha256="2d3b3e10ac112e382b88c50d66e4222ce543fca5d42be6d8376a684b82b8b238")
 
+    depends_on("kokkos@5.3.0", when="@5.3.0")
     depends_on("kokkos@5.2.2", when="@5.2.2")
     depends_on("kokkos@5.2.1", when="@5.2.1")
     depends_on("kokkos@5.2.0", when="@5.2.0")
