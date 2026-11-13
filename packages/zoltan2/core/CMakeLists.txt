@@ -1,3 +1,5 @@
+INCLUDE(TribitsETISupport)
+
 IF(Zoltan2_ENABLE_ParMETIS AND NOT TPL_ENABLE_MPI)
   MESSAGE(FATAL_ERROR "ParMETIS requires that MPI is enabled. "
     "Set TPL_ENABLE_MPI ON or set TPL_ENABLE_ParMETIS OFF or set "
