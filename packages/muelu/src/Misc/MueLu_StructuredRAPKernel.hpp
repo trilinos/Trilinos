@@ -203,7 +203,6 @@ class StructuredRAPKernel {
                       const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
                       const Teuchos::Array<int>& structuredCoarseningRate,
                       const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
-    using SC                      = Scalar;
     using execution_space         = typename device_type::execution_space;
     using range_policy            = Kokkos::RangePolicy<execution_space,
                                              Kokkos::IndexType<size_t>>;
