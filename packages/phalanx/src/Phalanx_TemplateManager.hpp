@@ -75,6 +75,16 @@ namespace PHX {
       }
     };
 
+    template <typename BuilderOpT, typename T>
+    static auto invokeBuilder(const BuilderOpT& builder, int)
+      -> decltype(builder.template build<T>())
+    { return builder.template build<T>(); }
+
+    template <typename BuilderOpT, typename T>
+    static auto invokeBuilder(const BuilderOpT& builder, long)
+      -> decltype(builder.template operator()<T>())
+    { return builder.template operator()<T>(); }
+
     template <typename BuilderOpT>
     struct BuildObject {
       std::vector< Teuchos::RCP<BaseT> >& objects;
@@ -86,12 +96,8 @@ namespace PHX {
 	objects(objects_),disabled(disabled_),builder(builder_) {}
       template <typename T> void operator()() const {
 	constexpr std::size_t idx = PHX::mpl::index_v<T,TypeSeq>;
-        if (!disabled[idx]) {
-          if constexpr (requires { builder.template build<T>(); })
-            objects[idx] = builder.template build<T>();
-          else
-            objects[idx] = builder.template operator()<T>();
-        }
+        if (!disabled[idx])
+          objects[idx] = invokeBuilder<BuilderOpT,T>(builder,0);
       }
     };
 
