@@ -730,8 +730,16 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
       auto h_x = Kokkos::create_mirror_view_and_copy(host_memory_space(), x);
       // solving complex-symmetric (no-conjugate)
       const value_type zero(0);
+      const ordinal_type nrhs = h_x.extent(1);
+      // lower-solve
       Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::External>::invoke(Diag::Unit(), one, _A, h_x);
-      for (int i = 0; i < _m; i++) if (_A(i,i) != zero) for (int j = 0; j < h_x.extent(1); j++) h_x(i,j) /= _A(i,i);
+      // diagonal-scale
+      for (ordinal_type i = 0; i < _m; i++) {
+        if (_A(i,i) != zero) {
+          for (ordinal_type j = 0; j < nrhs; j++) h_x(i,j) /= _A(i,i);
+        }
+      }
+      // upper-solve
       Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::External>::invoke(Diag::Unit(), one, _A, h_x);
       Kokkos::deep_copy(x, h_x);
       break;
