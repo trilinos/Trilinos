@@ -44,11 +44,12 @@ namespace LOCA {
      *   </ul>
      * </ul>
      *
-     * There are also %Epetra and %LAPACK specific strategies that can
-     * be instantiated by the LOCA::Epetra::Factory and LOCA::LAPACK::Factory.
-     * See LOCA::BorderedSolver::LAPACKDirectSolve,
-     * LOCA::BorderedSolver::EpetraHouseholder and
-     * LOCA::BorderedSolver::Epetra::Augmented.
+     * Additional package-specific factories may provide more methods,
+     * such as Tpetra Householder support.
+     *
+     * There is also a %LAPACK specific strategy that can
+     * be instantiated by the LOCA::LAPACK::Factory.
+     * See LOCA::BorderedSolver::LAPACKDirectSolve.
      */
     class Factory {
 

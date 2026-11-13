@@ -18,12 +18,11 @@
 
 Finally, %LOCA provides a stepper class that repeatedly calls the %NOX nonlinear solver to compute points along a continuation curve. The design allows for continuation of bifurcations so two-parameter bifurcation sets can be generated. The stepper class relies on several support classes that compute predictors, step sizes, etc.  Each of these are discussed in more detail n the \ref loca_class_overview.
 
-Unlike %NOX which can provide a range of nonlinear solvers using a single abstract interface to the nonlinear equations and linear algebra, %LOCA provides several different levels of functionality, each requiring additional information from the underlying problem.  Therefore, the interface to %LOCA is split among several abstract classes each encapsulating a different level of functionality.  To interface to %LOCA, the user need only provide implementations of those abstract classes for the functionality the user is interested in.  %LOCA provides two complete interfaces:
+Unlike %NOX which can provide a range of nonlinear solvers using a single abstract interface to the nonlinear equations and linear algebra, %LOCA provides several different levels of functionality, each requiring additional information from the underlying problem.  Therefore, the interface to %LOCA is split among several abstract classes each encapsulating a different level of functionality.  To interface to %LOCA, the user need only provide implementations of those abstract classes for the functionality the user is interested in.  %LOCA provides one complete package-local interface:
 
  - LOCA::LAPACK::Group
- - LOCA::Epetra::Group
 
-both of which implement the interface required for all levels of functionality provided by %LOCA.
+Additional integrations are available through the abstract interfaces and package-local factories.
 
 \section loca_user LOCA User Information
 
@@ -326,37 +325,7 @@ Most strategy choices above have another available option that is not listed abo
 
 \section user_defined_factory User-Defined Strategies Through Factories
 
-Another option is available for providing user-defined strategies by implementing a factory to instantiate these strategies.  This option is most appropriate when multiple user-defined strategies are available, and the user wishes to control which strategy is instantiated through parameter lists.   This is often used when providing strategies that are specific to the underlying %NOX group, for example the %Epetra and %LAPACK factories described below.  In this case one imlements the LOCA::Abstract::Factory by defining the relevant strategy creation methods and then passes a ref-count pointer to this factory in the LOCA::createGlobalData() call.  Then the user can select these strategies just as if they were built in to %LOCA.
-
-\subsection epetra_factory Epetra Factory
-
-The LOCA::Epetra::Factory provides strategies specific to the NOX::Epetra::Group.  It provides the following strategies:
-<ul>
-<li> Methods for solving bordered systems of equations (LOCA::BorderedSolver::Factory)
-    <ul>
-    <li> <B>"Householder"</B> -- Use the QR (a.k.a. Householder) method (LOCA::BorderedSolver::EpetraHouseholder).
-       <ul>
-       <li> <B>"Include UV In Preconditioner"</B> -- [bool] (default: false) Flag indicating whether to use the \f$U\f$ and \f$V\f$ terms in the preconditioner for \f$P\f$
-       <li> <B>"Use P For Preconditioner"</B> -- [bool] (default: false)  Flag indicating whether to use the representation of \f$P\f$ as a LOCA::Epetra::LowRankUpdateRowMatrix for computing the preconditioner.  This is valid only for preconditioners that accept an Epetra_RowMatrix interface.
-       <li> <B>"Transpose Solver Method"</B> -- [string] (default: "Transpose Preconditioner") Method for preconditioning the transpose linear system (LOCA::Epetra::TransposeLinearSystem::Factory).  Available choices are:
-       <ul>
-      <li> "Transpose Preconditioner" -- Use the transpose of the preconditioner for the original system.
-      <li> "Left Preconditioning" -- Use the transpose of the preconditioner, and apply using left preconditioning.
-      <li> "Explicit Transpose" -- Form the transpose of the matrix and compute the preconditioner.  This method is available only if Trilinos is configured with %EpetraExt support (--enable-epetraext).
-       </ul>
-       <li> <B>"Preconditioner Method"</B> -- [string] (default: "Jacobian") -
-           Method for preconditioning the \f$P\f$ operator.  Choices are:
-           <ul>
-           <li> "Jacobian" (default) -- Use the preconditioner for \f$J\f$
-           <li> "SMW" -- Use the Sherman-Morrison-Woodbury formula for the
-                inverse of \f$P\f$, replacing the inverse of \f$J\f$ with
-                the preconditioner for \f$J\f$.
-           </ul>
-       <li> <B>"Scale Augmented Rows"</B> -- [bool] (default: true) -
-           Scale augmented rows to unit 2-norm before computing QR
-           factorization.
-      </ul>
-    <li> <B>"Augmented"</B> -- Form an augmented linear problem implemented in a pseudo-matrix free mode (LOCA::BorderedSolver::EpetraAugmented).
+Another option is available for providing user-defined strategies by implementing a factory to instantiate these strategies.  This option is most appropriate when multiple user-defined strategies are available, and the user wishes to control which strategy is instantiated through parameter lists.   This is often used when providing strategies that are specific to the underlying %NOX group, for example the %LAPACK factory described below.  In this case one imlements the LOCA::Abstract::Factory by defining the relevant strategy creation methods and then passes a ref-count pointer to this factory in the LOCA::createGlobalData() call.  Then the user can select these strategies just as if they were built in to %LOCA.
     </ul>
 </ul>
 
@@ -400,7 +369,7 @@ is dependent on some Trilinos packages (namely %Teuchos), and greatly benefits
 from others (in particular, %Anasazi).  Therefore %LOCA can only be configured
 and built inside of Trilinos.  To enable %LOCA
 during configuration and compilation, supply the --enable-loca configuration
-option.  %LOCA %LAPACK and %Epetra support and examples are automatically
+option.  %LOCA %LAPACK support and examples are automatically
 enabled if they are enabled in %NOX (see \ref nox_configuration_options). In
 addition, Trilinos must be configured with --enable-teuchos, and if %LAPACK
 support is enabled, --enable-teuchos-complex.  %LOCA is capable of using the
@@ -431,7 +400,7 @@ abstract vector interface to implement to use %LOCA.
 
 \subsection loca_user_info_step_2_loca_implementations Implementations provided with LOCA
 
-%LOCA provides two ready-made implementations:
+%LOCA provides one ready-made implementation:
 
 <ul>
 <li>
@@ -442,12 +411,6 @@ functionality provided by %LOCA and can be used in any continuation or
 bifurcation calculation.
 
 <li>
-The LOCA::Epetra implementation extends the NOX::Epetra implementation to
-%LOCA.  %Epetra support and examples are automatically enabled if they are
-enabled in %NOX.  All levels of functionality provided by LOCA are supported,
-including recently added Hopf and generalized eigenvalue support.
-
-<li>
 Currently, there is no %LOCA Petsc support provided, but this will be
 added as soon as there is demand.
 </ul>
@@ -456,15 +419,14 @@ added as soon as there is demand.
 
 See \ref loca_continuation_tutorial for a tutorial describing how to use
 %LOCA to perform a simple continuation. The
-example problems in the examples-lapack and examples-epetra
-directories can serve as templates as well.
+example problems in the examples-lapack
+directory can serve as templates as well.
 
 \section loca_user_info_step_4 Step 4: Link your code to LOCA
 
 Linking with %LOCA is very similar to linking with %NOX.  You must additionally
 link against -lloca and one of the concrete implementations, either
--llocalapack (if using the LOCA::LAPACK), -llocaepetra (if using
-LOCA::Epetra),or a custom implementation.
+-llocalapack (if using the LOCA::LAPACK) or a custom implementation.
 
 \section loca_user_info_problems If you have problems...
 

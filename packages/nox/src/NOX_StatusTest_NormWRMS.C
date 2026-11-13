@@ -16,9 +16,6 @@
 #include "NOX_Solver_LineSearchBased.H"
 #include "NOX_Utils.H"
 
-//#include "/home/rppawlo/Trilinos/packages/epetra/src/Epetra_Vector.h"
-//#include "/home/rppawlo/nox/src-epetra/NOX_Epetra_Vector.H"
-
 using namespace NOX::StatusTest;
 
 NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
