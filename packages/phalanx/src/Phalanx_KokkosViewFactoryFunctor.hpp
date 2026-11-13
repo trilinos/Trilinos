@@ -38,9 +38,9 @@ namespace PHX {
     {}
     
     template <typename ScalarT>
-    void operator()(ScalarT t) const
+    void operator()() const
     {
-      if (tag_.dataTypeInfo() == typeid(t)) {
+      if (tag_.dataTypeInfo() == typeid(ScalarT)) {
         using LT = PHX::DataLayout::KokkosLayoutType;
         const auto layout = tag_.dataLayout().kokkosLayout();
         if (layout == LT::Default) {

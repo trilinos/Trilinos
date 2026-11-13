@@ -54,7 +54,7 @@ namespace panzer {
   */
   template <typename T>
   KOKKOS_INLINE_FUNCTION
-  typename Sacado::mpl::enable_if< Sacado::IsView<T> >::type
+  std::enable_if_t< Sacado::IsView<T>::value >
   zeroSensitivities(T x) {
     //std::cout << "zeroSensitivities - ViewFad" << std::endl;
       x.zero();

@@ -13,7 +13,7 @@
 
 #include <map>
 #include <vector>
-#include "Sacado_mpl_at.hpp"
+#include "Phalanx_TypeList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Phalanx_Evaluator_TemplateManager.hpp"
@@ -21,7 +21,7 @@
 
 namespace PHX {
 
-  //! Unary Function Object (UFO) - helper class required for mpl::for_each<>.
+  //! Unary Function Object (UFO) - helper class required for PHX::mpl::for_each_index<>.
   template<typename Traits, typename FactoryTraits>
   struct UFO {
     
@@ -35,10 +35,10 @@ namespace PHX {
 	bool& found) 
       : object_type(v), params(p), tm(t), found_object(found) {}
     
-    template<typename T> void operator()(T t) const
+    template<std::size_t I> void operator()() const
     {
-      if (object_type == t) {
- 	typedef typename Sacado::mpl::at<typename FactoryTraits::EvaluatorTypes, T::value>::type type;
+      if (object_type == static_cast<int>(I)) {
+ 	typedef PHX::mpl::at_t<typename FactoryTraits::EvaluatorTypes, I> type;
 	PHX::Evaluator_TemplateBuilder<Traits, type> builder(params);
 	tm->buildObjects(builder);
 	found_object = true;

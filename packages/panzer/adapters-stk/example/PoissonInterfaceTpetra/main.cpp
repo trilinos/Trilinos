@@ -200,7 +200,7 @@ void assembleAndSolve (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& a
     input.beta = 1.0;
 
     // Evaluate physics.
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
     if (it == 0 && Teuchos::nonnull(po.J))
       A = po.J;
     else
@@ -279,7 +279,7 @@ testJacobian (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
       panzer::AssemblyEngineInArgs input(ghost_con, ep_con);
       input.alpha = 0;
       input.beta = 1;
-      ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
+      ae_tm.get<panzer::Traits::Residual>()->evaluate(input);
       if (i == -1)
         f0 = ep_con->get_f();
       else {
@@ -314,7 +314,7 @@ testJacobian (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
     panzer::AssemblyEngineInArgs input(ghost_con, ep_con);
     input.alpha = 0.0;
     input.beta = 1.0;
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
     Tpetra::MatrixMarket::Writer<TpetraCrsMatrix>::writeSparseFile("A_ad.mm", *ep_con->get_A());
   }
 

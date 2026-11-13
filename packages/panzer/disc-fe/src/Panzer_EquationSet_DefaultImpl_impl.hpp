@@ -591,7 +591,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                        const Teuchos::ParameterList& user_data) const
 {
   Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
-    factory.getAsObject<EvalT>()->buildClosureModels(model_name,
+    factory.get<EvalT>()->buildClosureModels(model_name,
                                                      models,
                                                      fl,
                                                      ir,
@@ -668,7 +668,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
     Teuchos::RCP<const panzer::FieldLayoutLibrary> fll = fl.buildFieldLayoutLibrary(*dummy_ir);
 
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators = 
-      factory.getAsObject<EvalT>()->buildClosureModels(model_name, models, *fll, dummy_ir, *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
+      factory.get<EvalT>()->buildClosureModels(model_name, models, *fll, dummy_ir, *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
     
     for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
       this->template registerEvaluator<EvalT>(fm, (*evaluators)[i]);

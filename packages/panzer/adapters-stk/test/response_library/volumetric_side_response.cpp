@@ -51,7 +51,6 @@ using Teuchos::rcp;
 
 #include "Panzer_TypeAssocMap.hpp"
 
-#include "Sacado_mpl_vector.hpp"
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 

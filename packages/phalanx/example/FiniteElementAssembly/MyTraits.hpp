@@ -12,8 +12,6 @@
 #define PHX_MY_TRAITS_HPP
 
 // mpl (Meta Programming Library) templates
-#include "Sacado_mpl_vector.hpp"
-#include "Sacado_mpl_find.hpp"
 
 // Include User Data Types
 #include "Phalanx_config.hpp"
@@ -40,8 +38,8 @@ namespace PHX {
     struct Residual { typedef RealType ScalarT; };
     struct Jacobian { typedef FadType ScalarT;  };
     struct Jv { typedef JvFadType ScalarT;  };
-    //typedef Sacado::mpl::vector<Residual, Jacobian, Jv> EvalTypes;
-    typedef Sacado::mpl::vector<Residual, Jacobian> EvalTypes;
+    //typedef PHX::mpl::type_list<Residual, Jacobian, Jv> EvalTypes;
+    typedef PHX::mpl::type_list<Residual, Jacobian> EvalTypes;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
@@ -56,15 +54,15 @@ namespace PHX {
   // Data Types for each evaluation type
   template<>
   struct eval_scalar_types<PHX::MyTraits::Residual> 
-  { typedef Sacado::mpl::vector<PHX::MyTraits::RealType> type; };
+  { typedef PHX::mpl::type_list<PHX::MyTraits::RealType> type; };
 
   template<>
   struct eval_scalar_types<PHX::MyTraits::Jacobian> 
-  { typedef Sacado::mpl::vector<PHX::MyTraits::FadType> type; };
+  { typedef PHX::mpl::type_list<PHX::MyTraits::FadType> type; };
 
   template<>
   struct eval_scalar_types<PHX::MyTraits::Jv> 
-  { typedef Sacado::mpl::vector<PHX::MyTraits::JvFadType> type; };
+  { typedef PHX::mpl::type_list<PHX::MyTraits::JvFadType> type; };
 }
 
 #endif

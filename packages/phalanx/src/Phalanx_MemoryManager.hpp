@@ -22,7 +22,7 @@
 
 namespace PHX {
 
-  /// Functor used in Sacado::mpl::for_each to iterate over all scalar types in an evaluation type.
+  /// Functor used in PHX::mpl::for_each_type to iterate over all scalar types in an evaluation type.
   class KokkosViewSizeFunctor {
     const PHX::FieldTag& tag_;
     const std::vector<PHX::index_size_type>& extended_dimensions_;
@@ -36,12 +36,12 @@ namespace PHX {
       size_(size) {}
     
     template <typename ScalarT>
-    void operator()(ScalarT t) const
+    void operator()() const
     {
       // To get the padded sizes from kokkos view, we actually have to
       // allocate the view. Inefficient, but this only happens during
       // setup. See issue: https://github.com/kokkos/kokkos/issues/2182
-      if (tag_.dataTypeInfo() == typeid(t)) {
+      if (tag_.dataTypeInfo() == typeid(ScalarT)) {
         using LT = PHX::DataLayout::KokkosLayoutType;
         const auto layout = tag_.dataLayout().kokkosLayout();
         if (layout == LT::Default)
@@ -54,7 +54,7 @@ namespace PHX {
     }
   };
 
-  /// Functor to allocate memory used in Sacado::mpl::for_each to iterate over all scalar types in an evaluation type.
+  /// Functor to allocate memory used in PHX::mpl::for_each_type to iterate over all scalar types in an evaluation type.
   class KokkosViewCreateFunctor {
     const PHX::ViewCreationMode& mode_;
     const PHX::FieldTag& tag_;
@@ -76,9 +76,9 @@ namespace PHX {
     {}
     
     template <typename ScalarT>
-    void operator()(ScalarT t) const
+    void operator()() const
     {
-      if (tag_.dataTypeInfo() == typeid(t)) {
+      if (tag_.dataTypeInfo() == typeid(ScalarT)) {
         using LT = PHX::DataLayout::KokkosLayoutType;
         const auto layout = tag_.dataLayout().kokkosLayout();
         if (layout == LT::Default) {
@@ -170,7 +170,7 @@ namespace PHX {
     {
       std::size_t size = 0;
       typedef typename PHX::eval_scalar_types<EvaluationType>::type EvalDataTypes;
-      Sacado::mpl::for_each_no_kokkos<EvalDataTypes>(PHX::KokkosViewSizeFunctor(tag,extended_dimensions,size));
+      PHX::mpl::for_each_type<EvalDataTypes>(PHX::KokkosViewSizeFunctor(tag,extended_dimensions,size));
       return size;
     }
 
@@ -193,8 +193,8 @@ namespace PHX {
       // ROGER modify to return tracker!
 
       using EvalDataTypes = typename PHX::eval_scalar_types<EvaluationType>::type;
-      Sacado::mpl::for_each_no_kokkos<EvalDataTypes>(PHX::KokkosViewCreateFunctor(PHX::ViewCreationMode::AllocateMemory,
-                                                                                  tag,extended_dimensions,field,tracker));
+      PHX::mpl::for_each_type<EvalDataTypes>(PHX::KokkosViewCreateFunctor(PHX::ViewCreationMode::AllocateMemory,
+                                                                           tag,extended_dimensions,field,tracker));
 
       TEUCHOS_TEST_FOR_EXCEPTION(!field.has_value(),std::runtime_error,
                                  "Error: PHX::MemoryManager::createView(): could not build a Kokkos::View for field named \""
@@ -222,8 +222,8 @@ namespace PHX {
     {
       std::any field;
       using EvalDataTypes = typename PHX::eval_scalar_types<EvaluationType>::type;
-      Sacado::mpl::for_each_no_kokkos<EvalDataTypes>(PHX::KokkosViewCreateFunctor(PHX::ViewCreationMode::UseTracker,
-                                                                                  tag,extended_dimensions,field,tracker));
+      PHX::mpl::for_each_type<EvalDataTypes>(PHX::KokkosViewCreateFunctor(PHX::ViewCreationMode::UseTracker,
+                                                                           tag,extended_dimensions,field,tracker));
       TEUCHOS_TEST_FOR_EXCEPTION(!field.has_value(),std::runtime_error,
                                  "Error: PHX::MemoryManager::createViewUsingTracker(): could not build a Kokkos::View for field named \""
                                  << tag.identifier() << "\" of type \"" << tag.dataTypeInfo().name()

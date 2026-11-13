@@ -146,7 +146,7 @@ PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
   m_build_transient_support(build_transient_support),
   m_global_data(global_data),
   m_eqset_factory(factory),
-  m_active_evaluation_types(Sacado::mpl::size<panzer::Traits::EvalTypes>::value,true)
+  m_active_evaluation_types(PHX::mpl::size_v<panzer::Traits::EvalTypes>,true)
 {
   TEUCHOS_ASSERT(nonnull(physics_block_plist));
   TEUCHOS_ASSERT(nonnull(factory));
@@ -170,7 +170,7 @@ PhysicsBlock(const Teuchos::RCP<Teuchos::ParameterList>& physics_block_plist,
   m_default_integration_order(1),
   m_input_parameters(physics_block_plist),
   m_build_transient_support(false),
-  m_active_evaluation_types(Sacado::mpl::size<panzer::Traits::EvalTypes>::value,true)
+  m_active_evaluation_types(PHX::mpl::size_v<panzer::Traits::EvalTypes>,true)
 {
 }
 
@@ -190,7 +190,7 @@ PhysicsBlock(const std::string & element_block_id,
   m_build_transient_support(false),
   m_global_data(global_data),
   m_eqset_factory(Teuchos::null),
-  m_active_evaluation_types(Sacado::mpl::size<panzer::Traits::EvalTypes>::value,true)
+  m_active_evaluation_types(PHX::mpl::size_v<panzer::Traits::EvalTypes>,true)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -236,7 +236,7 @@ PhysicsBlock(const panzer::PhysicsBlock& pb,
   m_build_transient_support(pb.m_build_transient_support),
   m_global_data(pb.m_global_data),
   m_eqset_factory(pb.m_eqset_factory),
-  m_active_evaluation_types(Sacado::mpl::size<panzer::Traits::EvalTypes>::value,true)
+  m_active_evaluation_types(PHX::mpl::size_v<panzer::Traits::EvalTypes>,true)
 {
   initialize(m_input_parameters,
             m_default_integration_order,
@@ -300,15 +300,18 @@ void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>
       = m_eqset_factory->buildEquationSet(eq_set_pl, default_integration_order, cell_data, m_global_data, build_transient_support);
 
     // Set tangent parameter names for each equation set
-    for (auto eq_it = eq_set->begin(); eq_it != eq_set->end(); ++eq_it) {
-      eq_it->setTangentParamNames(tangent_param_names);
-    }
+    eq_set->forEachBase([&](panzer::EquationSetBase& eqs) {
+      eqs.setTangentParamNames(tangent_param_names);
+    });
 
     // add this equation set in
     m_equation_sets.push_back(eq_set);
 
+    // The evaluation types share DOFs and integration rules, so ask the first one.
+    const auto first_eq_set = eq_set->getAsBase<panzer::Traits::Residual>();
+
     // Interrogate DOFs
-    const std::vector<StrPureBasisPair> & sbNames = eq_set->begin()->getProvidedDOFs();
+    const std::vector<StrPureBasisPair> & sbNames = first_eq_set->getProvidedDOFs();
     for(std::size_t j=0;j<sbNames.size();j++) {
 
       // Generate list of dof names
@@ -328,7 +331,7 @@ void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>
     }
 
     // add coordinate dofs to physics block
-    const std::vector<std::vector<std::string> > & coord_dofs = eq_set->begin()->getCoordinateDOFs();
+    const std::vector<std::vector<std::string> > & coord_dofs = first_eq_set->getCoordinateDOFs();
     m_coordinate_dofs.insert(m_coordinate_dofs.begin(),coord_dofs.begin(),coord_dofs.end());
 
     // Get a unique list of point rules.  NOTE: This assumes that the
@@ -338,7 +341,7 @@ void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>
     // This would require some refactoring of the phsyics block
     // registration routines and the workset builder to support all
     // combinations of bases and point rules for each evaluation type.
-    const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & ir_map = eq_set->begin()->getIntegrationRules();
+    const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & ir_map = first_eq_set->getIntegrationRules();
     for(std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir = ir_map.begin();
        ir != ir_map.end(); ++ir)
       m_integration_rules[ir->second->order()] = ir->second;
@@ -354,10 +357,9 @@ void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>
   // setup element blocks: loop over each evaluation type
   for(std::size_t eq_i=0;eq_i<m_equation_sets.size();eq_i++) {
      RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set = m_equation_sets[eq_i];
-     for(panzer::EquationSet_TemplateManager<panzer::Traits>::iterator itr=eq_set->begin();
-         itr!=eq_set->end();++itr) {
-        itr->setElementBlockId(element_block_id);
-     }
+     eq_set->forEachBase([&](panzer::EquationSetBase& eqs) {
+        eqs.setElementBlockId(element_block_id);
+     });
   }
 
 }
@@ -365,7 +367,7 @@ void panzer::PhysicsBlock::initialize(const Teuchos::RCP<Teuchos::ParameterList>
 // *******************************************************************
 void panzer::PhysicsBlock::setActiveEvaluationTypes(const std::vector<bool>& aet)
 {
-  TEUCHOS_ASSERT(aet.size() == std::size_t(Sacado::mpl::size<panzer::Traits::EvalTypes>::value));
+  TEUCHOS_ASSERT(aet.size() == PHX::mpl::size_v<panzer::Traits::EvalTypes>);
   m_active_evaluation_types = aet;
 }
 
@@ -391,21 +393,17 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     // Loop over evaluation types
-    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
-      eqstm.begin();
-    int idx = 0;
-    for (; eval_type != eqstm.end(); ++eval_type,++idx) {
-      if (m_active_evaluation_types[idx]) {
+    (*eq_set)->forEach([&]<typename EvalT>(panzer::EquationSet<EvalT>& eval_type) {
+      if (m_active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
         // Do not loop over integration rules.  Only call this for the
         // ir that the residual is integrated over.  Otherwise the
         // residual gets contributions from multiple integrations of the
         // same cell!  This ir is only known by equaiton set.
-        const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
-        eval_type->buildAndRegisterEquationSetEvaluators(fm, *m_field_lib, user_data);
-        eval_type->setDetailsIndex(di);
+        const int di = eval_type.setDetailsIndex(this->getDetailsIndex());
+        eval_type.buildAndRegisterEquationSetEvaluators(fm, *m_field_lib, user_data);
+        eval_type.setDetailsIndex(di);
       }
-    }
+    });
   }
 }
 
@@ -425,17 +423,13 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     // Loop over evaluation types
-    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
-      eqstm.begin();
-    int idx = 0;
-    for (; eval_type != eqstm.end(); ++eval_type,++idx) {
-      if (m_active_evaluation_types[idx]) {
-        const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
-        eval_type->buildAndRegisterGatherAndOrientationEvaluators(fm, *m_field_lib, lof, user_data);
-        eval_type->setDetailsIndex(di);
+    (*eq_set)->forEach([&]<typename EvalT>(panzer::EquationSet<EvalT>& eval_type) {
+      if (m_active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
+        const int di = eval_type.setDetailsIndex(this->getDetailsIndex());
+        eval_type.buildAndRegisterGatherAndOrientationEvaluators(fm, *m_field_lib, lof, user_data);
+        eval_type.setDetailsIndex(di);
       }
-    }
+    });
   }
 }
 
@@ -455,12 +449,8 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     // Loop over evaluation types
-    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
-      eqstm.begin();
-    int idx = 0;
-    for (; eval_type != eqstm.end(); ++eval_type,++idx) {
-      if (m_active_evaluation_types[idx]) {
+    (*eq_set)->forEach([&]<typename EvalT>(panzer::EquationSet<EvalT>& eval_type) {
+      if (m_active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
 
         // Loop over integration rules
         for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
@@ -468,12 +458,12 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
 
           Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
 
-          const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
-          eval_type->buildAndRegisterDOFProjectionsToIPEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, lof, user_data);
-          eval_type->setDetailsIndex(di);
+          const int di = eval_type.setDetailsIndex(this->getDetailsIndex());
+          eval_type.buildAndRegisterDOFProjectionsToIPEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, lof, user_data);
+          eval_type.setDetailsIndex(di);
         }
       }
-    }
+    });
   }
 }
 
@@ -493,17 +483,13 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     // Loop over evaluation types
-    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
-      eqstm.begin();
-    int idx = 0;
-    for (; eval_type != eqstm.end(); ++eval_type,++idx) {
-      if (m_active_evaluation_types[idx]) {
-        const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
-        eval_type->buildAndRegisterScatterEvaluators(fm, *m_field_lib, lof, user_data);
-        eval_type->setDetailsIndex(di);
+    (*eq_set)->forEach([&]<typename EvalT>(panzer::EquationSet<EvalT>& eval_type) {
+      if (m_active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
+        const int di = eval_type.setDetailsIndex(this->getDetailsIndex());
+        eval_type.buildAndRegisterScatterEvaluators(fm, *m_field_lib, lof, user_data);
+        eval_type.setDetailsIndex(di);
       }
-    }
+    });
   }
 }
 
@@ -524,12 +510,8 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     // Loop over evaluation types
-    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
-      eqstm.begin();
-    int idx = 0;
-    for (; eval_type != eqstm.end(); ++eval_type,++idx) {
-      if (m_active_evaluation_types[idx]) {
+    (*eq_set)->forEach([&]<typename EvalT>(panzer::EquationSet<EvalT>& eval_type) {
+      if (m_active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
 
         // Loop over integration rules
         for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
@@ -537,12 +519,12 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
           Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
 
-          const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
-          eval_type->buildAndRegisterClosureModelEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, factory, models, user_data);
-          eval_type->setDetailsIndex(di);
+          const int di = eval_type.setDetailsIndex(this->getDetailsIndex());
+          eval_type.buildAndRegisterClosureModelEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, factory, models, user_data);
+          eval_type.setDetailsIndex(di);
         }
       }
-    }
+    });
   }
 }
 
@@ -565,32 +547,28 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   for (;eq_set != m_equation_sets.end(); ++eq_set) {
 
     // Loop over evaluation types
-    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
-    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
-      eqstm.begin();
-    int idx = 0;
-    for (; eval_type != eqstm.end(); ++eval_type,++idx) {
-      if (m_active_evaluation_types[idx]) {
+    (*eq_set)->forEach([&]<typename EvalT>(panzer::EquationSet<EvalT>& eval_type) {
+      if (m_active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
 
         // Loop over integration rules
         for (std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator ir_iter = m_integration_rules.begin();
              ir_iter != m_integration_rules.end(); ++ ir_iter) {
 
           Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
-          const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
-          eval_type->buildAndRegisterClosureModelEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, factory, model_name, models, user_data);
-          eval_type->setDetailsIndex(di);
+          const int di = eval_type.setDetailsIndex(this->getDetailsIndex());
+          eval_type.buildAndRegisterClosureModelEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, factory, model_name, models, user_data);
+          eval_type.setDetailsIndex(di);
         }
       }
-    }
+    });
   }
 
   // if there are no equation sets call the closure model directly
   if(m_equation_sets.size()==0) {
-    ClosureModelFactory_TemplateManager<panzer::Traits>::const_iterator eval_type = factory.begin();
-    int idx = 0;
-    for (;eval_type != factory.end(); ++eval_type,++idx) {
-      if (m_active_evaluation_types[idx]) {
+    // The copy shares the factories, setDetailsIndex() below is not const.
+    ClosureModelFactory_TemplateManager<panzer::Traits> factory_objects = factory;
+    factory_objects.forEach([&]<typename EvalT>(panzer::ClosureModelFactory<EvalT>& eval_type) {
+      if (m_active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
 
         // setup some place holder parameter list, lets hope no one needs is!
         Teuchos::ParameterList plist;
@@ -603,7 +581,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
           // call directly to the closure models
           Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > > evaluators =
-            eval_type->buildClosureModels(model_name,
+            eval_type.buildClosureModels(model_name,
                                           models,
                                           *m_field_lib->buildFieldLayoutLibrary(*ir),
                                           ir,
@@ -613,12 +591,12 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                           fm);
 
           // register the constructed evaluators
-          const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
-          eval_type->registerEvaluators(*evaluators,fm);
-          eval_type->setDetailsIndex(di);
+          const int di = eval_type.setDetailsIndex(this->getDetailsIndex());
+          eval_type.registerEvaluators(*evaluators,fm);
+          eval_type.setDetailsIndex(di);
         }
       }
-    }
+    });
   }
 }
 

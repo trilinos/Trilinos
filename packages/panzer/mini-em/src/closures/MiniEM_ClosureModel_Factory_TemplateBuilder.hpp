@@ -18,7 +18,7 @@
 
 namespace mini_em {
 
-/** \brief Builder functor used with Sacado::mpl::TemplateManager to
+/** \brief Builder functor used with PHX::TemplateManager to
   * construct one mini_em::ModelFactory<EvalT> per evaluation type.
   */
 class ClosureModelFactory_TemplateBuilder {

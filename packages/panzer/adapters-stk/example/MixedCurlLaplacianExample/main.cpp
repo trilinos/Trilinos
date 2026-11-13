@@ -498,7 +498,7 @@ int main(int argc,char * argv[])
    input.beta = 1;
 
    // evaluate physics: This does both the Jacobian and residual at once
-   ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+   ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
 
    // solve linear system
    /////////////////////////////////////////////////////////////

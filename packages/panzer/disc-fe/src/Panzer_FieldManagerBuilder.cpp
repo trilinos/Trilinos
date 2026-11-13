@@ -50,7 +50,7 @@ FieldManagerBuilder(bool disablePhysicsBlockScatter,
                     bool disablePhysicsBlockGather)
   : disablePhysicsBlockScatter_(disablePhysicsBlockScatter)
   , disablePhysicsBlockGather_(disablePhysicsBlockGather)
-  , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
+  , active_evaluation_types_(PHX::mpl::size_v<panzer::Traits::EvalTypes>, true)
 {}
 
 //=======================================================================
@@ -67,8 +67,8 @@ namespace {
       : active_(active),fm_(fm),setup_data_(setup_data) {}
 
     template<typename T>
-    void operator()(T) const {
-      auto index = Sacado::mpl::find<panzer::Traits::EvalTypes,T>::value;
+    void operator()() const {
+      constexpr std::size_t index = PHX::mpl::index_v<T,panzer::Traits::EvalTypes>;
       if (active_[index])
         fm_.postRegistrationSetupForType<T>(setup_data_);
     }
@@ -166,7 +166,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     setKokkosExtendedDataTypeDimensions(wd.getElementBlock(),*globalIndexer,user_data,*fm);
 
     // call postRegistrationSetup() for each active type
-    Sacado::mpl::for_each_no_kokkos<panzer::Traits::EvalTypes>(PostRegistrationFunctor(active_evaluation_types_,*fm,setupData));
+    PHX::mpl::for_each_type<panzer::Traits::EvalTypes>(PostRegistrationFunctor(active_evaluation_types_,*fm,setupData));
 
     // make sure to add the field manager & workset to the list
     volume_workset_desc_.push_back(wd);
@@ -270,19 +270,17 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
             bcstm = bc_factory.buildBCStrategy(*bc, side_pb->globalData());
 
           // Iterate over evaluation types
-          int i=0;
-          for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator
-                 bcs_type = bcstm->begin(); bcs_type != bcstm->end(); ++bcs_type,++i) {
-            if (active_evaluation_types_[i]) {
-              bcs_type->setDetailsIndex(block_id_index);
+          bcstm->forEach([&]<typename EvalT>(panzer::BCStrategy<EvalT>& bcs_type) {
+            if (active_evaluation_types_[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
+              bcs_type.setDetailsIndex(block_id_index);
               side_pb->setDetailsIndex(block_id_index);
-              bcs_type->setup(*side_pb, user_data);
-              bcs_type->buildAndRegisterEvaluators(fm, *side_pb, cm_factory, closure_models, user_data);
-              bcs_type->buildAndRegisterGatherAndOrientationEvaluators(fm, *side_pb, lo_factory, user_data);
+              bcs_type.setup(*side_pb, user_data);
+              bcs_type.buildAndRegisterEvaluators(fm, *side_pb, cm_factory, closure_models, user_data);
+              bcs_type.buildAndRegisterGatherAndOrientationEvaluators(fm, *side_pb, lo_factory, user_data);
               if ( ! physicsBlockScatterDisabled())
-                bcs_type->buildAndRegisterScatterEvaluators(fm, *side_pb, lo_factory, user_data);
+                bcs_type.buildAndRegisterScatterEvaluators(fm, *side_pb, lo_factory, user_data);
             }
-          }
+          });
 
           gid_count += globalIndexer->getElementBlockGIDCount(element_block_id);
         }
@@ -309,7 +307,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
         setupData.worksets_ = worksets;
         setupData.orientations_ = getWorksetContainer()->getOrientations();
 
-        Sacado::mpl::for_each_no_kokkos<panzer::Traits::EvalTypes>(PostRegistrationFunctor(active_evaluation_types_,fm,setupData));
+        PHX::mpl::for_each_type<panzer::Traits::EvalTypes>(PostRegistrationFunctor(active_evaluation_types_,fm,setupData));
 
       }
     } else {
@@ -346,17 +344,15 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 	  bc_factory.buildBCStrategy(*bc,side_pb->globalData());
 
 	// Iterate over evaluation types
-        int i=0;
-	for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator
-	       bcs_type = bcstm->begin(); bcs_type != bcstm->end(); ++bcs_type,++i) {
-          if (active_evaluation_types_[i]) {
-            bcs_type->setup(*side_pb,user_data);
-            bcs_type->buildAndRegisterEvaluators(fm,*side_pb,cm_factory,closure_models,user_data);
-            bcs_type->buildAndRegisterGatherAndOrientationEvaluators(fm,*side_pb,lo_factory,user_data);
+        bcstm->forEach([&]<typename EvalT>(panzer::BCStrategy<EvalT>& bcs_type) {
+          if (active_evaluation_types_[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>]) {
+            bcs_type.setup(*side_pb,user_data);
+            bcs_type.buildAndRegisterEvaluators(fm,*side_pb,cm_factory,closure_models,user_data);
+            bcs_type.buildAndRegisterGatherAndOrientationEvaluators(fm,*side_pb,lo_factory,user_data);
             if(!physicsBlockScatterDisabled())
-              bcs_type->buildAndRegisterScatterEvaluators(fm,*side_pb,lo_factory,user_data);
+              bcs_type.buildAndRegisterScatterEvaluators(fm,*side_pb,lo_factory,user_data);
           }
-	}
+	});
 
 	// Setup the fieldmanager
 	Traits::SD setupData;
@@ -369,7 +365,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 	// setup derivative information
 	setKokkosExtendedDataTypeDimensions(element_block_id,*globalIndexer,user_data,fm);
 
-        Sacado::mpl::for_each_no_kokkos<panzer::Traits::EvalTypes>(PostRegistrationFunctor(active_evaluation_types_,fm,setupData));
+        PHX::mpl::for_each_type<panzer::Traits::EvalTypes>(PostRegistrationFunctor(active_evaluation_types_,fm,setupData));
       }
     }
   }

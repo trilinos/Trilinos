@@ -631,9 +631,9 @@ The basic class should derive from the PHX::TraitsBase object.
 
 <b> The Traits struct must define each of the following typedef members of the struct:</b>
 
-- \b EvalTypes - an mpl::vector of user defined evaluation types.  Each evaluation type must have a typedef member called ScalarT that provides the default scalar type.  This is used to automate the building of evaluators for each evaluation type using the EvaluatorFactory.
+- \b EvalTypes - a PHX::mpl::type_list of user defined evaluation types.  Each evaluation type must have a typedef member called ScalarT that provides the default scalar type.  This is used to automate the building of evaluators for each evaluation type using the EvaluatorFactory.
       
-- \b EvalToDataMap - an mpl::map.  The key is an evaluation type and the value is an mpl::vector of valid data types for that particular evaluation type.
+- \b EvalToDataMap - an mpl::map.  The key is an evaluation type and the value is a PHX::mpl::type_list of valid data types for that particular evaluation type.
       
 - \b Allocator type - type that defines the allocator class to use to allocate the memory for data storage.
       
@@ -676,7 +676,7 @@ First we need to know the evaluation types.  Each evaluation type must include a
     // ******************************************************************
     struct Residual { typedef RealType ScalarT; };
     struct Jacobian { typedef FadType ScalarT;  };
-    typedef Sacado::mpl::vector<Residual, Jacobian> EvalTypes;
+    typedef PHX::mpl::type_list<Residual, Jacobian> EvalTypes;
 
      .
      .
@@ -693,15 +693,15 @@ Next we need to link the data types to the evaluation type.  Note that one could
      .
      .
     // Residual (default scalar type is RealType)
-    typedef Sacado::mpl::vector< RealType, 
-				 MyVector<RealType>,
-				 MyTensor<RealType> 
+    typedef PHX::mpl::type_list< RealType,
+				    MyVector<RealType>,
+				    MyTensor<RealType>
     > ResidualDataTypes;
   
     // Jacobian (default scalar type is Fad<double>)
-    typedef Sacado::mpl::vector< FadType,
-				 MyVector<FadType>,
-				 MyTensor<FadType> 
+    typedef PHX::mpl::type_list< FadType,
+				    MyVector<FadType>,
+				    MyTensor<FadType>
     > JacobianDataTypes;
      .
      .
@@ -1042,11 +1042,11 @@ struct MyFactoryTraits {
   static const int id_feinterpolation = 3;
   static const int id_nonlinearsource = 4;
 
-  typedef Sacado::mpl::vector< Constant<_,Traits>,             // 0
- 			       Density<_,Traits>,              // 1
- 			       Fourier<_,Traits>,              // 2
- 			       FEInterpolation<_,Traits>,      // 3
- 			       NonlinearSource<_,Traits>       // 4
+  typedef PHX::mpl::type_list< Constant<_,Traits>,             // 0
+ 			          Density<_,Traits>,              // 1
+ 			          Fourier<_,Traits>,              // 2
+ 			          FEInterpolation<_,Traits>,      // 3
+ 			          NonlinearSource<_,Traits>       // 4
   > EvaluatorTypes;
 
 };
@@ -1055,7 +1055,7 @@ struct MyFactoryTraits {
 
 \endcode 
 
-Since the factory is built at compile time, we need to link a run-time choice to the compile-time list of object types.  Thus the user must provide the static const int identifiers that are unique for each type that can be constructed.  Users can ignore the "_" argument in the mpl vector.  This is a placeholder argument that allows us to iterate over and instert each evaluation type into the factory traits.
+Since the factory is built at compile time, we need to link a run-time choice to the compile-time list of object types.  Thus the user must provide the static const int identifiers that are unique for each type that can be constructed.  Users can ignore the "_" argument in the type list.  This is a placeholder argument that allows us to iterate over and instert each evaluation type into the factory traits.
 
 Now let's build the evaluators.  The following code can be found in the Example.cpp file in the directory "phalanx/example/EnergyFlux".  We create a ParameterList for each evaluator and call the factory constructor.  Since we are using the factory, we need to specify the "Type" argument set to the integer of the corresponding Evaluator in the factory traits that we wish to build:
 

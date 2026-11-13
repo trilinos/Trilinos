@@ -370,16 +370,15 @@ public:
          continue;
  
        // loop over each evaluation type
-       for(typename ResponseEvaluatorFactory_TemplateManager<TraitsT>::iterator rf_itr=fact->begin();
-           rf_itr!=fact->end();++rf_itr) {
+       fact->forEachBase([&](ResponseEvaluatorFactoryBase& rf) {
 
          // not setup for this template type, ignore it
-         if(rf_itr.rcp()==Teuchos::null || !rf_itr.rcp()->typeSupported()) 
-           continue;
+         if(!rf.typeSupported())
+           return;
 
          // build and register evaluators, store field tag, make it required
-         rf_itr->buildAndRegisterEvaluators(responseName,fm,pb,userData_);     
-       }
+         rf.buildAndRegisterEvaluators(responseName,fm,pb,userData_);
+       });
      }
     
      return true;
@@ -704,7 +703,7 @@ template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 evaluate(const panzer::AssemblyEngineInArgs& input_args)
 {
-   ae_tm2_.template getAsObject<EvalT>()->evaluate(input_args);
+   ae_tm2_.template get<EvalT>()->evaluate(input_args);
 }
 
 template <typename TraitsT>
@@ -716,7 +715,7 @@ print(std::ostream & os) const
    for(RespObjType::const_iterator itr=responseObjects_.begin();itr!=responseObjects_.end();++itr) { 
      std::string respName = itr->first;
      os << "Response \"" << respName << "\": ";
-     Sacado::mpl::for_each<typename Response_TemplateManager::types_vector>(Printer(itr->second,os));
+     PHX::mpl::for_each_type<typename Response_TemplateManager::types_vector>(Printer(itr->second,os));
      os << std::endl;
    }
 }
@@ -726,7 +725,7 @@ template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 writeGraphvizFiles(const std::string& prefix)
 {
-  auto mb = ae_tm2_.template getAsObject<EvalT>()->getManagerBuilder();
+  auto mb = ae_tm2_.template get<EvalT>()->getManagerBuilder();
   auto workset_descriptors = mb->getVolumeWorksetDescriptors();
   for (auto& w : workset_descriptors) {
     std::string prefix_with_eb_info = prefix+"element_block_"+w.getElementBlock();

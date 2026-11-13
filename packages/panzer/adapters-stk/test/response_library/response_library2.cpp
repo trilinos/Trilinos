@@ -47,7 +47,7 @@ using Teuchos::rcp;
 
 #include "Panzer_TypeAssocMap.hpp"
 
-#include "Sacado_mpl_vector.hpp"
+#include "Phalanx_TypeList.hpp"
 
 using Teuchos::RCP;
 
@@ -72,7 +72,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(type_assoc_map, test)
   {
-    typedef Sacado::mpl::vector<char,short> VecType;
+    typedef PHX::mpl::type_list<char,short> VecType;
 
 
     TypeAssocMap<VecType,std::string> tMap;

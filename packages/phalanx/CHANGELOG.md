@@ -34,6 +34,19 @@
   works throughout Phalanx. Panzer does not build in that configuration and
   was not changed, so it is a Phalanx-only capability for now.
 
+- `PHX::TemplateManager` has a typed form, selected by
+  `Phalanx_HIDE_DEPRECATED_CODE=ON`: `TemplateManager<TypeSeq, ObjectT, BaseT>`
+  with `ObjectT` a class template and `BaseT` optional. It stores each object
+  with its full type and does not use Sacado. Both forms provide `get`, `set`,
+  `has`, `build`, `buildObjects` (which also takes a generic lambda),
+  `disable`, `isEnabled`, `reset`, `getAsBase`, `forEach` and `forEachBase`.
+  `getAsObject`, `disableType`, `deleteType`, the iterators and the
+  `PHX::FieldManager` iterators are deprecated. Code spelling out
+  `PHX::TemplateManager<TypeSeq, BaseT, Foo<_>>` needs an `#ifdef` to build
+  both ways. `scripts/migrate_template_manager.py` does the renames and
+  reports the rest; `scripts/test_migrate_template_manager.py` is its test
+  suite.
+
 - Design notes: `doc/design_notes/PhalanxSharedSpacePlan.txt`, whose decisions
   register records what was chosen and what was rejected.
 

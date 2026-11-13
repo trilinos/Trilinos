@@ -15,7 +15,7 @@ PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::
 TemplateManager()
 {
   // Determine number of types
-  int sz = Sacado::mpl::size<TypeSeq>::value;
+  constexpr std::size_t sz = PHX::mpl::size_v<TypeSeq>;
   objects.resize(sz);
   disabled.resize(sz,false);
 }
@@ -32,7 +32,7 @@ void
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::
 buildObjects(const BuilderOpT& builder)
 {
-  Sacado::mpl::for_each_no_kokkos<TypeSeq>(BuildObject<BuilderOpT>(objects,disabled,builder));
+  PHX::mpl::for_each_type<TypeSeq>(BuildObject<BuilderOpT>(objects,disabled,builder));
 }
 
 template <typename TypeSeq, typename BaseT, typename ObjectT>
@@ -50,7 +50,7 @@ Teuchos::RCP<BaseT>
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsBase()
 {
-  int idx = Sacado::mpl::find<TypeSeq,ScalarT>::value;
+  constexpr std::size_t idx = PHX::mpl::index_v<ScalarT,TypeSeq>;
   return objects[idx];
 }
 
@@ -59,7 +59,7 @@ template<typename ScalarT>
 Teuchos::RCP<const BaseT>
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::getAsBase() const
 {
-  int idx = Sacado::mpl::find<TypeSeq,ScalarT>::value;
+  constexpr std::size_t idx = PHX::mpl::index_v<ScalarT,TypeSeq>;
   return objects[idx];
 }
 
@@ -69,7 +69,7 @@ Teuchos::RCP< typename Sacado::mpl::apply<ObjectT,ScalarT>::type >
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsObject()
 {
-  int idx = Sacado::mpl::find<TypeSeq,ScalarT>::value;
+  constexpr std::size_t idx = PHX::mpl::index_v<ScalarT,TypeSeq>;
   return Teuchos::rcp_dynamic_cast< typename Sacado::mpl::apply<ObjectT,ScalarT>::type >(objects[idx], true);
 }
 
@@ -79,7 +79,7 @@ Teuchos::RCP< const typename Sacado::mpl::apply<ObjectT,ScalarT>::type >
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsObject() const
 {
-  int idx = Sacado::mpl::find<TypeSeq,ScalarT>::value;
+  constexpr std::size_t idx = PHX::mpl::index_v<ScalarT,TypeSeq>;
   return Teuchos::rcp_dynamic_cast< const typename Sacado::mpl::apply<ObjectT,ScalarT>::type >(objects[idx], 
 							     true);
 }
@@ -125,7 +125,7 @@ template<typename ScalarT>
 void
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::deleteType()
 {
-  int idx = Sacado::mpl::find<TypeSeq,ScalarT>::value;
+  constexpr std::size_t idx = PHX::mpl::index_v<ScalarT,TypeSeq>;
   objects[idx] = Teuchos::null;
 }
 
@@ -134,6 +134,6 @@ template<typename ScalarT>
 void
 PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::disableType()
 {
-  int idx = Sacado::mpl::find<TypeSeq,ScalarT>::value;
+  constexpr std::size_t idx = PHX::mpl::index_v<ScalarT,TypeSeq>;
   disabled[idx] = true;
 }

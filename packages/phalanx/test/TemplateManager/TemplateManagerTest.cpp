@@ -13,6 +13,13 @@
 #include "MyTraits.hpp"
 #include "Sacado_mpl_placeholders.hpp"
 
+// Tests the deprecated API. See TemplateManagerCommonApiTest.cpp for the rest.
+#ifndef PHALANX_HIDE_DEPRECATED_CODE
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 class DummyBase {
 public:
   virtual ~DummyBase() = default;
@@ -82,3 +89,5 @@ TEUCHOS_UNIT_TEST(template_manager_test, iterator_ops)
   TEST_ASSERT(start == end);
   TEST_ASSERT(start_again == end);
 }
+
+#endif // PHALANX_HIDE_DEPRECATED_CODE
