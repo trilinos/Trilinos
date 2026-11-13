@@ -15,6 +15,15 @@
 #include "Xpetra_Import.hpp"
 #include "Xpetra_Map_decl.hpp"
 
+// Xpetra::BlockedMap is now a thin wrapper around Tpetra::BlockedMap.  The heavy
+// lifting (Xpetra- vs. Thyra-mode numbering, sub-map/importer bookkeeping,
+// consistency checks, map concatenation) lives in Tpetra; this class merely
+// unwraps Xpetra maps to their Tpetra counterparts on the way in and re-wraps
+// Tpetra maps/importers on the way out.  Requiring Tpetra-backed maps means an
+// Epetra-backed map handed to a constructor throws Xpetra::Exceptions::BadCast
+// (via toTpetra), which is the intended behavior in the Tpetra-only world.
+#include <Tpetra_BlockedMap_decl.hpp>
+
 namespace Xpetra {
 
 template <class LocalOrdinal,
@@ -26,6 +35,9 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node> {
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node node_type;
   typedef typename Map<LocalOrdinal, GlobalOrdinal, Node>::global_indices_array_device_type global_indices_array_device_type;
+
+  //! The type of the underlying Tpetra::BlockedMap.
+  using tpetra_blockedmap_type = ::Tpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>;
 
  private:
 #undef XPETRA_BLOCKEDMAP_SHORT
@@ -61,6 +73,9 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node> {
 
   //! Expert constructor for Thyra maps
   BlockedMap(const std::vector<RCP<const Map>>& maps, const std::vector<RCP<const Map>>& thyramaps);
+
+  //! Xpetra-specific constructor: wrap an existing Tpetra::BlockedMap object.
+  BlockedMap(const Teuchos::RCP<const tpetra_blockedmap_type>& map);
 
   //! copy constructor
   BlockedMap(const BlockedMap& input);
@@ -165,17 +180,6 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node> {
 
   //! @name Attribute access functions
   //@{
-  //! Local number of rows on the calling process.
-  /*virtual size_t getLocalLength() const {
-    throw Xpetra::Exceptions::RuntimeError("BlockedMap::getLocalLength: routine not implemented.");
-    return 0;
-  }*/
-
-  //! Global number of rows in the multivector.
-  /*virtual global_size_t getGlobalLength() const {
-    throw Xpetra::Exceptions::RuntimeError("BlockedMap::getGlobalLength: routine not implemented.");
-    return 0;
-  }*/
 
   //! returns true if internally stored sub maps are in Thyra mode (i.e. start all with GIDs=0)
   virtual bool getThyraMode() const;
@@ -234,7 +238,7 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node> {
   using local_map_type = typename Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
 
   /// \brief Get the local Map for Kokkos kernels.
-  local_map_type getLocalMap() const { return fullmap_->getLocalMap(); }
+  local_map_type getLocalMap() const { return map_->getLocalMap(); }
 
   //@}
 
@@ -246,6 +250,14 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node> {
 
   //! Print the object with the given verbosity level to a FancyOStream.
   virtual void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
+
+  //@}
+
+  //! @name Xpetra-specific accessors for the wrapped Tpetra object
+  //@{
+
+  //! Get the underlying Tpetra::BlockedMap object.
+  RCP<const tpetra_blockedmap_type> getTpetra_BlockedMap() const { return map_; }
 
   //@}
 
@@ -272,15 +284,17 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node> {
   concatenateMaps(const std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>>& subMaps);
 
  private:
-  bool CheckConsistency() const;
+  //! The wrapped Tpetra::BlockedMap.
+  RCP<const tpetra_blockedmap_type> map_;
 
- private:
-  RCP<const Map> fullmap_;
-  std::vector<RCP<const Map>> maps_;
-  std::vector<RCP<Import>> importers_;
-  bool bThyraMode_;                        //< boolean flag: use Thyra numbering for local sub-block maps. default = false (for Xpetra mode)
-  std::vector<RCP<const Map>> thyraMaps_;  //< store Thyra-style numbering maps here in Thyra mode. In Xpetra mode this vector is empty.
-};                                         // BlockedMap class
+  //! Identity caches: Xpetra wrappers around the Tpetra sub-maps/importers, built
+  //! lazily so that repeated getMap(i)/getImporter(i)/getFullMap() calls return the
+  //! same RCP (preserving the object identity MueLu relies on for nested blocks).
+  mutable RCP<const Map> fullmapXpetra_;
+  mutable std::vector<RCP<const Map>> mapsXpetra_;       //< Xpetra-mode sub-maps
+  mutable std::vector<RCP<const Map>> thyraMapsXpetra_;  //< Thyra-mode sub-maps (empty in Xpetra mode)
+  mutable std::vector<RCP<Import>> importersXpetra_;
+};  // BlockedMap class
 
 }  // namespace Xpetra
 
