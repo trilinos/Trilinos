@@ -231,7 +231,7 @@ private:
   inline void checkStatus(const char *func, const char *lib) {
     if (_status != 0) {
       printf("Error: %s, %s returns non-zero status %d\n", lib, func, _status);
-      std::runtime_error("checkStatus failed");
+      TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "checkStatus failed");
     }
   }
   inline void checkDeviceLapackStatus(const char *func) {

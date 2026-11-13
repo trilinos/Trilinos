@@ -417,7 +417,10 @@ public:
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
       // Factor diagonal block
-      err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      if (_tol > 0.0)
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL);
+      else
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
       member.team_barrier();
       if (err != 0) {
         Kokkos::atomic_add(_rval, 1);

@@ -134,7 +134,9 @@ void Driver<VT, DT>::setFactorizationMethod(const int method) { // 0 - LDL nopiv
   if (_method_setup == method || method == 1) {
     // switch only if it is the same as method_setup or chol
     _method = method;
-    _N->setSolutionMethod(_method);
+    if (_m > _small_problem_thres) {
+      _N->setSolutionMethod(_method);
+    }
   }
 }
 
@@ -251,8 +253,10 @@ template <typename VT, typename DT> void Driver<VT, DT>::storeExplicitTranspose(
 ///
 /// get interface
 ///
-template <typename VT, typename DT> ordinal_type Driver<VT, DT>::getNumNonZerosU() const { return _nnz_u; }
-template <typename VT, typename DT> ordinal_type Driver<VT, DT>::getNumSupernodes() const { return _nsupernodes; }
+template <typename VT, typename DT>
+ordinal_type Driver<VT, DT>::getNumNonZerosU() const { return (_m <= _small_problem_thres ? _m*_m : _nnz_u); }
+template <typename VT, typename DT>
+ordinal_type Driver<VT, DT>::getNumSupernodes() const { return _nsupernodes; }
 
 template <typename VT, typename DT> typename Driver<VT, DT>::ordinal_type_array Driver<VT, DT>::getSupernodes() const {
   return _supernodes;
@@ -573,7 +577,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
       for (size_type j = jbeg; j < jend; ++j) {
         const ordinal_type col = _h_aj(j);
         const bool flag = ((_method == Cholesky  && i <= col) || /// upper
-                           (_method == LDL_nopiv && i >= col) || /// lower (calls ldl)
+                           (_method == LDL_nopiv && i <= col) || /// upper (calls ldl-nopiv)
                            (_method == LDL && i >= col) ||       /// lower
                            (_method == SymLU));                  /// full matrix
         if (flag)
@@ -591,7 +595,12 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
       rval = Tacho::Chol<Uplo::Upper, Algo::External>::invoke(_A);
       break;
     }
-    case LDL_nopiv:
+    case LDL_nopiv: {
+      bool conjugate = false; // complex-symmetric (no conjugate)
+      int ndefs = Tacho::LDL_nopiv<Uplo::Upper, Algo::External>::invoke(_pivot_tol, _A, conjugate);
+      if (ndefs < 0) rval = ndefs;
+      break;
+    }
     case LDL: {
       _P = ordinal_type_array_host("P", 4 * _m);
       _D = value_type_matrix_host("D", _m, 2);
@@ -708,15 +717,33 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
     t_copy = timer.seconds();
 
     timer.reset();
+    const value_type one(1);
     switch (_method) {
     case Cholesky : {
       auto h_x = Kokkos::create_mirror_view_and_copy(host_memory_space(), x);
-      Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::External>::invoke(Diag::NonUnit(), 1.0, _A, h_x);
-      Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::External>::invoke(Diag::NonUnit(), 1.0, _A, h_x);
+      Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::External>::invoke(Diag::NonUnit(), one, _A, h_x);
+      Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::External>::invoke(Diag::NonUnit(), one, _A, h_x);
       Kokkos::deep_copy(x, h_x);
       break;
     }
-    case LDL_nopiv:
+    case LDL_nopiv: {
+      auto h_x = Kokkos::create_mirror_view_and_copy(host_memory_space(), x);
+      // solving complex-symmetric (no-conjugate)
+      const value_type zero(0);
+      const ordinal_type nrhs = h_x.extent(1);
+      // lower-solve
+      Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::External>::invoke(Diag::Unit(), one, _A, h_x);
+      // diagonal-scale
+      for (ordinal_type i = 0; i < _m; i++) {
+        if (_A(i,i) != zero) {
+          for (ordinal_type j = 0; j < nrhs; j++) h_x(i,j) /= _A(i,i);
+        }
+      }
+      // upper-solve
+      Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::External>::invoke(Diag::Unit(), one, _A, h_x);
+      Kokkos::deep_copy(x, h_x);
+      break;
+    }
     case LDL: {
       auto perm = ordinal_type_array_host(_P.data() + 2 * _m, _m);
       auto peri = ordinal_type_array_host(_P.data() + 3 * _m, _m);
@@ -724,9 +751,9 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
       auto h_t = Kokkos::create_mirror_view(host_memory_space(), t);
 
       ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(h_x, perm, h_t);
-      Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::External>::invoke(Diag::Unit(), 1.0, _A, h_t);
+      Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::External>::invoke(Diag::Unit(), one, _A, h_t);
       Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal>::invoke(_P, _D, h_t);
-      Trsm<Side::Left, Uplo::Lower, Trans::Transpose, Algo::External>::invoke(Diag::Unit(), 1.0, _A, h_t);
+      Trsm<Side::Left, Uplo::Lower, Trans::Transpose, Algo::External>::invoke(Diag::Unit(), one, _A, h_t);
       ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(h_t, peri, h_x);
       Kokkos::deep_copy(x, h_x);
       break;
@@ -737,8 +764,8 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
       auto h_t = Kokkos::create_mirror_view(host_memory_space(), t);
       Kokkos::deep_copy(h_t, x);
       ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(h_t, perm, h_x);
-      Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::External>::invoke(Diag::Unit(), 1.0, _A, h_x);
-      Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::External>::invoke(Diag::NonUnit(), 1.0, _A, h_x);
+      Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::External>::invoke(Diag::Unit(), one, _A, h_x);
+      Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::External>::invoke(Diag::NonUnit(), one, _A, h_x);
       Kokkos::deep_copy(x, h_x);
       break;
     }
