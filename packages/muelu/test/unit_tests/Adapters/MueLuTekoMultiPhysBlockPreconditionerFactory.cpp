@@ -70,6 +70,7 @@ Teko::BlockedLinearOp buildBlockedOperator(ST scaling = 1.0, bool extraCoupling 
   const GO numGlobalRows = 60;
   const auto map0        = Teuchos::rcp(new TpetraMap(numGlobalRows, 0, comm));
   const auto map1        = Teuchos::rcp(new TpetraMap(numGlobalRows, 0, comm));
+
   const std::vector<Teuchos::RCP<const TpetraMap> > maps = {map0, map1};
 
   auto blo = Teko::createBlockedOp();
@@ -218,7 +219,7 @@ TEUCHOS_UNIT_TEST(TekoMultiPhysBlockPreconditionerFactory, ApplyHonorsScalingAnd
 
   // z = alpha * M r + beta * z
   const ST alpha = 2.0, beta = 0.5;
-  auto zInit     = Thyra::createMembers(M->range(), 2);
+  auto zInit = Thyra::createMembers(M->range(), 2);
   Thyra::randomize(-1.0, 1.0, zInit.ptr());
   auto z = Thyra::createMembers(M->range(), 2);
   Thyra::assign(z.ptr(), *zInit);

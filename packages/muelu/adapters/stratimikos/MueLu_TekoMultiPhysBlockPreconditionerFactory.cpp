@@ -307,7 +307,7 @@ RCP<TpetraMatrix> convertBlockMatrixToCrsMatrix(const Teko::BlockedLinearOp& blo
       prefixSumEntriesPerRow, localColumnIndices, values);
 
   const LO numCols = static_cast<LO>(colMap->getLocalNumElements());
-  auto localMatrix  = local_matrix_type(
+  auto localMatrix = local_matrix_type(
       "localMat", numRows, numCols, totalNumOwnedCols, values, prefixSumEntriesPerRow, localColumnIndices);
 
   return Teuchos::rcp(new TpetraMatrix(localMatrix, rangeMap, colMap, domainMap, rangeMap));
