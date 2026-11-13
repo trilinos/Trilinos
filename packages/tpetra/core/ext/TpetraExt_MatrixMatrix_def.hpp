@@ -564,7 +564,15 @@ add(const Scalar& alpha,
   // Check that A,B are fillComplete before getting B's column map
   TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete() || !Brcp->isFillComplete(), std::invalid_argument,
                              "TpetraExt::MatrixMatrix::add(): A and B must both be fill complete.");
-  RCP<crs_matrix_type> C = rcp(new crs_matrix_type(Brcp->getRowMap(), 0));
+
+  RCP<crs_matrix_type> C;
+  const bool sameGraphs = (A.getCrsGraph() == Brcp->getCrsGraph());
+  if (sameGraphs && !transposeA) {
+    C = rcp(new crs_matrix_type(A.getCrsGraph()));
+  } else {
+    C = rcp(new crs_matrix_type(Brcp->getRowMap(), 0));
+  }
+
   // this version of add() always fill completes the result, no matter what is in params on input
   add(alpha, transposeA, A, beta, false, *Brcp, *C, domainMap, rangeMap, params);
   return C;
@@ -634,8 +642,6 @@ void add(const Scalar& alpha,
     std::cerr << os.str();
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() || C.isGloballyIndexed(), std::invalid_argument,
-                             prefix_mmm << "C must be a 'new' matrix (neither locally nor globally indexed).");
   TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete() || !B.isFillComplete(), std::invalid_argument,
                              prefix_mmm << "A and B must both be fill complete.");
 #ifdef HAVE_TPETRA_DEBUG
@@ -697,6 +703,41 @@ void add(const Scalar& alpha,
       prefix_mmm << "Aprime and Bprime must both be fill complete.  "
                     "Please report this bug to the Tpetra developers.");
 #endif  // HAVE_TPETRA_DEBUG
+
+  bool doFillComplete = true;
+  if (Teuchos::nonnull(params) && params->isParameter("Call fillComplete")) {
+    doFillComplete = params->get<bool>("Call fillComplete");
+  }
+
+  // Check if we are in the special case where all graphs are the same.
+  const bool sameGraphs = ((C.getCrsGraph() == Aprime->getCrsGraph()) &&
+                           (C.getCrsGraph() == Bprime->getCrsGraph()));
+  if (sameGraphs) {
+    Tpetra::Details::ProfilingRegion pr("TpetraExt: add: fast addition for same graphs");
+
+    auto Alocal = Aprime->getLocalMatrixDevice();
+    auto Blocal = Bprime->getLocalMatrixDevice();
+    auto Clocal = C.getLocalMatrixDevice();
+
+    auto Avals = Alocal.values;
+    auto Bvals = Blocal.values;
+    auto Cvals = Clocal.values;
+
+    Kokkos::parallel_for(
+        Kokkos::RangePolicy<typename Node::execution_space>(0, Cvals.extent(0)),
+        KOKKOS_LAMBDA(const int i) {
+          Cvals(i) = alpha * Avals(i) + beta * Bvals(i);
+        });
+
+    if (doFillComplete)
+      C.fillComplete(C.getRangeMap(), C.getDomainMap());
+
+    return;
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(C.isLocallyIndexed() || C.isGloballyIndexed(), std::invalid_argument,
+                             prefix_mmm << "C must be a 'new' matrix (neither locally nor globally indexed).");
+
   RCP<const map_type> CDomainMap = domainMap;
   RCP<const map_type> CRangeMap  = rangeMap;
   if (CDomainMap.is_null()) {
@@ -732,10 +773,7 @@ void add(const Scalar& alpha,
   bool sorted                    = AGraphSorted && BGraphSorted;
   RCP<const import_type> Cimport = Teuchos::null;
   RCP<export_type> Cexport       = Teuchos::null;
-  bool doFillComplete            = true;
-  if (Teuchos::nonnull(params) && params->isParameter("Call fillComplete")) {
-    doFillComplete = params->get<bool>("Call fillComplete");
-  }
+
   auto Alocal     = Aprime->getLocalMatrixDevice();
   auto Blocal     = Bprime->getLocalMatrixDevice();
   LO numLocalRows = Alocal.numRows();
@@ -955,14 +993,16 @@ void Add(
                              prefix << "Failed to compute Op(B). Please report this bug to the Tpetra developers.");
 #endif  // HAVE_TPETRA_DEBUG
 
-  bool CwasFillComplete = false;
+  bool CwasFillComplete  = false;
+  const bool CwasNonzero = !C.is_null();
 
-  // Allocate or zero the entries of the result matrix.
-  if (!C.is_null()) {
+  // Allocate the result matrix if necessary.
+  if (CwasNonzero) {
     CwasFillComplete = C->isFillComplete();
-    if (CwasFillComplete)
-      C->resumeFill();
-    C->setAllToScalar(STS::zero());
+  } else if (Aprime->getCrsGraph() == Bprime->getCrsGraph()) {
+    // Graphs of Aprime and Bprime are the same.
+    // Reuse graph for C.
+    C = Teuchos::rcp(new crs_matrix_type(Aprime->getCrsGraph()));
   } else {
     // FIXME (mfh 08 May 2013) When I first looked at this method, I
     // noticed that C was being given the row Map of Aprime (the
@@ -985,6 +1025,32 @@ void Add(
     }
   }
 
+  // Check if we are in the special case where all graphs are the same.
+  const bool sameGraphs = ((C->getCrsGraph() == Aprime->getCrsGraph()) &&
+                           (C->getCrsGraph() == Bprime->getCrsGraph()));
+  if (sameGraphs) {
+    {
+      auto Alocal = Aprime->getLocalMatrixDevice();
+      auto Blocal = Bprime->getLocalMatrixDevice();
+      auto Clocal = C->getLocalMatrixDevice();
+
+      auto Avals = Alocal.values;
+      auto Bvals = Blocal.values;
+      auto Cvals = Clocal.values;
+
+      Kokkos::parallel_for(
+          Kokkos::RangePolicy<typename Node::execution_space>(0, Cvals.extent(0)),
+          KOKKOS_LAMBDA(const int i) {
+            Cvals(i) = scalarA * Avals(i) + scalarB * Bvals(i);
+          });
+    }
+
+    if (!CwasNonzero) {
+      C->fillComplete(C->getRangeMap(), C->getDomainMap());
+    }
+    return;
+  }
+
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(Aprime.is_null(), std::logic_error,
                              prefix << "At this point, Aprime is null. Please report this bug to the Tpetra developers.");
@@ -993,6 +1059,14 @@ void Add(
   TEUCHOS_TEST_FOR_EXCEPTION(C.is_null(), std::logic_error,
                              prefix << "At this point, C is null. Please report this bug to the Tpetra developers.");
 #endif  // HAVE_TPETRA_DEBUG
+
+  // Zero the resulting matrix if necessary
+  if (CwasNonzero) {
+    if (CwasFillComplete) {
+      C->resumeFill();
+    }
+    C->setAllToScalar(STS::zero());
+  }
 
   Array<RCP<const crs_matrix_type>> Mat =
       tuple<RCP<const crs_matrix_type>>(Aprime, Bprime);
