@@ -643,7 +643,7 @@ namespace Intrepid2 {
       hookRegistered = true;
     }
 
-    const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
+    const KeyType key(basis->getName(), basis->getDegree());
     const auto edgeFound = edgeOperatorData.find(key);
     const auto faceFound = faceOperatorData.find(key);
     
@@ -683,7 +683,7 @@ namespace Intrepid2 {
       hookRegistered = true;
     }
 
-    const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
+    const KeyType key(basis->getName(), basis->getDegree());
     const auto edgeFound = invEdgeOperatorData.find(key);
     const auto faceFound = invFaceOperatorData.find(key);
     

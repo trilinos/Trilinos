@@ -399,7 +399,7 @@ namespace Intrepid2 {
     //
     /** \brief  key :: basis name, order, value :: matrix data view type, transpose (0 for no transpose, 1 for transpose)
      */
-    using OrtOperatorDataType = std::map<std::pair<std::string,ordinal_type>,Kokkos::View<OrientationOperator<DeviceType>***,DeviceType> >;
+    using OrtOperatorDataType = std::map<KeyType,Kokkos::View<OrientationOperator<DeviceType>***,DeviceType> >;
 
     static OrtOperatorDataType edgeOperatorData;
     static OrtOperatorDataType invEdgeOperatorData;
