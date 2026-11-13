@@ -30,6 +30,9 @@ struct CmdLineOpts {
   size_t repetitions;
   // Use Kokkos kernels for graph and matrix assembly
   bool useKokkosAssembly;
+  // With Kokkos assembly, also build the graph the non-Kokkos way and check
+  // that the two graphs are identical (maps, row offsets and column indices).
+  bool compareGraph;
   // Number of doubles per element (for simulated state transfer)
   int numStateDoublesPerElement;
   // execInsertGlobalIndicesFE - execute the FE Insert Global Indices kernel
@@ -54,6 +57,7 @@ void setCmdLineOpts(struct CmdLineOpts& opts,
   opts.saveMM                    = false;
   opts.repetitions               = 1;
   opts.useKokkosAssembly         = false;
+  opts.compareGraph              = false;
   opts.numStateDoublesPerElement = 4;
   opts.execInsertGlobalIndicesFE = false;
   opts.execTotalElementLoop      = false;
@@ -66,6 +70,8 @@ void setCmdLineOpts(struct CmdLineOpts& opts,
   clp.setOption("save-mm", "without-save-mm", &(opts.saveMM), "Save the generated CrsMatrix into a Matrix Market file.");
   clp.setOption("repetitions", &(opts.repetitions), "Number of times to repeat the kernel.");
   clp.setOption("with-kokkos", "without-kokkos", &(opts.useKokkosAssembly), "Use Kokkos assembly.");
+  clp.setOption("with-compare-graph", "without-compare-graph", &(opts.compareGraph),
+                "With Kokkos assembly, check that the assembled graph is identical to the non-Kokkos one.");
   clp.setOption("state-per-element", &(opts.numStateDoublesPerElement), "Number of doubles per element to store element state");
   clp.setOption("with-insert-global-indices-fe", "without-insert-global-indices-fe", &(opts.execInsertGlobalIndicesFE),
                 "Execute the Insert FECrsMatrix Global Indices FEM Assembly kernel.");

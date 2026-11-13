@@ -86,8 +86,9 @@ int main(int argc, char* argv[]) {
       std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
   }
 
-  // This tells the Trilinos test framework that the test passed.
-  if (EXIT_SUCCESS == comm->getRank())
+  // This tells the Trilinos test framework that the test passed.  The
+  // execute*() functions return the same status on every process.
+  if (EXIT_SUCCESS == status)
     out << "End Result: TEST PASSED" << endl;
   else
     out << "End Result: TEST FAILED" << endl;

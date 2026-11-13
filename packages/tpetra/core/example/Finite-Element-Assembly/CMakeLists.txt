@@ -17,9 +17,20 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   FEMAssembly
   NAME FEMAssembly_InsertGlobalIndicesFESPKokkos
-  ARGS "--with-insert-global-indices-fe --num-elements-x=200 --num-elements-y=200 --with-kokkos"
+  ARGS "--with-insert-global-indices-fe --num-elements-x=200 --num-elements-y=200 --with-kokkos --with-compare-graph"
   COMM serial mpi
   NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
+
+# The Kokkos-assembled graph must be identical to the inserted graph on a
+# single process too (no owned+shared -> owned communication).
+TRIBITS_ADD_TEST(
+  FEMAssembly
+  NAME FEMAssembly_InsertGlobalIndicesFESPKokkosOneRank
+  ARGS "--with-insert-global-indices-fe --num-elements-x=50 --num-elements-y=50 --with-kokkos --with-compare-graph"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
 
