@@ -517,9 +517,21 @@ namespace Teuchos {
           ArrayRCP<Ordinal> ind = arcp<Ordinal> (elts_.size ());
           ArrayRCP<Scalar> val = arcp<Scalar> (elts_.size ());
 
-          // Number of rows in the matrix.
-          const Ordinal nrows = tolerant_ ? seenNumRows_ : expectedNumRows_;
+          // Number of rows in the matrix.  In tolerant mode, the
+          // Matrix Market file's metadata might not match the actual
+          // entries, so take the max of the expected and seen number
+          // of rows.  This ensures that rowptr has at least the
+          // documented numRows+1 entries, where numRows comes from
+          // the file's metadata.
+          const Ordinal nrows = tolerant_ ?
+            std::max (seenNumRows_, expectedNumRows_) : expectedNumRows_;
           ArrayRCP<Ordinal> ptr = arcp<Ordinal> (nrows + 1);
+
+          // Upper bound (exclusive) for valid (zero-based) column
+          // indices.  In tolerant mode, the Matrix Market file's
+          // metadata might understate the number of columns, so use
+          // the max of the expected and seen number of columns.
+          const Ordinal ncols = std::max (expectedNumCols_, seenNumCols_);
 
           // Copy over the elements, and fill in the ptr array with
           // offsets.  Note that merge() sorted the entries by row
@@ -547,6 +559,10 @@ namespace Teuchos {
               std::logic_error, "The current index " << curInd << " into ind "
               "and val is >= the number of matrix entries " << elts_.size ()
               << ".");
+            TEUCHOS_TEST_FOR_EXCEPTION(j < 0 || j >= ncols,
+              std::invalid_argument, "The current matrix entry's (zero-based) "
+              "column index " << j << " is out of range [0, " << ncols
+              << ").");
             ind[curInd] = j;
             val[curInd] = Aij;
             ++curInd;

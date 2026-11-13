@@ -359,6 +359,12 @@ namespace Teuchos {
           const Ordinal nrows = tolerant_ ? seenNumRows_ : expectedNumRows_;
           ArrayRCP<Ordinal> ptr = arcp<Ordinal> (nrows + 1);
 
+          // Upper bound (exclusive) for valid (zero-based) column
+          // indices.  In tolerant mode, the Matrix Market file's
+          // metadata might understate the number of columns, so use
+          // the max of the expected and seen number of columns.
+          const Ordinal ncols = std::max (expectedNumCols_, seenNumCols_);
+
           // Copy over the elements, and fill in the ptr array with
           // offsets.  Note that merge() sorted the entries by row
           // index, so we can assume the row indices are increasing in
@@ -384,6 +390,10 @@ namespace Teuchos {
               std::logic_error, "The current index " << curInd << " into ind "
               "is >= the number of matrix entries " << elts_.size ()
               << ".");
+            TEUCHOS_TEST_FOR_EXCEPTION(j < 0 || j >= ncols,
+              std::invalid_argument, "The current graph entry's (zero-based) "
+              "column index " << j << " is out of range [0, " << ncols
+              << ").");
             ind[curInd] = j;
             ++curInd;
           }
