@@ -29,29 +29,20 @@ struct axpby_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_AXPBY_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                       \
-  template <>                                                                                                         \
-  struct axpby_eti_spec_avail<                                                                                        \
-      EXEC_SPACE, SCALAR,                                                                                             \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      SCALAR,                                                                                                         \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1> {                                                                                                            \
-    enum : bool { value = true };                                                                                     \
-  };                                                                                                                  \
-  template <>                                                                                                         \
-  struct axpby_eti_spec_avail<                                                                                        \
-      EXEC_SPACE,                                                                                                     \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1> {                                                                                                            \
-    enum : bool { value = true };                                                                                     \
+#define KOKKOSBLAS1_AXPBY_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE)                                                 \
+  template <>                                                                                                        \
+  struct axpby_eti_spec_avail<                                                                                       \
+      EXEC_SPACE, SCALAR, Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      SCALAR, Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1> {              \
+    enum : bool { value = true };                                                                                    \
+  };                                                                                                                 \
+  template <>                                                                                                        \
+  struct axpby_eti_spec_avail<                                                                                       \
+      EXEC_SPACE, Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+      Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1> {                      \
+    enum : bool { value = true };                                                                                    \
   };
 
 //
@@ -61,29 +52,20 @@ struct axpby_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                     \
-  template <>                                                                                                          \
-  struct axpby_eti_spec_avail<                                                                                         \
-      EXEC_SPACE, SCALAR,                                                                                              \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      SCALAR,                                                                                                          \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      2> {                                                                                                             \
-    enum : bool { value = true };                                                                                      \
-  };                                                                                                                   \
-  template <>                                                                                                          \
-  struct axpby_eti_spec_avail<                                                                                         \
-      EXEC_SPACE,                                                                                                      \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      2> {                                                                                                             \
-    enum : bool { value = true };                                                                                      \
+#define KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXEC_SPACE)                                               \
+  template <>                                                                                                         \
+  struct axpby_eti_spec_avail<                                                                                        \
+      EXEC_SPACE, SCALAR, Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      SCALAR, Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2> {              \
+    enum : bool { value = true };                                                                                     \
+  };                                                                                                                  \
+  template <>                                                                                                         \
+  struct axpby_eti_spec_avail<                                                                                        \
+      EXEC_SPACE, Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
+      Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                      \
+      Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2> {                      \
+    enum : bool { value = true };                                                                                     \
   };
 
 // Include the actual specialization declarations
@@ -489,45 +471,27 @@ struct Axpby<execution_space, typename XV::non_const_value_type, XV, typename YV
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS1_AXPBY_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                        \
-  extern template struct Axpby<                                                                                       \
-      EXEC_SPACE, SCALAR,                                                                                             \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      SCALAR,                                                                                                         \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1, false, true>;                                                                                                \
-  extern template struct Axpby<                                                                                       \
-      EXEC_SPACE,                                                                                                     \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1, false, true>;
+#define KOKKOSBLAS1_AXPBY_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE)                                                  \
+  extern template struct Axpby<                                                                                      \
+      EXEC_SPACE, SCALAR, Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      SCALAR, Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, false, true>;  \
+  extern template struct Axpby<                                                                                      \
+      EXEC_SPACE, Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+      Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, false, true>;
 
 #include <generated_specializations_hpp/KokkosBlas1_axpby_eti_spec_decl.hpp>
 
-#define KOKKOSBLAS1_AXPBY_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                        \
-  template struct Axpby<                                                                                              \
-      EXEC_SPACE, SCALAR,                                                                                             \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      SCALAR,                                                                                                         \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1, false, true>;                                                                                                \
-  template struct Axpby<                                                                                              \
-      EXEC_SPACE,                                                                                                     \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                         \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1, false, true>;
+#define KOKKOSBLAS1_AXPBY_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE)                                                  \
+  template struct Axpby<                                                                                             \
+      EXEC_SPACE, SCALAR, Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      SCALAR, Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, false, true>;  \
+  template struct Axpby<                                                                                             \
+      EXEC_SPACE, Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,         \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+      Kokkos::View<SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, false, true>;
 
 //
 // Macro for declaration of full specialization of
@@ -537,45 +501,27 @@ struct Axpby<execution_space, typename XV::non_const_value_type, XV, typename YV
 // one or more .cpp files.
 //
 
-#define KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                      \
-  extern template struct Axpby<                                                                                        \
-      EXEC_SPACE, SCALAR,                                                                                              \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      SCALAR,                                                                                                          \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      2, false, true>;                                                                                                 \
-  extern template struct Axpby<                                                                                        \
-      EXEC_SPACE,                                                                                                      \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      2, false, true>;
+#define KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_DECL(SCALAR, LAYOUT, EXEC_SPACE)                                                \
+  extern template struct Axpby<                                                                                       \
+      EXEC_SPACE, SCALAR, Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      SCALAR, Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2, false, true>;  \
+  extern template struct Axpby<                                                                                       \
+      EXEC_SPACE, Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
+      Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                      \
+      Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2, false, true>;
 
 #include <generated_specializations_hpp/KokkosBlas1_axpby_mv_eti_spec_decl.hpp>
 
-#define KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE)                                      \
-  template struct Axpby<                                                                                               \
-      EXEC_SPACE, SCALAR,                                                                                              \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      SCALAR,                                                                                                          \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      2, false, true>;                                                                                                 \
-  template struct Axpby<                                                                                               \
-      EXEC_SPACE,                                                                                                      \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>,                                       \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                          \
-      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      2, false, true>;
+#define KOKKOSBLAS1_AXPBY_MV_ETI_SPEC_INST(SCALAR, LAYOUT, EXEC_SPACE)                                                \
+  template struct Axpby<                                                                                              \
+      EXEC_SPACE, SCALAR, Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      SCALAR, Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2, false, true>;  \
+  template struct Axpby<                                                                                              \
+      EXEC_SPACE, Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
+      Kokkos::View<const SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                     \
+      Kokkos::View<const SCALAR*, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                      \
+      Kokkos::View<SCALAR**, LAYOUT, EXEC_SPACE, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 2, false, true>;
 
 #include <KokkosBlas1_axpby_tpl_spec_decl.hpp>
 

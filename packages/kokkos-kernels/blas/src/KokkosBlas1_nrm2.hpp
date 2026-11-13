@@ -34,18 +34,17 @@ typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_c
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrm2: "
                 "XVector must have rank 1.");
-  typedef typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
-      mag_type;
+  using mag_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type;
 
-  typedef Kokkos::View<typename XVector::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-                       typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XVector_Internal;
+  using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
+                                        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+                                        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   using layout_t = typename XVector_Internal::array_layout;
 
-  typedef Kokkos::View<mag_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      RVector_Internal;
+  using RVector_Internal =
+      Kokkos::View<mag_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   mag_type result;
   RVector_Internal R = RVector_Internal(&result, layout_t());
@@ -109,35 +108,38 @@ void nrm2(const execution_space& space, const RV& R, const XMV& X,
                 "KokkosBlas::nrm2: "
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
-  typedef
-      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
+  using mag_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type;
   static_assert(std::is_same<typename RV::value_type, mag_type>::value,
                 "KokkosBlas::nrm2: R must have the magnitude type of"
                 "the xvectors value_type it is an output argument "
                 "(we have to be able to write to its entries).");
 
   // Check compatibility of dimensions at run time.
-  if (X.extent(1) != R.extent(0)) {
-    std::ostringstream os;
-    os << "KokkosBlas::nrm2 (MV): Dimensions of R and X do not match: "
-       << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x " << X.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr ((RV::rank == 1) && (XMV::rank == 2)) {
+    if (X.extent(1) != R.extent(0)) {
+      std::ostringstream os;
+      os << "KokkosBlas::nrm2 (MV): Dimensions of R and X do not match: "
+         << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x " << X.extent(1);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   using UnifiedXLayout  = typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
   using UnifiedRVLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<RV, UnifiedXLayout>::array_layout;
+  using UnifiedRVDevice =
+      std::conditional_t<Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename RV::memory_space>::assignable,
+                         Kokkos::HostSpace, execution_space>;
 
   // Create unmanaged versions of the input Views.  RV and XMV may be
   // rank 1 or rank 2.
-  typedef Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, typename RV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      RV_Internal;
-  typedef Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, typename XMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XMV_Internal;
+  using RV_Internal  = Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, UnifiedRVDevice,
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  RV_Internal R_internal  = R;
-  XMV_Internal X_internal = X;
+  RV_Internal R_internal  = KokkosKernels::Impl::unificationCast<RV_Internal>(R);
+  XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);
 
   Impl::Nrm2<execution_space, RV_Internal, XMV_Internal>::nrm2(space, R_internal, X_internal, true);
 }

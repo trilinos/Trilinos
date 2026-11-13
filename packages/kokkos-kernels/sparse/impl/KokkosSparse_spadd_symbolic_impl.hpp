@@ -439,7 +439,7 @@ void spadd_symbolic_impl(const execution_space& exec, KernelHandle* handle, cons
   if (addHandle->is_input_sorted()) {
     runSortedCountEntries<execution_space, KernelHandle, alno_row_view_t_, alno_nnz_view_t_, blno_row_view_t_,
                           blno_nnz_view_t_, clno_row_view_t_>(exec, a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap);
-    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(exec, nrows + 1, c_rowmap);
+    KokkosKernels::exclusive_parallel_prefix_sum(exec, c_rowmap);
   } else {
     // note: scoping individual parts of the process to free views sooner,
     // minimizing peak memory usage run the unsorted c_rowmap upper bound
@@ -452,8 +452,7 @@ void spadd_symbolic_impl(const execution_space& exec, KernelHandle* handle, cons
           countEntries(nrows, a_rowmap, b_rowmap, c_rowmap_upperbound);
       Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::CountEntries", range_type(exec, 0, nrows),
                            countEntries);
-      KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(exec, nrows + 1, c_rowmap_upperbound,
-                                                                             c_nnz_upperbound);
+      KokkosKernels::exclusive_parallel_prefix_sum(exec, c_rowmap_upperbound, c_nnz_upperbound);
     }
     ordinal_view_t c_entries_uncompressed(
         Kokkos::view_alloc(exec, Kokkos::WithoutInitializing, "C entries uncompressed"), c_nnz_upperbound);
@@ -482,7 +481,7 @@ void spadd_symbolic_impl(const execution_space& exec, KernelHandle* handle, cons
       Kokkos::parallel_for("KokkosSparse::SpAdd:Symbolic::InputNotSorted::MergeEntries", range_type(exec, 0, nrows),
                            mergeEntries);
       // compute actual c_rowmap
-      KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(exec, nrows + 1, c_rowmap);
+      KokkosKernels::exclusive_parallel_prefix_sum(exec, c_rowmap);
     }
     addHandle->set_a_b_pos(a_pos, b_pos);
   }

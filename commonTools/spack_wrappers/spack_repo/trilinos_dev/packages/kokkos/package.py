@@ -5,6 +5,7 @@ from spack.package import *
 
 class Kokkos(BuiltinKokkos):
 
+    version("5.3.0", sha256="f1875cacec93d4d4cbd6f391a38994abb67ccffea5ecee2b4be7a8191941ef88")
     version("5.2.2", sha256="d6557aaef39302282a15f9c770433d1fcdf4e961dfd6d9ed726b9d0d0f546b9f")
     version("5.2.1", sha256="3f754c99aa6130b1dd6520d904db7b2fd44ed618cd91e0dfd921956f23f6812d")
     version("5.2.0", sha256="54993e0682d80b78939bbf260490f8cf31428bb883c0309961369997f15d94df")
