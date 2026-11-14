@@ -71,8 +71,8 @@ struct BDF_system_wrapper {
 
   template <class vec_type>
   KOKKOS_FUNCTION void residual(const vec_type& y, const vec_type& f) const {
-    // f = f(t+dt, y)
-    mySys.evaluate_function(t, dt, y, f);
+    // The implicit BDF stage is evaluated at the end of the step,
+    mySys.evaluate_function(t + dt, dt, y, f);
 
     for (int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
       f(eqIdx) = y(eqIdx) - table.coefficients[order] * dt * f(eqIdx);
@@ -84,7 +84,7 @@ struct BDF_system_wrapper {
 
   template <class vec_type, class mat_type>
   KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
-    mySys.evaluate_jacobian(t, dt, y, jac);
+    mySys.evaluate_jacobian(t + dt, dt, y, jac);
 
     for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
       for (int colIdx = 0; colIdx < neqs; ++colIdx) {
@@ -95,44 +95,44 @@ struct BDF_system_wrapper {
   }
 };
 
-template <class system_type, class subview_type, class d_vec_type>
+template <class system_type, class subview_type, class y_vec_type>
 struct BDF_system_wrapper2 {
   const system_type mySys;
   const int neqs;
   const subview_type psi;
-  const d_vec_type d;
+  const y_vec_type y_predict;
 
   bool compute_jac = true;
   double t, dt, c = 0;
 
   KOKKOS_FUNCTION
-  BDF_system_wrapper2(const system_type& mySys_, const subview_type& psi_, const d_vec_type& d_, const double t_,
-                      const double dt_)
-      : mySys(mySys_), neqs(mySys_.neqs), psi(psi_), d(d_), t(t_), dt(dt_) {}
+  BDF_system_wrapper2(const system_type& mySys_, const subview_type& psi_, const y_vec_type& y_predict_,
+                      const double t_, const double dt_)
+      : mySys(mySys_), neqs(mySys_.neqs), psi(psi_), y_predict(y_predict_), t(t_), dt(dt_) {}
 
   template <class YVectorType, class FVectorType>
   KOKKOS_FUNCTION void residual(const YVectorType& y, const FVectorType& f) const {
-    // f = f(t+dt, y)
-    mySys.evaluate_function(t, dt, y, f);
+    // The implicit stage is evaluated at the end of the step,
+    mySys.evaluate_function(t + dt, dt, y, f);
 
-    // std::cout << "f = psi + d - c * f = " << psi(0) << " + " << d(0) << " - "
-    // << c << " * " << f(0) << std::endl;
-
-    // rhs = higher order terms + y_{n+1}^i - y_n - dt*f
+    // Corrector equation of the NDF step
+    //   0 = psi + (y - y_predict) - c * f(t+dt, y)
     for (int eqIdx = 0; eqIdx < neqs; ++eqIdx) {
-      f(eqIdx) = psi(eqIdx) + d(eqIdx) - c * f(eqIdx);
+      f(eqIdx) = psi(eqIdx) + (y(eqIdx) - y_predict(eqIdx)) - c * f(eqIdx);
     }
   }
 
   template <class vec_type, class mat_type>
   KOKKOS_FUNCTION void jacobian(const vec_type& y, const mat_type& jac) const {
     if (compute_jac) {
-      mySys.evaluate_jacobian(t, dt, y, jac);
+      mySys.evaluate_jacobian(t + dt, dt, y, jac);
 
-      // J = I - dt*(df/dy)
+      // Jacobian of the corrector residual psi + (y - y_predict) - c*f:
+      //   J = I - c*(df/dy),  with c = dt/alpha[order].
+      // This must use the same c that scales f in residual()
       for (int rowIdx = 0; rowIdx < neqs; ++rowIdx) {
         for (int colIdx = 0; colIdx < neqs; ++colIdx) {
-          jac(rowIdx, colIdx) = -dt * jac(rowIdx, colIdx);
+          jac(rowIdx, colIdx) = -c * jac(rowIdx, colIdx);
         }
         jac(rowIdx, rowIdx) += 1.0;
       }
@@ -154,14 +154,21 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, const table_type& table, scalar_type
     y_new(eqIdx) = y_old(eqIdx);
   }
 
-  // solver the nonlinear problem
-  { KokkosODE::Experimental::Newton::Solve(sys, param, jac, temp, y_new, rhs, update, scale); }
+  // solve the nonlinear problem
+  {
+    int newton_iterations;
+    KokkosODE::Experimental::Newton::Solve(sys, param, jac, temp, y_new, rhs, update, scale, newton_iterations);
+  }
 
 }  // BDFStep
 
 template <class mat_type, class scalar_type>
 KOKKOS_FUNCTION void compute_coeffs(const int order, const scalar_type factor, const mat_type& coeffs) {
+  // initialize coeffs
   coeffs(0, 0) = 1.0;
+  for (int rowIdx = 0; rowIdx < order; ++rowIdx) {
+    coeffs(rowIdx + 1, 0) = 0.0;
+  }
   for (int colIdx = 0; colIdx < order; ++colIdx) {
     coeffs(0, colIdx + 1) = 1.0;
     for (int rowIdx = 0; rowIdx < order; ++rowIdx) {
@@ -248,12 +255,13 @@ KOKKOS_FUNCTION void initial_step_size(const ode_type ode, const int order, cons
 }  // initial_step_size
 
 template <class ode_type, class vec_type, class res_type, class mat_type, class scalar_type>
-KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, scalar_type t_end, int& order,
-                             int& num_equal_steps, const int max_newton_iters, const scalar_type atol,
-                             const scalar_type rtol, const scalar_type min_factor, const vec_type& y_old,
-                             const vec_type& y_new, const res_type& rhs, const res_type& update, const mat_type& temp,
-                             const mat_type& temp2) {
-  using newton_params = KokkosODE::Experimental::Newton_params;
+[[nodiscard]] KOKKOS_FUNCTION KokkosODE::Experimental::ode_solver_status BDFStep(
+    ode_type& ode, scalar_type& t, scalar_type& dt, scalar_type t_end, const scalar_type max_step, int& order,
+    int& num_equal_steps, const int max_newton_iters, const scalar_type atol, const scalar_type rtol,
+    const scalar_type min_factor, const vec_type& y_old, const vec_type& y_new, const res_type& rhs,
+    const res_type& update, const mat_type& temp, const mat_type& temp2) {
+  using newton_params     = KokkosODE::Experimental::Newton_params;
+  using ode_solver_status = KokkosODE::Experimental::ode_solver_status;
 
   constexpr int max_order = 5;
 
@@ -272,18 +280,22 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   // temp.extent_int(1); std::cout << "numRows: " << numRows << ", numCols: " <<
   // numCols << std::endl; std::cout << "Extract subview from temp" <<
   // std::endl;
+  // Column layout of temp: [0] rhs, [1] update, [2, 10) D,
+  // [10, 18) tempD, [18] scale, [19] y_predict, [20] psi, [21] error,
+  // [22, 22 + neqs) jac, [22 + neqs, 26 + 2 * neqs) gesv buffer.
+  // Callers must provide at least 26 + 2 * neqs columns.
   int offset = 2;
   auto D = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + 8));  // y and its derivatives
   offset += 8;
   auto tempD = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + 8));
   offset += 8;
-  auto scale = Kokkos::subview(temp, Kokkos::ALL(), offset + 1);
+  auto scale = Kokkos::subview(temp, Kokkos::ALL(), offset);
   ++offset;  // Scaling coefficients for error calculation
-  auto y_predict = Kokkos::subview(temp, Kokkos::ALL(), offset + 1);
+  auto y_predict = Kokkos::subview(temp, Kokkos::ALL(), offset);
   ++offset;  // Initial guess for y_{n+1}
-  auto psi = Kokkos::subview(temp, Kokkos::ALL(), offset + 1);
+  auto psi = Kokkos::subview(temp, Kokkos::ALL(), offset);
   ++offset;  // Higher order terms contribution to rhs
-  auto error = Kokkos::subview(temp, Kokkos::ALL(), offset + 1);
+  auto error = Kokkos::subview(temp, Kokkos::ALL(), offset);
   ++offset;  // Error estimate
   auto jac =
       Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(offset, offset + ode.neqs));  // Jacobian matrix
@@ -301,13 +313,14 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   gamma(4)    = 2.08333333;
   gamma(5)    = 2.28333333;
 
-  BDF_system_wrapper2 sys(ode, psi, update, t, dt);
-  const newton_params param(
-      max_newton_iters, atol,
-      Kokkos::max(10 * KokkosKernels::ArithTraits<scalar_type>::eps() / rtol, Kokkos::min(0.03, Kokkos::sqrt(rtol))));
+  BDF_system_wrapper2 sys(ode, psi, y_predict, t, dt);
+  const newton_params param(max_newton_iters, atol, rtol);
 
-  scalar_type max_step = KokkosKernels::ArithTraits<scalar_type>::max();
-  scalar_type min_step = KokkosKernels::ArithTraits<scalar_type>::min();
+  // Smallest step that can still advance t in floating point
+  // arithmetic (same floor as SciPy's BDF): once dt shrinks below
+  // this, the step is treated as failed instead of retried forever.
+  const scalar_type min_step =
+      10 * Kokkos::abs(Kokkos::nextafter(t, KokkosKernels::ArithTraits<scalar_type>::max()) - t);
   scalar_type safety = 0.675, error_norm = 0.0;
   if (dt > max_step) {
     update_D(order, max_step / dt, coeffs, tempD, D);
@@ -328,7 +341,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   bool step_accepted = false;
   while (!step_accepted) {
     if (dt < min_step) {
-      return;
+      return ode_solver_status::MIN_SIZE;
     }
     t_new = t + dt;
 
@@ -354,26 +367,31 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
     KokkosBlas::Experimental::serial_gemv('N', 1.0 / alpha[order], subD, subGamma, 0.0, psi);
 
     sys.compute_jac = true;
-    sys.c           = dt / alpha[order];
+    // dt may have been halved or clamped since the last attempt: refresh
+    // the wrapper so the residual and Jacobian see the current step.
+    sys.dt = dt;
+    sys.c  = dt / alpha[order];
     sys.jacobian(y_new, jac);
     sys.compute_jac = true;
     Kokkos::Experimental::local_deep_copy(y_new, y_predict);
     Kokkos::Experimental::local_deep_copy(update, 0);
+    int newton_iterations;
     KokkosODE::Experimental::newton_solver_status newton_status =
-        KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new, rhs, update, scale);
+        KokkosODE::Experimental::Newton::Solve(sys, param, jac, tmp_gesv, y_new, rhs, update, scale, newton_iterations);
 
     for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
       update(eqIdx) = y_new(eqIdx) - y_predict(eqIdx);
     }
 
-    if (newton_status == KokkosODE::Experimental::newton_solver_status::MAX_ITER) {
+    // Reject the step on any status that isn't a converged solve
+    if (newton_status != KokkosODE::Experimental::newton_solver_status::NLS_SUCCESS) {
       dt = 0.5 * dt;
       update_D(order, 0.5, coeffs, tempD, D);
       num_equal_steps = 0;
 
     } else {
       // Estimate the solution error
-      safety     = 0.9 * (2 * max_newton_iters + 1) / (2 * max_newton_iters + param.iters);
+      safety     = 0.9 * (2 * max_newton_iters + 1) / (2 * max_newton_iters + newton_iterations);
       error_norm = 0;
       for (int eqIdx = 0; eqIdx < sys.neqs; ++eqIdx) {
         scale(eqIdx) = atol + rtol * Kokkos::abs(y_new(eqIdx));
@@ -414,7 +432,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   // attempt order adaptation.
   double error_low = 0, error_high = 0;
   if (num_equal_steps < order + 1) {
-    return;
+    return ode_solver_status::SUCCESS;
   }
 
   if (1 < order) {
@@ -458,6 +476,7 @@ KOKKOS_FUNCTION void BDFStep(ode_type& ode, scalar_type& t, scalar_type& dt, sca
   update_D(order, factor, coeffs, tempD, D);
   num_equal_steps = 0;
 
+  return ode_solver_status::SUCCESS;
 }  // BDFStep
 
 }  // namespace Impl

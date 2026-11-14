@@ -209,8 +209,6 @@ ETI Options
 - ``KokkosKernels_INST_MEMSPACE_HIPSPACE``: BOOL
 - ``KokkosKernels_INST_EXECSPACE_SYCL``: BOOL
 - ``KokkosKernels_INST_MEMSPACE_SYCLSPACE``: BOOL
-- ``KokkosKernels_INST_EXECSPACE_OPENMPTARGET``: BOOL
-- ``KokkosKernels_INST_MEMSPACE_OPENMPTARGETSPACE``: BOOL
 - ``KokkosKernels_INST_MEMSPACE_HBWSPACE``: BOOL
 
 Documentation Options
@@ -240,11 +238,11 @@ Supported Third-party Libraries and Related CMake Options
       - Default: OFF
 
     - ``ARMPL_LIBRARIES``: STRING
-      
+
       - the name of the armpl library files to look for (possibly combined with above)
 
     - ``ARMPL_LIBRARY_DIRS``: STRING
-      
+
       - which directories to look for ``armpl``/``armpl_mp`` (optionally combined with below)
 
   - Environment Variables

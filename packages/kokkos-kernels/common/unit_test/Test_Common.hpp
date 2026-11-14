@@ -16,5 +16,6 @@
 #include <Test_Common_Iota.hpp>
 #include <Test_Common_LowerBound.hpp>
 #include <Test_Common_UpperBound.hpp>
+#include <Test_Common_traits.hpp>
 
 #endif  // TEST_COMMON_HPP

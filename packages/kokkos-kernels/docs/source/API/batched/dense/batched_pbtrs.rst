@@ -16,10 +16,10 @@ Defined in header: :code:`KokkosBatched_Pbtrs.hpp`
 
 Solves a system of the linear equations :math:`A \cdot X = B` with a symmetric (or Hermitian) positive definite band matrix A using the Cholesky factorization computed by ``Pbtrf``.
 
-1. For a real symmetric positive definite band matrix A, this solves a system of the linear equations :math:`A \cdot X = B` for X using the :math:`A = U^T \cdot U \: \text{(if ArgUplo == Uplo::Upper)}` or :math:`A = L \cdot L^T \: \text{(if ArgUplo == Uplo::Lower)}` factorization 
+1. For a real symmetric positive definite band matrix A, this solves a system of the linear equations :math:`A \cdot X = B` for X using the :math:`A = U^T \cdot U \: \text{(if ArgUplo == Uplo::Upper)}` or :math:`A = L \cdot L^T \: \text{(if ArgUplo == Uplo::Lower)}` factorization
 computed by ``Pbtrf``. Here, U is an upper triangular matrix and L is a lower triangular matrix. This operation is equivalent to the LAPACK routine ``SPBTRS`` or ``DPBTRS`` for single or double precision.
 
-2. For a complex Hermitian positive definite band matrix A, this solves a system of the linear equations :math:`A \cdot X = B` for X using the :math:`A = U^H \cdot U \: \text{(if ArgUplo == Uplo::Upper)}` or :math:`A = L \cdot L^H \: \text{(if ArgUplo == Uplo::Lower)}` factorization 
+2. For a complex Hermitian positive definite band matrix A, this solves a system of the linear equations :math:`A \cdot X = B` for X using the :math:`A = U^H \cdot U \: \text{(if ArgUplo == Uplo::Upper)}` or :math:`A = L \cdot L^H \: \text{(if ArgUplo == Uplo::Lower)}` factorization
 computed by ``Pbtrs``. Here, U is an upper triangular matrix and L is a lower triangular matrix. This operation is equivalent to the LAPACK routine ``CPBTRS`` or ``ZPBTRS`` for single or double precision.
 
 Parameters

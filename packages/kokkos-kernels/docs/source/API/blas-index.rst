@@ -9,7 +9,9 @@ API: BLAS
    blas/blas1_axpy
    blas/blas1_axpby
    blas/blas1_dot
+   blas/blas1_fill
    blas/blas1_iamax
+   blas/blas1_mult
    blas/blas1_nrminf
    blas/blas1_nrm1
    blas/blas1_nrm2
@@ -19,7 +21,9 @@ API: BLAS
    blas/blas1_rotm
    blas/blas1_scal
    blas/blas1_set
+   blas/blas1_sum
    blas/blas1_swap
+   blas/blas1_update
 
    blas/blas2_gemv
    blas/blas2_ger
@@ -403,7 +407,7 @@ BLAS 3
      - X
      - X
      - X
-     - --
+     - X
    * - SYMM
      - --
      - --
@@ -461,3 +465,37 @@ BLAS 3
      - --
      - --
 
+
+BLAS Additions
+--------------
+
+
+.. list-table::
+   :widths: 12 26 10 10 10
+   :header-rows: 1
+
+   * - BLAS Call
+     - API Call
+     - cuBLAS
+     - rocBLAS
+     - oneMKL
+   * - fill
+     - :doc:`fill(space, X, val) <blas/blas1_fill>`
+     - X
+     - X
+     - X
+   * - mult
+     - :doc:`mult(space, X, Y) <blas/blas1_mult>`
+     -
+     -
+     -
+   * - sum
+     - :doc:`sum(space, R, X) <blas/blas1_sum>`
+     -
+     -
+     -
+   * - update
+     - :doc:`update(space, R, X) <blas/blas1_update>`
+     -
+     -
+     -

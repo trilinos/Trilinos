@@ -11,7 +11,7 @@ Defined in header: :code:`KokkosBatched_Laswp.hpp`
       KOKKOS_INLINE_FUNCTION static int invoke(const PivViewType &piv, const AViewType &A);
     };
 
-Performs a series of row interchanges on the matrix :math:`A`. One row interchange is initiated for each of rows `K1` through `K2` of :math:`A`, where 
+Performs a series of row interchanges on the matrix :math:`A`. One row interchange is initiated for each of rows `K1` through `K2` of :math:`A`, where
 `piv` includes the elements from `K1` to `K2`.
 
 Parameters

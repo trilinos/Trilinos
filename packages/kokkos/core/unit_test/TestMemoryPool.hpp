@@ -154,7 +154,7 @@ struct TestMemoryPool_Functor {
   struct TagAlloc {};
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagAlloc, int i, long& update) const noexcept {
+  void operator()(TagAlloc, int i, long& update) const {
     unsigned alloc_size = 32 * (1 + (i % 5));
     ptrs(i)             = (uintptr_t)pool.allocate(alloc_size);
     if (ptrs(i)) {
@@ -165,7 +165,7 @@ struct TestMemoryPool_Functor {
   struct TagDealloc {};
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagDealloc, int i, long& update) const noexcept {
+  void operator()(TagDealloc, int i, long& update) const {
     if (ptrs(i) && (0 == i % 3)) {
       unsigned alloc_size = 32 * (1 + (i % 5));
       pool.deallocate((void*)ptrs(i), alloc_size);
@@ -177,7 +177,7 @@ struct TestMemoryPool_Functor {
   struct TagRealloc {};
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagRealloc, int i, long& update) const noexcept {
+  void operator()(TagRealloc, int i, long& update) const {
     if (0 == ptrs(i)) {
       unsigned alloc_size = 32 * (1 + (i % 5));
       ptrs(i)             = (uintptr_t)pool.allocate(alloc_size);
@@ -190,7 +190,7 @@ struct TestMemoryPool_Functor {
   struct TagMixItUp {};
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagMixItUp, int i, long& update) const noexcept {
+  void operator()(TagMixItUp, int i, long& update) const {
     if (ptrs(i) && (0 == i % 3)) {
       unsigned alloc_size = 32 * (1 + (i % 5));
 
@@ -341,7 +341,7 @@ struct TestMemoryPoolCorners {
   using value_type = long;
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(int i, long& err) const noexcept {
+  void operator()(int i, long& err) const {
     unsigned alloc_size = size << (i % stride);
     if (0 == ptrs(i)) {
       ptrs(i) = (uintptr_t)pool.allocate(alloc_size);
@@ -354,7 +354,7 @@ struct TestMemoryPoolCorners {
   struct TagDealloc {};
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(int i) const noexcept {
+  void operator()(int i) const {
     unsigned alloc_size = size << (i % stride);
     if (ptrs(i)) {
       pool.deallocate((void*)ptrs(i), alloc_size);
@@ -474,7 +474,7 @@ struct TestMemoryPoolHuge<
 
   using value_type = long;
 
-  void operator()(int i, long& err) const noexcept {
+  void operator()(int i, long& err) const {
     if (i < int(num_superblock)) {
       ptrs(i) = (uintptr_t)pool.allocate(max_block_size);
 #if 0
@@ -489,7 +489,7 @@ struct TestMemoryPoolHuge<
     }
   }
 
-  void operator()(int i) const noexcept {
+  void operator()(int i) const {
     if (i < int(num_superblock)) {
       pool.deallocate((void*)ptrs(i), max_block_size);
       ptrs(i) = 0;
@@ -522,7 +522,15 @@ namespace Test {
 TEST(TEST_CATEGORY, memory_pool) {
   TestMemoryPool::test_host_memory_pool_defaults<>();
   TestMemoryPool::test_host_memory_pool_stats<>();
-  TestMemoryPool::test_memory_pool_v2<TEST_EXECSPACE>(false, false);
+  // FIXME_NEXTSILICON: projection of the TagAlloc reduction fails to converge,
+  // and the following reductions depend on its result.
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+  if constexpr (!std::is_same_v<TEST_EXECSPACE,
+                                Kokkos::Experimental::NextSilicon>)
+#endif
+  {
+    TestMemoryPool::test_memory_pool_v2<TEST_EXECSPACE>(false, false);
+  }
   TestMemoryPool::test_memory_pool_corners<TEST_EXECSPACE>(false, false);
 #ifdef KOKKOS_ENABLE_LARGE_MEM_TESTS
   TestMemoryPool::test_memory_pool_huge<TEST_EXECSPACE>();

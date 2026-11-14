@@ -58,7 +58,7 @@ Linear Algebra Operations
 =========================
 
 - sparse matrix-vector multiplication
-   
+
   - :doc:`spmv <sparse/spmv>`
 
 - sparse matrix-matrix addition

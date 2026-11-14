@@ -7,16 +7,17 @@
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_Core_fwd.hpp>
 #include <impl/Kokkos_Error.hpp>  // Impl::throw_runtime_exception
-
-#ifdef KOKKOS_ENABLE_NEXTSILICON
-#include <NextSilicon/Kokkos_NextSilicon_PageAlignedData.hpp>
-#endif
+#include <Kokkos_Atomic.hpp>
 
 #include <cstdint>
 #include <string>
+#include <type_traits>
 
 namespace Kokkos {
 namespace Impl {
+
+template <class DstMemorySpace, class SrcMemorySpace>
+struct MemorySpaceAccess;
 
 template <class MemorySpace = void, class DestroyFunctor = void>
 class SharedAllocationRecord;
@@ -108,12 +109,20 @@ class SharedAllocationRecord<void, void> {
       SharedAllocationHeader* arg_alloc_ptr, size_t arg_alloc_size,
       function_type arg_dealloc, const std::string& label);
  private:
-#ifdef KOKKOS_ENABLE_NEXTSILICON
-  // FIXME_NEXTSILICON: NextSilicon backend has problems with page migration of
-  // thread-local variables, so we need to page align them as a workaround.
-  static inline thread_local PageAlignedData<int> t_tracking_enabled = 1;
-#else
   static inline thread_local int t_tracking_enabled = 1;
+
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+  // FIXME_NEXTSILICON: containment for the TLS read, same rationale as
+  // NextSiliconThreadSpaceGuard::host_thread_is_on_device()
+  // (Kokkos_NextSilicon_ThreadSpaceGuard.hpp): if `t_tracking_enabled` were
+  // read directly inline in tracking_enabled()'s KOKKOS_IF_ON_HOST branch,
+  // the underlying TLS-address intrinsic is speculatable and can be hoisted
+  // past the host/device split during lowering, executing unconditionally.
+  // Keeping the read behind a non-inlined `weak` wrapper makes the call
+  // opaque at the use site, so it can't be hoisted out of the branch.
+  static __attribute__((weak)) int host_tracking_enabled() {
+    return t_tracking_enabled;
+  }
 #endif
 
  public:
@@ -124,7 +133,11 @@ class SharedAllocationRecord<void, void> {
 #pragma diag_suppress implicit_return_from_non_void_function
 #endif
   static KOKKOS_FUNCTION int tracking_enabled() {
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+    KOKKOS_IF_ON_HOST(return host_tracking_enabled();)
+#else
     KOKKOS_IF_ON_HOST(return t_tracking_enabled;)
+#endif
     KOKKOS_IF_ON_DEVICE(return 0;)
     KOKKOS_IMPL_UNREACHABLE();
   }
@@ -167,8 +180,7 @@ class SharedAllocationRecord<void, void> {
   /* User's memory begins at the end of the header */
   size_t size() const { return m_alloc_size - sizeof(SharedAllocationHeader); }
 
-  /* Cannot be 'constexpr' because 'm_count' is volatile */
-  int use_count() const { return *static_cast<const volatile int*>(&m_count); }
+  int use_count() const { return Kokkos::atomic_load(&m_count); }
 
   /* Increment use count */
   static void increment(SharedAllocationRecord*);
@@ -421,23 +433,11 @@ SharedAllocationRecord<void, void>
     HostInaccessibleSharedAllocationRecordCommon<MemorySpace>::s_root_record;
 #endif
 
-#define KOKKOS_IMPL_SHARED_ALLOCATION_SPECIALIZATION(MEMORY_SPACE)        \
-  template <>                                                             \
-  class Kokkos::Impl::SharedAllocationRecord<MEMORY_SPACE, void>          \
-      : public Kokkos::Impl::SharedAllocationRecordCommon<MEMORY_SPACE> { \
-    using SharedAllocationRecordCommon<                                   \
-        MEMORY_SPACE>::SharedAllocationRecordCommon;                      \
-  }
-
-#define KOKKOS_IMPL_HOST_INACCESSIBLE_SHARED_ALLOCATION_SPECIALIZATION(    \
-    MEMORY_SPACE)                                                          \
-  template <>                                                              \
-  class Kokkos::Impl::SharedAllocationRecord<MEMORY_SPACE, void>           \
-      : public Kokkos::Impl::HostInaccessibleSharedAllocationRecordCommon< \
-            MEMORY_SPACE> {                                                \
-    using HostInaccessibleSharedAllocationRecordCommon<                    \
-        MEMORY_SPACE>::HostInaccessibleSharedAllocationRecordCommon;       \
-  }
+template <class MemorySpace>
+using SharedAllocationRecordBase = std::conditional_t<
+    Kokkos::Impl::MemorySpaceAccess<Kokkos::HostSpace, MemorySpace>::accessible,
+    SharedAllocationRecordCommon<MemorySpace>,
+    HostInaccessibleSharedAllocationRecordCommon<MemorySpace>>;
 
 #define KOKKOS_IMPL_SHARED_ALLOCATION_RECORD_EXPLICIT_INSTANTIATION( \
     MEMORY_SPACE)                                                    \
@@ -532,7 +532,12 @@ class SharedAllocationRecord
 
 template <class MemorySpace>
 class SharedAllocationRecord<MemorySpace, void>
-    : public SharedAllocationRecord<void, void> {};
+    : public SharedAllocationRecordBase<MemorySpace> {
+  using base_type = SharedAllocationRecordBase<MemorySpace>;
+
+ public:
+  using base_type::base_type;
+};
 
 union SharedAllocationTracker {
  private:

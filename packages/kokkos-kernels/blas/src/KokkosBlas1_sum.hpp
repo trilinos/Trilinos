@@ -19,12 +19,9 @@ namespace KokkosBlas {
 /// \param x [in] Input 1-D View.
 ///
 /// \return The sum product result; a single value.
-template <class execution_space, class XVector,
-          typename std::enable_if<Kokkos::is_execution_space_v<execution_space>, int>::type = 0>
+template <class execution_space, class XVector>
+  requires Kokkos::is_execution_space_v<execution_space>
 typename XVector::non_const_value_type sum(const execution_space& space, const XVector& x) {
-  static_assert(Kokkos::is_execution_space_v<execution_space>,
-                "KokkosBlas::sum: execution_space must be a valid Kokkos "
-                "execution space");
   static_assert(Kokkos::is_view<XVector>::value, "KokkosBlas::sum: XVector must be a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XVector::memory_space>::accessible,
                 "KokkosBlas::sum: XVector must be accessible from execution_space.");
@@ -34,7 +31,7 @@ typename XVector::non_const_value_type sum(const execution_space& space, const X
 
   using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
                                         typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-                                        typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+                                        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   using layout_t = typename XVector_Internal::array_layout;
 
@@ -72,7 +69,7 @@ typename XVector::non_const_value_type sum(const XVector& x) {
 /// This function is non-blocking and thread-safe.
 ///
 /// \tparam execution_space a Kokkos execution space where the kernel will run.
-/// \tparam RMV 1-D or 2-D Kokkos::View specialization.
+/// \tparam RMV 0-D or 1-D Kokkos::View specialization.
 /// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
@@ -81,20 +78,15 @@ typename XVector::non_const_value_type sum(const XVector& x) {
 /// \param R [out] Output View (rank 0 or 1) containing the results.
 /// \param X [in] Input View (rank 1 or 2).
 template <class execution_space, class RV, class XMV>
-void sum(const execution_space& space, const RV& R, const XMV& X,
-         typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+void sum(const execution_space& space, const RV& R, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::sum: execution_space must be a valid Kokkos "
                 "execution space.");
-  static_assert(Kokkos::is_view<RV>::value,
-                "KokkosBlas::sum: "
-                "R is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<XMV>::value,
-                "KokkosBlas::sum: "
-                "X is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<RV>, "KokkosBlas::sum: R is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<XMV>, "KokkosBlas::sum: X is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
                 "KokkosBlas::sum: XMV must be accessible from execution_space.");
-  static_assert(std::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+  static_assert(!std::is_const_v<typename RV::value_type>,
                 "KokkosBlas::sum: R is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
@@ -103,27 +95,30 @@ void sum(const execution_space& space, const RV& R, const XMV& X,
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
   // Check compatibility of dimensions at run time.
-  if (X.extent(1) != R.extent(0)) {
-    std::ostringstream os;
-    os << "KokkosBlas::sum (MV): Dimensions of R and X do not match: "
-       << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x " << X.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (XMV::rank == 2) {
+    if (X.extent(1) != R.extent(0)) {
+      std::ostringstream os;
+      os << "KokkosBlas::sum (MV): Dimensions of R and X do not match: "
+         << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x " << X.extent(1);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   using UnifiedXLayout  = typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
   using UnifiedRVLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<RV, UnifiedXLayout>::array_layout;
+  using UnifiedRVDevice =
+      std::conditional_t<Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename RV::memory_space>::assignable,
+                         Kokkos::HostSpace, execution_space>;
 
   // Create unmanaged versions of the input Views.  RV and XMV may be
   // rank 1 or rank 2.
-  typedef Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, typename RV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      RV_Internal;
-  typedef Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, typename XMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XMV_Internal;
+  using RV_Internal  = Kokkos::View<typename RV::non_const_data_type, UnifiedRVLayout, UnifiedRVDevice,
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, UnifiedXLayout, execution_space,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  RV_Internal R_internal  = R;
-  XMV_Internal X_internal = X;
+  RV_Internal R_internal  = KokkosKernels::Impl::unificationCast<RV_Internal>(R);
+  XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);
 
   Impl::Sum<execution_space, RV_Internal, XMV_Internal>::sum(space, R_internal, X_internal);
 }
@@ -144,7 +139,8 @@ void sum(const execution_space& space, const RV& R, const XMV& X,
 /// \param R [out] Output View (rank 0 or 1) containing the results.
 /// \param X [in] Input View (rank 1 or 2).
 template <class RV, class XMV>
-void sum(const RV& R, const XMV& X, typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
+  requires Kokkos::is_view_v<RV>
+void sum(const RV& R, const XMV& X) {
   sum(typename XMV::execution_space{}, R, X);
 }
 

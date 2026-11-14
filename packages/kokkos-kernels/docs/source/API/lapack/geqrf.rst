@@ -57,4 +57,3 @@ Example
 
 .. literalinclude:: ../../../../example/docs/lapack/KokkosLapack_docs_geqrf.cpp
   :language: c++
-

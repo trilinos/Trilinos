@@ -5,7 +5,7 @@ Defined in header: :code:`KokkosBlas3_trsm.hpp`
 
 .. code:: c++
 
-  // Version 1: Takes execution_space as argument 
+  // Version 1: Takes execution_space as argument
   template <class execution_space, class AViewType, class BViewType>
   void trsm(const execution_space& space, const char side[], const char uplo[],
             const char trans[], const char diag[],
@@ -89,7 +89,7 @@ Example
       Kokkos::fill_random(B,rand_pool,Scalar(10));
 
       const Scalar alpha = 1.0;
-   
+
       KokkosBlas::trsm("R","L","T","N",alpha,A,B);
     }
     Kokkos::finalize();

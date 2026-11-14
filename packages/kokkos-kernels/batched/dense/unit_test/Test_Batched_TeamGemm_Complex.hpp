@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
 

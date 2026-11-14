@@ -36,7 +36,7 @@ Examples are enabled by the makefile generated from `scripts/generate_makefile.b
 the option `build-all` or `build-example` to the make command.
 
 ### Usage
-Once the examples are built, the binaries will be located in the `example` subdirectory of your 
+Once the examples are built, the binaries will be located in the `example` subdirectory of your
 build directory. The D2GC example application will be in `KokkosKernels_Example_Distance2GraphColor.exe`.
 Executing the application with no parameters will print out the usage options.
 
@@ -86,7 +86,7 @@ Running the example with the following parameters:
         --amtx ${HOME}/Data/MatrixMarket/vanHeukelum/cage11.mtx
 ```
 runs the Vertex-Based + BitVector based forbidden-array variation using 8 OpenMP threads
-on the [vanHeukelum][1] [Cage11][2] graph. The coloring will be checked for correctness and a histogram 
+on the [vanHeukelum][1] [Cage11][2] graph. The coloring will be checked for correctness and a histogram
 summary will be printed out. This results in the following output:
 ```
 Run Graph Color D2 (COLORING_D2_VB_BIT)
@@ -115,5 +115,3 @@ Coloring Stats
 
 [1]: https://sparse.tamu.edu/vanHeukelum
 [2]: https://sparse.tamu.edu/vanHeukelum/cage11
-
-

@@ -54,7 +54,7 @@ template <class CMatrix, class AMatrix, class BMatrix,
           bool eti_spec_avail = spgemm_noreuse_eti_spec_avail<CMatrix, AMatrix, BMatrix>::value>
 struct SPGEMM_NOREUSE {
   static CMatrix spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, bool transA, const BMatrix& B,
-                                bool transB);
+                                bool transB, bool input_sorted, bool result_sorted);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -63,7 +63,7 @@ struct SPGEMM_NOREUSE {
 template <class CMatrix, class AMatrix, class BMatrix>
 struct SPGEMM_NOREUSE<CMatrix, AMatrix, BMatrix, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static CMatrix spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm algo, const AMatrix& A, bool transA, const BMatrix& B,
-                                bool transB) {
+                                bool transB, bool input_sorted, bool result_sorted) {
     using device_t    = typename CMatrix::device_type;
     using scalar_t    = typename CMatrix::value_type;
     using ordinal_t   = typename CMatrix::ordinal_type;
@@ -74,7 +74,7 @@ struct SPGEMM_NOREUSE<CMatrix, AMatrix, BMatrix, false, KOKKOSKERNELS_IMPL_COMPI
     KokkosKernels::Experimental::KokkosKernelsHandle<size_type, ordinal_t, scalar_t, typename device_t::execution_space,
                                                      typename device_t::memory_space, typename device_t::memory_space>
         kh;
-    kh.create_spgemm_handle(algo);
+    kh.create_spgemm_handle(algo, input_sorted, result_sorted);
     // A is m*n, B is n*k, C is m*k
     ordinal_t m = A.numRows();
     ordinal_t n = B.numRows();

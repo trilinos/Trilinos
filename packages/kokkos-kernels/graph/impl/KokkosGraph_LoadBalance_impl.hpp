@@ -71,7 +71,7 @@ struct Balancer {
 
         /* We will provide the inclusive scan of task sizes as A, and Iota as B
         Therefore, stepping in B means there's another work-item in the current task
-        
+
         This work-item comes from task at the global index into A
         This work-item is rank bg - scanTasks(ag-1)
         */

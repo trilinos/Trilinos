@@ -9,5 +9,5 @@
 namespace KokkosSparse {
 namespace Impl {
 @SPARSE_GAUSS_SEIDEL_APPLY_ETI_INST_BLOCK@
-  } //IMPL 
+  } //IMPL
 } //Kokkos

@@ -136,7 +136,7 @@ if __name__ == "__main__":
     html_tag = '<div class="content-icon-container">'
     print(f'=> Adding button after: {html_tag}')
     # Wiki prefix pointing directly to GitHub
-    wiki_prefix = 'https://github.com/kokkos/kokkos-core-wiki/blob/main/docs/source'
+    wiki_prefix = 'https://github.com/kokkos/kokkos-kernels/blob/develop/docs/source'
     print(f'=> Using prefix for Kokkos Wiki: {wiki_prefix}')
     HTMLButtonAdder(document_files=document_files, html_files=html_files, excluded_files=excluded_files,
                     html_tag=html_tag).add_button(wiki_prefix=wiki_prefix)

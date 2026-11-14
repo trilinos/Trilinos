@@ -9,5 +9,5 @@
 namespace KokkosLapack {
 namespace Impl {
 @LAPACK_SVD_ETI_INST_BLOCK@
-  } //IMPL 
+  } //IMPL
 } //Kokkos

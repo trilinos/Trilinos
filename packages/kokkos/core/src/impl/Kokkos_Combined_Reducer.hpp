@@ -155,20 +155,20 @@ struct CombinedReducerImpl<std::integer_sequence<size_t, Idxs...>, Space,
 
   template <class... ReducersDeduced>
   KOKKOS_FUNCTION constexpr explicit CombinedReducerImpl(
-      value_type& value, ReducersDeduced&&... reducers) noexcept
+      value_type& value, ReducersDeduced&&... reducers)
       : CombinedReducerStorageImpl<Idxs, Reducers>(
             (ReducersDeduced&&)reducers)...,
         m_value_view(&value) {}
 
   KOKKOS_FUNCTION constexpr void join(value_type& dest,
-                                      value_type const& src) const noexcept {
+                                      value_type const& src) const {
     (this->CombinedReducerStorageImpl<Idxs, Reducers>::_join(
          dest.template get<Idxs, typename Reducers::value_type>(),
          src.template get<Idxs, typename Reducers::value_type>()),
      ...);
   }
 
-  KOKKOS_FUNCTION constexpr void init(value_type& dest) const noexcept {
+  KOKKOS_FUNCTION constexpr void init(value_type& dest) const {
     (this->CombinedReducerStorageImpl<Idxs, Reducers>::_init(
          dest.template get<Idxs, typename Reducers::value_type>()),
      ...);
@@ -216,14 +216,14 @@ struct CombinedReducerImpl<std::integer_sequence<size_t, Idxs...>, Space,
 
   template <int Idx, class View>
   KOKKOS_FUNCTION static void write_one_value_back_on_device(
-      View const& inputView, typename View::const_value_type& value) noexcept {
+      View const& inputView, typename View::const_value_type& value) {
     *inputView.data() = value;
   }
 
   template <typename... CombinedReducers>
   KOKKOS_FUNCTION void write_value_back_to_original_references_on_device(
       value_type const& value,
-      CombinedReducers const&... reducers_that_reference_original_values) noexcept {
+      CombinedReducers const&... reducers_that_reference_original_values) {
     (write_one_value_back_on_device<Idxs>(
          reducers_that_reference_original_values.view(),
          value.template get<Idxs, typename CombinedReducers::value_type>()),
@@ -474,19 +474,13 @@ KOKKOS_INLINE_FUNCTION void parallel_reduce_combined_reducers_impl(
       Impl::_make_reducer_from_arg<mem_space_type>(returnTypes)...);
 }
 
-}  // end namespace Impl
-
-//==============================================================================
-// <editor-fold desc="Overloads of parallel_reduce for multiple outputs"> {{{1
-
-// These need to be forwarding references so that we can deduce const-ness,
-// but none of them should be forwarded (and, indeed, none of them should be
-// rvalue references)
-template <class PolicyType, class Functor, class ReturnType1, class ReturnType2,
-          class... ReturnTypes>
-auto parallel_reduce(std::string const& label, PolicyType const& policy,
-                     Functor const& functor, ReturnType1&& returnType1,
-                     ReturnType2&& returnType2, ReturnTypes&&... returnTypes)
+template <bool HasLabel, class PolicyType, class Functor, class ReturnType1,
+          class ReturnType2, class... ReturnTypes>
+auto parallel_reduce_dispatch(const OptionalLabelRef<HasLabel> optional_label,
+                              PolicyType const& policy, Functor const& functor,
+                              ReturnType1&& returnType1,
+                              ReturnType2&& returnType2,
+                              ReturnTypes&&... returnTypes)
     -> std::enable_if_t<Kokkos::is_execution_policy<PolicyType>::value> {
   //----------------------------------------
   // Since we don't support asynchronous combined reducers yet for various
@@ -515,7 +509,8 @@ auto parallel_reduce(std::string const& label, PolicyType const& policy,
       Impl::ParallelReduceAdaptor<PolicyType, combined_functor_type,
                                   combined_reducer_type>;
 
-  reduce_adaptor_t::execute(label, policy, combined_functor, combined_reducer);
+  reduce_adaptor_t::execute(optional_label, policy, combined_functor,
+                            combined_reducer);
   Impl::ParallelReduceFence<typename PolicyType::execution_space,
                             combined_reducer_type>::
       fence(
@@ -532,6 +527,26 @@ auto parallel_reduce(std::string const& label, PolicyType const& policy,
   //----------------------------------------
 }
 
+}  // end namespace Impl
+
+//==============================================================================
+// <editor-fold desc="Overloads of parallel_reduce for multiple outputs"> {{{1
+
+// These need to be forwarding references so that we can deduce const-ness,
+// but none of them should be forwarded (and, indeed, none of them should be
+// rvalue references)
+template <class PolicyType, class Functor, class ReturnType1, class ReturnType2,
+          class... ReturnTypes>
+auto parallel_reduce(std::string const& label, PolicyType const& policy,
+                     Functor const& functor, ReturnType1&& returnType1,
+                     ReturnType2&& returnType2, ReturnTypes&&... returnTypes)
+    -> std::enable_if_t<Kokkos::is_execution_policy<PolicyType>::value> {
+  Impl::parallel_reduce_dispatch(Impl::WithLabel{label}, policy, functor,
+                                 std::forward<ReturnType1>(returnType1),
+                                 std::forward<ReturnType2>(returnType2),
+                                 std::forward<ReturnTypes>(returnTypes)...);
+}
+
 template <class PolicyType, class Functor, class ReturnType1, class ReturnType2,
           class... ReturnTypes>
 auto parallel_reduce(PolicyType const& policy, Functor const& functor,
@@ -539,10 +554,10 @@ auto parallel_reduce(PolicyType const& policy, Functor const& functor,
                      ReturnTypes&&... returnTypes)
     -> std::enable_if_t<Kokkos::is_execution_policy<PolicyType>::value> {
   //----------------------------------------
-  Kokkos::parallel_reduce("", policy, functor,
-                          std::forward<ReturnType1>(returnType1),
-                          std::forward<ReturnType2>(returnType2),
-                          std::forward<ReturnTypes>(returnTypes)...);
+  Impl::parallel_reduce_dispatch(Impl::NoLabel{}, policy, functor,
+                                 std::forward<ReturnType1>(returnType1),
+                                 std::forward<ReturnType2>(returnType2),
+                                 std::forward<ReturnTypes>(returnTypes)...);
   //----------------------------------------
 }
 
@@ -551,11 +566,11 @@ template <class Functor, class ReturnType1, class ReturnType2,
 void parallel_reduce(std::string const& label, size_t n, Functor const& functor,
                      ReturnType1&& returnType1, ReturnType2&& returnType2,
                      ReturnTypes&&... returnTypes) {
-  Kokkos::parallel_reduce(label,
-                          RangePolicy<Kokkos::DefaultExecutionSpace>(0, n),
-                          functor, std::forward<ReturnType1>(returnType1),
-                          std::forward<ReturnType2>(returnType2),
-                          std::forward<ReturnTypes>(returnTypes)...);
+  Impl::parallel_reduce_dispatch(
+      Impl::WithLabel{label}, RangePolicy<Kokkos::DefaultExecutionSpace>(0, n),
+      functor, std::forward<ReturnType1>(returnType1),
+      std::forward<ReturnType2>(returnType2),
+      std::forward<ReturnTypes>(returnTypes)...);
 }
 
 template <class Functor, class ReturnType1, class ReturnType2,
@@ -563,10 +578,11 @@ template <class Functor, class ReturnType1, class ReturnType2,
 void parallel_reduce(size_t n, Functor const& functor,
                      ReturnType1&& returnType1, ReturnType2&& returnType2,
                      ReturnTypes&&... returnTypes) {
-  Kokkos::parallel_reduce("", n, functor,
-                          std::forward<ReturnType1>(returnType1),
-                          std::forward<ReturnType2>(returnType2),
-                          std::forward<ReturnTypes>(returnTypes)...);
+  Impl::parallel_reduce_dispatch(
+      Impl::NoLabel{}, RangePolicy<Kokkos::DefaultExecutionSpace>(0, n),
+      functor, std::forward<ReturnType1>(returnType1),
+      std::forward<ReturnType2>(returnType2),
+      std::forward<ReturnTypes>(returnTypes)...);
 }
 
 //------------------------------------------------------------------------------

@@ -191,4 +191,3 @@ nnz
   KOKKOS_INLINE_FUNCTION size_type nnz() const;
 
 Returns the number of non-zero entries in the matrix.
-

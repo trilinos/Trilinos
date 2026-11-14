@@ -661,14 +661,13 @@
 #endif
 // clang-format on
 
-#if (defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG) ||        \
-     defined(KOKKOS_COMPILER_INTEL_LLVM) ||                                   \
-     defined(KOKKOS_COMPILER_NEXT_LLVM) || defined(KOKKOS_COMPILER_NVHPC)) && \
-    !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__ANDROID__)
 #if __has_include(<execinfo.h>)
 #define KOKKOS_IMPL_ENABLE_STACKTRACE
 #endif
+#if __has_include(<cxxabi.h>)
 #define KOKKOS_IMPL_ENABLE_CXXABI
+#endif
 #endif
 
 #if (defined(KOKKOS_IMPL_WINDOWS_CUDA) || defined(KOKKOS_COMPILER_MSVC)) && \
@@ -691,16 +690,40 @@
 #define KOKKOS_IMPL_EXPORT
 #endif
 
-#ifdef KOKKOS_IMPL_HALF_TYPE_DEFINED
+// CUDA, HIP, and SYCL define KOKKOS_HAS_NATIVE_HALF_TYPE in their setup files
+// but there isn't a correspondong file indicating support for C++23
+// std::float16_t. Hence, do that detection here.
+#if !defined(KOKKOS_HAS_NATIVE_HALF_TYPE) && defined(__STDCPP_FLOAT16_T__)
+#define KOKKOS_HAS_NATIVE_HALF_TYPE
+#define KOKKOS_IMPL_HALF_TYPE_STANDARD_SUPPORT
+#define KOKKOS_HALF_IS_FULL_TYPE_ON_ARCH
+#endif
+
+#ifdef KOKKOS_HAS_NATIVE_HALF_TYPE
 #define KOKKOS_HALF_T_IS_FLOAT false
 #else
 #define KOKKOS_HALF_T_IS_FLOAT true
 #endif
 
-#ifdef KOKKOS_IMPL_BHALF_TYPE_DEFINED
+#if !defined(KOKKOS_HAS_NATIVE_BHALF_TYPE) && defined(__STDCPP_BFLOAT16_T__)
+#define KOKKOS_HAS_NATIVE_BHALF_TYPE
+#define KOKKOS_IMPL_BHALF_TYPE_STANDARD_SUPPORT
+#define KOKKOS_BHALF_IS_FULL_TYPE_ON_ARCH
+#endif
+
+#ifdef KOKKOS_HAS_NATIVE_BHALF_TYPE
 #define KOKKOS_BHALF_T_IS_FLOAT false
 #else
 #define KOKKOS_BHALF_T_IS_FLOAT true
+#endif
+
+// check for backends that support SharedSpace and SharedHostPinnedSpace
+#if !defined(KOKKOS_ENABLE_OPENACC)
+#define KOKKOS_HAS_SHARED_SPACE
+#endif
+
+#if !defined(KOKKOS_ENABLE_OPENACC) && !defined(KOKKOS_ENABLE_NEXTSILICON)
+#define KOKKOS_HAS_SHARED_HOST_PINNED_SPACE
 #endif
 
 #endif  // #ifndef KOKKOS_MACROS_HPP

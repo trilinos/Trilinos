@@ -38,7 +38,7 @@ Deprecated in Kokkos Kernels 5.2.0
 ``SerialDot``, ``TeamDot``, and ``TeamVectorDot`` for the batched dot product
 -----------------------------------------------------------------------------
 
-Following ``SerialDot``, ``TeamDot``, and ``TeamVectorDot`` structs without Axis template parameter (defined in ``KokkosBatched_Dot.hpp``) are deprecated. 
+Following ``SerialDot``, ``TeamDot``, and ``TeamVectorDot`` structs without Axis template parameter (defined in ``KokkosBatched_Dot.hpp``) are deprecated.
 For new APIs, see the documentation for :doc:`Batched Dot <API/batched/dense/batched_dot>`.
 
 .. code:: c++

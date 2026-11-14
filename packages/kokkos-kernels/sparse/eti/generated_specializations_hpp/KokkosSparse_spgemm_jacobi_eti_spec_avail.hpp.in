@@ -7,6 +7,6 @@
 namespace KokkosSparse {
 namespace Impl {
 @SPARSE_SPGEMM_JACOBI_ETI_AVAIL_BLOCK@
-  } //IMPL 
+  } //IMPL
 } //Kokkos
 #endif

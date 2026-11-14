@@ -7,6 +7,6 @@
 namespace KokkosBlas {
 namespace Impl {
 @BLAS1_ROTG_ETI_AVAIL_BLOCK@
-  } //IMPL 
+  } //IMPL
 } //Kokkos
 #endif

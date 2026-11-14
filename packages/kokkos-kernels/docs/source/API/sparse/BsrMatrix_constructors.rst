@@ -28,7 +28,7 @@ Constructs a BsrMatrix from specified inputs.
 1. Default constructors with empty graph and values.
 2. Copy constructor, it perform shallow copies of the input matrix.
 3. Construct with a graph that will be shared, allocate values.
-4. Constructor from COO matrix stored on Host. This constructor is fairly slow and mostly intended to help with testing and reading data from file. The ``pad`` input parameters is currently not used. 
+4. Constructor from COO matrix stored on Host. This constructor is fairly slow and mostly intended to help with testing and reading data from file. The ``pad`` input parameters is currently not used.
 5. Construct the matrix from views for the ``row_map``, ``entries`` and ``values`` using their copy constructors (shallow copies).
 6. Construct the matrix from ``graph``, ``values`` and ``ncols`` using their respective copy constructors (shallow copies).
 7. Constructor using a CrsMatrix with an appropriate block structure. The reduced graph and values of the BsrMatrix are allocated and constructed on host before copying them to the appropriate memory space.

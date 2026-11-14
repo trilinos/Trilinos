@@ -9,7 +9,7 @@ The main Kokkos Kernels paper to cite for general use of the library is:
 ::
 
   @misc{rajamanickam2021kokkoskernelsperformanceportable,
-    title={Kokkos Kernels: Performance Portable Sparse/Dense Linear Algebra and Graph Kernels}, 
+    title={Kokkos Kernels: Performance Portable Sparse/Dense Linear Algebra and Graph Kernels},
     author={Sivasankaran Rajamanickam and Seher Acer and Luc Berger-Vergiat and Vinh Dang and Nathan Ellingwood and Evan Harvey and Brian Kelley and Christian R. Trott and Jeremiah Wilke and Ichitaro Yamazaki},
     year={2021},
     eprint={2103.11991},
@@ -78,7 +78,7 @@ Two-stage Gauss-Seidel
 ::
 
    @misc{bergervergiat2021twostagegaussseidelpreconditionerssmoothers,
-     title={Two-Stage Gauss--Seidel Preconditioners and Smoothers for Krylov Solvers on a GPU cluster}, 
+     title={Two-Stage Gauss--Seidel Preconditioners and Smoothers for Krylov Solvers on a GPU cluster},
      author={Luc Berger-Vergiat and Brian Kelley and Sivasankaran Rajamanickam and Jonathan Hu and Katarzyna Swirydowicz and Paul Mullowney and Stephen Thomas and Ichitaro Yamazaki},
      year={2021},
      eprint={2104.01196},
@@ -93,8 +93,8 @@ Graph Coloring
 
    @INPROCEEDINGS{deveci2016parallelgraphcoloring,
      author={Deveci, Mehmet and Boman, Erik G and Devine, Karen D. and Rajamanickam, Sivasankaran},
-     booktitle={2016 IEEE International Parallel and Distributed Processing Symposium (IPDPS)}, 
-     title={Parallel Graph Coloring for Manycore Architectures}, 
+     booktitle={2016 IEEE International Parallel and Distributed Processing Symposium (IPDPS)},
+     title={Parallel Graph Coloring for Manycore Architectures},
      year={2016},
      volume={},
      number={},
@@ -108,8 +108,8 @@ Distance-2 Maximal Independent Set and Graph Coarsening
 
    @INPROCEEDINGS{9820696,
      author={Kelley, Brian and Rajamanickam, Sivasankaran},
-     booktitle={2022 IEEE International Parallel and Distributed Processing Symposium (IPDPS)}, 
-     title={Parallel, Portable Algorithms for Distance-2 Maximal Independent Set and Graph Coarsening}, 
+     booktitle={2022 IEEE International Parallel and Distributed Processing Symposium (IPDPS)},
+     title={Parallel, Portable Algorithms for Distance-2 Maximal Independent Set and Graph Coarsening},
      year={2022},
      volume={},
      number={},
@@ -124,8 +124,8 @@ Batched Sparse Linear Solvers
 
    @ARTICLE{10054414,
      author={Liegeois, Kim and Rajamanickam, Sivasankaran and Berger-Vergiat, Luc},
-     journal={IEEE Transactions on Parallel and Distributed Systems}, 
-     title={Performance Portable Batched Sparse Linear Solvers}, 
+     journal={IEEE Transactions on Parallel and Distributed Systems},
+     title={Performance Portable Batched Sparse Linear Solvers},
      year={2023},
      volume={34},
      number={5},

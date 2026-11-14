@@ -55,7 +55,7 @@ Type Requirements
 
 - `AV` must be a scalar or a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ that satisfies one of the following:
 
-  - ``AV::rank == 0`` 
+  - ``AV::rank == 0``
   - ``AV::rank == 1 && Kokkos::SpaceAccessibility<execution_space, typename YMV::memory_space>::accessible``
 
 Example

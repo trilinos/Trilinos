@@ -125,11 +125,11 @@ struct SerialSchurInternal {
 
           /// Step 2: if there exist non-converged eigen values
           if (1 < mdiff) {
-#if 0  /// implicit QR with shift for testing 
+#if 0  /// implicit QR with shift for testing
             {
-              /// Rayleigh quotient shift 
-              const real_type shift = *(H+(mend-1)*hs); 
-              SerialHessenbergQR_WithShiftInternal::invoke(mbeg, mend, m, 
+              /// Rayleigh quotient shift
+              const real_type shift = *(H+(mend-1)*hs);
+              SerialHessenbergQR_WithShiftInternal::invoke(mbeg, mend, m,
                                                            H, hs0, hs1,
                                                            shift,
                                                            Gs, true);
@@ -138,7 +138,7 @@ struct SerialSchurInternal {
                 const Kokkos::pair<real_type,real_type> G(Gs[i].first, -Gs[i].second);
                 SerialApplyRightGivensInternal::invoke(G, m,
                                                        Z+i*zs1,     zs0,
-                                                       Z+i*zs1+zs1, zs0);                    
+                                                       Z+i*zs1+zs1, zs0);
               }
             }
 #endif

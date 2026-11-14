@@ -237,6 +237,3 @@ Example
     }
     Kokkos::finalize();
   }
-
-
-

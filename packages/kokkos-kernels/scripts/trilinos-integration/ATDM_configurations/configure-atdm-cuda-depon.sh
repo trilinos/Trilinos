@@ -42,7 +42,7 @@ cmake \
   -DKokkosKernels_SOURCE_DIR_OVERRIDE:STRING=kokkos-kernels \
 $TRILINOS_DIR
 
-# Notes: 
+# Notes:
 # Compile using ninja
 # make NP=32
 

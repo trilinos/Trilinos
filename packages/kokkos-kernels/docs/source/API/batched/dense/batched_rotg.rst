@@ -24,7 +24,7 @@ Constructs a plane rotation such that:
 
 2. For complex arithmetic, the rotation is defined such that :math:`c^2+|s|^2=1` and :math:`r=a/|a| \times \sqrt{a^2 + |b|^2}`. This operation is equivalent to the BLAS routine ``CROTG`` or ``ZROTG`` for single or double precision.
 
-The rotation can be applied to vectors :math:`x` and :math:`y` by calling the `Rot` routine described in :doc:`batched_rot`. 
+The rotation can be applied to vectors :math:`x` and :math:`y` by calling the `Rot` routine described in :doc:`batched_rot`.
 
 Parameters
 ==========

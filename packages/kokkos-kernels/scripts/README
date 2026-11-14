@@ -81,5 +81,3 @@ snapshot.py
 
 This script handles snapshots of kokkos-kernels into another project,
 e.g., Trilinos.
-
-
