@@ -1,0 +1,35 @@
+<ParameterList name="MueLu">
+  <!-- ===========  GENERAL ================ -->
+  <Parameter        name="verbosity"                            type="string"   value="extreme"/>
+  <Parameter        name="coarse: max size"                     type="int"      value="200"/>
+  <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
+  <Parameter        name="max levels"                	          type="int"      value="10"/>
+  <Parameter        name="number of equations"                  type="int"      value="1"/>
+
+  <!--Parameter        name="multigrid algorithm"                  type="string"   value="sa"/-->
+   <Parameter        name="multigrid algorithm"                  type="string"   value="classical"/>
+   <Parameter        name="use kokkos refactor"                  type="bool" value="true"/>
+
+  <!-- ===========  AGGREGATION  =========== -->
+  <Parameter        name="aggregation: type"                    type="string"   value="classical"/>
+  <Parameter        name="aggregation: classical scheme"        type="string"   value="classical modified"/>
+  <Parameter        name="aggregation: drop scheme" type="string"   value="signed classical distance laplacian"  />
+  <Parameter        name="filtered matrix: lumping choice"  type="string"             value="distributed lumping" />
+  <Parameter        name="aggregation: drop tol" type="double"                        value=".08"                />
+
+  <!-- ===========  SMOOTHING  =========== -->
+ <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
+  <ParameterList name="smoother: params">
+    <Parameter name="relaxation: sweeps"                      type="int"       value="1"/>
+    <Parameter name="relaxation: type"             type="string"    value="Symmetric Gauss-Seidel"/>
+  </ParameterList>
+  <ParameterList name="export data">
+    <Parameter name="A" type="string" value="{9999990}"/>
+    <Parameter name="P" type="string" value="{1234}"/>
+    <Parameter name="Coordinates" type="string" value="{100}"/>
+    <Parameter name="Aggregates" type="string" value="{12345}"/>
+  </ParameterList>
+  <ParameterList name="project auxiliary matrices">
+    <Parameter name="M" type="string" value="NoFactory"/>
+  </ParameterList>
+</ParameterList>

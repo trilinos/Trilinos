@@ -1426,6 +1426,15 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: use blocking", dropParams);
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: symmetrize color graph", dropParams);
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: symmetrize graph after dropping", dropParams);
+      if (paramList.isParameter("aggregation: drop scheme")) {
+        const std::string dropScheme = paramList.get<std::string>("aggregation: drop scheme");
+        if ((dropScheme == "signed classical distance laplacian") || (dropScheme == "signed classical")) {
+          paramList.set("aggregation: coloring: use color graph", true);
+          paramList.set("aggregation: coloring: localize color graph", true);
+          dropParams.set("aggregation: coloring: use color graph", true);
+          dropParams.set("aggregation: coloring: localize color graph", true);
+        }
+      }
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: strength-of-connection: matrix", dropParams);
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: strength-of-connection: measure", dropParams);
       test_and_set_param_2list<bool>(paramList, defaultList, "filtered matrix: use lumping", dropParams);
@@ -1467,7 +1476,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     if (dropParams.isParameter("aggregation: drop scheme")) {
       std::string drop_scheme = dropParams.get<std::string>("aggregation: drop scheme");
-      if (drop_scheme == "block diagonal colored signed classical")
+      if ((drop_scheme == "block diagonal colored signed classical") || (drop_scheme == "signed classical distance laplacian") || (drop_scheme == "signed classical"))
         manager.SetFactory("Coloring Graph", dropFactory);
       if ((test_param_2list<bool>(dropParams, defaultList, "aggregation: use blocking", true)) ||
           (drop_scheme.find("block diagonal") != std::string::npos || drop_scheme == "signed classical")) {
@@ -1564,6 +1573,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<Factory> mapFact = rcp(new ClassicalMapFactory());
     ParameterList mapParams;
     test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: deterministic", mapParams);
+    test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: coloring: use color graph", mapParams);
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: coloring algorithm", mapParams);
 
     ParameterList tempParams;
@@ -1585,6 +1595,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: classical scheme", aggParams);
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: drop scheme", aggParams);
     test_and_set_param_2list<std::string>(paramList, defaultList, "filtered matrix: lumping choice", aggParams);
+    test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: coloring algorithm", aggParams);
     aggFactory->SetParameterList(aggParams);
     aggFactory->SetFactory("FC Splitting", manager.GetFactory("FC Splitting"));
     aggFactory->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));

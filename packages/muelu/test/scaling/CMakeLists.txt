@@ -124,6 +124,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     recurMG.xml
     regularOverLap.dat
     repart.xml
+    RSamgDLapDLump.xml
     sa_enforce_constraints.xml
     sa_with_Ifpack2_line_detection.xml
     sa_with_ilu.xml
@@ -664,6 +665,15 @@ ELSE()
     #do not check for convergence
   )
 ENDIF()
+
+MUELU_ADD_SERIAL_AND_MPI_TEST(
+  Driver
+  NAME "ClassicalDLapDlump"
+  ARGS "--xml=RSamgDLapDLump.xml --its=80 --matrixType=HexFEM_LapStiff --nx=50 --ny=40 --nz=10   --stretchx=.013 --stretchy=.94 --stretchz=.97  --tol=1e-6 "
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Belos converged"
+)
 
 MUELU_ADD_SERIAL_AND_MPI_TEST(
   Driver
