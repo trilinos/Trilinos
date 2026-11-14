@@ -219,8 +219,8 @@ set(CMAKE_C_FLAGS "-fPIC -fno-semantic-interposition" CACHE STRING "Set by ${CMA
 # fflags='-fPIC -fno-semantic-interposition'
 set(CMAKE_FORTRAN_FLAGS "-fPIC -fno-semantic-interposition" CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
 # ldlibs='-lgfortran -lm -lz -ldl -lpthread'
-set(CMAKE_C_STANDARD_LIBRARIES -lgfortran -lm -lz -ldl -lpthread CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
-set(CMAKE_CXX_STANDARD_LIBRARIES -lgfortran -lm -lz -ldl -lpthread CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
-set(CMAKE_Fortran_STANDARD_LIBRARIES -lgfortran -lm -lz -ldl -lpthread CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
+set(CMAKE_C_STANDARD_LIBRARIES "-lgfortran -lm -lz -ldl -lpthread" CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
+set(CMAKE_CXX_STANDARD_LIBRARIES "-lgfortran -lm -lz -ldl -lpthread" CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
+set(CMAKE_Fortran_STANDARD_LIBRARIES "-lgfortran -lm -lz -ldl -lpthread" CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
 # release_flags
 set(CMAKE_CXX_FLAGS_RELEASE_OVERRIDE "-O2 -DNDEBUG" CACHE STRING "Set by ${CMAKE_CURRENT_LIST_FILE}" FORCE)
