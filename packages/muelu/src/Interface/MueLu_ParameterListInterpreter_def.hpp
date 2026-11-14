@@ -283,6 +283,8 @@ bool ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       useCoordinates_ = true;
     } else if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "block diagonal distance laplacian")) {
       useCoordinates_ = true;
+    } else if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "signed classical distance laplacian")) {
+      useCoordinates_ = true;
     }
 
     // Rotations need coordinates
@@ -1582,6 +1584,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ParameterList aggParams;
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: classical scheme", aggParams);
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: drop scheme", aggParams);
+    test_and_set_param_2list<std::string>(paramList, defaultList, "filtered matrix: lumping choice", aggParams);
     aggFactory->SetParameterList(aggParams);
     aggFactory->SetFactory("FC Splitting", manager.GetFactory("FC Splitting"));
     aggFactory->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
@@ -1593,6 +1596,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         aggFactory->SetFactory("BlockNumber", this->GetFactoryManager(levelID - 1)->GetFactory("BlockNumber"));
       else
         aggFactory->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
+    }
+    if (drop_algo == "signed classical distance laplacian") {
+      if (levelID > 0)
+        aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID - 1)->GetFactory("Coordinates"));
+      else
+        aggFactory->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
     }
 
     // Now we short-circuit, because we neither need nor want TentativePFactory here
@@ -1827,14 +1836,24 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       RCP<Factory> coords = rcp(new CoordinatesTransferFactory());
       coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
       coords->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
-      manager.SetFactory("Coordinates", coords);
+
+      const bool classicalSignedDLap =
+          paramList.isParameter("multigrid algorithm") &&
+          (paramList.get<std::string>("multigrid algorithm") == "classical") &&
+          paramList.isParameter("aggregation: drop scheme") &&
+          (paramList.get<std::string>("aggregation: drop scheme") == "signed classical distance laplacian");
+
+      if (!classicalSignedDLap)
+        manager.SetFactory("Coordinates", coords);
 
       auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
       if (!RAP.is_null()) {
-        RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+        if (!classicalSignedDLap)
+          RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
       } else {
         auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
-        RAPs->AddTransferFactory(manager.GetFactory("Coordinates"));
+        if (!classicalSignedDLap)
+          RAPs->AddTransferFactory(manager.GetFactory("Coordinates"));
       }
     }
   }

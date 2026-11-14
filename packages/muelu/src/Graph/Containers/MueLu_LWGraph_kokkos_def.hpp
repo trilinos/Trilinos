@@ -16,7 +16,7 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<MueLu::LWGraph<LocalOrdinal, GlobalOrdinal, Node> > MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::copyToHost() {
+RCP<MueLu::LWGraph<LocalOrdinal, GlobalOrdinal, Node> > MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::copyToHost() const {
   // This could be improved to skip copies for UVM.
 
   auto graph = this->getGraph();
