@@ -56,12 +56,16 @@ int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[])
 
   // Get test parameters from command-line processor
   bool verbose = false, proc_verbose = false, debug = false;
+  bool flexible = false;
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;      // total number of right-hand sides to solve for
   std::string filename("mhd1280b.cua");
   MT tol = 1.0e-5;     // relative residual tolerance
 
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("flexible","standard",&flexible,
+                   "Use flexible GCRODR.  No preconditioner is required; "
+                   "the right preconditioner application falls back to identity.");
   cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GCRODR solver.");
@@ -107,6 +111,9 @@ int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[])
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
   belosList.set( "Num Blocks", numBlocks );
   belosList.set( "Num Recycled Blocks", numRecycledBlocks );
+  if (flexible) {
+      belosList.set( "Flexible GCRODR", true );
+    }
 
   int verbLevel = Belos::Errors + Belos::Warnings;
   if (debug) {
@@ -141,6 +148,8 @@ int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[])
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
     std::cout << "Max number of GCRODR iterations: " << maxits << std::endl;
     std::cout << "Relative residual tolerance: " << tol << std::endl;
+    std::cout << "Flexible GCRODR: "
+                << (flexible ? "enabled" : "disabled") << std::endl;
     std::cout << std::endl;
   }
   

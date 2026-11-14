@@ -295,11 +295,7 @@ namespace Belos {
       const int ncols = MVT::GetNumberVecs(X);
       Teuchos::RCP<DM> XTX = DMT::Create(ncols, ncols);
       innerProd (X, X, *XTX);
-      DMT::SyncDeviceToHost(*XTX);
-      for (int k = 0; k < ncols; ++k) {
-        DMT::Value(*XTX,k,k) -= ONE;
-      }
-      DMT::SyncHostToDevice(*XTX);
+      DMT::AddDiag(*XTX, -ONE);
       return DMT::NormFrobenius(*XTX);
     }
 
