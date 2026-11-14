@@ -446,13 +446,7 @@ namespace Intrepid2 {
     createMatchingUnmanagedView(const InViewType &view, const CtorProp &data, const Dims... dims)
     {
   #ifdef HAVE_INTREPID2_SACADO
-      if constexpr (Sacado::is_view_fad<InViewType>::value)
-      {
-        const int derivative_dimension = get_dimension_scalar(view);
-        return OutViewType(data, dims..., derivative_dimension);
-      }
-      else
-        return OutViewType(data, dims...);
+      return Sacado::createViewWithType<OutViewType>(view, data, dims...);
   #else
       (void)view;
       return OutViewType(data, dims...);
