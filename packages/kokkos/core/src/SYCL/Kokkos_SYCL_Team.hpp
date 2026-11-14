@@ -24,6 +24,7 @@ class SYCLTeamMember {
   using execution_space      = Kokkos::SYCL;
   using scratch_memory_space = execution_space::scratch_memory_space;
   using team_handle          = SYCLTeamMember;
+  using thread_handle        = ThreadHandleType<team_handle>;
 
  private:
   mutable sycl::local_ptr<void> m_team_reduce;
@@ -495,11 +496,23 @@ template <typename iType, class Closure>
 void parallel_for(const Impl::TeamThreadRangeBoundariesStruct<
                       iType, Impl::SYCLTeamMember>& loop_boundaries,
                   const Closure& closure) {
+  using thread_handle_t = Impl::ThreadHandleType<Impl::SYCLTeamMember>;
+
   for (iType i = loop_boundaries.start +
                  loop_boundaries.member.item().get_local_id(0);
        i < loop_boundaries.end;
-       i += loop_boundaries.member.item().get_local_range(0))
-    closure(i);
+       i += loop_boundaries.member.item().get_local_range(0)) {
+    if constexpr (std::is_invocable_v<Closure, iType>) {
+      closure(i);
+    } else if constexpr (std::is_invocable_v<Closure, thread_handle_t const&,
+                                             iType>) {
+      closure(thread_handle_t(loop_boundaries.member), i);
+    } else {
+      static_assert(Kokkos::Impl::always_false<Closure>::value,
+                    "Kokkos::parallel_for(TeamThreadRange) closure must be "
+                    "invocable with (iType) or (ThreadHandleType, iType)");
+    }
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -597,6 +610,8 @@ void parallel_scan(const Impl::TeamThreadRangeBoundariesStruct<
   static_assert(std::is_same_v<closure_value_type, ValueType>,
                 "Non-matching value types of closure and return type");
 
+  using thread_handle_t = Impl::ThreadHandleType<Impl::SYCLTeamMember>;
+
   const auto start     = loop_bounds.start;
   const auto end       = loop_bounds.end;
   auto& member         = loop_bounds.member;
@@ -604,19 +619,35 @@ void parallel_scan(const Impl::TeamThreadRangeBoundariesStruct<
   const auto team_rank = member.team_rank();
   const auto nchunk    = (end - start + team_size - 1) / team_size;
   ValueType accum      = 0;
+
+  auto const invoke = [&](iType i, ValueType& val, bool final_pass) {
+    if constexpr (std::is_invocable_v<FunctorType, iType, ValueType&, bool>) {
+      lambda(i, val, final_pass);
+    } else if constexpr (std::is_invocable_v<FunctorType,
+                                             thread_handle_t const&, iType,
+                                             ValueType&, bool>) {
+      lambda(thread_handle_t(member), i, val, final_pass);
+    } else {
+      static_assert(Kokkos::Impl::always_false<FunctorType>::value,
+                    "Kokkos::parallel_scan(TeamThreadRange) closure must be "
+                    "invocable with (iType, ValueType&, bool) or "
+                    "(ThreadHandleType, iType, ValueType&, bool)");
+    }
+  };
+
   // each team has to process one or more chunks of the prefix scan
   for (iType i = 0; i < nchunk; ++i) {
     auto ii = start + i * team_size + team_rank;
     // local accumulation for this chunk
     ValueType local_accum = 0;
     // user updates value with prefix value
-    if (ii < loop_bounds.end) lambda(ii, local_accum, false);
+    if (ii < loop_bounds.end) invoke(ii, local_accum, false);
     // perform team scan
     local_accum = member.team_scan(local_accum);
     // add this blocks accum to total accumulation
     ValueType val = accum + local_accum;
     // user updates their data with total accumulation
-    if (ii < loop_bounds.end) lambda(ii, val, true);
+    if (ii < loop_bounds.end) invoke(ii, val, true);
     // the last value needs to be propogated to next chunk
     if (team_rank == team_size - 1) accum = val;
     // broadcast last value to rest of the team
@@ -862,13 +893,14 @@ std::enable_if_t<Kokkos::is_reducer<ReducerType>::value> parallel_scan(
   const iType tidx1   = loop_boundaries.member.item().get_local_id(1);
   const iType grange1 = loop_boundaries.member.item().get_local_range(1);
 
-  const int mask          = grange1 - 1;
-  const int rem           = loop_boundaries.end & mask;  // == end % grange1
-  const int end           = loop_boundaries.end + (rem ? grange1 - rem : 0);
+  const int mask  = grange1 - 1;
+  const iType rem = (loop_boundaries.end - loop_boundaries.start) &
+                    mask;  // == (end - start) % grange1
+  const iType end         = loop_boundaries.end + (rem ? grange1 - rem : 0);
   const auto sg           = loop_boundaries.member.item().get_sub_group();
   const int vector_offset = (sg.get_local_id() / grange1) * grange1;
 
-  for (int i = tidx1; i < end; i += grange1) {
+  for (iType i = loop_boundaries.start + tidx1; i < end; i += grange1) {
     value_type val = identity;
 
     // First acquire per-lane contributions.
@@ -988,6 +1020,50 @@ void single(const Impl::ThreadSingleStruct<Impl::SYCLTeamMember>& single_struct,
   if (single_struct.team_member.item().get_local_linear_id() == 0) lambda(val);
   single_struct.team_member.team_broadcast(val, 0);
 }
+
+// FIXME_SYCL_OUT_OF_ORDER_QUEUES
+#ifndef KOKKOS_ENABLE_IMPL_SYCL_OUT_OF_ORDER_QUEUES
+namespace Impl {
+
+inline size_t sycl_get_scratch_index(sycl::nd_item<2> item,
+                                     int32_t* scratch_locks,
+                                     size_t num_scratch_locks) {
+  size_t threadid = 0;
+  if (item.get_local_linear_id() == 0) {
+    size_t const league_size =
+        item.get_group_range(0) * item.get_group_range(1);
+    size_t const wraparound_len = Kokkos::min(
+        league_size, num_scratch_locks /
+                         (item.get_local_range(0) * item.get_local_range(1)));
+    threadid = item.get_group_linear_id() % wraparound_len;
+    while (true) {
+      int expected = 0;
+      sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
+                       sycl::memory_scope::device,
+                       sycl::access::address_space::global_space>
+          ref(scratch_locks[threadid]);
+      if (ref.compare_exchange_strong(expected, /*desired*/ 1)) break;
+      threadid = (threadid + 1) % wraparound_len;
+    }
+  }
+  return sycl::group_broadcast(item.get_group(), threadid);
+}
+
+inline void sycl_release_scratch_index(sycl::nd_item<2> item,
+                                       int32_t* scratch_locks,
+                                       size_t threadid) {
+  sycl::group_barrier(item.get_group());
+  if (item.get_local_linear_id() == 0) {
+    sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
+                     sycl::memory_scope::device,
+                     sycl::access::address_space::global_space>
+        ref(scratch_locks[threadid]);
+    ref = 0;
+  }
+}
+
+}  // namespace Impl
+#endif
 
 }  // namespace Kokkos
 

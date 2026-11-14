@@ -37,6 +37,7 @@ class ThreadsExecTeamMember {
   using execution_space      = Kokkos::Threads;
   using scratch_memory_space = execution_space::scratch_memory_space;
   using team_handle          = ThreadsExecTeamMember;
+  using thread_handle        = ThreadHandleType<team_handle>;
 
  private:
   using space = execution_space::scratch_memory_space;
@@ -662,6 +663,12 @@ class TeamPolicyInternal<Kokkos::Threads, Properties...>
     return m_team_scratch_size[level] +
            team_size_ * m_thread_scratch_size[level];
   }
+  inline size_t team_scratch_size(int level) const {
+    return m_team_scratch_size[level];
+  }
+  inline size_t thread_scratch_size(int level) const {
+    return m_thread_scratch_size[level];
+  }
 
   inline int team_iter() const { return m_team_iter; }
 
@@ -893,9 +900,21 @@ KOKKOS_INLINE_FUNCTION void parallel_for(
     const Impl::TeamThreadRangeBoundariesStruct<
         iType, Impl::ThreadsExecTeamMember>& loop_boundaries,
     const Lambda& lambda) {
+  using thread_handle_t = Impl::ThreadHandleType<Impl::ThreadsExecTeamMember>;
+
   for (iType i = loop_boundaries.start; i < loop_boundaries.end;
-       i += loop_boundaries.increment)
-    lambda(i);
+       i += loop_boundaries.increment) {
+    if constexpr (std::is_invocable_v<Lambda, iType>) {
+      lambda(i);
+    } else if constexpr (std::is_invocable_v<Lambda, thread_handle_t const&,
+                                             iType>) {
+      lambda(thread_handle_t(loop_boundaries.member), i);
+    } else {
+      static_assert(Kokkos::Impl::always_false<Lambda>::value,
+                    "Kokkos::parallel_for(TeamThreadRange) closure must be "
+                    "invocable with (iType) or (ThreadHandleType, iType)");
+    }
+  }
 }
 
 /** \brief  Inter-thread vector parallel_reduce. Executes lambda(iType i,
@@ -1049,7 +1068,24 @@ KOKKOS_INLINE_FUNCTION void parallel_scan(
   static_assert(std::is_same_v<closure_value_type, ValueType>,
                 "Non-matching value types of closure and return type");
 
+  using thread_handle_t = Impl::ThreadHandleType<Impl::ThreadsExecTeamMember>;
+
   auto scan_val = ValueType{};
+
+  auto const invoke = [&](iType i, ValueType& val, bool final_pass) {
+    if constexpr (std::is_invocable_v<FunctorType, iType, ValueType&, bool>) {
+      lambda(i, val, final_pass);
+    } else if constexpr (std::is_invocable_v<FunctorType,
+                                             thread_handle_t const&, iType,
+                                             ValueType&, bool>) {
+      lambda(thread_handle_t(loop_bounds.member), i, val, final_pass);
+    } else {
+      static_assert(Kokkos::Impl::always_false<FunctorType>::value,
+                    "Kokkos::parallel_scan(TeamThreadRange) closure must be "
+                    "invocable with (iType, ValueType&, bool) or "
+                    "(ThreadHandleType, iType, ValueType&, bool)");
+    }
+  };
 
   // Intra-member scan
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -1057,7 +1093,7 @@ KOKKOS_INLINE_FUNCTION void parallel_scan(
 #endif
   for (iType i = loop_bounds.start; i < loop_bounds.end;
        i += loop_bounds.increment) {
-    lambda(i, scan_val, false);
+    invoke(i, scan_val, false);
   }
 
   auto& team_member = loop_bounds.member;
@@ -1070,7 +1106,7 @@ KOKKOS_INLINE_FUNCTION void parallel_scan(
 #endif
   for (iType i = loop_bounds.start; i < loop_bounds.end;
        i += loop_bounds.increment) {
-    lambda(i, scan_val, true);
+    invoke(i, scan_val, true);
   }
 
   team_member.team_broadcast(scan_val, team_member.team_size() - 1);
@@ -1161,6 +1197,7 @@ parallel_scan(const Impl::ThreadVectorRangeBoundariesStruct<
        i += loop_boundaries.increment) {
     lambda(i, scan_val, true);
   }
+  reducer.reference() = scan_val;
 }
 
 }  // namespace Kokkos

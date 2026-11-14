@@ -38,24 +38,14 @@ struct HIPJoinFunctor {
  *  HIP thread blocks for team closures are dimensioned as:
  *    blockDim.x == number of "vector lanes" per "thread"
  *    blockDim.y == number of "threads" per team
- *    blockDim.z == number of teams in a block
- *  where
- *    A set of teams exactly fill a warp OR a team is the whole block
- *      ( 0 == WarpSize % ( blockDim.x * blockDim.y ) )
- *      OR
- *      ( 1 == blockDim.z )
-
- *  Thus when 1 < blockDim.z the team is warp-synchronous
- *  and __syncthreads should not be called in team collectives.
- *
- *  When multiple teams are mapped onto a single block then the
- *  total available shared memory must be partitioned among teams.
+ *    blockDim.z == 1
  */
 class HIPTeamMember {
  public:
   using execution_space      = HIP;
   using scratch_memory_space = execution_space::scratch_memory_space;
   using team_handle          = HIPTeamMember;
+  using thread_handle        = ThreadHandleType<team_handle>;
 
  private:
   mutable void* m_team_reduce;
@@ -102,10 +92,7 @@ class HIPTeamMember {
 
   KOKKOS_INLINE_FUNCTION void team_barrier() const {
 #ifdef __HIP_DEVICE_COMPILE__
-    if (1 == blockDim.z)
-      __syncthreads();  // team == block
-    else
-      __threadfence_block();  // team <= warp
+    __syncthreads();  // team == block
 #endif
   }
 
@@ -115,19 +102,13 @@ class HIPTeamMember {
   KOKKOS_INLINE_FUNCTION void team_broadcast(ValueType& val,
                                              const int& thread_id) const {
 #ifdef __HIP_DEVICE_COMPILE__
-    if (blockDim.z == 1) {  // team == block
-      __syncthreads();
-      // Wait for shared data write until all threads arrive here
-      if (threadIdx.x == 0u &&
-          threadIdx.y == static_cast<uint32_t>(thread_id)) {
-        *(reinterpret_cast<ValueType*>(m_team_reduce)) = val;
-      }
-      __syncthreads();  // Wait for shared data read until root thread writes
-      val = *(reinterpret_cast<ValueType*>(m_team_reduce));
-    } else {               // team <= warp
-      ValueType tmp(val);  // input might not be a register variable
-      in_place_shfl(val, tmp, blockDim.x * thread_id, blockDim.x * blockDim.y);
+    __syncthreads();
+    // Wait for shared data write until all threads arrive here
+    if (threadIdx.x == 0u && threadIdx.y == static_cast<uint32_t>(thread_id)) {
+      *(reinterpret_cast<ValueType*>(m_team_reduce)) = val;
     }
+    __syncthreads();  // Wait for shared data read until root thread writes
+    val = *(reinterpret_cast<ValueType*>(m_team_reduce));
 #else
     (void)val;
     (void)thread_id;
@@ -147,14 +128,11 @@ class HIPTeamMember {
    *  Mapping of teams onto blocks:
    *    blockDim.x  is "vector lanes"
    *    blockDim.y  is team "threads"
-   *    blockDim.z  is number of teams per block
+   *    blockDim.z  is 1
    *
    *  Requires:
    *    blockDim.x is power two
    *    blockDim.x <= HIPTraits::WarpSize
-   *    ( 0 == HIPTraits::WarpSize % ( blockDim.x * blockDim.y )
-   *      OR
-   *    ( 1 == blockDim.z )
    */
   template <typename ReducerType>
   KOKKOS_INLINE_FUNCTION std::enable_if_t<is_reducer<ReducerType>::value>
@@ -474,9 +452,21 @@ KOKKOS_INLINE_FUNCTION void parallel_for(
         loop_boundaries,
     const Closure& closure) {
 #ifdef __HIP_DEVICE_COMPILE__
+  using thread_handle_t = Impl::ThreadHandleType<Impl::HIPTeamMember>;
+
   for (iType i = loop_boundaries.start + threadIdx.y; i < loop_boundaries.end;
-       i += blockDim.y)
-    closure(i);
+       i += blockDim.y) {
+    if constexpr (std::is_invocable_v<Closure, iType>) {
+      closure(i);
+    } else if constexpr (std::is_invocable_v<Closure, thread_handle_t const&,
+                                             iType>) {
+      closure(thread_handle_t(loop_boundaries.member), i);
+    } else {
+      static_assert(Kokkos::Impl::always_false<Closure>::value,
+                    "Kokkos::parallel_for(TeamThreadRange) closure must be "
+                    "invocable with (iType) or (ThreadHandleType, iType)");
+    }
+  }
 #else
   (void)loop_boundaries;
   (void)closure;
@@ -580,6 +570,8 @@ KOKKOS_INLINE_FUNCTION void parallel_scan(
   static_assert(std::is_same_v<functor_value_type, ValueType>,
                 "Non-matching value types of functor and return type");
 
+  using thread_handle_t = Impl::ThreadHandleType<Impl::HIPTeamMember>;
+
   const auto start     = loop_bounds.start;
   const auto end       = loop_bounds.end;
   auto& member         = loop_bounds.member;
@@ -587,19 +579,35 @@ KOKKOS_INLINE_FUNCTION void parallel_scan(
   const auto team_rank = member.team_rank();
   const auto nchunk    = (end - start + team_size - 1) / team_size;
   ValueType accum      = {};
+
+  auto const invoke = [&](iType i, ValueType& val, bool final_pass) {
+    if constexpr (std::is_invocable_v<FunctorType, iType, ValueType&, bool>) {
+      lambda(i, val, final_pass);
+    } else if constexpr (std::is_invocable_v<FunctorType,
+                                             thread_handle_t const&, iType,
+                                             ValueType&, bool>) {
+      lambda(thread_handle_t(member), i, val, final_pass);
+    } else {
+      static_assert(Kokkos::Impl::always_false<FunctorType>::value,
+                    "Kokkos::parallel_scan(TeamThreadRange) closure must be "
+                    "invocable with (iType, ValueType&, bool) or "
+                    "(ThreadHandleType, iType, ValueType&, bool)");
+    }
+  };
+
   // each team has to process one or more chunks of the prefix scan
   for (iType i = 0; i < nchunk; ++i) {
     auto ii = start + i * team_size + team_rank;
     // local accumulation for this chunk
     ValueType local_accum = 0;
     // user updates value with prefix value
-    if (ii < loop_bounds.end) lambda(ii, local_accum, false);
+    if (ii < loop_bounds.end) invoke(ii, local_accum, false);
     // perform team scan
     local_accum = member.team_scan(local_accum);
     // add this blocks accum to total accumulation
     ValueType val = accum + local_accum;
     // user updates their data with total accumulation
-    if (ii < loop_bounds.end) lambda(ii, val, true);
+    if (ii < loop_bounds.end) invoke(ii, val, true);
     // the last value needs to be propogated to next chunk
     if (team_rank == team_size - 1) accum = val;
     // broadcast last value to rest of the team
@@ -843,11 +851,13 @@ parallel_scan(const Impl::ThreadVectorRangeBoundariesStruct<
   //     ( end % blockDim.x ) == ( end & ( blockDim.x - 1 ) )
   //   1 <= blockDim.x <= HIPTraits::WarpSize
 
-  const int mask = blockDim.x - 1;
-  const int rem  = loop_boundaries.end & mask;  // == end % blockDim.x
-  const int end  = loop_boundaries.end + (rem ? blockDim.x - rem : 0);
+  const int mask  = blockDim.x - 1;
+  const iType rem = (loop_boundaries.end - loop_boundaries.start) &
+                    mask;  // == (end - start) % blockDim.x
+  const iType end = loop_boundaries.end + (rem ? blockDim.x - rem : 0);
 
-  for (int i = threadIdx.x; i < end; i += blockDim.x) {
+  for (iType i = loop_boundaries.start + threadIdx.x; i < end;
+       i += blockDim.x) {
     value_type val = identity;
 
     // First acquire per-lane contributions.
@@ -936,10 +946,15 @@ KOKKOS_INLINE_FUNCTION void parallel_scan(
   static_assert(std::is_same_v<closure_value_type, ValueType>,
                 "Non-matching value types of closure and return type");
 
-  ValueType accum;
-  parallel_scan(loop_boundaries, closure, Kokkos::Sum<ValueType>(accum));
-
-  return_val = accum;
+  // Device assigns accum through the reducer but host does not so
+  // value-initialize only the host result.
+  (void)loop_boundaries;
+  (void)closure;
+  KOKKOS_IF_ON_DEVICE(
+      (ValueType accum;
+       parallel_scan(loop_boundaries, closure, Kokkos::Sum<ValueType>(accum));
+       return_val = accum;))
+  KOKKOS_IF_ON_HOST((return_val = ValueType{};))
 }
 
 }  // namespace Kokkos
