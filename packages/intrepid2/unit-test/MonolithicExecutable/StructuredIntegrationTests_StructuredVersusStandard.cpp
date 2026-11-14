@@ -62,12 +62,44 @@ namespace
 {
   using namespace Intrepid2;
 
+//! Returns a copy of the provided geometry, as a nodal CellGeometry, with node coordinates sheared by x_d += shear * x_{d+1} for d < spaceDim - 1.
+//! The resulting Jacobians are upper triangular (nonsymmetric when shear != 0), so this exercises the transpose in the H(grad) gradient and H(curl) value pullbacks.
+template<class PointScalar, int spaceDim, typename DeviceType>
+CellGeometry<PointScalar, spaceDim, DeviceType> getShearedNodalCellGeometry(CellGeometry<PointScalar, spaceDim, DeviceType> &anyCellGeometry,
+                                                                            const PointScalar &shear, const bool &claimAffine)
+{
+  const int numCells = anyCellGeometry.extent_int(0);
+  const int numNodes = anyCellGeometry.extent_int(1);
+  
+  auto cellToNodes = ScalarView<int,DeviceType>("cell to nodes", numCells, numNodes);
+  auto nodes       = getView<PointScalar,DeviceType>("sheared nodes", numCells * numNodes, spaceDim);
+  
+  using ExecutionSpace = typename DeviceType::execution_space;
+  auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodes});
+  Kokkos::parallel_for("copy and shear cell nodes", policy,
+  KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinalInCell) {
+    const int globalNodeOrdinal = cellOrdinal * numNodes + nodeOrdinalInCell;
+    for (int d=0; d<spaceDim; d++)
+    {
+      PointScalar x_d = anyCellGeometry(cellOrdinal,nodeOrdinalInCell,d);
+      if (d+1 < spaceDim) x_d += shear * anyCellGeometry(cellOrdinal,nodeOrdinalInCell,d+1);
+      nodes(globalNodeOrdinal,d) = x_d;
+    }
+    cellToNodes(cellOrdinal,nodeOrdinalInCell) = globalNodeOrdinal;
+  });
+  ExecutionSpace().fence();
+  
+  return CellGeometry<PointScalar, spaceDim, DeviceType>(anyCellGeometry.cellTopology(), cellToNodes, nodes, claimAffine,
+                                                         anyCellGeometry.nodeOrderingForHypercubes());
+}
+
 template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
 void testStandardVersusStructuredIntegration(const int &meshWidth, const int &worksetSize,
                                              const EFunctionSpace &fs1, const EOperator &op1, const int &p1, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim> > vectorWeight1,
                                              const EFunctionSpace &fs2, const EOperator &op2, const int &p2, Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim> > vectorWeight2,
                                              const double &relTol, const double &absTol,
-                                             Teuchos::FancyOStream &out, bool &success)
+                                             Teuchos::FancyOStream &out, bool &success,
+                                             const double &shear = 0.0, const bool &claimAffine = false)
 {
   // compare the integration in StructuredAssembly.hpp with that in StandardAssembly.hpp
   
@@ -80,6 +112,10 @@ void testStandardVersusStructuredIntegration(const int &meshWidth, const int &wo
   }
   
   auto geometry = getMesh<PointScalar, spaceDim, DeviceType>(Standard, gridCellCounts);
+  if ((shear != 0.0) || claimAffine)
+  {
+    geometry = getShearedNodalCellGeometry(geometry, PointScalar(shear), claimAffine);
+  }
   shards::CellTopology cellTopo = geometry.cellTopology();
   
   double flopCountIntegration = 0, flopCountJacobian = 0;
@@ -712,6 +748,177 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandar
 
 // asymmetric tests (mostly -- a couple symmetric ones tossed in as sanity checks on the test itself)
 
+// Sheared mesh: nonsymmetric Jacobians.  Checks that the structured path applies (DF)^{-T} (not (DF)^{-1}) for H(grad) gradients and H(curl) values.
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardSheared_D2_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 2;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  const double shear = 0.5;
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  for (const bool claimAffine : {false, true})
+  {
+    out << "Sheared mesh; claimAffine = " << (claimAffine ? "true" : "false") << std::endl;
+    testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+      (meshWidth, worksetSize, fs1, op1, p1, Teuchos::null, fs2, op2, p2, Teuchos::null, relTol, absTol, out, success, shear, claimAffine);
+  }
+}
+
+// Sheared mesh: nonsymmetric Jacobians.  Checks that the structured path applies (DF)^{-T} (not (DF)^{-1}) for H(grad) gradients and H(curl) values.
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardSheared_D2_P2_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 2;
+  const int p1 = 2;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  const double shear = 0.5;
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  for (const bool claimAffine : {false, true})
+  {
+    out << "Sheared mesh; claimAffine = " << (claimAffine ? "true" : "false") << std::endl;
+    testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+      (meshWidth, worksetSize, fs1, op1, p1, Teuchos::null, fs2, op2, p2, Teuchos::null, relTol, absTol, out, success, shear, claimAffine);
+  }
+}
+
+// Sheared mesh: nonsymmetric Jacobians.  Checks that the structured path applies (DF)^{-T} (not (DF)^{-1}) for H(grad) gradients and H(curl) values.
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardSheared_D3_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 3;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  const double shear = 0.5;
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  for (const bool claimAffine : {false, true})
+  {
+    out << "Sheared mesh; claimAffine = " << (claimAffine ? "true" : "false") << std::endl;
+    testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+      (meshWidth, worksetSize, fs1, op1, p1, Teuchos::null, fs2, op2, p2, Teuchos::null, relTol, absTol, out, success, shear, claimAffine);
+  }
+}
+
+// Sheared mesh: nonsymmetric Jacobians.  Checks that the structured path applies (DF)^{-T} (not (DF)^{-1}) for H(grad) gradients and H(curl) values.
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardShearedVectorWeighted_D2_P2_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 2;
+  const int p1 = 2;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  const double shear = 0.5;
+
+  auto vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  auto vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight1)[d] = 1.0 / (d+1.0);
+    (*vectorWeight2)[d] = 0.5 * (d+1.0);
+  }
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  for (const bool claimAffine : {false, true})
+  {
+    out << "Sheared mesh; claimAffine = " << (claimAffine ? "true" : "false") << std::endl;
+    testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+      (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success, shear, claimAffine);
+  }
+}
+
+// Sheared mesh: nonsymmetric Jacobians.  Checks that the structured path applies (DF)^{-T} (not (DF)^{-1}) for H(grad) gradients and H(curl) values.
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, StructuredVersusStandardShearedVectorWeighted_D3_P1_P1, FS1Tag, Op1Tag, FS2Tag, Op2Tag)
+{
+  using DataScalar  = double;
+  using PointScalar = double;
+  const int meshWidth = 2;
+  const int spaceDim = 3;
+  const int p1 = 1;
+  const int p2 = 1;
+  const int worksetSize = meshWidth;
+  const double shear = 0.5;
+
+  auto vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  auto vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+  for (int d=0; d<spaceDim; d++)
+  {
+    (*vectorWeight1)[d] = 1.0 / (d+1.0);
+    (*vectorWeight2)[d] = 0.5 * (d+1.0);
+  }
+
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const EFunctionSpace fs1 = FS1Tag::functionSpace;
+  const EFunctionSpace fs2 = FS2Tag::functionSpace;
+  const EOperator op1 = Op1Tag::op;
+  const EOperator op2 = Op2Tag::op;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  for (const bool claimAffine : {false, true})
+  {
+    out << "Sheared mesh; claimAffine = " << (claimAffine ? "true" : "false") << std::endl;
+    testStandardVersusStructuredIntegration<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>
+      (meshWidth, worksetSize, fs1, op1, p1, vectorWeight1, fs2, op2, p2, vectorWeight2, relTol, absTol, out, success, shear, claimAffine);
+  }
+}
+
 // 1D tests: H(grad) and H(vol) bases defined
 // p1, p1:
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D1_P1_P1, HGRAD, GRAD,  HGRAD, GRAD)
@@ -829,5 +1036,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStan
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D3_P1_P1, HGRAD, GRAD, HVOL,  VALUE)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D3_P1_P1, HGRAD, GRAD, HGRAD, VALUE)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardVectorDotVectorAgainstScalar_D3_P1_P1, HDIV, VALUE, HGRAD, VALUE)
+
+// sheared-mesh tests: nonsymmetric Jacobians
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D2_P1_P1, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D2_P1_P1, HGRAD, GRAD,  HDIV,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D2_P1_P1, HGRAD, GRAD,  HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D2_P1_P1, HCURL, VALUE, HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D2_P1_P1, HDIV,  VALUE, HDIV,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D2_P1_P1, HCURL, CURL,  HCURL, CURL)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D2_P2_P1, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D2_P2_P1, HGRAD, GRAD,  HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D3_P1_P1, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D3_P1_P1, HGRAD, GRAD,  HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D3_P1_P1, HCURL, VALUE, HCURL, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D3_P1_P1, HCURL, CURL,  HCURL, CURL)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D3_P1_P1, HCURL, CURL,  HDIV,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardSheared_D3_P1_P1, HDIV,  VALUE, HDIV,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardShearedVectorWeighted_D2_P2_P1, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardShearedVectorWeighted_D2_P2_P1, HCURL, VALUE, HDIV,  VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardShearedVectorWeighted_D3_P1_P1, HGRAD, GRAD,  HGRAD, GRAD)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandardShearedVectorWeighted_D3_P1_P1, HCURL, VALUE, HDIV,  VALUE)
 
 } // anonymous namespace

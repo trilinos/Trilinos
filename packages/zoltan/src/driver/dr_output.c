@@ -221,10 +221,9 @@ int output_results(const char *cmd_file,
   quicksort_pointer_inc_id_id(index, global_ids, NULL,
                               0, mesh->num_elems-1);
 
-  /* generate the parallel filename for this processor */
-  strcpy(ctemp, pio_info->pexo_fname);
-  strcat(ctemp, ".");
-  strcat(ctemp, tag);
+  /* generate the parallel filename for this processor;
+   * pexo_fname is command-file-controlled, so bound the copies */
+  snprintf(ctemp, sizeof(ctemp), "%s.%s", pio_info->pexo_fname, tag);
   gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
 
   fp = fopen(par_out_fname, "w");
@@ -283,7 +282,8 @@ int output_results(const char *cmd_file,
     quicksort_pointer_inc_id_id(index, global_ids, NULL, 
                                 0, total_nodes-1);
 
-    strcat(par_out_fname, ".mesh");
+    strncat(par_out_fname, ".mesh",
+            sizeof(par_out_fname) - strlen(par_out_fname) - 1);
     fp = fopen(par_out_fname, "w");
     fprintf(fp, "Vertex IDs and coordinates\n");
     prev_id = ZOLTAN_ID_INVALID;

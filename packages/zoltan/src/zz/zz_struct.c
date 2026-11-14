@@ -417,7 +417,11 @@ int Zoltan_Deserialize(struct Zoltan_Struct *zz, size_t bufSize, char *buf)
   Zoltan_Deserialize_Params(zz, &bufptr);
 
   /* Deserialize LB information; advance bufptr */
-  Zoltan_LB_Deserialize(zz, &bufptr);
+  size_t used = (size_t)(bufptr - buf);
+  ierr = Zoltan_LB_Deserialize(zz, &bufptr,
+                               (bufSize > used) ? (bufSize - used) : 0);
+  if (ierr != ZOLTAN_OK)
+    return ierr;
 
   if (bufptr - buf > bufSize) {
     ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Deserialize", 

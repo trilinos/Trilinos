@@ -172,6 +172,7 @@ void Amesos2Wrapper<MatrixType>::setMatrix(const Teuchos::RCP<const row_matrix_t
   // factorization.
   IsInitialized_ = false;
   IsComputed_    = false;
+  A_local_       = Teuchos::null;
 
   if (A.is_null()) {
     A_ = Teuchos::null;
@@ -254,9 +255,9 @@ void Amesos2Wrapper<MatrixType>::initialize() {
     IsInitialized_ = false;
     IsComputed_    = false;
 
-    RCP<const row_matrix_type> A_local = makeLocalFilter(A_);
+    A_local_ = makeLocalFilter(A_);
     TEUCHOS_TEST_FOR_EXCEPTION(
-        A_local.is_null(), std::logic_error,
+        A_local_.is_null(), std::logic_error,
         "Ifpack2::AmesosWrapper::initialize: "
         "makeLocalFilter returned null; it failed to compute A_local.  "
         "Please report this bug to the Ifpack2 developers.");
@@ -264,30 +265,30 @@ void Amesos2Wrapper<MatrixType>::initialize() {
     {
       // The matrix that Amesos2 will build the preconditioner on must be a Tpetra::Crs matrix.
       // If A_local isn't, then we build one.
-      A_local_crs_ = rcp_dynamic_cast<const crs_matrix_type>(A_local);
+      A_local_crs_ = rcp_dynamic_cast<const crs_matrix_type>(A_local_);
 
       if (A_local_crs_.is_null()) {
-        local_ordinal_type numRows = A_local->getLocalNumRows();
+        local_ordinal_type numRows = A_local_->getLocalNumRows();
         Array<size_t> entriesPerRow(numRows);
         for (local_ordinal_type i = 0; i < numRows; i++) {
-          entriesPerRow[i] = A_local->getNumEntriesInLocalRow(i);
+          entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
         }
-        RCP<crs_matrix_type> A_local_crs_nc =
-            rcp(new crs_matrix_type(A_local->getRowMap(),
-                                    A_local->getColMap(),
+        A_local_crs_nc_ =
+            rcp(new crs_matrix_type(A_local_->getRowMap(),
+                                    A_local_->getColMap(),
                                     entriesPerRow()));
         // copy entries into A_local_crs
-        typename crs_matrix_type::nonconst_local_inds_host_view_type indices("Indices", A_local->getLocalMaxNumRowEntries());
-        typename crs_matrix_type::nonconst_values_host_view_type values("Values", A_local->getLocalMaxNumRowEntries());
+        typename crs_matrix_type::nonconst_local_inds_host_view_type indices("Indices", A_local_->getLocalMaxNumRowEntries());
+        typename crs_matrix_type::nonconst_values_host_view_type values("Values", A_local_->getLocalMaxNumRowEntries());
         for (local_ordinal_type i = 0; i < numRows; i++) {
           size_t numEntries = 0;
-          A_local->getLocalRowCopy(i, indices, values, numEntries);
+          A_local_->getLocalRowCopy(i, indices, values, numEntries);
           ArrayView<const local_ordinal_type> indicesInsert(indices.data(), numEntries);
           ArrayView<const scalar_type> valuesInsert((const scalar_type*)values.data(), numEntries);
-          A_local_crs_nc->insertLocalValues(i, indicesInsert, valuesInsert);
+          A_local_crs_nc_->insertLocalValues(i, indicesInsert, valuesInsert);
         }
-        A_local_crs_nc->fillComplete(A_local->getDomainMap(), A_local->getRangeMap());
-        A_local_crs_ = rcp_const_cast<const crs_matrix_type>(A_local_crs_nc);
+        A_local_crs_nc_->fillComplete(A_local_->getDomainMap(), A_local_->getRangeMap());
+        A_local_crs_ = rcp_const_cast<const crs_matrix_type>(A_local_crs_nc_);
       }
     }
 
@@ -334,6 +335,21 @@ void Amesos2Wrapper<MatrixType>::compute() {
   // Don't count initialization in the compute() time.
   if (!isInitialized()) {
     initialize();
+  }
+
+  // Copy the new values of A into A_local_crs_ before numeric factorization
+  if (!A_local_crs_nc_.is_null()) {
+    // copy entries into A_local_crs
+    A_local_crs_nc_->resumeFill();
+    local_ordinal_type numRows = A_local_->getLocalNumRows();
+    typename crs_matrix_type::nonconst_local_inds_host_view_type indices("Indices", A_local_->getLocalMaxNumRowEntries());
+    typename crs_matrix_type::nonconst_values_host_view_type values("Values", A_local_->getLocalMaxNumRowEntries());
+    for (local_ordinal_type i = 0; i < numRows; i++) {
+      size_t numEntries = 0;
+      A_local_->getLocalRowCopy(i, indices, values, numEntries);
+      A_local_crs_nc_->replaceLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()), indices.data());
+    }
+    A_local_crs_nc_->fillComplete(A_local_->getDomainMap(), A_local_->getRangeMap());
   }
 
   const std::string timerName("Ifpack2::Details::Amesos2Wrapper::compute");

@@ -57,6 +57,7 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
   }
 
   strncpy (filename, path, FILE_NAME_SIZE);
+  filename[FILE_NAME_SIZE] = '\0'; /* strncpy does not terminate long paths */
   for (i=0; (error != 0) && (i <2) ; ++i) {
 
     if (i == 0) { /* Try the classical compressed version */
@@ -83,8 +84,10 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
       }
       strncat(filename, append, EXTENSION_SIZE);
     }
-    else
+    else {
       strncpy(filename, path, FILE_NAME_SIZE);
+      filename[FILE_NAME_SIZE] = '\0';
+    }
 
     switch (type) {
     case STANDARD:

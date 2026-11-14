@@ -316,8 +316,9 @@ class Amesos2Wrapper : virtual public Ifpack2::Preconditioner<typename MatrixTyp
   /// A_local.  This is because the current adapters in Amesos2
   /// only accept a Tpetra::CrsMatrix.  That may change
   /// in the future.
+  Teuchos::RCP<const row_matrix_type> A_local_;
   Teuchos::RCP<const crs_matrix_type> A_local_crs_;
-
+  Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
   //@}
   // \name Parameters (set by setParameters())
   //@{

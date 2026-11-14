@@ -77,6 +77,7 @@ struct UnitTestSetup {
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_const) {                \
     UTS setup;                                                          \
+    setup.cx = setup.a; /*Unnecessary, fixes an uninitialized warning*/ \
     UTS::vec_type u = OP(setup.cx + SHIFT);                             \
     UTS::vec_type v(1, 0.0);                                            \
     for (int i=0; i<v.size(); i++)                                      \
@@ -133,6 +134,7 @@ struct UnitTestSetup {
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_both_const) {           \
     UTS setup;                                                          \
+    setup.cx = setup.a; /*Unnecessary, fixes an uninitialized warning*/ \
     UTS::vec_type u = setup.cx OP setup.cx;                             \
     UTS::vec_type v(1, 0.0);                                            \
     for (int i=0; i<v.size(); i++)                                      \
@@ -143,6 +145,7 @@ struct UnitTestSetup {
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_left_const2) {          \
     UTS setup;                                                          \
+    setup.cx = setup.a; /*Unnecessary, fixes an uninitialized warning*/ \
     UTS::vec_type u = setup.cx OP setup.x;                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -153,6 +156,7 @@ struct UnitTestSetup {
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_right_const2) {         \
     UTS setup;                                                          \
+    setup.cx = setup.a; /*Unnecessary, fixes an uninitialized warning*/ \
     UTS::vec_type u = setup.x OP setup.cx;                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -250,6 +254,7 @@ struct UnitTestSetup {
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_left_const2) {          \
     UTS setup;                                                          \
+    setup.cx = setup.a; /*Unnecessary, fixes an uninitialized warning*/ \
     UTS::vec_type u = OP(setup.cx,setup.x);                             \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -263,6 +268,7 @@ struct UnitTestSetup {
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_right_const2) {         \
     UTS setup;                                                          \
+    setup.cx = setup.a; /*Unnecessary, fixes an uninitialized warning*/ \
     UTS::vec_type u = OP(setup.x,setup.cx);                             \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
@@ -340,6 +346,7 @@ struct UnitTestSetup {
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_const2) {               \
     UTS setup;                                                          \
+    setup.cx = setup.a; /*Unnecessary, fixes an uninitialized warning*/ \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
     u OP setup.cx;                                                      \
@@ -397,6 +404,7 @@ struct UnitTestSetup {
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, saxpy_const2) {                  \
     UTS setup;                                                          \
+    setup.cx = setup.a; /*Unnecessary, fixes an uninitialized warning*/ \
     UTS::vec_type u = std::sin(setup.x);                                \
     UTS::vec_type v = std::sin(setup.x);                                \
     u += setup.cx*setup.y;                                              \

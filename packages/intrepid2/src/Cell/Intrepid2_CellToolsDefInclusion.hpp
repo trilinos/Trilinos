@@ -87,18 +87,6 @@ namespace Intrepid2 {
   }
 
 
-  template<typename DeviceType>
-  template<typename PointViewType>
-  bool 
-  CellTools<DeviceType>::
-  checkPointInclusion( const PointViewType          point,
-                       const shards::CellTopology   cellTopo,
-                       const typename ScalarTraits<typename PointViewType::value_type>::scalar_type threshold) {
-    return parametricDistance(point, cellTopo) <= 1.0 + threshold;
-  }
-
-
-
   template<unsigned cellTopologyKey,
              typename OutputViewType,
              typename InputViewType>

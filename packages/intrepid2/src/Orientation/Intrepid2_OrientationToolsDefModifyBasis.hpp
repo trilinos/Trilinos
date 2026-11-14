@@ -95,6 +95,9 @@ namespace Intrepid2 {
                    Kokkos::subview(input,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL())
                  : Kokkos::subview(input,        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
+        // the callers copy input to output, so a cell aligned to the reference needs no modification
+        if (orts(cell).isAlignedToReference()) return;
+
         // edge transformation
         if (numEdges > 0)
         {
@@ -520,8 +523,11 @@ namespace Intrepid2 {
     //Initialize output with values from outputLeft
     Kokkos::deep_copy(output, outputLeft);
     if ((cellDim < 3) || basisRight->requireOrientation()) {
+      // The oriented right basis is O_R psi, so the oriented matrix is O_L M O_R^T.  Right multiplication computes
+      // output(i,j) = sum_k input(i,k) op(j,k) = (input op^T)(i,j), so op must be O_R itself (not its transpose).
+      // (The two differ only for nonsymmetric operators, e.g. for rotated faces of hexahedra.)
       const bool leftMultiply = false;
-      const bool transpose = true; // NVR: added this September 2025; I think to date we have only ever run this with symmetric orientation operations, so that it has not mattered to date.
+      const bool transpose = false;
       const ordinal_type
         numOtherFields = numFieldsLeft,
         dimBasis       = output.extent(3); //returns 1 when output.rank() < 4;

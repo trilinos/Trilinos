@@ -84,14 +84,20 @@ public:
     auto variationTypes     = matrixDataIn.getVariationTypes();
     const auto D1           = extents[rank-2];
     
+    // the identity does not vary in the leading (non-matrix) dimensions
+    for (ordinal_type r=0; r<rank-2; r++)
+    {
+      variationTypes[r] = CONSTANT;
+    }
     extents[rank-2]        = D1;
     extents[rank-1]        = D1;
     variationTypes[rank-2] = BLOCK_PLUS_DIAGONAL;
     variationTypes[rank-1] = BLOCK_PLUS_DIAGONAL;
-    
+
     Kokkos::View<Scalar*,DeviceType> identityUnderlyingView("Intrepid2::DataTools::transposeMatrix() - identity view",D1);
     Kokkos::deep_copy(identityUnderlyingView, 1.0);
-    Data<Scalar,DeviceType> identityData(identityUnderlyingView,extents,variationTypes);
+    // extents and variationTypes are length-7 arrays; we must specify the rank explicitly
+    Data<Scalar,DeviceType> identityData(rank,identityUnderlyingView,extents,variationTypes);
     
     auto result = Data<Scalar,DeviceType>::allocateMatMatResult(true, matrixDataIn, false, identityData);
     result.storeMatMat(true, matrixDataIn, false, identityData);

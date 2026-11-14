@@ -13,6 +13,7 @@
 #include <new>
 #include <cstring>
 #include <stdint.h>
+#include <type_traits>
 
 #include "Sacado_Traits.hpp"
 #if defined(HAVE_SACADO_KOKKOS)
@@ -678,8 +679,13 @@ namespace Sacado {
       for (int i=0; i<sz; ++i)
         m[i] = 0.0;
 #else
-      if (sz > 0)
-        std::memset(m,0,sz*sizeof(T));
+      if constexpr (std::is_trivially_copyable_v<T>) {
+        if (sz > 0)
+          std::memset(m,0,sz*sizeof(T));
+      } else {
+        for (int i=0; i<sz; ++i)
+          m[i] = 0.0;
+      }
 #endif
       return m;
     }
@@ -711,13 +717,19 @@ namespace Sacado {
     //! Copy array from \c src to \c dest of length \c sz
     SACADO_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
-      if (sz > 0 && dest != NULL && src != NULL)
+      if (sz > 0 && dest != NULL && src != NULL) {
 #if defined( __CUDACC__) || defined(__HIPCC__ ) || defined(__SYCL_DEVICE_ONLY__)
         for (int i=0; i<sz; ++i)
           dest[i] = src[i];
 #else
-        std::memcpy(dest,src,sz*sizeof(T));
+        if constexpr (std::is_trivially_copyable_v<T>) {
+          std::memcpy(dest,src,sz*sizeof(T));
+        } else {
+          for (int i=0; i<sz; ++i)
+            dest[i] = src[i];
+        }
 #endif
+      }
     }
 
     //! Copy array from \c src to \c dest of length \c sz
@@ -734,13 +746,19 @@ namespace Sacado {
     //! Zero out array \c dest of length \c sz
     SACADO_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
-      if (sz > 0 && dest != NULL)
+      if (sz > 0 && dest != NULL) {
 #if defined(__CUDACC__ ) || defined(__HIPCC__ ) || defined(__SYCL_DEVICE_ONLY__)
         for (int i=0; i<sz; ++i)
           dest[i] = T(0.);
 #else
-        std::memset(dest,0,sz*sizeof(T));
+        if constexpr (std::is_trivially_copyable_v<T>) {
+          std::memset(dest,0,sz*sizeof(T));
+        } else {
+          for (int i=0; i<sz; ++i)
+            dest[i] = T(0.);
+        }
 #endif
+      }
     }
 
     //! Zero out array \c dest of length \c sz

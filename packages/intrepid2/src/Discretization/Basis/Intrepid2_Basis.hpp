@@ -28,6 +28,7 @@
 #include <Teuchos_RCPDecl.hpp>
 #include <Kokkos_Core.hpp>
 
+#include <memory>
 #include <vector>
 
 namespace Intrepid2 {
@@ -201,7 +202,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         \li     ordinalToTag_[DodOrd][2] = ordinal of the specified DoF relative to the subcell
         \li     ordinalToTag_[DofOrd][3] = total number of DoFs associated with the subcell
     */
-    OrdinalTypeArray2DHost ordinalToTag_;
+    mutable OrdinalTypeArray2DHost ordinalToTag_;
 
     /** \brief  DoF tag to ordinal lookup table.
 
@@ -214,7 +215,18 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
 
         \li     tagToOrdinal_[subcDim][subcOrd][subcDofOrd] = Degree-of-freedom ordinal
     */
-    OrdinalTypeArray3DHost tagToOrdinal_;
+    mutable OrdinalTypeArray3DHost tagToOrdinal_;
+
+    /** \brief  Ensures that the dense tag tables (<var>ordinalToTag_</var>, <var>tagToOrdinal_</var>) are filled.
+
+        The default does nothing: most bases fill the tables at construction.  Derived classes that defer construction of
+        the tables (e.g., Basis_TensorBasis) override this; they are responsible for making it thread-safe.
+
+        Basis itself must not hold host-only members (e.g., std::shared_ptr or std::mutex): bases are copy-constructed on
+        device for team-level getValues() (see copy_virtual_class_to_device()), and the implicit copy constructor of such
+        a member cannot run there.  State for lazy initialization therefore lives in the derived classes that need it.
+     */
+    virtual void requireTags() const {}
 
     /** \brief  Fills <var>ordinalToTag_</var> and <var>tagToOrdinal_</var> by basis-specific tag data
 
@@ -238,11 +250,12 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
                             const ordinal_type       posScDim,
                             const ordinal_type       posScOrd,
                             const ordinal_type       posDfOrd ) {
-      // Create ordinalToTag
-      ordinalToTag = OrdinalTypeView2D("ordinalToTag", basisCard, tagSize);
+      // The tables are host views, filled here with plain loops rather than with Kokkos::deep_copy(): Basis_TensorBasis
+      // calls this lazily from const queries, which may come from inside an OpenMP parallel region, where dispatching a
+      // kernel on the OpenMP execution space (as deep_copy() of a nonzero value does) aborts.
 
-      // Initialize with -1
-      Kokkos::deep_copy( ordinalToTag, -1 );
+      // Create ordinalToTag; every entry is set below
+      ordinalToTag = OrdinalTypeView2D(Kokkos::view_alloc("ordinalToTag", Kokkos::WithoutInitializing), basisCard, tagSize);
 
       // Copy tags
       for (ordinal_type i=0;i<basisCard;++i)
@@ -268,11 +281,12 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
           maxDfOrd = tags(i*tagSize + posDfOrd);
       ++maxDfOrd;
 
-      // Create tagToOrdinal
-      tagToOrdinal = OrdinalTypeView3D("tagToOrdinal", maxScDim, maxScOrd, maxDfOrd);
-
-      // Initialize with -1
-      Kokkos::deep_copy( tagToOrdinal, -1 );
+      // Create tagToOrdinal, and initialize with -1
+      tagToOrdinal = OrdinalTypeView3D(Kokkos::view_alloc("tagToOrdinal", Kokkos::WithoutInitializing), maxScDim, maxScOrd, maxDfOrd);
+      for (ordinal_type i=0;i<maxScDim;++i)
+        for (ordinal_type j=0;j<maxScOrd;++j)
+          for (ordinal_type k=0;k<maxDfOrd;++k)
+            tagToOrdinal(i, j, k) = -1;
 
       // Overwrite elements of the array corresponding to tags with local DoF Id's, leave all other = -1
       for (ordinal_type i=0;i<basisCard;++i)
@@ -862,9 +876,10 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
      
      \return the number of DoFs associated with the specified subcell.
      */
-    ordinal_type
+    virtual ordinal_type
     getDofCount( const ordinal_type subcDim,
                  const ordinal_type subcOrd ) const {
+      this->requireTags();
       if ( subcDim >= 0   &&   subcDim < static_cast<ordinal_type>(tagToOrdinal_.extent(0)) &&
            subcOrd >= 0   &&   subcOrd < static_cast<ordinal_type>(tagToOrdinal_.extent(1)) )
       {
@@ -888,10 +903,11 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
 
         \return the DoF ordinal corresponding to the specified DoF tag data.
     */
-    ordinal_type
+    virtual ordinal_type
     getDofOrdinal( const ordinal_type subcDim,
                    const ordinal_type subcOrd,
                    const ordinal_type subcDofOrd ) const {
+      this->requireTags();
       // this should be abort and able to be called as a device function
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( subcDim < 0 || subcDim >= static_cast<ordinal_type>(tagToOrdinal_.extent(0)), std::out_of_range,
@@ -923,6 +939,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     /** \brief DoF tag to ordinal data structure */
     const OrdinalTypeArray3DHost
     getAllDofOrdinal() const {
+      requireTags();
       return tagToOrdinal_;
     }
 
@@ -937,8 +954,9 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         \li     element [2] = tag field 2  ->  ordinal of the specified DoF relative to the subcell
         \li     element [3] = tag field 3  ->  total number of DoFs associated with the subcell
     */
-    const OrdinalTypeArrayStride1DHost
+    virtual const OrdinalTypeArrayStride1DHost
     getDofTag( const ordinal_type dofOrd ) const {
+      this->requireTags();
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= static_cast<ordinal_type>(ordinalToTag_.extent(0)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofTag): dofOrd is out of range");
@@ -955,8 +973,9 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
         \li     element [DofOrd][2] = tag field 2 for the DoF with the specified ordinal
         \li     element [DofOrd][3] = tag field 3 for the DoF with the specified ordinal
     */
-    const OrdinalTypeArray2DHost
+    virtual const OrdinalTypeArray2DHost
     getAllDofTags() const {
+      this->requireTags();
       return ordinalToTag_;
     }
 

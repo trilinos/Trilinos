@@ -57,5 +57,8 @@ int main(int argc, char *argv[]) {
                             C,
                             order,
                             verbose);
+
+  Kokkos::finalize();
+
   return r_val_double;
 }

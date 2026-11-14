@@ -50,6 +50,22 @@ namespace Intrepid2 {
     using ExecSpaceType = typename DeviceType::execution_space;
     using MemSpaceType = typename DeviceType::memory_space;
   public:
+    /** \brief Returns the transpose of the provided Jacobian inverse, (DF)^{-T}, for use as a TransformedBasisValues transform.
+     
+        TransformedBasisValues applies a matrix transform T to reference values v as T * v.  The HGRAD gradient and HCURL value
+        pullbacks are (DF)^{-T} * v, so the stored transform must be (DF)^{-T}.  When the Jacobian inverse is diagonal (e.g., on
+        axis-aligned meshes) it is its own transpose, and we return it as-is, preserving its structure and avoiding an allocation.
+     
+        \param  jacobianInverse  [in]  - Data object with logical shape (C,P,D,D) containing cell Jacobian inverses.
+        \return Data object with logical shape (C,P,D,D) containing the transposes of the cell Jacobian inverses.
+    */
+    template<class Scalar>
+    static Data<Scalar,DeviceType> jacobianInverseTranspose(const Data<Scalar,DeviceType> &jacobianInverse)
+    {
+      if (jacobianInverse.isDiagonal()) return jacobianInverse;
+      return DataTools::transposeMatrix(jacobianInverse);
+    }
+    
     /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
           reference cell, stored in the user-provided container <var><b>inputVals</b></var>
           and indexed by (F,P,D).  The returned object contains the transformed gradient field,
@@ -96,7 +112,8 @@ namespace Intrepid2 {
     template<class Scalar>
     static TransformedBasisValues<Scalar,DeviceType> getHGRADtransformGRAD(const Data<Scalar,DeviceType> &jacobianInverse, const BasisValues<Scalar,DeviceType> &refBasisGradValues)
     {
-      return TransformedBasisValues<Scalar,DeviceType>(jacobianInverse,refBasisGradValues);
+      // TransformedBasisValues applies its transform T as T * v, so the pullback (DF)^{-T} requires that we store the transpose of jacobianInverse.
+      return TransformedBasisValues<Scalar,DeviceType>(jacobianInverseTranspose(jacobianInverse),refBasisGradValues);
     }
         
     /** \brief Transformation of a (scalar) value field in the H-grad space, defined at points on a
@@ -189,7 +206,8 @@ namespace Intrepid2 {
     getHCURLtransformVALUE(const Data<Scalar,DeviceType> &jacobianInverse,
                           const BasisValues<Scalar,DeviceType> &refBasisValues )
     {
-      return TransformedBasisValues<Scalar,DeviceType>(jacobianInverse,refBasisValues);
+      // TransformedBasisValues applies its transform T as T * v, so the pullback (DF)^{-T} requires that we store the transpose of jacobianInverse.
+      return TransformedBasisValues<Scalar,DeviceType>(jacobianInverseTranspose(jacobianInverse),refBasisValues);
     }
     
     /** \brief Transformation of a 3D curl field in the H-curl space, defined at points on a

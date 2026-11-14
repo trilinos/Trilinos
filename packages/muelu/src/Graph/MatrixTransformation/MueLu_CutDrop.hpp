@@ -237,7 +237,7 @@ class ScaledComparison {
         return (x_aij / x_aiiajj);
       } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
         auto val         = A.values(offset + x);
-        auto neg_aij     = -ATS::real(val);
+        auto neg_aij     = ATS::real(-val);
         auto max_neg_aik = ATS::real(diag(rlid));
         auto v           = neg_aij / max_neg_aik;
         if (ATS::real(v) <= mATS::zero()) {
@@ -387,7 +387,7 @@ class UnscaledDistanceLaplacianComparison {
       } else {
         val = diag(rlid);
       }
-      auto aij2 = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+      auto aij2 = ATS::magnitude(val * val);  // |a_ij|^2
       return aij2;
     }
   };
@@ -527,10 +527,10 @@ class ScaledDistanceLaplacianComparison {
 
       if constexpr (measure == Misc::SmoothedAggregationMeasure) {
         auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
-        auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
+        auto aij2   = ATS::magnitude(val * val);                                // |a_ij|^2
         return (aij2 / aiiajj);
       } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
-        auto neg_aij     = -ATS::real(val);
+        auto neg_aij     = ATS::real(-val);
         auto max_neg_aik = ATS::real(diag(rlid));
         auto v           = ATS::magnitude(neg_aij / max_neg_aik);
         if (ATS::real(neg_aij) >= mzero)
@@ -540,7 +540,7 @@ class ScaledDistanceLaplacianComparison {
       } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
         auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
         const bool is_nonpositive = ATS::real(val) <= mATS::zero();
-        magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+        magnitudeType aij2        = ATS::magnitude(val * val);  // |a_ij|^2
         // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
         if (!is_nonpositive)
           aij2 = -aij2;
@@ -697,7 +697,7 @@ class UnscaledDistanceLaplacianVectorComparison {
       } else {
         val = diag(brlid);
       }
-      auto aij2 = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+      auto aij2 = ATS::magnitude(val * val);  // |a_ij|^2
       return aij2;
     }
   };
@@ -853,7 +853,7 @@ class ScaledDistanceLaplacianVectorComparison {
         auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                  // |a_ij|^2
         return (aij2 / aiiajj);
       } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
-        auto neg_aij     = -ATS::real(val);
+        auto neg_aij     = ATS::real(-val);
         auto max_neg_aik = ATS::real(diag(brlid));
         auto v           = ATS::magnitude(neg_aij / max_neg_aik);
         if (ATS::real(neg_aij) >= mzero)

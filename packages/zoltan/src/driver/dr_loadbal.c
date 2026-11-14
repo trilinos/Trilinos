@@ -602,8 +602,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
     if (Test.Gen_Files) {
       /* Write output files. */
-      strcpy(fname, pio_info->pexo_fname);
-      strcat(fname, ".before");
+      snprintf(fname, sizeof(fname), "%s.before", pio_info->pexo_fname);
       Zoltan_Generate_Files(zz, fname, 1, 1, 1, 1);
     }
 
@@ -805,8 +804,7 @@ exit(-1);
     }
     if (Test.Gen_Files) {
       /* Write output files. */
-      strcpy(fname, pio_info->pexo_fname);
-      strcat(fname, ".after");
+      snprintf(fname, sizeof(fname), "%s.after", pio_info->pexo_fname);
       Zoltan_Generate_Files(zz, fname, 1, 1, 1, 1);
     }
 
@@ -2359,8 +2357,7 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
   test_both = ((gmax_part == (Num_Proc-1)) && (Test.Local_Parts == 0));
 
   /* generate the parallel filename for this processor */
-  strcpy(ctemp, pio_info->pexo_fname);
-  strcat(ctemp, ".drops");
+  snprintf(ctemp, sizeof(ctemp), "%s.drops", pio_info->pexo_fname);
   gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
   fp = fopen(par_out_fname, "w");
 

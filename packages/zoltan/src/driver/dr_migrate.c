@@ -982,6 +982,18 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
     return;
   }
 
+  /* Validate fields copied from the received buffer before using them as
+   * array indices or allocation sizes; the message contents come from a
+   * peer rank and must not be trusted blindly. */
+  if (elem_mig->elem_blk < 0 || elem_mig->elem_blk >= mesh->num_el_blks
+   || elem_mig->adj_len < 0
+   || (size_t)elem_mig->adj_len * (sizeof(ZOLTAN_ID_TYPE) + sizeof(int))
+      > (size_t)elem_data_size) {
+    Gen_Error(0, "fatal: invalid element data in migration buffer");
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
   current_elem = &(elem[idx]);
   /* now put the migrated information into the array */
   *current_elem = *elem_mig;

@@ -403,6 +403,9 @@ namespace Intrepid2
     numCells_ *= numCellsPerGridCell(subdivisionStrategy_);
     
     shards::CellTopology cellTopo; // will register with HostMemberLookup below
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType,PointScalar,PointScalar>;
+    const int linearPolyOrder = 1;
+    BasisPtr basisForNodes;
     if (subdivisionStrategy_ == NO_SUBDIVISION)
     {
       // hypercube
@@ -411,18 +414,27 @@ namespace Intrepid2
       if (spaceDim == 1)
       {
         cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >());
+        basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, linearPolyOrder);
       }
       else if (spaceDim == 2)
       {
         cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<> >());
+        basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, linearPolyOrder);
       }
       else if (spaceDim == 3)
       {
         cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<> >());
+        basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, linearPolyOrder);
       }
       else
       {
-        // TODO: Once shards supports higher-dimensional hypercubes, initialize cellTopo accordingly
+        INTREPID2_TEST_FOR_EXCEPTION(nodeOrdering_ == HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS, std::invalid_argument,
+                                     "Classic Shards node ordering is only defined for hypercubes through space dimension 3");
+        // Shards does not provide topologies above 3D, so cellTopology() is left invalid (a default-constructed
+        // shards::CellTopology), and operations that require it (e.g., orientations) fail.  The uniform-grid path is
+        // affine, and still supplies coordinates and Jacobians for higher-dimensional tensor-product cells; the node
+        // basis is a tensor product of linear H(grad) line bases.
+        basisForNodes = getHypercubeBasis_HGRAD<BasisFamily>(linearPolyOrder, spaceDim);
       }
     }
     else
@@ -432,20 +444,19 @@ namespace Intrepid2
       if (spaceDim == 2)
       {
         cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >());
+        basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, linearPolyOrder);
       }
       else if (spaceDim == 3)
       {
         cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >());
+        basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, linearPolyOrder);
       }
       else
       {
-        // TODO: Once shards supports higher-dimensional simplices, initialize cellTopo_ accordingly
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                                     "Uniform-grid simplex subdivision is only supported in space dimensions 2 and 3");
       }
     }
-    
-    using BasisFamily = DerivedNodalBasisFamily<DeviceType,PointScalar,PointScalar>;
-    const int linearPolyOrder = 1;
-    BasisPtr basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, linearPolyOrder);
     
     if (nodeOrdering_ == HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS)
     {
@@ -982,6 +993,8 @@ namespace Intrepid2
   void CellGeometry<PointScalar,spaceDim,DeviceType>::initializeOrientations()
   {
     using HostExecSpace = Kokkos::DefaultHostExecutionSpace;
+    INTREPID2_TEST_FOR_EXCEPTION(this->cellTopology().getCellTopologyData() == nullptr, std::invalid_argument,
+                                 "CellGeometry: orientations require a cell topology, which is not defined for space dimensions above 3");
     
     const bool isGridType = (cellGeometryType_ == TENSOR_GRID) || (cellGeometryType_ == UNIFORM_GRID);
     const int numOrientations = isGridType ? numCellsPerGridCell(subdivisionStrategy_) : numCells();

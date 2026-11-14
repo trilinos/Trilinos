@@ -420,9 +420,9 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SatisfyPConstraintsN
   Teuchos::ArrayRCP<Scalar> ConstraintViolationSum(nPDEs);
   Teuchos::ArrayRCP<Scalar> Rsum(nPDEs);
   Teuchos::ArrayRCP<size_t> nPositive(nPDEs);
-  for (size_t k = 0; k < (size_t)nPDEs; k++) ConstraintViolationSum[k] = zero;
-  for (size_t k = 0; k < (size_t)nPDEs; k++) Rsum[k] = zero;
-  for (size_t k = 0; k < (size_t)nPDEs; k++) nPositive[k] = 0;
+  for (LO k = 0; k < nPDEs; k++) ConstraintViolationSum[k] = zero;
+  for (LO k = 0; k < nPDEs; k++) Rsum[k] = zero;
+  for (LO k = 0; k < nPDEs; k++) nPositive[k] = 0;
 
   for (size_t i = 0; i < as<size_t>(P->getRowMap()->getLocalNumElements()); i++) {
     Teuchos::ArrayView<const LocalOrdinal> indices;

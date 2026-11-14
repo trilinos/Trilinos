@@ -1494,6 +1494,13 @@ int Zoltan_Hier(
     /* determine parts to compute at this level */
     hpp.part_to_compute =
       zz->Get_Hier_Part(zz->Get_Hier_Part_Data, hpp.level, &ierr);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_HIER_ERROR(ierr, "ZOLTAN_HIER_PART_FN returned error.");
+    }
+    if (hpp.part_to_compute < 0) {
+      ZOLTAN_HIER_ERROR(ZOLTAN_FATAL,
+                        "ZOLTAN_HIER_PART_FN returned a negative part.");
+    }
     /* number of parts is one more than the highest part id
        specified on procs in the current hier_comm */
     MPI_Allreduce(&hpp.part_to_compute, &hpp.num_parts, 1, MPI_INT,
