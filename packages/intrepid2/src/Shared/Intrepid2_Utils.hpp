@@ -356,13 +356,12 @@ namespace Intrepid2 {
   template <class DataType, class... Properties>
   KOKKOS_INLINE_FUNCTION auto
   as_scalar_1d_view(const Kokkos::View<DataType, Properties...> &view) {
-    using view_t = Kokkos::View<DataType, Properties...>;
 #ifdef HAVE_INTREPID2_SACADO
-    if constexpr (Sacado::is_view_fad<view_t>::value) {
-      return Sacado::as_scalar_view(view);
-    } else
-#endif
+    return Sacado::as_scalar_view(view);
+#else
+    using view_t = Kokkos::View<DataType, Properties...>;
     return Kokkos::View<typename view_t::value_type*, Properties...>(view.data(), view.mapping().required_span_size());
+#endif
   }
 
   template <class... Args>
