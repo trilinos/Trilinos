@@ -14,7 +14,7 @@ Defined in header: :code:`KokkosBatched_Rotmg.hpp`
 Constructs the modified Givens transformation
 
 .. math::
-  
+
   H = \begin{bmatrix} h_{11} & h_{12} \\ h_{21} & h_{22} \end{bmatrix}
 
 that zeros out the second component of a 2D vector :math:`(\sqrt{d1} \times x1, \sqrt{d2} \times y1)^T`. The transformation can be applied to vectors :math:`x` and :math:`y` by calling the `Rotm` routine described in :doc:`batched_rotm`. This operation is equivalent to the BLAS routine `SROTMG <https://www.netlib.org/blas/srotmg.f>`_ or `DROTMG <https://www.netlib.org/blas/drotmg.f>`_ for single or double precision.

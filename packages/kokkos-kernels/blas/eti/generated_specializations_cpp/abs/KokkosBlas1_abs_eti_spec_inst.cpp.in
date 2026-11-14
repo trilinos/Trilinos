@@ -13,4 +13,3 @@ namespace Impl {
 
 } // Impl
 } // KokkosBlas
-

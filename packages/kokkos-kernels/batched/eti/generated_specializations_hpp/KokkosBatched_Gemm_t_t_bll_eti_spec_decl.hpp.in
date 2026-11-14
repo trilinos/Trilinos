@@ -7,6 +7,6 @@ namespace KokkosBatched {
 namespace Impl {
 using KokkosBlas::Trans;
 @BATCHED_GEMM_T_T_BLL_ETI_DECL_BLOCK@
-  } //IMPL 
+  } //IMPL
 } //Kokkos
 #endif

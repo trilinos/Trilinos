@@ -6,6 +6,6 @@
 namespace KokkosSparse {
 namespace Impl {
 @SPARSE_SPADD_NUMERIC_ETI_AVAIL_BLOCK@
-  } //IMPL 
+  } //IMPL
 } //Kokkos
 #endif

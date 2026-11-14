@@ -47,7 +47,7 @@ Parameters
 
 :handle: an instance of ``KokkosKernels::KokkosKernelsHandle`` from which a gs_handle will be used to extract control parameters.
 
-:num_rows, num_cols: the number of rows and columns of the input matrix. 
+:num_rows, num_cols: the number of rows and columns of the input matrix.
 
 :rowmap: row map of the input matrix.
 
@@ -80,4 +80,3 @@ and :doc:`backward_sweep_gauss_seidel_apply <gauss_seidel_apply_backward>` for h
 .. literalinclude:: ../../../../example/wiki/sparse/KokkosSparse_wiki_gauss_seidel.cpp
   :language: c++
   :lines: 16-
-

@@ -1,9 +1,9 @@
  ************************************************************************
- 
+
                         Kokkos v. 4.0
        Copyright (2022) National Technology & Engineering
                Solutions of Sandia, LLC (NTESS).
- 
+
  Under the terms of Contract DE-NA0003525 with NTESS,
  the U.S. Government retains certain rights in this software.
 
@@ -231,7 +231,7 @@
  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- Questions? Contact: 
+ Questions? Contact:
    Siva Rajamanickam (srajama@sandia.gov)
    Luc Berger-Vergiat (lberge@sandia.gov)
 

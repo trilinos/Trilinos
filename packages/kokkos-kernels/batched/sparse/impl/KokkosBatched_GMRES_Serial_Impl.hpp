@@ -155,6 +155,8 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
     }
 
     for (OrdinalType l = 0; l < numMatrices; ++l) {
+      MagnitudeType rotation_product = 1.;
+
       // Apply the previous Givens rotations:
       auto H_j        = Kokkos::subview(H_view, l, j, Kokkos::ALL);
       auto Givens_0_l = Kokkos::subview(Givens_view, l, Kokkos::ALL, 0);
@@ -185,12 +187,18 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
 
         G(l, j + 1) = -Givens_1_l(j) * G(l, j);
         G(l, j) *= Givens_0_l(j);
+
+        // Rotation product at Arnoldi iteration j
+        for (size_t i = 0; i <= j; i++) {
+          rotation_product *= Givens_1_l(i);
+        }
       } else {
-        H_j(j)      = 1.;
-        G(l, j + 1) = 0.;
+        H_j(j)           = 1.;
+        G(l, j + 1)      = 0.;
+        rotation_product = 0.;  // equivalent to G_{j+1} = 0 for converged systems
       }
 
-      auto res_norm = KokkosKernels::ArithTraits<double>::abs(G(l, j + 1)) / G(l, 0);
+      auto res_norm = ATM::abs(rotation_product);
 
       handle.set_norm(GMRES_id, l, j + 1, res_norm);
 

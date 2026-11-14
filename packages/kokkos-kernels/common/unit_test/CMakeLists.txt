@@ -40,12 +40,7 @@ if(KOKKOS_ENABLE_SYCL)
     COMPONENTS common)
 endif()
 
-if(KOKKOS_ENABLE_OPENMPTARGET)
-  # KOKKOSKERNELS_ADD_UNIT_TEST(common_openmptarget
-  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Common.cpp
-  #   COMPONENTS common
-  # )
-endif()
+
 
 #####################
 #                   #

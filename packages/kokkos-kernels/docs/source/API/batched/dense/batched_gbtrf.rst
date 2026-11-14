@@ -15,9 +15,9 @@ Defined in header: :code:`KokkosBatched_Gbtrf.hpp`
     };
 
 Computes a LU factorization of a general m-by-n band matrix :math:`A` using partial pivoting with row interchanges. The factorization has the format
-:math:`A = P \cdot L \cdot U`. 
+:math:`A = P \cdot L \cdot U`.
 
-where 
+where
 
 - :math:`P` is a permutation matrix
 - :math:`L` is a lower triangular matrix with unit diagonal elements

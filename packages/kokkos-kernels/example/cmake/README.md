@@ -28,5 +28,3 @@ From 3.12 on, you can use:
 cmake <my_project_source> -DKokkos_ROOT=<kokkos_prefix>
 ````
 For projects depending on KokkosKernels, equivalent `KokkosKernels_ROOT` or `KokkosKernels_DIR` flags are needed.
-
-

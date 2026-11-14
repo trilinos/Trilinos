@@ -63,7 +63,7 @@ Example
 =======
 
 .. code:: c++
-  
+
   #include<Kokkos_Core.hpp>
   #include<KokkosBlas2_gemv.hpp>
 
@@ -82,7 +82,7 @@ Example
 
       const double alpha = double(1.0);
       const double beta = double(0.0);
-   
+
       KokkosBlas::gemv("N",alpha,A,x,beta,y);
     }
     Kokkos::finalize();

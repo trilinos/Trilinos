@@ -6,6 +6,6 @@
 namespace KokkosGraph {
 namespace Impl {
 @GRAPH_COLOR_D1_ETI_AVAIL_BLOCK@
-  } //IMPL 
+  } //IMPL
 } //Kokkos
 #endif
