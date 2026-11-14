@@ -192,6 +192,16 @@ int Zoltan_DD_Find (
       ptr = (DD_Find_Msg*) sbufftmp;
       sbufftmp += dd->find_msg_size;
 
+      /* do not trust peer-returned values: validate before indexing the
+       * caller's output arrays */
+      if (ptr->index < 0 || ptr->index >= count
+       || ptr->proc < -1 || ptr->proc >= dd->nproc)  {  /* -1 = not found */
+         ZOLTAN_PRINT_ERROR (dd->my_proc, yo,
+          "Invalid index or proc in returned find message");
+         err = ZOLTAN_FATAL;
+         goto fini;
+      }
+
       if (owner)
          owner[ptr->index] = ptr->proc;
       if (partition)
