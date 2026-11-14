@@ -388,17 +388,24 @@ struct ViewScalarStride<
   static constexpr bool is_unit_stride = (stride == 1u);
 };
 
+// Rank-1 view of the scalars stored in the memory spanned by a view: for a
+// view of Fad types, the values and derivatives of all of its entries, for
+// any other view, its entries.  The rank of the result is 1 in both cases.
 template <class DataType, class... Properties>
 KOKKOS_INLINE_FUNCTION auto
 as_scalar_view(const Kokkos::View<DataType, Properties...> &view) {
   using view_t = Kokkos::View<DataType, Properties...>;
   if constexpr (Sacado::is_view_fad<view_t>::value) {
-    using value_type = typename view_t::value_type::value_type;
+    using value_type = std::conditional_t<
+        std::is_const_v<typename view_t::value_type>,
+        const typename view_t::non_const_value_type::value_type,
+        typename view_t::non_const_value_type::value_type>;
     return Kokkos::View<value_type *, Properties...>(
         view.data(),
         view.mapping().required_span_size() * (view.accessor().fad_size()+1));
   } else {
-    return view;
+    return Kokkos::View<typename view_t::value_type *, Properties...>(
+        view.data(), view.mapping().required_span_size());
   }
 }
 

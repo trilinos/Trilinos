@@ -560,7 +560,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   auto va = Sacado::as_scalar_view(v);
 
   const size_type expected_extent = global_num_rows * global_num_cols * (global_fad_size + 1);
+  TEUCHOS_TEST_EQUALITY(decltype(va)::rank(), 1, out, success);
   TEUCHOS_TEST_EQUALITY(va.extent(0), expected_extent, out, success);
+
+  // View of const Fad
+  typedef Kokkos::View<const FadType**,Layout,Device> ConstViewType;
+  ConstViewType cv = v;
+  auto cva = Sacado::as_scalar_view(cv);
+  TEUCHOS_TEST_EQUALITY(decltype(cva)::rank(), 1, out, success);
+  TEUCHOS_TEST_EQUALITY(cva.extent(0), expected_extent, out, success);
+  TEUCHOS_TEST_EQUALITY(cva.data() == va.data(), true, out, success);
+
+  // A view of scalars gives a rank-1 view as well
+  typedef typename Sacado::inner_layout<Layout>::type ScalarLayout;
+  typedef Kokkos::View<double**,ScalarLayout,Device> ScalarViewType;
+  ScalarViewType s("scalar view", num_rows, num_cols);
+  auto sa = Sacado::as_scalar_view(s);
+  TEUCHOS_TEST_EQUALITY(decltype(sa)::rank(), 1, out, success);
+  TEUCHOS_TEST_EQUALITY(sa.extent(0), num_rows*num_cols, out, success);
+  TEUCHOS_TEST_EQUALITY(sa.data() == s.data(), true, out, success);
 #endif
 }
 
@@ -579,7 +597,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   auto va = Sacado::as_scalar_view(v);
 
   const size_type expected_extent = global_num_rows * global_num_cols * (global_fad_size + 1);
+  TEUCHOS_TEST_EQUALITY(decltype(va)::rank(), 1, out, success);
   TEUCHOS_TEST_EQUALITY(va.extent(0), expected_extent, out, success);
+
+  // A view of scalars gives a rank-1 view as well
+  typedef typename Sacado::inner_layout<Layout>::type ScalarLayout;
+  typedef Kokkos::DynRankView<double,ScalarLayout,Device> ScalarViewType;
+  ScalarViewType s("scalar view", num_rows, num_cols);
+  auto sa = Sacado::as_scalar_view(s);
+  TEUCHOS_TEST_EQUALITY(decltype(sa)::rank(), 1, out, success);
+  TEUCHOS_TEST_EQUALITY(sa.extent(0), num_rows*num_cols, out, success);
+  TEUCHOS_TEST_EQUALITY(sa.data() == s.data(), true, out, success);
 #endif
 }
 
