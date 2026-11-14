@@ -138,6 +138,12 @@ template <typename Space>
 using IsSYCL = std::enable_if_t<std::is_same_v<Space, Kokkos::SYCL>, bool>;
 #endif  // KOKKOS_ENABLE_SYCL
 
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+///\brief IsNextSilicon<Space> is a type if Space is Kokkos::Experimental::NextSilicon
+template <typename Space>
+using IsNextSilicon = std::enable_if_t<std::is_same_v<Space, Kokkos::Experimental::NextSilicon>, bool>;
+#endif  // KOKKOS_ENABLE_NEXTSILICON
+
 /*! \brief Construct a Kokkos execution space instance with the following
    priority
 
@@ -325,6 +331,9 @@ extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::HIP> HIPSpaces;
 #if defined(KOKKOS_ENABLE_SYCL)
 extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::SYCL> SYCLSpaces;
 #endif
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+extern InstanceLifetimeManager<Kokkos::Experimental::NextSilicon> NextSiliconSpaces;
+#endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
 
@@ -377,6 +386,16 @@ template <typename ExecSpace, Priority priority = Priority::medium,
           IsSYCL<ExecSpace> = true>
 Teuchos::RCP<const ExecSpace> space_instance(int i = 0) {
   return SYCLSpaces.space_instance<priority>(i);
+}
+#endif
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+/*! \brief get a strong Teuchos::RCP to Tpetra-managed Kokkos::Experimental::NextSilicon instance \c
+ * i
+ */
+template <typename ExecSpace, Priority priority = Priority::medium,
+          IsNextSilicon<ExecSpace> = true>
+Teuchos::RCP<const ExecSpace> space_instance(int i = 0) {
+  return NextSiliconSpaces.space_instance<priority>(i);
 }
 #endif
 
@@ -483,6 +502,14 @@ is_gpu_exec_space<Kokkos::HIP>() {
 template <>
 constexpr KOKKOS_INLINE_FUNCTION bool
 is_gpu_exec_space<Kokkos::SYCL>() {
+  return true;
+}
+#endif
+
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+template <>
+constexpr KOKKOS_INLINE_FUNCTION bool
+is_gpu_exec_space<Kokkos::Experimental::NextSilicon>() {
   return true;
 }
 #endif

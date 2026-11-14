@@ -70,6 +70,9 @@ void lazy_init() {
 #ifdef KOKKOS_ENABLE_SYCL
 /*extern*/ InstanceLifetimeManager<Kokkos::SYCL> SYCLSpaces;
 #endif
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+/*extern*/ InstanceLifetimeManager<Kokkos::Experimental::NextSilicon> NextSiliconSpaces;
+#endif
 
 }  // namespace Spaces
 }  // namespace Details

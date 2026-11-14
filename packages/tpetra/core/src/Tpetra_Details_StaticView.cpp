@@ -111,6 +111,31 @@ void finalize_sycl_shared_memory() {
 }
 #endif  // KOKKOS_ENABLE_SYCL
 
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+
+void* nextsilicon_memory_       = nullptr;
+size_t nextsilicon_memory_size_ = 0;
+
+void finalize_nextsilicon_memory() {
+  if (nextsilicon_memory_ != nullptr) {
+    Kokkos::kokkos_free<Kokkos::Experimental::NextSiliconSpace>(nextsilicon_memory_);
+    nextsilicon_memory_      = nullptr;
+    nextsilicon_memory_size_ = 0;
+  }
+}
+
+void* nextsilicon_shared_memory_       = nullptr;
+size_t nextsilicon_shared_memory_size_ = 0;
+
+void finalize_nextsilicon_shared_memory() {
+  if (nextsilicon_shared_memory_ != nullptr) {
+    Kokkos::kokkos_free<Kokkos::Experimental::NextSiliconSharedSpace>(nextsilicon_shared_memory_);
+    nextsilicon_shared_memory_      = nullptr;
+    nextsilicon_shared_memory_size_ = 0;
+  }
+}
+#endif  // KOKKOS_ENABLE_NEXTSILICON
+
 void* host_memory_       = nullptr;
 size_t host_memory_size_ = 0;
 
@@ -291,6 +316,56 @@ void* StaticKokkosAllocation<Kokkos::SYCLSharedUSMSpace>::
 }
 
 #endif  // KOKKOS_ENABLE_SYCL
+
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+
+template <>
+void* StaticKokkosAllocation<Kokkos::Experimental::NextSiliconSpace>::
+    resize(Kokkos::Experimental::NextSiliconSpace /* space */,
+           const size_t size) {
+  using memory_space                = Kokkos::Experimental::NextSiliconSpace;
+  static bool created_finalize_hook = false;
+
+  if (size > nextsilicon_memory_size_) {
+    if (nextsilicon_memory_ != nullptr) {
+      Kokkos::kokkos_free<memory_space>(nextsilicon_memory_);
+    }
+    const size_t req_size    = size > minimum_initial_size ? size : minimum_initial_size;
+    nextsilicon_memory_      = Kokkos::kokkos_malloc<memory_space>(req_size);
+    nextsilicon_memory_size_ = size;
+  }
+  if (!created_finalize_hook) {
+    Kokkos::push_finalize_hook(finalize_nextsilicon_memory);
+    created_finalize_hook = true;
+  }
+
+  return nextsilicon_memory_;
+}
+
+template <>
+void* StaticKokkosAllocation<Kokkos::Experimental::NextSiliconSharedSpace>::
+    resize(Kokkos::Experimental::NextSiliconSharedSpace /* space */,
+           const size_t size) {
+  using memory_space                = Kokkos::Experimental::NextSiliconSharedSpace;
+  static bool created_finalize_hook = false;
+
+  const size_t req_size = size > minimum_initial_size ? size : minimum_initial_size;
+  if (req_size > nextsilicon_shared_memory_size_) {
+    if (nextsilicon_shared_memory_ != nullptr) {
+      Kokkos::kokkos_free<memory_space>(nextsilicon_shared_memory_);
+    }
+    nextsilicon_shared_memory_      = Kokkos::kokkos_malloc<memory_space>(req_size);
+    nextsilicon_shared_memory_size_ = req_size;
+  }
+  if (!created_finalize_hook) {
+    Kokkos::push_finalize_hook(finalize_nextsilicon_shared_memory);
+    created_finalize_hook = true;
+  }
+
+  return nextsilicon_shared_memory_;
+}
+
+#endif  // KOKKOS_ENABLE_NEXTSILICON
 
 void* StaticKokkosAllocation<Kokkos::HostSpace>::
     resize(Kokkos::HostSpace /* space */,

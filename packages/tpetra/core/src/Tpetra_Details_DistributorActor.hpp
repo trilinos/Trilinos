@@ -591,6 +591,15 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
                 "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
 #endif  // KOKKOS_ENABLE_SYCL
 
+// FIXME_NEXTSILICON
+#if 0
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+  static_assert(!std::is_same<typename ImpView::memory_space, Kokkos::Experimental::NextSiliconSharedSpace>::value,
+                "Please do not use Tpetra::Distributor with NextSiliconSharedSpace "
+                "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
+#endif  // KOKKOS_ENABLE_NEXTSILICON
+#endif
+
 #if defined(HAVE_TPETRA_MPI)
   // All-to-all communication layout is quite different from
   // point-to-point, so we handle it separately.
@@ -734,6 +743,16 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
                 "Please do not use Tpetra::Distributor with SharedUSM allocations.  "
                 "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
 #endif  // KOKKOS_ENABLE_SYCL
+
+// FIXME_NEXTSILICON
+#if 0
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+  static_assert(!std::is_same<typename ExpView::memory_space, Kokkos::Experimental::NextSiliconSharedSpace>::value &&
+                    !std::is_same<typename ImpView::memory_space, Kokkos::Experimental::NextSiliconSharedSpace>::value,
+                "Please do not use Tpetra::Distributor with SharedUSM allocations.  "
+                "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
+#endif  // KOKKOS_ENABLE_NEXTSILICON
+#endif
 
   ProfilingRegion ps("Tpetra::Distributor::doPostSends");
 

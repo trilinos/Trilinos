@@ -9,6 +9,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   Thrust          "cmake/TPLs/"    ST
   Cusp            "cmake/TPLs/"    ST
   ROCBLAS         "cmake/TPLs/"    PT
+  NEXTBLAS        "cmake/TPLs/"    PT
   ROCSPARSE       "cmake/TPLs/"    PT
   ROCSOLVER       "cmake/TPLs/"    PT
   TBB             "cmake/TPLs/"    EX
