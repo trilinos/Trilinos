@@ -1,0 +1,42 @@
+# Trilinos has a couple of wrappers around Spack packages to guarantee the smooth transition between Kokkos versions at
+# commonTools/spack_wrappers
+#
+# Applications could use this Spack repository, but it would involve cloning Trilinos.
+# Instead, we sync only the Spack package repository to its own git repository. 
+
+name: Spack repo sync
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  spack_repo_sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Trilinos
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: changes
+        with:
+          filters: |
+            spack_wrappers:
+            - 'commonTools/spack_wrappers/**'
+        
+      - name: Dispatch repository_dispatch event
+        if: steps.changes.outputs.spack_wrappers == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ secrets.SPACK_WRAPPERS_REPO_ACCESS_TOKEN }} # A PAT with 'repo' scope
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: "trilinos",
+              repo: "spack_wrappers", 
+              event_type: "build", 
+              client_payload: {}
+            });

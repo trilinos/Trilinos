@@ -139,7 +139,7 @@ jobs:
       uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0.8.3.12.0
       with:
         message-id: format-patch
-        issue: ${{ steps.pr.output.number }}
+        issue: ${{ steps.pr.outputs.number }}
         refresh-message-position: true
         message-path: ${{ runner.temp }}/artifacts/format_patch_message.txt
 

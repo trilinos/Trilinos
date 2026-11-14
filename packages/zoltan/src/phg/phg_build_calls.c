@@ -290,8 +290,13 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (!myPins.esizes) MEMORY_ERROR;
     }
 
+    if (myPins.nHedges && pinIdx[0] < 0)
+      FATAL_ERROR("Invalid (negative) pin index returned by query function");
+
     for (i=0; i<myPins.nHedges; i++){
       myPins.esizes[i] = pinIdx[i+1] - pinIdx[i];
+      if (myPins.esizes[i] < 0)
+        FATAL_ERROR("Invalid (non-monotonic) pin indices returned by query function");
     }
 
     ZOLTAN_FREE(&pinIdx);

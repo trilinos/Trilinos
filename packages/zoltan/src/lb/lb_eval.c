@@ -296,6 +296,15 @@ int Zoltan_LB_Eval_Graph(ZZ *zzin, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
   if (ierr != ZOLTAN_OK)
     goto End;
 
+  /* Parts come from the application's part query; reject invalid
+     part numbers before they are used as array indices below. */
+  for (i=0; i < num_obj; i++){
+    if (parts[i] < 0){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid negative part number");
+      ierr = ZOLTAN_FATAL;
+      goto End;
+    }
+  }
 
 
   /*****************************************************************
@@ -1418,6 +1427,17 @@ object_metrics(ZZ *zz, int num_obj, int *parts, float *part_sizes, int req_npart
   ierr = ZOLTAN_OK;
 
   part_dim = (vwgt_dim > 0) ? vwgt_dim : 1;
+
+  /* Parts come from the application's part query; reject invalid
+     part numbers before they are used as array indices. */
+  for (i=0; i < num_obj; i++){
+    if (parts[i] < 0){
+      ZOLTAN_PRINT_ERROR(zz->Proc, "object_metrics",
+                         "Invalid negative part number");
+      ierr = ZOLTAN_FATAL;
+      goto End;
+    }
+  }
 
   /* Get the actual number of parts, and number of objects per part */
 

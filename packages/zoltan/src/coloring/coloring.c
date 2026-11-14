@@ -1669,6 +1669,10 @@ static int D1ParallelColoring (
 			break;
 		    if ((hv = Zoltan_G2LHash_G2L(hash, v)) != -1) {
 			c = (int)newcolored[p][j++];
+			/* a valid greedy color is in [1, gmaxdeg-1]; mark[]
+			   has only gmaxdeg entries, so do not trust more */
+			if (c < 1 || c > gmaxdeg-1)
+			    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Received invalid color.");
 			color[hv] = c;
 		    } else
 			++j;
@@ -1727,6 +1731,10 @@ static int D1ParallelColoring (
 		    break;
 		if ((hv = Zoltan_G2LHash_G2L(hash, v)) != -1) {
 		    c = (int)newcolored[p][j++];
+		    /* a valid greedy color is in [1, gmaxdeg-1]; mark[]
+		       has only gmaxdeg entries, so do not trust more */
+		    if (c < 1 || c > gmaxdeg-1)
+			ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Received invalid color.");
 		    color[hv] = c;
 		} else
 		    ++j;

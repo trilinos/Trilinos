@@ -378,6 +378,12 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
         if (!cnt || !nhg->vindex || (nPins && !nhg->vedge))
             MEMORY_ERROR;
 
+        /* Validate the received pins before using them as indices. */
+        for (i = 0; i < nPins; ++i)
+            if (pins[2*i] < 0 || pins[2*i] >= (ZOLTAN_GNO_TYPE)nhg->nVtx
+             || pins[2*i+1] < 0 || pins[2*i+1] >= (ZOLTAN_GNO_TYPE)nhg->nEdge)
+                FATAL_ERROR("Received out-of-range pin");
+
         /* Count the number of pins per vertex */
         for (i = 0; i < nPins; ++i)
             ++cnt[pins[2*i]];

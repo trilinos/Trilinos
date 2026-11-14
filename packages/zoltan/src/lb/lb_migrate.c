@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 
+#include <limits.h>
 #include "zz_const.h"
 
 /*****************************************************************************/
@@ -373,6 +374,13 @@ int *actual_imp_to_part = NULL;          /* processor may not be included.  */
     total_send_size = 0;
 
     for (i = 0; i < actual_num_exp; i++) {
+      /* Never trust the application's callback to return a sane size. */
+      if (sizes[i] < 0 || sizes[i] > INT_MAX - tag_size) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid object size returned from "
+                        "ZOLTAN_OBJ_SIZE(_MULTI) function.");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
       sizes[i] = Zoltan_Align(sizes[i]);
       total_send_size += sizes[i] + tag_size;
     }
@@ -565,6 +573,14 @@ int *actual_imp_to_part = NULL;          /* processor may not be included.  */
       idx_cnt = 0;
       for (i = 0; i < actual_num_imp; i++) {
 
+        /* Never trust the sizes embedded in the received message. */
+        if (tag_size > (import_buf + total_recv_size) - tmp) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                          "Received message too small for object tags.");
+          ierr = ZOLTAN_FATAL;
+          goto End;
+        }
+
         /* Unpack the object's global ID */
         ZOLTAN_SET_GID(zz, &(tmp_id[i*num_gid_entries]), (ZOLTAN_ID_PTR) tmp);
         tmp += id_size;
@@ -572,6 +588,14 @@ int *actual_imp_to_part = NULL;          /* processor may not be included.  */
         /* Unpack the object's size */
         sizes[i] = *((int *)tmp);
         tmp += aligned_int;
+
+        if (sizes[i] < 0 ||
+            sizes[i] > (import_buf + total_recv_size) - tmp) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                          "Invalid object size in received message.");
+          ierr = ZOLTAN_FATAL;
+          goto End;
+        }
 
         /* If using ZOLTAN_UNPACK_OBJ_MULTI_FN, build the index array. */
         idx_cnt += tag_size;
@@ -602,7 +626,21 @@ int *actual_imp_to_part = NULL;          /* processor may not be included.  */
     else {
       tmp = import_buf;
       for (i = 0; i < actual_num_imp; i++) {
+        /* Never trust the sizes embedded in the received message. */
+        if (tag_size > (import_buf + total_recv_size) - tmp) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                          "Received message too small for object tags.");
+          ierr = ZOLTAN_FATAL;
+          goto End;
+        }
         tmp_size = *((int *)(tmp + id_size));
+        if (tmp_size < 0 ||
+            tmp_size > (import_buf + total_recv_size) - (tmp + tag_size)) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                          "Invalid object size in received message.");
+          ierr = ZOLTAN_FATAL;
+          goto End;
+        }
         if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
           printf("[%1d] DEBUG in %s: Unpacking object with gid ", zz->Proc, yo);
           ZOLTAN_PRINT_GID(zz, (ZOLTAN_ID_PTR)tmp);

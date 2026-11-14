@@ -184,13 +184,17 @@ void Zoltan_LB_Serialize(struct Zoltan_Struct const *zz, char **buf)
 }
 
 /*****************************************************************************/
-void Zoltan_LB_Deserialize(struct Zoltan_Struct *zz, char **buf)
+int Zoltan_LB_Deserialize(struct Zoltan_Struct *zz, char **buf, size_t bufSize)
 {
+  char *yo = "Zoltan_LB_Deserialize";
   char *bufptr = *buf;
+  size_t remaining = bufSize;
   struct Zoltan_LB_Struct *lb = &(zz->LB);
   int orig_Imb_Tol_Len = lb->Imb_Tol_Len;
 
   /* Copy 12 integers into zz->LB */
+  if (remaining < 12 * sizeof(int))
+    goto Error;
   int *intptr = (int *) bufptr;
   lb->Num_Global_Parts = *intptr; intptr++;
   lb->Num_Global_Parts_Param = *intptr; intptr++;
@@ -205,41 +209,71 @@ void Zoltan_LB_Deserialize(struct Zoltan_Struct *zz, char **buf)
   lb->Uniform_Parts = *intptr; intptr++;
   lb->Imb_Tol_Len = *intptr; intptr++;
   bufptr = (char *) intptr;
+  remaining -= 12 * sizeof(int);
 
   /* Reset the functions (Point_Assign, etc.) associated with the LB_Method */
-  strcpy(lb->Method_Name, bufptr);
+  if (remaining < MAX_PARAM_STRING_LEN)
+    goto Error;
+  strncpy(lb->Method_Name, bufptr, MAX_PARAM_STRING_LEN - 1);
+  lb->Method_Name[MAX_PARAM_STRING_LEN - 1] = '\0';
   bufptr += MAX_PARAM_STRING_LEN;
+  remaining -= MAX_PARAM_STRING_LEN;
   Zoltan_Set_Param(zz, "LB_METHOD", lb->Method_Name);
 
   /* Copy Part_Info */
   if (lb->Part_Info_Len) {
+    if (lb->Part_Info_Len < 0 ||
+        (size_t)lb->Part_Info_Len >
+        remaining / sizeof(struct Zoltan_part_info))
+      goto Error;
     size_t tmpSize = lb->Part_Info_Len * sizeof(struct Zoltan_part_info);
     lb->Part_Info = (struct Zoltan_part_info *) ZOLTAN_MALLOC(tmpSize);
+    if (lb->Part_Info == NULL)
+      goto Error;
     memcpy((char *)(lb->Part_Info), bufptr, tmpSize);
     bufptr += tmpSize;
+    remaining -= tmpSize;
   }
 
   /* Copy Imbalance_Tol */
   if (lb->Imb_Tol_Len) {
+    if (lb->Imb_Tol_Len < 0 ||
+        (size_t)lb->Imb_Tol_Len > remaining / sizeof(float))
+      goto Error;
     size_t tmpSize = lb->Imb_Tol_Len * sizeof(float);
     if (lb->Imb_Tol_Len > orig_Imb_Tol_Len) {
       if (lb->Imbalance_Tol != NULL) ZOLTAN_FREE(&(lb->Imbalance_Tol));
       lb->Imbalance_Tol = (float *) ZOLTAN_MALLOC(tmpSize);
+      if (lb->Imbalance_Tol == NULL)
+        goto Error;
     }
     memcpy((char *)(lb->Imbalance_Tol), bufptr, tmpSize);
     bufptr += tmpSize;
+    remaining -= tmpSize;
   }
 
   /* Copy lb->Approach */
-  strcpy(lb->Approach, bufptr);
+  if (remaining < MAX_PARAM_STRING_LEN)
+    goto Error;
+  strncpy(lb->Approach, bufptr, MAX_PARAM_STRING_LEN - 1);
+  lb->Approach[MAX_PARAM_STRING_LEN - 1] = '\0';
   bufptr += MAX_PARAM_STRING_LEN;
- 
+  remaining -= MAX_PARAM_STRING_LEN;
+
   /* Copy Remap array; needed by Point_Assign  */
-  int nbytes = lb->Num_Global_Parts * sizeof(int);
+  if (remaining < sizeof(int))
+    goto Error;
   intptr = (int *) bufptr;
   bufptr += sizeof(int);
+  remaining -= sizeof(int);
   if (*intptr) {  // Remap data was sent
+    if (lb->Num_Global_Parts < 0 ||
+        (size_t)lb->Num_Global_Parts > remaining / sizeof(int))
+      goto Error;
+    size_t nbytes = lb->Num_Global_Parts * sizeof(int);
     lb->Remap = (int *) ZOLTAN_MALLOC(nbytes);
+    if (lb->Remap == NULL && nbytes)
+      goto Error;
     memcpy(lb->Remap, bufptr, nbytes);
     bufptr += nbytes;
   }
@@ -252,6 +286,13 @@ void Zoltan_LB_Deserialize(struct Zoltan_Struct *zz, char **buf)
     lb->Deserialize_Structure(zz, &bufptr);
 
   *buf = bufptr;
+  return ZOLTAN_OK;
+
+Error:
+  ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                     "Invalid or truncated serialized Zoltan buffer.");
+  *buf = bufptr;
+  return ZOLTAN_FATAL;
 }
 
 /****************************************************************************/

@@ -103,7 +103,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, Build, Scalar, Loc
   RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector", mvtf.get());
   Teuchos::Array<magnitude_type> vn(1);
   coarseOnes->norm2(vn);
-  TEST_FLOATING_EQUALITY(vn[0] * vn[0], (Teuchos::as<magnitude_type>(fineOnes->getGlobalLength())), 1e-12);
+  TEST_FLOATING_EQUALITY(vn[0] * vn[0], (Teuchos::as<magnitude_type>(fineOnes->getGlobalLength())), 1e4 * Teuchos::ScalarTraits<magnitude_type>::eps());
 }  // Build test
 
 //------------------------------------------------------------------------------------------
@@ -164,7 +164,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, BuildP, Scalar, Lo
   RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector", mvtf.get());
   Teuchos::Array<magnitude_type> vn(1);
   coarseOnes->norm2(vn);
-  TEST_FLOATING_EQUALITY(vn[0] * vn[0], (Teuchos::as<magnitude_type>(fineOnes->getGlobalLength())), 1e-12);
+  TEST_FLOATING_EQUALITY(vn[0] * vn[0], (Teuchos::as<magnitude_type>(fineOnes->getGlobalLength())), 1e4 * Teuchos::ScalarTraits<magnitude_type>::eps());
 }  // BuildP test
 
 //------------------------------------------------------------------------------------------
@@ -225,7 +225,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, BuildNormalize, Sc
 
   RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector", mvtf.get());
 
-  TEST_FLOATING_EQUALITY(coarseOnes->getVector(0)->meanValue(), fineOnes->getVector(0)->meanValue(), 1e-12);
+  TEST_FLOATING_EQUALITY(coarseOnes->getVector(0)->meanValue(), fineOnes->getVector(0)->meanValue(), 1e4 * Teuchos::ScalarTraits<magnitude_type>::eps());
 }  // BuildNormalize test
 
 //------------------------------------------------------------------------------------------
@@ -288,7 +288,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, BuildAggScalar, Sc
 
   RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector", mvtf.get());
 
-  TEST_FLOATING_EQUALITY(coarseOnes->getVector(0)->meanValue(), fineOnes->getVector(0)->meanValue(), 1e-12);
+  TEST_FLOATING_EQUALITY(coarseOnes->getVector(0)->meanValue(), fineOnes->getVector(0)->meanValue(), 1e4 * Teuchos::ScalarTraits<magnitude_type>::eps());
 }  // BuildAggScalar test
 
 //------------------------------------------------------------------------------------------
@@ -302,6 +302,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, BuildAggVector, Sc
   out << "Tests the action of the transfer factory on a vector. In this test, the transfer are the aggregates" << std::endl;
   out << "and the vector is all ones. So the norm of the resulting coarse grid vector should be equal to the" << std::endl;
   out << "number of fine degrees of freedom." << std::endl;
+
+  using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
   Level fineLevel;
   Level coarseLevel;
@@ -345,7 +347,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, BuildAggVector, Sc
 
   RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector", mvtf.get());
 
-  TEST_FLOATING_EQUALITY(coarseOnes->getVector(0)->meanValue(), fineOnes->getVector(0)->meanValue(), 1e-12);
+  TEST_FLOATING_EQUALITY(coarseOnes->getVector(0)->meanValue(), fineOnes->getVector(0)->meanValue(), 1e4 * Teuchos::ScalarTraits<magnitude_type>::eps());
 }  // BuildAggVector test
 
 //------------------------------------------------------------------------------------------
@@ -435,7 +437,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, ThreeLevels, Scala
      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> vn(1);
      coarseOnes->norm2(vn);
 
-     TEST_FLOATING_EQUALITY(vn[0]*vn[0],((SC)fineOnes->getGlobalLength()),1e-12);
+     TEST_FLOATING_EQUALITY(vn[0]*vn[0],((SC)fineOnes->getGlobalLength()),1e4*Teuchos::ScalarTraits<magnitude_type>::eps());
      */
 }  // ThreeLevels
 
