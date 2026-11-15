@@ -131,7 +131,7 @@ private:
     return std::sqrt(norm);
   }
 
-  void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
+  void updateVector(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
     for (uint i = 0; i < u.size(); i++) {
       u[i] += alpha*s[i];
     }
@@ -176,13 +176,13 @@ private:
       tmp = rnorm;
       alpha = 1.0;
       utmp.assign(u.begin(),u.end());
-      update(utmp,s,-alpha);
+      updateVector(utmp,s,-alpha);
       compute_residual(r,up,utmp,z);
       rnorm = compute_norm(r);
       while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON<Real>()) ) {
         alpha /= 2.0;
         utmp.assign(u.begin(),u.end());
-        update(utmp,s,-alpha);
+        updateVector(utmp,s,-alpha);
         compute_residual(r,up,utmp,z);
         rnorm = compute_norm(r);
       }
@@ -325,7 +325,7 @@ public:
       // Get Right Hand Side
       if ( t > 0 ) {
         apply_mass(M,sold);
-        update(vnew,M);
+        updateVector(vnew,M);
       }
       // Solve solve adjoint system at current time step
       linear_solve(snew,d,o,vnew);
@@ -395,7 +395,7 @@ public:
       // Get Right Hand Side
       if ( t < nt_ ) {
         apply_mass(M,sold);
-        update(vnew,M);
+        updateVector(vnew,M);
       }
       // Solve solve adjoint system at current time step
       linear_solve(snew,d,o,vnew);
@@ -549,7 +549,7 @@ private:
     return std::sqrt(compute_weighted_dot(r,r));
   }
 
-  void update(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
+  void updateVector(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
     for (uint i = 0; i < u.size(); i++) {
       u[i] += alpha*s[i];
     }
