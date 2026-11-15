@@ -239,6 +239,8 @@ class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   //! Replace current value at the specified location with specified value.
   /** \pre \c globalRow must be a valid global element on this node, according to the row map.
    */
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void replaceGlobalValue(const GlobalOrdinal globalRow, const Scalar& value);
 
   /// \brief Add value to existing value, using global (row) index.
@@ -260,6 +262,9 @@ class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   /// \param atomic [in] Whether to use an atomic update.  If this
   ///   class' execution space is not Kokkos::Serial, then this is
   ///   true by default, else it is false by default.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void
   sumIntoGlobalValue(const GlobalOrdinal globalRow,
                      const Scalar& value,
@@ -268,6 +273,8 @@ class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   //! Replace current value at the specified location with specified values.
   /** \pre \c localRow must be a valid local element on this node, according to the row map.
    */
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void replaceLocalValue(const LocalOrdinal myRow, const Scalar& value);
 
   /// \brief Add \c value to existing value, using local (row) index.
@@ -287,6 +294,9 @@ class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   /// \param atomic [in] Whether to use an atomic update.  If this
   ///   class' execution space is not Kokkos::Serial, then this is
   ///   true by default, else it is false by default.
+  ///
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - calls sync_host() to ensure host data is up-to-date before modification, then modify_host() to mark host data as modified
   void
   sumIntoLocalValue(const LocalOrdinal myRow,
                     const Scalar& value,
@@ -299,6 +309,8 @@ class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get1dCopy;  // overloading, not hiding
   //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
+  /// \brief MPI synchronization: never
+  /// \brief Kokkos synchronization: sometimes - synchronizes device to host if device data is more recent (checked via need_sync_host())
   void get1dCopy(const Teuchos::ArrayView<Scalar>& A) const;
 
   using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDataNonConst;  // overloading, not hiding
