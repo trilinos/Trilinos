@@ -16,6 +16,7 @@
 #include <array>
 #include <functional>
 #include <map>
+#include <stdexcept>
 
 /*! \file Tpetra_Details_Behavior.cpp
 
@@ -54,7 +55,7 @@ and is parsed as an int instead of a long long
 // environ should be available on posix platforms
 #if not(defined(WIN) && (_MSC_VER >= 1900))
 // needs to be in the global namespace
-extern char **environ;
+extern char** environ;
 #endif
 
 namespace Tpetra {
@@ -107,12 +108,13 @@ constexpr const std::string_view TIME_KOKKOS_FENCE = "TPETRA_TIME_KOKKOS_FENCE";
 constexpr const std::string_view TIME_KOKKOS_FUNCTIONS =
     "TPETRA_TIME_KOKKOS_FUNCTIONS";
 constexpr const std::string_view USE_NEW_COPY_AND_PERMUTE = "TPETRA_USE_NEW_COPY_AND_PERMUTE";
+constexpr const std::string_view USE_RANGE_SHUFFLE_SPMV   = "TPETRA_USE_RANGE_SHUFFLE_SPMV";
 
 // construct an std::array of string_view with any number of provided
 // string_views
 template <typename... Elems>
 constexpr std::array<std::string_view, sizeof...(Elems)>
-make_array(Elems &&...elems) {
+make_array(Elems&&... elems) {
   return {std::forward<Elems>(elems)...};
 }
 
@@ -126,7 +128,7 @@ constexpr const auto RECOGNIZED_VARS = make_array(
     DEFAULT_SEND_TYPE, GRANULAR_TRANSFERS,
     SPACES_ID_WARN_LIMIT, TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
     TIME_KOKKOS_DEEP_COPY_VERBOSE2, TIME_KOKKOS_FENCE, TIME_KOKKOS_FUNCTIONS,
-    USE_NEW_COPY_AND_PERMUTE);
+    USE_NEW_COPY_AND_PERMUTE, USE_RANGE_SHUFFLE_SPMV);
 
 std::map<std::string, std::map<std::string, bool> > namedVariableMap_;
 bool verboseDisabled_ = false;
@@ -136,7 +138,7 @@ bool timingDisabled_  = false;
 namespace {  // (anonymous)
 
 void split(const std::string_view s,
-           std::function<void(const std::string &)> f,
+           std::function<void(const std::string&)> f,
            const char sep = ',') {
   typedef std::string::size_type size_type;
   size_type cur_pos, last_pos = 0, length = s.length();
@@ -193,7 +195,7 @@ void Behavior::reject_unrecognized_env_vars() {
 
   if (!once) {
     const char prefix[] = "Tpetra::Details::Behavior: ";
-    char **env;
+    char** env;
 #if defined(WIN) && (_MSC_VER >= 1900)
     env = *__p__environ();
 #else
@@ -207,7 +209,7 @@ void Behavior::reject_unrecognized_env_vars() {
       // split name=value on the first =, everything before = is name
       split(
           ev,
-          [&](const std::string &s) {
+          [&](const std::string& s) {
             if (name.empty()) {
               name = s;
             } else {
@@ -215,6 +217,12 @@ void Behavior::reject_unrecognized_env_vars() {
             }
           },
           '=');
+
+#ifndef KOKKOS_ENABLE_CUDA
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          name == BehaviorDetails::USE_RANGE_SHUFFLE_SPMV, std::runtime_error,
+          prefix << "Environment variable \"" << BehaviorDetails::USE_RANGE_SHUFFLE_SPMV << "\" is only available on CUDA backend.");
+#endif
 
       if (name.size() >= BehaviorDetails::RESERVED_PREFIX.size() &&
           name.substr(0, BehaviorDetails::RESERVED_PREFIX.size()) ==
@@ -553,6 +561,16 @@ bool Behavior::useNewCopyAndPermute() {
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::USE_NEW_COPY_AND_PERMUTE,
+      defaultValue);
+}
+
+bool Behavior::useRangeShuffleSpMV() {
+  constexpr bool defaultValue(false);
+
+  static bool value_       = defaultValue;
+  static bool initialized_ = false;
+  return Teuchos::idempotentlyGetEnvironmentVariable(
+      value_, initialized_, BehaviorDetails::USE_RANGE_SHUFFLE_SPMV,
       defaultValue);
 }
 

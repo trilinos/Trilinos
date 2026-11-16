@@ -15,6 +15,7 @@
 #include "KokkosSparse.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
+#include "Tpetra_Details_RangeShuffleSpMV.hpp"
 
 namespace Tpetra {
 
@@ -73,7 +74,12 @@ void LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
 #endif  // HAVE_TPETRA_DEBUG
 
   const auto op = transpose ? (conjugate ? KokkosSparse::ConjugateTranspose : KokkosSparse::Transpose) : KokkosSparse::NoTranspose;
-  if (have_A_cusparse) {
+#if defined(KOKKOS_ENABLE_CUDA)
+  if ((op == KokkosSparse::NoTranspose) && (X.extent(1) == 1) && Details::Behavior::useRangeShuffleSpMV()) {
+    Details::spmv_range_shuffle(op, alpha, A_cusparse, Kokkos::subview(X, Kokkos::ALL(), 0), beta, Kokkos::subview(Y, Kokkos::ALL(), 0));
+  } else
+#endif
+      if (have_A_cusparse) {
     KokkosSparse::spmv(op, alpha, A_cusparse, X, beta, Y);
   } else {
     KokkosSparse::spmv(op, alpha, *A_, X, beta, Y);
