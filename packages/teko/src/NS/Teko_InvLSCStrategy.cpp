@@ -12,20 +12,7 @@
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Teko_ConfigDefs.hpp"
 
-#ifdef TEKO_HAVE_EPETRA
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_MultiVectorOut.h"
-#include "EpetraExt_VectorOut.h"
-#include "Teko_EpetraHelpers.hpp"
-#include "Teko_EpetraOperatorWrapper.hpp"
-#endif
 
 #include "Teuchos_Time.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -278,37 +265,13 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp& A, LSCPrecondState* 
     return;
   }
 
-  // for Epetra_CrsMatrix...zero out certain rows: this ensures spectral radius is correct
+  ST scalar   = 0.0;
+  bool transp = false;
+  RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > crsF =
+      Teko::TpetraHelpers::getTpetraCrsMatrix(F, &scalar, &transp);
+
   LinearOp modF = F;
-  if (!Teko::TpetraHelpers::isTpetraLinearOp(F)) {  // Epetra
-#ifdef TEKO_HAVE_EPETRA
-    const RCP<const Epetra_Operator> epF = Thyra::get_Epetra_Operator(*F);
-    if (epF != Teuchos::null && rowZeroingNeeded_) {
-      // try to get a CRS matrix
-      const RCP<const Epetra_CrsMatrix> crsF = rcp_dynamic_cast<const Epetra_CrsMatrix>(epF);
-
-      // if it is a CRS matrix get rows that need to be zeroed
-      if (crsF != Teuchos::null) {
-        std::vector<int> zeroIndices;
-
-        // get rows in need of zeroing
-        Teko::Epetra::identityRowIndices(crsF->RowMap(), *crsF, zeroIndices);
-
-        // build an operator that zeros those rows
-        modF = Thyra::epetraLinearOp(rcp(new Teko::Epetra::ZeroedOperator(zeroIndices, crsF)));
-      }
-    }
-#else
-    throw std::logic_error(
-        "InvLSCStrategy::initializeState is trying to use "
-        "Epetra code, but TEKO is not built with Epetra!");
-#endif
-  } else {  // Tpetra
-    ST scalar   = 0.0;
-    bool transp = false;
-    RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > crsF =
-        Teko::TpetraHelpers::getTpetraCrsMatrix(F, &scalar, &transp);
-
+  if (rowZeroingNeeded_) {
     std::vector<GO> zeroIndices;
 
     // get rows in need of zeroing
@@ -487,11 +450,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList& p
   Teko_DEBUG_MSG_END()
 
   // set defaults as needed
-#if defined(Teko_ENABLE_Amesos)
-      if (invStr == "") invStr = "Amesos";
-#elif defined(Teko_ENABLE_Amesos2)
-      if (invStr == "") invStr = "Amesos2";
-#endif
+  if (invStr == "") invStr = "Amesos2";
   if (invVStr == "") invVStr = invStr;
   if (invPStr == "") invPStr = invStr;
 

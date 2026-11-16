@@ -258,11 +258,7 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   Teko_DEBUG_MSG_END()
 
   // set defaults as needed
-#if defined(Teko_ENABLE_Amesos)
-      if (invStr == "") invStr = "Amesos";
-#elif defined(Teko_ENABLE_Amesos2)
-      if (invStr == "") invStr = "Amesos2";
-#endif
+  if (invStr == "") invStr = "Amesos2";
 
   if (invVStr == "") invVStr = invStr;
   if (invPStr == "") invPStr = invStr;

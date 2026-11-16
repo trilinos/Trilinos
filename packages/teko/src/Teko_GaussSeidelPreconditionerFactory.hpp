@@ -30,7 +30,7 @@ typedef enum { GS_UseLowerTriangle, GS_UseUpperTriangle } TriSolveType;
   *
   * To invoke this preconditioner using the XML file a diagonal inverse
   * needs to be specified. For example the following XML code creates
-  * a Gauss-Seidel preconditioner called "GS-Outer" using Amesos
+  * a Gauss-Seidel preconditioner called "GS-Outer" using Amesos2
   * (a direct solver) to invert the diagonal blocks. This will invert the
   * lower triangular portion of the matrix.
   *
@@ -38,7 +38,7 @@ typedef enum { GS_UseLowerTriangle, GS_UseUpperTriangle } TriSolveType;
     <ParameterList name="GS-Outer">
        <Parameter name="Type" type="string" value="Block Gauss-Seidel"/>
        <Parameter name="Use Upper Triangle" type="bool" value="false"/>
-       <Parameter name="Inverse Type" type="string" value="Amesos"/>
+       <Parameter name="Inverse Type" type="string" value="Amesos2"/>
     </ParameterList>
     \endverbatim
   *

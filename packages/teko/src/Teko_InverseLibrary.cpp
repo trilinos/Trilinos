@@ -52,13 +52,9 @@ InverseLibrary::InverseLibrary() {
 
   // set valid solve factory names
   stratValidSolver_.push_back("Belos");
-  stratValidSolver_.push_back("Amesos");
   stratValidSolver_.push_back("Amesos2");
-  stratValidSolver_.push_back("AztecOO");
 
   // set valid preconditioner factory name
-  stratValidPrecond_.push_back("ML");
-  stratValidPrecond_.push_back("Ifpack");
   stratValidPrecond_.push_back("Neumann Series");
   stratValidPrecond_.push_back("MueLu");
   stratValidPrecond_.push_back("Ifpack2");
