@@ -25,7 +25,7 @@
 #include <string>
 
 namespace Tpetra {
-namespace experimental {
+namespace Experimental {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class BinaryIO {
@@ -151,7 +151,7 @@ class BinaryIO {
   static unsigned long long exclusiveScanUnsignedLongLong(const unsigned long long localValue, const trcp_tcomm_t& comm);
 };
 
-}  // namespace experimental
+}  // namespace Experimental
 }  // namespace Tpetra
 
 #endif  // TPETRA_BINARYIO_DECL_HPP

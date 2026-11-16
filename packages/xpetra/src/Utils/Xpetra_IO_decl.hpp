@@ -190,7 +190,7 @@ class IO {
   static std::string toString(const T& what);
 };
 
-namespace experimental {
+namespace Experimental {
 
 /*! @brief Convert a legacy Xpetra binary matrix file to the current Tpetra binary format.
 
@@ -207,14 +207,14 @@ void ConvertLegacyBinaryToBinary(const std::string& oldFileName,
                                  Xpetra::UnderlyingLib lib,
                                  const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   if (lib == Xpetra::UseTpetra) {
-    Tpetra::experimental::Details::convertLegacyBinaryToBinary<Scalar, LocalOrdinal, GlobalOrdinal, Node>(oldFileName, newFileName, comm);
+    Tpetra::Experimental::Details::convertLegacyBinaryToBinary<Scalar, LocalOrdinal, GlobalOrdinal, Node>(oldFileName, newFileName, comm);
     return;
   }
 
-  throw Exceptions::RuntimeError("Xpetra::experimental::ConvertLegacyBinaryToBinary : binary mode is only implemented for Xpetra::UseTpetra.");
+  throw Exceptions::RuntimeError("Xpetra::Experimental::ConvertLegacyBinaryToBinary : binary mode is only implemented for Xpetra::UseTpetra.");
 }
 
-}  // namespace experimental
+}  // namespace Experimental
 
 }  // end namespace Xpetra
 

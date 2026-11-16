@@ -27,15 +27,15 @@
 #include <type_traits>
 
 namespace Tpetra {
-namespace experimental {
+namespace Experimental {
 
 namespace Details {
 
 /// \brief On-disk header shared by every Tpetra binary I/O file.
 ///
-/// This mirrors \c Tpetra::experimental::BinaryIO::FileHeader.  It is duplicated here (rather
+/// This mirrors \c Tpetra::Experimental::BinaryIO::FileHeader.  It is duplicated here (rather
 /// than shared) so that the scalar-free map reader does not depend on the
-/// Scalar-templated \c Tpetra::experimental::BinaryIO class.
+/// Scalar-templated \c Tpetra::Experimental::BinaryIO class.
 struct BinaryIOFileHeader {
   char magic[8];
   unsigned long long version;
@@ -141,7 +141,7 @@ void binaryIOValidateMapHeader(const BinaryIOFileHeader& header) {
                              std::runtime_error,
                              "Tpetra::BinaryIO: File does not have a recognized Tpetra binary I/O header. "
                                  << "Legacy Xpetra binary matrix files must be converted with "
-                                 << "Xpetra::experimental::ConvertLegacyBinaryToBinary before reading with Tpetra::experimental::BinaryIO.");
+                                 << "Xpetra::Experimental::ConvertLegacyBinaryToBinary before reading with Tpetra::Experimental::BinaryIO.");
   TEUCHOS_TEST_FOR_EXCEPTION(header.version != binaryIOFileVersion,
                              std::runtime_error,
                              "Tpetra::BinaryIO: Unsupported file version " << header.version << ".");
@@ -259,17 +259,17 @@ readBinaryMapFile(const std::string& filename,
   return Details::binaryIOReadMapSection<LocalOrdinal, GlobalOrdinal, Node>(filename, header.rowMapOffset, comm);
 }
 
-}  // namespace experimental
+}  // namespace Experimental
 }  // namespace Tpetra
 
 //
-// Explicit template instantiation macro for Tpetra::experimental::readBinaryMapFile.
+// Explicit template instantiation macro for Tpetra::Experimental::readBinaryMapFile.
 // This function is templated only on LocalOrdinal, GlobalOrdinal, and Node
-// (the LGN scheme), so it is instantiated separately from Tpetra::experimental::BinaryIO.
+// (the LGN scheme), so it is instantiated separately from Tpetra::Experimental::BinaryIO.
 //
 #define TPETRA_READBINARYMAPFILE_INSTANT(LO, GO, NODE)   \
   template Teuchos::RCP<const Tpetra::Map<LO, GO, NODE>> \
-  experimental::readBinaryMapFile<LO, GO, NODE>(         \
+  Experimental::readBinaryMapFile<LO, GO, NODE>(         \
       const std::string&,                                \
       const Teuchos::RCP<const Teuchos::Comm<int>>&);
 

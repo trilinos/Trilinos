@@ -14,9 +14,9 @@
 /// \brief Inline utilities shared by Tpetra's binary I/O readers and writers.
 ///
 /// These helpers are intentionally header-only and free of explicit template
-/// instantiation.  They are shared between the \c Tpetra::experimental::BinaryIO class
+/// instantiation.  They are shared between the \c Tpetra::Experimental::BinaryIO class
 /// (see Tpetra_BinaryIO_decl.hpp) and the free function
-/// \c Tpetra::experimental::readBinaryMapFile (see Tpetra_ReadBinaryMapFile_decl.hpp), which
+/// \c Tpetra::Experimental::readBinaryMapFile (see Tpetra_ReadBinaryMapFile_decl.hpp), which
 /// live in separate translation units so that their explicit template
 /// instantiations stay independent.
 
@@ -35,7 +35,7 @@
 #include <string>
 
 namespace Tpetra {
-namespace experimental {
+namespace Experimental {
 namespace Details {
 
 /// \brief Cast an unsigned 64-bit count to \c size_t, throwing if it does not fit.
@@ -481,7 +481,7 @@ void binaryIOReadArrayCollective(const std::string& filename,
 }
 
 }  // namespace Details
-}  // namespace experimental
+}  // namespace Experimental
 }  // namespace Tpetra
 
 #endif  // TPETRA_BINARYIO_HELPERS_HPP

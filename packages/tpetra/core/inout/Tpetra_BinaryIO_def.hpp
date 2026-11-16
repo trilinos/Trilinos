@@ -40,7 +40,7 @@
 #include <type_traits>
 
 namespace Tpetra {
-namespace experimental {
+namespace Experimental {
 
 namespace Details {
 
@@ -224,7 +224,7 @@ void BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::validateHeader(const F
                              std::runtime_error,
                              "Tpetra::BinaryIO: File does not have a recognized Tpetra binary I/O header. "
                                  << "Legacy Xpetra binary matrix files must be converted with "
-                                 << "Xpetra::experimental::ConvertLegacyBinaryToBinary before reading with Tpetra::experimental::BinaryIO.");
+                                 << "Xpetra::Experimental::ConvertLegacyBinaryToBinary before reading with Tpetra::Experimental::BinaryIO.");
   TEUCHOS_TEST_FOR_EXCEPTION(header.version != fileVersion,
                              std::runtime_error,
                              "Tpetra::BinaryIO: Unsupported file version " << header.version << ".");
@@ -598,7 +598,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const typename BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>
 BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readMapFile(const std::string& filename,
                                                                  const trcp_tcomm_t& comm) {
-  return Tpetra::experimental::readBinaryMapFile<LocalOrdinal, GlobalOrdinal, Node>(filename, comm);
+  return Tpetra::Experimental::readBinaryMapFile<LocalOrdinal, GlobalOrdinal, Node>(filename, comm);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -938,17 +938,17 @@ BinaryIO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::readSparseFile(const std::s
   return readSparseFile(filename, rowMap, Teuchos::null, domainMap, rangeMap, callFillComplete);
 }
 
-}  // namespace experimental
+}  // namespace Experimental
 }  // namespace Tpetra
 
 //
-// Explicit template instantiation macro for the Tpetra::experimental::BinaryIO class.
+// Explicit template instantiation macro for the Tpetra::Experimental::BinaryIO class.
 // BinaryIO is templated on Scalar, LocalOrdinal, GlobalOrdinal, and Node (the
-// SC-LO-GO-Node scheme).  The scalar-free Tpetra::experimental::readBinaryMapFile reader is
+// SC-LO-GO-Node scheme).  The scalar-free Tpetra::Experimental::readBinaryMapFile reader is
 // instantiated separately (see Tpetra_ReadBinaryMapFile_def.hpp); BinaryIO only
 // sees its declaration, so no cross-scheme extern-template coupling is needed.
 //
 #define TPETRA_BINARYIO_INSTANT(SCALAR, LO, GO, NODE) \
-  template class experimental::BinaryIO<SCALAR, LO, GO, NODE>;
+  template class Experimental::BinaryIO<SCALAR, LO, GO, NODE>;
 
 #endif  // TPETRA_BINARYIO_DEF_HPP
