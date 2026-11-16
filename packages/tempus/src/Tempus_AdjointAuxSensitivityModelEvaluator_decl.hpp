@@ -67,12 +67,28 @@ namespace Tempus {
  * "Sum Over Times" responses the adjoint equations are homogeneous; the
  * response terms are added by IntegratorAdjointSensitivity.
  *
+ * W = alpha*dF/d(y_dot,z_dot) + beta*dF/d(y,z) is the exact Jacobian of these
+ * (linear) equations, which is block lower triangular:
+ *        W = [ (alpha*df/dx_dot + beta*df/dx)^T    0       ]
+ *            [ -beta*df/dp^T                       alpha*I ]
+ * (AdjointAuxCouplingLinearOp for the block -beta*df/dp^T), and get_W_factory()
+ * solves it by block forward substitution.  A Newton step of the adjoint
+ * equations is therefore exact (up to the tolerance of the linear solver).
+ *
  * The derivatives of the model at the forward state (df/dx and df/dp, and
  * dg/dx and dg/dp for a "Time Integral" response) depend on the time, on the
  * parameters and on whether x_dot is given, not on the adjoint variables:
  * they are evaluated once for each of these evaluation points, and reused by
  * the evaluations of the residual and of W at the same point (e.g., by the
  * iterations and the line search of the nonlinear solver of a time step).
+ *
+ * A W keeps the df/dp of its own evaluation point: when the evaluation point
+ * changes while a W references the cached df/dp, df/dp at the new point is
+ * evaluated into new storage.  A df/dp operator that the model evaluates
+ * lazily (e.g., a matrix-free operator that refers to the state or the
+ * parameters of the model at apply time) can still change with later
+ * evaluations of the model; W is then valid until the model is evaluated at
+ * another point, as within the nonlinear solve of a time step.
  */
 template <typename Scalar>
 class AdjointAuxSensitivityModelEvaluator
@@ -187,7 +203,9 @@ class AdjointAuxSensitivityModelEvaluator
   //! Mark the derivatives of the model at the forward state as not evaluated
   void invalidateDerivatives() const;
 
-  //! Evaluate df/dp at the forward state (me_inArgs), unless already evaluated
+  /** \brief Evaluate df/dp at the forward state (me_inArgs), unless already
+   *  evaluated.  If a W references the df/dp of the previous evaluation point,
+   *  evaluate it into new storage. */
   void evalDfDpAtForwardState(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& me_inArgs) const;
 
@@ -234,6 +252,8 @@ class AdjointAuxSensitivityModelEvaluator
   mutable bool dgdx_is_current_;
   mutable bool dgdp_is_current_;
   mutable Thyra::EOpTransp dfdp_trans_;  // df/dp^T*v = apply(my_dfdp_op_, dfdp_trans_, v)
+  // Whether the coupling block of a W references my_dfdp_op_
+  mutable bool dfdp_referenced_by_W_;
   mutable bool x_dot_is_set_;
   mutable Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > p_eval_;
   mutable Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > p_diff_;

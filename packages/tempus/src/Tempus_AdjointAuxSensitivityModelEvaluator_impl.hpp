@@ -19,6 +19,8 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
+#include "Tempus_AdjointAuxCouplingLinearOp.hpp"
+
 namespace Tempus {
 
 template <typename Scalar>
@@ -40,6 +42,7 @@ AdjointAuxSensitivityModelEvaluator<Scalar>::
     dgdx_is_current_(false),
     dgdp_is_current_(false),
     dfdp_trans_(Thyra::CONJTRANS),
+    dfdp_referenced_by_W_(false),
     x_dot_is_set_(false)
 {
   using Teuchos::Array;
@@ -177,12 +180,26 @@ AdjointAuxSensitivityModelEvaluator<Scalar>::create_W_op() const
   using Thyra::LinearOpBase;
 
   RCP<LinearOpBase<Scalar> > adjoint_op = adjoint_model_->create_W_op();
-  RCP<LinearOpBase<Scalar> > mv_adjoint_op =
+  RCP<Thyra::MultiVectorLinearOp<Scalar> > mv_adjoint_op =
       Thyra::nonconstMultiVectorLinearOp(adjoint_op, num_adjoint_);
   RCP<const Thyra::VectorSpaceBase<Scalar> > g_space = response_space_;
   RCP<LinearOpBase<Scalar> > g_op                    = Thyra::scaledIdentity(g_space, Scalar(1.0));
   RCP<LinearOpBase<Scalar> > null_op;
-  return nonconstBlock2x2(mv_adjoint_op, null_op, null_op, g_op);
+
+  // Coupling block -beta*df/dp^T of the auxiliary rows and the adjoint
+  // columns (zero if the residual does not depend on the parameters)
+  RCP<LinearOpBase<Scalar> > coupling_op;
+  if (f_depends_on_p_) {
+    RCP<const DMVPVS> mv_adjoint_domain =
+        Teuchos::rcp_dynamic_cast<const DMVPVS>(mv_adjoint_op->domain(), true);
+    RCP<LinearOpBase<Scalar> > dfdp_trans_op =
+        Teuchos::rcp(new AdjointAuxCouplingLinearOp<Scalar>(
+            model_->get_p_space(p_index_), mv_adjoint_domain->getBlock(0)));
+    coupling_op = Thyra::nonconstMultiVectorLinearOp(
+        dfdp_trans_op, response_space_, mv_adjoint_domain);
+  }
+  return Thyra::nonconstBlock2x2<Scalar>(mv_adjoint_op, null_op, coupling_op,
+                                         g_op);
 }
 
 template <typename Scalar>
@@ -321,6 +338,20 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::evalModelImpl(
         rcp_dynamic_cast<Thyra::ScaledIdentityLinearOpWithSolve<Scalar> >(
             block_op->getNonconstBlock(1, 1), true);
     si_op->setScale(inArgs.get_alpha());
+
+    // Coupling of g to the adjoint: beta*d(-df/dp^T*y)/dy = -beta*df/dp^T.
+    // Like the adjoint W above, this is the block of the implicit form.
+    if (f_depends_on_p_) {
+      RCP<Thyra::MultiVectorLinearOp<Scalar> > mv_coupling_op =
+          rcp_dynamic_cast<Thyra::MultiVectorLinearOp<Scalar> >(
+              block_op->getNonconstBlock(1, 0), true);
+      RCP<AdjointAuxCouplingLinearOp<Scalar> > coupling_op =
+          rcp_dynamic_cast<AdjointAuxCouplingLinearOp<Scalar> >(
+              mv_coupling_op->getNonconstLinearOp(), true);
+      evalDfDpAtForwardState(me_inArgs);
+      coupling_op->initialize(my_dfdp_op_, dfdp_trans_, -inArgs.get_beta());
+      dfdp_referenced_by_W_ = true;
+    }
   }
 
   // Compute adjoint residual F(y):
@@ -536,6 +567,15 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::evalDfDpAtForwardState(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& me_inArgs) const
 {
   if (dfdp_is_current_) return;
+  // The coupling block of a W evaluated at the previous evaluation point
+  // references my_dfdp_op_: evaluate df/dp at the new point into new storage
+  // (allocated by evalDfDp()), so that the W keeps the df/dp of its own
+  // evaluation point
+  if (dfdp_referenced_by_W_) {
+    my_dfdp_op_           = Teuchos::null;
+    my_dfdp_mv_           = Teuchos::null;
+    dfdp_referenced_by_W_ = false;
+  }
   dfdp_trans_      = AdjointSensitivityUtils::evalDfDp(*model_, p_index_, me_inArgs,
                                                        my_dfdp_op_, my_dfdp_mv_);
   dfdp_is_current_ = true;
