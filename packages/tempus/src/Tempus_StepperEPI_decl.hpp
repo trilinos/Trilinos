@@ -144,7 +144,7 @@ class StepperEPI : virtual public Tempus::StepperExponential<Scalar> {
    * @param out `Teuchos::FancyOStream` receiving setup diagnostics.
    * @return True when the inherited setup and EPI callback are valid.
    */
-  bool isValidSetup(Teuchos::FancyOStream& out) const;
+  bool isValidSetup(Teuchos::FancyOStream& out) const override;
 
   /**
    * @brief Advance the working state by its configured time step.

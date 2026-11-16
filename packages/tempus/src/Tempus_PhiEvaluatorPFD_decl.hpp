@@ -65,7 +65,7 @@ class PhiEvaluatorPFD
    *
    * @param pl Teuchos::RCP to the mutable evaluator ParameterList.
    */
-  void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+  void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
   /** \brief Computes the supported \f$\varphi_s\f$ action.
    *

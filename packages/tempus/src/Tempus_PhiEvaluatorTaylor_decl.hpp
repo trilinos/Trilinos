@@ -41,8 +41,8 @@ class PhiEvaluatorTaylor
 
   /// \name Basic PhiEvaluatorTaylor Methods
 
-  std::string description() const;
-  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const;
+  std::string description() const override;
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const override;
 
   /** \brief Returns valid parameters including defaults. */
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;

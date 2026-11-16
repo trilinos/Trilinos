@@ -334,9 +334,9 @@ class PhiEvaluator
 
   /// \name Overridden from Teuchos::Describable
   //@{
-  virtual std::string description() const;
+  virtual std::string description() const override;
   virtual void describe(Teuchos::FancyOStream& out,
-                        const Teuchos::EVerbosityLevel verbLevel) const;
+                        const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
   /** @brief Selects row-sum mass lumping for subsequent mass assemblies.

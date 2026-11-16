@@ -102,8 +102,8 @@ class PhiEvaluatorLeja
   /// \name Basic PhiEvaluatorLeja Methods
   //@{
 
-  std::string description() const;
-  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const;
+  std::string description() const override;
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const override;
 
   /** \brief Returns valid Leja parameters and their defaults. */
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
