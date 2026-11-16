@@ -34,7 +34,13 @@ AdjointAuxSensitivityModelEvaluator<Scalar>::
     t_final_(t_final),
     mass_matrix_is_computed_(false),
     dgdx_dot_checked_(false),
-    t_interp_(Teuchos::ScalarTraits<Scalar>::rmax())
+    t_interp_(Teuchos::ScalarTraits<Scalar>::rmax()),
+    dfdx_is_current_(false),
+    dfdp_is_current_(false),
+    dgdx_is_current_(false),
+    dgdp_is_current_(false),
+    dfdp_trans_(Thyra::CONJTRANS),
+    x_dot_is_set_(false)
 {
   using Teuchos::Array;
   using Teuchos::RCP;
@@ -118,6 +124,8 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::setFinalTime(
     const Scalar t_final)
 {
   t_final_ = t_final;
+  // The forward state at an adjoint time changes with the final time
+  t_interp_ = Teuchos::ScalarTraits<Scalar>::rmax();
 }
 
 template <typename Scalar>
@@ -128,6 +136,7 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::setForwardSolutionHistory(
   t_interp_         = Teuchos::ScalarTraits<Scalar>::rmax();
   forward_state_    = Teuchos::null;
   dgdx_dot_checked_ = false;
+  invalidateDerivatives();
 }
 
 template <typename Scalar>
@@ -270,17 +279,22 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::evalModelImpl(
     else
       sh_->interpolateState(forward_t, forward_state_.get());
     t_interp_ = t;
+    invalidateDerivatives();
   }
 
   // setup input arguments for model
   MEB::InArgs<Scalar> me_inArgs = model_->getNominalValues();
   me_inArgs.set_x(forward_state_->getX());
-  if (me_inArgs.supports(MEB::IN_ARG_x_dot) &&
-      inArgs.get_x_dot() != Teuchos::null)
-    me_inArgs.set_x_dot(forward_state_->getXDot());
+  const bool x_dot_is_set = me_inArgs.supports(MEB::IN_ARG_x_dot) &&
+                            inArgs.get_x_dot() != Teuchos::null;
+  if (x_dot_is_set) me_inArgs.set_x_dot(forward_state_->getXDot());
   if (me_inArgs.supports(MEB::IN_ARG_t)) me_inArgs.set_t(forward_t);
   const int np = me_inArgs.Np();
   for (int i = 0; i < np; ++i) me_inArgs.set_p(i, inArgs.get_p(i));
+
+  // The derivatives of the model at the forward state are reused while the
+  // evaluation point does not change
+  updateDerivativeEvaluationPoint(me_inArgs, x_dot_is_set);
 
   // compute W
   RCP<Thyra::LinearOpBase<Scalar> > op = outArgs.get_W_op();
@@ -331,10 +345,13 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::evalModelImpl(
     MEB::OutArgs<Scalar> adj_me_outArgs = adjoint_model_->createOutArgs();
 
     if (my_dfdx_ == Teuchos::null) my_dfdx_ = adjoint_model_->create_W_op();
-    adj_me_outArgs.set_W_op(my_dfdx_);
-    if (me_inArgs.supports(MEB::IN_ARG_alpha)) me_inArgs.set_alpha(0.0);
-    if (me_inArgs.supports(MEB::IN_ARG_beta)) me_inArgs.set_beta(1.0);
-    adjoint_model_->evalModel(me_inArgs, adj_me_outArgs);
+    if (!dfdx_is_current_) {
+      adj_me_outArgs.set_W_op(my_dfdx_);
+      if (me_inArgs.supports(MEB::IN_ARG_alpha)) me_inArgs.set_alpha(0.0);
+      if (me_inArgs.supports(MEB::IN_ARG_beta)) me_inArgs.set_beta(1.0);
+      adjoint_model_->evalModel(me_inArgs, adj_me_outArgs);
+      dfdx_is_current_ = true;
+    }
 
     // Explicit form residual F(y) = -df/dx^T*y
     my_dfdx_->apply(Thyra::NOTRANS, *adjoint_x_mv, adjoint_f_mv.ptr(),
@@ -345,11 +362,14 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::evalModelImpl(
     if (response_type_ == AdjointResponseType::TimeIntegral) {
       if (my_dgdx_mv_ == Teuchos::null)
         my_dgdx_mv_ = createMembers(model_->get_x_space(), num_adjoint_);
-      AdjointSensitivityUtils::evalResponseGradientX(
-          *model_, g_index_, responseInArgs(me_inArgs), *my_dgdx_mv_,
-          !dgdx_dot_checked_,
-          "Tempus::AdjointAuxSensitivityModelEvaluator::evalModel");
-      dgdx_dot_checked_ = true;
+      if (!dgdx_is_current_) {
+        AdjointSensitivityUtils::evalResponseGradientX(
+            *model_, g_index_, responseInArgs(me_inArgs), *my_dgdx_mv_,
+            !dgdx_dot_checked_,
+            "Tempus::AdjointAuxSensitivityModelEvaluator::evalModel");
+        dgdx_dot_checked_ = true;
+        dgdx_is_current_  = true;
+      }
       Thyra::update(Scalar(1.0), *my_dgdx_mv_, adjoint_f_mv.ptr());
     }
 
@@ -396,9 +416,9 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::evalModelImpl(
         rcp_dynamic_cast<DMVPV>(adjoint_g, true)->getNonconstMultiVector();
 
     if (f_depends_on_p_) {
-      AdjointSensitivityUtils::applyDfDpTranspose(
-          *model_, p_index_, me_inArgs, *adjoint_x_mv, *adjoint_g_mv,
-          Scalar(1.0), Scalar(0.0), my_dfdp_op_, my_dfdp_mv_);
+      evalDfDpAtForwardState(me_inArgs);
+      my_dfdp_op_->apply(dfdp_trans_, *adjoint_x_mv, adjoint_g_mv.ptr(),
+                         Scalar(1.0), Scalar(0.0));
     }
     else
       Thyra::assign(adjoint_g_mv.ptr(), Scalar(0.0));
@@ -407,8 +427,11 @@ void AdjointAuxSensitivityModelEvaluator<Scalar>::evalModelImpl(
     if (response_type_ == AdjointResponseType::TimeIntegral && g_depends_on_p_) {
       if (my_dgdp_mv_ == Teuchos::null)
         my_dgdp_mv_ = createMembers(model_->get_p_space(p_index_), num_adjoint_);
-      AdjointSensitivityUtils::evalResponseGradientP(
-          *model_, g_index_, p_index_, responseInArgs(me_inArgs), *my_dgdp_mv_);
+      if (!dgdp_is_current_) {
+        AdjointSensitivityUtils::evalResponseGradientP(
+            *model_, g_index_, p_index_, responseInArgs(me_inArgs), *my_dgdp_mv_);
+        dgdp_is_current_ = true;
+      }
       Thyra::update(Scalar(-1.0), *my_dgdp_mv_, adjoint_g_mv.ptr());
     }
 
@@ -458,6 +481,64 @@ AdjointAuxSensitivityModelEvaluator<Scalar>::responseInArgs(
   if (inArgs.supports(MEB::IN_ARG_x_dot) && forward_state_->getXDot() != Teuchos::null)
     inArgs.set_x_dot(forward_state_->getXDot());
   return inArgs;
+}
+
+template <typename Scalar>
+void AdjointAuxSensitivityModelEvaluator<Scalar>::updateDerivativeEvaluationPoint(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& me_inArgs,
+    const bool x_dot_is_set) const
+{
+  using Teuchos::RCP;
+  bool changed  = (x_dot_is_set != x_dot_is_set_);
+  x_dot_is_set_ = x_dot_is_set;
+
+  const int np = me_inArgs.Np();
+  if (p_eval_.size() != np) {
+    p_eval_.resize(np);
+    p_diff_.resize(np);
+    changed = true;
+  }
+  for (int i = 0; i < np; ++i) {
+    RCP<const Thyra::VectorBase<Scalar> > p = me_inArgs.get_p(i);
+    if (p == Teuchos::null) {
+      if (p_eval_[i] != Teuchos::null) changed = true;
+      p_eval_[i] = Teuchos::null;
+    }
+    else if (p_eval_[i] == Teuchos::null) {
+      p_eval_[i] = p->clone_v();
+      p_diff_[i] = p->clone_v();
+      changed    = true;
+    }
+    else {
+      // The parameters may change in place, so their values are compared
+      Thyra::V_VmV(p_diff_[i].ptr(), *p, *p_eval_[i]);
+      if (Thyra::norm_inf(*p_diff_[i]) !=
+          Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero()) {
+        Thyra::assign(p_eval_[i].ptr(), *p);
+        changed = true;
+      }
+    }
+  }
+  if (changed) invalidateDerivatives();
+}
+
+template <typename Scalar>
+void AdjointAuxSensitivityModelEvaluator<Scalar>::invalidateDerivatives() const
+{
+  dfdx_is_current_ = false;
+  dfdp_is_current_ = false;
+  dgdx_is_current_ = false;
+  dgdp_is_current_ = false;
+}
+
+template <typename Scalar>
+void AdjointAuxSensitivityModelEvaluator<Scalar>::evalDfDpAtForwardState(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& me_inArgs) const
+{
+  if (dfdp_is_current_) return;
+  dfdp_trans_      = AdjointSensitivityUtils::evalDfDp(*model_, p_index_, me_inArgs,
+                                                       my_dfdp_op_, my_dfdp_mv_);
+  dfdp_is_current_ = true;
 }
 
 }  // namespace Tempus

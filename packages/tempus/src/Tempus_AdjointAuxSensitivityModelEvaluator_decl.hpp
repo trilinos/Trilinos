@@ -66,6 +66,13 @@ namespace Tempus {
  * The response must not depend on x_dot.  For "Final Time" and
  * "Sum Over Times" responses the adjoint equations are homogeneous; the
  * response terms are added by IntegratorAdjointSensitivity.
+ *
+ * The derivatives of the model at the forward state (df/dx and df/dp, and
+ * dg/dx and dg/dp for a "Time Integral" response) depend on the time, on the
+ * parameters and on whether x_dot is given, not on the adjoint variables:
+ * they are evaluated once for each of these evaluation points, and reused by
+ * the evaluations of the residual and of W at the same point (e.g., by the
+ * iterations and the line search of the nonlinear solver of a time step).
  */
 template <typename Scalar>
 class AdjointAuxSensitivityModelEvaluator
@@ -170,6 +177,20 @@ class AdjointAuxSensitivityModelEvaluator
   Thyra::ModelEvaluatorBase::InArgs<Scalar> responseInArgs(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& me_inArgs) const;
 
+  /** \brief Set the parameters and whether x_dot is given of the evaluation
+   *  point of the derivatives of the model at the forward state, and mark the
+   *  derivatives as not evaluated if they changed. */
+  void updateDerivativeEvaluationPoint(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& me_inArgs,
+      const bool x_dot_is_set) const;
+
+  //! Mark the derivatives of the model at the forward state as not evaluated
+  void invalidateDerivatives() const;
+
+  //! Evaluate df/dp at the forward state (me_inArgs), unless already evaluated
+  void evalDfDpAtForwardState(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& me_inArgs) const;
+
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
@@ -203,6 +224,19 @@ class AdjointAuxSensitivityModelEvaluator
   mutable bool dgdx_dot_checked_;
   mutable Teuchos::RCP<Tempus::SolutionState<Scalar> > forward_state_;
   mutable Scalar t_interp_;
+
+  // Whether the derivatives above (my_dfdx_, my_dfdp_op_, my_dgdx_mv_ and
+  // my_dgdp_mv_) are evaluated at the evaluation point: the forward state at
+  // t_interp_, the parameters p_eval_ and whether x_dot is given
+  // (x_dot_is_set_)
+  mutable bool dfdx_is_current_;
+  mutable bool dfdp_is_current_;
+  mutable bool dgdx_is_current_;
+  mutable bool dgdp_is_current_;
+  mutable Thyra::EOpTransp dfdp_trans_;  // df/dp^T*v = apply(my_dfdp_op_, dfdp_trans_, v)
+  mutable bool x_dot_is_set_;
+  mutable Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > p_eval_;
+  mutable Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > p_diff_;
 };
 
 }  // namespace Tempus
