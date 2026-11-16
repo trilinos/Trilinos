@@ -545,7 +545,7 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
           {
             get_nodes(exoid, side_set_node_list, node_pos + 2, connect,
                       connect_offset + tri3_table[side_num][2] - 1);
-            get_nodes(exoid, side_set_node_list, node_pos + 2, connect,
+            get_nodes(exoid, side_set_node_list, node_pos + 3, connect,
                       connect_offset + 4 - 1); /* Center node of 4-noded face */
           }
           else if (num_nodes_per_elem == 6) /* 6-node face */
@@ -705,6 +705,10 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
                   connect_offset + tetra_table[side_num][4] - 1);
         get_nodes(exoid, side_set_node_list, node_pos + 5, connect,
                   connect_offset + tetra_table[side_num][5] - 1);
+        if (num_nodes_per_elem >= 14) { /* 14- and 15-node tetra: mid-face node */
+          get_nodes(exoid, side_set_node_list, node_pos + 6, connect,
+                    connect_offset + tetra_table[side_num][6] - 1);
+        }
       }
       break;
     }

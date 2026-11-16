@@ -1,0 +1,3 @@
+# Select a global variable whose name is the full 32 characters.
+GLOBAL VARIABLES
+	LN012345678901234567890123456789

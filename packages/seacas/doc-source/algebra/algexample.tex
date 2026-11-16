@@ -1,0 +1,132 @@
+\chapter{Sample Session} \label{appx:example}
+
+The following is an example session with \caps{\PROGRAM}. Text following
+the \caps{\PROGRAM} prompt (\verb|ALG>|) is supplied by the user. The
+program response (if any) is shown directly below the equation or
+command. Comments on the example are in {\em italics}.
+
+\newenvironment{comments} {\em}{}
+
+\verb|ALG>| \cmd{LIST VARS}
+\begin{verbatim}
+Database:  /User/me/testing/input_databse.e
+
+SAMPLE DATABASE FOR ALGEBRA
+
+Number of coordinates per node       =     2
+Number of nodes                      =   644
+Number of elements                   =   480
+Number of element blocks             =     1
+
+Number of node sets                  =     0
+Number of side sets                  =     0
+
+Code:  MISCPROG  version  1.0       on  12/23/85  at  10:21:59
+\end{verbatim}
+
+\verb|ALG>| \cmd{LIST STEPS}
+\begin{verbatim}
+Number of time steps = 21
+   Minimum time =  0.00
+   Maximum time = 10.00
+\end{verbatim}
+
+\newpage
+\verb|ALG>| \cmd{SHOW TMAX}
+\vspace{-\medskipamount}
+\begin{verbatim}
+Select all times from 0.0 to 10.0
+   Number of selected times = 21
+\end{verbatim}
+\verb|ALG>| \cmd{TMAX 5.0}
+\vspace{-\medskipamount}
+\begin{verbatim}
+Select all times from 0.0 to 5.0
+   Number of selected times = 11
+\end{verbatim}
+\verb|ALG>| \cmd{NINTV 5}
+\vspace{-\medskipamount}
+\begin{verbatim}
+Select times 0.0 to 5.0 in 5 intervals with delta offset
+   Number of selected times = 5
+\end{verbatim}
+
+\begin{comments}
+These commands select up to 5 time steps between 0.0 and 5.0 starting at
+an offset (1.0) from 0.0. The steps with the times nearest 1.0, 2.0,
+3.0, 4.0, and 5.0 are selected. The equations are evaluated and the
+results written to the output database only for the selected steps.
+\end{comments}
+
+\verb|ALG>| \cmd{LIST NAMES}
+\begin{verbatim}
+Coordinate names: R Z
+
+Variables Names:
+   Global:   RESIDUAL  ENERGY    NORM      L2NORM
+   Nodal:    DISPLR    DISPLZ    VELR      VELZ      ACCELR    ACCELZ
+   Element:  SIGR      SIGZ      SIGT      TAURZ     EPSR      EPST
+             EPSRZ
+\end{verbatim}
+
+\verb|ALG>| \cmd{SAVE NODAL}
+
+\begin{comments}
+All the input database nodal variables (\cmd{DISPLR}, \cmd{DISPLZ}, \ldots,
+\cmd{ACCELZ}) will be written unchanged to the output database (unless
+they are assigned a value or listed in a \cmd{DELETE} command).
+\end{comments}
+
+\newpage
+\verb|ALG>|
+\cmd{VONMISES = (1.0$/$SQRT(2.0)) $*$ TMAG(SIGR,SIGZ,SIGT,TAURZ,0,0)} \\
+\verb|ALG>|
+\cmd{EFFSTR = SQRT(1.5) $*$ 5.79E-3 $*$ VONMISES$**$4 $*$
+EXP(-12.0$/$300.0$*$1.987)} \\
+\verb|ALG>|
+\cmd{PRESS = (SIGR $+$ SIGZ $+$ SIGT) $/$ 3.0} \\
+\verb|ALG>|
+\cmd{PRESS100 = (SIGR\$100 + SIGZ\$100 + SIGT\$100) $/$ 3.0} \\
+\verb|ALG>|
+\cmd{PHI = EFFSTR $-$ 0.023 $-$ PRESS $*$ (4.43E$-$8 $-$ 3.7E$-$15 $*$
+PRESS)} \\
+\verb|ALG>|
+\cmd{ALPHA = SIGR\$56} \\
+\verb|ALG>|
+\cmd{BETA = ALPHA $+$ 1.414}
+
+\begin{comments}
+Assign element variables \cmd{VONMISES}, \cmd{EFFSTR}, \cmd{PRESS}, and
+\cmd{PHI} and global variables \cmd{PRESS100}, \cmd{ALPHA}, and
+\cmd{BETA}. Note that the \cmd{PRESS100} equation could be replaced by
+``\cmd{PRESS100 = PRESS\$100}''.
+\end{comments}
+
+\verb|ALG>| \cmd{DELETE ALPHA}
+
+\begin{comments}
+\cmd{ALPHA} (assigned in the equation ``\cmd{ALPHA = SIGR\$56}'' above)
+becomes a temporary variable and will not be written to the output
+database.
+\end{comments}
+
+\verb|ALG>| \cmd{BAD = (A + 1)) + SIN (1,2)}
+\vspace{-\medskipamount}
+\begin{verbatim}
+*** Expected 1 parameter(s) for function SIN, found 2
+*** Parenthesis do not balance
+*** "A" is not a database variable
+    Equation ignored
+\end{verbatim}
+
+\begin{comments}
+This equation contains several errors. Each error is flagged and the
+equation is ignored.
+\end{comments}
+
+\verb|ALG>| \cmd{END}
+
+\begin{comments}
+No further user input is accepted and the equation evaluation
+begins.
+\end{comments}

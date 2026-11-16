@@ -253,7 +253,7 @@ C disable netcdf warning messages
 
       CALL EXOPTS(0,IERR)
 
-      call debug('MVOPNFIL')
+      call mv_debug('MVOPNFIL')
       CALL MVOPNFIL
 
 C get info for QA records
@@ -307,7 +307,7 @@ C reserve space for storing the search box size for each map operation
      &              'JUST BEFORE CALL TO RDINPT',0,' ',0,' ',' ',1)
       END IF
 
-      call debug('RDINPT')
+      call mv_debug('RDINPT')
       CALL RDINPT (A(NT1),IA(NAEB),IA(NBEB),IA(NMAP),A(NMAPS),IMP,MBLK)
 
 C ******************************************************************
@@ -360,7 +360,7 @@ C Copy "GENESIS" from mesh-B to mesh-C
 c read mesh A (coords,displ,variable names,QA, INFO records),
 c write mesh C, (variable names, QA, INFO records)
 
-      call debug('RDA1')
+      call mv_debug('RDA1')
       CALL RDA1 (A(NAX),A(NAY),A(NAZ),A(NADX),A(NADY),A(NADZ))
 
 C ... Mapvar is buggy if mesh contains:
@@ -546,7 +546,7 @@ C      A(NBZ)      =    ZB(1:NODESB) - Mesh-B Z-coord
 
 c read coordinates for mesh B
 
-      call debug('RDB1')
+      call mv_debug('RDB1')
       CALL RDB1 (A(NBX),A(NBY),A(NBZ))
 
 C *********************************************************
@@ -585,7 +585,7 @@ C    A(NSE)      = SE(1:NODESB)  - storage for element vars in ininod
 
       call inirea(nodesb*nvarnp, 0.0, a(nbsoln))
 
-      call debug('TRUTBL')
+      call mv_debug('TRUTBL')
       CALL TRUTBL(IA(NMAP),IMP,IA(NAEB),IA(NBEB),IA(ITTA),IA(ITTB))
 
 C *********************************************************************
@@ -604,7 +604,7 @@ C     A(NAGV)    =    GVAR(1:NVARGP) Global variables
 
       CALL MDRSRV ('GVAR',   NAGV, NVARGP)
 
-      call debug('WRTC')
+      call mv_debug('WRTC')
       CALL WRTC(A(NBX),A(NBY),A(NBZ),A(NAGV),A(NBSOLN))
 
       DO 50 IM = 1, IMP
@@ -703,7 +703,7 @@ C  A(NASTAT)  =    STATUS(1:NUMEBA) - Mesh-A element status
 
 c 2nd read of mesh A
 
-        call debug('RDA2')
+        call mv_debug('RDA2')
         CALL RDA2 (IDBLKA,IA(NACON),IA(NANDLST),A(NASTAT),
      &             MAXLN)
 
@@ -754,7 +754,7 @@ C hex-8 or tet-8
 
 c 2nd read of mesh-b
 
-        call debug('RDB2')
+        call mv_debug('RDB2')
         CALL RDB2(IDBLKB,IDBLKA,IA(NBCON),IA(NBNDLST))
 
 C set up arrays for element block-by-element block processing
@@ -850,22 +850,22 @@ C     **********************************************************
 C     Path through code for shells
 C     **********************************************************
 
-          call debug('BLDSRF')
+          call mv_debug('BLDSRF')
           CALL BLDSRF(A(NAX),A(NAY),A(NAZ),A(NS16))
 
           IF (NVARNP .GT. 0)THEN
 
-            call debug('BLDPTN')
+            call mv_debug('BLDPTN')
             CALL BLDPTN(A(NBX),A(NBY),A(NBZ),IA(NBNDLST),A(NS17))
 
-            call debug('SRCHS-nodes')
+            call mv_debug('SRCHS-nodes')
             CALL SRCHS (NODESA,NUMEBA,IA(NACON),A(NS16),
      1       NUMNDB,A(NS17),TOLSHL,1,6,
      2       NISS,NRSS,IA(NS1),A(NS2),LBLK,
      3       IA(NS3),IA(NS4),IA(NS5),IA(NS6),IA(NS7),IA(NS8),IA(NS9),
      4       IA(NS10),IA(NS11),A(NS12),A(NS13),IA(NS14),A(NS15),IERR)
 
-            call debug('SINTPN')
+            call mv_debug('SINTPN')
             CALL SINTPN(IA(NACON),A(NASOLN),IA(NS1),1,A(NS2),6,
      1                  A(NBSOLN),IA(NBNDLST),A(NBX),A(NBY),A(NBZ),
      2                  IDBLKB,A(NT1),INSUB,A(NSN))
@@ -873,10 +873,10 @@ C     **********************************************************
           END IF
           IF (NVAREL .GT. 0)THEN
 
-            call debug('BLDPTE')
+            call mv_debug('BLDPTE')
             CALL BLDPTE(A(NBX),A(NBY),A(NBZ),IA(NBCON),A(NS17))
 
-            call debug('SRCHS-element centroids')
+            call mv_debug('SRCHS-element centroids')
             CALL SRCHS (NODESA,NUMEBA,IA(NACON),A(NS16),
      1       NUMEBB,A(NS17),TOLSHL,1,6,
      2       NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -902,12 +902,12 @@ C Set up time steps
                   ISTP = ISTEP
                 END IF
 
-                call debug('SETON0')
+                call mv_debug('SETON0')
                 CALL SETON0(IA(NACON),IA(NANELTN),A(NASOLE),
      &           A(NASOLEN),IDBLKA,A(NAX),A(NAY),A(NAZ),ISTP,
      &           IA(ITTB),IBLKB)
 
-                call debug('SINTPE')
+                call mv_debug('SINTPE')
                 CALL SINTPE(IA(NACON),A(NASOLEN),IA(NS1),1,A(NS2),6,
      &                      A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      &                      IA(NBCON),IA(ITTB),IBLKB,A(NT1),A(NS17),
@@ -916,7 +916,7 @@ C Set up time steps
 
             ELSE IF (ISCHEM .EQ. 1) THEN
 
-              call debug('INVCON')
+              call mv_debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 
 C Set up time steps
@@ -934,13 +934,13 @@ C Set up time steps
                   ISTP = ISTEP
                 END IF
 
-                call debug('SETON1')
+                call mv_debug('SETON1')
                 CALL SETON1(A(NACTR),A(NASOLE),A(NASOLEN),IDBLKA,
      &                    A(NAX),A(NAY),A(NAZ),IA(NACON),IA(NANDLST),
      &                    IA(NAINVLN),IA(NAINVC),MAXLN,ISTP,
      &                    IA(ITTB),IBLKB)
 
-                call debug('SINTPE')
+                call mv_debug('SINTPE')
                 CALL SINTPE(IA(NACON),A(NASOLEN),IA(NS1),1,A(NS2),6,
      &                      A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      &                      IA(NBCON),IA(ITTB),IBLKB,A(NT1),A(NS17),
@@ -951,7 +951,7 @@ C Set up time steps
 
 c direct transfer, does not require scatter to nodes
 
-              call debug('STRAN')
+              call mv_debug('STRAN')
               CALL STRAN(IA(NS1),1,A(NASOLE),A(NBSOLE),
      &                    IDBLKA,IDBLKB,
      &                    IA(ITTB),IBLKB,A(NT1),A(NS17),
@@ -960,7 +960,7 @@ c direct transfer, does not require scatter to nodes
 
             ELSE IF (ISCHEM .EQ. 3)THEN
 
-              call debug('INVCON')
+              call mv_debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 
 C Set up time steps
@@ -978,13 +978,13 @@ C Set up time steps
                   ISTP = ISTEP
                 END IF
 
-                call debug('ELGRAD')
+                call mv_debug('ELGRAD')
                 CALL ELGRAD(A(NACTR),A(NAX),A(NAY),A(NAZ),
      &                      A(NASOLE),A(NSOLGR),IA(NICHKE),
      &                      IDBLKA,IA(NACON),IA(NAINVLN),IA(NAINVC),
      &                      MAXLN,ISTP,IA(ITTB),IBLKB)
 
-                call debug('INTRP3')
+                call mv_debug('INTRP3')
                 CALL INTRP3(A(NACTR),A(NS17),IA(NS1),
      &                      A(NBSOLE),A(NASOLE),A(NSOLGR),
      &                      IDBLKB,IA(ITTB),IBLKB,A(NT1),
@@ -1013,15 +1013,15 @@ C     *****************************************************
 
 C find and store location of mesh-b nodes within mesh-a
 
-          call debug('BLDSRF')
+          call mv_debug('BLDSRF')
           CALL BLDSRF(A(NAX),A(NAY),A(NAZ),A(NS16))
 
           IF (NVARNP .GT. 0)THEN
 
-            call debug('BLDPTN')
+            call mv_debug('BLDPTN')
             CALL BLDPTN(A(NBX),A(NBY),A(NBZ),IA(NBNDLST),A(NS17))
 
-            call debug('SRCHQ-nodes')
+            call mv_debug('SRCHQ-nodes')
             CALL SRCHQ (NODESA,NUMEBA,IA(NACON),A(NS16),
      1       NUMNDB,A(NS17),TOLQAD,1,3,
      2       NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1049,10 +1049,10 @@ c locate Mesh-B element centroid in Mesh-A
           END IF
           IF (NVAREL .GT. 0)THEN
 
-            call debug('BLDPTE')
+            call mv_debug('BLDPTE')
             CALL BLDPTE(A(NBX),A(NBY),A(NBZ),IA(NBCON),A(NS17))
 
-            call debug('SRCHQ-element centroids')
+            call mv_debug('SRCHQ-element centroids')
             CALL SRCHQ (NODESA,NUMEBA,IA(NACON),A(NS16),
      1       NUMEBB,A(NS17),TOLQAD,1,3,
      2       NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1078,14 +1078,14 @@ C Set up time steps
                   ISTP = ISTEP
                 END IF
 
-                call debug('ELTON0')
+                call mv_debug('ELTON0')
                 CALL ELTON0(IA(NACON),IA(NANELTN),A(NASOLE),
      &           A(NASOLEN),IDBLKA,A(NAX),A(NAY),A(NAZ),ISTP,
      &           IA(ITTB),IBLKB)
 
 c interpolate element vars
 
-                call debug('INTRPE')
+                call mv_debug('INTRPE')
                 CALL INTRPE(IA(NACON),A(NASOLEN),IA(NS1),A(NS2),
      1                    A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      2                    IA(NBCON),IA(ITTB),IBLKB,A(NT1),
@@ -1096,7 +1096,7 @@ c element centroid variables linear least squares to nodes
 
             ELSE IF (ISCHEM .EQ. 1)THEN
 
-              call debug('INVCON')
+              call mv_debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 
 C Set up time steps
@@ -1114,7 +1114,7 @@ C Set up time steps
                   ISTP = ISTEP
                 END IF
 
-                call debug('ELTON1')
+                call mv_debug('ELTON1')
                 CALL ELTON1(A(NACTR),A(NASOLE),A(NASOLEN),IDBLKA,
      &                    A(NAX),A(NAY),A(NAZ),IA(NACON),IA(NANDLST),
      &                    IA(NAINVLN),IA(NAINVC),MAXLN,ISTP,
@@ -1122,7 +1122,7 @@ C Set up time steps
 
 c interpolate element vars
 
-                call debug('INTRPE')
+                call mv_debug('INTRPE')
                 CALL INTRPE(IA(NACON),A(NASOLEN),IA(NS1),A(NS2),
      1                    A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      2                    IA(NBCON),IA(ITTB),IBLKB,A(NT1),
@@ -1133,7 +1133,7 @@ c interpolate element vars
 
 c direct transfer from Mesh-A to Mesh-B
 
-              call debug('TRANAB')
+              call mv_debug('TRANAB')
               CALL TRANAB(IA(NS1),A(NASOLE),A(NBSOLE),
      &                  IDBLKA,IDBLKB,
      &                  IA(ITTB),IBLKB,A(NT1),A(NS17),
@@ -1142,7 +1142,7 @@ c direct transfer from Mesh-A to Mesh-B
 
             ELSE IF (ISCHEM .EQ. 3)THEN
 
-              call debug('INVCON')
+              call mv_debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 
 C Set up time steps
@@ -1160,13 +1160,13 @@ C Set up time steps
                   ISTP = ISTEP
                 END IF
 
-                call debug('ELGRAD')
+                call mv_debug('ELGRAD')
                 CALL ELGRAD(A(NACTR),A(NAX),A(NAY),A(NAZ),
      &                    A(NASOLE),A(NSOLGR),IA(NICHKE),
      &                    IDBLKA,IA(NACON),IA(NAINVLN),IA(NAINVC),
      &                    MAXLN,ISTP,IA(ITTB),IBLKB)
 
-                call debug('INTRP3')
+                call mv_debug('INTRP3')
                 CALL INTRP3(A(NACTR),A(NS17),IA(NS1),
      &                    A(NBSOLE),A(NASOLE),A(NSOLGR),
      &                    IDBLKB,IA(ITTB),IBLKB,A(NT1),
@@ -1189,16 +1189,16 @@ C     *****************************************************
 
 C     FIND AND STORE LOCATION OF MESH-B NODES WITHIN MESH-A
 
-          call debug('BLDSRF')
+          call mv_debug('BLDSRF')
           CALL BLDSRF(A(NAX),A(NAY),A(NAZ),A(NS16))
 
           IF (NVARNP .GT. 0)THEN
 
-            call debug('BLDPTN')
+            call mv_debug('BLDPTN')
              CALL BLDPTN(A(NBX),A(NBY),A(NBZ),IA(NBNDLST),A(NS17))
 
             IF (ITYPE .EQ. 10)THEN
-              call debug('SRCHH-nodes')
+              call mv_debug('SRCHH-nodes')
               CALL SRCHH (NODESA,NUMEBA,IA(NACON),A(NS16),
      1          NUMNDB,A(NS17),TOLHEX,1,3,
      2          NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1208,7 +1208,7 @@ C     FIND AND STORE LOCATION OF MESH-B NODES WITHIN MESH-A
      6          IERR)
 
             ELSEIF (ITYPE .EQ. 6)THEN
-              call debug('SRCHT-nodes')
+              call mv_debug('SRCHT-nodes')
               CALL SRCHT (NODESA,NUMEBA,IA(NACON),A(NS16),
      1          NUMNDB,A(NS17),TOLHEX,1,3,
      2          NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1220,7 +1220,7 @@ C     FIND AND STORE LOCATION OF MESH-B NODES WITHIN MESH-A
 
 c interpolate nodal variables
 
-            call debug('INTRPN')
+            call mv_debug('INTRPN')
             CALL INTRPN(IA(NACON),A(NASOLN),IA(NS1),A(NS2),
      &                A(NBSOLN),IA(NBNDLST),A(NBX),A(NBY),A(NBZ),
      &                IDBLKB,A(NT1),INSUB,A(NSN))
@@ -1232,11 +1232,11 @@ c locate Mesh-B element centroid in Mesh-A
           END IF
           IF (NVAREL .GT. 0)THEN
 
-            call debug('BLDPTE')
+            call mv_debug('BLDPTE')
             CALL BLDPTE(A(NBX),A(NBY),A(NBZ),IA(NBCON),A(NS17))
 
             IF (ITYPE .EQ. 10)THEN
-              call debug('SRCHH-element centroids')
+              call mv_debug('SRCHH-element centroids')
               CALL SRCHH (NODESA,NUMEBA,IA(NACON),A(NS16),
      1          NUMEBB,A(NS17),TOLHEX,1,3,
      2          NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1246,7 +1246,7 @@ c locate Mesh-B element centroid in Mesh-A
      6          IERR)
 
             ELSEIF (ITYPE .EQ. 6)THEN
-              call debug('SRCHT-element centroids')
+              call mv_debug('SRCHT-element centroids')
               CALL SRCHT (NODESA,NUMEBA,IA(NACON),A(NS16),
      1          NUMEBB,A(NS17),TOLHEX,1,3,
      2          NISS,NRSS,IA(NS1),A(NS2),LBLK,
@@ -1273,14 +1273,14 @@ C Set up time steps
                   ISTP = ISTEP
                 END IF
 
-                call debug('ELTON0')
+                call mv_debug('ELTON0')
                 CALL ELTON0(IA(NACON),IA(NANELTN),A(NASOLE),
      &               A(NASOLEN),IDBLKA,A(NAX),A(NAY),A(NAZ),ISTP,
      &               IA(ITTB),IBLKB)
 
 c interpolate element vars
 
-                call debug('INTRPE')
+                call mv_debug('INTRPE')
                 CALL INTRPE(IA(NACON),A(NASOLEN),IA(NS1),A(NS2),
      1                    A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      2                    IA(NBCON),IA(ITTB),IBLKB,A(NT1),
@@ -1289,7 +1289,7 @@ c interpolate element vars
 
             ELSE IF (ISCHEM .EQ. 1)THEN
 
-              call debug('INVCON')
+              call mv_debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 
 C Set up time steps
@@ -1307,7 +1307,7 @@ C Set up time steps
                   ISTP = ISTEP
                 END IF
 
-                call debug('ELTON1')
+                call mv_debug('ELTON1')
                 CALL ELTON1(A(NACTR),A(NASOLE),A(NASOLEN),IDBLKA,
      &                    A(NAX),A(NAY),A(NAZ),IA(NACON),IA(NANDLST),
      &                    IA(NAINVLN),IA(NAINVC),MAXLN,ISTP,
@@ -1315,7 +1315,7 @@ C Set up time steps
 
 c interpolate element vars
 
-                call debug('INTRPE')
+                call mv_debug('INTRPE')
                 CALL INTRPE(IA(NACON),A(NASOLEN),IA(NS1),A(NS2),
      1                    A(NBSOLE),IDBLKB,A(NBX),A(NBY),A(NBZ),
      2                    IA(NBCON),IA(ITTB),IBLKB,A(NT1),
@@ -1326,7 +1326,7 @@ c interpolate element vars
 
 c direct transfer from Mesh-A to Mesh-B
 
-              call debug('TRANAB')
+              call mv_debug('TRANAB')
               CALL TRANAB(IA(NS1),A(NASOLE),A(NBSOLE),
      &                IDBLKA,IDBLKB,
      &                IA(ITTB),IBLKB,A(NT1),A(NS17),
@@ -1335,7 +1335,7 @@ c direct transfer from Mesh-A to Mesh-B
 
             ELSE IF (ISCHEM .EQ. 3)THEN
 
-              call debug('INVCON')
+              call mv_debug('INVCON')
               CALL INVCON(IA(NAINVLN),MAXLN,IA(NAINVC),IA(NACON))
 
 C Set up time steps
@@ -1353,13 +1353,13 @@ C Set up time steps
                   ISTP = ISTEP
                 END IF
 
-                call debug('ELGRAD')
+                call mv_debug('ELGRAD')
                 CALL ELGRAD(A(NACTR),A(NAX),A(NAY),A(NAZ),
      &                    A(NASOLE),A(NSOLGR),IA(NICHKE),
      &                    IDBLKA,IA(NACON),IA(NAINVLN),IA(NAINVC),
      &                    MAXLN,ISTP,IA(ITTB),IBLKB)
 
-                call debug('INTRP3')
+                call mv_debug('INTRP3')
                 CALL INTRP3(A(NACTR),A(NS17),IA(NS1),
      &                    A(NBSOLE),A(NASOLE),A(NSOLGR),
      &                    IDBLKB,IA(ITTB),IBLKB,A(NT1),
@@ -1597,7 +1597,7 @@ C     CLOSE FILES AND STOP
 
       CALL BANNR2(84,'NORMAL',NTPOUT)
       CALL BANNR2(84,'EXIT',NTPOUT)
-      call debug('CLSFIL')
+      call mv_debug('CLSFIL')
       CALL CLSFIL
 
       call addlog (qainfo(1))

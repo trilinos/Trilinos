@@ -1,0 +1,59 @@
+\newif\ifdraft\drafttrue
+\newif\ifsand\sandfalse
+
+\SANDnum{SANDXX-YYYY}
+\SANDauthor{Amy P. Gilkey (original)\\Gregory D. Sjaardema (reprint)}
+\SANDprintDate{\today}
+\newcommand{\theTitle}{\caps{\PROGRAM} -- \\
+A Program That Algebraically Manipulates the Output of a \\
+Finite Element Analysis \\
+(\exo{} Version)}
+\title{\theTitle}
+\ifsand
+\pdfbookmark[1]{Cover}{cover}
+\doCover
+\newpage
+\else
+\SANDmarks{cover}
+\setcounter{page}{3}
+\fi
+
+\pdfbookmark[1]{Title}{title}
+
+%\begin{titlepage}
+\begin{center}
+%\SANDnumVar\\
+%\SANDreleaseTypeVar\\
+\ifdraft
+Draft Date: \SANDprintDateVar\\
+\else
+Printed \SANDprintDateVar\\
+\fi
+
+\vspace{0.75in}
+\CoverFont{m}{24}{28pt}
+\theTitle\\
+\vspace{0.75in}
+\CoverFont{m}{12}{14pt}
+\SANDauthorVar\\
+Applied Mechanics Division III\\
+Sandia National Laboratories\\
+Albuquerque, NM 87185-0380\\
+\vspace*{.5in}
+\textbf{Abstract}
+\end{center}
+The \caps{\PROGRAM} program allows the user to manipulate data from a
+finite element analysis before it is plotted. The finite element output
+data is in the form of variable values (e.g., stress, strain, and
+velocity components) in an \exo{} database. The \caps{\PROGRAM} program
+evaluates user-supplied functions of the data and writes the results to
+an output \exo{} database which can be read by plot programs.
+%\end{titlepage}
+\newpage
+\begin{center} ACKNOWLEDGEMENTS \end{center}
+
+The original version of \caps{\PROGRAM} was written by Mary R. Sagartz
+and Johnny H. Biffle \cite{bib:oldalg}.
+
+The version of \caps{\PROGRAM} described in \cite{bib:seaalg}
+manipulates a \caps{SEACO} database \cite{bib:seaco}.

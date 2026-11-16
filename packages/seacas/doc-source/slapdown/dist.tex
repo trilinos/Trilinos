@@ -1,0 +1,471 @@
+\documentstyle[12pt,twoside]{tex$1520:sand}
+%<<<<<
+%<<<<< How to use:
+%<<<<< There are two parts to the distribution list, External and Internal
+%<<<<<     distribution.
+%<<<<< External:
+%<<<<< 1. the mailing address is started with `\address'
+%<<<<< 2. type the address as it is to appear, lines are separated by
+%<<<<<    carriage returns.
+%<<<<< 3. After the address is complete, type `\name' and then the
+%<<<<<    names of the people who will get the report.  These names
+%<<<<<    will be indented `2em' from the left margin.
+%<<<<< 4. go to 2.
+%<<<<<
+%<<<<< Internal:
+%<<<<< 1. Type `\SanInt' to begin internal distribution
+%<<<<< 2. each name is begun with `\sandis' and then the division,
+%<<<<<    first and second initials, last name and then `/'
+%<<<<<         e.g. \sandis 1510  J. W. Nunziato/
+%<<<<< 3. If there is no middle initial, type two periods in a row
+%<<<<<         e.g. \sandis 6332  R. Beraun/
+%<<<<< 4. The easiest way to do this is to type in all of the names
+%<<<<<    and then define a key to insert `\sandis' and the `/' at the
+%<<<<<    end of the name.
+%<<<<<
+%<<<<<    <CTRL>K<KP7>\sandis <KP2>/<KP0><CTRL>K
+%<<<<<    where: <CTRL> --- control
+%<<<<<           <KPx>  --- keypad key x
+%<<<<<
+%<<<<<    This defines the "page" key <KP7> to modify the names.  Position
+%<<<<<    the cursor at the beginning of the first internal name and then
+%<<<<<    repeatedly press <KP7> until all names have been modified.
+%<<<<<
+%<<<<<    Example external distribution:
+%<<<<<    \address
+%<<<<<    U. S. Department of Energy, (5)
+%<<<<<    Office of Civilian Radioactive Waste Management
+%<<<<<    Office of Geologic Repositories
+%<<<<<    Forrestal Building
+%<<<<<    Washington, DC\ \ 20585
+%<<<<<    \name
+%<<<<<       Stephen H. Kale -- RW-20
+%<<<<<          Associate Director
+%<<<<<       T. H. Isaacs -- RW-20
+%<<<<<          Deputy Associate Director
+%<<<<<       James C. Bresee -- RW-22
+%<<<<<          Director, Repository Coordination Div.
+%<<<<<       Ralph Stein -- RW-23
+%<<<<<          Director, Engineering \& Geotechnology
+%<<<<<       James P. Knight -- RW-24
+%<<<<<          Director, Siting, Licensing and Quality Assurance
+%<<<<<    \address
+%<<<<<    U.S. Department of Energy~(3)
+%<<<<<    Albuquerque Operations
+%<<<<<    P.O. Box 5400
+%<<<<<    Albuquerque, NM\ \ 87185
+%<<<<<    \name
+%<<<<<         G. C. Romatowski
+%<<<<<         J. E. Bickel
+%<<<<<         D. G. Jackson, Director, Public Affairs Division
+%<<<<<
+%<<<<<    Example internal distribution:
+%<<<<<    \SanInt
+%<<<<<    \sandis 1510  J. W. Nunziato/
+%<<<<<    \sandis 1520  C. W. Peterson/
+%<<<<<    \sandis 1521  R. D. Krieg/
+%<<<<<
+%<<<<<<<<<<<<<<<<<<<<<<<<<<<< JUNK FOR SETTING UP FORMAT >>>>>>>>>>>>>>>>>>>>>
+\makeatletter
+% using PLAIN's tabbing environment for distribution
+%
+\newif\ifus@ \newif\if@cr
+\newbox\tabs \newbox\tabsyet \newbox\tabsdone
+
+\def\cleartabs{\global\setbox\tabsyet\null \setbox\tabs\null}
+\outer\def\settabs{\setbox\tabs\null \futurelet\next\sett@b}
+\let\+=\relax % in case this file is being read in twice
+\def\sett@b{\ifx\next\+\let\next\relax
+    \def\next{\afterassignment\s@tt@b\let\next}%
+  \else\let\next\s@tcols\fi\next}
+\def\s@tt@b{\let\next\relax\us@false\m@ketabbox}
+\def\tabalign{\us@true\m@ketabbox} % non-\outer version of \+
+\outer\def\+{\tabalign}
+\def\s@tcols#1\columns{\count@#1 \dimen@\hsize
+  \loop\ifnum\count@>\z@ \@nother \repeat}
+\def\@nother{\dimen@ii\dimen@ \divide\dimen@ii\count@
+  \setbox\tabs\hbox{\hbox to\dimen@ii{}\unhbox\tabs}%
+  \advance\dimen@-\dimen@ii \advance\count@\m@ne}
+
+\def\m@ketabbox{\begingroup
+  \global\setbox\tabsyet\copy\tabs
+  \global\setbox\tabsdone\null
+  \def\cr{\@crtrue\crcr\egroup\egroup
+    \ifus@\unvbox\z@\lastbox\fi\endgroup
+    \setbox\tabs\hbox{\unhbox\tabsyet\unhbox\tabsdone}}%
+  \setbox\z@\vbox\bgroup\@crfalse
+    \ialign\bgroup&\t@bbox##\t@bb@x\crcr}
+
+\def\t@bbox{\setbox\z@\hbox\bgroup}
+\def\t@bb@x{\if@cr\egroup % now \box\z@ holds the column
+  \else\hss\egroup \global\setbox\tabsyet\hbox{\unhbox\tabsyet
+      \global\setbox\@ne\lastbox}% now \box\@ne holds its size
+    \ifvoid\@ne\global\setbox\@ne\hbox to\wd\z@{}%
+    \else\setbox\z@\hbox to\wd\@ne{\unhbox\z@}\fi
+    \global\setbox\tabsdone\hbox{\box\@ne\unhbox\tabsdone}\fi
+  \box\z@}
+\def\@oddhead{\hbox{{\large\bf Distribution} (continued):}\@rhead \hfil}
+\def\@evenhead{\hbox{{\large\bf Distribution} (continued):}\@rhead \hfil}
+\makeatother
+
+\def\address{\filbreak\bigskip\parindent0pt\everypar{\hangindent2em}}
+\def\name{\parindent2em\everypar{\hangindent4em}}
+\def\info#1{\filbreak\tabalign&#1\cr}
+
+\def\sandis#1 #2.#3.#4/{\filbreak\tabalign#1&\ifx#2\blank\else#2.&\fi
+                                     \ifx#3\blank\else#3.&\fi
+                                     \ifx#4\blank\else#4\fi\cr}
+
+\settabs\+1111\quad&W.$\,$&W.$\,$& \cr
+\long\def\SanInt{\filbreak\bigskip\medskip\parindent0pt
+      {\large\bf Sandia Internal:}\medskip}
+
+\parskip=0pt\relax
+%>>>>>>>>>>>>>>>>>>>>>>>>>>||||||||||||||||||||||||||||||<<<<<<<<<<<<<<<<<<<<
+%<<<<<<<<<<<<<<<<<<<<<<<<< BEGINNING OF DISTRIBUTION LIST >>>>>>>>>>>>>>>>>>>
+%>>>>>>>>>>>>>>>>>>>>>>>>>>||||||||||||||||||||||||||||||<<<<<<<<<<<<<<<<<<<<
+\begin{document}
+\setcounter{page}{77}        % <<<<<<<<<< PAGE NUMBER
+\twocolumn\obeylines
+\thispagestyle{plain}
+\begin{flushleft}
+{\large \bf Distribution:}
+\address
+U. S. Department of Energy, (2)
+Routing RW-32
+1000 Independence Ave., SW
+Washington, DC 20585
+\name
+K. Klein
+D. Shelor
+\address
+U. S. Department of Energy, (6)
+Routing RW-32
+1000 Independence Ave., SW
+Washington, DC 20585
+\name
+L. Barrett
+G. Callaghan
+S. Denny
+W. Lake
+L. Marks
+E. Wilmot
+\address
+U. S. Department of Energy, (2)
+Albuquerque Operations Office
+Albuquerque Headquarters
+P. O. Box 5400
+Albuquerque, NM 87115
+\name
+J. E. Bickel
+K. G. Golliher
+\address
+U. S. Department of Energy, (6)
+Idaho Operations Office
+550 Second Street
+Idaho Falls, ID 83401
+\name
+M. Barainca
+N. Burrell
+C. Dwight
+S. Hinschberger
+T. Rowland
+W. Lattin
+\address
+U. S. Department of Energy, (2)
+Routing DP-123
+Washington, DC 20545
+\name
+F. Falci
+L. Harmon
+\address
+U. S. Department of Energy
+Naval Reactors
+Routing NE-60
+Washington, DC 20585
+\name
+R. Kulbitskas
+\address
+U. S. Department of Energy
+Nevada Operations Office
+P. O. Box 14100
+Las Vegas, NV 89114-4100
+\name
+W. Dixon
+\address
+U. S. Department of Energy
+Salt Repository Project Office
+110 North 25 Mile Avenue
+Hereford, TX 79045
+\name
+B. Darrough
+\address
+U. S. Department of Energy
+Richland Operations Office
+Basalt Waste Isolation Division
+825 Jadwin Avenue
+P. O. Box 550
+Richland, WA 99352
+\name
+J. Peterson
+\address
+Office of Security Evaluations
+Defense Programs - DP-4, GTN
+Washington, DC 20545
+\name
+C. Mauck
+\address
+Battelle Columbus Division, (3)
+505 King Avenue
+Columbus, OH 43201-2693
+\name
+J. Allen
+W. Pardue
+R. Peterson
+\address
+Battelle Pacific Northwest Laboratory,~(2)
+Battelle Boulevard
+Richland, WA 99352
+\name
+G. Beeman
+J. Creer
+\address
+E. G. \& G. Idaho, Inc.
+P. O. Box 1625
+Idaho Falls, ID 83145
+\name
+I. Hall
+\address
+Oak Ridge National Laboratory, (4)
+P. O. Box X
+Oak Ridge, TN 37830
+\name
+R. Rawl
+T. Rowe
+L. Shappert
+R. Westfall
+\address
+University of California
+Lawrence Livermore National Laboratory
+P. O. Box 808
+Livermore, CA 94550
+\name
+L. E. Fisher
+\address
+U. S. Nuclear Regulatory Commission,~(7)
+Office of Nuclear Materials
+Safety and Safeguards
+Washington, DC 20555
+\name
+R. Chappell
+A. Grella
+R. Odegaarten
+C. MacDonald
+C. Marotta
+J. Roberts
+L. Rouse
+\address
+U. S. Nuclear Regulatory Commission,~(2)
+Office of Nuclear Regulatory Research
+Washington, DC 20555
+\name
+D. Hopkins
+W. Lahs
+\address
+U. S. Department of Transportation
+Federal Rail Administration
+RRS-32
+400 7th Street, SW
+Washington, DC 20590
+\name
+C. Orth
+\address
+U. S. Department of Transportation
+Office of Materials Transportation
+400 7th Street, SW
+Washington, DC 20590
+\name
+M. Wangler
+\address
+Electric Power Research Institute, (2)
+P. O. Box 10412
+3412 Hillview Avenue
+Palo Alto, CA 94304
+\name
+R. Lambert
+R. Williams
+\address
+Edison Electric Institute
+1111 19th Street, NW
+Washington, DC 20036
+\name
+J. Kearney
+\address
+Florida Power \& Light Co.
+P. O. Box 14000
+Juno Beach, FL 33408
+\name
+D. Brodnick
+\address
+Virginia Power Co., (2)
+P. O. Box 2666
+Richmond, VA 23261
+\name
+J. Fisher
+M. Smith
+\address
+Southern California Edison Co.
+2244 Walnut Grove Ave.
+Rosemead, CA 91770
+\name
+J. Ladesich
+\address
+ANEFCO, Inc
+904 Ethan Allen Hwy.
+P. O. Box 433
+Ridgefield, CT 06877
+\name
+J. Murphy
+\address
+Babcock and Wilcox
+Nuclear Equipment Division
+91 Stirling Avenue
+Barberton, OH 44203
+\name
+T. Stevens
+\address
+Chem-Nuclear Systems, Inc.
+220 Stonebridge Drive
+Columbia, SC 29210
+\name
+R. Anderson
+\address
+Combustion Engineering
+CE Power Systems
+1000 Prospect Hill Road
+Windsor, CT 06095
+\name
+R. Ng
+\address
+G. A. Technologies, Inc., (3)
+P. O. Box 85608
+Building 2, Rm 644
+San Diego, CA 92138
+\name
+R. Burgoyne
+M. Koploy
+A. Zimmer
+\address
+Nuclear Assurance Corp.
+6251 Crooked Creek Rd.
+Norcross, GA 30092
+\name
+C. Johnson
+\address
+Nuclear Packaging, Inc
+1010 S. 336th, Suite 220
+Federal Way, WA 98003
+\name
+E. Kapinos
+\address
+Transnuclear, Inc.
+Two Skyline Drive
+Hawthorne, NY 10532-2120
+\name
+B. R. Teer
+\address
+Westinghouse Electric Corp.
+Bettis Atomic Power Lab.
+Mail Stop 36E
+P. O. Box 79
+West Miflin, PA 15122
+\name
+M. J. Schneider
+\address
+Westinghouse Electric Corp.
+Waste Technology Services Div.
+Box 286
+Madison, PA 15663-0286
+\name
+S. Little
+\address
+LeBoeuf, Lamb, and McRae
+1333 New Hampshire Avenue, NW
+Washington, DC 20036
+\name
+L. Trosten
+\address
+Utility Nuclear Waste Management Group
+1111 19th Street, NW
+Washington, DC 20036
+\name
+J. Davis
+\address
+JNT, Inc
+P. O. Box 1510
+Los Gatos, CA 95031-1510
+\name
+R. Jones
+\address
+Yankee Atomic Electric Co.
+1617 Worcester Rd.
+Framington, MA 01701
+\name
+V. Pareto
+\address
+Northern States Power Co.
+414 Nicollet Mall
+Minneapolis, MN 55401
+\name
+L. McCarten
+\address
+Wisconsin Electric Power Co.
+231 West Michigan St.
+Milwaukee, WI 53201
+\name
+H. Shimon
+\address
+Southern Company Services
+P. O. Box 2625
+Birmingham, AL 35202
+\name
+K. Folk
+\address
+Duke Power Co., (2)
+P. O. Box 33189
+Charlotte, NC 28242
+\name
+D. French
+B. Rasmussen
+\SanInt
+\sandis 1510  J. W. Nunziato/
+\sandis 1520  C. W. Peterson/
+\sandis 1521 R. D. Krieg/
+\sandis 1521 S. W. Attaway/
+\sandis 1521 G. D. Sjaardema (10)/
+\sandis 1521 G. W. Wellman (10)/
+\sandis 1522 R. C. Reuter/
+\sandis 1523 J. H. Biffle/
+\sandis 1524 A. K. Miller/
+\sandis 1524 K. W. Gwinn/
+\sandis 1530  L. W. Davison/
+\sandis 1550  R. C. Maydew/
+\sandis 3141 S. A. Landenberger (5)/
+\sandis 3151 W. L. Garner (3)/
+\sandis 3154-1 C. H. Dalin (8)/
+\info{for DOE/OSTI}
+\sandis 6320 J. E. Stiegler/
+\sandis 6320 .. TTC Library/
+\sandis 6321 R. E. Luna/
+\sandis 6322 J. M. Freedman/
+\sandis 6322 R. E. Glass/
+\sandis 6322 M. A. Kinsey/
+\sandis 6322 K. B. Sorenson/
+\sandis 6323 G. C. Allen/
+\sandis 6323 M. M. Madsen/
+\sandis 6323 D.. Stenberg/
+\sandis 6323 W. L. Uncapher/
+\sandis 6323 H. R. Yoshimura/
+\sandis 8524 P. W. Dean/
+\end{flushleft}
+\end{document}

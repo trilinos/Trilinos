@@ -17,28 +17,33 @@
 //
 // We don't have any systems on which we have found that (yet?), but this is proactive
 // in removing our use of `.data()` on potentially empty vectors...
-template <typename T> constexpr T *Data(std::vector<T> &vec)
-{
-  if (vec.empty()) {
-    return nullptr;
+
+namespace suplib_cpp {
+
+  template <typename T> constexpr T *Data(std::vector<T> &vec)
+  {
+    if (vec.empty()) {
+      return nullptr;
+    }
+    return vec.data();
   }
-  return vec.data();
-}
 
-template <typename T> constexpr const T *Data(const std::vector<T> &vec)
-{
-  if (vec.empty()) {
-    return nullptr;
+  template <typename T> constexpr const T *Data(const std::vector<T> &vec)
+  {
+    if (vec.empty()) {
+      return nullptr;
+    }
+    return vec.data();
   }
-  return vec.data();
-}
 
-template <typename T, size_t N> constexpr T *Data(std::array<T, N> &arr)
-{
-  return N == 0 ? nullptr : arr.data();
-}
+  template <typename T, size_t N> constexpr T *Data(std::array<T, N> &arr)
+  {
+    return N == 0 ? nullptr : arr.data();
+  }
 
-template <typename T, size_t N> constexpr const T *Data(const std::array<T, N> &arr)
-{
-  return N == 0 ? nullptr : arr.data();
-}
+  template <typename T, size_t N> constexpr const T *Data(const std::array<T, N> &arr)
+  {
+    return N == 0 ? nullptr : arr.data();
+  }
+
+} // namespace suplib_cpp

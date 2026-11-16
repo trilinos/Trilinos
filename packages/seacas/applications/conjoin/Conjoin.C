@@ -55,6 +55,20 @@
 #include "CJ_Variables.h"
 #include "CJ_Version.h"
 
+namespace suplib_cpp {
+
+  extern double seacas_timer();
+
+}
+
+using suplib_cpp::copy_string;
+using suplib_cpp::Data;
+using suplib_cpp::format_time;
+using suplib_cpp::pdqsort;
+using suplib_cpp::seacas_timer;
+using suplib_cpp::sys_info;
+using suplib_cpp::time_stamp;
+
 namespace {
   template <typename T> void clear(std::vector<T> &vec)
   {
@@ -171,8 +185,6 @@ struct NodeInfo
 
 using GlobalMap = std::vector<NodeInfo>;
 using GMapIter  = GlobalMap::iterator;
-
-extern double seacas_timer();
 
 namespace {
   template <class T> struct TimeStepMap

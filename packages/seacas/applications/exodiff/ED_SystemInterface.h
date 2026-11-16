@@ -143,8 +143,8 @@ public:
   bool has_change_sets{false};
 
 private:
-  void          enroll_options();
-  GetLongOption options_{}; //!< Options parsing
+  void                      enroll_options();
+  suplib_cpp::GetLongOption options_{}; //!< Options parsing
 };
 
 extern SystemInterface interFace;

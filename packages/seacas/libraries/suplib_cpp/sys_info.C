@@ -22,45 +22,49 @@
 #endif
 #include <fmt/format.h>
 
-std::string sys_info(const std::string &codename)
-{
-  // Return 'uname' output.  This is used as information data records
-  // in output exodus files to help in tracking when/where/... the
-  // file was created
+namespace suplib_cpp {
+
+  std::string sys_info(const std::string &codename)
+  {
+    // Return 'uname' output.  This is used as information data records
+    // in output exodus files to help in tracking when/where/... the
+    // file was created
 
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
     defined(__MINGW32__) || defined(_WIN64)
-  char  machine_name[MAX_COMPUTERNAME_LENGTH + 1] = {0};
-  DWORD buf_len                                   = MAX_COMPUTERNAME_LENGTH + 1;
-  ::GetComputerName(machine_name, &buf_len);
+    char  machine_name[MAX_COMPUTERNAME_LENGTH + 1] = {0};
+    DWORD buf_len                                   = MAX_COMPUTERNAME_LENGTH + 1;
+    ::GetComputerName(machine_name, &buf_len);
 
-  std::string info = codename + ": ";
-  info += machine_name;
-  info += ", OS: ";
+    std::string info = codename + ": ";
+    info += machine_name;
+    info += ", OS: ";
 
-  std::string   os = "Microsoft Windows";
-  OSVERSIONINFO osvi;
+    std::string   os = "Microsoft Windows";
+    OSVERSIONINFO osvi;
 
-  ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
-  osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 
-  if (GetVersionEx(&osvi)) {
-    DWORD             build = osvi.dwBuildNumber & 0xFFFF;
-    std::stringstream str;
-    fmt::print(info, " {}.{} {} (Build {})", osvi.dwMajorVersion, osvi.dwMinorVersion,
-               osvi.szCSDVersion, build);
-    os += str.str();
-  }
-  info += os;
+    if (GetVersionEx(&osvi)) {
+      DWORD             build = osvi.dwBuildNumber & 0xFFFF;
+      std::stringstream str;
+      fmt::print(info, " {}.{} {} (Build {})", osvi.dwMajorVersion, osvi.dwMinorVersion,
+                 osvi.szCSDVersion, build);
+      os += str.str();
+    }
+    info += os;
 #else
-  struct utsname sys_info
-  {
-  };
-  uname(&sys_info);
+    struct utsname sys_info
+    {
+    };
+    uname(&sys_info);
 
-  std::string info =
-      fmt::format("{}: {}, OS: {} {}, {}, Machine: {}", codename, sys_info.nodename,
-                  sys_info.sysname, sys_info.release, sys_info.version, sys_info.machine);
+    std::string info =
+        fmt::format("{}: {}, OS: {} {}, {}, Machine: {}", codename, sys_info.nodename,
+                    sys_info.sysname, sys_info.release, sys_info.version, sys_info.machine);
 #endif
-  return info;
-}
+    return info;
+  }
+
+} // namespace suplib_cpp

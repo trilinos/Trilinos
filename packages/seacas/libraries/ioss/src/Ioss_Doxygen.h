@@ -31,6 +31,7 @@ catalyst_exodus  | Output        | Visualization pipeline, exodus-based
 catalyst_cgns    | Output        | Visualization pipeline, cgns-based
 null             | Output        | No data written to disk, no calculations done by ioss
 exonull          | Output        | No data written to disk, but uses all of the exodus io database infrastructure/calculations
+s3               | Input/Output  | Cloud storage using Amazon AWS
 adios            | Input/Output  | Adaptable Input/Output system, (https://adios2.readthedocs.io/en/latest/)
 faodel           | Input/Output  | (https://github.com/faodel/faodel)
 exodusii         | Input/Output  | alias for exodus

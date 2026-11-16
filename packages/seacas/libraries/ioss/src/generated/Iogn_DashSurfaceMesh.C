@@ -138,6 +138,19 @@ namespace Iogn {
     }
   }
 
+  Ioss::NameList DashSurfaceMesh::sideset_touching_blocks(int64_t setId) const
+  {
+    Ioss::NameList touchingBlocks;
+
+    switch (setId) {
+    case 1: touchingBlocks.push_back("block_2"); break;
+    case 2: touchingBlocks.push_back("block_1"); break;
+    default: throw std::exception(); break;
+    }
+
+    return touchingBlocks;
+  }
+
   void DashSurfaceMesh::nodeset_nodes(int64_t /*nset_id*/, Ioss::Int64Vector & /*nodes*/) const {}
 
   void DashSurfaceMesh::node_communication_map(Ioss::Int64Vector &map, std::vector<int> &proc)

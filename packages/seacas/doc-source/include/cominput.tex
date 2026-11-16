@@ -1,0 +1,135 @@
+The commands are in free-format and must adhere to the following syntax
+rules.
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item
+Valid delimiters are a comma or one or more blanks.
+\item
+\ifx\PROGRAM\BLOT
+Either lowercase or uppercase letters are acceptable, but lowercase
+letters are converted to uppercase except in user-defined text that
+appears on a plot (such as the plot caption).
+\else
+Either lowercase or uppercase letters are acceptable, but lowercase
+letters are converted to uppercase.
+\fi
+\item
+\ifx\PROGRAM\ALGEBRA
+A ``\verb|'|'' character in any command line starts a comment. The
+``\verb|'|'' and any characters following it on the line are ignored.
+\else
+A ``\cmd{\$}'' character in any command line starts a comment. The
+``\cmd{\$}'' and any characters following it on the line are ignored.
+\fi
+\item
+\ifx\PROGRAM\ALGEBRA
+A command may be continued over several lines with an ``\verb|>|''
+character. The ``\verb|>|'' and any characters following it on the
+current line are ignored and the next line is appended to the current
+line.
+\else
+A command may be continued over several lines with an ``\verb|>|''
+character. The ``\verb|>|'' and any characters following it on the
+current line are ignored and the next line is appended to the current
+line.
+\fi
+\end{itemize}
+
+Each command has an action keyword or ``verb'' followed by a variable
+number of parameters.
+
+The command verb is a character string. It may be abbreviated, as long
+as enough characters are given to distinguish it from other commands.
+
+The meaning and type of the parameters is dependent on the command verb.
+Most command parameters are optional. If an optional parameter field is
+blank, a command-dependent default value is supplied. Below is a
+description of the valid entries for parameters.
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+%
+\item
+A numeric parameter may be a real number or an integer. A real number
+may be in any legal \caps{FORTRAN} numeric format (e.g., \cmd{1},
+\cmd{0.2}, \cmd{-1E-2}). An integer parameter may be in any legal
+integer format.
+\item
+A string parameter is a literal character string. Most string parameters
+may be abbreviated.
+%
+\newcommand{\okname}{f}
+\ifx\PROGRAM\BLOT \renewcommand{\okname}{t} \fi
+\ifx\PROGRAM\ALGEBRA \renewcommand{\okname}{t} \fi
+\ifx\PROGRAM\GROPE \renewcommand{\okname}{t} \fi
+\if\okname t
+\item
+Variable names must be fully specified. The blank delimiter creates a
+problem with database variable names with embedded blanks. The program
+handles this by deleting all embedded blanks from the input database
+names. For example, the variable name ``\cmd{SIG~R}'' must be entered as
+``\cmd{SIGR}''. The blank must be deleted in any references to the
+variable.
+\ifx\PROGRAM\GROPE
+All database names appear exactly as input in all displays.
+\else
+All database names appear in uppercase without the embedded blanks in
+all displays.
+\fi
+\fi
+\ifx\PROGRAM\BLOT
+\item
+Screen and mesh positions may be selected with the graphics cursor (also
+known as the graphics locator). Cursor input is device-dependent and
+uses the VDI graphics locator routines. When the program prompts for the
+position, the user positions the graphics cursor (e.g., the crosshairs)
+on the screen, then selects the position by pressing any printable
+keyboard character (e.g., the space bar).
+\fi
+\newcommand{\okrange}{f}
+\ifx\PROGRAM\BLOT \renewcommand{\okrange}{t} \fi
+\ifx\PROGRAM\GROPE \renewcommand{\okrange}{t} \fi
+\if\okrange t
+\ifx\PROGRAM\GROPE \newpage \fi %%%
+\item
+Several parameters allow a range of values. A range is in one of the
+following forms:
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item ``\param{n$_{1}$}'' selects value \param{n$_{1}$},
+\item ``\param{n$_{1}$} \cmd{TO} \param{n$_{2}$}'' selects all values from
+\param{n$_{1}$} to \param{n$_{2}$},
+\item ``\param{n$_{1}$} \cmd{TO} \param{n$_{2}$} \cmd{BY} \param{n$_{3}$}''
+selects all values from \param{n$_{1}$} to \param{n$_{2}$} stepping by
+\param{n$_{3}$}, where \param{n$_{3}$} may be positive or negative.
+\end{itemize}
+If the upper limit of the range is greater than the maximum allowable
+value, the upper limit is changed to the maximum without a message.
+\fi
+\end{itemize}
+
+\ifx\PROGRAM\ALGEBRA \newpage \fi %%%
+The notation conventions used in the command descriptions are:
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item
+The command verb is in \cmdverb{bold} type.
+\item
+A literal string is in all uppercase \cmd{SANSERIF} type and should be
+entered as shown (or abbreviated).
+\item
+The value of a parameter is represented by the parameter name in
+\param{italics}.
+\newcommand{\okoptpar}{f}
+\ifx\PROGRAM\BLOT \renewcommand{\okoptpar}{t} \fi
+\ifx\PROGRAM\ALGEBRA \renewcommand{\okoptpar}{t} \fi
+\ifx\PROGRAM\GROPE \renewcommand{\okoptpar}{t} \fi
+\if\okoptpar t
+\item
+A literal string in square brackets (``[~]'') represents a parameter
+option which is omitted entirely (including any following comma) if not
+appropriate. These parameters are distinct from most parameters in that
+they do not require a comma as a place holder to request the default
+value.
+\fi
+\item
+The default value of a parameter is in angle brackets (``$<$~$>$''). The
+initial value of a parameter set by a command is usually the default
+parameter value. If not, the initial setting is given with the default
+or in the command description.
+\end{itemize}

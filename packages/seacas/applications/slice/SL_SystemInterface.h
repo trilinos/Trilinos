@@ -72,7 +72,7 @@ private:
   */
   void parse_step_option(const char *tokens);
 
-  GetLongOption options_; //!< Options parsing
+  suplib_cpp::GetLongOption options_; //!< Options parsing
 
   std::string decompMethod_{"linear"};
   std::string decompFile_;

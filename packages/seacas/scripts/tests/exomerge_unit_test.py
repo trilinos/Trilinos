@@ -502,7 +502,7 @@ class ExomergeUnitTester:
         if number is None:
             number = self.maximum_objects
         while len(self.model.get_element_field_names()) > number:
-            (id_, name) = self._random_element_field_name()
+            id_, name = self._random_element_field_name()
             self.model.delete_element_field(name, id_)
 
     def _truncate_node_set_fields(self, number=None):
@@ -513,7 +513,7 @@ class ExomergeUnitTester:
         if number is None:
             number = self.maximum_objects
         while len(self.model.get_node_set_field_names()) > number:
-            (id_, name) = self._random_node_set_field_name()
+            id_, name = self._random_node_set_field_name()
             self.model.delete_node_set_field(name, id_)
 
     def _truncate_side_set_fields(self, number=None):
@@ -524,7 +524,7 @@ class ExomergeUnitTester:
         if number is None:
             number = self.maximum_objects
         while len(self.model.get_side_set_field_names()) > number:
-            (id_, name) = self._random_side_set_field_name()
+            id_, name = self._random_side_set_field_name()
             self.model.delete_side_set_field(name, id_)
 
     def _create_hex8_element_block(self, origin=None):
@@ -559,6 +559,50 @@ class ExomergeUnitTester:
         self.model.create_element_block(element_block_id, info, connectivity)
         return element_block_id
 
+    def _create_shell4_element_block(self, origin=None):
+        """
+        Create a 1-element shell4 block and return the element block id.
+
+        The shell lies in the XY plane.
+        """
+        new_nodes = [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ]
+        if origin is None:
+            origin = [0.0, 0.0, 0.0]
+        new_nodes = [[x + y for x, y in zip(node, origin)] for node in new_nodes]
+        connectivity = [x + len(self.model.nodes) for x in range(4)]
+        self.model.create_nodes(new_nodes)
+        info = ["shell4", 1, 4, 0]
+        element_block_id = self._new_element_block_id()
+        self.model.create_element_block(element_block_id, info, connectivity)
+        return element_block_id
+
+    def _create_shell_element_block(self, origin=None):
+        """
+        Create a 1-element shell block and return the element block id.
+
+        The shell lies in the XY plane.
+        """
+        new_nodes = [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ]
+        if origin is None:
+            origin = [0.0, 0.0, 0.0]
+        new_nodes = [[x + y for x, y in zip(node, origin)] for node in new_nodes]
+        connectivity = [x + len(self.model.nodes) for x in range(4)]
+        self.model.create_nodes(new_nodes)
+        info = ["shell", 1, 4, 0]
+        element_block_id = self._new_element_block_id()
+        self.model.create_element_block(element_block_id, info, connectivity)
+        return element_block_id
+
     def _topology_test(self):
         """
         Test the topology definitions to ensure they are consistent.
@@ -582,13 +626,18 @@ class ExomergeUnitTester:
                 == set(self.model.NODES_PER_ELEMENT.keys())
             )
         )
-        # faces should be 1 dimension less than their element
+        # faces should be 1 dimension less than their element, except shell
+        # topologies which intentionally expose both surface faces (2D) and
+        # edge faces (1D) while remaining topological dimension 3.
         for element_type, face_list in list(self.model.FACE_MAPPING.items()):
             element_dimension = self.model._get_dimension(element_type)
             for face_type, _ in face_list:
-                self.model._assert(
-                    self.model._get_dimension(face_type) + 1 == element_dimension
-                )
+                if element_type in ["shell4", "shell"]:
+                    self.model._assert(self.model._get_dimension(face_type) in [1, 2])
+                else:
+                    self.model._assert(
+                        self.model._get_dimension(face_type) + 1 == element_dimension
+                    )
         # all 2D elements should be able to be triangulated
         for element_type in self.model.STANDARD_ELEMENT_TYPES:
             if self.model.DIMENSION[element_type] == 2:
@@ -781,7 +830,7 @@ class ExomergeUnitTester:
         info = self._random_element_field_name()
         if info is None:
             return False
-        (id_, _) = info
+        id_, _ = info
         variable_names = set(["time"])
         variable_names.update(self.model.get_global_variable_names())
         variable_names.update(self.model.get_element_field_names(id_))
@@ -797,7 +846,7 @@ class ExomergeUnitTester:
             return False
         if not self.model.timesteps:
             self.model.create_timestep(0.0)
-        (id_, name) = info
+        id_, name = info
         block_ids = [
             x
             for x in self.model.get_element_block_ids()
@@ -820,7 +869,7 @@ class ExomergeUnitTester:
             return False
         if not self.model.timesteps:
             self.model.create_timestep(0.0)
-        (id_, name) = info
+        id_, name = info
         block_ids = [
             x
             for x in self.model.get_element_block_ids()
@@ -888,7 +937,7 @@ class ExomergeUnitTester:
             return False
         if not self.model.timesteps:
             self.model.create_timestep(0.0)
-        (id_, name) = info
+        id_, name = info
         variable_names = set(["time"])
         variable_names.update(self.model.get_global_variable_names())
         variable_names.update(self.model.get_node_field_names())
@@ -905,7 +954,7 @@ class ExomergeUnitTester:
             return False
         if not self.model.timesteps:
             self.model.create_timestep(0.0)
-        (id_, name) = info
+        id_, name = info
         variable_names = set(["time"])
         variable_names.update(self.model.get_global_variable_names())
         variable_names.update(self.model.get_side_set_field_names(id_))
@@ -928,7 +977,7 @@ class ExomergeUnitTester:
     def _test_unmerge_element_blocks(self):
         if len(self.model.element_blocks) < 2:
             return False
-        (id1, id2) = _random_subset(self.model.get_element_block_ids(), count=2)
+        id1, id2 = _random_subset(self.model.get_element_block_ids(), count=2)
         connectivity_1 = self.model.get_connectivity(id1)
         connectivity_2 = self.model.get_connectivity(id2)
         if not connectivity_1 or not connectivity_2:
@@ -997,14 +1046,14 @@ class ExomergeUnitTester:
         info = self._random_node_set_field_name()
         if info is None:
             return False
-        (id_, name) = info
+        id_, name = info
         self.model.rename_node_set_field(name, self._new_node_set_field_name(), id_)
 
     def _test_rename_side_set_field(self):
         info = self._random_side_set_field_name()
         if info is None:
             return False
-        (id_, name) = info
+        id_, name = info
         self.model.rename_side_set_field(name, self._new_side_set_field_name(), id_)
 
     def _test_delete_node_set_field(self):
@@ -1014,14 +1063,14 @@ class ExomergeUnitTester:
             info = self._random_node_set_field_name()
             if info is None:
                 return False
-        (id_, name) = info
+        id_, name = info
         self.model.delete_node_set_field(name, id_)
 
     def _test_delete_side_set_field(self):
         info = self._random_side_set_field_name()
         if info is None:
             return False
-        (id_, name) = info
+        id_, name = info
         self.model.delete_side_set_field(name, id_)
 
     def _test_calculate_element_centroids(self):
@@ -1783,7 +1832,7 @@ class ExomergeUnitTester:
         unmatched = []
         matched_unit_tests = []
         for unit_test in unit_tests:
-            (test, _) = unit_test
+            test, _ = unit_test
             if test[6:] not in public_functions:
                 unmatched.append(test)
             else:
@@ -1885,23 +1934,67 @@ class ExomergeUnitTester:
 
         # List of all possible field names sorted according to SIERRA conventions.
         sorted_names = [
-            "Displacement_X", "Displacement_Y", "Displacement_Z",
-            "ln_strain_1", "ln_strain_2", "ln_strain_3", "ln_strain_4",  # scalar field defined in integration points
-            "quat_x", "quat_y", "quat_z", "quat_q",  # 3D Quaternion (using IOSS convention.  Not sure why `q` and not `w`
-            "quat_2d_s", "quat_2d_q",  # 2D Quaternion (using IOSS convention)
-            "SIGMA_XX", "SIGMA_YY", "SIGMA_ZZ", "SIGMA_XY", "SIGMA_YZ", "SIGMA_ZX", "SIGMA_YX", "SIGMA_ZY", "SIGMA_XZ",  # asymmetric tensor
-            "unrotated_stress_xx_1", "unrotated_stress_yy_1", "unrotated_stress_zz_1", "unrotated_stress_xy_1", "unrotated_stress_yz_1", "unrotated_stress_zx_1",  # Symmetric tensor with integration points
-            "unrotated_stress_xx_2", "unrotated_stress_yy_2", "unrotated_stress_zz_2", "unrotated_stress_xy_2", "unrotated_stress_yz_2", "unrotated_stress_zx_2",
-            "unrotated_stress_xx_3", "unrotated_stress_yy_3", "unrotated_stress_zz_3", "unrotated_stress_xy_3", "unrotated_stress_yz_3", "unrotated_stress_zx_3",
-            "unrotated_stress_xx_12", "unrotated_stress_yy_12", "unrotated_stress_zz_12", "unrotated_stress_xy_12", "unrotated_stress_yz_12", "unrotated_stress_zx_12",  # Try with a number bigger than 9
-            "velocity",  # scalar field
-            "x", "x_1_1", "y", "y_1_1", "z", "z_1_1"  # make sure regex not too greedy (no basename)
+            "Displacement_X",
+            "Displacement_Y",
+            "Displacement_Z",
+            "ln_strain_1",
+            "ln_strain_2",
+            "ln_strain_3",
+            "ln_strain_4",
+            "quat_x",
+            "quat_y",
+            "quat_z",
+            "quat_q",
+            "quat_2d_s",
+            "quat_2d_q",
+            "SIGMA_XX",
+            "SIGMA_YY",
+            "SIGMA_ZZ",
+            "SIGMA_XY",
+            "SIGMA_YZ",
+            "SIGMA_ZX",
+            "SIGMA_YX",
+            "SIGMA_ZY",
+            "SIGMA_XZ",
+            "unrotated_stress_xx_1",
+            "unrotated_stress_yy_1",
+            "unrotated_stress_zz_1",
+            "unrotated_stress_xy_1",
+            "unrotated_stress_yz_1",
+            "unrotated_stress_zx_1",
+            "unrotated_stress_xx_2",
+            "unrotated_stress_yy_2",
+            "unrotated_stress_zz_2",
+            "unrotated_stress_xy_2",
+            "unrotated_stress_yz_2",
+            "unrotated_stress_zx_2",
+            "unrotated_stress_xx_3",
+            "unrotated_stress_yy_3",
+            "unrotated_stress_zz_3",
+            "unrotated_stress_xy_3",
+            "unrotated_stress_yz_3",
+            "unrotated_stress_zx_3",
+            "unrotated_stress_xx_12",
+            "unrotated_stress_yy_12",
+            "unrotated_stress_zz_12",
+            "unrotated_stress_xy_12",
+            "unrotated_stress_yz_12",
+            "unrotated_stress_zx_12",
+            "velocity",
+            "x",
+            "x_1_1",
+            "y",
+            "y_1_1",
+            "z",
+            "z_1_1",
         ]
 
         # Randomly shuffle the names to simulate unsorted input
         unsorted_names = sorted_names.copy()
         random.shuffle(unsorted_names)
-        assert sorted_names == self.model._sort_field_names(unsorted_names), "Failed to sort names with underscores.\nExpected: {}\nGot: {}".format(
+        assert sorted_names == self.model._sort_field_names(
+            unsorted_names
+        ), "Failed to sort names with underscores.\nExpected: {}\nGot: {}".format(
             sorted_names, self.model._sort_field_names(unsorted_names)
         )
 
@@ -1909,27 +2002,130 @@ class ExomergeUnitTester:
         sorted_names_no_underscores = [name.replace("_", "") for name in sorted_names]
         unsorted_names_no_underscores = sorted_names_no_underscores.copy()
         random.shuffle(unsorted_names_no_underscores)
-        assert sorted_names_no_underscores == self.model._sort_field_names(unsorted_names_no_underscores), "Failed to sort names without underscores. \nExpected: {}\nGot: {}".format(
-            sorted_names_no_underscores, self.model._sort_field_names(unsorted_names_no_underscores)
+        assert sorted_names_no_underscores == self.model._sort_field_names(
+            unsorted_names_no_underscores
+        ), "Failed to sort names without underscores. \nExpected: {}\nGot: {}".format(
+            sorted_names_no_underscores,
+            self.model._sort_field_names(unsorted_names_no_underscores),
         )
 
         # Cannot sort the field names with two numeric suffices without underscores...
         sorted_ip_ip_names = [
-            "_x", "_y", "_z",  # Make sure this isn't a 3D vector with no base name...
-            "state_dsa_01_1", "state_dsa_02_1", "state_dsa_03_1", "state_dsa_04_1", "state_dsa_05_1",
-            "state_dsa_06_1", "state_dsa_07_1", "state_dsa_08_1", "state_dsa_09_1", "state_dsa_10_1",
-            "state_dsa_01_2", "state_dsa_02_2", "state_dsa_03_2", "state_dsa_04_2", "state_dsa_05_2",
-            "state_dsa_06_2", "state_dsa_07_2", "state_dsa_08_2", "state_dsa_09_2", "state_dsa_10_2",
-            "state_dsa_01_3", "state_dsa_02_3", "state_dsa_03_3", "state_dsa_04_3", "state_dsa_05_3",
-            "state_dsa_06_3", "state_dsa_07_3", "state_dsa_08_3", "state_dsa_09_3", "state_dsa_10_3"  # Two sets of numeric suffices...
+            "_x",
+            "_y",
+            "_z",
+            "state_dsa_01_1",
+            "state_dsa_02_1",
+            "state_dsa_03_1",
+            "state_dsa_04_1",
+            "state_dsa_05_1",
+            "state_dsa_06_1",
+            "state_dsa_07_1",
+            "state_dsa_08_1",
+            "state_dsa_09_1",
+            "state_dsa_10_1",
+            "state_dsa_01_2",
+            "state_dsa_02_2",
+            "state_dsa_03_2",
+            "state_dsa_04_2",
+            "state_dsa_05_2",
+            "state_dsa_06_2",
+            "state_dsa_07_2",
+            "state_dsa_08_2",
+            "state_dsa_09_2",
+            "state_dsa_10_2",
+            "state_dsa_01_3",
+            "state_dsa_02_3",
+            "state_dsa_03_3",
+            "state_dsa_04_3",
+            "state_dsa_05_3",
+            "state_dsa_06_3",
+            "state_dsa_07_3",
+            "state_dsa_08_3",
+            "state_dsa_09_3",
+            "state_dsa_10_3",
         ]
 
         # Randomly shuffle the names to simulate unsorted input
         unsorted_ip_names = sorted_ip_ip_names.copy()
         random.shuffle(unsorted_ip_names)
-        assert sorted_ip_ip_names == self.model._sort_field_names(unsorted_ip_names), "Failed to sort names with underscores.\nExpected: {}\nGot: {}".format(
+        assert sorted_ip_ip_names == self.model._sort_field_names(
+            unsorted_ip_names
+        ), "Failed to sort names with underscores.\nExpected: {}\nGot: {}".format(
             sorted_ip_ip_names, self.model._sort_field_names(unsorted_ip_names)
         )
+
+    def _test_shell_topology(self):
+        """
+        Unittest for newly added shell topology definitions.
+        """
+        for element_type in ["shell4", "shell"]:
+            standard_type = self.model._get_standard_element_type(element_type)
+            assert standard_type == "shell4"
+            assert self.model._is_standard_element_type(element_type)
+            assert self.model._get_dimension(element_type) == 3
+            assert self.model.NODES_PER_ELEMENT[standard_type] == 4
+            assert self.model._get_inverted_connectivity(
+                element_type
+            ) == self.model._get_inverted_connectivity("quad4")
+
+            face_mapping = self.model._get_face_mapping(element_type)
+            assert len(face_mapping) == 6
+            assert face_mapping[0] == ("quad4", (0, 1, 2, 3))
+            assert face_mapping[1] == ("quad4", (0, 3, 2, 1))
+            assert face_mapping[2] == ("line2", (0, 1))
+            assert face_mapping[3] == ("line2", (1, 2))
+            assert face_mapping[4] == ("line2", (2, 3))
+            assert face_mapping[5] == ("line2", (3, 0))
+
+            inverted_faces = self.model._get_inverted_face_mapping(element_type)
+            assert len(inverted_faces) == 6
+
+    def _test_shell4_volume_formula(self):
+        """
+        Unittest for shell4 area calculation via calculate_element_volumes().
+        """
+        if not self.model.timesteps:
+            self.model.create_timestep(0.0)
+        block_id = self._create_shell4_element_block()
+        field_name = self._new_element_field_name()
+        self.model.calculate_element_volumes(field_name, [block_id])
+        values = self.model.get_element_field_values(field_name, block_id, timestep=0.0)
+        assert len(values) == 1
+        assert abs(values[0] - 1.0) < 1e-12
+
+    def _test_shell_volume_formula(self):
+        """
+        Unittest for shell area calculation via calculate_element_volumes().
+        """
+        if not self.model.timesteps:
+            self.model.create_timestep(0.0)
+        block_id = self._create_shell_element_block()
+        field_name = self._new_element_field_name()
+        self.model.calculate_element_volumes(field_name, [block_id])
+        values = self.model.get_element_field_values(field_name, block_id, timestep=0.0)
+        assert len(values) == 1
+        assert abs(values[0] - 1.0) < 1e-12
+
+    def _test_shell_inversion(self):
+        """
+        Unittest for shell inversion behavior.
+        """
+        block_id = self._create_shell4_element_block()
+        original = list(self.model.get_connectivity(block_id))
+        self.model._invert_element_blocks([block_id])
+        inverted = list(self.model.get_connectivity(block_id))
+        assert inverted == [original[i] for i in (0, 3, 2, 1)]
+
+    def _test_shell_external_faces(self):
+        """
+        Unittest for shell external face enumeration.
+        """
+        block_id = self._create_shell4_element_block()
+        faces = self.model._get_external_element_faces([block_id])
+        print(f"there are {len(faces)} faces")
+        assert len(faces) == 6
+        assert set(faces) == set((block_id, 0, i) for i in range(6))
 
 
 # if this module is executed (as opposed to imported), run the tests
@@ -1953,3 +2149,13 @@ if __name__ == "__main__":
     tester.model = exomerge.import_model(temp_exo_path)
     print("[1]_test_sort_field_names")
     tester._test_sort_field_names()
+    print("[2]_test_shell_topology")
+    tester._test_shell_topology()
+    print("[3]_test_shell4_volume_formula")
+    tester._test_shell4_volume_formula()
+    print("[4]_test_shell_volume_formula")
+    tester._test_shell_volume_formula()
+    print("[5]_test_shell_inversion")
+    tester._test_shell_inversion()
+    print("[6]_test_shell_external_faces")
+    tester._test_shell_external_faces()

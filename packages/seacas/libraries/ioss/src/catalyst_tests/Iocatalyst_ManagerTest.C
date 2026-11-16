@@ -565,3 +565,58 @@ TEST_F(ManagerTest, ManagerAddExecuteDataThreeInputs)
   checkExecuteData(n, m1Channel, state + 1, time + 1, m1);
   checkExecuteData(n, m2Channel, state + 2, time + 2, m2);
 }
+
+TEST_F(ManagerTest, ManagerCallExecuteWithTwoInputsOneScript)
+{
+  reset();
+
+  conduit_cpp::Node m1;
+  std::string       m1Channel = "m1";
+  m1["m1/data"]               = 100;
+
+  conduit_cpp::Node m2;
+  std::string       m2Channel = "m2";
+  m2["m2/data"]               = 500;
+
+  std::string name  = "multi";
+  int         state = 2;
+  double      time  = 8.9;
+  props.add(Ioss::Property(CatalystManager::CATALYST_MULTI_INPUT_PIPELINE_NAME, name));
+  props.add(Ioss::Property(CatalystManager::CATALYST_INPUT_NAME, "inputx"));
+  initialize();
+  // CatalystManager::getInstance().setMultiInputWaitState(id, state, time, n);
+  conduit_cpp::Node m;
+
+  Ioss::PropertyManager propsTwo;
+  propsTwo.add(Ioss::Property(CatalystManager::CATALYST_MULTI_INPUT_PIPELINE_NAME, name));
+  propsTwo.add(Ioss::Property(CatalystManager::CATALYST_INPUT_NAME, "inputy"));
+  auto idTwo = CatalystManager::getInstance().initialize(propsTwo, putils);
+
+  CatalystManager  &catMgr = CatalystManager::getInstance();
+  auto              pppa   = catMgr.getCatalystProps(id);
+  conduit_cpp::Node nnna;
+  catMgr.addExecuteProps(nnna, pppa, state, time);
+  auto              pppb = CatalystManager::getInstance().getCatalystProps(idTwo);
+  conduit_cpp::Node nnnb;
+  catMgr.addExecuteProps(nnnb, pppb, state, time);
+  bool returnDueToMultiPipeNotReady = false;
+  returnDueToMultiPipeNotReady = catMgr.setupConduitNodeForCatalystExecute(nnna, pppa, 2, 10.2, m1);
+  EXPECT_TRUE(returnDueToMultiPipeNotReady);
+  returnDueToMultiPipeNotReady = catMgr.setupConduitNodeForCatalystExecute(nnnb, pppb, 2, 10.2, m2);
+  EXPECT_FALSE(returnDueToMultiPipeNotReady);
+  std::string datapatha = "catalyst/channels/inputx/data/m1/data";
+  std::string datapathb = "catalyst/channels/inputy/data/m2/data";
+  EXPECT_TRUE(nnnb.has_path(datapatha));
+  EXPECT_TRUE(nnnb.has_path(datapathb));
+  if (nnnb.has_path(datapatha) && nnnb.has_path(datapathb)) {
+    std::string resa = nnnb[datapatha].to_json();
+    std::string resb = nnnb[datapathb].to_json();
+    if ((resa != "100") || (resb != "500")) {
+      std::cerr << "ManagerCallExecuteWithTwoInputsOneScript test failing, "
+                   "printing bad conduit node:\n";
+      std::cerr << nnnb.to_json() << "\n";
+    }
+    EXPECT_TRUE(resa == "100");
+    EXPECT_TRUE(resb == "500");
+  }
+}

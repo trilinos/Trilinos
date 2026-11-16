@@ -772,6 +772,152 @@ namespace {
     EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
   }
 
+  TEST_F(TestTextMesh, nodeWithNoReference)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE,";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+  }
+
+  TEST_F(TestTextMesh, nodeWithNoReferenceVersion2)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+  }
+
+  TEST_F(TestTextMesh, nodeWithInvalidReference)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE,2";
+    EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+  }
+
+  TEST_F(TestTextMesh, twoNodesWithNoReference)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE,\n"
+                           "0,5,NODE,";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+  }
+
+  TEST_F(TestTextMesh, twoNodesWithNoReferenceVersion2)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE\n"
+                           "0,5,NODE,";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+  }
+
+  TEST_F(TestTextMesh, twoNodesWithNoReferenceVersion3)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE,\n"
+                           "0,5,NODE";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+  }
+
+  TEST_F(TestTextMesh, twoNodesWithNoReferenceVersion4)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE\n"
+                           "0,5,NODE";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+  }
+
+  TEST_F(TestTextMesh, twoNodesWithOneReference)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE,1\n"
+                           "0,5,NODE";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+  }
+
+  TEST_F(TestTextMesh, twoNodesWithOneReferenceVersion2)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE\n"
+                           "0,5,NODE,5";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+  }
+
+  TEST_F(TestTextMesh, threeNodes)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE,1\n"
+                           "0,2,NODE,2\n"
+                           "0,3,NODE,3";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+    verify_num_elements(0);
+    verify_num_nodes(3);
+  }
+
+  TEST_F(TestTextMesh, nodeWithCoordinates)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string         meshDesc        = "0,1,NODE,1|coordinates:2,0,0";
+    std::vector<double> goldCoordinates = {2, 0, 0};
+    EntityIdVector      nodeIds         = EntityIdVector{1};
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+    verify_num_elements(0);
+    verify_num_nodes(1);
+    verify_coordinates(nodeIds, goldCoordinates);
+  }
+
+  TEST_F(TestTextMesh, nodeDisconnectedFromHex)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE,1\n"
+                           "0,1,HEX_8,2,3,4,5,6,7,8,9";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+    verify_num_elements(1);
+    verify_num_nodes(9);
+    verify_single_node(1u);
+    verify_single_element(1u, "HEX_8", EntityIdVector{2, 3, 4, 5, 6, 7, 8, 9});
+  }
+
+  TEST_F(TestTextMesh, nodeOnHex)
+  {
+    if (get_parallel_size() != 1)
+      return;
+
+    std::string meshDesc = "0,1,NODE\n"
+                           "0,2,HEX_8,1,2,3,4,5,6,7,8";
+    EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+    verify_num_elements(1);
+    verify_num_nodes(8);
+    verify_single_node(1u);
+    verify_single_element(2u, "HEX_8", EntityIdVector{1, 2, 3, 4, 5, 6, 7, 8});
+  }
+
   TEST_F(TestTextMesh, particleWithCoordinates)
   {
     if (get_parallel_size() != 1)
@@ -1929,13 +2075,17 @@ namespace {
     verify_single_sideset("my_ss", 1, SideVector{{1, 1}});
   }
 
-  TEST_F(TestTextMesh1d, oneDimensionNotSupported)
+  TEST_F(TestTextMesh1d, oneDimensionSingleLine)
   {
     if (get_parallel_size() != 1)
       return;
 
     std::string meshDesc = "0,1,LINE_2_1D,1,2";
-    EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+    setup_text_mesh(meshDesc);
+
+    verify_num_elements(1);
+    verify_num_nodes(2);
+    verify_single_element(1u, "LINE_2_1D", EntityIdVector{1, 2});
   }
 
   TEST_F(TestTextMeshGraph, singleHex)

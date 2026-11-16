@@ -1,0 +1,72 @@
+\chapter{Conclusions}
+\begin{enumerate}
+\item {A simple three degree-of-freedom code, \SLAP ,
+has been written to approximate the eccentric impact response
+of a deformable body.
+Nonlinear load
+displacement characteristics and friction effects are included.  The
+code has been verified experimentally and analytically.  The code
+interfaces with Department
+1520 plotting codes to provide convenient
+graphical output.}
+
+\item {The secondary impact velocity of a body
+can be conveniently estimated using only the length
+and radius of gyration.  Slapdown (velocity at secondary impact higher
+than the primary impact velocity) cannot occur for length to radius of
+gyration ratios less than two.}
+
+\item {The amount of energy absorbed in the initial impact is the most
+important parameter associated with the nose spring characteristics.
+For linear elastic springs, the
+spring rate (stiffness) of the nose spring is unimportant.}
+
+\item {Friction, for geometries and coefficients reasonably associated
+with transportation casks, has a small effect on secondary impact
+velocity.  There is an optimum value (one which minimizes the
+secondary impact velocity) of coefficient of friction based on the
+load displacement characteristics of the nose spring and on the object
+geometry.  Sufficient
+friction can increase the severity of the
+primary impact
+to values greater than those
+experienced for the flat side impact.  This can make the
+primary impact at a shallow angle the controlling impact event.}
+
+\item {The following scaling parameters have been verified for nonlinear
+as well as linear load displacement characteristics (one G field
+neglected):}
+\end{enumerate}
+\begin{table}
+\begin{center}
+\caption{Summary of Relationships for Scale Model Testing}
+\makeqnum
+\begin{tabular}{||l|c||}
+\hline
+\multicolumn{1}{|c}{Parameter}
+ &\multicolumn{1}{|c||}{Scaling Relationships}\\
+Geometry and & \\
+Initial Conditions: &\\
+\quad Overall Length     & $l_{sm} = l_{fs} \times (Scale)^{1}$\\
+\quad Mass               & $M_{sm} = M_{fs} \times (Scale)^{3}$\\
+\quad Moment of Inertia  & $I_{sm} = I_{fs} \times (Scale)^{5}$\\
+\quad Spring Constants   & $K_{sm} = K_{fs} \times (Scale)^{1}$\\
+\quad Initial Velocity   & $V_{sm} = V_{fs} \times (Scale)^{0}$\\
+\quad Initial Angle      & $\theta _{sm} = \theta _{fs} \times
+(Scale)^{0}$\\
+\hline
+Results: & \\
+\quad    Linear Accelerations  & $a_{sm} = a_{fs} \times (Scale)^{-1}$\\
+\quad    Angular Accelerations & $\alpha _{sm} = \alpha _{fs} \times
+(Scale)^{-2}$\\
+\quad    Linear Velocities     & $V_{sm} = V_{fs} \times (Scale)^{0}$\\
+\quad    Angular Velocities    & $\omega _{sm} = \omega _{fs} \times
+(Scale)^{-1}$\\
+\quad    Linear Displacements  & $\Delta _{sm} = \Delta _{fs} \times
+(Scale)^{1}$\\
+\quad    Angular Displacements & $\theta _{sm} = \theta _{f} \times
+(Scale)^{0}$\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}

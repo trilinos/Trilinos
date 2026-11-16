@@ -1,0 +1,163 @@
+\chapter{Output} \label{chap:output}
+%
+%%% \errmsg produces an error message with explanation
+\newcommand{\errmsg}[2]{
+   {\sf #1}
+   \topicbegin \negmedskip {#2} \topicend
+   }
+
+\caps{\PROGRAM} first scans the \caps{ABAQUS} file for initial
+information such as the number of nodes and the variable records.
+The \caps{ABAQUS} database is assumed to be correct and complete.
+The
+program may flag some \caps{ABAQUS} database errors at this point.
+For example, there may be too many element variables selected, causing
+some to be ignored.
+
+\errmsg{WARNING - OVER \param{max} ELEMENT VARIABLES SELECTED,
+record type \param{type} ignored \\
+WARNING - OVER \param{max} NODAL VARIABLES SELECTED, record type
+\param{type} ignored}
+{
+The maximum number of variables to be stored is exceeded. All following
+record types are ignored. Commands \cmd{EVARS} and \cmd{NVARS} limit the
+variable records selected. This message appears during the first pass.
+}
+
+After the \caps{ABAQUS} database is scanned, command input is requested
+from the user. An error or warning message may appear in response to a
+command. If an error message appears, the command is usually ignored. If
+only a warning is printed, the command is usually performed. If the
+message is not sufficiently informative, the appropriate command
+description may be helpful.
+
+The database is then rewound and the element connectivity and the nodal
+coordinates are read. The new elements and nodes are generated and
+written to the new \caps{EXODUS} database. \caps{\PROGRAM} displays
+information about the input database and the generated elements, etc.
+The element and nodal variables are then read, and the values for each
+time step are written to the \caps{EXODUS} database. \caps{\PROGRAM}
+displays the number of time steps written.
+
+\errmsg{WARNING - END OF FILE in ELEMENT CONNECTIVITY \\
+WARNING - END OF FILE in NODE COORDINATES \\
+WARNING - END OF FILE in ELEMENT VARIABLES \\
+WARNING - END OF FILE in NODAL VARIABLES \\
+WARNING - END OF FILE before TIME STEPS}
+{
+An end of file was found while reading the listed records.
+}
+
+\errmsg{WARNING - UNKNOWN RECORD \param{type}}
+{
+An unknown record type was found. The record is ignored. This message
+does not appear after the first time step.
+}
+
+\errmsg{WARNING - UNKNOWN ELEMENT TYPE \param{type} for element
+\param{elem},
+assume \param{2or3}D}
+{
+The listed element type in the connectivity record (1900) is unknown to
+\caps{\PROGRAM}. The element is assumed to have the listed dimension and
+is handled accordingly. Please contact the code sponsor.
+}
+
+\errmsg{WARNING - ELEMENT TYPE \param{type} NOT HANDLED for element
+\param{elem},
+assume \param{2or3}D}
+{
+The listed element type in the connectivity record (1900) is not handled
+by \caps{\PROGRAM}. The element is assumed to have the listed dimension
+and is handled accordingly.
+}
+
+\errmsg{WARNING - \# NODES for element \param{elem}, \param{2or3}D,
+read \param{n}, expected \param{nexp}}
+{
+The number of nodes in the connectivity record (1900) is incorrect. For
+3D elements, 8 or 20 nodes are expected; for 2D elements, 4 or 8 nodes
+are expected. \caps{\PROGRAM} ignores extra nodes if the element is
+transformed; otherwise they are kept.
+}
+
+\errmsg{WARNING - \# ELEMENTS in connectivity, read \param{n}, expected
+\param{nexp}}
+{
+There are no connectivity records for some elements.
+}
+
+\errmsg{WARNING - \# NODES in coordinates, read \param{n}, expected
+\param{nexp}}
+{
+Either there are two coordinate records (1901) for some nodes or there
+are no coordinate records for some nodes.
+}
+
+\errmsg{WARNING - MISSING POINTS for element \param{elem},
+variables \param{n$_1$} to \param{n$_2$}, \param{npt} \verb|<|
+\param{exppt}}
+{
+The number of integration points expected is dependent on the element
+transformation. There should be at least one integration point for each
+new element. This message appears on the first time step only.
+}
+
+\errmsg{WARNING - \# ELEMENTS in step \param{s}, read \param{n},
+expected \param{nexp}}
+{
+The number of elements in the variable records is not equal to the
+maximum from the connectivity records.
+}
+
+\errmsg{WARNING - \# ELEMENT VARIABLES in step \param{s},
+read \param{n}, expected \param{nexp}}
+{
+The number of element variables stored is not equal to the maximum
+scanned from all the time steps.
+}
+
+\errmsg{WARNING - \# ELEMENT POINTS in step \param{s},
+read \param{n}, expected \param{nexp}}
+{
+The number of integration points expected is dependent on the element
+transformation. There should be at least one integration point for each
+new element.
+}
+
+\errmsg{WARNING - \# NODES in step \param{s}, read \param{n}, expected
+\param{nexp}}
+{
+The number of nodes in the variable records (51..1000) is not equal to
+the maximum from the coordinate records.
+}
+
+\errmsg{WARNING - \# NODAL VARIABLES in step \param{s},
+read \param{n}, expected \param{nexp}}
+{
+The number of nodal variables stored is not equal to the maximum scanned
+from all the time steps.
+}
+
+\errmsg{WARNING - MISSING CONNECTIVITY for element \param{elem}, filled
+with 0}
+{
+No connectivity record was read for the element.
+}
+
+The program allocates memory dynamically as it is needed. If the system
+runs out of memory, the following message is printed:
+\errfmt{
+\cmd{FATAL ERROR - Too much dynamic memory requested}
+}
+and the program aborts. The user should first try to obtain more memory
+on the system. Another solution is to run the program in a less
+memory-intensive fashion. For example, restricting the variable records
+selected should require less memory.
+
+\caps{\PROGRAM} has certain programmer-defined limitations. The limits
+are not specified in this manual since they may change. In most cases the
+limits are chosen to be more than adequate. If the user exceeds a limit,
+a message is printed. If the user feels the limit is too restrictive,
+the code sponsor should be notified so the limit may be raised in future
+releases of \caps{\PROGRAM}.

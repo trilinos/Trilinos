@@ -7,7 +7,7 @@
 #pragma once
 
 #if !defined(IOSS_USE_STD_SORT)
-#include <pdqsort.h>
+#include "Ioss_pdqsort.h"
 #endif
 
 #include <cstddef>
@@ -19,7 +19,7 @@ namespace Ioss {
 #if defined(IOSS_USE_STD_SORT)
     std::sort(begin, end, compare);
 #else
-    pdqsort(begin, end, compare);
+    Ioss::pdqsort(begin, end, compare);
 #endif
   }
 
@@ -28,7 +28,7 @@ namespace Ioss {
 #if defined(IOSS_USE_STD_SORT)
     std::sort(begin, end);
 #else
-    pdqsort(begin, end);
+    Ioss::pdqsort(begin, end);
 #endif
   }
 

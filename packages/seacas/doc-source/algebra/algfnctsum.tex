@@ -1,0 +1,127 @@
+\chapter{Summary of Functions} \label{appx:function}
+
+\begin{center} \begin{tabular}{||l|l||}
+\hline
+\multicolumn{2}{||c||}{} \\
+\multicolumn{2}{||c||}{Standard \caps{FORTRAN} Functions} \\
+\multicolumn{2}{||c||}{} \\
+\hline
+\param{r} = \cmd{AINT} ($x$)
+      & truncation: $|x|$ \\
+\param{r} = \cmd{ANINT} ($x$)
+      & nearest integer: [$x + .5*$sign($x$)] \\
+\param{r} = \cmd{ABS} ($x$)
+      & absolute value: $|x|$ \\
+\param{r} = \cmd{MOD} ($x$, $y$)
+      & remainder: $x - y * [x/y]$ \\
+\param{r} = \cmd{SIGN} ($x$, $y$)
+      & transfer of sign: $|x|$ sign $y$ \\
+\param{r} = \cmd{DIM} ($x$, $y$)
+      & positive difference: $x - $min($x$,$y$) \\
+\param{r} = \cmd{MAX} ($x$, $y$, \ldots)
+      & maximum of $x$, $y$, \ldots\ \\
+\param{r} = \cmd{MIN} ($x$, $y$, \ldots)
+      & minimum of $x$, $y$, \ldots\ \\
+\param{r} = \cmd{SQRT} ($x$)
+      & square root: $\sqrt{x}$ \\
+\param{r} = \cmd{EXP} ($x$)
+      & exponentiation: e$^{x}$ \\
+\param{r} = \cmd{LOG} ($x$)
+      & natural logarithm: log$_{e}x$ \\
+\param{r} = \cmd{LOG10} ($x$)
+      & common logarithm: log$_{10}x$ \\
+\param{r} = \cmd{SIN} ($x$)
+      & sine $x$ \\
+\param{r} = \cmd{COS} ($x$)
+      & cosine $x$ \\
+\param{r} = \cmd{TAN} ($x$)
+      & tangent $x$ \\
+\param{r} = \cmd{ASIN} ($x$)
+      & arc sine $x$ \\
+\param{r} = \cmd{ACOS} ($x$)
+      & arc cosine $x$ \\
+\param{r} = \cmd{ATAN} ($x$)
+      & arc tangent $x$ \\
+\param{r} = \cmd{ATAN2} ($x$, $y$)
+      & arc tangent $x/y$ \\
+\param{r} = \cmd{SINH} ($x$)
+      & hyperbolic sine $x$ \\
+\param{r} = \cmd{COSH} ($x$)
+      & hyperbolic cosine $x$ \\
+\param{r} = \cmd{TANH} ($x$)
+      & hyperbolic tangent $x$ \\
+\hline
+\end{tabular} \end{center}
+
+\medskip
+\begin{center} \begin{tabular}{||l|l||}
+\hline
+\multicolumn{2}{||c||}{} \\
+\multicolumn{2}{||c||}{Tensor Principal Values and Magnitude Functions}
+\\
+\multicolumn{2}{||c||}{} \\
+\hline
+\param{r} = \cmd{PMAX}
+   ($T_{11}$, $T_{22}$, $T_{33}$, $T_{12}$, $T_{23}$, $T_{31}$)
+      & maximum principal values \\
+\param{r} = \cmd{PMIN}
+   ($T_{11}$, $T_{22}$, $T_{33}$, $T_{12}$, $T_{23}$, $T_{31}$)
+      & minimum principal values \\
+\param{r} = \cmd{PMAX2} ($T_{11}$, $T_{22}$, $T_{12}$)
+      & maximum principal values (2D) \\
+\param{r} = \cmd{PMIN2} ($T_{11}$, $T_{22}$, $T_{12}$)
+      & minimum principal values (2D) \\
+\param{r} = \cmd{TMAG}
+   ($T_{11}$, $T_{22}$, $T_{33}$, $T_{12}$, $T_{23}$, $T_{31}$)
+      & magnitude of the deviatoric part \\
+\hline
+\end{tabular} \end{center}
+
+\medskip
+\begin{center} \begin{tabular}{||l|l||}
+\hline
+\multicolumn{2}{||c||}{} \\
+\multicolumn{2}{||c||}{IF Functions} \\
+\multicolumn{2}{||c||}{} \\
+\hline
+\param{r} = \cmd{IFLZ} (\param{cond}, \param{rtrue}, \param{rfalse})
+      & if \param{cond} $<$ 0.0,
+         \param{rtrue} else \param{rfalse} \\
+\param{r} = \cmd{IFEZ} (\param{cond}, \param{rtrue}, \param{rfalse})
+      & if \param{cond} $=$ 0.0,
+         \param{rtrue} else \param{rfalse} \\
+\param{r} = \cmd{IFGZ} (\param{cond}, \param{rtrue}, \param{rfalse})
+      & if \param{cond} $>$ 0.0,
+         \param{rtrue} else \param{rfalse} \\
+\hline
+\end{tabular} \end{center}
+
+\medskip
+\begin{center} \begin{tabular}{||l|l||}
+\hline
+\multicolumn{2}{||c||}{} \\
+\multicolumn{2}{||c||}{Array $\Rightarrow$ Global Variable Functions} \\
+\multicolumn{2}{||c||}{} \\
+\hline
+\param{r} = \cmd{SUM} (\param{x})
+      & sum of \param{x} over all nodes or elements \\
+\param{r} = \cmd{SMAX} (\param{x})
+      & maximum of \param{x} over all nodes or elements \\
+\param{r} = \cmd{SMIN} (\param{x})
+      & minimum of \param{x} over all nodes or elements \\
+\hline
+\end{tabular} \end{center}
+
+\medskip
+\begin{center} \begin{tabular}{||l|l||}
+\hline
+\multicolumn{2}{||c||}{} \\
+\multicolumn{2}{||c||}{Envelope Functions} \\
+\multicolumn{2}{||c||}{} \\
+\hline
+\param{r} = \cmd{ENVMAX} (\param{x})
+      & maximum of \param{x} over all previous time steps \\
+\param{r} = \cmd{ENVMIN} (\param{x})
+      & minimum of \param{x} over all previous time steps \\
+\hline
+\end{tabular} \end{center}

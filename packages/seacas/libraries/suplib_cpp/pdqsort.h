@@ -569,42 +569,46 @@ namespace pdqsort_detail {
   }
 } // namespace pdqsort_detail
 
-template <class Iter, class Compare> inline void pdqsort(Iter begin, Iter end, Compare comp)
-{
-  if (begin == end)
-    return;
+namespace suplib_cpp {
+
+  template <class Iter, class Compare> inline void pdqsort(Iter begin, Iter end, Compare comp)
+  {
+    if (begin == end)
+      return;
 
 #if __cplusplus >= 201103L
-  pdqsort_detail::pdqsort_loop<
-      Iter, Compare,
-      pdqsort_detail::is_default_compare<typename std::decay<Compare>::type>::value &&
-          std::is_arithmetic<typename std::iterator_traits<Iter>::value_type>::value>(
-      begin, end, comp, pdqsort_detail::log2(end - begin));
+    pdqsort_detail::pdqsort_loop<
+        Iter, Compare,
+        pdqsort_detail::is_default_compare<typename std::decay<Compare>::type>::value &&
+            std::is_arithmetic<typename std::iterator_traits<Iter>::value_type>::value>(
+        begin, end, comp, pdqsort_detail::log2(end - begin));
 #else
-  pdqsort_detail::pdqsort_loop<Iter, Compare, false>(begin, end, comp,
-                                                     pdqsort_detail::log2(end - begin));
+    pdqsort_detail::pdqsort_loop<Iter, Compare, false>(begin, end, comp,
+                                                       pdqsort_detail::log2(end - begin));
 #endif
-}
+  }
 
-template <class Iter> inline void pdqsort(Iter begin, Iter end)
-{
-  typedef typename std::iterator_traits<Iter>::value_type T;
-  pdqsort(begin, end, std::less<T>());
-}
+  template <class Iter> inline void pdqsort(Iter begin, Iter end)
+  {
+    typedef typename std::iterator_traits<Iter>::value_type T;
+    pdqsort(begin, end, std::less<T>());
+  }
 
-template <class Iter, class Compare>
-inline void pdqsort_branchless(Iter begin, Iter end, Compare comp)
-{
-  if (begin == end)
-    return;
-  pdqsort_detail::pdqsort_loop<Iter, Compare, true>(begin, end, comp,
-                                                    pdqsort_detail::log2(end - begin));
-}
+  template <class Iter, class Compare>
+  inline void pdqsort_branchless(Iter begin, Iter end, Compare comp)
+  {
+    if (begin == end)
+      return;
+    pdqsort_detail::pdqsort_loop<Iter, Compare, true>(begin, end, comp,
+                                                      pdqsort_detail::log2(end - begin));
+  }
 
-template <class Iter> inline void pdqsort_branchless(Iter begin, Iter end)
-{
-  typedef typename std::iterator_traits<Iter>::value_type T;
-  pdqsort_branchless(begin, end, std::less<T>());
-}
+  template <class Iter> inline void pdqsort_branchless(Iter begin, Iter end)
+  {
+    typedef typename std::iterator_traits<Iter>::value_type T;
+    pdqsort_branchless(begin, end, std::less<T>());
+  }
+
+} // namespace suplib_cpp
 
 #undef PDQSORT_PREFER_MOVE

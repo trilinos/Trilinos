@@ -34,6 +34,8 @@
 #include "fix_column_partitions.h"
 #include "vector_data.h"
 
+using suplib_cpp::Data;
+
 #ifndef M_PI
 #define M_PI   3.14159265358979323846264338327
 #define M_PI_2 (M_PI / 2.0)
@@ -60,6 +62,10 @@ int ilog2i(size_t n)
 }
 
 namespace {
+
+  template <typename INT>
+  int get_node_conn_index(Mesh_Description<INT> *mesh, size_t elem, INT node);
+
   template <typename INT>
   int nodal_dist(LB_Description<INT> * /*lb*/, Machine_Description * /*machine*/,
                  Mesh_Description<INT> * /*mesh*/, Graph_Description<INT> * /*graph*/);
@@ -1405,6 +1411,20 @@ namespace {
   }
 
   template <typename INT>
+  int get_node_conn_index(Mesh_Description<INT> *mesh, size_t elem, INT node)
+  {
+    ElementType etype  = mesh->elem_type[elem];
+    int         nnodes = get_elem_info(ElementInfo::NNODES, etype);
+    const INT  *conn   = mesh->connect[elem];
+    for (int i = 0; i < nnodes; i++) {
+      if (conn[i] == node) {
+        return i + 1;
+      }
+    }
+    return -1;
+  }
+
+  template <typename INT>
   int nodal_dist(LB_Description<INT> *lb, Machine_Description *machine, Mesh_Description<INT> *mesh,
                  Graph_Description<INT> *graph)
   {
@@ -1559,7 +1579,8 @@ namespace {
                   categorized[ecnt] = 1;
                 }
                 lb->e_cmap_elems[proc2].push_back(elem);
-                lb->e_cmap_sides[proc2].push_back(2 - ncnt);
+                auto value = get_node_conn_index(mesh, elem, side_nodes[0]);
+                lb->e_cmap_sides[proc2].push_back(value);
                 lb->e_cmap_procs[proc2].push_back(proce);
                 lb->e_cmap_neigh[proc2].push_back(ecnt);
               }

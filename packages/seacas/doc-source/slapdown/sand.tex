@@ -1,0 +1,89 @@
+\documentclass{report}
+\usepackage{sandcover}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{alltt}
+\usepackage{xfrac}
+\usepackage{calc}
+\usepackage{makeidx}
+\usepackage{amsmath,amssymb,amsfonts,textcomp}
+\usepackage{hyperref}
+%\usepackage{showkeys}
+\usepackage{longtable}
+\usepackage{bookmark}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=blue, urlcolor=blue}
+
+% \makeqnum sets ? to be an empty space the width of a roman ``0''
+% this can be used in tables where the numbers have different lengths
+% to line them up by the decimal point.      See TeXbook, p. 241 top
+\makeatletter
+\newdimen\@digitwd
+\setbox0=\hbox{\rm0}
+\@digitwd=\wd0
+{\catcode`?=\active\gdef?{\kern\@digitwd\relax}}
+\def\makeqnum{\catcode`?=13\relax}
+\def\makeqquest{\catcode`?=12\relax}
+%
+% Use ``\eref{reference}'' instead of ``\ref{reference}'' to get the
+%     reference in parentheses e.g. Equation (4.3.1)
+\def\eref#1{(\ref{#1})}
+\makeatother
+
+\def\SANDIA{Sandia National Laboratories, Albuquerque, NM}
+
+\newcommand{\caps}[1]
+   {\uppercase{#1}\null}
+\newcommand{\cmd}[1]
+   {\mbox{\sf\uppercase{#1}}\null}
+\newcommand{\lcmd}[1]
+   {\mbox{\sf#1}\null}
+\newcommand{\param}[1]
+   {{\em #1}\null}
+\newcommand{\optparam}[1]
+   {[{\em #1\/}]\null}
+%%\input{macro}
+\def\var#1{{\sf #1}}
+\def\SLAP{{\sf SLAP\-DOWN}}
+\def\EXO{{\sf EXODUS}}
+\def\dhline#1{\hline\multicolumn{#1}{c}{\vspace{-.15in}}\\ \hline} % Double HLINE
+\def\KW#1{{\sf #1}}
+\def\NEW#1{\marginalstar{\sf #1}}
+\def\N#1{\rlap{$^{#1}$}}
+\long\def\Q#1#2{\llap{$^{#1}$}#2}
+\def\REQ{\sf REQ}
+\def\dis{{\bf u}}
+\def\vel{{\bf \dot u}}
+\def\acc{{\bf \ddot u}}
+\def\fext{{\bf f}_{ext}}
+%%%%%
+%      REVISION MARKING AND FONT STYLE
+%
+\def\N#1{\rlap{$^{#1}$}}
+%
+%%%%%%
+\begin{document}
+%
+%\include{header_sand}
+%\makeqnum
+\include{title}
+\tableofcontents
+\listoffigures
+\listoftables
+%
+% INCLUDE FILES
+%
+\include{intro}
+\include{analytical}
+\include{numerics}
+\include{aspect}
+\include{firsthit}
+\include{friction}
+\include{scal}
+\include{conclusions}
+\include{reference}
+\appendix
+\include{usersm}
+\include{appb}
+%
+\end{document}

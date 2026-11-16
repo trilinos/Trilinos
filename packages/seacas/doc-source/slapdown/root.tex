@@ -1,0 +1,47 @@
+
+\documentstyle[12pt,draft,freqn,chapeqn,sequence]{tex$1520:sand}
+
+% bold greek definition
+\def\spose#1{\hbox to 0pt{#1 \hskip0pt minus100pt}}
+\def\boldg#1{\spose{\hskip .5pt\raise .3pt\hbox{$#1$}}
+\spose{\hskip .1pt\raise .1pt\hbox{$#1$}}
+\spose{\hskip .1pt\raise .1pt\hbox{$#1$}}  {#1}}
+
+\def\hang{\noindent\hangindent=15pt\hangafter=1}
+\def\mys#1{\vspace{1cm}\begin{center}{\bf {#1}}\end{center}}
+\def\refr#1#2#3{\hang {\bf {#1}}\newline {\it {#2}} {#3}}
+\def\SLAP{{\sf Slap\-down}}
+
+%\includeonly{header_sand,chapter1,chapter2,chapter3,appendix2,reference}
+%\includeonly{header_sand}
+%\includeonly{header_sand,chap1}
+%\includeonly{chapter2}
+%\includeonly{header_sand,chap1,chap3,chap4,chap5}
+%\includeonly{appendix2}
+%\includeonly{references}
+
+\begin{document}
+%
+%\include{header_sand}
+\include{title}
+\tableofcontents
+\listoffigures
+%\listoftables
+%
+% INCLUDE FILES
+%
+\include{intro}
+\include{analytical}
+\include{numerics}
+\include{aspect}
+\include{firsthit}
+\include{friction}
+\include{scal}
+\include{con}
+\include{references}
+\appendix
+\include{usersm}
+\include{appb}
+%\include{figb}
+%
+\end{document}

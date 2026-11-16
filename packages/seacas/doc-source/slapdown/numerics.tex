@@ -1,0 +1,363 @@
+\chapter{Description of \SLAP\ Idealization}\label{theory}
+
+The idealization of the body and the numerical algorithms required to
+perform the spatial and temporal integration of the equations of
+motion in \SLAP\ are described in this chapter. The idealized geometry
+is described in the first section; the next section describes the
+algorithms used to determine the spring and frictional forces at the
+impact points.  The explicit time integration scheme is explained in
+the final section.
+
+\section{Geometry Idealization}\label{s:ideal}
+
+The impact response of a deformable body is idealized in \SLAP\ as a
+simple three degree-of-freedom body.  The three degrees-of-freedom are
+the vertical, horizontal, and angular velocity at the center of
+gravity (CG) of the body.  The nonlinear force-deformation response of
+the deformable body is represented by two piecewise linear ``springs''
+which apply both a vertical force and a moment to the body.  The
+springs are located at the initial and secondary impact points. A
+horizontal force and an additional moment are caused by frictional
+forces at the point(s) of impact.  The mass of the body is assumed to
+be concentrated at the CG, and the idealization has the same mass
+moment of inertia as the body. Figure~\ref{f:gi} shows a
+cross-section of the geometry being analyzed and the \SLAP\
+idealization.
+
+\paragraph*{End Treatment} Two options are available for modeling
+the spring attachment to the body: {\sf SQUARE}
+and {\sf ROUND}.  If the {\sf SQUARE} option is used, the spring is
+constrained to be perpendicular to the axis of the rigid body; in
+the {\sf ROUND} option, the spring is perpendicular to the rigid
+surface.  Figure~\ref{f:square} illustrates these two configurations.
+In both cases, the force-displacement curve is defined in terms of the
+displacement normal to the rigid surface.  The effect of the different
+end treatments is only important for large angle impacts; for shallow
+angle impacts the difference in the response is negligible.
+
+\section{Normal and Tangential Force Algorithms}
+The algorithms used to determine the normal and tangential forces
+resulting from the body deformation and friction between the body and
+the rigid surface are described in this section.
+
+\subsection{Normal Force---``Springs''}
+The normal force results from the deformation of the body after impact
+with the rigid surface.  In \SLAP, a piecewise linear spring
+definition is used to approximate the force-deformation behavior of
+the actual body.  An unloading modulus can also be specified which
+represents the force-displacement behavior during rebound of the body.
+In this way a plastic spring can be modeled. If the unloading modulus
+is not specified, the body unloads along the original loading curve
+simulating a non-linear elastic spring.  The spring reloads along
+the same path as it unloaded.
+
+The algorithm that implements this behavior requires three variables
+in addition to the spring definition: (1)~the current spring
+displacement, \var{DISP}, (2)~the maximum spring displacement,
+\var{DISPMX}, and (3)~a logical variable to determine if the spring
+has rebounded.  If the spring has not yet rebounded and is still
+loading, the algorithm simply searches the spring definition until the
+value of \var{DISP} is bounded by the displacement values of one of
+the piecewise linear spring segments.  It then linearly interpolates
+to find the corresponding force.  If the value of \var{DISP} is larger
+than the maximum displacement in the spring definition, an error
+message is printed and the program stops.
+
+If the value of \var{DISP} is less than the value of \var{DISPMX}, the
+spring is unloading.  Two options are used to determine the spring
+force.  If the unloading modulus (\var{UNLOAD}) is zero, the unloading
+path is along the spring definition curve, and the force calculation
+proceeds as described in the previous paragraph.  If the unloading
+modulus is nonzero, the algorithm must unload at that slope from the
+value of the maximum displacement.  The force corresponding to the
+maximum displacement \var{DISPMX} is calculated using the method
+described in the previous paragraph.  The force is then reduced by the
+product of the unloading modulus and the rebound from the maximum
+spring displacement.  The spring force must be non-negative at all
+times; if the calculated force is tensile, then the spring force is
+set to zero.
+
+\subsection{Tangential Force---Friction}
+
+The tangential force is the result of friction at the point of impact of
+the body with the rigid surface.  The tangential force is equal to the
+product of the coefficient of friction, \var{CF}, and the normal force,
+\var{FRC}.  The direction of this force is opposite to the direction of
+the horizontal velocity at the impact point; no force is applied if the
+horizontal velocity is zero.
+
+The current algorithm has problems with high coefficients of friction
+and when both ends are in contact with the rigid surface. Methods for
+more accurately representing the frictional force are being developed
+and will be implemented when they have been thoroughly tested.
+
+\section{Explicit Time Integration}
+\SLAP\ uses a central difference scheme to integrate the equations of
+motion through time. Table~\ref{t:explicit} is a flowchart for the
+explicit algorithm~\cite{Belyt}.  In the table, $\dis$, $\vel$, and
+$\acc$ are the displacements, velocities, and accelerations of the
+three degrees-of-freedom, respectively; $\fext$ are the external
+forces due to the deformation of the springs and friction at the
+impact point; ${\bf M}$ is the mass matrix; $N$ is the step number;
+and $\Delta t$ is the time increment.  A constant time increment
+$\Delta t$ is used in \SLAP.
+
+\begin{table}[ht]
+\begingroup\itemsep 0pt
+\hrule
+\begin{enumerate}
+\item Set initial conditions: $\dis^0 = \dis(0)$, $\vel^{1/2}
+= \vel(0)$, $\fext^0 = {\bf 0}$, $N=0$
+\item\label{stepbeg} Update displacements: $\dis^{N+1} = \dis^N + \Delta
+t\vel^{N+1/2}$
+\item Compute external forces $\fext^{N+1}$ due to ``springs'' and
+friction
+\item Update accelerations: $\acc^{N+1} = {\bf M}^{-1} \fext^{N+1}$
+\item $N \leftarrow N+1$
+\item Update velocities: $\vel^{N+1/2} = \vel^{N-1/2} + \Delta t\acc$
+\item Go to step \ref{stepbeg}
+\end{enumerate}
+\hrule
+\endgroup
+\caption{Flowchart for explicit integration of equations of
+motion}\label{t:explicit}
+\end{table}
+
+The central difference method is conditionally stable.  The stable time
+step for this method is:
+\begin{displaymath}
+\Delta t
+\le\min\left[\frac{2}{\omega_n}\left(\sqrt{1+\xi^2_n}-\xi_n\right)\right]
+= \Delta t_{\rm stab}
+\end{displaymath}
+where $\omega_n$ is the natural frequency of the system and $\xi_n$ is
+the fraction of critical damping in the $n^{\rm th}$ mode. No damping
+is used in \SLAP\ so the stable time step calculation reduces to:
+\begin{displaymath}
+\Delta t_{\rm stab} = \frac{2}{\omega_{\max}}
+\end{displaymath}
+The value of $\Delta t_{\rm stab}$ is calculated internally in \SLAP; it
+is then reduced by the {\sf TIME STEP SCALE FACTOR} read from the input
+file.  The default value of the {\sf TIME STEP SCALE FACTOR} is $0.1$
+(see Table~\ref{tglob}, page~\pageref{tglob}).  The reduction is not
+required for stability, rather it is done for added resolution and
+improved accuracy.
+
+The following equation is used to determine the value of $\omega_n$
+that is used to calculate the stable time step interval.  Note that
+$\lambda = \omega^2$ and $|\cdot|$ represents the determinant.  The
+horizontal degree-of-freedom is not used in the calculation.
+\begin{displaymath}
+\left|\begin{array}{ll} k_n + k_t - M\lambda & k_n l_n - k_t l_t \\
+                         k_n l_n - k_t l_t   & k_n l_n^2 + k_t l_t^2 - I\lambda
+      \end{array}\right|
+= 0
+\end{displaymath}
+where $k$ is the maximum spring constant in the spring definition, $l$
+is the length from the CG to the impact point, $M$ is the mass, $I$ is
+the moment of inertia, and the subscripts $(\cdot)_n$ and $(\cdot)_t$
+refer to the nose and tail of the body, respectively.
+
+This equation is based on the assumption that both springs remain in
+contact with the rigid surface and provide a tensile force when
+stretched.  In \SLAP, the springs release from the rigid surface and
+provide no tensile forces.  To accommodate this feature, the above
+calculation is repeated three times with different values for $k_n$ and
+$k_t$; the minimum value calculated for $\Delta t_{\rm stab}$ is
+used.  The three calculations are: (1)~both ends in contact, (2)~nose in
+contact, tail released $(k_t=0)$, and (3)~tail in contact, nose released
+$(k_n=0)$.
+
+The integration is stepped through time using the calculated value of
+$\Delta t$ until either both springs have unloaded, or the velocities
+of both the {\sf NOSE} and {\sf TAIL} are positive.  Data are written
+to the {\sf EXODUS} postprocessing file at both the first and last
+time step and every {\sf PLOT} (see Table~\ref{tglob},
+page~\pageref{tglob}) steps throughout the analysis.
+
+\begin{figure}
+%\begin{center}
+\unitlength 1in
+\begin{picture}(6.0,8)
+\thicklines
+\put(0.25, 2.5){\framebox(.75,.3){Nose}}
+\put(5.00, 3.5){\framebox(.75,.3){Tail}}
+\put(3.125,2.0){\framebox(.75,.3){CG}}
+\put(1.25, 1){\line(-1,4){0.25}}
+\put(1.00, 2){\line( 4,1){4.0}}
+\put(5.00, 3){\line(0,-1){1.0}}
+\put(3.50, 2.6250){\circle*{.1}}
+\put(5.25, 2.4000){\vector(0,-1){.4}}
+\put(5.25, 2.5000){\makebox(0,0){$R_t$}}
+\put(5.25, 2.6000){\vector(0, 1){.4}}
+%
+% force vectors
+%
+\put(3.50, 2.6250){\vector(0, 1){.5}}
+\put(3.50, 2.6250){\vector(1, 0){.5}}
+%
+\put(5.00, 1.5   ){\vector(0, 1){.5}}
+\put(5.00, 1.5   ){\makebox(0,0)[t]{$F_N^t$}}
+\put(4.50, 2.0   ){\vector(1, 0){.5}}
+\put(4.50, 2.0   ){\makebox(0,0)[r]{$F_T^t$}}
+%
+\put(1.25, 0.5   ){\vector(0, 1){.5}}
+\put(1.25, 0.5   ){\makebox(0,0)[t]{$F_N^n$}}
+\put(0.75, 1.0   ){\vector(1, 0){.5}}
+\put(0.75, 1.0   ){\makebox(0,0)[r]{$F_T^n$}}
+%
+% Dimensions
+%
+\put(1.40, 1.4){\vector(1,-4){.10}}
+\put(1.375,1.5){\makebox(0,0){$R_n$}}
+\put(1.35, 1.6){\vector(-1,4){.10}}
+%
+\put(2.10, 2.5250){\vector(-4,-1){1.10}}
+\put(2.25, 2.5625){\makebox(0,0){$l_n$}}
+\put(2.40, 2.6000){\vector( 4, 1){1.10}}
+%
+\put(4.10, 3.0250){\vector(-4,-1){0.60}}
+\put(4.25, 3.0625){\makebox(0,0){$l_t$}}
+\put(4.40, 3.1000){\vector( 4, 1){0.60}}
+%
+% Rigid surface
+%
+\put(1,1){\line(1,0){4.5}}
+\put(3.5,.8){Rigid Surface}
+%
+\put(1.50,2){\line(1,0){0.5}}
+\put(1.75,2.05){\makebox(0,0)[b]{$\theta$}}
+\thinlines
+%
+%
+% draw the picture outline
+%
+%\thinlines
+%\put(0,0){\line(1,0){6.0}}
+%\put(0,1){\line(1,0){6.0}}
+%\put(0,2){\line(1,0){6.0}}
+%\put(0,3){\line(1,0){6.0}}
+%\put(0,4){\line(1,0){6.0}}
+%\put(0,5){\line(1,0){6.0}}
+%\put(0,6){\line(1,0){6.0}}
+%\put(0,7){\line(1,0){6.0}}
+%\put(0,8){\line(1,0){6.0}}
+%\put(0.0,0){\line(0,1){8.0}}
+%\put(1.0,0){\line(0,1){8.0}}
+%\put(2.0,0){\line(0,1){8.0}}
+%\put(3.0,0){\line(0,1){8.0}}
+%\put(4.0,0){\line(0,1){8.0}}
+%\put(5.0,0){\line(0,1){8.0}}
+%\put(6.0,0){\line(0,1){8.0}}
+\end{picture}
+%\end{center}
+\caption{\SLAP\ Geometry Idealization ({\sf SQUARE} end)}\label{f:gi}
+\end{figure}
+
+
+
+\begin{figure}
+%\begin{center}
+\unitlength 1in
+\begin{picture}(6.0,8)
+\thicklines
+\put(0.15, 1.7){\framebox(.75,.3){Nose}}
+\put(5.10, 2.7){\framebox(.75,.3){Tail}}
+\put(3.125,2.0){\framebox(.75,.3){CG}}
+\put(1.25, 1){\line(-1,4){0.25}}
+\put(1.00, 2){\line( 4,1){4.0}}
+\put(5.00, 3){\line(0,-1){1.0}}
+\put(3.50, 2.6250){\circle*{.1}}
+%
+% force vectors
+%
+\put(3.50, 2.6250){\vector(0, 1){.5}}
+\put(3.50, 2.6250){\vector(1, 0){.5}}
+%
+\put(1.25, 0.5   ){\vector(0, 1){.5}}
+\put(1.25, 0.5   ){\makebox(0,0)[t]{$F_N^n$}}
+\put(0.75, 1.0   ){\vector(1, 0){.5}}
+\put(0.75, 1.0   ){\makebox(0,0)[r]{$F_T^n$}}
+%
+% Moment arm dimension
+%
+\thinlines
+\put(1.25,1.2){\line(0,1){1.925}}
+\thicklines
+\put(2,2.75){\vector(-1,0){0.75}}
+\put(2,2.75){\vector( 1,0){1.50}}
+\put(2.25, 3.0){\makebox(0,0){Moment Arm---{\sf SQUARE}}}
+\put(1.0, 3.7){\framebox(4.0,.3){{\sf SQUARE} Moment Arm $\leq$ {\sf
+ROUND} Moment Arm}}
+%
+% Rigid surface
+%
+\put(1,1){\line(1,0){4.5}}
+\put(4.5,.8){Rigid Surface}
+%
+\put(1.50,2){\line(1,0){0.5}}
+\put(1.75,2.05){\makebox(0,0)[b]{$\theta$}}
+%
+% ROUND End -- Top Half of figure
+%
+\thicklines
+\put(0.15, 5.7){\framebox(.75,.3){Nose}}
+\put(5.10, 6.7){\framebox(.75,.3){Tail}}
+\put(3.125,6.0){\framebox(.75,.3){CG}}
+\put(1.00, 5){\line( 0,1){1.0}}
+\put(1.00, 6){\line( 4,1){4.0}}
+\put(5.00, 7){\line(0,-1){1.0}}
+\put(3.50, 6.6250){\circle*{.1}}
+%
+% force vectors
+%
+\put(3.50, 6.6250){\vector(0, 1){.5}}
+\put(3.50, 6.6250){\vector(1, 0){.5}}
+%
+\put(1.0, 4.5   ){\vector(0, 1){.5}}
+\put(1.0, 4.5   ){\makebox(0,0)[t]{$F_N^n$}}
+\put(0.5, 5.0   ){\vector(1, 0){.5}}
+\put(0.5, 5.0   ){\makebox(0,0)[r]{$F_T^n$}}
+%
+% Moment arm dimension
+%
+\thinlines
+\put(1,6.2){\line(0,1){0.9250}}
+\thicklines
+\put(2,6.75){\vector(-1,0){1.00}}
+\put(2,6.75){\vector( 1,0){1.50}}
+\put(2.25, 7.0){\makebox(0,0){Moment Arm---{\sf ROUND}}}
+%
+% Rigid surface
+%
+\put(1,5){\line(1,0){4.5}}
+\put(4.5,4.8){Rigid Surface}
+%
+\put(1.50,6){\line(1,0){0.5}}
+\put(1.75,6.05){\makebox(0,0)[b]{$\theta$}}
+\thinlines
+%
+%
+% draw the picture outline
+%
+%\thinlines
+%\put(0,0){\line(1,0){6.0}}
+%\put(0,1){\line(1,0){6.0}}
+%\put(0,2){\line(1,0){6.0}}
+%\put(0,3){\line(1,0){6.0}}
+%\put(0,4){\line(1,0){6.0}}
+%\put(0,5){\line(1,0){6.0}}
+%\put(0,6){\line(1,0){6.0}}
+%\put(0,7){\line(1,0){6.0}}
+%\put(0,8){\line(1,0){6.0}}
+%\put(0.0,0){\line(0,1){8.0}}
+%\put(1.0,0){\line(0,1){8.0}}
+%\put(2.0,0){\line(0,1){8.0}}
+%\put(3.0,0){\line(0,1){8.0}}
+%\put(4.0,0){\line(0,1){8.0}}
+%\put(5.0,0){\line(0,1){8.0}}
+%\put(6.0,0){\line(0,1){8.0}}
+\end{picture}
+%\end{center}
+\caption{Effect of {\sf ROUND} and {\sf SQUARE} End Treatment}\label{f:square}
+\end{figure}

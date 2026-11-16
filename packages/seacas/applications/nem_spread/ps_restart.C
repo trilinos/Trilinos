@@ -21,6 +21,8 @@
 #include <string>
 #include <vector> // for vector
 
+using suplib_cpp::Data;
+
 /*****************************************************************************/
 /*****************************************************************************/
 template void NemSpread<double, int>::read_restart_params();
@@ -218,7 +220,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
         }
 
         if (ilocal < globals.Proc_Num_Elem_Blk[iproc]) {
-          eb_map_ptr[iproc][cnt]    = &globals.GElems[iproc][offset];
+          eb_map_ptr[iproc][cnt]    = Data(globals.GElems[iproc]) + offset;
           eb_cnts_local[iproc][cnt] = globals.Proc_Num_Elem_In_Blk[iproc][ilocal];
           offset += globals.Proc_Num_Elem_In_Blk[iproc][ilocal];
           ifound = ilocal; /* don't search the same part of the list over */

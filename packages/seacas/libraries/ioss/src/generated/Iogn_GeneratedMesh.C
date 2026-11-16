@@ -11,6 +11,7 @@
 #include "Ioss_TriShell3.h"
 #include "Ioss_Utils.h"
 #include "generated/Iogn_GeneratedMesh.h"
+#include <algorithm>
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
 #include <fmt/format.h>
@@ -1623,19 +1624,11 @@ namespace Iogn {
     // If there is a shell block on this face, then the sideset is
     // applied to the shell block; if not, it is applied to the
     // underlying hex elements.
-    bool    underlying_shell = false;
-    int64_t shell_block      = 0;
-    for (size_t i = 0; i < shellBlocks.size(); i++) {
-      if (shellBlocks[i] == loc) {
-        underlying_shell = true;
-        shell_block      = i + 2;
-        break;
-      }
-    }
+    auto shell_ids = shell_ids_at_location(loc);
 
-    if (underlying_shell) {
+    if (!shell_ids.empty()) {
       // Get ids of shell elements at this location...
-      element_map(shell_block, elem_sides);
+      element_map(shell_ids.back(), elem_sides);
 
       // Insert face_ordinal in between each entry in elem_sides...
       // Face will be 0 for all shells...
@@ -1653,9 +1646,36 @@ namespace Iogn {
     }
   }
 
-  Ioss::NameList GeneratedMesh::sideset_touching_blocks(int64_t /*set_id*/) const
+  Ioss::NameList GeneratedMesh::sideset_touching_blocks(int64_t set_id) const
   {
-    Ioss::NameList result(1, "block_1");
+    if (set_id <= 0 || (size_t)set_id > sidesets.size()) {
+      IOSS_ERROR(fmt::format("set_id out of range in sideset_touching_blocks: {}", set_id));
+    }
+
+    Ioss::NameList result;
+    ShellLocation  loc       = sidesets[set_id - 1];
+    auto           shell_ids = shell_ids_at_location(loc);
+    if (!shell_ids.empty()) {
+      result.push_back("block_" + std::to_string(shell_ids.back()));
+    }
+    else {
+      result.push_back("block_1");
+    }
+    return result;
+  }
+
+  std::vector<size_t> GeneratedMesh::shell_ids_at_location(ShellLocation loc) const
+  {
+    std::vector<size_t> result;
+
+    for (size_t i = 0; i < shellBlocks.size(); i++) {
+      if (shellBlocks[i] == loc) {
+        result.push_back(i + 2);
+      }
+    }
+    if (loc == MX || loc == MY || loc == MZ) {
+      std::reverse(result.begin(), result.end());
+    }
     return result;
   }
 

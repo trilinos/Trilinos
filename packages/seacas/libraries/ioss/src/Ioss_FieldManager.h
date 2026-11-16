@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -41,27 +41,27 @@ namespace Ioss {
 
     FieldManager &operator=(const FieldManager &) = delete;
 
-    // If a field with the same 'name' exists, an exception will be thrown.
+    ///< If a field with the same 'name' exists, an exception will be thrown.
     // Add the specified field to the list.
     void add(const Field &new_field);
 
-    // Remove all fields of type `role`
+    ///< Remove all fields of type `role`
     void erase(Field::RoleType role);
 
-    // Assumes: Field 'name' must exist.
+    ///< Assumes: Field 'name' must exist.
     void erase(const std::string &field_name);
 
-    // Checks if a field with 'field_name' exists in the database.
+    ///< Checks if a field with 'field_name' exists in the database.
     IOSS_NODISCARD bool exists(const std::string &field_name) const;
 
     IOSS_NODISCARD Field        get(const std::string &field_name) const;
     IOSS_NODISCARD const Field &getref(const std::string &field_name) const;
 
-    // Returns the names of all fields
+    ///< Returns the names of all fields
     int                     describe(NameList *names) const;
     IOSS_NODISCARD NameList describe() const;
 
-    // Returns the names of all fields with the specified 'RoleType'
+    ///< Returns the names of all fields with the specified 'RoleType'
     int                     describe(Field::RoleType role, NameList *names) const;
     IOSS_NODISCARD NameList describe(Field::RoleType role) const;
 

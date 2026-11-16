@@ -38,7 +38,7 @@ private:
   double minimumTime_{0.0};
   double maximumTime_{-1.0};
 
-  GetLongOption options_; //!< Options parsing
+  suplib_cpp::GetLongOption options_; //!< Options parsing
 
   std::string inputFile_{};
   std::string outputFile_{};

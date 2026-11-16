@@ -11,6 +11,8 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Suplib      libraries/suplib        PT  OPTIONAL
   SuplibC     libraries/suplib_c      PT  OPTIONAL
   SuplibCpp   libraries/suplib_cpp    PT  OPTIONAL
+  Exodus_cpp  libraries/exodus_cpp    PT  OPTIONAL
+  UTestUtil   applications/utest_util PT  OPTIONAL  
   SVDI        libraries/svdi          ST  OPTIONAL
   PLT         libraries/plt           ST  OPTIONAL
   Algebra     applications/algebra    PT  OPTIONAL

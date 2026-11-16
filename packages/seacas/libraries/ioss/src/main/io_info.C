@@ -152,14 +152,14 @@ template <typename T> struct fmt::formatter<std::vector<T>> : fmt::formatter<T>
     for (int i = 0; i < container.size(); ++i) {
       const auto &elem = container[i];
       if (i % 5 == 0 && i > 0) {
-        format_to(out, "\n");
-        format_to(out, "\t");
+        fmt::format_to(out, "\n");
+        fmt::format_to(out, "\t");
       }
       fmt::formatter<T>::format(elem, context);
-      format_to(out, ",");
+      fmt::format_to(out, ",");
     }
 
-    return format_to(out, "");
+    return fmt::format_to(out, "");
   }
 };
 

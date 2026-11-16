@@ -13,6 +13,9 @@
 #include <fmt/format.h>
 #include <vector> // for vector
 
+using suplib_cpp::Data;
+using suplib_cpp::index_qsort;
+
 template <typename INT> Side_Set<INT>::Side_Set() : Exo_Entity() {}
 
 template <typename INT> Side_Set<INT>::Side_Set(int file_id, size_t id) : Exo_Entity(file_id, id)

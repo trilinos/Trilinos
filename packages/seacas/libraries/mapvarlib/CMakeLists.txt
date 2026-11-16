@@ -56,7 +56,7 @@ SET(SOURCES
   tetsrc.f
   vol.f
   ininod.f
-  debug.f
+  mv_debug.f
   inielt.f
   sintpe.f
   rdinpt.f

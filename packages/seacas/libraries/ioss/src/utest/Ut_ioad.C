@@ -447,6 +447,7 @@ template <> const std::string get_entity_type_test<Ioss::SideBlock>()
 
 TEST_CASE("Ioad_BlockNames")
 {
+  Ioss::Init::Initializer init_db;
   CHECK(get_entity_type_test<Ioss::SideBlock>() == Ioad::get_entity_type<Ioss::SideBlock>());
   CHECK(get_entity_type_test<Ioss::SideSet>() == Ioad::get_entity_type<Ioss::SideSet>());
   CHECK(get_entity_type_test<Ioss::NodeBlock>() == Ioad::get_entity_type<Ioss::NodeBlock>());

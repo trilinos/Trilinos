@@ -52,8 +52,15 @@
 //  * More efficient border-node-processor communication map.
 // ========================================================================
 
-extern double seacas_timer();
-int           debug_level = 0;
+namespace suplib_cpp {
+
+  extern double seacas_timer();
+
+}
+
+using suplib_cpp::seacas_timer;
+
+int debug_level = 0;
 
 // size_t partial_count = 1'00'000;
 size_t partial_count = 1'000'000'000;
