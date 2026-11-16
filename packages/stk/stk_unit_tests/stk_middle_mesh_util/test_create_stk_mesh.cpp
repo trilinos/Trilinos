@@ -13,7 +13,7 @@ namespace impl {
 
 namespace {
 
-void read_stk_mesh(const std::string& fname, stk::mesh::BulkData& bulkData)
+void read_input_stk_mesh(const std::string& fname, stk::mesh::BulkData& bulkData)
 {
   stk::io::StkMeshIoBroker reader(bulkData.parallel());
   reader.set_bulk_data(bulkData);
@@ -132,7 +132,7 @@ TEST(StkMeshCreator, create_mesh_from_bulk_data)
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 2) { GTEST_SKIP(); }
 
   std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
-  read_stk_mesh("generated:1x2x2|sideset:x", *bulkDataPtr);
+  read_input_stk_mesh("generated:1x2x2|sideset:x", *bulkDataPtr);
 
   stk_interface::StkMeshCreator stkMeshCreator(bulkDataPtr);
 

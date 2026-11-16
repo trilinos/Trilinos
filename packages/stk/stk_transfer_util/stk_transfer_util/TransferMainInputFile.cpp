@@ -166,6 +166,14 @@ std::vector<std::string> get_string_list(const YAML::Node& node, const std::stri
 //   field-list:
 //     - field_1                                    # same name on send and recv mesh
 //     - {send: send_field_2, recv: recv_field_2}
+//   field-list:                                    # alternative "grouped" form: each group is
+//     - fields: field_1                            # transferred with its own options. 'fields'
+//       xfer-type: INTERP                          # is required and takes the same values as the
+//       recv-type: NODE                            # non-grouped field-list above. xfer-type,
+//     - fields: [elemField, {send: a, recv: b}]    # recv-type, extrapolate-option and part-list
+//       xfer-type: PATCH                           # are optional and default to the top-level
+//       recv-type: ELEMENT_CENTROID                # options.
+//       part-list: {recv: [block_1]}
 //   part-list:
 //     send: [block_1, block_2]                     # omitted or empty => all parts
 //     recv: [surface_1]
@@ -212,7 +220,7 @@ std::pair<std::string, std::string> parse_field_entry(const YAML::Node& entry, c
 
 // A sequence of entries, each either a field name or a {send, recv} map. A single
 // entry may also be given without the enclosing sequence.
-std::vector<std::pair<std::string, std::string>> parse_field_list(const YAML::Node& node, const std::string& name)
+std::vector<std::pair<std::string, std::string>> parse_field_names(const YAML::Node& node, const std::string& name)
 {
   if (node.IsScalar() || node.IsMap()) {
     return {parse_field_entry(node, name)};
@@ -245,6 +253,65 @@ TransferInputFilePartLists parse_part_list(const YAML::Node& node, const std::st
       else               { parts.recv = get_string_list(value, name + ".recv"); }
     });
   return parts;
+}
+
+const char* const fieldGroupFieldsKey = "fields";
+
+bool is_field_group(const YAML::Node& node)
+{
+  return node.IsMap() && node[fieldGroupFieldsKey];
+}
+
+TransferInputFileFieldGroup parse_field_group(const YAML::Node& node, const std::string& name)
+{
+  const OptionNames names;
+  TransferInputFileFieldGroup group;
+  bool haveFields = false;
+  for_each_map_entry(node, "'" + name + "'",
+    {fieldGroupFieldsKey, names.transferType, names.recvType, names.ExtrapolateOption, names.partList},
+    [&](const std::string& key, const YAML::Node& value) {
+      const std::string entryName = name + "." + key;
+      if (key == fieldGroupFieldsKey) {
+        STK_ThrowRequireMsg(!value.IsNull(), inputFileError << "'" << entryName << "' must not be empty.");
+        group.fields = parse_field_names(value, entryName);
+        STK_ThrowRequireMsg(!group.fields.empty(), inputFileError << "'" << entryName << "' must not be empty.");
+        haveFields = true;
+      }
+      else if (key == names.transferType)      { group.transferType = get_scalar_string(value, entryName); }
+      else if (key == names.recvType)          { group.recvType = get_scalar_string(value, entryName); }
+      else if (key == names.ExtrapolateOption) { group.extrapolateOption = get_scalar_string(value, entryName); }
+      else                                     { group.parts = parse_part_list(value, entryName); }
+    });
+  STK_ThrowRequireMsg(haveFields, inputFileError << "'" << name << "' requires a '" << fieldGroupFieldsKey << "' entry.");
+  return group;
+}
+
+// 'field-list' is either a list of field names (see parse_field_names), or a list of
+// field groups (maps with a 'fields' key, see parse_field_group). A single group may
+// also be given without the enclosing sequence.
+void parse_field_list(const YAML::Node& node, const std::string& name, TransferInputFileOptions& options)
+{
+  if (is_field_group(node)) {
+    options.fieldGroups = std::vector<TransferInputFileFieldGroup>{parse_field_group(node, name)};
+    return;
+  }
+
+  const bool isGroupedSequence = node.IsSequence() && node.size() > 0 && is_field_group(node[0]);
+  if (!isGroupedSequence) {
+    options.fields = parse_field_names(node, name);
+    return;
+  }
+
+  std::vector<TransferInputFileFieldGroup> groups;
+  for (std::size_t i = 0; i < node.size(); ++i) {
+    const std::string entryName = name + "[" + std::to_string(i) + "]";
+    STK_ThrowRequireMsg(is_field_group(node[i]),
+        inputFileError << "'" << entryName << "' must be a field group (a map with a '" << fieldGroupFieldsKey
+                       << "' entry), since '" << name << "[0]' is one. Field groups and plain field names "
+                       << "cannot be mixed in '" << name << "'.");
+    groups.push_back(parse_field_group(node[i], entryName));
+  }
+  options.fieldGroups = groups;
 }
 
 std::string parse_time_steps(const YAML::Node& node, const std::string& name)
@@ -386,7 +453,7 @@ TransferInputFileOptions parse_transfer_input_file_yaml(const std::string& yamlT
           options.timeSteps = parse_time_steps(value, key);
         }
         else if (key == names.fieldList) {
-          options.fields = parse_field_list(value, key);
+          parse_field_list(value, key, options);
         }
         else if (key == names.partList) {
           options.parts = parse_part_list(value, key);

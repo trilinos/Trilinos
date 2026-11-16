@@ -120,11 +120,10 @@ void unpackCommunicationsAndStoreSharedEntityToProcPair(
                     stk::CommSparse& commStage2,
                     std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities);
 
-bool is_received_entity_in_local_shared_entity_list(
-                      bool use_entity_ids_for_resolving_sharing,
-                      const std::vector<shared_entity_type>::iterator &shared_itr,
-                      const std::vector<shared_entity_type>& shared_entities_this_proc,
-                      const shared_entity_type &shared_entity_from_other_proc);
+bool is_received_entity_in_local_shared_entity_list(bool use_entity_ids_for_resolving_sharing,
+    std::vector<shared_entity_type>::iterator& shared_itr,
+    const std::vector<shared_entity_type>& shared_entities_this_proc,
+    const shared_entity_type& shared_entity_from_other_proc);
 
 } // namespace impl
 } // namespace mesh

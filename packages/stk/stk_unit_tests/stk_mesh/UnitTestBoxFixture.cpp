@@ -58,8 +58,6 @@ using stk::mesh::fixtures::BoxFixture;
 
 namespace {
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-
 class ExposePartition : public BoxFixture
 {
 public:
@@ -133,14 +131,14 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
         const EntityId elem_id =  1 + i + j * ngx + k * ngx * ngy;
 
         std::vector<Entity> nodes(8);
-        nodes[0] = bulk.get_entity( NODE_RANK, n0 );
-        nodes[1] = bulk.get_entity( NODE_RANK, n1 );
-        nodes[2] = bulk.get_entity( NODE_RANK, n2 );
-        nodes[3] = bulk.get_entity( NODE_RANK, n3 );
-        nodes[4] = bulk.get_entity( NODE_RANK, n4 );
-        nodes[5] = bulk.get_entity( NODE_RANK, n5 );
-        nodes[6] = bulk.get_entity( NODE_RANK, n6 );
-        nodes[7] = bulk.get_entity( NODE_RANK, n7 );
+        nodes[0] = bulk.get_entity( stk::topology::NODE_RANK, n0 );
+        nodes[1] = bulk.get_entity( stk::topology::NODE_RANK, n1 );
+        nodes[2] = bulk.get_entity( stk::topology::NODE_RANK, n2 );
+        nodes[3] = bulk.get_entity( stk::topology::NODE_RANK, n3 );
+        nodes[4] = bulk.get_entity( stk::topology::NODE_RANK, n4 );
+        nodes[5] = bulk.get_entity( stk::topology::NODE_RANK, n5 );
+        nodes[6] = bulk.get_entity( stk::topology::NODE_RANK, n6 );
+        nodes[7] = bulk.get_entity( stk::topology::NODE_RANK, n7 );
 
         Entity elem = bulk.get_entity( element_rank, elem_id );
 

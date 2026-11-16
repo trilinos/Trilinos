@@ -7,7 +7,6 @@
 #include "stk_tools/mesh_tools/EntityDisconnectTool.hpp"
 
 
-inline constexpr size_t MAX_NEIGHBORS = 40;
 class ElementDisconnectPerfFixture : public stk::unit_test_util::MeshFixture
 {
  public:

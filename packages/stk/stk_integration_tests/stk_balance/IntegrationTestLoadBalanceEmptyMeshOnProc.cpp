@@ -12,7 +12,7 @@ namespace
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-void balance_mesh(stk::mesh::BulkData& bulkData);
+void balance_mesh_with_empty_proc(stk::mesh::BulkData& bulkData);
 void test_that_mesh_is_balanced(const stk::mesh::BulkData& stkMeshBulkData, const unsigned gold_num_elements_per_proc);
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,7 +41,7 @@ void test_load_balancing_when_one_proc_has_no_mesh(stk::mesh::BulkData& stkMeshB
 {
   move_elements_from_proc_2_to_proc_0(stkMeshBulkData);
   test_that_empty_mesh_exists_on_proc_2(stkMeshBulkData);
-  balance_mesh(stkMeshBulkData);
+  balance_mesh_with_empty_proc(stkMeshBulkData);
   test_that_mesh_is_balanced(stkMeshBulkData, 2);
 }
 
@@ -69,7 +69,7 @@ void test_that_empty_mesh_exists_on_proc_2(const stk::mesh::BulkData& stkMeshBul
   EXPECT_EQ(num_elements_per_proc[stkMeshBulkData.parallel_rank()], num_elements);
 }
 
-void balance_mesh(stk::mesh::BulkData& bulkData)
+void balance_mesh_with_empty_proc(stk::mesh::BulkData& bulkData)
 {
   stk::balance::BasicZoltan2Settings graphSettings;
   stk::balance::balanceStkMesh(graphSettings, bulkData);

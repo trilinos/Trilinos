@@ -164,6 +164,7 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/TestNgpMeshUpdate.cpp"
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/howToNgp.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/howToNgpMeshMod.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/implNgpMeshMod.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/NgpDeviceCommMapUpdateTest.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/NgpFieldAsyncTest.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/ngpFieldBLASTest.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/ngpFieldTest.cpp")
@@ -186,6 +187,14 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/UnitTestNgpMeshModDecl
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/UnitTestNgpMeshModRemoveConnectivities.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ngp/UnitTestNgpMeshModCommon.cpp")
 ENDIF()
+
+# Compiled on their own in unity builds: each takes minutes to compile, so batching them
+# would serialize the slowest part of the build.
+set_source_files_properties(
+  ngp/NgpParallelSumTest.cpp
+  ngp/NgpDeviceCommMapUpdateTest.cpp
+  ngp/UnitTestNgpMeshModChangeParts.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})

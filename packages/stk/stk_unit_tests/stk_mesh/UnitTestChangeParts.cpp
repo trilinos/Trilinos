@@ -49,26 +49,16 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 #include "stk_mesh/baseImpl/Partition.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 namespace
 {
-
-std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim,
-                                                stk::ParallelMachine comm,
-                                                stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::AUTO_AURA)
-{
-  stk::mesh::MeshBuilder builder(comm);
-  builder.set_spatial_dimension(spatialDim);
-  builder.set_aura_option(auraOption);
-  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  return bulk;
-}
 
 TEST(UnitTestChangeParts, test_throw_on_internal_part_change)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   const int spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, communicator);
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulkData = *bulkPtr;
 
@@ -139,7 +129,7 @@ TEST(UnitTestChangeParts, genmesh_test_batch_part_change_1_node)
   if (p_size != 1) { GTEST_SKIP(); }
 
   const int spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
 
   stk::io::fill_mesh("generated:1x1x1", *bulkPtr);
 
@@ -154,7 +144,7 @@ TEST(UnitTestChangeParts, test_batch_part_change_1_node)
   if (p_size != 1) { GTEST_SKIP(); }
 
   const int spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1";
   stk::unit_test_util::setup_text_mesh(*bulkPtr, meshDesc);
@@ -170,7 +160,7 @@ TEST(UnitTestChangeParts, test_batch_part_change)
   if (p_size != 1) { GTEST_SKIP(); }
 
   const int spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulkData = *bulkPtr;
 
@@ -213,7 +203,7 @@ TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
   }
 
   const int spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulkData = *bulkPtr;
 
@@ -296,7 +286,7 @@ TEST(ChangeElemParts, DontMarkSharedNodesModifiedUnnecessarily)
   if(numProcs > 2) { GTEST_SKIP(); }
 
   const int spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, communicator, stk::mesh::BulkData::NO_AUTO_AURA);
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
   stk::mesh::Part& myPart = meta.declare_part("myPart");
   stk::mesh::BulkData& bulk = *bulkPtr;
@@ -326,7 +316,7 @@ TEST(ChangeElemParts, addThenRemoveElemPart_checkSharedNode)
   if(numProcs > 2) { GTEST_SKIP(); }
 
   const int spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, communicator, stk::mesh::BulkData::NO_AUTO_AURA);
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
   stk::mesh::Part& myPart = meta.declare_part_with_topology("myPart", stk::topology::HEX_8);
   stk::mesh::BulkData& bulk = *bulkPtr;

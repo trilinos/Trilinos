@@ -1,5 +1,8 @@
 
 FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+# Compiled on its own in unity builds: doc snippet duplicates helpers from TimerHowTo.cpp
+set_source_files_properties(TimerHowToParallel.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 IF(NOT STK_HAS_MPI)
    LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/CommSparseHowTo.cpp")

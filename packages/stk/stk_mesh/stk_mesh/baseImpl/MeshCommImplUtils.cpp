@@ -457,23 +457,27 @@ void unpackCommunicationsAndStoreSharedEntityToProcPair(const int numProcs, cons
     }
 }
 
-bool is_received_entity_in_local_shared_entity_list(
-          bool use_entity_ids_for_resolving_sharing,
-          const std::vector<shared_entity_type>::iterator &shared_itr,
-          const std::vector<shared_entity_type>& shared_entities_this_proc,
-          const shared_entity_type &shared_entity_from_other_proc)
+bool is_received_entity_in_local_shared_entity_list(bool use_entity_ids_for_resolving_sharing,
+    std::vector<shared_entity_type>::iterator& shared_itr,
+    const std::vector<shared_entity_type>& shared_entities_this_proc,
+    const shared_entity_type& shared_entity_from_other_proc)
 {
   bool entitiesHaveSameNodes = shared_itr != shared_entities_this_proc.end() && *shared_itr == shared_entity_from_other_proc;
-  bool entitiesAreTheSame = false;
 
-  if ( use_entity_ids_for_resolving_sharing ) {
-    entitiesAreTheSame = entitiesHaveSameNodes && shared_itr->local_key == shared_entity_from_other_proc.local_key;
-  }
-  else {
-    entitiesAreTheSame = entitiesHaveSameNodes;
+  if (!use_entity_ids_for_resolving_sharing) {
+    return entitiesHaveSameNodes;
   }
 
-  return entitiesAreTheSame;
+  // The received entity's key is the sender's local key, unpacked into global_key.  Several local
+  // entities can have the same nodes (e.g. a coincident shell face), so look for the one with that key
+  // among them, and leave shared_itr at it.
+  for (auto itr = shared_itr; itr != shared_entities_this_proc.end() && *itr == shared_entity_from_other_proc; ++itr) {
+    if (itr->local_key == shared_entity_from_other_proc.global_key) {
+      shared_itr = itr;
+      return true;
+    }
+  }
+  return false;
 }
 
 } // namespace impl

@@ -67,11 +67,11 @@ public:
 
   void fill_alternating() 
   {
-    FloatingPointType half(0.5);
+    FloatingPointType oneHalf(0.5);
     FloatingPointType zeroOne = zeros_ones();
 
-    m_valueA = (zeroOne < half);
-    m_valueB = (zeroOne < half);
+    m_valueA = (zeroOne < oneHalf);
+    m_valueB = (zeroOne < oneHalf);
 
     load_scalar_values();
   }

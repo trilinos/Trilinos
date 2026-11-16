@@ -1,3 +1,6 @@
+#ifndef STK_MIDDLE_MESH_UNIT_TEST_MESH_COMPARER_HPP
+#define STK_MIDDLE_MESH_UNIT_TEST_MESH_COMPARER_HPP
+
 #include "stk_middle_mesh/mesh.hpp"
 
 namespace stk {
@@ -39,3 +42,5 @@ void compare_meshes(std::shared_ptr<mesh::Mesh> mesh1, std::shared_ptr<mesh::Mes
 } // namespace impl
 } // namespace middle_mesh
 } // namespace stk
+
+#endif // STK_MIDDLE_MESH_UNIT_TEST_MESH_COMPARER_HPP

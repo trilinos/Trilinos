@@ -51,6 +51,7 @@
 #include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 namespace stk { namespace mesh { class Part; } }
 
@@ -238,13 +239,6 @@ void testTwoEntitiesTwoBuckets(stk::mesh::BulkData& bulkData)
   EXPECT_EQ(expectedNumBuckets, bulkData.buckets(stk::topology::NODE_RANK).size());
 }
 
-std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim, stk::ParallelMachine comm)
-{
-  stk::mesh::MeshBuilder builder(comm);
-  builder.set_spatial_dimension(spatialDim);
-  return builder.create();
-}
-
 using TestTypes = ::testing::Types<char, unsigned char, signed char, short, unsigned short, int, unsigned int,
                                    long, unsigned long, long long, unsigned long long, float, double, long double,
                                    Kokkos::complex<float>, Kokkos::complex<double>>;
@@ -260,7 +254,7 @@ TYPED_TEST(TestFieldDataManager, AllocateFieldData_LayoutRight)
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
 
-  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
   initializeTestField<FieldDataType, stk::mesh::Layout::Right>(meshMetaData);
 
@@ -276,7 +270,7 @@ TYPED_TEST(TestFieldDataManager, AllocateFieldData_LayoutLeft)
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
 
-  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
   initializeTestField<FieldDataType, stk::mesh::Layout::Left>(meshMetaData);
 
@@ -292,7 +286,7 @@ TYPED_TEST(TestFieldDataManager, AllocateFieldDataTwoBuckets_LayoutRight)
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
 
-  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
   initializeTestField<FieldDataType, stk::mesh::Layout::Right>(meshMetaData);
 
@@ -308,7 +302,7 @@ TYPED_TEST(TestFieldDataManager, AllocateFieldDataTwoBuckets_LayoutLeft)
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
 
-  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
   initializeTestField<FieldDataType, stk::mesh::Layout::Left>(meshMetaData);
 
@@ -324,7 +318,7 @@ TYPED_TEST(TestFieldDataManager, TwoEntitiesTwoBuckets_LayoutRight)
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
 
-  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
   createPart(meshMetaData);
   initializeTestField<FieldDataType, stk::mesh::Layout::Right>(meshMetaData);
@@ -339,7 +333,7 @@ TYPED_TEST(TestFieldDataManager, TwoEntitiesTwoBuckets_LayoutLeft)
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
 
-  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
   createPart(meshMetaData);
   initializeTestField<FieldDataType, stk::mesh::Layout::Left>(meshMetaData);
@@ -354,7 +348,7 @@ TYPED_TEST(TestFieldDataManager, AllocateFieldDataAndReorderBuckets_LayoutRight)
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
 
-  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
   initializeTestField<FieldDataType, stk::mesh::Layout::Right>(meshMetaData);
 
@@ -379,7 +373,7 @@ TYPED_TEST(TestFieldDataManager, AllocateFieldDataAndReorderBuckets_LayoutLeft)
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
 
-  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD);
   stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
   initializeTestField<FieldDataType, stk::mesh::Layout::Left>(meshMetaData);
 

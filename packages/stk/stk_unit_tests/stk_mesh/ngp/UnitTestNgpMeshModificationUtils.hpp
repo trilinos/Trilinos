@@ -388,6 +388,11 @@ void check_device_entity_field_data(DeviceMeshType& ngpMesh,
 }
 
 }  // namespace
+
+std::vector<stk::mesh::Entity> batch_declare_entities_on_device_for_test(
+    stk::mesh::BulkData& bulk, stk::topology::rank_t rank, const std::vector<unsigned>& entityIds,
+    const std::vector<stk::mesh::PartOrdinal>& addPartOrdinals);
+
 #endif
 
 #endif

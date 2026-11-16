@@ -59,7 +59,6 @@ using stk::mesh::fixtures::RingFixture;
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 TEST( UnitTestBoxFixture, verifyRingFixture )
 {
@@ -97,18 +96,18 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
 
   std::vector<size_t> local_count;
   stk::mesh::count_entities( select_used , bulk , local_count );
-  ASSERT_EQ( local_count[NODE_RANK]     , nLocalNode );
+  ASSERT_EQ( local_count[stk::topology::NODE_RANK]     , nLocalNode );
   ASSERT_EQ( local_count[element_rank] , nLocalElement );
 
   std::vector<Entity> all_nodes;
-  get_entities( bulk, NODE_RANK, all_nodes);
+  get_entities( bulk, stk::topology::NODE_RANK, all_nodes);
 
   unsigned num_selected_nodes =
-      count_selected_entities( select_used, bulk.buckets(NODE_RANK) );
-  ASSERT_EQ( num_selected_nodes , local_count[NODE_RANK] );
+      count_selected_entities( select_used, bulk.buckets(stk::topology::NODE_RANK) );
+  ASSERT_EQ( num_selected_nodes , local_count[stk::topology::NODE_RANK] );
 
   std::vector<Entity> universal_nodes;
-  get_selected_entities(select_all, bulk.buckets(NODE_RANK),
+  get_selected_entities(select_all, bulk.buckets(stk::topology::NODE_RANK),
                         universal_nodes );
   ASSERT_EQ( universal_nodes.size() , all_nodes.size() );
 
@@ -124,8 +123,8 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
     const unsigned n0 = id_end < id_total ? id_begin : 0 ;
     const unsigned n1 = id_end < id_total ? id_end : id_begin ;
 
-    Entity const node0 = bulk.get_entity( NODE_RANK , fixture.m_node_ids[n0] );
-    Entity const node1 = bulk.get_entity( NODE_RANK , fixture.m_node_ids[n1] );
+    Entity const node0 = bulk.get_entity( stk::topology::NODE_RANK , fixture.m_node_ids[n0] );
+    Entity const node1 = bulk.get_entity( stk::topology::NODE_RANK , fixture.m_node_ids[n1] );
 
     ASSERT_TRUE( bulk.is_valid(node0) );
     ASSERT_TRUE( bulk.is_valid(node1) );
@@ -262,8 +261,8 @@ void test_shift_ring( RingFixture& ring )
   ASSERT_EQ( count_shared , 2u );
 
   {
-    const EntityKey node_recv = EntityKey(NODE_RANK , ring.m_node_ids[id_recv]);
-    const EntityKey node_send = EntityKey(NODE_RANK , ring.m_node_ids[id_send]);
+    const EntityKey node_recv = EntityKey(stk::topology::NODE_RANK , ring.m_node_ids[id_recv]);
+    const EntityKey node_send = EntityKey(stk::topology::NODE_RANK , ring.m_node_ids[id_send]);
 
     std::vector<int> node_recv_shared_procs;
     bulk.comm_shared_procs(node_recv,node_recv_shared_procs);

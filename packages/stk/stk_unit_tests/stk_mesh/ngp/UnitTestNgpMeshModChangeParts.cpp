@@ -120,8 +120,7 @@ class NgpBatchChangeEntityPartsTwoBlocks : public ::ngp_testing::Test
       Kokkos::deep_copy(remove_part_ordinals, remove_part_ordinals_host);
 
       stk::mesh::NgpMesh& deviceMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-      auto wrappedEntities = stk::mesh::impl::wrap_entities(entities);
-      deviceMesh.impl_batch_change_entity_parts_with_inducible_parts(wrappedEntities, add_part_ordinals, remove_part_ordinals, {});
+      deviceMesh.batch_change_entity_parts(entities, add_part_ordinals, remove_part_ordinals);
     }
 
     stk::mesh::MetaData meta;
@@ -1020,7 +1019,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, removePartToNode_impl_set_new_part_lists)
   }
 }
 
-NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_addPartToNode)
+NGP_TEST_F(NgpBatchChangeEntityParts, batch_change_entity_parts_addPartToNode)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1040,7 +1039,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_addPartToNo
   fill_device_views_add_remove_part_from_node(entities, addPartOrdinals, removePartOrdinals, ngpMesh,
                                               node1, &part2, nullptr);
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts(stk::mesh::impl::wrap_entities(entities), addPartOrdinals, removePartOrdinals, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals));
 
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
@@ -1052,7 +1051,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_addPartToNo
   check_device_mesh_indices(ngpMesh, stk::topology::NODE_RANK);
 }
 
-NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_removePartFromNode)
+NGP_TEST_F(NgpBatchChangeEntityParts, batch_change_entity_parts_removePartFromNode)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1071,7 +1070,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_removePartF
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   fill_device_views_add_remove_part_from_node(entities, addPartOrdinals, removePartOrdinals, ngpMesh,
                                               node1, nullptr, &part1);
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts(stk::mesh::impl::wrap_entities(entities), addPartOrdinals, removePartOrdinals, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals));
 
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
@@ -1083,7 +1082,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_removePartF
   check_device_mesh_indices(ngpMesh, stk::topology::NODE_RANK);
 }
 
-NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_remove_parts_create_multiple_buckets_in_partition)
+NGP_TEST_F(NgpBatchChangeEntityParts, batch_change_entity_parts_remove_parts_create_multiple_buckets_in_partition)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1119,7 +1118,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_remove_part
   EXPECT_EQ(2u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
   EXPECT_EQ(2u, deviceBucketRepo.num_partitions(stk::topology::NODE_RANK));
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts));
 
   EXPECT_EQ(2u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
   EXPECT_EQ(1u, deviceBucketRepo.num_partitions(stk::topology::NODE_RANK));
@@ -1130,7 +1129,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_remove_part
   check_device_mesh_indices(ngpMesh, stk::topology::NODE_RANK);
 }
 
-NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_move_nodes_to_another_bucket)
+NGP_TEST_F(NgpBatchChangeEntityParts, batch_change_entity_parts_move_nodes_to_another_bucket)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1164,7 +1163,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_move_nodes_
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
   EXPECT_EQ(1u, deviceBucketRepo.num_partitions(stk::topology::NODE_RANK));
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts));
 
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
   EXPECT_EQ(1u, deviceBucketRepo.num_partitions(stk::topology::NODE_RANK));
@@ -1175,7 +1174,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_move_nodes_
   check_device_mesh_indices(ngpMesh, stk::topology::NODE_RANK);
 }
 
-NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_add_parts_create_multiple_buckets_in_partition)
+NGP_TEST_F(NgpBatchChangeEntityParts, batch_change_entity_parts_add_parts_create_multiple_buckets_in_partition)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1211,7 +1210,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_add_parts_c
   EXPECT_EQ(2u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
   EXPECT_EQ(2u, deviceBucketRepo.num_partitions(stk::topology::NODE_RANK));
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts));
 
   EXPECT_EQ(2u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
   EXPECT_EQ(1u, deviceBucketRepo.num_partitions(stk::topology::NODE_RANK));
@@ -1222,7 +1221,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_add_parts_c
   check_device_mesh_indices(ngpMesh, stk::topology::NODE_RANK);
 }
 
-NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_remove_parts_create_single_bucket_in_partition)
+NGP_TEST_F(NgpBatchChangeEntityParts, batch_change_entity_parts_remove_parts_create_single_bucket_in_partition)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1258,7 +1257,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_remove_part
   EXPECT_EQ(2u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
   EXPECT_EQ(2u, deviceBucketRepo.num_partitions(stk::topology::NODE_RANK));
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts));
 
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
   EXPECT_EQ(1u, deviceBucketRepo.num_partitions(stk::topology::NODE_RANK));
@@ -1269,7 +1268,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_remove_part
   check_device_mesh_indices(ngpMesh, stk::topology::NODE_RANK);
 }
 
-NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_add_parts_create_single_buckets_in_partition)
+NGP_TEST_F(NgpBatchChangeEntityParts, batch_change_entity_parts_add_parts_create_single_buckets_in_partition)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1308,7 +1307,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_add_parts_c
   EXPECT_EQ(2u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
   EXPECT_EQ(2u, deviceBucketRepo.num_partitions(stk::topology::NODE_RANK));
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts));
 
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(stk::topology::NODE_RANK));
   EXPECT_EQ(1u, deviceBucketRepo.num_partitions(stk::topology::NODE_RANK));
@@ -1321,7 +1320,7 @@ NGP_TEST_F(NgpBatchChangeEntityParts, impl_batch_change_entity_parts_add_parts_c
 
 using NgpBatchChangeEntityPartsDeathTest = NgpBatchChangeEntityParts;
 
-TEST_F(NgpBatchChangeEntityPartsDeathTest, DISABLED_check_impl_batch_change_entity_parts_detect_internal_part)
+TEST_F(NgpBatchChangeEntityPartsDeathTest, DISABLED_check_batch_change_entity_parts_detect_internal_part)
 {
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
@@ -1347,8 +1346,8 @@ TEST_F(NgpBatchChangeEntityPartsDeathTest, DISABLED_check_impl_batch_change_enti
   Kokkos::deep_copy(devAddParts, hostAddParts);
 
 #ifndef NDEBUG
-  ASSERT_DEATH(ngpMesh.impl_batch_change_entity_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {}), "");
-  ASSERT_DEATH(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {}), "");
+  ASSERT_DEATH(ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts), "");
+  ASSERT_DEATH(ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts), "");
 #endif
 }
 
@@ -1576,8 +1575,7 @@ NGP_TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, check_impl_set_new_pa
   using PartOrdinalsProxyViewType = Kokkos::View<stk::mesh::impl::PartOrdinalsProxyIndices*>;
   PartOrdinalsProxyViewType partOrdinalsProxy(Kokkos::view_alloc("partOrdinalsProxy", Kokkos::WithoutInitializing), wrappedEntities.size());
   stk::mesh::impl::set_new_part_list_per_entity_with_induced_parts(ngpMesh, wrappedEntities, sortedAddPartOrdinals, removePartOrdinals,
-                                                                   maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy,
-                                                                   Kokkos::View<stk::mesh::impl::DeniedPartRemoval*>{});
+                                                                   maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy);
   EXPECT_EQ(9u, partOrdinalsProxy.extent(0));
 
   stk::mesh::PartVector partsForElem{&elemPart1, &unrankedPart};
@@ -1635,8 +1633,7 @@ NGP_TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, check_impl_set_new_pa
   using PartOrdinalsProxyViewType = Kokkos::View<stk::mesh::impl::PartOrdinalsProxyIndices*>;
   PartOrdinalsProxyViewType partOrdinalsProxy(Kokkos::view_alloc("partOrdinalsProxy", Kokkos::WithoutInitializing), wrappedEntities.size());
   stk::mesh::impl::set_new_part_list_per_entity_with_induced_parts(ngpMesh, wrappedEntities, sortedAddPartOrdinals, removePartOrdinals,
-                                                                   maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy,
-                                                                   Kokkos::View<stk::mesh::impl::DeniedPartRemoval*>{});
+                                                                   maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy);
   EXPECT_EQ(9u, partOrdinalsProxy.extent(0));
 
   stk::mesh::PartVector partsForElem{&elemPart1};
@@ -1695,8 +1692,7 @@ NGP_TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, check_impl_set_new_pa
   using PartOrdinalsProxyViewType = Kokkos::View<stk::mesh::impl::PartOrdinalsProxyIndices*>;
   PartOrdinalsProxyViewType partOrdinalsProxy(Kokkos::view_alloc("partOrdinalsProxy", Kokkos::WithoutInitializing), wrappedEntities.size());
   stk::mesh::impl::set_new_part_list_per_entity_with_induced_parts(ngpMesh, wrappedEntities, sortedAddPartOrdinals, removePartOrdinals,
-                                                                   maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy,
-                                                                   Kokkos::View<stk::mesh::impl::DeniedPartRemoval*>{});
+                                                                   maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy);
   EXPECT_EQ(9u, partOrdinalsProxy.extent(0));
 
   stk::mesh::PartVector partsForElem{&elemPart1, &elemPart2};
@@ -1754,8 +1750,7 @@ NGP_TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, check_impl_set_new_pa
   using PartOrdinalsProxyViewType = Kokkos::View<stk::mesh::impl::PartOrdinalsProxyIndices*>;
   PartOrdinalsProxyViewType partOrdinalsProxy(Kokkos::view_alloc("partOrdinalsProxy", Kokkos::WithoutInitializing), wrappedEntities.size());
   stk::mesh::impl::set_new_part_list_per_entity_with_induced_parts(ngpMesh, wrappedEntities, sortedAddPartOrdinals, removePartOrdinals,
-                                                                   maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy,
-                                                                   Kokkos::View<stk::mesh::impl::DeniedPartRemoval*>{});
+                                                                   maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy);
   EXPECT_EQ(9u, partOrdinalsProxy.extent(0));
 
   stk::mesh::PartVector partsForElem{&elemPart1};
@@ -1810,7 +1805,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, add_unranked_part_to_elem
   check_device_connectivity(ngpMesh, stk::topology::NODE_RANK, devNodeEntities,
                             stk::topology::ELEM_RANK, expectedNumConnectedElems);
 
-  ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {});
+  ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts);
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(stk::topology::ELEM_RANK));
@@ -1879,7 +1874,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, remove_unranked_part_from
   check_device_connectivity(ngpMesh, stk::topology::NODE_RANK, devNodeEntities,
                             stk::topology::ELEM_RANK, expectedNumConnectedElems);
 
-  ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {});
+  ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts);
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(stk::topology::ELEM_RANK));
@@ -1947,7 +1942,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, add_ranked_part_to_elemen
   check_device_connectivity(ngpMesh, stk::topology::NODE_RANK, devNodeEntities,
                             stk::topology::ELEM_RANK, expectedNumConnectedElems);
 
-  ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {});
+  ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts);
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(stk::topology::ELEM_RANK));
@@ -1998,7 +1993,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, remove_ranked_part_from_e
   auto node = m_bulk->get_entity(stk::topology::NODE_RANK, nodeId);
 
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
-  ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {});
+  ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts);
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(stk::topology::ELEM_RANK));
@@ -2049,7 +2044,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, element_with_ranked_part_
   auto devNodes = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostNodes);
 
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devNodes), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devNodes, devAddParts, devRemoveParts));
 
   DevicePartOrdinalsType expectedDevicePartOrdinal = create_device_part_ordinal(stk::mesh::PartVector{&elemPart});
   check_device_entity_part_ordinal_match(ngpMesh, stk::topology::ELEM_RANK, devEntities, expectedDevicePartOrdinal);
@@ -2089,7 +2084,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, try_add_ranked_part_to_lo
   auto devNodes = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostNodes);
 
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devNodes), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devNodes, devAddParts, devRemoveParts));
 
   DevicePartOrdinalsType expectedDevicePartOrdinal = create_device_part_ordinal(stk::mesh::PartVector{&elemPart1});
   check_device_entity_part_ordinal_match(ngpMesh, stk::topology::ELEM_RANK, devEntities, expectedDevicePartOrdinal);
@@ -2151,7 +2146,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, two_elements_with_diff_ra
   hostRemoveParts(0) = part1.mesh_meta_data_ordinal();
   Kokkos::deep_copy(devRemoveParts, hostRemoveParts);
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devEntities1), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devEntities1, devAddParts, devRemoveParts));
 
   expectedDevicePartOrdinal = create_device_part_ordinal(elemPart2);
   check_device_entity_part_ordinal_match(ngpMesh, stk::topology::ELEM_RANK, devEntities2, expectedDevicePartOrdinal);
@@ -2217,7 +2212,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, two_elements_with_same_ra
   hostRemoveParts(0) = part1.mesh_meta_data_ordinal();
   Kokkos::deep_copy(devRemoveParts, hostRemoveParts);
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devEntities1), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devEntities1, devAddParts, devRemoveParts));
 
   auto unexpectedDevicePartOrdinal = create_device_part_ordinal(elemPart);
   check_device_buckets_part_ordinal_does_not_contain_part(ngpMesh, stk::topology::ELEM_RANK, devEntities1, unexpectedDevicePartOrdinal);
@@ -2282,7 +2277,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, two_elements_with_same_ra
   hostRemoveParts(0) = block1Part->mesh_meta_data_ordinal();
   Kokkos::deep_copy(devRemoveParts, hostRemoveParts);
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devFaces), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devFaces, devAddParts, devRemoveParts));
 
   auto expectedDevicePartOrdinal = create_device_part_ordinal(stk::mesh::PartVector{block1Part});
   check_device_entity_part_ordinal_match(ngpMesh, stk::topology::ELEM_RANK, devElems, expectedDevicePartOrdinal);
@@ -2379,7 +2374,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, two_elements_with_same_ra
   check_device_connectivity(ngpMesh, stk::topology::NODE_RANK, devNodes2,
                             stk::topology::ELEM_RANK, expectedNumConnectedElems);
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devElem), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devElem, devAddParts, devRemoveParts));
 
   auto expectedDevicePartOrdinal = create_device_part_ordinal(stk::mesh::PartVector{block1Part, &part2, internalPart});
   check_device_entity_has_parts(ngpMesh, stk::topology::FACE_RANK, devFace, expectedDevicePartOrdinal);
@@ -2388,7 +2383,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, two_elements_with_same_ra
   hostAddParts(0) = part3.mesh_meta_data_ordinal();
   Kokkos::deep_copy(devAddParts, hostAddParts);
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devNodes2), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devNodes2, devAddParts, devRemoveParts));
 
   expectedDevicePartOrdinal = create_device_part_ordinal(stk::mesh::PartVector{block1Part, &part2});
   check_device_entity_has_parts(ngpMesh, stk::topology::ELEM_RANK, devElem, expectedDevicePartOrdinal);
@@ -2477,7 +2472,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, nodal_field_data_two_elem
   hostAddParts(0) = part2.mesh_meta_data_ordinal();
   Kokkos::deep_copy(devAddParts, hostAddParts);
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devElem), devAddParts, devRemoveParts, {}));
+  EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devElem, devAddParts, devRemoveParts));
 
   check_device_entity_field_data_is_id(ngpMesh, stk::topology::NODE_RANK, nodalField, devNodes2);
 
@@ -2520,7 +2515,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, test_repeated_part_additi
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
 
   for (int i = 0; i < numIters; ++i) {
-    EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, devRemoveParts, {}));
+    EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devEntities, devAddParts, devRemoveParts));
   }
 }
 
@@ -2563,8 +2558,8 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, test_repeated_part_additi
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
 
   for (int i = 0; i < numIters; ++i) {
-    EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devEntities), devAddParts, emptyParts, {}));
-    EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(stk::mesh::impl::wrap_entities(devEntities), emptyParts, devRmParts, {}));
+    EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devEntities, devAddParts, emptyParts));
+    EXPECT_NO_THROW(ngpMesh.batch_change_entity_parts(devEntities, emptyParts, devRmParts));
   }
 }
 

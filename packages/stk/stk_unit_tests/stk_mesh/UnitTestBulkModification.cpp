@@ -105,7 +105,6 @@ public:
 
 namespace {
 
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 TEST( UnitTestBulkDataNotSynchronized , testUnit )
 {
@@ -163,7 +162,7 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
     stk::mesh::Selector universal_selector(universal);
 
     // Get the buckets that will give us the universal nodes
-    BucketVector buckets = bulk_data.get_buckets(NODE_RANK, universal_selector);
+    BucketVector buckets = bulk_data.get_buckets(stk::topology::NODE_RANK, universal_selector);
 
     // Get the universal nodes
     std::vector< Entity> universal_entities;

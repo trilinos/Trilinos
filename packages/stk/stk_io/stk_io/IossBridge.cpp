@@ -1501,6 +1501,29 @@ void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData 
   }
 }
 
+stk::topology map_2d_ioss_to_stk_shell(const Ioss::ElementTopology& iossTopo)
+{
+  stk::topology stkTopology = stk::topology::INVALID_TOPOLOGY;
+
+  if (iossTopo.name() == "quad4") {
+    stkTopology = stk::topology::SHELL_QUAD_4;
+  }
+  else if (iossTopo.name() == "quad8") {
+    stkTopology = stk::topology::SHELL_QUAD_8;
+  }
+  else if (iossTopo.name() == "tri3") {
+    stkTopology = stk::topology::SHELL_TRI_3;
+  }
+  else if (iossTopo.name() == "tri6") {
+    stkTopology = stk::topology::SHELL_TRI_6;
+  }
+  else {
+    std::cerr << "Warning: Ioss ElementTopology "<<iossTopo.name()<<" with spatial dimension "<<iossTopo.spatial_dimension()<<" not handled..." << std::endl;
+  }
+
+  return stkTopology;
+}
+
 void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler, bool createEmptyOmittedParts)
 {
   bool includeEntity = include_entity(entity);
@@ -1529,24 +1552,19 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
 
     if (entity->type() == Ioss::ELEMENTBLOCK) {
       assert(topology != nullptr);
-      if (topology->spatial_dimension() < static_cast<int>(meta.spatial_dimension())) {
-        // NOTE: The comparison is '<' and not '!=' since a 2D mesh
-        // can contain a "3d" element -- a Beam is both a 2D and
-        // 3D element...
-
-        std::ostringstream msg ;
-        msg << "\n\nERROR: Element Block " << entity->name()
-            << " contains " << topology->name() << " elements with spatial dimension "
-            << topology->spatial_dimension()
-            << "\n       which does not match the spatial dimension of the model which is "
-            << meta.spatial_dimension() << "\n\n";
-        throw std::runtime_error( msg.str() );
-      }
-
       set_original_topology_type_from_ioss(entity, *part);
     }
 
     stk::topology stkTopology = map_ioss_topology_to_stk(topology, meta.spatial_dimension(), should_use_all_face_sides(entity));
+    if (entity->type() == Ioss::ELEMENTBLOCK &&
+        (stkTopology == stk::topology::INVALID_TOPOLOGY ||
+        topology->spatial_dimension() < static_cast<int>(meta.spatial_dimension()))) {
+      if (3u == meta.spatial_dimension() && 2 == topology->spatial_dimension()) {
+        stkTopology = map_2d_ioss_to_stk_shell(*topology);
+        STK_ThrowRequireMsg(stkTopology != stk::topology::INVALID_TOPOLOGY, "Error, failed to handle Ioss topology " << topology->name() << " for 3D mesh.");
+      }
+    }
+
     if (stkTopology != stk::topology::INVALID_TOPOLOGY) {
       if (stkTopology.rank() != part->primary_entity_rank() && entity->entity_count() == 0) {
         std::ostringstream os;
@@ -2897,7 +2915,11 @@ void define_element_block(stk::io::OutputParams &params,
                                                           params.get_output_selector(rank),
                                                           nullptr, part, false);
 
-  const size_t numElems = stk::mesh::count_entities(bulk, rank, selector);
+  stk::mesh::EntityVector entities;
+  bool gettingFacesForBlock = stk::mesh::is_element_block(part) && rank == meta.side_rank();
+  size_t numElems = gettingFacesForBlock ?
+     get_entities(params, part, rank, entities, false)
+   : stk::mesh::count_entities(bulk, rank, selector);
 
   stk::topology topo = part.topology();
   if (topo == stk::topology::INVALID_TOPOLOGY) {

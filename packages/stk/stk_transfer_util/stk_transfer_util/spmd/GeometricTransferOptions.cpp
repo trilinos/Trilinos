@@ -1227,8 +1227,11 @@ void GeometricTransferOptions::check_field_validity() const
       "Number of source fields does not match number of destination fields in transfer named: " << name());
 
   for(size_t i = 0; i < sendFieldSpecs.size(); i++) {
-    const stk::mesh::FieldBase* sendField = stk::mesh::get_field_by_name(sendFieldSpecs[i].name, sendMeta);
-    const stk::mesh::FieldBase* recvField = stk::mesh::get_field_by_name(recvFieldSpecs[i].name, recvMeta);
+    // Prefer the field pointer when the spec was built from one; name lookup searches all ranks.
+    const stk::mesh::FieldBase* sendField = (nullptr != sendFieldSpecs[i].field)
+        ? sendFieldSpecs[i].field : stk::mesh::get_field_by_name(sendFieldSpecs[i].name, sendMeta);
+    const stk::mesh::FieldBase* recvField = (nullptr != recvFieldSpecs[i].field)
+        ? recvFieldSpecs[i].field : stk::mesh::get_field_by_name(recvFieldSpecs[i].name, recvMeta);
 
     STK_ThrowRequireMsg(nullptr != sendField,
           "Could not find send field named: " << sendFieldSpecs[i].name << " in transfer named: " << name());

@@ -33,7 +33,7 @@ class GeometryImproverRestoreMesh2VertsTester : public ::testing::Test
     std::shared_ptr<mesh::Mesh> meshIn;
 };
 
-mesh::MeshEntityPtr get_closest_vert(std::shared_ptr<mesh::Mesh> mesh, const utils::Point& pt)
+mesh::MeshEntityPtr get_closest_vert_restore(std::shared_ptr<mesh::Mesh> mesh, const utils::Point& pt)
 {
   double minDist              = std::numeric_limits<double>::max();
   mesh::MeshEntityPtr minVert = nullptr;
@@ -54,9 +54,9 @@ mesh::MeshEntityPtr get_closest_vert(std::shared_ptr<mesh::Mesh> mesh, const uti
   return minVert;
 }
 
-void test_z_value(std::shared_ptr<mesh::Mesh> mesh, const utils::Point& vertLocation, double expectedZ)
+void test_z_value_restore(std::shared_ptr<mesh::Mesh> mesh, const utils::Point& vertLocation, double expectedZ)
 {
-  mesh::MeshEntityPtr vert = get_closest_vert(mesh, vertLocation);
+  mesh::MeshEntityPtr vert = get_closest_vert_restore(mesh, vertLocation);
   EXPECT_NEAR(vert->get_point_orig(0).z, expectedZ, 1e-13);
 }
 
@@ -91,7 +91,7 @@ TEST_F(GeometryImproverRestoreMesh2VertsTester, TwoToFour)
     {
       double x                   = deltaX * i;
       double y                   = deltaY * j;
-      mesh::MeshEntityPtr vertIn = get_closest_vert(meshIn, utils::Point(x, y, 0));
+      mesh::MeshEntityPtr vertIn = get_closest_vert_restore(meshIn, utils::Point(x, y, 0));
       EXPECT_NEAR(vertIn->get_point_orig(0).z, 1, 1e-13);
     }
 }
@@ -117,61 +117,61 @@ TEST_F(GeometryImproverRestoreMesh2VertsTester, TwoToFive)
 
   setup(meshspec1, meshspec2);
 
-  test_z_value(meshIn, utils::Point(0, 0), 1);
-  test_z_value(meshIn, utils::Point(0.2, 0), 1);
-  test_z_value(meshIn, utils::Point(0.4, 0), 1);
-  test_z_value(meshIn, utils::Point(0.5, 0), 0);
-  test_z_value(meshIn, utils::Point(0.6, 0), 1);
-  test_z_value(meshIn, utils::Point(0.8, 0), 1);
-  test_z_value(meshIn, utils::Point(1, 0), 1);
+  test_z_value_restore(meshIn, utils::Point(0, 0), 1);
+  test_z_value_restore(meshIn, utils::Point(0.2, 0), 1);
+  test_z_value_restore(meshIn, utils::Point(0.4, 0), 1);
+  test_z_value_restore(meshIn, utils::Point(0.5, 0), 0);
+  test_z_value_restore(meshIn, utils::Point(0.6, 0), 1);
+  test_z_value_restore(meshIn, utils::Point(0.8, 0), 1);
+  test_z_value_restore(meshIn, utils::Point(1, 0), 1);
 
-  test_z_value(meshIn, utils::Point(0, 0.2), 1);
-  test_z_value(meshIn, utils::Point(0.2, 0.2), 1);
-  test_z_value(meshIn, utils::Point(0.4, 0.2), 1);
-  test_z_value(meshIn, utils::Point(0.5, 0.2), 0);
-  test_z_value(meshIn, utils::Point(0.6, 0.2), 1);
-  test_z_value(meshIn, utils::Point(0.8, 0.2), 1);
-  test_z_value(meshIn, utils::Point(1, 0.2), 1);
+  test_z_value_restore(meshIn, utils::Point(0, 0.2), 1);
+  test_z_value_restore(meshIn, utils::Point(0.2, 0.2), 1);
+  test_z_value_restore(meshIn, utils::Point(0.4, 0.2), 1);
+  test_z_value_restore(meshIn, utils::Point(0.5, 0.2), 0);
+  test_z_value_restore(meshIn, utils::Point(0.6, 0.2), 1);
+  test_z_value_restore(meshIn, utils::Point(0.8, 0.2), 1);
+  test_z_value_restore(meshIn, utils::Point(1, 0.2), 1);
 
-  test_z_value(meshIn, utils::Point(0, 0.4), 1);
-  test_z_value(meshIn, utils::Point(0.2, 0.4), 1);
-  test_z_value(meshIn, utils::Point(0.4, 0.4), 1);
-  test_z_value(meshIn, utils::Point(0.5, 0.4), 0);
-  test_z_value(meshIn, utils::Point(0.6, 0.4), 1);
-  test_z_value(meshIn, utils::Point(0.8, 0.4), 1);
-  test_z_value(meshIn, utils::Point(1, 0.4), 1);
+  test_z_value_restore(meshIn, utils::Point(0, 0.4), 1);
+  test_z_value_restore(meshIn, utils::Point(0.2, 0.4), 1);
+  test_z_value_restore(meshIn, utils::Point(0.4, 0.4), 1);
+  test_z_value_restore(meshIn, utils::Point(0.5, 0.4), 0);
+  test_z_value_restore(meshIn, utils::Point(0.6, 0.4), 1);
+  test_z_value_restore(meshIn, utils::Point(0.8, 0.4), 1);
+  test_z_value_restore(meshIn, utils::Point(1, 0.4), 1);
 
-  test_z_value(meshIn, utils::Point(0, 0.5), 0);
-  test_z_value(meshIn, utils::Point(0.2, 0.5), 0);
-  test_z_value(meshIn, utils::Point(0.4, 0.5), 0);
-  test_z_value(meshIn, utils::Point(0.5, 0.5), 0);
-  test_z_value(meshIn, utils::Point(0.6, 0.5), 0);
-  test_z_value(meshIn, utils::Point(0.8, 0.5), 0);
-  test_z_value(meshIn, utils::Point(1, 0.5), 0);
+  test_z_value_restore(meshIn, utils::Point(0, 0.5), 0);
+  test_z_value_restore(meshIn, utils::Point(0.2, 0.5), 0);
+  test_z_value_restore(meshIn, utils::Point(0.4, 0.5), 0);
+  test_z_value_restore(meshIn, utils::Point(0.5, 0.5), 0);
+  test_z_value_restore(meshIn, utils::Point(0.6, 0.5), 0);
+  test_z_value_restore(meshIn, utils::Point(0.8, 0.5), 0);
+  test_z_value_restore(meshIn, utils::Point(1, 0.5), 0);
 
-  test_z_value(meshIn, utils::Point(0, 0.6), 1);
-  test_z_value(meshIn, utils::Point(0.2, 0.6), 1);
-  test_z_value(meshIn, utils::Point(0.4, 0.6), 1);
-  test_z_value(meshIn, utils::Point(0.5, 0.6), 0);
-  test_z_value(meshIn, utils::Point(0.6, 0.6), 1);
-  test_z_value(meshIn, utils::Point(0.8, 0.6), 1);
-  test_z_value(meshIn, utils::Point(1, 0.6), 1);
+  test_z_value_restore(meshIn, utils::Point(0, 0.6), 1);
+  test_z_value_restore(meshIn, utils::Point(0.2, 0.6), 1);
+  test_z_value_restore(meshIn, utils::Point(0.4, 0.6), 1);
+  test_z_value_restore(meshIn, utils::Point(0.5, 0.6), 0);
+  test_z_value_restore(meshIn, utils::Point(0.6, 0.6), 1);
+  test_z_value_restore(meshIn, utils::Point(0.8, 0.6), 1);
+  test_z_value_restore(meshIn, utils::Point(1, 0.6), 1);
 
-  test_z_value(meshIn, utils::Point(0, 0.8), 1);
-  test_z_value(meshIn, utils::Point(0.2, 0.8), 1);
-  test_z_value(meshIn, utils::Point(0.4, 0.8), 1);
-  test_z_value(meshIn, utils::Point(0.5, 0.8), 0);
-  test_z_value(meshIn, utils::Point(0.6, 0.8), 1);
-  test_z_value(meshIn, utils::Point(0.8, 0.8), 1);
-  test_z_value(meshIn, utils::Point(1, 0.8), 1);
+  test_z_value_restore(meshIn, utils::Point(0, 0.8), 1);
+  test_z_value_restore(meshIn, utils::Point(0.2, 0.8), 1);
+  test_z_value_restore(meshIn, utils::Point(0.4, 0.8), 1);
+  test_z_value_restore(meshIn, utils::Point(0.5, 0.8), 0);
+  test_z_value_restore(meshIn, utils::Point(0.6, 0.8), 1);
+  test_z_value_restore(meshIn, utils::Point(0.8, 0.8), 1);
+  test_z_value_restore(meshIn, utils::Point(1, 0.8), 1);
 
-  test_z_value(meshIn, utils::Point(0, 1.0), 1);
-  test_z_value(meshIn, utils::Point(0.2, 1.0), 1);
-  test_z_value(meshIn, utils::Point(0.4, 1.0), 1);
-  test_z_value(meshIn, utils::Point(0.5, 1.0), 0);
-  test_z_value(meshIn, utils::Point(0.6, 1.0), 1);
-  test_z_value(meshIn, utils::Point(0.8, 1.0), 1);
-  test_z_value(meshIn, utils::Point(1, 1.0), 1);
+  test_z_value_restore(meshIn, utils::Point(0, 1.0), 1);
+  test_z_value_restore(meshIn, utils::Point(0.2, 1.0), 1);
+  test_z_value_restore(meshIn, utils::Point(0.4, 1.0), 1);
+  test_z_value_restore(meshIn, utils::Point(0.5, 1.0), 0);
+  test_z_value_restore(meshIn, utils::Point(0.6, 1.0), 1);
+  test_z_value_restore(meshIn, utils::Point(0.8, 1.0), 1);
+  test_z_value_restore(meshIn, utils::Point(1, 1.0), 1);
 }
 
 } // namespace impl

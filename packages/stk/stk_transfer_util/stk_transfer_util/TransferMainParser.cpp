@@ -108,6 +108,10 @@ void TransferMainParser::add_options_to_parser()
       "command-line options (e.g. 'send-mesh: send.exo'). Options given on the command line take "
       "precedence over options in the input file. List-type options use YAML sequences and maps:\n"
       "  field-list: [field_1, {send: send_field_2, recv: recv_field_2}]\n"
+      "  field-list:    (field groups, each transferred with its own options; xfer-type, recv-type,\n"
+      "                  extrapolate-option and part-list are optional and default to the top-level options)\n"
+      "    - {fields: [field_1], xfer-type: INTERP, recv-type: NODE}\n"
+      "    - {fields: [elem_field], xfer-type: PATCH, recv-type: ELEMENT_CENTROID}\n"
       "  part-list: {send: [block_1, block_2], recv: [surface_1]}\n"
       "  time-steps: LAST    (or ALL, FIRST, \"1:5:2\", or {begin: 1, end: 5, stride: 2})\n"
       "  2d-to-3d-axisymmetric: {axis: [0, 0, 1], translation: [0, 0, 0]}    (use {} for defaults)\n"
@@ -269,6 +273,7 @@ TransferMainSettings TransferMainParser::generate_transfer_settings()
     set_2d_to_3d_axisymmetric_transfer_params(settings);
     set_3d_to_3d_axisymmetric_transfer_params(settings);
     set_coord_transf_z_expr(settings);
+    set_field_groups(settings);
   }
 
   return settings;
@@ -350,6 +355,51 @@ void TransferMainParser::set_transfer_fields(TransferMainSettings& settings)
     for (const std::pair<std::string, std::string>& fieldNamePair : *m_inputFileOptions.fields) {
       settings.set_transfer_field(fieldNamePair);
     }
+  }
+}
+
+void TransferMainParser::set_field_groups(TransferMainSettings& settings)
+{
+  // A --field-list on the command line takes precedence over the input file's field-list.
+  if (m_cmdLineParser.is_option_parsed(m_optionNames.fieldList) || !m_inputFileOptions.fieldGroups) {
+    return;
+  }
+
+  // Each group starts from the (already fully-resolved) top-level settings, then
+  // overrides whatever the group specifies. Copy the top-level settings before adding
+  // any groups to them, so that the groups don't contain groups.
+  const TransferMainSettings topLevelSettings = settings;
+  for (const TransferInputFileFieldGroup& group : *m_inputFileOptions.fieldGroups) {
+    TransferMainSettings groupSettings = topLevelSettings;
+
+    for (const std::pair<std::string, std::string>& fieldNamePair : group.fields) {
+      groupSettings.set_transfer_field(fieldNamePair);
+    }
+
+    if (group.transferType) {
+      const std::string transferType = sierra::make_upper(*group.transferType);
+      STK_ThrowRequireMsg(groupSettings.set_transfer_type(transferType),
+                          "Invalid option " + transferType + " provided for transfer type.");
+    }
+
+    if (group.recvType) {
+      const std::string recvType = sierra::make_upper(*group.recvType);
+      STK_ThrowRequireMsg(groupSettings.set_recv_type(recvType),
+                          "Invalid option " + recvType + " provided for receive type.");
+    }
+
+    if (group.extrapolateOption) {
+      const std::string policy = sierra::make_upper(*group.extrapolateOption);
+      STK_ThrowRequireMsg(groupSettings.set_extrapolate_option(policy),
+                          "Invalid option " + policy + " provided for extrapolate option.");
+    }
+
+    if (group.parts) {
+      groupSettings.set_transfer_send_parts(group.parts->send);
+      groupSettings.set_transfer_recv_parts(group.parts->recv);
+    }
+
+    settings.add_field_group(groupSettings);
   }
 }
 

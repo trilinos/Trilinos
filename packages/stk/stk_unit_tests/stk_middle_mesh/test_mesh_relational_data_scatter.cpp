@@ -333,7 +333,7 @@ class MeshRelationalDataScatterTesterTri : public MeshRelationalDataScatterTeste
     }      
 };
 
-mesh::MeshEntityPtr find_entity(std::shared_ptr<mesh::Mesh> mesh, int dim, const utils::Point& centroid, double tol)
+mesh::MeshEntityPtr find_entity_scatter(std::shared_ptr<mesh::Mesh> mesh, int dim, const utils::Point& centroid, double tol)
 {
   double minDist = std::numeric_limits<double>::max();
   mesh::MeshEntityPtr minEntity = nullptr;
@@ -560,10 +560,10 @@ TEST_F(MeshRelationalDataScatterTester, Mesh2ClassificationNearBoundary)
   {
     auto& verts2ClassOnMesh1 = *(m_meshRelationalDataInput->verts2ClassOnMesh1);
 
-    auto vert2 = find_entity(m_mesh2, 0, {2.0/3.0, 2.0/3.0, 0}, 1e-13);
+    auto vert2 = find_entity_scatter(m_mesh2, 0, {2.0/3.0, 2.0/3.0, 0}, 1e-13);
     if (vert2)
     {
-      auto el1   = find_entity(m_mesh1ScatteredToMesh2, 2, {0.75, 0.25}, 1e-13);
+      auto el1   = find_entity_scatter(m_mesh1ScatteredToMesh2, 2, {0.75, 0.25}, 1e-13);
       verts2ClassOnMesh1(vert2, 0, 0) = predicates::impl::PointRecord(predicates::impl::PointClassification::Vert, 0, el1);
     }
   }
@@ -573,7 +573,7 @@ TEST_F(MeshRelationalDataScatterTester, Mesh2ClassificationNearBoundary)
   if (m_mesh2ScatteredToMesh1)
   {
     auto& verts2ClassOnMesh1 = *(meshRelationalDataOutput->verts2ClassOnMesh1);
-    auto vert2 = find_entity(m_mesh2ScatteredToMesh1, 0, {2.0/3.0, 2.0/3.0, 0}, 1e-13);
+    auto vert2 = find_entity_scatter(m_mesh2ScatteredToMesh1, 0, {2.0/3.0, 2.0/3.0, 0}, 1e-13);
     predicates::impl::PointRecord record = verts2ClassOnMesh1(vert2, 0, 0);
     EXPECT_NE(record.el, nullptr);
   }
@@ -726,8 +726,8 @@ TEST_F(MeshRelationalDataScatterTester, mesh1EdgeFields)
   if (m_mesh1ScatteredToMesh2)
   {
     auto& mesh1EdgesToSplit = *(m_meshRelationalDataInput->mesh1EdgesToSplit);
-    mesh::MeshEntityPtr edge1 = find_entity(m_mesh1ScatteredToMesh2, 1, {0.0, 0.25, 0}, 1e-13);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2, 1, {0, 1.0/6, 0}, 1e-12);
+    mesh::MeshEntityPtr edge1 = find_entity_scatter(m_mesh1ScatteredToMesh2, 1, {0.0, 0.25, 0}, 1e-13);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2, 1, {0, 1.0/6, 0}, 1e-12);
 
     if (edge1)
     {
@@ -742,8 +742,8 @@ TEST_F(MeshRelationalDataScatterTester, mesh1EdgeFields)
   if (m_mesh1)
   {
     auto& mesh1EdgesToSplit = *(meshRelationalDataOutput->mesh1EdgesToSplit);
-    mesh::MeshEntityPtr edge1 = find_entity(m_mesh1, 1, {0, 0.25, 0}, 1e-13);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2ScatteredToMesh1, 1, {0, 1.0/6, 0}, 1e-12);
+    mesh::MeshEntityPtr edge1 = find_entity_scatter(m_mesh1, 1, {0, 0.25, 0}, 1e-13);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2ScatteredToMesh1, 1, {0, 1.0/6, 0}, 1e-12);
     
     if (edge1)
     {
@@ -766,8 +766,8 @@ TEST_F(MeshRelationalDataScatterTester, mesh1EdgeFieldsSenderEntityShared)
   if (m_mesh1ScatteredToMesh2)
   {
     auto& mesh1EdgesToSplit = *(m_meshRelationalDataInput->mesh1EdgesToSplit);
-    mesh::MeshEntityPtr edge1 = find_entity(m_mesh1ScatteredToMesh2, 1, {0.75, 0.5, 0}, 1e-13);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2, 1, {2.0/3.0, 0.5, 0}, 1e-13);
+    mesh::MeshEntityPtr edge1 = find_entity_scatter(m_mesh1ScatteredToMesh2, 1, {0.75, 0.5, 0}, 1e-13);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2, 1, {2.0/3.0, 0.5, 0}, 1e-13);
 
     if (edge1)
     {
@@ -782,8 +782,8 @@ TEST_F(MeshRelationalDataScatterTester, mesh1EdgeFieldsSenderEntityShared)
   if (m_mesh1)
   {
     auto& mesh1EdgesToSplit = *(meshRelationalDataOutput->mesh1EdgesToSplit);
-    mesh::MeshEntityPtr edge1 = find_entity(m_mesh1, 1, {0.75, 0.5, 0}, 1e-13);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2ScatteredToMesh1, 1, {2.0/3.0, 0.5, 0}, 1e-13);
+    mesh::MeshEntityPtr edge1 = find_entity_scatter(m_mesh1, 1, {0.75, 0.5, 0}, 1e-13);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2ScatteredToMesh1, 1, {2.0/3.0, 0.5, 0}, 1e-13);
     
     if (edge1)
     {
@@ -807,8 +807,8 @@ TEST_F(MeshRelationalDataScatterTester, mesh1EdgeFieldsWithRepeatedVert)
   if (m_mesh1ScatteredToMesh2)
   {
     auto& mesh1EdgesToSplit = *(m_meshRelationalDataInput->mesh1EdgesToSplit);
-    mesh::MeshEntityPtr edge1 = find_entity(m_mesh1ScatteredToMesh2, 1, {0.25, 0, 0}, 1e-13);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2, 1, {1.0/6, 0, 0}, 1e-12);
+    mesh::MeshEntityPtr edge1 = find_entity_scatter(m_mesh1ScatteredToMesh2, 1, {0.25, 0, 0}, 1e-13);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2, 1, {1.0/6, 0, 0}, 1e-12);
     auto& verts2ToFakeVerts = *(m_meshRelationalDataInput->verts2ToFakeVerts);
 
     if (edge1)
@@ -824,8 +824,8 @@ TEST_F(MeshRelationalDataScatterTester, mesh1EdgeFieldsWithRepeatedVert)
   if (m_mesh1)
   {
     auto& mesh1EdgesToSplit = *(meshRelationalDataOutput->mesh1EdgesToSplit);
-    mesh::MeshEntityPtr edge1 = find_entity(m_mesh1, 1, {0.25, 0, 0}, 1e-13);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2ScatteredToMesh1, 1, {1.0/6, 0, 0}, 1e-12);
+    mesh::MeshEntityPtr edge1 = find_entity_scatter(m_mesh1, 1, {0.25, 0, 0}, 1e-13);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2ScatteredToMesh1, 1, {1.0/6, 0, 0}, 1e-12);
     auto& verts2ToFakeVerts   = *(meshRelationalDataOutput->verts2ToFakeVerts);
     
     if (edge1)
@@ -850,7 +850,7 @@ TEST_F(MeshRelationalDataScatterTester, mesh2EdgeFields)
   if (m_mesh2)
   {
     auto& edges2ToFakeVertsIn = *(m_meshRelationalDataInput->edges2ToFakeVertsIn);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2, 1, {1.0/3, 1.0/6, 0}, 1e-12);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2, 1, {1.0/3, 1.0/6, 0}, 1e-12);
 
     if (edge2)
     {
@@ -866,7 +866,7 @@ TEST_F(MeshRelationalDataScatterTester, mesh2EdgeFields)
   if (m_mesh2ScatteredToMesh1)
   {
     auto& edges2ToFakeVertsIn = *(meshRelationalDataOutput->edges2ToFakeVertsIn);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2ScatteredToMesh1, 1, {1.0/3, 1.0/6, 0}, 1e-12);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2ScatteredToMesh1, 1, {1.0/3, 1.0/6, 0}, 1e-12);
     
     if (edge2)
     {
@@ -891,7 +891,7 @@ TEST_F(MeshRelationalDataScatterTester, mesh2EdgeFieldsSenderEntityShared)
   if (m_mesh2)
   {
     auto& edges2ToFakeVertsIn = *(m_meshRelationalDataInput->edges2ToFakeVertsIn);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2, 1, {2.0/3, 0.5, 0}, 1e-12);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2, 1, {2.0/3, 0.5, 0}, 1e-12);
 
     if (edge2)
     {
@@ -907,7 +907,7 @@ TEST_F(MeshRelationalDataScatterTester, mesh2EdgeFieldsSenderEntityShared)
   if (m_mesh2ScatteredToMesh1)
   {
     auto& edges2ToFakeVertsIn = *(meshRelationalDataOutput->edges2ToFakeVertsIn);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2ScatteredToMesh1, 1, {2.0/3, 0.5, 0}, 1e-12);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2ScatteredToMesh1, 1, {2.0/3, 0.5, 0}, 1e-12);
     
     if (edge2)
     {
@@ -933,7 +933,7 @@ TEST_F(MeshRelationalDataScatterTester, mesh2EdgeFieldsWithRepeatedVert)
   {
     auto& verts2ToFakeVerts   = *(m_meshRelationalDataInput->verts2ToFakeVerts);
     auto& edges2ToFakeVertsIn = *(m_meshRelationalDataInput->edges2ToFakeVertsIn);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2, 1, {1.0/6, 0, 0}, 1e-12);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2, 1, {1.0/6, 0, 0}, 1e-12);
 
     if (edge2)
     {
@@ -950,7 +950,7 @@ TEST_F(MeshRelationalDataScatterTester, mesh2EdgeFieldsWithRepeatedVert)
   {
     auto& verts2ToFakeVerts   = *(meshRelationalDataOutput->verts2ToFakeVerts);
     auto& edges2ToFakeVertsIn = *(meshRelationalDataOutput->edges2ToFakeVertsIn);
-    mesh::MeshEntityPtr edge2 = find_entity(m_mesh2ScatteredToMesh1, 1, {1.0/6, 0, 0}, 1e-12);
+    mesh::MeshEntityPtr edge2 = find_entity_scatter(m_mesh2ScatteredToMesh1, 1, {1.0/6, 0, 0}, 1e-12);
     
     if (edge2)
     {

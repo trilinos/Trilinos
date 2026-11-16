@@ -81,7 +81,6 @@ namespace Ioss { class DatabaseIO; }
 
 namespace {
 
-const stk::topology::rank_t NODE_RANK = stk::topology::NODE_RANK;
 using ngp_unit_test_utils::host_check_bucket_layout;
 using ngp_unit_test_utils::device_check_bucket_layout;
 using ngp_unit_test_utils::check_bucket_layout;
@@ -108,13 +107,13 @@ TEST(UnitTestField, testFieldMaxSize)
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, pm);
   stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
 
-  rank_zero_field & f0 = meta_data.declare_field<double>(NODE_RANK, name0);
-  rank_one_field  & f1 = meta_data.declare_field<double>(NODE_RANK, name1);
-  rank_two_field  & f2 = meta_data.declare_field<double>(NODE_RANK, name2);
+  rank_zero_field & f0 = meta_data.declare_field<double>(stk::topology::NODE_RANK, name0);
+  rank_one_field  & f1 = meta_data.declare_field<double>(stk::topology::NODE_RANK, name1);
+  rank_two_field  & f2 = meta_data.declare_field<double>(stk::topology::NODE_RANK, name2);
 
-  stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK);
-  stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK);
-  stk::mesh::Part & p2 = meta_data.declare_part("P2", NODE_RANK);
+  stk::mesh::Part & p0 = meta_data.declare_part("P0", stk::topology::NODE_RANK);
+  stk::mesh::Part & p1 = meta_data.declare_part("P1", stk::topology::NODE_RANK);
+  stk::mesh::Part & p2 = meta_data.declare_part("P2", stk::topology::NODE_RANK);
 
   stk::mesh::put_field_on_mesh(f0, p0, nullptr);
   stk::mesh::put_field_on_mesh(f1, p1, 10, nullptr);
@@ -137,7 +136,7 @@ TEST(UnitTestField, fieldDataAccess_rankMustMatch)
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulk = *bulkPtr;
   using MyField = stk::mesh::Field<double>;
-  MyField& nodalField = meta.declare_field<double>(NODE_RANK, "nodal_field");
+  MyField& nodalField = meta.declare_field<double>(stk::topology::NODE_RANK, "nodal_field");
 
   stk::mesh::put_field_on_mesh(nodalField, meta.universal_part(), nullptr);
 
@@ -174,10 +173,10 @@ TEST(UnitTestField, testFieldWithSelector)
   stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulk_data = *bulkPtr;
 
-  rank_zero_field  & f0 = meta_data.declare_field<double>( NODE_RANK, name0 );
+  rank_zero_field  & f0 = meta_data.declare_field<double>( stk::topology::NODE_RANK, name0 );
 
-  stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK );
-  stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK );
+  stk::mesh::Part & p0 = meta_data.declare_part("P0", stk::topology::NODE_RANK );
+  stk::mesh::Part & p1 = meta_data.declare_part("P1", stk::topology::NODE_RANK );
 
   stk::mesh::Selector select_p0 = p0;
 
@@ -198,7 +197,7 @@ TEST(UnitTestField, testFieldWithSelector)
     bulk_data.declare_node(i, std::vector< stk::mesh::Part * >(1, &p1));
 
   const stk::mesh::BucketVector & node_buckets =
-      bulk_data.buckets( NODE_RANK );
+      bulk_data.buckets( stk::topology::NODE_RANK );
 
   unsigned num = stk::mesh::count_selected_entities(select_p0, node_buckets);
 
@@ -209,7 +208,7 @@ TEST(UnitTestField, testFieldWithSelector)
   unsigned num_f0 = stk::mesh::count_selected_entities(select_f0, node_buckets);
   ASSERT_EQ(10u, num_f0);
 
-  stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(NODE_RANK, select_p0);
+  stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(stk::topology::NODE_RANK, select_p0);
   unsigned num_buckets = f0_buckets.size();
   ASSERT_EQ(1u, num_buckets);
 
@@ -346,10 +345,10 @@ TEST(UnitTestField, testFieldEntityMembership)
   stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulk_data = *bulkPtr;
 
-  rank_zero_field  & f0 = meta_data.declare_field<double>( NODE_RANK, "test_field_0");
+  rank_zero_field  & f0 = meta_data.declare_field<double>( stk::topology::NODE_RANK, "test_field_0");
 
-  stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK );
-  stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK );
+  stk::mesh::Part & p0 = meta_data.declare_part("P0", stk::topology::NODE_RANK );
+  stk::mesh::Part & p1 = meta_data.declare_part("P1", stk::topology::NODE_RANK );
 
   stk::mesh::Selector field_selector = p0;
   stk::mesh::Selector not_field_selector = !p0;

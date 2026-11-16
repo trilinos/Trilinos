@@ -63,7 +63,7 @@ void sort_and_unique(VECTOR &vector, COMPARE_LESS compare_less, COMPARE_EQUALS c
 template<typename VECTOR>
 void sort_and_unique(VECTOR &vec)
 {
-    sort_and_unique(vec,std::less<typename VECTOR::value_type>());
+    stk::util::sort_and_unique(vec,std::less<typename VECTOR::value_type>());
 }
 
 template<class VECTOR, class COMPARE_LESS>
