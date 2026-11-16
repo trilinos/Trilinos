@@ -37,8 +37,7 @@ namespace Experimental {
 
 namespace Details {
 
-enum class StencilAction
-{
+enum class StencilAction {
   invalid,
   local,
   remote
@@ -848,12 +847,12 @@ createCrsGraphFromStencil(
 }  // namespace Experimental
 }  // namespace Tpetra
 
-#define TPETRA_CREATECRSGRAPHFROMSTENCIL_INSTANT(LO, GO, NODE)            \
-  template Teuchos::RCP<const CrsGraph<LO, GO, NODE>>                     \
-  Experimental::createCrsGraphFromStencil<LO, GO, NODE>(                 \
-      const Teuchos::RCP<const Map<LO, GO, NODE>>&,                       \
-      const Teuchos::ArrayView<const LO>&,                                \
-      const Teuchos::ArrayView<const Experimental::StencilOffset>&,       \
+#define TPETRA_CREATECRSGRAPHFROMSTENCIL_INSTANT(LO, GO, NODE)      \
+  template Teuchos::RCP<const CrsGraph<LO, GO, NODE>>               \
+  Experimental::createCrsGraphFromStencil<LO, GO, NODE>(            \
+      const Teuchos::RCP<const Map<LO, GO, NODE>>&,                 \
+      const Teuchos::ArrayView<const LO>&,                          \
+      const Teuchos::ArrayView<const Experimental::StencilOffset>&, \
       const LO, const Experimental::StencilNumbering, const bool);
 
 #endif  // TPETRA_CREATECRSGRAPHFROMSTENCIL_DEF_HPP
