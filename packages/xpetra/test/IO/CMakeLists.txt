@@ -9,6 +9,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  IO_LegacyBinaryFallback
+  SOURCES
+    IO_LegacyBinaryFallback.cpp
+    ../Xpetra_UnitTests.cpp
+  COMM mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIO_cp
-  SOURCE_FILES test.mtx test.mtx.bin
+  SOURCE_FILES test.mtx
 )
