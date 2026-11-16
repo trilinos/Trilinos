@@ -230,21 +230,6 @@ Go on to \ref step2.
   "NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON" option to enable.
   The NOX::LAPACK instatiation is serial only.
   <li>
-  The NOX::Epetra instantiation is an interface to the Trilinos/Epetra
-  linear algebra library.  It is Sandia's workhorse code for parallel
-  applications.  For more information see the <a
-  href="http://trilinos.sandia.gov/packages/epetra">Epetra Home
-  Page</a>. The epetra support interface actually requires four
-  Trilinos libraries: %Epetra, %EpetraExt, %AztecOO, and %Ifpack.  The
-  NOX::Epetra library is automatically enabled if you configure
-  Trilinos with the four required packages enabled.  Alternatively,
-  you can force epetra support to be enabled with the CMake flag
-  "NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA=ON".  The configure will
-  fail if you do not have the required packages (%Epetra, %EpetraExt,
-  %AztecOO, and %Ifpack) enabled.  For instructions on interfacing
-  your code to the epetra implementation see \ref epetra_interface.
-  Optionally, the epetra support can also use the %ML library.
-  <li>
   The NOX::Thyra instantiation is an interface to the Trilinos/Thyra
   package.  The Thyra package contains a set of interfaces and
   supporting code that defines basic interoperability mechanisms
@@ -252,9 +237,7 @@ Go on to \ref step2.
   the interfaces related to abstract numerical algorithms (ANAs) are
   the mathematical concepts of vectors, vector spaces, and linear
   operators. All other ANA interfaces and support software are built
-  on these fundamental operator/vector interfaces.  We expect this
-  interface to supersceed the Epetra interface above when all
-  functionality is moved into the Trilinos/Stratimikos layer.  For
+  on these fundamental operator/vector interfaces. For
   more information see the <a
   href="http://trilinos.sandia.gov/packages/thyra">Thyra Home
   Page</a>. Thyra will automatically be enabled if the Trilinos
@@ -440,17 +423,6 @@ LIBS = -lnox -lnoxlapack -llapack -lblas
 CXXFLAGS = -I$(NOX_PREFIX)/include/
 \endverbatim
 
-Compiling with Epetra support:
-
-We assume that Epetra, EpetraExt, Aztec, and Ifpack are installed in the same directory as %NOX.
-
-\verbatim
-NOX_PREFIX = /usr/local
-LDFLAGS = -L$(NOX_PREFIX)/lib
-LIBS = -lnox -lnoxepetra -laztecoo -lifpack -lepetraext -lepetra  -llapack -lblas
-CXXFLAGS = -I$(NOX_PREFIX)/include/
-\endverbatim
-
 \note If compiling without using the export makefile system, you have to be very careful about which libraries are needed to link against.  Enabling configure options typically brings in new library requirements.  The export makefile system catches this automatically.  Not using export makefiles means YOU will have to catch the additional dependencies.
 
 \section step4_problems If you have problems...
@@ -511,7 +483,7 @@ The following artice by Herb Sutter explains this issue:
  %NOX/%LOCA version 8.0 will be release as part of Trilinos 8.0 in early September 2007.  Current changes/additions:
 <ul>
   <li> All %Manager classes have been replaced with Factories.  This change clarifies what occurs during reset calls and simplifies object management.  No more handles.  The factories return "Generic" base class objects.
-  <li> A new concrete implementation of the group/vector has been added to support %Thyra objects.  %Thyra is a set of abstract interfaces designed to provide developers of abstract numerical algorithms a single point of contact with codes.  It plays the same role as the NOX::Abstract::Group and NOX::Abstract::Vector play in NOX. More information on %Thyra can be found at <A HREF="http://trilinos.sandia.gov/packages/thyra">Thyra</A>.  The group leverages the <A HREF="http://trilinos.sandia.gov/packages/stratimikos">Stratimikos library</A> to build the linear solver and preconditioner.  In the future, we plan to move away from the direct Epetra support class as the %Thyra wrappers gain more functionality.  Examples can be found in nox/test/epetra/Thyra_2Dsim directory.
+  <li> A new concrete implementation of the group/vector has been added to support %Thyra objects.  %Thyra is a set of abstract interfaces designed to provide developers of abstract numerical algorithms a single point of contact with codes.  It plays the same role as the NOX::Abstract::Group and NOX::Abstract::Vector play in NOX. More information on %Thyra can be found at <A HREF="http://trilinos.sandia.gov/packages/thyra">Thyra</A>.  The group leverages the <A HREF="http://trilinos.sandia.gov/packages/stratimikos">Stratimikos library</A> to build the linear solver and preconditioner.  In the future, we plan to move away from the direct Epetra support class as the %Thyra wrappers gain more functionality.
   <li> A wrapper called Thyra::NOXNonlinearSolver has been added that derives from the Thyra::NonlinearSolverBase class.  This allows abstract numerical agorithms to use NOX as the nonlinear solver through a Thyra abstract interface.  In particular, NOX can now be used by Rythmos.
   <li> A NOX::StatusTest::Factory has been added to allow for the construction of an entire status test set via a parameter list.  Please use the nonmember functions to build parameter lists instead of using the Factory object directly.
   <li> The NOX::Utils object can now take a parameter sublist to enable the print options specified with the "Output Information" parameter.  Previously the user had to sum the print options into an integer that was set in the parameter list.  Now the user can just specify a sublist of print options for the "Output Information" parameter.  Setting the integer still works.  Here is an example:
@@ -608,7 +580,7 @@ NOX release 4.0 notes:
 <li> A new Tensor based solver that is independent of the linear solver is now implemented (in the prerelease section).
 <li> Inexact Trust Region Techniques are fully supported (also in the prerelease section).
 <li> Improved support for Epetra objects - The NOX::EpetraNew::Group should be used in place of the NOX::Epetra::Group.  In the future we will be phasing out the NOX::Epetra::Group and replace it with NOX::EpetraNew::Group.
-<li> A multi-physics technique for code coupling has been demonstrated in the test/epetra/Multiphysics directory.  This will be expanded to a generic capability in the next year.
+<li> A multi-physics technique for code coupling has been demonstrated in older package-local tests.  This will be expanded to a generic capability in the next year.
 </ul>
 
 */
@@ -656,15 +628,6 @@ To get a complete list of all configure options supported by %NOX and %LOCA do t
   <li> \c  NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON
     <ul>
       <li> Compile noxlapack library (libnoxlapack.a). Default is not to compile the library.
-    </ul>
-</ul>
-
-\section epetra_options Epetra-Related Options
-
-<ul>
-  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA=ON
-    <ul>
-      <li> Compile noxepetra library (libnoxepetra.a). Default is not to compile the library unless Epetra, EpetraExt, Ifpack, and AztecOO are enabled.
     </ul>
 </ul>
 
@@ -1322,22 +1285,15 @@ immediately before the word that is causing the link. For example,
   optionally, the Jacobian. Complete details are provided in
   the class description.
 
-  Included with %NOX are four such interfaces:
+  Included with %NOX are three such interfaces:
 
   - NOX::LAPACK
-  - NOX::Epetra
   - NOX::Thyra
   - NOX::Petsc
 
   The \b LAPACK interface is an interface to the BLAS/LAPACK library.
   It is not intended for large-scale computations, but to serve as an
   easy-to-understand example of how one might interface to %NOX.
-
-  The \b Epetra interface is an interface to the
-  Trilinos/Epetra library developed by
-  <a href="http://www.sandia.gov">Sandia National Labs</a>;
-  for more information see the
-  <a href="http://trilinos.sandia.gov/trilinos">Trilinos Home Page</a>.
 
   The \b Thyra interface is an interface to the
   Trilinos/Thyra library developed by
@@ -1393,7 +1349,7 @@ immediately before the word that is causing the link. For example,
   method.
 
   \note These parameters are valid for the general %NOX library.  The
-  LAPACK, Epetra, Thyra, and PETSc Group/Vector support objects have
+  LAPACK, Thyra, and PETSc Group/Vector support objects have
   their own set of parameters that are documented on each object's
   doxygen page.
 
@@ -1640,129 +1596,6 @@ A user can build a set of status tests from an independent parameter list using 
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page epetra_interface The Epetra Interface
-
- \section epetra_interface_derived Implementing the Interfaces
-
- The Epetra support code in %NOX implements a concrete Group and
- Vector class using Epetra objects.  The user only needs to write an
- interface that supplies the nonlinear equations in residual form, \f$
- F(x)=0 \f$.  Additionally, the user may provide details such as the
- Jacobian and Preconditioner if using an iterative linear solver.
- Below, we describe each of these interfaces.
-
- To link your code to %NOX using the epetra interface, you must write a
- concrete class derived from the NOX::Epetra::Interface::Required
- object.  This object defines the method for evaluating the set of
- nonlinear equations to be solved:
-
- <li> computeF(const Epetra_Vector& x, Epetra_Vector& RHS, const FillType flag) -
-      Computes the set of nonlinear equations, \f$ F \f$, to be solved
-      by %NOX. This method must be supplied by the user.
-      - x - solution vector specified from %NOX.
-      - RHS - the Epetra_Vector to be filled with the \f$ F \f$ values that
-        correspond to the input solution vector x.
-      - flag - enumerated type (see NOX::Epetra::FillType) that
-        tells a users interface why computeF() was called.  %NOX
-        has the ability to generate Jacobians based on numerical
-        differencing using calls to computeF().  In this case, the
-    user may want to compute an inexact (and hopefully cheaper)
-        \f$ F \f$ since it is only used in the Jacobian (or preconditioner).
-
- Additonally if the user wishes to provide a Jacobian operator, they
- will need to implement a concrete class derived from the
- NOX::Epetra::Interface::Jacobian object.  This object defined the
- method for evaluating the Jacobian:
-
- <li> computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac) - this
-      is an optional method that the user can implement if they wish to
-      supply their own evaluation of the Jacobian. If the user does not
-      wish to supply their own Jacobian, they should implement this method
-      so that it throws an error if it is called.  This method should update
-      the Jac operator so that subsequent Epetra_Operator::Apply() calls
-      on that operator correspond to the Jacobian at the current solution
-      vector x.
-      - x - solution vector specified from %NOX.
-      - Jac - a reference to the Jacobian operator that the user supplied
-        in the NOX::Epetra::Group constructor.
-
- Additonally if the user wishes to provide a preconditioner operator,
- they will need to implement a concrete class derived from the
- NOX::Epetra::Interface::Preconditioner object.  This object defined
- the method for evaluating the Preconditioner or a Matrix to be used
- with an interal preconditioner:
-
- <li> computePreconditioner(const Epetra_Vector& x, Epetra_Operator&
-      M, Teuchos::ParameterList* precParams) - This method allows a user to supply their own preconditioner.
-      The method should compute a preconditioner based upon the solution
-      vector x and store it in the Epetra_Operator M.  Subsequent calls to
-      the Epetra_Operator::Apply method will apply this user supplied
-      preconditioner to epetra vectors. The Epetra_Operator M can also be
-      an Epetra_RowMatrix that can be used by internally constructed
-      preconditioner objects such as AztecOO, Ipfack, and ML.
-
-      - x - solution vector specified from %NOX.
-      - M - a reference to the operator that is to be filled.  This operator
-    should be updated to correspond to the current solution vector x.
-      - precParams - a pointer to a parameter list that can be used by
-        the preconditioner.
-
- \section epetra_interface_operators Optional Operators
-
-  The user can write their own operators for the Jacobian or
-  preconditioner as discussed above, or they can use one of the %NOX
-  pre-supplied operators.  Available Operators include:
-
-  - Jacobian-Free Newton-Krylov Operator (see NOX::Epetra::MatrixFree)
-  - Finite Difference Operator (see NOX::Epetra::FiniteDifference)
-  - Colored Finite Difference Operator (see NOX::Epetra::FiniteDifferenceColoring)
-  - Broyden Operator (see NOX::Epetra::BroydenOperator)
-
-  These operators are built automatically by the linear system object
-  depending on the constuctor used.
-
- \section epetra_interface_notes Notes on NOX/Epetra:
-
-  - The concrete Epetra implementations for the %NOX Group and Vector
-    are in a separate library from the nox solver algorithms.  To build
-    the library for nox epetra support use the flag --enable-nox-epetra
-    in NOX's configure script.  This will generate a separate library called
-    libnoxepetra.a
-
-  - In addition to the %NOX headers, be sure to include the %NOX %Epetra
-    support specific headers in your interface:
-    \verbatim
-    // NOX headers for an epetra interface
-    #include "NOX.H"
-    #include "NOX_Epetra.H"
-    \endverbatim
-
-  \section epetra_features Special Epetra Features
-
-  The %Epetra support in %NOX provides a number of tools that allow users to perform complex algorithms.  This section lists some of the important features.
-
-  <ul>
-  <li>  Multivector Support.  %NOX has an implementation of multivector support that is typically used for solving multiple RHS vectors in an efficeint manner.  See NOX::Abstract::Multivector for more information.
-  <li>  Scaling.  %NOX supports a scaling object that allows users to specify diagonal scaling matrices as Epetra_Vectors that will scale the linear system using either right or left scaling.  See NOX::Epetra::Scaling for more information.
-  <li> Arbitrary vector space.  The %NOX algorithms were written to support arbitrary vectors spaces.  This allows users to define scaled norms and dot products and have them used consistently throughout the code.  See NOX::Epetra::VectorSpace for more details.
-  <li> Model evaluator interface.  %NOX supports a concrete implementation of the NOX::Epetra::Interface objects that wraps an EpetraExt::ModelEvaluator.  If a code implements their residual evaluation, Jacobian, or preconditioner via the EpetraExt::ModelEvaluator class, then it can be automatically used by the %NOX's %Epetra Group. See NOX::Epetra::ModelEvaluatorInterface for more details.
-  <li> The NOX::Epetra::Group implementation allows users to define their own linear solver via the NOX::Epetra::LinearSystem pure virtual class.  %NOX comes with the concrete NOX::Epetra::LinearSystemAztecOO class the uses iterative Krylov subspace methods. See NOX::Epetra::LinearSystem for more details.
-  </ul>
-
-  \section nox_tutorial_link NOX Epetra Tutorial
-
-  See the page \ref nox_epetra_tutorial for more information on how to
-  use the epetra support group.
-
-  The directory Trilinos/packages/nox/test/epetra/1Dfem contains many
-  examples and is the best resource on how to use %NOX with %Epetra.
-
-*/
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
 /*! \page thyra_interface The Thyra Interface
 
  \section thyra_interface_derived Implementing the Interfaces
@@ -1777,8 +1610,8 @@ A user can build a set of status tests from an independent parameter list using 
  concrete class derived from the Thyra::ModelEvaluator
  object.
 
-  The directory Trilinos/packages/nox/test/epetra/Thyra_2Dsim contains
-  examples and is the best resource on how to use %NOX with %Thyra.
+  See the active Thyra/Tpetra tests under `packages/nox/test` for current
+  examples of the Thyra interface.
 */
 
 /* ************************************************************************ */
@@ -1852,7 +1685,8 @@ setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib_${PETSC_BOPT}/${PETSC_ARCH}
  This page describes how to write the main file for using %NOX's
  Epetra implementation of the Group and Vector.
 
- This example can be found in Trilinos/packages/nox/test/epetra/1Dfem/1Dfem.C
+ This tutorial describes a legacy Epetra-based example that is no longer
+ shipped in `packages/nox`.
 
  Begin by including the %NOX library header files and any other headers
  needed by your application:
