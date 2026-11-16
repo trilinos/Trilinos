@@ -806,8 +806,9 @@ createCrsGraphFromStencil(
                 globalNodes, globalNodeStart, procGrid, rankDataDevice,
                 myProcX, myProcY, myProcZ, numbering, neighborRank,
                 neighborNode);
-            if (debug)
+            if (debug) {
               KOKKOS_ASSERT(valid);
+            }
             (void)valid;
             firstColumn = colLocalMap.getLocalElement(
                 globalMinGid + neighborNode * dofsPerNodeGO);
