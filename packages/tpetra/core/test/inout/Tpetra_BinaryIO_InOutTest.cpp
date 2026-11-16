@@ -119,7 +119,7 @@ TEUCHOS_UNIT_TEST(BinaryIO, ByteChunkBoundaries) {
   unsigned long long offset = 1234ull;
   for (unsigned long long chunkIndex = 0; chunkIndex < Tpetra::experimental::Details::binaryIOChunkCount(multiChunkSize, maxChunk); ++chunkIndex) {
     offset = Tpetra::experimental::Details::binaryIOCheckedAddByteOffset(offset,
-                                                           Tpetra::experimental::Details::binaryIOChunkSize(multiChunkSize, maxChunk, chunkIndex));
+                                                                         Tpetra::experimental::Details::binaryIOChunkSize(multiChunkSize, maxChunk, chunkIndex));
   }
   TEST_EQUALITY(offset, 1234ull + multiChunkSize);
 }
