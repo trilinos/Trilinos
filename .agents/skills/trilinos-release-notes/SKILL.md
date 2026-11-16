@@ -1,6 +1,6 @@
 ---
 name: trilinos-release-notes
-description: Generates a draft of Trilinos RELEASE_NOTES entries from PRs merged since the previous release and writes them as a patch file. Run from a full (non-partial, non-shallow) clone with the trilinos-release-M-m-branch being documented checked out. Use when asked to write, update, or draft Trilinos release notes or the RELEASE_NOTES file.
+description: Generates a draft of Trilinos RELEASE_NOTES entries from PRs merged since the previous release and writes them as a patch file, release-notes-<M>.<m>.<p>.patch, at the repo root. Run from a full (non-partial, non-shallow) clone with the trilinos-release-M-m-branch being documented checked out. Use when asked to write, update, or draft Trilinos release notes or the RELEASE_NOTES file.
 ---
 
 # Trilinos Release Notes
@@ -38,6 +38,12 @@ commit, date, or PR number in this file or in your reasoning about it.
   carries an actual date.
 
 Compare versions after normalizing: `M.m` and `M.m.0` are the same version.
+
+In the patch file name (Step 8), `<TARGET>` is always written with three
+numeric parts, `M.m.p`. A minor release gets `.0` (e.g. a minor release
+`M.m` produces `release-notes-M.m.0.patch`); a patch release keeps its
+number (`release-notes-M.m.p.patch`). No dates, branch names, or `-dev`
+suffixes appear in the name.
 
 ## Step 0: Preconditions
 
@@ -325,7 +331,7 @@ General shape, using placeholders only:
 ```
 ###############################################################################
 #                                                                             #
-# Trilinos Release <TARGET> Release Notes                       <Month DD, YYYY> #
+# Trilinos Release <TARGET> Release Notes                    <Month DD, YYYY> #
 #                                                                             #
 ###############################################################################
 
@@ -372,24 +378,32 @@ Rules:
    git diff --no-index RELEASE_NOTES <scratch-copy>
    ```
    then rewrite the `---`/`+++` lines to `a/RELEASE_NOTES` / `b/RELEASE_NOTES`.
-3. Save the result as `release-notes-<TARGET>.patch` in the repository root
-   (sibling to `RELEASE_NOTES`).
-4. Sanity-check it with `git apply --check release-notes-<TARGET>.patch`.
-   Then verify that no PR spans two releases: no `/pull/<N>` on an added
-   (`+`) line may appear in any *other* release section of the current
-   `RELEASE_NOTES`. Repeats within the `<TARGET>` section are allowed.
-   ```
-   # OTHER = RELEASE_NOTES minus the <TARGET> section (the whole file when
-   # <TARGET> is a new section).
-   grep '^+' release-notes-<TARGET>.patch | grep -oE 'pull/[0-9]+' | sort -u |
-     while read u; do grep -q "$u\b" OTHER && echo "$u"; done
-   ```
-   This must print nothing; if not, fix the scratch copy and regenerate the
-   patch. Cross-release duplicates already in `RELEASE_NOTES` before this
-   run are not this skill's to fix -- mention them to the user instead.
+3. Save the result as `release-notes-<M>.<m>.<p>.patch` (three-part
+   version; see Notation) at the repository root
+   (`git rev-parse --show-toplevel`), sibling to `RELEASE_NOTES`. The name
+   is fixed so automated workflows can locate the patch without parsing
+   output. If the file already exists, overwrite it and tell the user an
+   earlier patch was replaced.
+4. Check the patch before leaving it at that path:
+   - its `---`/`+++` lines are `a/RELEASE_NOTES` / `b/RELEASE_NOTES`;
+   - `git apply --check release-notes-<M>.<m>.<p>.patch` succeeds;
+   - no PR spans two releases: no `/pull/<N>` on an added (`+`) line may
+     appear in any *other* release section of the current `RELEASE_NOTES`.
+     Repeats within the `<TARGET>` section are allowed.
+     ```
+     # OTHER = RELEASE_NOTES minus the <TARGET> section (the whole file when
+     # <TARGET> is a new section).
+     grep '^+' release-notes-<M>.<m>.<p>.patch | grep -oE 'pull/[0-9]+' |
+       sort -u | while read u; do grep -q "$u\b" OTHER && echo "$u"; done
+     ```
+     This must print nothing.
+   If any check fails, fix the scratch copy and regenerate the patch; never
+   leave a failing patch at the final path. Cross-release duplicates already
+   in `RELEASE_NOTES` before this run are not this skill's to fix -- mention
+   them to the user instead.
 5. Never modify the real `RELEASE_NOTES`, and never `git add`/`commit`/push
-   anything. Tell the user the patch is ready and how to apply it:
-   `git apply release-notes-<TARGET>.patch`.
+   anything. Give the user the full path of the patch and how to apply it:
+   `git apply release-notes-<M>.<m>.<p>.patch`.
 
 ## Pitfalls
 
