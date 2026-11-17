@@ -40,7 +40,7 @@ class Zoltan2_Directory_Node {
     // between empty slots and filled. But I am not quite understanding this
     // and is there a way to search the filled slots without referring to the
     // keys.
-    Zoltan2_Directory_Node() : free(1) {}
+    Zoltan2_Directory_Node() : owner(-1), partition(-1), errcheck(-1), lid(), userData(), free(1) {}
     int owner;       /* processor hosting global ID object    */
     int partition;   /* Optional data                         */
     int errcheck;    /* Error checking(inconsistent updates)  */
