@@ -94,6 +94,7 @@ C     Find element block indices of arrays already reserved
       CALL MDFIND ('NUMLNK', KNLNK, NELBLK)
       CALL MDFIND ('NUMATR', KNATR, NELBLK)
       CALL MCFIND ('BLKTYP', KNMLB, NELBLK * MXSTLN)
+      CALL MCFIND ('BLKNAM', KEBNAM, NELBLK * MXSTLN)
       CALL MDFIND ('LINK',   KLINK, IELNK)
       CALL MDFIND ('ATRIB',  KATRIB, IEATR)
 
@@ -110,7 +111,7 @@ C     Find element block indices of arrays already reserved
 C     Check for errors
       CALL MDSTAT (NERR, MEM)
       CALL MCSTAT (CERR, MEM)
-      IF ((NERR .GT. 0) .AND. (CERR .GT. 0)) THEN
+      IF ((NERR .GT. 0) .OR. (CERR .GT. 0)) THEN
         CALL MEMERR
         MERR = 1
         RETURN
@@ -277,8 +278,11 @@ C                     Internal node IDs
 C           KFACNS - Returned array containing the distribution factors
 C                    for all node sets
           CALL MDRSRV ('FACNPS', KFACNS, LNPSNL)
+C           KNAMNS - Returned array containing the names for all node sets          
+          CALL MCRSRV ('NAMNPS', KNAMNS, NUMNPS * NAMLEN)
           CALL MDSTAT(NERR,MEM)
-          IF (NERR .GT. 0) THEN
+          CALL MCSTAT(CERR, MEM)
+          IF ((NERR .GT. 0) .OR. (CERR .GT. 0)) THEN
             CALL MEMERR
             MERR = 1
             RETURN
@@ -291,7 +295,7 @@ C     Read the concatenated node sets
                 CALL EXGCNS(ndbin, ia(kidns), ia(knnns), ia(kndnps),
      &               ia(kixnns), ia(kdisns), ia(kltnns), a(kfacns),
      $               ierr)
-
+                call getnams(ndbin, EXNSET, numnps, c(KNAMNS))
 C     Reserve scratch arrays for subroutine ZMNPS
                 CALL MDRSRV ('NEWIX', KNEWIX, NUMNP)
                 CALL MDRSRV ('IXNPS', KIXNPS, LNPSNO)
@@ -363,8 +367,11 @@ C           FACESS - Returned array containing dist factors for all side sets
           CALL MDRSRV ('FACESS', KFACSS, LESSDF)
 C           LTNNN - array of number of nodes for each side in a side set
           CALL MDRSRV ('LTNNN', KLTNNN, LESSEL)
+C           KNAMSS - Returned array containing the names for all side sets          
+          CALL MCRSRV ('NAMESS', KNAMSS, NUMESS * NAMLEN)          
           CALL MDSTAT(NERR, MEM)
-          IF (NERR .GT. 0) THEN
+          CALL MCSTAT(CERR, MEM)
+          IF ((NERR .GT. 0) .OR. (CERR .GT. 0)) THEN          
             CALL MEMERR
             MERR = 1
             RETURN
@@ -378,7 +385,8 @@ C              Read concatenated side sets
      &        A(KFACSS), IERR)
 
             CALL EXGCSSC(NDBIN, A(KLTNNN), IERR)
-
+            call getnams(ndbin, EXSSET, NUMESS, C(KNAMSS))
+            
 C              Reserve scratch arrays for ZMESS
             CALL MDRSRV ('NEWIX', KNEWIX, MAX (NUMEL, NUMNP))
             CALL MDRSRV ('NEWSD', KNEWSD, LESSEL)
@@ -402,7 +410,8 @@ C              Delete scratch arrays
             CALL MDDEL ('NEWSD')
             CALL MDDEL ('NEWIX')
             CALL MDSTAT(NERR, MEM)
-            IF (NERR .GT. 0) THEN
+            CALL MCSTAT(CERR, MEM)            
+            IF ((NERR .GT. 0) .OR. (CERR .GT. 0)) THEN
               CALL MEMERR
               MERR = 1
               RETURN
@@ -456,7 +465,7 @@ C     including element block connectivity and attributed
 C ****************************************************************
 
       CALL WELB (NDBOUT, NELBLK, A(KVISEB),
-     &  (NUMEL .EQ. NUMELO), C(KNMLB), A(KNLNK), A(KNATR),
+     &  (NUMEL .EQ. NUMELO), C(KNMLB), C(KEBNAM), A(KNLNK), A(KNATR),
      &  A(KLINK), A(KATRIB), A(KNELB), A(KIXELB), A(KIXEBO),
      &  A(KXELEM),(NUMNP .NE. NUMNPO), A(KNODIX),
      &  A(KIDELB), A, IA, C, MERR)
@@ -532,8 +541,11 @@ C                     Internal node IDs
 C           KFACNS - Returned array containing the distribution factors
 C                    for all node sets
           CALL MDRSRV ('FACNPS', KFACNS, LNPSNL)
+C           KNAMNS - Returned array containing the names for all node sets          
+          CALL MCRSRV ('NAMNPS', KNAMNS, NUMNPS * NAMLEN)
           CALL MDSTAT (NERR, MEM)
-          IF (NERR .GT. 0) THEN
+          CALL MCSTAT (CERR, MEM)
+          IF ((NERR .GT. 0) .OR. (CERR .GT. 0)) THEN
             CALL MEMERR
             MERR = 1
             RETURN
@@ -541,13 +553,14 @@ C                    for all node sets
 
           CALL EXGCNS(ndbin, ia(kidns), ia(knnns), ia(kndnps),
      &      ia(kixnns), ia(kdisns), ia(kltnns), a(kfacns), ierr)
+          call getnams(ndbin, EXNSET, numnps, c(KNAMNS))
         END IF
       END IF
 C     Write the node set information
       if ((numnps .gt. 0) .AND. (nnpso .gt. 0)) then
         CALL EXPCNS(ndbout, ia(kidns), ia(knnns), ia(kndnps),
      &    ia(kixnns), ia(kdisns), ia(kltnns), a(kfacns), ierr)
-
+        call putnams(ndbout, EXNSET, numnps, c(KNAMNS))
 C       Delete unneeded dynamic memory
         CALL MDDEL ('IDNPS')
         CALL MDDEL ('NNNPS')
@@ -556,8 +569,10 @@ C       Delete unneeded dynamic memory
         CALL MDDEL ('IXDNPS')
         CALL MDDEL ('LTNNPS')
         CALL MDDEL ('FACNPS')
+        CALL MCDEL ('NAMNPS')
         CALL MDSTAT (NERR, MEM)
-        IF (NERR .GT. 0) THEN
+        CALL MCSTAT (CERR, MEM)
+        IF ((NERR .GT. 0) .OR. (CERR .GT. 0)) THEN
           CALL MEMERR
           MERR = 1
           RETURN
@@ -593,22 +608,26 @@ C          LTSESS - Returned array containing the sides for all side sets
           CALL MDRSRV ('LTSESS', KLTSSS, LESSEL)
 C          FACESS - Returned array containing dist factors for all side sets
           CALL MDRSRV ('FACESS', KFACSS, LESSDF)
+C           KNAMSS - Returned array containing the names for all side sets          
+          CALL MCRSRV ('NAMESS', KNAMSS, NUMESS * NAMLEN)          
           CALL MDSTAT (NERR, MEM)
-          IF (NERR .GT. 0) THEN
+          CALL MCSTAT (CERR, MEM)
+          IF ((NERR .GT. 0) .OR. (CERR .GT. 0)) THEN
             CALL MEMERR
             MERR = 1
             RETURN
           END IF
           CAll EXGCSS(ndbin, a(kidss), a(kness), a(kndss), a(kixess),
      &      a(kidess), a(kltess), a(kltsss), a(kfacss), ierr)
-        END IF
+          call getnams(ndbin, EXSSET, numess, c(KNAMSS))
+       END IF
       END IF
 
 C     Write the side set information
       IF ((numess .gt. 0) .AND. (nesso .gt. 0)) THEN
         CAll EXPCSS(ndbout, a(kidss), a(kness), a(kndss), a(kixess),
      &    a(kidess), a(kltess), a(kltsss), a(kfacss), ierr)
-
+        call putnams(ndbout, EXSSET, NUMESS, c(KNAMSS))
 C        Delete dynamic memory
         CALL MDDEL ('IDESS')
         CALL MDDEL ('NEESS')
@@ -618,6 +637,14 @@ C        Delete dynamic memory
         CALL MDDEL ('LTEESS')
         CALL MDDEL ('LTSESS')
         CALL MDDEL ('FACESS')
+        CALL MCDEL ('NAMESS')
+        CALL MDSTAT (NERR, MEM)
+        CALL MCSTAT (CERR, MEM)
+        IF ((NERR .GT. 0) .OR. (CERR .GT. 0)) THEN
+          CALL MEMERR
+          MERR = 1
+          RETURN
+        END IF        
       END IF
 
 C ****************************************************************
@@ -885,3 +912,22 @@ c         CALL NCSNC (NDBOUT, IERR)
       i2array = intarr(irow, icol)
       return
       end
+
+C=======================================================================
+      SUBROUTINE GETNAMS (NDB, ITYPE, NUM, NAMES)
+C=======================================================================
+      include 'ag_namlen.blk'
+      CHARACTER*(NAMLEN) NAMES(*)
+      CALL EXGNAMS(NDB, ITYPE, NUM, names, ierr)
+      RETURN
+      END
+
+C=======================================================================
+      SUBROUTINE PUTNAMS (NDB, ITYPE, NUM, NAMES)
+C=======================================================================
+      include 'ag_namlen.blk'
+      CHARACTER*(NAMLEN) NAMES(*)
+      call EXPNAMS(NDB, ITYPE, NUM, names, ierr)
+      return
+      end
+      

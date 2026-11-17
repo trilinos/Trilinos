@@ -26,6 +26,7 @@ namespace Excn {
 
     int debug() const { return debugLevel_; }
     int processor_count() const { return processorCount_; }
+    int processor_rank() const { return myRank_; }
     int start_part() const { return startPart_; }
     int part_count() const;
     int screen_width() const { return screenWidth_; }
@@ -119,7 +120,7 @@ namespace Excn {
     */
     void parse_step_option(const char *tokens);
 
-    GetLongOption options_; //!< Options parsing
+    suplib_cpp::GetLongOption options_; //!< Options parsing
 
     std::string inExtension_{};
     std::string outExtension_{};

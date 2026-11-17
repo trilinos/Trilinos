@@ -1,0 +1,67 @@
+%
+% cxref.sty - Copyright 1996 Andrew M. Bishop
+%
+% New commands that are defined to use in typesetting cxref.
+%
+
+\typeout{Cxref Style-sheet -- By A. M. Bishop. (Custom commands)}
+
+% Stop LaTeX from printing all of the annoying error messages about under/over-full boxes.
+
+\tolerance=10000
+\hbadness=10000
+\emergencystretch=100pt
+
+% Set the section number depth to 3.
+
+\setcounter{secnumdepth}{3}
+
+% Set the table of contents number depth to 3.
+
+\setcounter{tocdepth}{3}
+
+% Set the parindent and table column separator to zero.
+
+\setlength{\parindent}{0in}
+\setlength{\tabcolsep}{0in}
+
+% Define a command to display the 'computer format' text, a small teletype font.
+
+\newcommand{\stt}{\small\tt}
+
+% The command argument list and items to use in it.
+
+\newenvironment{cxrefarglist}{\begin{list}{}{\leftmargin=2.25in \labelsep=0in \labelwidth=2.25in \itemsep=0pt \parsep=3pt \topsep=3pt}}{\end{list}}
+\newcommand{\cxrefargitem}[1]{\item[\parbox{2.25in}{$\cdot$\hspace*{0.1in}{\stt #1}}]}
+
+% A table with one wide column and a cross reference (Include files).
+
+\newenvironment{cxreftabi}{\begin{tabular}{{p{5.0in}l}}}{\end{tabular}}
+
+% A table with a narrow column, a wide column and a cross reference (Included in).
+
+\newenvironment{cxreftabii}{\begin{tabular}{{p{0.75in}p{4.25in}l}}}{\end{tabular}}
+
+% A table with two approximately equal columns (2nd is wider) and a cross reference (Struct / Union).
+
+\newenvironment{cxreftabiia}{\begin{tabular}{{p{2.5in}p{3.5in}}}}{\end{tabular}}
+
+% A table with two exactly equal columns and a cross reference (Appendix).
+
+\newenvironment{cxreftabiib}{\begin{tabular}{{p{2.5in}p{2.5in}l}}}{\end{tabular}}
+
+% A table with a narrow column, two approximately equal columns and a cross reference (Used in, Calls, Called etc.).
+
+\newenvironment{cxreftabiii}{\begin{tabular}{{p{0.75in}p{2.25in}p{2.0in}l}}}{\end{tabular}}
+\newcommand{\cxreftabiiispan}[1]{\multicolumn{2}{p{4.25in}}{#1}}
+
+% Break the above tables by stopping the current table and starting a new one.
+
+\newcommand{\cxreftabbreak}[1]{\end{#1}\vskip 0pt\begin{#1}}
+
+% Cross references for Files, Functions, Variables and Typedefs.
+
+\newcommand{\cxreffile}[1]{{\small\it (Section \ref{file_#1})\/}}
+\newcommand{\cxreffunc}[2]{{\small\it (Section \ref{func_#1_#2})\/}}
+\newcommand{\cxrefvar}[2]{{\small\it (Section \ref{var_#1_#2})\/}}
+\newcommand{\cxreftype}[2]{{\small\it (Section \ref{type_#1_#2})\/}}

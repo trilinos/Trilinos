@@ -1,0 +1,205 @@
+%
+% STANDARD SETUP FOR MANUALS
+%
+%%% set up so item does not have so much space between items and top
+\setlength{\parindent}{0pt}
+\setlength{\topsep}{0pt} \setlength{\parsep}{0pt}
+%%% \setlength{\itemsep}{\smallskipamount} \begin{itemize} ...
+%
+%%% \myindent is a nice amount to indent
+\newlength{\myindent}
+\setlength{\myindent}{30pt}
+\newlength{\myhalfind}
+\setlength{\myhalfind}{15pt}
+%
+%%% \cenlinesbegin and end start a block of centered text (each line to left)
+\newcommand{\cenlinesbegin}
+   { \begin{center} \begin{tabular}{l} }
+\newcommand{\cenlinesend}
+   { \end{tabular} \end{center} }
+%
+%%% these commands are used for all-capital-letter words (\caps),
+%%% typed literals (\cmd), parameters (\param), bold font (\bold)
+\newcommand{\caps}[1]
+   {\uppercase{#1}\null}
+\newcommand{\cmd}[1]
+   {\mbox{\sf\uppercase{#1}}\null}
+\newcommand{\lcmd}[1]
+   {\mbox{\sf#1}\null}
+\newcommand{\param}[1]
+   {{\em #1}\null}
+\newcommand{\optparam}[1]
+   {[{\em #1\/}]\null}
+%
+%%% \negmedskip produces a medium negative space
+\newcommand{\negmedskip}
+   {\vspace{-\medskipamount}}
+%
+%%% \doublehline[#columns] produces a double horizontal line in tabular
+\newcommand{\doublehline}[1]
+   {\hline\multicolumn{#1}{c}{\vspace{-.17in}}\\ \hline}
+%
+%%% \SNL produces the text "Sandia National Laboratories"
+%%% \SNLA adds "Albuquerque, NM"
+\def\SNL{Sandia National Laboratories}
+\def\SNLA{Sandia National Laboratories, Albuquerque, NM}
+%%%
+%%% \nth produces text like 1st with the "st" raised
+\newcommand{\nth}[2]
+   {{#1}\raisebox{.6ex}{#2}}
+%
+%%% \cmdverb is used to produce the command verb
+\newfont{\bldsf}{cmssbx10 scaled \magstep1} % bold sans serif
+\newcommand{\cmdverb}[1]{\mbox{\bldsf #1}\null}
+%
+%%% \default produces the command parameter default in braces;
+%%% \nodefault is used for a command parameter with no default
+\newcommand{\default}[1]{$<${#1}$>$}
+\newcommand{\nodefault}[0]{$<$no default$>$}
+%
+%%% \topicbegin and end indents a block of text
+\newcommand{\topicbegin}{
+   \par\addtolength{\leftskip}{\myindent}
+   \addtolength{\leftmargin}{\myindent}
+   \addtolength{\leftmargini}{\myindent}
+   }
+\newcommand{\topicend}{
+   \par\addtolength{\leftskip}{-\myindent}
+   \addtolength{\leftmargin}{-\myindent}
+   \addtolength{\leftmargini}{-\myindent}
+   }
+%
+%%% \cmddef produces the command descriptions
+\newcommand{\cmddef}[2]{
+   \par \hangindent=\myhalfind \hangafter=1 {#1}
+   \par \topicbegin {#2} \topicend
+   }
+%
+%%% \cmdnext precedes a second command definition line
+\newcommand{\cmdnext}{
+   \par \hangindent=\myhalfind \hangafter=1 \negmedskip
+   }
+% \newcommand{\cmdnext}{
+%   \par \hangindent=\myhalfind \hangafter=1 \vspace{-\bigskipamount}
+%   }
+%
+%%% \cmdoption produces a heading and an indented block of text
+\newcommand{\cmdoption}[2]{
+   \par \hangindent=\myhalfind \hangafter=1 {#1}
+   \par \vspace{-\medskipamount}
+   \topicbegin {#2} \topicend
+   }
+%
+%%% \cmdsum produces a command summary line
+\newcommand{\cmdsum}[2]{
+   \par {#1}
+   \par \vspace{-\medskipamount}
+   \topicbegin {#2} \topicend
+   }
+%
+%%% \errfmt produces a centered error message
+\newcommand{\errfmt}[1]{
+   \begin{center} \vspace{-\smallskipamount}
+   {#1}
+   \vspace{-\smallskipamount} \end{center}
+   }
+%
+%%% \notetome produces a message to me
+\newcommand{\notetome}[1]{
+%%%   \begin{center} {\bf *** {#1} ***} \end{center}
+   \typeout{*** #1 ***}
+   }
+%
+%%% The following are symbols set up for the names of the manuals.
+%%% These symbols are used to check for equality.
+\newcommand{\ABAEXO}{ABAEXO}
+\newcommand{\ALGEBRA}{ALGEBRA}
+\newcommand{\BLOT}{\sf Blot}
+\newcommand{\GENTD}{GENTD}
+\newcommand{\GJOIN}{GJOIN}
+\newcommand{\GROPE}{GROPE}
+\newcommand{\NUMBERS}{NUMBERS}
+
+\newcommand{\superscript}[1]{\ensuremath{^{\textrm{#1}}}}
+\newcommand{\subscript}[1]{\ensuremath{_{\textrm{#1}}}}
+% Welcome to the 21\superscript{st} century.
+\renewcommand{\th}[0]{\superscript{th}}
+\newcommand{\st}[0]{\superscript{st}}
+\newcommand{\nd}[0]{\superscript{nd}}
+\newcommand{\rd}[0]{\superscript{rd}}
+% Carl took 1\st place. Elly, Tom and Ann came in 2\nd, 3\rd and 4\th.
+
+\newcommand{\texifylineno}[1]{{\footnotesize\hspace{-4em}\makebox[4em][r]{#1\hspace{1.5ex}}}}
+
+\newcommand{\sectionline}{%
+  \nointerlineskip \vspace{\baselineskip}%
+  \hspace{\fill}\rule{\linewidth}{.7pt}\hspace{\fill}%
+	\par\nointerlineskip
+}
+\def\SNLA{Sandia National Laboratories, Albuquerque, NM}
+
+\newcommand\dash{\raise2.1pt\hbox{\rule{5pt}{0.3pt}}\hspace{1pt}}
+\newcommand{\gap}{\hspace{12pt}}
+
+\newcommand{\paramdef}[2]
+ {\color{red}\begin{tabular}{@{}l@{}p{6.0in}}\bf\tt #1\enspace\enspace &\tt #2\\\index{#1!Parameter}\index{Parameter!#1}\end{tabular}\color{black}}
+
+\newcommand{\funcdef}[2]
+ {\color{red}\begin{tabular}{@{}l@{}p{0.5in}}\Large\bf\tt int #1\enspace(&\Large\bf\tt #2)\\\index{#1!Definition}\index{Functions!#1!Definition}\end{tabular}\color{black}}
+\newcommand{\funcdefv}[2]
+ {\color{red}\begin{tabular}{@{}l@{}p{3.7in}}\Large\bf\tt void #1\enspace(&\Large\bf\tt #2)\\\index{#1!Definition}\index{Functions!#1!Definition}\end{tabular}\color{black}}
+%
+% Set left margin and counter
+\setlength{\oddsidemargin}{0.25in}
+\setlength{\evensidemargin}{0.25in}
+\setcounter{secnumdepth}{10}
+\setcounter{tocdepth}{3}
+\setlength{\textwidth}{6in}
+\setlength{\topmargin}{-0.25in}
+\setlength{\textheight}{8.5in}
+\parskip 0.2cm
+\parindent 0.0cm
+
+\newenvironment{syntax}
+{\begin{quote}\begin{alltt}\color{blue}}
+{\end{alltt}\end{quote}}
+
+\newenvironment{csource}
+{\small\begin{quote}\color{blue}\begin{alltt}}
+{\end{alltt}\end{quote}\normalsize}
+
+\newenvironment{fsource}
+{\small\begin{quote}\color{red}\begin{alltt}}
+{\end{alltt}\end{quote}\normalsize}
+
+\newcommand{\api}
+   {\mbox{\em API Functions:\hspace{0.1in}}\null}
+
+\newcommand{\exo}
+   {\mbox{\sf Exodus}\null}
+
+\newcommand{\exodiff}
+   {\mbox{\sf Exodiff}\null}
+
+\newcommand{\epu}
+   {\mbox{\sf EPU}\null}
+
+\newcommand{\ejoin}
+   {\mbox{\sf EJoin}\null}
+
+\newcommand{\conjoin}
+   {\mbox{\sf Conjoin}\null}
+
+\newcommand{\entrylabel}[1]{
+   {\parbox[b]{\labelwidth-4pt}{\makebox[0pt][l]{\color{red}\tt\textbf{#1}}\vspace{1.0\baselineskip}}}}
+\newenvironment{parameters}
+{\begin{list}{}
+  {
+    \settowidth{\labelwidth}{80pt}
+    \setlength{\leftmargin}{\labelwidth}
+    \setlength{\parsep}{-10pt}
+    \setlength{\itemsep}{24pt}  % Between items
+    \renewcommand{\makelabel}{\entrylabel}
+  }
+}
+{\end{list}}

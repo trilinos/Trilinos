@@ -1,0 +1,241 @@
+\chapter{Analytical Prediction of Slapdown Magnitude}
+\section{Introduction}
+
+In this chapter, simple equations are developed that can economically
+be used to estimate the ratio of the initial vertical velocity to the
+secondary impact velocity during a slapdown impact orientation.  The
+equations can also be used to determine the critical impact angle
+$\theta_0$ producing the largest secondary impact velocity. The only
+variables required are geometric and mass quantities; the
+force-displacement behavior of the impact is not required.
+
+
+\section{Derivation of Slapdown Equation}
+
+The body is approximated by the three degree-of-freedom system shown
+in Figure~\ref{f:gi} on page~\pageref{f:gi}.  The force-displacement
+behavior is approximated by springs located at the initial and
+secondary impact points. The slapdown equation is developed assuming
+that (1)~the springs are linear elastic, (2)~there are no horizontal
+forces due to friction between the rigid surface and the body, and
+(3)~at most one spring is in contact with the rigid surface at any
+time.  Assumption~(2) reduces the body to a two degree-of-freedom
+system, and assumption~(3) further reduces it to a sequence of one
+degree-of-freedom systems. It will be shown that the linear elastic
+behavior is a conservative assumption that maximizes the secondary
+impact velocity.
+
+In the text that follows, the nose and tail of the body refer to
+the initial and secondary impact points, respectively.  The sign
+convention used is that displacements, velocities and accelerations are
+positive downward; and angular positions, velocities and accelerations
+are positive clockwise.
+
+\subsection{Nomenclature}
+
+The nomenclature used in the derivation of the Slapdown equation is
+defined below.
+\begin{description}
+\item[$y$,$\dot y$,$\ddot y$] Vertical displacement, velocity, and
+acceleration.  Positive toward rigid surface,
+\item[$\theta$,$\omega$,$\alpha$] Angular inclination, velocity, and
+acceleration of the axis of the body with respect to the rigid
+surface, positive counterclockwise if the nose is to the left of the
+tail,
+\item[$m$,$I_{CG}$]
+Body mass and moment of inertia about the center of
+gravity,
+\item[$l$]       Length from the center of gravity to the impact point
+measured along the axis of the body,
+\item[$k$]       Spring constant (force/length),
+\item[$v_0$,$\theta_0$]     Initial vertical velocity and angular
+position of the body,
+\item[$\omega_n$] Natural frequency of the differential equation, and
+\item[$t$]        Time.
+\end{description}
+For the geometric variables and the linear displacement quantities, the
+subscripts $(\cdot)_n$ and $(\cdot)_t$ designate the nose and tail
+of the body, respectively; a superposed dot indicates the time
+derivative of the dotted quantity.
+
+\subsection{Rigid Body Motion Equations}
+
+Using D'Alembert's principle, the vertical acceleration $\ddot y_n$ at the
+nose and the angular acceleration $\alpha$ about the nose during
+the time interval that only the nose is in contact with the rigid
+surface can be determined by the summation of moments and forces.
+\begin{eqnarray}
+\sum M_n\rightarrow 0  & = & 2 \ddot y_n l_n +\alpha(l_n-r)^2
+     +\alpha(l_n+r)^2\label{e1} \\
+\sum F_n\rightarrow -ky_n & = & \frac{m}{2}\left\{\left[(l_n-r)\alpha
+     +\ddot y_n \right] +\left[(l_n+r)\alpha+\ddot y_n\right]\right\}\label{e2}
+\end{eqnarray}
+\begin{tabbing}
+where: \=ZZ\= \kill
+where: \>$r  $\> is the radius of gyration ${}=\sqrt{\frac{I_{CG}}{m}}$,\\
+       \>$l_n$\> is the distance from the center of mass to the nose,\\
+       \>$y_n$\> is the vertical displacement of the nose,\\
+       \>$k  $\> is the elastic spring constant, and\\
+       \>     \> it is assumed that $\cos\theta\approx 1$.
+\end{tabbing}
+Equation~\eref{e1} can be used to give $\alpha$ in terms of $\ddot y_n$:
+\begin{equation}
+\alpha = \frac{-\ddot y_n l_n}{l_n^2 + r^2}\label{eq:alpha}
+\end{equation}
+Using this result, Equation~\eref{e2} can be written as the single
+degree-of-freedom equation:
+\begin{equation}
+\ddot y_n\left[\frac{m}{\beta_n^2+1}\right] + ky_n = 0\label{eq:diff}
+\end{equation}
+where $\beta_n$ is defined to be $l_n/r$.  Equation~\eref{eq:diff} has the
+solution
+\begin{eqnarray}
+     y_n & = & A\cos\omega_n t + B\sin\omega_n t\label{eq:acbs}\\
+\omega_n & = & \sqrt{\frac{k}{m}\left(\beta_n^2+1\right)}
+\end{eqnarray}
+At time $t=0$, $\dot y_n = v_0$ and $y_n = 0$.  Substituting these
+conditions into Equation~\eref{eq:acbs} results in the following equations
+for the vertical displacement, velocity, and acceleration of the nose:
+\begin{eqnarray}
+      y_n & = &  \frac{v_0}{\omega_n}\sin\omega_n t\\
+ \dot y_n & = &  v_0\cos\omega_n t\label{eq:vl}\\
+\ddot y_n & = & -v_0\omega_n\sin\omega_n t\label{eq:ayl}
+\end{eqnarray}
+The angular quantities are determined by substituting
+Equation~\eref{eq:ayl} into Equation~\eref{eq:alpha} and integrating.
+\begin{eqnarray}
+\alpha & = & \frac{\beta_n v_0\omega_n}{r(\beta_n^2+1)}\sin\omega_n t\\
+\omega & = & \frac{-\beta_n v_0}{r(\beta_n^2+1)}[\cos\omega_n t - 1]
+               \label{eq:omega}\\
+\theta & = & \frac{-\beta_n v_0}{r(\beta_n^2+1)}
+                \left[\frac{\sin\omega_n t}{\omega_n} - t\right] + \theta_0
+\label{etheta}
+\end{eqnarray}
+
+These results are only valid during the time interval ($0\leq t\leq
+\pi / \omega_n$) when the spring is in contact with the rigid surface.
+For times $t>\pi/\omega_n$ and before the tail contacts the rigid
+surface,
+\begin{eqnarray}
+\alpha & = & 0, \\
+\omega & = & \frac{2\beta_n v_0}{r(\beta_n^2+1)},\\
+\theta & = & \frac{\beta_n v_0}{r(\beta_n^2+1)}\left[\frac{-\pi}{\omega_n}
+      + 2t\right] + \theta_0\label{e12}
+\end{eqnarray}
+
+\subsection{Velocity of Tail at Impact}
+
+The vertical velocity at the tail of the body $v_t$ is related to
+the vertical velocity and angular velocity at the nose by
+\begin{equation}
+v_t = v_n + \omega(l_n + l_t)\cos\theta
+\end{equation}
+where $v_n = \dot y_n$.
+Substituting Equations~\eref{eq:vl} and~\eref{eq:omega} into the above
+equation and assuming that $\cos\theta\approx 1$, the ratio of the velocity
+at the tail to the initial vertical velocity is:
+\begin{equation}
+\frac{v_t}{v_0} = \cos\omega_nt - \frac{\beta_n(\beta_n+\beta_t)}
+{(1+\beta_n^2)}\left[\cos\omega_n t-1\right]\label{eq:vrv0t}
+\end{equation}
+where $\beta_t$ is defined to be $l_t/r$. This ratio is maximized at
+time $t = \pi/\omega_n$ and gives a maximum velocity ratio of
+\begin{equation}
+\frac{v_t}{v_0} = \frac{2\beta_n(\beta_n+\beta_t)}{1+\beta_n^2} - 1
+\label{eq:vrv0}
+\end{equation}
+
+This result indicates that if linear elastic response is assumed, the
+magnitude of the slapdown velocity of the body can be estimated using
+only geometric and mass quantities; the force-displacement behavior of
+the body is not needed.  Furthermore, Equation~\eref{eq:vrv0} can be
+used to show that
+\begin{equation}
+{\rm If} \quad\beta_n\beta_t \leq1, \quad{\rm then}
+\quad\frac{v_t}{v_0} \leq1\label{eq:blbr}
+\end{equation}
+
+\subsection{Effect of Inelastic Force-Displacement Behavior}
+
+The results in the previous section were derived assuming a linear
+elastic force-displacement behavior.  In general, the force-displacement
+behavior is inelastic and energy is dissipated by plastic deformation.
+In this section it will be shown that when energy is dissipated by
+plastic deformation, the slapdown velocity ratio is closer to
+unity than if there is no energy dissipation.
+
+In this derivation, the springs are assumed to have an infinite
+unloading modulus which means that all of the internal energy in the
+spring is dissipated.  Equations \eref{e1} through~\eref{etheta} are
+still valid, except that the time interval is reduced to ($0\leq t\leq
+\pi / 2\omega_n$).  If the tail impacts the rigid surface at time
+$t=\pi/2\omega_n$, then Equation~\eref{eq:vrv0t} gives the following
+expression for the maximum inelastic velocity ratio:
+\begin{equation}
+\frac{v_t}{v_0} = \frac{\beta_n(\beta_n+\beta_t)}{1+\beta_n^2}
+\label{eq:vrv0i}
+\end{equation}
+which can be written as:
+\begin{equation}
+\left(\frac{v_t}{v_0}\right)_\infty = \left(\frac{v_t}{v_0}\right)_E +
+  \left(\frac{1-\beta_n\beta_t}{1+\beta_n^2}\right)\label{eisum}
+\end{equation}
+where the subscripts $(\ )_\infty$ and $(\ )_E$ denote infinite
+unloading modulus and elastic unloading modulus, respectively.  The
+last term on the right-hand-side is greater than zero if
+$\beta_n\beta_t\leq1$ and is less than zero if $\beta_n\beta_t\geq1$.
+Therefore, an infinite unloading modulus results in a tip velocity
+ratio that is closer to unity than the velocity ratio calculated
+assuming linear elastic impact behavior.  These two cases bound the
+possible unloading behavior of all bodies, therefore
+\begin{displaymath}
+\begin{array}{cccc}
+{\rm If\;} &
+   \left\{\begin{array}{rcl}
+       \beta_n\beta_t & \leq & 1\\
+       {} & {} & {}\\
+       \beta_n\beta_t & \geq & 1
+   \end{array}\right\}, &
+{\quad\rm then\quad} &
+   \left\{\begin{array}{rclcl}
+       \left[\frac{v_t}{v_0}\right]_E & \leq &
+                       \left[\frac{v_t}{v_0}\right]_I & \leq & 1\\
+       {} & {} & {} & {} & {}\\
+       \left[\frac{v_t}{v_0}\right]_E & \geq &
+                       \left[\frac{v_t}{v_0}\right]_I & \geq & 1
+   \end{array}\right\}
+\end{array}
+\end{displaymath}
+where the subscripts $(\ )_E$ and $(\ )_I$ refer to the elastic and
+inelastic responses, respectively. The above results have been verified
+using the \SLAP\ program. Note that although the velocity
+ratio for the inelastic case increases when $\beta_n\beta_t \leq  1$, it
+does not increase to greater than unity.  If the body is symmetric,
+then $\beta_n = \beta_t$ and this result states that there will be no
+slapdown if $L/r < 2$.
+
+\section{Conclusions}
+
+An equation has been derived which gives a conservative estimate of
+the velocity ratio for slapdown of a body impacting a rigid surface.
+Only easily obtainable geometric and mass quantities are required.
+This equation can be used during the design process to help determine
+a body geometry which will minimize the slapdown potential.
+
+
+Equation~\eref{e12} can be used to determine the minimum initial drop
+angle $\theta_0$ such that the secondary impact occurs at the same
+time or after the initial impact point has rebounded from the rigid
+surface. This angle is important for three-dimensional finite element
+analyses of the slapdown event.  The drop angle is given by
+\begin{equation}
+\theta_0 = \frac{\beta_n v_0\pi}{r(\beta_n^2+1)\omega_n}
+\end{equation}
+This angle is measured counter-clockwise from the horizontal and
+assumes that the body has the same radius at the initial and secondary
+impact points.  If the body is not symmetric, the angle
+$\tan^{-1}\left(\frac{R_n-R_t}{l_n+l_t}\right)$ must be subtracted
+from the initial angle $\theta_0$ to account for the asymmetric
+geometry. $R_n$ and $R_t$ are the radii at the nose and tail of the
+body, respectively, and the radius is defined as the perpendicular
+distance from the longitudinal axis of the body to the impact point.

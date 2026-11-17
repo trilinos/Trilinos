@@ -1,0 +1,107 @@
+\chapter{Introduction} \label{chap:intro}
+
+The \caps{\PROGRAM} program allows the user to manipulate data from a
+finite element program before it is plotted. The program reads the
+database output from an analysis program, manipulates the data using
+algebraic expressions supplied by the user, and writes the new data to a
+database to be processed by a plot program such as \caps{BLOT}
+\cite{bib:blot}.
+
+The program's algebraic evaluations allow special functions that are not
+provided by the analysis program (such as principal values, effective
+stress, and pressure) to be available for plotting. The evaluations
+include all of the \caps{FORTRAN} arithmetic operations and most of the
+\caps{FORTRAN} functions plus several special functions.
+
+Both the input and output databases are in the \exo{} database
+format \cite{bib:exodus}. The \exo{} format defines three types of
+variables:\footnote{There are actually more variables than this
+  permitted in an \exo{} database, but only the three below are
+  currently supported by \caps{\PROGRAM}}
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item
+A global variable has a value representative of the system as a whole
+at each time step (e.g., the total energy).
+\item
+A nodal variable has a value for every node of the mesh at each time
+step in the analysis (e.g., the displacement in the x-direction).
+\item
+An element variable has a value for every element in the element block
+in which the variable is defined at each time step (e.g., the stress in the
+x-direction).
+
+\end{itemize}
+
+A time step includes the values for all the variables (global, nodal, and element).
+
+Each element in the database is assigned to an ``element block''. An
+element block distinguishes a material or an element type (such as a
+truss or quadrilateral). A specific element variable may be undefined
+for some element blocks, meaning that the variable has no value for
+elements in that element block.
+
+The algebraic expressions to be evaluated in \caps{\PROGRAM} depend on
+the values from the input database. These input values include the time
+of the time step, the nodal coordinates, and the global, nodal,
+and element variables calculated by the analysis program, including
+values at specific nodes or elements. The values of variables from the
+previous database time step or the first database time step may also be
+referenced in the algebraic expressions. Global, nodal, and
+element variables are created by \caps{\PROGRAM} in the output database,
+with the variable type determined by the types of variables in the
+expression being evaluated.
+
+The \exo{} database format includes the names of the coordinates
+and variables. This allows the user to reference the input variables by
+name and to associate a meaningful name with calculated data.
+
+There are two or three (depending on the number of dimensions in the
+mesh) special nodal variables which contain the displacement components
+at each node. The \caps{BLOT} plot program~\cite{bib:blot} expects these
+variables to follow certain order and naming conventions. These
+variables must be the first nodal variables and they must start with
+``D'' and end with the last letter of the corresponding coordinate name.
+
+\caps{\PROGRAM} allows the user to restrict the information that is
+written to the output database. The time steps to be written may be
+selected from those available on the input database. The size of the
+output mesh may be limited by giving the nodal coordinates of a section
+of the mesh or by selecting elements by element block.
+
+\section{Changes since original printing}
+\begin{itemize}
+  \item Algebra will now add a timestep to an exodus file with no previous timesteps.  The equation
+	    defining the new variable(s) can access constants and coordinates.
+
+  \item	Can remove elements by global id. The syntax is:
+\cmddef{\cmdverb{REMOVE ELEMENT} \param{id1} \param{id2} \ldots\ \param{idn}}{}
+    A maximum of 1024 ids may be specified. It is currently not very efficient, but should work.
+
+  \item Implemented filtering of elements which is the capability
+    to remove elements based on the value of a specified element
+    variable.  The syntax is:
+
+\cmddef{\cmdverb{FILTER ELEMENT}
+  \param{variable} \param{lt$|$le$|$ge$|$ne$|$gt$|$ge} \param{value} \cmd{TIME} \param{db\_time}
+}{
+\begin{itemize}
+\item \param{variable} is the name of an element variable on the database.
+\item \param{value} is the value that this variable will be compared against.
+\item \param{lt$|$le$|$ge$|$ne$|$gt$|$ge} is the type of comparison corresponding to: lt -- less than, le == less than or
+		equal, \ldots
+\item \param{db\_time} is the time on the database where the variable
+  will be read. If \param{db\_time} is less than the minimum database time, then the minimum time will be used; if greater than
+  the maximum database time, then the maximum time will be used.
+\end{itemize}
+If the variable doesn't exist on an element block, then all of the elements in that element block will be retained.
+}
+
+
+\item Added inverse zoom capability -- delete all nodes and
+  elements inside the specified zoom box unless the element
+  contains nodes that are outside the zoom box. This is
+  specified by adding \cmd{OUTSIDE} to the end of the
+  \cmd{ZOOM} command line.
+
+\item Removed all mention of history variables which have been removed from \exo{} a long time ago.
+\end{itemize}

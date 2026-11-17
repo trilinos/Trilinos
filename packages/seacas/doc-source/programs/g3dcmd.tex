@@ -1,0 +1,218 @@
+\chapter{Command Input} \label{chap:command}
+
+The user directs the processing by entering commands to set processing
+parameters.
+\input{texmisc:cominput}
+
+\newpage
+\section{Mesh Transformation}
+\label{cmd:meshtrans}
+
+\cmddef{\cmdverb{TRANSLATE}
+   \param{ntran} \default{1},
+   \param{tottran} \default{1.0},
+   \param{grad} \default{1.0}
+} {
+\cmd{TRANSLATE} causes the \caps{2D} mesh to be translated to create the
+\caps{3D} mesh. The number of levels is \param{ntran}, which is also the
+number of \caps{3D} elements derived from each input \caps{2D} element.
+The total range of the \caps{Z} coordinate is \param{tottran} with a
+gradient of \param{grad}. This command negates a \cmd{ROTATE} command.
+
+The gradient affects the spacing of the levels. The \caps{Z} range of
+level \param{i} is
+}
+
+\cmddef{\cmdverb{ROTATE}
+   \param{nrot} \default{1},
+   \param{totdeg} \default{360.0},
+   \param{cenrot} \default{0.0}
+} {
+\cmd{ROTATE} causes the \caps{2D} mesh to be rotated to create the
+\caps{3D} mesh. The number of rotation levels is \param{nrot}, which is
+also the number of \caps{3D} elements derived from each input \caps{2D}
+element (with the exception of those affected by the \cmd{CENTER}
+command). The mesh is rotated a total of \param{totdeg} degrees, with
+each level rotated \param{totdeg}/\param{nrot} degrees. The center of
+rotation \param{cenrot} is only meaningful if no center element blocks
+are defined (see the \cmd{CENTER} command).
+}
+
+\cmddef{\cmdverb{REVOLVE}
+   \param{axis$_{1}$}, \param{ndeg$_{1}$},
+   \param{axis$_{2}$}, \param{ndeg$_{2}$}, \ldots\
+      \default{last selection} \\
+\cmdnext \cmdverb{REVOLVE}
+   \cmd{RESET} \default{initial condition}
+} {
+\cmd{REVOLVE} causes the transformed \caps{3D} mesh to be rotated. Each
+(\param{axis}, \param{ndeg}) parameter pair specifies an axis
+(\cmd{X} or \cmd{Y} or \cmd{Z}) and the number of degrees to rotate. The
+axis refers to the ``viewing'' axis, not to the object axis. The
+rotations are according to right-hand rule. The center of the rotation
+is specified by the \cmd{REVCEN} command.
+
+Rotations are cumulative. The \cmd{REVOLVE RESET} command resets to no
+rotation.
+}
+
+\cmddef{\cmdverb{REVCEN}
+   \param{xcen} \default{\caps{2D} minimum X coordinate},
+   \param{ycen} \default{\caps{2D} minimum Y coordinate},
+   \param{zcen} \default{0.0}
+} {
+\cmd{REVCEN} sets the center of rotation for the \cmd{REVOLVE} command
+to the point (\param{xcen},\param{ycen},\param{zcen}).
+}
+
+\newpage %%%
+\cmddef{\cmdverb{OFFSET}
+   \param{xoff} \default{0.0},
+   \param{yoff} \default{0.0},
+   \param{zoff} \default{0.0}
+} {
+\cmd{OFFSET} specifies offsets to be added to the transformed \caps{3D}
+coordinates. If a \cmd{REVOLVE} command has been issued, the \caps{3D}
+mesh is rotated before it is offset.
+}
+
+\newpage
+\section{Element Block Types}
+\label{cmd:blocktypes}
+
+Each element block is assigned one of the following block types:
+\setlength{\itemsep}{\smallskipamount} \begin{itemize}
+\item A normal block requires no special handling.
+\item A tunnel block (translation only) changes materials as it is
+translated.
+\item A center block (rotation around mesh edge only) has some elements
+which border the mesh edge that is the center of rotation.
+\end{itemize}
+
+Initially, all blocks are normal blocks.
+
+The \param{block\_id} parameter below refers to the element block identifier.
+The identifiers are displayed by the \cmd{SHOW BLOCKS} command.
+
+\cmddef{\cmdverb{BLOCK}
+   \param{block\_id$_{1}$}, \param{block\_id$_{2}$}, \ldots\
+      \default{all element blocks}
+} {
+\cmd{BLOCK} defines the specified element blocks
+as normal blocks. This command
+negates the effect of a \cmd{TUNNEL} or \cmd{CENTER} command.
+}
+
+\cmddef{\cmdverb{TUNNEL}
+   \param{block\_id} \nodefault,
+   \param{start} \default{1},
+   \param{end} \default{number of levels},
+   \param{inc} \default{1}
+} {
+\cmd{TUNNEL} defines the specified element block as a
+tunnel block. A \cmd{TRANSLATE} command must be in effect before this
+command is issued. If a \cmd{ROTATE} command is issued, all tunnel
+blocks are changed to normal blocks.
+
+For each tunnel block, a separate \caps{3D} element block is created
+starting at level \param{start}, with each block having \param{inc}
+levels. Any levels after level \param{end} are put in a single block.
+
+For example, the commands
+\cenlinesbegin
+\cmd{TRANSLATE 15, 15.0} \\
+\cmd{TUNNEL 999, 5, 9, 2}
+\cenlinesend
+create five blocks consisting of the following \caps{3D} elements
+(derived from the \caps{2D} elements of element block \param{block\_id}):
+\cenlinesbegin
+1) the elements in levels 1, 2, 3, and 4, \\
+2) the elements in levels 5 and 6, \\
+3) the elements in levels 7 and 8, \\
+4) the elements in level 9, \\
+5) the elements in levels 10, 11, 12, 13, 14, and 15.
+\cenlinesend
+
+The block identifier of the first block is always \param{block\_id}. The new
+blocks are assigned consecutive identifiers greater than the maximum
+existing (and new) identifier.
+}
+
+\cmddef{\cmdverb{CENTER}
+   \param{block\_id$_{1}$}, \param{block\_id$_{2}$}, \ldots\
+      \default{all element blocks}
+} {
+\cmd{CENTER} defines the specified element blocks
+as center blocks. A
+\cmd{ROTATE} command must be in effect before this command is issued.
+The mesh must be rotated a complete quadrant (90, 180, 270 or 360
+degrees) and the number of rotation levels must be a multiple of 2 for
+each 90 degrees of rotation. If a \cmd{TRANSLATE} command is issued, all
+center blocks are changed to normal blocks.
+
+If center blocks are defined, the center of rotation defined by the
+\cmd{ROTATE} command is ignored. The center of rotation is the minimum
+coordinate of all elements in the center blocks.
+}
+
+\newpage
+\section{Front and Back Set Definition}
+\label{cmd:setdef}
+
+\cmddef{\cmdverb{NSETS}
+   \cmd{FRONT} or \cmd{BACK} \nodefault,
+   \param{set\_id$_{1}$}, \param{set\_id$_{2}$}, \ldots\ \nodefault
+} {
+\cmd{NSETS} defines front or back node sets with the given
+identifiers. The identifiers must be unique from existing node
+set identifiers and defined front and back node set identifiers.
+
+Back sets cannot be defined on a 360-degree rotation.
+}
+
+\cmddef{\cmdverb{SSETS}
+   \cmd{FRONT} or \cmd{BACK} \nodefault,
+   \param{set\_id$_{1}$}, \param{set\_id$_{2}$}, \ldots\ \nodefault
+} {
+\cmd{SSETS} is equivalent to a \cmd{NSETS} command except that it
+defines side sets.
+}
+
+\newpage
+\section{Information and Processing}
+\label{cmd:info}
+
+\cmddef{\cmdverb{SHOW}
+   \param{command} \default{no parameter}
+} {
+\cmd{SHOW} displays the settings of parameters relevant to the
+\param{command}. For example, the command \cmd{SHOW BLOCK} displays
+information about all the element blocks.
+}
+
+\cmddef{\cmdverb{LIST VARS}
+} {
+\cmd{LIST VARS} displays a summary of the input database. The summary
+includes the database title; the number of nodes, elements, and
+element blocks; and the number of node sets and side sets.
+}
+
+\cmddef{\cmdverb{HELP}
+   \param{command} \default{no parameter}
+} {
+\cmd{HELP} displays information about the program command given as the
+parameter. If no parameter is given, all the command verbs are
+displayed. This command is system-dependent and may not be available on
+some systems.
+}
+
+\cmddef{\cmdverb{END}
+} {
+\cmd{END} ends the command input and starts the database transformation.
+}
+
+\cmddef{\cmdverb{QUIT}
+} {
+\cmd{QUIT} ends the command input and exits the program immediately
+without writing an output database.
+}

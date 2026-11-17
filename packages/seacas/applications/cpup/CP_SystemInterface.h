@@ -101,7 +101,7 @@ namespace Cpup {
     */
     void parse_step_option(const char *tokens);
 
-    GetLongOption options_; //!< Options parsing
+    suplib_cpp::GetLongOption options_; //!< Options parsing
 
     StringVector varNames_;
     std::string  inExtension_{};

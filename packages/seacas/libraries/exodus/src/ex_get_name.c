@@ -77,10 +77,9 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char
 
     /* read the name */
     {
-      int db_name_size   = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);
       int api_name_size  = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
       int used_name_size = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-      int name_size      = db_name_size < api_name_size ? db_name_size : api_name_size;
+      int name_size      = api_name_size;
       if (used_name_size < name_size) {
         name_size = used_name_size;
       }

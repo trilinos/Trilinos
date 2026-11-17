@@ -4,7 +4,6 @@ endif()
 
 SET( ACCESSDIR ${CMAKE_INSTALL_PREFIX} )
 SET( SEPARATOR "_")
-INCLUDE(GNUInstallDirs)
 
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASNemspread)
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASNemslice)
@@ -65,6 +64,21 @@ IF (${PROJECT_NAME}_ENABLE_SEACASConjoin)
         @ONLY
         )
   INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/pconjoin DESTINATION bin)
+ENDIF()
+
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_SEACASAlgebra)
+IF (${PROJECT_NAME}_ENABLE_SEACASAlgebra)
+  find_package(Python COMPONENTS Interpreter)
+  IF (${Python_FOUND})
+    CONFIGURE_FILE(
+          ${CMAKE_CURRENT_SOURCE_DIR}/run_algebra.in.py
+          ${CMAKE_CURRENT_BINARY_DIR}/run_algebra.py
+          @ONLY
+          )
+	  INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/run_algebra.py DESTINATION bin)
+   else()
+      MESSAGE(STATUS "run_algebra.py NOT installed since Python could not be found.")
+   endif()	  
 ENDIF()
 
 TRIBITS_INCLUDE_DIRECTORIES(

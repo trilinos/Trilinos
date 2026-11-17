@@ -1,0 +1,19 @@
+\bigskip
+For example, if the times from the database are 0.0, 0.5, 1.0, 1.5,
+etc.\null, the commands
+\cenlinesbegin
+\cmd{TMIN 0.0} \\
+\cmd{TMAX 5.0} \\
+\cmd{NINTV 5}
+\cenlinesend
+select times 1.0, 2.0, 3.0, 4.0, and 5.0. If the \cmd{NINTV} command is
+replaced by
+\cenlinesbegin
+\cmd{ZINTV 3}
+\cenlinesend
+then times 0.0, 2.5, and 5.0 are selected. If the \cmd{NINTV} command is
+replaced by
+\cenlinesbegin
+\cmd{DELTIME 2.0}
+\cenlinesend
+then times 0.0, 2.0, 4.0 are selected.

@@ -9,6 +9,7 @@
 
 #include <array>
 
+#include "exodus_property.h"
 #include "globals.h"
 #include "pe_str_util_const.h" // for strip_string, token_compare, etc
 #include "rf_allo.h"
@@ -17,6 +18,7 @@
 #define UTIL_NAME "nem_spread"
 #define VER_STR   "7.05 (2025/02/04)"
 
+extern int    check_change_sets(int exoid, int &selected_change_set);
 extern void   check_exodus_error(int, const char *);
 extern double second();
 
@@ -27,6 +29,7 @@ public:
   int    check_inp();
   void   read_coord(int exoid, int max_name_length);
   void   read_elem_blk_ids(int mesh_exoid, int max_name_length);
+  void   read_elem_blk_properties(int mesh_exoid);
   void   read_elem_blk(int exoid);
   void   extract_elem_blk();
   void   extract_global_element_ids(const std::vector<INT> &global_ids, size_t Num_Elem, int iproc);
@@ -158,6 +161,10 @@ public:
 
   std::array<int, 6> Proc_Info{};
   std::vector<int>   Proc_Ids{};
+
+  std::vector<ExodusPropertyManager> Elem_Blk_Properties; /* User defined properties for each *
+                                                           * element block. These are single  *
+                                                           * key-value per element block      */
 
   NemSpread() { Coord_Name[0] = Coord_Name[1] = Coord_Name[2] = nullptr; }
 

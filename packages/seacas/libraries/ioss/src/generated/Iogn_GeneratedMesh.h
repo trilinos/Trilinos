@@ -82,7 +82,9 @@ namespace Iogn {
        multicharacter string.  You can add multiple shell blocks to a face,
        for example, shell:xxx would add three layered shell blocks on the
        minimum x face.  An error is output if a non xXyYzZ character is
-       found, but execution continues.
+       found, but execution continues. The shell block ids start from 2 and
+       increase from left to right through the shell creations argument string.
+       Block id 1 is reserved for the cube block.
 
        - `nodeset` -- argument = xXyYzZ which specifies whether there is
        a nodeset at that location. `x` is minimum x face, `X` is
@@ -454,7 +456,19 @@ namespace Iogn {
      */
     virtual void sideset_elem_sides(int64_t id, Ioss::Int64Vector &elem_sides) const;
 
+    /**
+     * Returns names of element blocks and shell blocks touched by sideset given by set_id.
+     * If the sideset is on a shell block with multiple stacked shells, then return the
+     * outermost shell block name.
+     */
     IOSS_NODISCARD virtual Ioss::NameList sideset_touching_blocks(int64_t set_id) const;
+
+    /**
+     * For mesh face given by loc, returns the shell block ids of the shells on the face
+     * in innermost to outermost order. Returns an empty vector if no shells are defined
+     * on the face.
+     */
+    IOSS_NODISCARD virtual std::vector<size_t> shell_ids_at_location(ShellLocation loc) const;
 
     IOSS_NODISCARD int64_t get_num_x() const { return numX; }
     IOSS_NODISCARD int64_t get_num_y() const { return numY; }

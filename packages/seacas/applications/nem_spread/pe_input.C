@@ -23,6 +23,8 @@
 
 #define TLIST_CNT 5
 
+using suplib_cpp::copy_string;
+
 constexpr int MAX_INPUT_STR_LN = 4096; /* maximum string length for read_string()  */
 
 /*****************************************************************************/

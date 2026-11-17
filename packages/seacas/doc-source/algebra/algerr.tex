@@ -1,0 +1,83 @@
+\chapter{Informational and Error Messages} \label{chap:errmsg}
+
+\caps{\PROGRAM} operates in three stages:
+
+\begin{enumerate}
+
+\item scan the input database for general information,
+
+\item input commands and equations from the user,
+
+\item re-read the input database and copies the mesh description to
+  the output database, and
+
+\item evaluate the equations for each time step.
+
+\end{enumerate}
+
+\caps{\PROGRAM} expects a valid database. If a format error is
+discovered before the time steps, the program prints an error of the
+following format:
+\errfmt{
+\cmd{DATABASE ERROR - Reading \param{database item}}
+}
+and aborts. This problem may occur either while scanning the input
+database or while copying the mesh description to the output database.
+
+If a format error is found while reading the time steps, the following
+error message is printed:
+\errfmt{
+\cmd{WARNING - End-of-file during time steps} \\
+or \\
+\cmd{DATABASE ERROR - Reading \param{database item}}.
+}
+If this error is encountered while scanning the input database, the time
+step with the error and all following time steps are ignored, but the
+program continues and the previous time steps are available for
+processing. Some database errors may not be detected until the equations
+are being evaluated. The program aborts when the error is encountered,
+but the output database is correct for all previous time steps.
+
+An equation is checked for syntax errors as soon as the user enters the
+line. If an error is found, a message is printed and the equation is
+ignored (with a message to that effect). If only a warning is printed,
+the equation is accepted. If the message is not sufficiently
+informative, the description of the equation syntax
+(Chapter~\ref{chap:equation}) may be helpful.
+
+A command is performed as soon as it is entered. A command error usually
+causes the command to be ignored. The command is usually performed if
+only a warning is printed. The display after the command shows the
+effect of the command. If the message is not sufficiently informative,
+the appropriate command description (Chapter~\ref{chap:command}) may be
+helpful.
+
+The evaluation loop processes each time step by reading the needed input
+database variables, evaluating the equations, and writing the results to
+the output database. Any error during this stage causes the program to
+abort (with a fatal error message). The output database is readable, but
+it contains only the data from the time steps processed before the
+error.
+
+A numerical error while evaluating the equations (such as divide by
+zero) causes a fatal error. A message is printed describing the error
+and the equation that caused the error is displayed after the error
+message.
+
+The program allocates memory dynamically as it is needed. If the system
+runs out of memory, the following message is printed:
+\errfmt{
+\cmd{FATAL ERROR - Too much dynamic memory requested}
+}
+and the program aborts. The user should first try to obtain more memory
+on the system. Another solution is to run the program in a less
+memory-intensive fashion. For example, entering fewer equations may
+require less memory.
+
+\caps{\PROGRAM} has certain programmer-defined limitations (for example,
+the number of curves that may be defined. The limits are not specified
+in this manual since they may change. In most cases the limits are
+chosen to be more than adequate. If the user exceeds a limit, a message
+is printed. If the user feels the limit is too restrictive, the code
+sponsor should be notified so the limit may be raised in future releases
+of \caps{\PROGRAM}.

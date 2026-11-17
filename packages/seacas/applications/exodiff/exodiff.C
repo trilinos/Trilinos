@@ -41,6 +41,8 @@
 #include "add_to_log.h"
 
 SystemInterface interFace;
+using suplib_cpp::Data;
+using suplib_cpp::FileInfo;
 
 struct TimeInterp
 {

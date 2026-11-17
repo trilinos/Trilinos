@@ -30,6 +30,8 @@
 #include <string> // for string, char_traits, etc
 #include <vector> // for vector
 
+using suplib_cpp::Data;
+
 namespace {
   void read_vars(int file_id, EXOTYPE flag, const char *type, int num_vars, NameList &varlist);
   void query_change_sets(int file_id, NameList &names, bool return_full_names);

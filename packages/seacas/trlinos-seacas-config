@@ -422,6 +422,11 @@ then
 fi
 fi
 
+if [ "$OS" == "Darwin" ] && [[ "$CXX" == *clang* || "$CXX" == *mpicxx* ]]
+then
+    CXXFLAGS="${CXXFLAGS} -include cstdlib"
+fi
+
 rm -f CMakeCache.txt
 ###------------------------------------------------------------------------
 cmake -G "${GENERATOR}" \

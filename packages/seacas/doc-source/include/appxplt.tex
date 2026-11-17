@@ -1,0 +1,69 @@
+\chapter{Special Plot Text Capabilities} \label{appx:plt}
+
+There are several special capabilities available for user-defined text
+that appears on a plot (such as the plot caption). For example, the text
+can include subscripted text, Greek letters, and special symbols. The
+user requests a capability by inserting an ``escape sequence'' in the
+text. The escape sequence starts with a backslash (``\verb|\|'') and
+(unless otherwise noted) must end with a space which is
+deleted from the text string. Escape sequences are translated only when
+{\bf software} characters are plotted. If an invalid escape sequence is
+entered, an error message appears when the plot is drawn and the
+sequence is ignored.
+The following escape sequences are available:
+
+\begin{center} \begin{tabbing}
+\verb|\|\cmd{XXXXXXX} \= explanation of symbol xx \=
+\verb|\|\cmd{XXXXXXX} \= explanation of symbol xx \kill
+%
+\verb|\|\cmd{SQ} \> square \>
+\verb|\|\cmd{CSQ} \> centered square \\
+\verb|\|\cmd{DI} \> diamond \>
+\verb|\|\cmd{CDI} \> centered diamond \\
+\verb|\|\cmd{CS} \> cross \>
+\verb|\|\cmd{CCS} \> centered cross \\
+\verb|\|\cmd{X} \> X \>
+\verb|\|\cmd{CX} \> centered X \\
+\verb|\|\cmd{TR} \> triangle \>
+\verb|\|\cmd{CTR} \> centered triangle \\
+\verb|\|\cmd{CI} \> circle \>
+\verb|\|\cmd{CCI} \> centered circle \\
+\verb|\|\cmd{DO} \> dot \>
+\verb|\|\cmd{CDO} \> centered dot \\
+\verb|\|\cmd{LO} \> logo \>
+\verb|\|\cmd{CLO} \> centered logo \\
+\\
+\verb|\|\cmd{SLINE} \> solid line \>
+\verb|\|\cmd{DLINE} \> dotted line \\
+\verb|\|\cmd{DDLINE} \> dot-dash line \>
+\verb|\|\cmd{SDLINE} \> short dash line \\
+\verb|\|\cmd{LDLINE} \> long dash line \>
+\verb|\|\cmd{MDLINE} \> medium dash line \\
+\\
+\verb|\|\cmd{NEQ} \> not equal to \\
+\verb|\|\cmd{LEQ} \> less than or equal to \>
+\verb|\|\cmd{GEQ} \> greater than or equal to \\
+\verb|\|\cmd{NLEQ} \> not less than or equal to \>
+\verb|\|\cmd{NGEQ} \> not greater than or equal to \\
+\verb|\|\cmd{NLT} \> not less than \>
+\verb|\|\cmd{NGT} \> not greater than \\
+\verb|\|\cmd{LL} \> much less than \>
+\verb|\|\cmd{GG} \> much greater than \\
+\\
+\verb|\|\cmd{PLUSMIN} \> plus or minus \>
+\verb|\|\cmd{PRIME} \> prime \\
+\verb|\|\cmd{SUM} \> summation \>
+\verb|\|\cmd{APPROX} \> approximation sign \\
+\verb|\\| \> single backslash (with no ending space) \\
+\\
+\verb|\|\cmd{GR} \> Greek font \>
+\verb|\|\cmd{ENG} \> normal font \\
+\\
+\verb|\^| \> start superscript (with no ending space) \\
+\verb|\_| \> start subscript (with no ending space) \\
+\verb|\-| \> end superscript or subscript (with no ending space) \\
+\end{tabbing} \end{center}
+%\\
+%\verb|\|\cmd{CR} \> carriage return \>
+%\verb|\|\cmd{LF} \> linefeed \\
+%\verb|\|\cmd{CL} \> carriage return and linefeed \\

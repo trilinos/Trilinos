@@ -23,6 +23,9 @@
 #include "stringx.h"
 #include <SL_tokenize.h>
 
+using suplib_cpp::copyright;
+using suplib_cpp::GetLongOption;
+
 namespace {
   [[noreturn]] void Parse_Die(std::string &sline)
   {

@@ -941,7 +941,6 @@ namespace Ioss {
       }
     }
     return ++stateCount;
-    ;
   }
 
   /** \brief Get the time corresponding to the specified state or the currently active state.

@@ -416,7 +416,7 @@ namespace Iotm {
           fill_transient_data(ef_blk, field, data, Data(ids), num_to_get);
         }
         else {
-          fill_constant_data(field, data, 1.0);
+          fill_constant_data(field, data, m_constantDistributionFactor);
         }
       }
 

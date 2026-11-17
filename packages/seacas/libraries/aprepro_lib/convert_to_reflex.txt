@@ -1,0 +1,46 @@
+Steps needed to use reflex instead of flex...
+Note that there  is additional work required to get the Scanner class working.  This just gets you some of the way:
+
+* Delete `FlexLexer.h`
+* In `aprepro_parser.h`:
+  -- Add `#include "aprepro_parser.h"`
+  -- Change include of `FlexLexer.h` to `reflex/flexlexer.h`
+  -- the `int` arguments on LexerOutput and LexerInput are `size_t`
+
+In aprepro.ll:
+
+* Rename `echo` to `do_echo`
+* Add `#undef yyterminate` before `#define yyterminate()`
+* Add `#undef YY_USER_ACTION` before the `#define YY_USER_ACTION`
+
+* Add:
+```
+%option namespace=SEAMS
+%option lexer=SEAMSFlexLexer
+%option lex=yylex
+```
+In the `/*** Fex Declarations and Options ***/` section.
+
+* Change `%START` to `%s`
+
+* All matching rules need to have the leading whitespace removed...  For example,
+```
+ <VERBATIM>{
+  "{VERBATIM(OFF)}" { BEGIN(INITIAL);   }
+  [A-Za-z0-9_ ]* |
+    .               { if (echo) ECHO; }
+    "\n"            { if (echo) ECHO; aprepro.ap_file_list.top().lineno++; }
+}
+```
+Becomes:
+```
+<VERBATIM>{
+"{VERBATIM(OFF)}" { BEGIN(INITIAL);   }
+[A-Za-z0-9_ ]* |
+.               { if (do_echo) ECHO; }
+"\n"            { if (do_echo) ECHO; aprepro.ap_file_list.top().lineno++; }
+}
+```
+
+
+This will get you part of the way to using reflex.  

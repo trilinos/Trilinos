@@ -171,6 +171,8 @@ namespace Iogn {
 
     void sideset_elem_sides(int64_t setId, std::vector<int64_t> &elem_sides) const override;
 
+    IOSS_NODISCARD Ioss::NameList sideset_touching_blocks(int64_t setId) const override;
+
     void nodeset_nodes(int64_t nset_id, std::vector<int64_t> &nodes) const override;
 
     void node_communication_map(std::vector<int64_t> &map, std::vector<int> &proc) override;

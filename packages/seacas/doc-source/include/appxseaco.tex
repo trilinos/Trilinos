@@ -1,0 +1,116 @@
+\chapter{The SEACO Database Format} \label{appx:seaco}
+
+The following code segment reads a SEACO database.
+
+\begin{verbatim}
+C   --Open the database file
+
+      NDB = 11
+      OPEN (UNIT=NDB, ..., STATUS='OLD', FORM='UNFORMATTED')
+
+C   --Read the header information
+
+      READ (NDB) TITLE, CNAME, CDATE, CTIME, MNAME, MDATE, MTIME
+C      --TITLE - the title of the database (CHARACTER*80)
+C      --CNAME - the program which created the database (CHARACTER*8)
+C      --CDATE, CTIME - the date (DD-MM-YY) and time (HH:MM:SS)
+C      --   the database was created (both CHARACTER*8)
+C      --MNAME - the program which last modified the database
+C      --   (CHARACTER*8)
+C      --MDATE, MTIME - the date (DD-MM-YY) and time (HH:MM:SS)
+C      --   the database was last modified (both CHARACTER*8)
+
+      READ (NDB) NDIM, NUMNP, NUMEL, NLINK, NUMMAT,
+     &   NVARNP, NVAREL, NVARGL, IBLKNV, IBLKEV, IPACK
+C      --NDIM - the number of coordinates per node
+C      --NUMNP - the number of nodes
+C      --NUMEL - the number of elements
+C      --NLINK - the number of nodes per element
+C      --NUMMAT - the number of materials
+C      --NVARNP - the number of nodal variables
+C      --NVAREL - the number of element variables
+C      --NVARGL - the number of global variables
+C      --IBLKNV - the nodal variable blocking flag, must be 0
+C      --IBLKEV - the element variable blocking flag, must be 0
+C      --IPACK  - the packed data flag, must be 1
+\end{verbatim}
+\newpage
+\begin{verbatim}
+C   --Read the coordinate and variable names
+
+      IF (NDIM .GT. 0) THEN
+         READ (NDB) (NAMECO(I), I=1,NDIM)
+C         --NAMECO - the names of the coordinates (CHARACTER*8)
+      END IF
+
+      IF (NVARNP .GT. 0) THEN
+         READ (NDB) (NAMENV(I), I=1,NVARNP)
+C         --NAMENV - the names of the nodal variables (CHARACTER*8)
+      END IF
+      IF (NVAREL .GT. 0) THEN
+         READ (NDB) (NAMEEV(I), I=1,NVAREL)
+C         --NAMEEV - the names of the element variables (CHARACTER*8)
+      END IF
+      IF (NVARGL .GT. 0) THEN
+         READ (NDB) (NAMEGV(I), I=1,NVARGL)
+C         --NAMEGV - the names of the global variables (CHARACTER*8)
+      END IF
+
+C   --Read the coordinate, connectivity, and material arrays
+
+      IF (NDIM .GT. 0) THEN
+         READ (NDB) ((CORD(I,INP), INP=1,NUMNP), I=1,NDIM)
+C         --CORD - the coordinates for each node
+      END IF
+
+      IF (NUMEL .GT. 0) THEN
+         DO 100 IEL = 1, NUMEL
+            READ (NDB) (LINK(I,IEL), I=1,NLINK)
+C            --LINK - the connectivity array (nodes of each element)
+  100    CONTINUE
+      END IF
+
+      IF (NUMMAT .GT. 1) THEN
+         READ (NDB) (MAT(IEL), IEL=1,NUMEL)
+C         --MAT - the material for each element
+      END IF
+\end{verbatim}
+\newpage
+\begin{verbatim}
+C   --Read the time steps
+
+  110 CONTINUE
+
+         READ (NDB, END=900) TIME
+C         --TIME - the current time step time
+
+         IF (NVARNP .GT. 0) THEN
+            DO 120 NV = 1, NVARNP
+               READ (NDB) (VARNP(NV,INP), INP=1,NUMNP)
+C               --VARNP - the nodal variables at each node
+C               --   for the current time step
+  120       CONTINUE
+         END IF
+
+         IF (NVAREL .GT. 0) THEN
+            DO 130 NV = 1, NVAREL
+               READ (NDB) (VAREL(NV,IEL), IEL=1,NUMEL)
+C               --VAREL - the element variables at each element
+C               --   for the current time step
+  130       CONTINUE
+         END IF
+
+         IF (NVARGL .GT. 0) THEN
+            READ (NDB) (GLOBL(NV), NV=1,NVARGL)
+C            --GLOBL - the global variables for the current time step
+         END IF
+
+C      --Handle time step data
+         ...
+
+      GOTO 110
+
+  900 CONTINUE
+C   --Handle end of file on database
+      ...
+\end{verbatim}

@@ -1,0 +1,44 @@
+\chapter{Site Supplements} \label{appx:site}
+
+\section{VAX VMS}
+
+The command to execute \caps{\PROGRAM} on \caps{VMS} is:
+\begin{center}
+\cmd{\PROGRAM\ \param{input\_database} \param{output\_database}
+\param{user\_input}}
+\end{center}
+
+\param{Input\_database} is the filename of the input \exo{}
+database. A prompt appears if \param{input\_database} is omitted. The
+default is \cmd{TAPE11.EXO}.
+
+\param{Output\_database} is the filename of the output \exo{}
+database. A prompt appears if \param{output\_database} is omitted. The
+default is \cmd{TAPE12.EXO}.
+
+If \param{user\_input} is given, the user input is read from this
+file. Otherwise user input is read from \caps{SYS\$INPUT} (the terminal
+keyboard). User output is directed to \caps{SYS\$OUTPUT} (the terminal).
+
+\caps{\PROGRAM} operates in either interactive or batch modes.
+
+\section{CRAY CTSS}
+
+To execute \caps{\PROGRAM}, the user must have selected the \cmd{acclib}
+library and be running \cmd{ccl}.
+
+The command to execute \caps{\PROGRAM} on \caps{CTSS} is:
+\begin{center}
+\cmd{algebra \param{input\_database} \param{output\_database}
+   i=\param{input} o=\param{output}}
+\end{center}
+
+\param{Input\_database} is the filename of the input \exo{}
+database. The default is \cmd{tape11}.
+
+\param{Output\_database} is the filename of the output \exo{}
+database. The default is \cmd{tape11}.
+
+User input is read from \param{input}, which defaults to \cmd{tty} (the
+terminal keyword). User output is directed to \param{output}, which
+defaults to \cmd{tty} (the terminal).

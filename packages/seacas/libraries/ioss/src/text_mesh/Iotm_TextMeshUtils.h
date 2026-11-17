@@ -239,10 +239,10 @@ namespace Iotm {
 
         if (option.size() == 2) {
           m_parsedDimension = std::stoull(option[1]);
-          if (m_parsedDimension != 2 && m_parsedDimension != 3) {
+          if (m_parsedDimension != 1 && m_parsedDimension != 2 && m_parsedDimension != 3) {
             std::ostringstream errmsg;
             errmsg << "Error!  Parsed spatial dimension (" << m_parsedDimension
-                   << " not defined to be 2 or 3.";
+                   << " not defined to be 1, 2 or 3.";
             m_errorHandler(errmsg);
           }
 
@@ -602,6 +602,7 @@ namespace Iotm {
         };
         set_error_handler(errorHandler);
         m_topologyMapping.initialize_topology_map();
+        m_nodeTopology = m_topologyMapping.topology("NODE");
       }
 
       void initialize_connectivity_parse(const std::string &meshDescription)
@@ -623,7 +624,24 @@ namespace Iotm {
       {
         while (m_lexer.has_token()) {
           ElementData<EntityId, Topology> elemData = parse_element();
-          m_data.add_element(elemData);
+
+          if (m_nodeTopology == elemData.topology) {
+            for (EntityId node : elemData.nodeIds) {
+              if (node != elemData.identifier) {
+                std::ostringstream errmsg;
+                errmsg << "Reference node id:  " << node
+                       << " does not match NODE entity id: " << elemData.identifier
+                       << ".  Error on line " << m_lineNumber << ".";
+                m_errorHandler(errmsg);
+              }
+            }
+
+            NodeData<EntityId> nodeData{elemData.proc, elemData.identifier, elemData.partName};
+            m_data.add_node(nodeData);
+          }
+          else {
+            m_data.add_element(elemData);
+          }
 
           validate_no_extra_fields();
           parse_newline();
@@ -631,6 +649,7 @@ namespace Iotm {
 
         std::sort(m_data.elementDataVec.begin(), m_data.elementDataVec.end(),
                   ElementDataLess<EntityId, Topology>());
+        std::sort(m_data.nodeDataVec.begin(), m_data.nodeDataVec.end(), NodeDataLess<EntityId>());
       }
 
       ElementData<EntityId, Topology> parse_element()
@@ -755,6 +774,17 @@ namespace Iotm {
 
       void validate_node_count(const Topology &topology, size_t numNodes)
       {
+        if (topology == m_nodeTopology) {
+          if ((numNodes != 0) && (numNodes != 1)) {
+            std::ostringstream errmsg;
+            errmsg << "Error!  The input line appears to contain " << numNodes
+                   << " nodes, but the topology " << topology << " needs 0 or 1 listed"
+                   << " nodes on line " << m_lineNumber << ".";
+            m_errorHandler(errmsg);
+          }
+          return;
+        }
+
         size_t numTopologyNodes = topology.num_nodes();
         if (numNodes != numTopologyNodes) {
           std::ostringstream errmsg;
@@ -769,6 +799,7 @@ namespace Iotm {
       TextMeshData<EntityId, Topology> m_data;
       TextMeshLexer                    m_lexer;
       TopologyMapping                  m_topologyMapping;
+      Topology                         m_nodeTopology;
 
       ErrorHandler m_errorHandler;
 

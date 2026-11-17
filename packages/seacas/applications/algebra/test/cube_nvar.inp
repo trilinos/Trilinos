@@ -1,0 +1,5 @@
+title
+cube.g
+R = SQRT(X^2 + Y^2 + Z^2)
+save all
+exit

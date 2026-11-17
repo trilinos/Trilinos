@@ -1,0 +1,64 @@
+\chapter{Command Input} \label{chap:command}
+
+The user may direct the processing by entering commands to set
+processing parameters.
+\input{../include/cominput}
+
+\cmddef{\cmdverb{DO4NOD}
+   \cmd{ON} or \cmd{OFF} \default{\cmd{OFF}}
+} {
+\cmd{DO4NOD} indicates whether 4-node elements should be transformed into
+four 4-node elements as is done with 8-node elements (if \cmd{ON}) or
+left as 4-node elements (if \cmd{OFF}).
+}
+
+\cmddef{\cmdverb{EVARS}
+   \param{record\_range$_{1}$}, \param{record\_range$_{2}$}, \ldots\
+      \default{all element variable records}
+} {
+\cmd{EVARS} limits the selected element variable records. The element
+variables are output only for selected record types. Element variable
+records that are not selected are ignored.
+
+The variable record types are listed in the \caps{ABAQUS} Manual
+\cite{bib:abaqus}
+Section 10.
+Each \param{record\_range} must be in the range notation described above.
+The effect of multiple \cmd{EVARS} commands is cumulative.
+}
+
+\cmddef{\cmdverb{NVARS}
+   \param{record\_range$_{1}$}, \param{record\_range$_{2}$}, \ldots\
+      \default{all nodal variable records}
+} {
+\cmd{NVARS} is the same as the \cmd{EVARS} command except that it
+selects
+nodal variable records.
+}
+
+\cmddef{\cmdverb{MATERIAL}
+} {
+\cmd{MATERIAL} signals the start of the element block settings. The
+settings follow on the next lines. The \cmd{END} command ends the block
+settings.
+
+On each line following the \cmd{MATERIAL} command, the element block
+number is given, followed by the numbers of the original elements that
+are in that element block. The elements must be in the range notation
+described above. All elements must be listed.
+
+If no \cmd{MATERIAL} command is issued, the element block is determined
+as described in Section~\ref{intro:element}.
+}
+
+\cmddef{\cmdverb{END}
+} {
+\cmd{END} ends the command input and starts the
+\caps{ABAQUS} file translation.
+}
+
+\cmddef{\cmdverb{QUIT}
+} {
+\cmd{QUIT} ends the command input and aborts the program immediately
+without writing an output database.
+}

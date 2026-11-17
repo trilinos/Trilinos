@@ -13,10 +13,7 @@ TRIBITS_INCLUDE_DIRECTORIES(
 )
 
 SET(HEADERS "")
-APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/EP_ExodusFile.C
-		    ${CMAKE_CURRENT_SOURCE_DIR}/EP_Internals.C
-		    ${CMAKE_CURRENT_SOURCE_DIR}/EP_ParallelDisks.C
-		    ${CMAKE_CURRENT_SOURCE_DIR}/EP_SystemInterface.C)
+APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.C)
 
 #disabling on PGI due to an odd compiler issue with the compiler generated assembly.
 #this error only seems to manifest on pgi 11.1, however, the version of the compiler
@@ -26,7 +23,7 @@ IF(NOT __LINUX_COMPILER_PGI)
     epu
     NOEXEPREFIX
     NOEXESUFFIX
-    SOURCES ${SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/epu.C
+    SOURCES ${SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/main/epu_main.C
     INSTALLABLE
     )
 IF (TPL_ENABLE_MPI)
@@ -34,13 +31,18 @@ IF (TPL_ENABLE_MPI)
     pepu
     NOEXEPREFIX
     NOEXESUFFIX
-    SOURCES ${SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/pepu.C
+    SOURCES ${SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/main/pepu_main.C
     COMM mpi
     INSTALLABLE
     CATEGORIES BASIC PERFORMANCE
     )
     target_compile_definitions(pepu PUBLIC SEACAS_HAVE_MPI)
 ENDIF()
+
+IF (TPL_ENABLE_GTest)
+  TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
+ENDIF()
+
 ENDIF()
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()

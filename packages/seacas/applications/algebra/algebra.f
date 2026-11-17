@@ -267,6 +267,8 @@ C     VISELB(i) = True iff element block i is to be written
       CALL MDRSRV ('VISELB', KVISEB, NELBLK)
 C     BLKTYP: Element type
       CALL MCRSRV ('BLKTYP', KNMLB, NELBLK * MXSTLN)
+C     BLKNAM: Element block names
+      CALL MCRSRV ('BLKNAM', KEBNAM, NELBLK * NAMLEN)
 C     Reserving space for the element block connectivity arrays
       CALL MDRSRV ('LINK', KLINK, 0)
 C     Reserving space for the element block attributes
@@ -293,7 +295,8 @@ C     Note: Element block ID's must be read for all options
 C     DBIELB reads the element block information from the database.
 C     An error message is displayed if the end of file is read.
       CALL DBIELB (NDBIN, '*', 1, NELBLK, A(KIDELB), A(KNELB),
-     &     A(KNLNK), A(KNATR), C(KNMLB), A, IELNK, IEATR, MERR)
+     &     A(KNLNK), A(KNATR), C(KNMLB), C(KEBNAM), A,
+     &     IELNK, IEATR, MERR)
 C     Exit program on memory error
       IF (MERR .EQ. 1) GO TO 130
 
@@ -566,6 +569,7 @@ C     set of strings of the same length (right justified)
       CALL MDDEL ('NUMELB')
       CALL MDDEL ('VISELB')
       CALL MCDEL ('BLKTYP')
+      CALL MCDEL ('BLKNAM')
       CALL MDDEL ('SELELB')
       CALL MDDEL ('TIMES')
       CALL MDDEL ('IPTIMS')

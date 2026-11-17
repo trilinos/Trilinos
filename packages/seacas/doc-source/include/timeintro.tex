@@ -1,0 +1,38 @@
+The following are the time step selection parameters:
+\negmedskip
+\setlength{\itemsep}{0pt} \begin{itemize}
+\item \param{tmin} is the minimum selected time,
+\item \param{tmax} is the maximum selected time,
+\item \param{nintv} is the number of selected time intervals, and
+\item \param{delt} is the selected time interval.
+\end{itemize}
+
+In the interval-times mode, up to \param{nintv} time steps at interval
+\param{delt} between \param{tmin} and \param{tmax} are selected. The
+mode may have a delta offset or a zero offset. With a delta offset, the
+first selected time is \param{tmin}+\param{delt}; with a zero offset, it
+is \param{tmin}.
+
+In the interval-times mode with a delta offset, the number of selected
+time intervals \param{nintv} and the selected time interval \param{delt}
+are related mathematically by the equations:
+\begin{center} \begin{tabular}{cl}
+$delt$ = $(tmax-tmin) / nintv$ & (1) \\
+$nintv$ = \cmd{int} $((tmin-tmax) / delt)$ & (2) \\
+\end{tabular} \end{center}
+With a zero offset, \param{nintv} and \param{delt} are related
+mathematically by the equations:
+\begin{center} \begin{tabular}{cl}
+$delt$ = $(tmax-tmin) / (nintv-1)$ & (1) \\
+$nintv$ = \cmd{int} $((tmin-tmax) / delt) + 1$ & (2) \\
+\end{tabular} \end{center}
+
+The user specifies either \param{nintv} or \param{delt}. If
+\param{nintv} is specified, \param{delt} is calculated using equation 1.
+If \param{delt} is specified, \param{nintv} is calculated using equation
+2.
+
+In the all-available-times mode, all database time steps between
+\param{tmin} and \param{tmax} are selected (parameters \param{nintv} and
+\param{delt} are ignored). In the user-selected-times mode, the
+specified times are selected (all parameters are ignored).

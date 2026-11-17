@@ -36,6 +36,9 @@
 #endif
 
 unsigned int debug_level = 0;
+using suplib_cpp::format_time;
+using suplib_cpp::get_hwm_memory_info;
+using suplib_cpp::time_stamp;
 
 namespace {
   std::string tsFormat = "[{:%H:%M:%S}] ";
