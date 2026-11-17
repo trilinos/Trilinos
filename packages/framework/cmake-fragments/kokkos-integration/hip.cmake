@@ -1,3 +1,4 @@
+include("${CMAKE_CURRENT_LIST_DIR}/test-disables.cmake")
 set(AMDDeviceLibs_DIR "/rocm/lib/cmake/AMDDeviceLibs" CACHE PATH "")
 #set(AMDGPU_TARGETS "gfx942;gfx942;gfx942;gfx942" CACHE STRING "")
 set(Adelus_DISABLE_STRONG_WARNINGS "OFF" CACHE BOOL "")
