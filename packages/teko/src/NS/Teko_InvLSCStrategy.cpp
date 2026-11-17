@@ -331,11 +331,12 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp& A, LSCPrecondState* 
   }
   state->addInverse("BHBtmC", BHBtmC);
 
-  Teko_DEBUG_MSG_BEGIN(5) DEBUG_STREAM << "LSC Gamma Parameter = " << state->gamma_ << std::endl;
-  DEBUG_STREAM << "LSC Alpha Parameter = " << state->alpha_ << std::endl;
+  Teko_DEBUG_MSG_BEGIN(5)
+    DEBUG_STREAM << "LSC Gamma Parameter = " << state->gamma_ << std::endl;
+    DEBUG_STREAM << "LSC Alpha Parameter = " << state->alpha_ << std::endl;
   Teko_DEBUG_MSG_END()
 
-      state->setInitialized(true);
+  state->setInitialized(true);
 }
 
 /** Compute the inverses required for the LSC Schur complement
@@ -433,18 +434,19 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList& p
   if (pl.isParameter("Assume Stable Discretization"))
     assumeStable_ = pl.get<bool>("Assume Stable Discretization");
 
-  Teko_DEBUG_MSG_BEGIN(5) DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
-  DEBUG_STREAM << "   inv type   = \"" << invStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
-  DEBUG_STREAM << "   bndry rows = " << rowZeroing << std::endl;
-  DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
-  DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
-  DEBUG_STREAM << "   use w-scaling    = " << useWScaling_ << std::endl;
-  DEBUG_STREAM << "   assume stable    = " << assumeStable_ << std::endl;
-  DEBUG_STREAM << "   scale type    = " << getDiagonalName(scaleType_) << std::endl;
-  DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
-  pl.print(DEBUG_STREAM);
+  Teko_DEBUG_MSG_BEGIN(5)
+    DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
+    DEBUG_STREAM << "   inv type   = \"" << invStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
+    DEBUG_STREAM << "   bndry rows = " << rowZeroing << std::endl;
+    DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
+    DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
+    DEBUG_STREAM << "   use w-scaling    = " << useWScaling_ << std::endl;
+    DEBUG_STREAM << "   assume stable    = " << assumeStable_ << std::endl;
+    DEBUG_STREAM << "   scale type    = " << getDiagonalName(scaleType_) << std::endl;
+    DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
+    pl.print(DEBUG_STREAM);
   Teko_DEBUG_MSG_END()
 
   // set defaults as needed

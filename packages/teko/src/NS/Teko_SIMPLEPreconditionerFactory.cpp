@@ -244,17 +244,18 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   }
   if (pl.isParameter("Use Mass Scaling")) useMass_ = pl.get<bool>("Use Mass Scaling");
 
-  Teko_DEBUG_MSG_BEGIN(5) DEBUG_STREAM << "SIMPLE Parameters: " << std::endl;
-  DEBUG_STREAM << "   inv type    = \"" << invStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv v type  = \"" << invVStr << "\"" << std::endl;
-  DEBUG_STREAM << "   prec v type  = \"" << precVStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv p type  = \"" << invPStr << "\"" << std::endl;
-  DEBUG_STREAM << "   prec p type  = \"" << precPStr << "\"" << std::endl;
-  DEBUG_STREAM << "   alpha       = " << alpha_ << std::endl;
-  DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
-  DEBUG_STREAM << "   vel scaling = " << getDiagonalName(fInverseType_) << std::endl;
-  DEBUG_STREAM << "SIMPLE Parameter list: " << std::endl;
-  pl.print(DEBUG_STREAM);
+  Teko_DEBUG_MSG_BEGIN(5)
+    DEBUG_STREAM << "SIMPLE Parameters: " << std::endl;
+    DEBUG_STREAM << "   inv type    = \"" << invStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv v type  = \"" << invVStr << "\"" << std::endl;
+    DEBUG_STREAM << "   prec v type  = \"" << precVStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv p type  = \"" << invPStr << "\"" << std::endl;
+    DEBUG_STREAM << "   prec p type  = \"" << precPStr << "\"" << std::endl;
+    DEBUG_STREAM << "   alpha       = " << alpha_ << std::endl;
+    DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
+    DEBUG_STREAM << "   vel scaling = " << getDiagonalName(fInverseType_) << std::endl;
+    DEBUG_STREAM << "SIMPLE Parameter list: " << std::endl;
+    pl.print(DEBUG_STREAM);
   Teko_DEBUG_MSG_END()
 
   // set defaults as needed
