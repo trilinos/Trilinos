@@ -6,3 +6,6 @@ AlignConsecutiveAssignments: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true
 ColumnLimit: 100
+#Teko specific options
+MacroBlockBegin: '^Teko_DEBUG_MSG_BEGIN$'
+MacroBlockEnd: '^Teko_DEBUG_MSG_END$'
