@@ -37,7 +37,7 @@ jobs:
     with:
       target-runner-labels: "['self-hosted', 'rocm-6.2.1-openblas-0.3.28-openmpi-4.1.5-zen3-gfx90a']"
       image: "unknown"
-      genconfig-string: "rhel_rocm-clang-openmpi_release_static_AMDgfx90a_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_kokkos-integration"
+      genconfig-string: "rhel_kokkos-rocm_release_static_AMDgfx90a_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_kokkos-integration"
       target-branch: ${{ inputs.target_branch }}
       cdash-track: "Nightly"
       dashboard-build-name: rocm-6.2.1-openblas-0.3.28-openmpi-4.1.5-gfx90a_release_static_kokkos-integration-hip${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
