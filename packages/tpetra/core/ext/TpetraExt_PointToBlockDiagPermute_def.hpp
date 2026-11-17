@@ -14,6 +14,7 @@
 
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 
@@ -36,19 +37,17 @@ PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PointToBlock
   , blockStarts_()
   , blockGids_()
   , compatibleMap_(Teuchos::null)
-  , blockDiagMatrix_(Teuchos::null)
-  , invBlocks_()
-  , blockRows_() {}
+  , invBlockDiagMatrix_(Teuchos::null)
+  , localToBlock_() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::cleanupBlockInfo() {
   blockStarts_.clear();
   blockGids_.clear();
-  numBlocks_       = 0;
-  compatibleMap_   = Teuchos::null;
-  blockDiagMatrix_ = Teuchos::null;
-  invBlocks_.clear();
-  blockRows_.clear();
+  numBlocks_          = 0;
+  compatibleMap_      = Teuchos::null;
+  invBlockDiagMatrix_ = Teuchos::null;
+  localToBlock_.clear();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -146,35 +145,36 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::extractB
   TEUCHOS_TEST_FOR_EXCEPTION(matrix_ == nullptr, std::runtime_error,
                              "PointToBlockDiagPermute: null matrix");
 
+  using dense_mat_type = Teuchos::SerialDenseMatrix<int, Scalar>;
+
   const auto rowMap = matrix_->getRowMap();
   const auto colMap = matrix_->getColMap();
 
   const LocalOrdinal numMyRows = static_cast<LocalOrdinal>(rowMap->getLocalNumElements());
 
-  std::vector<int> localToBlock(numMyRows, -1);
+  localToBlock_.assign(numMyRows, -1);
   std::vector<int> blockOffset(numMyRows, -1);
+  std::vector<std::vector<LocalOrdinal> > blockRows(numBlocks_);
+  std::vector<dense_mat_type> invBlocks(numBlocks_);
 
+  // Purely local mode: each block only contains the rows owned by this rank.
+  // Block entries that are not locally owned (e.g., a contiguous block that
+  // straddles a rank boundary) are dropped, as is any row already assigned to
+  // an earlier block.
   for (int b = 0; b < numBlocks_; ++b) {
     for (int j = blockStarts_[b]; j < blockStarts_[b + 1]; ++j) {
       GlobalOrdinal gid = blockGids_[j];
       LocalOrdinal lid  = rowMap->getLocalElement(gid);
-      if (lid != Teuchos::OrdinalTraits<LocalOrdinal>::invalid()) {
-        localToBlock[lid] = b;
-        blockOffset[lid]  = j - blockStarts_[b];
-      }
+      if (lid == Teuchos::OrdinalTraits<LocalOrdinal>::invalid()) continue;
+      if (localToBlock_[lid] >= 0) continue;
+      localToBlock_[lid] = b;
+      blockOffset[lid]   = static_cast<int>(blockRows[b].size());
+      blockRows[b].push_back(lid);
     }
-  }
 
-  blockRows_.resize(numBlocks_);
-  invBlocks_.resize(numBlocks_);
-
-  for (int b = 0; b < numBlocks_; ++b) {
-    const int bsz = blockStarts_[b + 1] - blockStarts_[b];
-    blockRows_[b].resize(bsz);
-    invBlocks_[b].shapeUninitialized(bsz, bsz);
-    for (int i = 0; i < bsz; ++i)
-      for (int j = 0; j < bsz; ++j)
-        invBlocks_[b](i, j) = Teuchos::ScalarTraits<Scalar>::zero();
+    // shape() zero-initializes the block
+    const int bsz = static_cast<int>(blockRows[b].size());
+    invBlocks[b].shape(bsz, bsz);
   }
 
   typename crs_type::nonconst_local_inds_host_view_type inds(
@@ -183,11 +183,10 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::extractB
       "vals", matrix_->getLocalMaxNumRowEntries());
 
   for (LocalOrdinal lrow = 0; lrow < numMyRows; ++lrow) {
-    int blockNum = localToBlock[lrow];
+    int blockNum = localToBlock_[lrow];
     if (blockNum < 0) continue;
 
-    const int rowInBlock             = blockOffset[lrow];
-    blockRows_[blockNum][rowInBlock] = lrow;
+    const int rowInBlock = blockOffset[lrow];
 
     size_t numEntries = Teuchos::OrdinalTraits<size_t>::invalid();
     matrix_->getLocalRowCopy(lrow, inds, vals, numEntries);
@@ -201,27 +200,28 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::extractB
 
       LocalOrdinal rowLid = rowMap->getLocalElement(colGid);
       if (rowLid == Teuchos::OrdinalTraits<LocalOrdinal>::invalid()) continue;
-      if (localToBlock[rowLid] != blockNum) continue;
+      if (localToBlock_[rowLid] != blockNum) continue;
 
-      const int colInBlock                         = blockOffset[rowLid];
-      invBlocks_[blockNum](rowInBlock, colInBlock) = vals(k);
+      const int colInBlock                        = blockOffset[rowLid];
+      invBlocks[blockNum](rowInBlock, colInBlock) = vals(k);
     }
   }
 
   // Invert dense blocks in-place
   Teuchos::LAPACK<int, Scalar> lapack;
   for (int b = 0; b < numBlocks_; ++b) {
-    const int n = invBlocks_[b].numRows();
+    const int n = invBlocks[b].numRows();
+    if (n == 0) continue;
     std::vector<int> ipiv(n);
     int info = 0;
 
-    lapack.GETRF(n, n, invBlocks_[b].values(), invBlocks_[b].stride(), ipiv.data(), &info);
+    lapack.GETRF(n, n, invBlocks[b].values(), invBlocks[b].stride(), ipiv.data(), &info);
     TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
                                "PointToBlockDiagPermute: GETRF failed for block " << b
                                                                                   << " with info = " << info);
 
     std::vector<Scalar> work(std::max(1, n * n));
-    lapack.GETRI(n, invBlocks_[b].values(), invBlocks_[b].stride(), ipiv.data(),
+    lapack.GETRI(n, invBlocks[b].values(), invBlocks[b].stride(), ipiv.data(),
                  work.data(), static_cast<int>(work.size()), &info);
     TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error,
                                "PointToBlockDiagPermute: GETRI failed for block " << b
@@ -229,46 +229,36 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::extractB
   }
 
   // Assemble explicit inverse block-diagonal CRS matrix
-  auto blockDiag =
+  auto invBlockDiag =
       Teuchos::rcp(new crs_type(rowMap, contiguousBlockSize_ > 0 ? contiguousBlockSize_ : 8));
 
+  std::vector<GlobalOrdinal> outCols;
+  std::vector<Scalar> outVals;
   for (int b = 0; b < numBlocks_; ++b) {
-    const int bsz = invBlocks_[b].numRows();
+    const int bsz = invBlocks[b].numRows();
 
     for (int i = 0; i < bsz; ++i) {
-      const LocalOrdinal lrow    = blockRows_[b][i];
-      const GlobalOrdinal rowGid = rowMap->getGlobalElement(lrow);
+      const GlobalOrdinal rowGid = rowMap->getGlobalElement(blockRows[b][i]);
 
-      std::vector<GlobalOrdinal> outCols;
-      std::vector<Scalar> outVals;
-      outCols.reserve(bsz);
-      outVals.reserve(bsz);
-
+      outCols.clear();
+      outVals.clear();
       for (int j = 0; j < bsz; ++j) {
-        const LocalOrdinal lcol    = blockRows_[b][j];
-        const GlobalOrdinal colGid = rowMap->getGlobalElement(lcol);
-
-        const Scalar val = invBlocks_[b](i, j);
+        const Scalar val = invBlocks[b](i, j);
         if (val != Teuchos::ScalarTraits<Scalar>::zero()) {
-          outCols.push_back(colGid);
+          outCols.push_back(rowMap->getGlobalElement(blockRows[b][j]));
           outVals.push_back(val);
         }
       }
 
-      if (outCols.empty()) {
-        outCols.push_back(rowGid);
-        outVals.push_back(Teuchos::ScalarTraits<Scalar>::one());
-      }
-
-      blockDiag->insertGlobalValues(rowGid,
-                                    Teuchos::ArrayView<const GlobalOrdinal>(outCols),
-                                    Teuchos::ArrayView<const Scalar>(outVals));
+      invBlockDiag->insertGlobalValues(rowGid,
+                                       Teuchos::ArrayView<const GlobalOrdinal>(outCols),
+                                       Teuchos::ArrayView<const Scalar>(outVals));
     }
   }
 
-  blockDiag->fillComplete(matrix_->getDomainMap(), matrix_->getRangeMap());
-  compatibleMap_   = rowMap;
-  blockDiagMatrix_ = blockDiag;
+  invBlockDiag->fillComplete(matrix_->getDomainMap(), matrix_->getRangeMap());
+  compatibleMap_      = rowMap;
+  invBlockDiagMatrix_ = invBlockDiag;
 
   return 0;
 }
@@ -276,42 +266,66 @@ int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::extractB
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::applyInverse(
     const mv_type& X, mv_type& Y) const {
-  TEUCHOS_TEST_FOR_EXCEPTION(blockDiagMatrix_.is_null(), std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(invBlockDiagMatrix_.is_null(), std::runtime_error,
                              "PointToBlockDiagPermute::applyInverse: compute() must be called first");
-  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-                             "PointToBlockDiagPermute::applyInverse: X and Y must have same number of vectors");
-  TEUCHOS_TEST_FOR_EXCEPTION(blockRows_.size() != static_cast<size_t>(numBlocks_), std::runtime_error,
-                             "PointToBlockDiagPermute::applyInverse: internal block structure is inconsistent");
-
-  const size_t numVecs = X.getNumVectors();
-  auto Xview           = X.getLocalViewHost(Tpetra::Access::ReadOnly);
-  auto Yview           = Y.getLocalViewHost(Tpetra::Access::OverwriteAll);
-
-  for (size_t j = 0; j < numVecs; ++j) {
-    for (int b = 0; b < numBlocks_; ++b) {
-      const int n = invBlocks_[b].numRows();
-      std::vector<Scalar> xblock(n), yblock(n, Teuchos::ScalarTraits<Scalar>::zero());
-
-      for (int i = 0; i < n; ++i) {
-        const LocalOrdinal lrow = blockRows_[b][i];
-        xblock[i]               = Xview(lrow, j);
-      }
-
-      for (int i = 0; i < n; ++i) {
-        for (int k = 0; k < n; ++k) {
-          yblock[i] += invBlocks_[b](i, k) * xblock[k];
-        }
-      }
-
-      for (int i = 0; i < n; ++i) {
-        const LocalOrdinal lrow = blockRows_[b][i];
-        Yview(lrow, j)          = yblock[i];
-      }
-    }
-  }
-
+  invBlockDiagMatrix_->apply(X, Y);
   return 0;
 }
+
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<typename PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::crs_type>
+PointToBlockDiagPermute<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createCrsMatrix() const {
+  if (invBlockDiagMatrix_.is_null()) return Teuchos::null;
+
+  const auto rowMap = matrix_->getRowMap();
+  const auto colMap = matrix_->getColMap();
+
+  const LocalOrdinal numMyRows = static_cast<LocalOrdinal>(rowMap->getLocalNumElements());
+
+  auto blockDiag =
+      Teuchos::rcp(new crs_type(rowMap, contiguousBlockSize_ > 0 ? contiguousBlockSize_ : 8));
+
+  typename crs_type::nonconst_local_inds_host_view_type inds(
+      "inds", matrix_->getLocalMaxNumRowEntries());
+  typename crs_type::nonconst_values_host_view_type vals(
+      "vals", matrix_->getLocalMaxNumRowEntries());
+
+  std::vector<GlobalOrdinal> outCols;
+  std::vector<Scalar> outVals;
+  for (LocalOrdinal lrow = 0; lrow < numMyRows; ++lrow) {
+    const int blockNum = localToBlock_[lrow];
+    if (blockNum < 0) continue;
+
+    size_t numEntries = Teuchos::OrdinalTraits<size_t>::invalid();
+    matrix_->getLocalRowCopy(lrow, inds, vals, numEntries);
+
+    outCols.clear();
+    outVals.clear();
+    for (size_t k = 0; k < numEntries; ++k) {
+      const GlobalOrdinal colGid = colMap->getGlobalElement(inds(k));
+      const LocalOrdinal rowLid  = rowMap->getLocalElement(colGid);
+      if (rowLid == Teuchos::OrdinalTraits<LocalOrdinal>::invalid()) continue;
+      if (localToBlock_[rowLid] != blockNum) continue;
+
+      outCols.push_back(colGid);
+      outVals.push_back(vals(k));
+    }
+
+    if (outCols.empty()) {
+      outCols.push_back(rowMap->getGlobalElement(lrow));
+      outVals.push_back(Teuchos::ScalarTraits<Scalar>::one());
+    }
+
+    blockDiag->insertGlobalValues(rowMap->getGlobalElement(lrow),
+                                  Teuchos::ArrayView<const GlobalOrdinal>(outCols),
+                                  Teuchos::ArrayView<const Scalar>(outVals));
+  }
+
+  blockDiag->fillComplete(matrix_->getDomainMap(), matrix_->getRangeMap());
+  return blockDiag;
+}
+#endif
 
 }  // namespace Tpetra::Ext
 

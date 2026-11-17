@@ -238,7 +238,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraExt_PointToBlockDiagPermute, contiguous_
   TEST_EQUALITY(perm.setParameters(pl), 0);
   TEST_EQUALITY(perm.compute(), 0);
 
-  auto P = perm.createCrsMatrix();
+  auto P = perm.getInverseBlockDiagonal();
   TEST_ASSERT(!P.is_null());
 
   auto E = buildExpectedInverseBlockDiagonal<ST, LO, GO, NT>(comm, blockSize, numLocalBlocks);
@@ -279,7 +279,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraExt_PointToBlockDiagPermute, explicit_re
   TEST_EQUALITY(perm.setParameters(pl), 0);
   TEST_EQUALITY(perm.compute(), 0);
 
-  auto P = perm.createCrsMatrix();
+  auto P = perm.getInverseBlockDiagonal();
   TEST_ASSERT(!P.is_null());
 
   auto E = buildExpectedReversedBlockDiagonal<ST, LO, GO, NT>(comm, blockSize, numLocalBlocks);
@@ -324,7 +324,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraExt_PointToBlockDiagPermute, explicit_id
   TEST_EQUALITY(perm.setParameters(pl), 0);
   TEST_EQUALITY(perm.compute(), 0);
 
-  auto P = perm.createCrsMatrix();
+  auto P = perm.getInverseBlockDiagonal();
   TEST_ASSERT(!P.is_null());
 
   auto E = buildExpectedInverseBlockDiagonal<ST, LO, GO, NT>(comm, blockSize, numLocalBlocks);
@@ -349,7 +349,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraExt_PointToBlockDiagPermute, apply_inver
   TEST_EQUALITY(perm.setParameters(pl), 0);
   TEST_EQUALITY(perm.compute(), 0);
 
-  auto H = perm.createCrsMatrix();
+  auto H = perm.getInverseBlockDiagonal();
   TEST_ASSERT(!H.is_null());
 
   using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
@@ -374,11 +374,107 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraExt_PointToBlockDiagPermute, apply_inver
   TEST_COMPARE(norm, <, 1.0e-14);
 }
 
+// Contiguous blocks of size 2 over 3 rows per rank: some blocks straddle a rank
+// boundary (or run past the last global row). Each rank should only invert the
+// part of a block it owns instead of hitting a singular dense block.
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraExt_PointToBlockDiagPermute, straddling_contiguous_blocks, ST, LO, GO, NT) {
+  using map_t = Tpetra::Map<LO, GO, NT>;
+  using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+
+  auto comm = Tpetra::getDefaultComm();
+
+  // Rank r owns rows 3r..3r+2, holding the tridiagonal block
+  // [ d0 -2  0 ]
+  // [ -1 d1 -2 ]
+  // [  0 -1 d2 ]
+  // with d_i = 10 + gid.
+  auto A = buildBlockDiagonalMatrix<ST, LO, GO, NT>(comm, 3, 1);
+
+  Teuchos::ParameterList pl;
+  pl.set("contiguous block size", 2);
+
+  Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT> perm(*A);
+  TEST_EQUALITY(perm.setParameters(pl), 0);
+  TEST_NOTHROW(perm.compute());
+
+  auto H = perm.getInverseBlockDiagonal();
+  TEST_ASSERT(!H.is_null());
+  if (H.is_null()) return;
+
+  // The global blocks are {2k, 2k+1}. On an even rank the first two local rows
+  // form a full 2x2 block and the last row is a 1x1 block; on an odd rank the
+  // first row is a 1x1 block and the last two rows form a full 2x2 block.
+  auto map       = rcp(new map_t(A->getRowMap()->getGlobalNumElements(), 0, comm));
+  auto E         = rcp(new crs_t(map, 2));
+  const GO g0    = map->getMinGlobalIndex();
+  auto diag      = [](GO gid) { return static_cast<ST>(10.0 + static_cast<double>(gid)); };
+  auto insert1x1 = [&](GO g) {
+    std::vector<GO> cols{g};
+    std::vector<ST> vals{static_cast<ST>(1.0) / diag(g)};
+    E->insertGlobalValues(g, Teuchos::ArrayView<const GO>(cols), Teuchos::ArrayView<const ST>(vals));
+  };
+  // inverse of [a -2; -1 d] = 1/(ad-2) [d 2; 1 a]
+  auto insert2x2 = [&](GO g) {
+    const ST a   = diag(g);
+    const ST d   = diag(g + 1);
+    const ST det = a * d - static_cast<ST>(2.0);
+    std::vector<GO> cols{g, g + 1};
+    std::vector<ST> row0{d / det, static_cast<ST>(2.0) / det};
+    std::vector<ST> row1{static_cast<ST>(1.0) / det, a / det};
+    E->insertGlobalValues(g, Teuchos::ArrayView<const GO>(cols), Teuchos::ArrayView<const ST>(row0));
+    E->insertGlobalValues(g + 1, Teuchos::ArrayView<const GO>(cols), Teuchos::ArrayView<const ST>(row1));
+  };
+  if (g0 % 2 == 0) {
+    insert2x2(g0);
+    insert1x1(g0 + 2);
+  } else {
+    insert1x1(g0);
+    insert2x2(g0 + 1);
+  }
+  E->fillComplete();
+
+  const double norm = diffNorm<ST, LO, GO, NT>(*E, *H);
+  TEST_COMPARE(norm, <, 1.0e-14);
+}
+
+#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
+// createCrsMatrix() keeps its Trilinos 17.x meaning: the non-inverted block diagonal.
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraExt_PointToBlockDiagPermute, deprecated_create_crs_matrix, ST, LO, GO, NT) {
+  auto comm = Tpetra::getDefaultComm();
+
+  const int blockSize      = 3;
+  const int numLocalBlocks = 2;
+
+  auto A = buildBlockDiagonalMatrix<ST, LO, GO, NT>(comm, blockSize, numLocalBlocks);
+
+  Teuchos::ParameterList pl;
+  pl.set("contiguous block size", blockSize);
+  pl.set("number of local blocks", numLocalBlocks);
+
+  Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT> perm(*A);
+  TEST_EQUALITY(perm.setParameters(pl), 0);
+  TEST_EQUALITY(perm.compute(), 0);
+
+  auto P = perm.createCrsMatrix();
+  TEST_ASSERT(!P.is_null());
+  if (P.is_null()) return;
+
+  const double norm = diffNorm<ST, LO, GO, NT>(*A, *P);
+  TEST_COMPARE(norm, <, 1.0e-14);
+}
+#define DEPRECATED_UNIT_TEST_GROUP(ST, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraExt_PointToBlockDiagPermute, deprecated_create_crs_matrix, ST, LO, GO, NT)
+#else
+#define DEPRECATED_UNIT_TEST_GROUP(ST, LO, GO, NT)
+#endif
+
 #define UNIT_TEST_GROUP(ST, LO, GO, NT)                                                                                 \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraExt_PointToBlockDiagPermute, contiguous_blocks, ST, LO, GO, NT)            \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraExt_PointToBlockDiagPermute, explicit_reversed_gids, ST, LO, GO, NT)       \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraExt_PointToBlockDiagPermute, explicit_identity_order_gids, ST, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraExt_PointToBlockDiagPermute, apply_inverse, ST, LO, GO, NT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraExt_PointToBlockDiagPermute, apply_inverse, ST, LO, GO, NT)                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraExt_PointToBlockDiagPermute, straddling_contiguous_blocks, ST, LO, GO, NT) \
+  DEPRECATED_UNIT_TEST_GROUP(ST, LO, GO, NT)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
