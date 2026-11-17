@@ -34,7 +34,6 @@
 #include "Stokhos_TotalOrderBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_LTBSparse3Tensor.hpp"
-#include "Stokhos_Sparse3TensorUtilities.hpp"
 
 #ifdef HAVE_STOKHOS_KOKKOSLINALG
 #include "KokkosSparse_CrsMatrix.hpp"
