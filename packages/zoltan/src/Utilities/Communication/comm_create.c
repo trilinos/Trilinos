@@ -92,6 +92,11 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
     prev_proc = nprocs;
     for (i = 0; i < nvals; i++) {
 	proc = assign[i];
+	if (proc >= nprocs) {
+	    ZOLTAN_COMM_ERROR("Invalid processor in assign array.", yo, my_proc);
+	    ZOLTAN_FREE(&starts);
+	    return ZOLTAN_FATAL;
+	}
 	if (no_send_buff && proc != prev_proc) { /* Checks if blocked by proc */
 	    if (proc >= 0 && (starts[proc] || prev_proc < 0)) {
 		no_send_buff = FALSE;
