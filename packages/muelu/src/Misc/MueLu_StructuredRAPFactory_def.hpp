@@ -481,8 +481,8 @@ typename StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::FineSt
 StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MakeCoarseStencilMetadata(
     const StructuredGraphSpec& coarseStencil) const {
   FineStencilSpec metadata;
-  metadata.numDimensions = coarseStencil.numDimensions;
-  metadata.dofsPerNode   = coarseStencil.dofsPerNode;
+  metadata.numDimensions  = coarseStencil.numDimensions;
+  metadata.dofsPerNode    = coarseStencil.dofsPerNode;
   metadata.stencilOffsets = coarseStencil.stencilOffsets;
   metadata.entries.reserve(
       coarseStencil.stencilOffsets.size() *
