@@ -212,7 +212,6 @@ TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, construction_test_tpetra) {
   //                        enough
 }
 
-
 TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, residual_test_tpetra) {
   // build global (or serial communicator)
   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();

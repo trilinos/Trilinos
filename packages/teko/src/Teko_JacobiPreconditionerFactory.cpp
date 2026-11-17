@@ -42,8 +42,7 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(
 }
 
 //! Initialize from a parameter list
-void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList& pl)
-{
+void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList& pl) {
   Teko_DEBUG_SCOPE("JacobiPreconditionerFactory::initializeFromParameterList", 10);
   Teko_DEBUG_MSG_BEGIN(9);
   DEBUG_STREAM << "Parameter list: " << std::endl;

@@ -75,7 +75,7 @@ void GaussSeidelPreconditionerFactory::initializeFromParameterList(
   RCP<const InverseLibrary> invLib = getInverseLibrary();
 
   // get string specifying default inverse
-  std::string invStr = "Amesos2";
+  std::string invStr  = "Amesos2";
   std::string precStr = "None";
   if (pl.isParameter(inverse_type)) invStr = pl.get<std::string>(inverse_type);
   if (pl.isParameter(preconditioner_type)) precStr = pl.get<std::string>(preconditioner_type);

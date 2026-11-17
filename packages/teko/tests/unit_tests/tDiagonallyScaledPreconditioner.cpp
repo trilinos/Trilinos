@@ -213,7 +213,6 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column_tpetr
     out << "Apply 0: SUCCESS" << std::endl;
 }
 
-
 TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues_tpetra) {
   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
 

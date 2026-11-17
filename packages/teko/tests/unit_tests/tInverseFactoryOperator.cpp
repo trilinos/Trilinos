@@ -145,7 +145,6 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve_tpetra) {
   }
 }
 
-
 TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve_tpetra) {
   // build global (or serial communicator)
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();

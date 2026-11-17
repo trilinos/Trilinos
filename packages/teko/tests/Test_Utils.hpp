@@ -105,14 +105,14 @@ inline const std::string toString(bool status) { return status ? "PASSED" : "FAI
 }  // end namespace Teko
 
 #define Teko_ADD_UNIT_TEST(str, name) Teko::Test::UnitTest::AddTest(Teuchos::rcp(new str()), #name)
-#define Teko_TEST_MSG(os, level, msgp, msgf)                     \
-  {                                                              \
-    int failPID = -1;                                            \
+#define Teko_TEST_MSG(os, level, msgp, msgf)                            \
+  {                                                                     \
+    int failPID = -1;                                                   \
     status      = UnitTest::CheckParallelBools_tpetra(status, failPID); \
-    if (verbosity >= level && status)                            \
-      os << msgp << std::endl;                                   \
-    else if (verbosity >= level && not status)                   \
-      os << msgf << " ( PID = " << failPID << " )" << std::endl; \
+    if (verbosity >= level && status)                                   \
+      os << msgp << std::endl;                                          \
+    else if (verbosity >= level && not status)                          \
+      os << msgf << " ( PID = " << failPID << " )" << std::endl;        \
   }
 
 #define Teko_TEST_MSG_tpetra(os, level, msgp, msgf)                     \

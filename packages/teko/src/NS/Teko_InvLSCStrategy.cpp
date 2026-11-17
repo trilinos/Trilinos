@@ -12,8 +12,6 @@
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
-
-
 #include "Teuchos_Time.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 

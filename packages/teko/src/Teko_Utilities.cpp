@@ -488,8 +488,7 @@ ModifiableLinearOp getAbsRowSumMatrix(const LinearOp &op) {
     auto out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
     *out << "Teko: getAbsRowSumMatrix requires a Tpetra::CrsMatrix\n";
-    *out << "    Could not extract a Tpetra_Operator from a \""
-         << op->description() << std::endl;
+    *out << "    Could not extract a Tpetra_Operator from a \"" << op->description() << std::endl;
     *out << "           OR\n";
     *out << "    Could not cast a Tpetra_Operator to a Tpetra::CrsMatrix\n";
     *out << std::endl;
@@ -562,7 +561,6 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp &op) {
     // build Thyra diagonal operator
     return Teko::TpetraHelpers::thyraDiagOp(ptrDiag, *tCrsOp->getRowMap(),
                                             "absRowSum( " + op->getObjectLabel() + " ))");
-
   }
 
   throw std::logic_error("getAbsRowSumInvMatrix requires a Tpetra::CrsMatrix");
@@ -655,8 +653,7 @@ const ModifiableLinearOp getDiagonalOp(const LinearOp &op) {
     RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
     *out << "Teko: getDiagonalOp requires a Tpetra::CrsMatrix\n";
-    *out << "    Could not extract a Tpetra_Operator from a \""
-         << op->description() << std::endl;
+    *out << "    Could not extract a Tpetra_Operator from a \"" << op->description() << std::endl;
     *out << "           OR\n";
     *out << "    Could not cast a Tpetra_Operator to a Tpetra::CrsMatrix\n";
     *out << std::endl;
@@ -683,8 +680,7 @@ const MultiVector getDiagonal(const LinearOp &op) {
     RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
     *out << "Teko: getDiagonal requires a Tpetra::CrsMatrix\n";
-    *out << "    Could not extract a Tpetra_Operator from a \""
-         << op->description() << std::endl;
+    *out << "    Could not extract a Tpetra_Operator from a \"" << op->description() << std::endl;
     *out << "           OR\n";
     *out << "    Could not cast a Tpetra_Operator to a Tpetra::CrsMatrix\n";
     *out << std::endl;
@@ -764,7 +760,6 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp &op) {
     // build Thyra diagonal operator
     return Teko::TpetraHelpers::thyraDiagOp(diag, *tCrsOp->getRowMap(),
                                             "inv(diag( " + op->getObjectLabel() + " ))");
-
   }
 
   throw std::logic_error("getInvDiagonalOp requires a Tpetra::CrsMatrix");
@@ -994,7 +989,6 @@ const LinearOp explicitMultiply(const LinearOp &opl, const LinearOp &opm, const 
                             Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getDomainMap()),
                             explicitCrsOp);
     return tExplicitOp;
-
   }
 
   throw std::logic_error("explicitMultiply requires Tpetra-backed operators");
@@ -1100,7 +1094,6 @@ const ModifiableLinearOp explicitMultiply(const LinearOp &opl, const LinearOp &o
                             Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getDomainMap()),
                             explicitCrsOp);
     return tExplicitOp;
-
   }
 
   throw std::logic_error("explicitMultiply requires Tpetra-backed operators");
@@ -1308,7 +1301,6 @@ const LinearOp explicitMultiply(const LinearOp &opl, const LinearOp &opr) {
     return Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
         Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getRangeMap()),
         Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getDomainMap()), explicitCrsOp);
-
   }
 
   throw std::logic_error("explicitMultiply requires Tpetra-backed operators");
@@ -1516,7 +1508,6 @@ const ModifiableLinearOp explicitMultiply(const LinearOp &opl, const LinearOp &o
     return Thyra::tpetraLinearOp<ST, LO, GO, NT>(
         Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getRangeMap()),
         Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getDomainMap()), explicitCrsOp);
-
   }
 
   throw std::logic_error("explicitMultiply requires Tpetra-backed operators");
@@ -1624,7 +1615,6 @@ const LinearOp explicitAdd(const LinearOp &opl_in, const LinearOp &opr_in) {
                             Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getDomainMap()),
                             explicitCrsOp);
     return tExplicitOp;
-
   }
 
   throw std::logic_error("explicitAdd requires Tpetra-backed operators");
@@ -1786,7 +1776,6 @@ const ModifiableLinearOp explicitAdd(const LinearOp &opl_in, const LinearOp &opr
                             Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getDomainMap()),
                             explicitCrsOp);
     return tExplicitOp;
-
   }
 
   throw std::logic_error("explicitAdd requires Tpetra-backed operators");
@@ -1814,7 +1803,6 @@ const LinearOp explicitTranspose(const LinearOp &op) {
     return Thyra::tpetraLinearOp<ST, LO, GO, NT>(
         Thyra::tpetraVectorSpace<ST, LO, GO, NT>(transOp->getRangeMap()),
         Thyra::tpetraVectorSpace<ST, LO, GO, NT>(transOp->getDomainMap()), transOp);
-
   }
 
   throw std::logic_error("explicitTranspose requires a Tpetra-backed operator");
@@ -1868,7 +1856,6 @@ double oneNorm(const LinearOp &op) {
   if (Teko::TpetraHelpers::isTpetraLinearOp(op)) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "One norm not currently implemented for Tpetra matrices");
-
   }
 
   throw std::logic_error("oneNorm requires a Tpetra-backed operator");
@@ -1898,7 +1885,6 @@ double infNorm(const LinearOp &op) {
       for (LO j = 0; j < numEntries; j++) diag.sumIntoLocalValue(i, std::abs(values(j)));
     }
     return diag.normInf() * scalar;
-
   }
 
   throw std::logic_error("infNorm requires a Tpetra-backed operator");
@@ -2381,8 +2367,7 @@ void writeMatrix(const std::string &filename, const Teko::LinearOp &op) {
     Writer::writeMapFile(("domainmap_" + filename).c_str(), *(crsOp->getDomainMap()));
     Writer::writeMapFile(("rangemap_" + filename).c_str(), *(crsOp->getRangeMap()));
     Writer::writeSparseFile(filename.c_str(), crsOp);
-  }
-  else if (isPhysicallyBlockedLinearOp(op)) {
+  } else if (isPhysicallyBlockedLinearOp(op)) {
     double scalar = 0.0;
     bool transp   = false;
     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double>> blocked_op =
