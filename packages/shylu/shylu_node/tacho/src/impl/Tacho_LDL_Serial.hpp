@@ -173,7 +173,8 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
 };
 
 template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Serial> {
-  template <typename ViewTypeA> inline static int invoke(const double tol, const ViewTypeA &A, const bool conjugate) {
+  template <typename ViewTypeA>
+  inline static int invoke(const double tol, const ViewTypeA &A, const bool conjugate) {
 
     static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
 
