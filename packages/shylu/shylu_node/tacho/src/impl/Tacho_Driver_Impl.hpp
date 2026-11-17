@@ -596,8 +596,8 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
       break;
     }
     case LDL_nopiv: {
-      bool conjugate = false; // complex-symmetric (no conjugate)
-      int ndefs = Tacho::LDL_nopiv<Uplo::Upper, Algo::External>::invoke(_pivot_tol, _A, conjugate);
+      const bool conjugate = false; // complex-symmetric (no conjugate)
+      const int ndefs = Tacho::LDL_nopiv<Uplo::Upper, Algo::External>::invoke(_pivot_tol, _A, conjugate);
       if (ndefs < 0) rval = ndefs;
       break;
     }
