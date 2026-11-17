@@ -54,48 +54,48 @@ public:
   }
 };
 
-class UnsignedDiagnosticTester : public stk::balance::UnsignedDiagnostic
+class PrinterUnsignedDiagnosticTester : public stk::balance::UnsignedDiagnostic
 {
 public:
   virtual std::string print_header1(unsigned ) override { return "Test"; }
   virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
 };
 
-class UnsignedDiagnosticTester2 : public stk::balance::UnsignedDiagnostic
+class PrinterUnsignedDiagnosticTester2 : public stk::balance::UnsignedDiagnostic
 {
 public:
   virtual std::string print_header1(unsigned ) override { return "Test"; }
   virtual std::string print_header2(unsigned ) override { return "Diag"; }
 };
 
-class UnsignedWithPercentDiagnosticTester : public stk::balance::UnsignedWithPercentDiagnostic
+class PrinterUnsignedWithPercentDiagnosticTester : public stk::balance::UnsignedWithPercentDiagnostic
 {
 public:
   virtual std::string print_header1(unsigned ) override { return "Test"; }
   virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
 };
 
-class DoubleWithPercentDiagnosticTester : public stk::balance::DoubleWithPercentDiagnostic
+class PrinterDoubleWithPercentDiagnosticTester : public stk::balance::DoubleWithPercentDiagnostic
 {
 public:
   virtual std::string print_header1(unsigned ) override { return "Test"; }
   virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
 };
 
-class MultiUnsignedDiagnosticTester : public stk::balance::MultiUnsignedDiagnostic
+class PrinterMultiUnsignedDiagnosticTester : public stk::balance::MultiUnsignedDiagnostic
 {
 public:
-  MultiUnsignedDiagnosticTester(unsigned numColumns)
+  PrinterMultiUnsignedDiagnosticTester(unsigned numColumns)
     : MultiUnsignedDiagnostic(numColumns)
   {}
   virtual std::string print_header1(unsigned ) override { return "Test"; }
   virtual std::string print_header2(unsigned column) override { return "Diag " + std::to_string(column + 1); }
 };
 
-class MultiUnsignedWithPercentDiagnosticTester : public stk::balance::MultiUnsignedWithPercentDiagnostic
+class PrinterMultiUnsignedWithPercentDiagnosticTester : public stk::balance::MultiUnsignedWithPercentDiagnostic
 {
 public:
-  MultiUnsignedWithPercentDiagnosticTester(unsigned numColumns)
+  PrinterMultiUnsignedWithPercentDiagnosticTester(unsigned numColumns)
     : MultiUnsignedWithPercentDiagnostic(numColumns)
   {}
   virtual std::string print_header1(unsigned ) override { return "Test"; }
@@ -120,9 +120,9 @@ TEST_F(UnitTestDiagnosticsPrinter, unsignedDiagnostic)
   const int numLogicalRanks = 2;
   std::ostringstream os;
 
-  stk::balance::register_diagnostic<UnsignedDiagnosticTester>();
+  stk::balance::register_diagnostic<PrinterUnsignedDiagnosticTester>();
 
-  auto * diag = stk::balance::get_diagnostic<UnsignedDiagnosticTester>();
+  auto * diag = stk::balance::get_diagnostic<PrinterUnsignedDiagnosticTester>();
   if (parallelRank == 0) {
     diag->store_value(parallelRank, 10);
   }
@@ -162,11 +162,11 @@ TEST_F(UnitTestDiagnosticsPrinter, twoUnsignedDiagnostics)
   const int numLogicalRanks = 2;
   std::ostringstream os;
 
-  stk::balance::register_diagnostic<UnsignedDiagnosticTester>();
-  stk::balance::register_diagnostic<UnsignedDiagnosticTester2>();
+  stk::balance::register_diagnostic<PrinterUnsignedDiagnosticTester>();
+  stk::balance::register_diagnostic<PrinterUnsignedDiagnosticTester2>();
 
-  auto * diag1 = stk::balance::get_diagnostic<UnsignedDiagnosticTester>();
-  auto * diag2 = stk::balance::get_diagnostic<UnsignedDiagnosticTester2>();
+  auto * diag1 = stk::balance::get_diagnostic<PrinterUnsignedDiagnosticTester>();
+  auto * diag2 = stk::balance::get_diagnostic<PrinterUnsignedDiagnosticTester2>();
   if (parallelRank == 0) {
     diag1->store_value(parallelRank, 10);
     diag2->store_value(parallelRank, 1000000000);
@@ -208,11 +208,11 @@ TEST_F(UnitTestDiagnosticsPrinter, twoUnsignedDiagnostics_oneLogicalRank)
   const int numLogicalRanks = 1;
   std::ostringstream os;
 
-  stk::balance::register_diagnostic<UnsignedDiagnosticTester>();
-  stk::balance::register_diagnostic<UnsignedDiagnosticTester2>();
+  stk::balance::register_diagnostic<PrinterUnsignedDiagnosticTester>();
+  stk::balance::register_diagnostic<PrinterUnsignedDiagnosticTester2>();
 
-  auto * diag1 = stk::balance::get_diagnostic<UnsignedDiagnosticTester>();
-  auto * diag2 = stk::balance::get_diagnostic<UnsignedDiagnosticTester2>();
+  auto * diag1 = stk::balance::get_diagnostic<PrinterUnsignedDiagnosticTester>();
+  auto * diag2 = stk::balance::get_diagnostic<PrinterUnsignedDiagnosticTester2>();
   if (parallelRank == 1) {
     diag1->store_value(0, 10);
     diag2->store_value(0, 1000000000);
@@ -249,11 +249,11 @@ TEST_F(UnitTestDiagnosticsPrinter, twoUnsignedDiagnostics_threeLogicalRanks)
   const int numLogicalRanks = 3;
   std::ostringstream os;
 
-  stk::balance::register_diagnostic<UnsignedDiagnosticTester>();
-  stk::balance::register_diagnostic<UnsignedDiagnosticTester2>();
+  stk::balance::register_diagnostic<PrinterUnsignedDiagnosticTester>();
+  stk::balance::register_diagnostic<PrinterUnsignedDiagnosticTester2>();
 
-  auto * diag1 = stk::balance::get_diagnostic<UnsignedDiagnosticTester>();
-  auto * diag2 = stk::balance::get_diagnostic<UnsignedDiagnosticTester2>();
+  auto * diag1 = stk::balance::get_diagnostic<PrinterUnsignedDiagnosticTester>();
+  auto * diag2 = stk::balance::get_diagnostic<PrinterUnsignedDiagnosticTester2>();
   if (parallelRank == 0) {
     diag1->store_value(0, 10);
     diag1->store_value(2, 55);
@@ -298,9 +298,9 @@ TEST_F(UnitTestDiagnosticsPrinter, unsignedWithPercentDiagnostics)
   const int numLogicalRanks = 4;
   std::ostringstream os;
 
-  stk::balance::register_diagnostic<UnsignedWithPercentDiagnosticTester>();
+  stk::balance::register_diagnostic<PrinterUnsignedWithPercentDiagnosticTester>();
 
-  auto * diag = stk::balance::get_diagnostic<UnsignedWithPercentDiagnosticTester>();
+  auto * diag = stk::balance::get_diagnostic<PrinterUnsignedWithPercentDiagnosticTester>();
   if (parallelRank == 0) {
     diag->store_value(0, 10);
     diag->store_value(3, 170);
@@ -344,9 +344,9 @@ TEST_F(UnitTestDiagnosticsPrinter, doubleWithPercentDiagnostics)
   const int numLogicalRanks = 3;
   std::ostringstream os;
 
-  stk::balance::register_diagnostic<DoubleWithPercentDiagnosticTester>();
+  stk::balance::register_diagnostic<PrinterDoubleWithPercentDiagnosticTester>();
 
-  auto * diag = stk::balance::get_diagnostic<DoubleWithPercentDiagnosticTester>();
+  auto * diag = stk::balance::get_diagnostic<PrinterDoubleWithPercentDiagnosticTester>();
   if (parallelRank == 0) {
     diag->store_value(0, -0.2);
     diag->store_value(2, 0.2);
@@ -389,11 +389,11 @@ TEST_F(UnitTestDiagnosticsPrinter, oneUnsignedDiagnostic_oneMultiUnsignedDiagnos
   const unsigned numColumns = 2;
   std::ostringstream os;
 
-  stk::balance::register_diagnostic<UnsignedDiagnosticTester>();
-  stk::balance::register_diagnostic<MultiUnsignedDiagnosticTester>(numColumns);
+  stk::balance::register_diagnostic<PrinterUnsignedDiagnosticTester>();
+  stk::balance::register_diagnostic<PrinterMultiUnsignedDiagnosticTester>(numColumns);
 
-  auto * diag1 = stk::balance::get_diagnostic<UnsignedDiagnosticTester>();
-  auto * diag2 = stk::balance::get_diagnostic<MultiUnsignedDiagnosticTester>();
+  auto * diag1 = stk::balance::get_diagnostic<PrinterUnsignedDiagnosticTester>();
+  auto * diag2 = stk::balance::get_diagnostic<PrinterMultiUnsignedDiagnosticTester>();
   if (parallelRank == 0) {
     diag1->store_value(0, 10);
     diag1->store_value(2, 55);
@@ -444,11 +444,11 @@ TEST_F(UnitTestDiagnosticsPrinter, oneUnsignedDiagnostic_oneMultiUnsignedWithPer
   const unsigned numColumns = 2;
   std::ostringstream os;
 
-  stk::balance::register_diagnostic<UnsignedDiagnosticTester>();
-  stk::balance::register_diagnostic<MultiUnsignedWithPercentDiagnosticTester>(numColumns);
+  stk::balance::register_diagnostic<PrinterUnsignedDiagnosticTester>();
+  stk::balance::register_diagnostic<PrinterMultiUnsignedWithPercentDiagnosticTester>(numColumns);
 
-  auto * diag1 = stk::balance::get_diagnostic<UnsignedDiagnosticTester>();
-  auto * diag2 = stk::balance::get_diagnostic<MultiUnsignedWithPercentDiagnosticTester>();
+  auto * diag1 = stk::balance::get_diagnostic<PrinterUnsignedDiagnosticTester>();
+  auto * diag2 = stk::balance::get_diagnostic<PrinterMultiUnsignedWithPercentDiagnosticTester>();
   if (parallelRank == 0) {
     diag1->store_value(0, 10);
     diag1->store_value(3, 50);

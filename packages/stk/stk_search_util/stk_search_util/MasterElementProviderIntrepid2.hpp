@@ -52,6 +52,8 @@ class MasterElementProviderIntrepid2 : public MasterElementProviderInterface
   MasterElementProviderIntrepid2(bool useCompositeTet10 = false) :
     m_lastTopology(stk::topology::INVALID_TOPOLOGY),
     m_numEvalPoints(0),
+    m_numNodes(0),
+    m_numParCoords(0),
     m_useCompositeTet10(useCompositeTet10)
   {}
 
@@ -114,6 +116,8 @@ class MasterElementProviderIntrepid2 : public MasterElementProviderInterface
     mutable BasisViewType m_basisVals;
     mutable PointViewType m_paramCoords;
     mutable unsigned m_numEvalPoints;
+    mutable unsigned m_numNodes;
+    mutable unsigned m_numParCoords;
     bool m_useCompositeTet10;
 };
 }

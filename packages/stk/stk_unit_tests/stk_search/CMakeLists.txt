@@ -33,6 +33,14 @@
 # 
 
 FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+# Compiled on their own in unity builds: each takes minutes to compile, so batching them
+# would serialize the slowest part of the build.
+set_source_files_properties(
+  UnitTestCoarseSearch.cpp
+  UnitTestCoarseSearchBoxOverlappingEightSurroundingBoxes.cpp
+  UnitTestCoarseSearchLineOfBoundingBoxes.cpp
+  UnitTestCoarseSearchTwoSpheres.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_EXECUTABLE(stk_search_utest

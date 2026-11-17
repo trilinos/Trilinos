@@ -27,6 +27,14 @@ else()
 
   FILE(GLOB HEADERS CONFIGURE_DEPENDS stk_mesh/*.hpp)
 
+  # Compiled on their own in unity builds: each takes minutes to compile, so batching them
+  # would serialize the slowest part of the build.
+  set_source_files_properties(
+    stk_mesh/ParallelSum.cpp
+    stk_search/VolumeToVolume.cpp
+    stk_search/VolumeToSurface.cpp
+    PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
   add_executable(stk_performance_tests ${SOURCES})
   target_link_libraries(stk_performance_tests stk_unit_main)
   target_link_libraries(stk_performance_tests stk_balance_lib)

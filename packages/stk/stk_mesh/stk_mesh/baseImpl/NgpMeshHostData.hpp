@@ -53,6 +53,10 @@ struct NgpMeshHostData : NgpMeshHostDataBase {
   typename UnsignedViewType<NgpMemSpace>::host_mirror_type hostVolatileFastSharedCommMapNumShared[stk::topology::NUM_RANKS];
   typename NgpCommMapIndices<NgpMemSpace>::host_mirror_type hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
 
+  // The entity in each volatileFastSharedCommMap slot, so the slot's FastMeshIndex can be re-gathered
+  // after a device modification renumbers buckets.
+  Kokkos::View<Entity*, NgpMemSpace> commMapEntities[stk::topology::NUM_RANKS];
+
   typename UnsignedViewType<NgpMemSpace>::host_mirror_type m_hostBufferOffsets;
   typename UnsignedViewType<NgpMemSpace>::host_mirror_type m_hostMeshIndicesOffsets;
 

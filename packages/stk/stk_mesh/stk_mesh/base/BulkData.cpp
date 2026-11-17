@@ -138,12 +138,12 @@ void BulkData::update_shared_entity_this_proc(EntityKey global_key_other_proc, s
 void BulkData::check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<shared_entity_type>& shared_entities_this_proc, int proc_id, const shared_entity_type &shared_entity_from_other_proc)
 {
     std::vector<shared_entity_type>::iterator shared_itr = std::lower_bound(shared_entities_this_proc.begin(), shared_entities_this_proc.end(), shared_entity_from_other_proc);
-    size_t shared_itr_index = shared_itr - shared_entities_this_proc.begin();
     bool entitiesAreTheSame = impl::is_received_entity_in_local_shared_entity_list(this->use_entity_ids_for_resolving_sharing(),
            shared_itr, shared_entities_this_proc, shared_entity_from_other_proc);
 
     if( entitiesAreTheSame )
     {
+        const size_t shared_itr_index = shared_itr - shared_entities_this_proc.begin();
         update_shared_entity_this_proc(shared_entity_from_other_proc.global_key, shared_entities_this_proc[shared_itr_index], proc_id);
     }
 }

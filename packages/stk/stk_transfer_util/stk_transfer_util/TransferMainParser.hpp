@@ -71,6 +71,7 @@ protected:
  void set_outputMesh_filename(TransferMainSettings& settings);
  void set_transfer_fields(TransferMainSettings& settings);
  void set_transfer_parts(TransferMainSettings& settings);
+ void set_field_groups(TransferMainSettings& settings);
  void set_extrapolate_option(TransferMainSettings& settings);
  void set_master_elements_name(TransferMainSettings& settings);
  void set_recv_type(TransferMainSettings& settings);

@@ -32,6 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#ifndef STK_UNIT_TESTS_STK_TOPOLOGY_TOPOLOGY_TEST_UTILS_HPP
+#define STK_UNIT_TESTS_STK_TOPOLOGY_TOPOLOGY_TEST_UTILS_HPP
+
 #include "gtest/gtest.h"
 #include "stk_ngp_test/ngp_test.hpp"
 #include "stk_topology/topology.hpp"
@@ -489,3 +492,4 @@ void check_lexicographical_smallest_permutation_ngp(stk::topology topology, cons
   }
 }
 
+#endif // STK_UNIT_TESTS_STK_TOPOLOGY_TOPOLOGY_TEST_UTILS_HPP

@@ -3,6 +3,11 @@ FILE(GLOB SOURCES_A CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/utest_a/*.cpp)
 FILE(GLOB SOURCES_B CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/utest_b/*.cpp)
 FILE(GLOB SOURCES_C CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/utest_c/*.cpp)
 
+# Compiled on their own in unity builds: each takes minutes to compile, so batching them
+# would serialize the slowest part of the build.
+set_source_files_properties(${SOURCES_A} ${SOURCES_B} ${SOURCES_C}
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_topology_utest_a
     SOURCES ${SOURCES_A}

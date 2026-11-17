@@ -869,7 +869,7 @@ TEST( UnitTestRootTopology, getPartsDoesNotFindAutoCreatedRootParts )
     return;
   }
 
-  std::vector < stk::topology > test_topologies {
+  std::vector < stk::topology > test_topology_vector {
     stk::topology::NODE
         //EDGE_RANK
         , stk::topology::LINE_2
@@ -907,9 +907,8 @@ TEST( UnitTestRootTopology, getPartsDoesNotFindAutoCreatedRootParts )
         , stk::topology::HEX_20
         , stk::topology::HEX_27};
 
-  for (unsigned i = 0; i < test_topologies.size(); ++i)
-  {
-    check_selector_does_not_return_root_topology_parts(pm, "topo_part" , test_topologies[i]);
+  for (auto test_topology : test_topology_vector) {
+    check_selector_does_not_return_root_topology_parts(pm, "topo_part" , test_topology);
   }
 }
 

@@ -17,14 +17,14 @@ using namespace mesh;
 using namespace mesh::impl;
 
 namespace {
-enum class GeoClassificationE
+enum class MeshGeoClassificationE
 {
   Vertex = 0,
   Edge,
   Face
 };
 
-GeoClassificationE get_geo_classification(const MeshSpec& spec, const utils::Point& pt)
+MeshGeoClassificationE get_mesh_geo_classification(const MeshSpec& spec, const utils::Point& pt)
 {
   double eps  = 1e-12;
   auto x      = pt.get_x();
@@ -35,21 +35,21 @@ GeoClassificationE get_geo_classification(const MeshSpec& spec, const utils::Poi
   bool isYmax = std::abs(y - spec.ymax) < eps;
 
   if ((isXmin && isYmin) || (isXmin && isYmax) || (isXmax && isYmin) || (isXmax && isYmax))
-    return GeoClassificationE::Vertex;
+    return MeshGeoClassificationE::Vertex;
   else if (isXmin || isXmax || isYmin || isYmax)
-    return GeoClassificationE::Edge;
+    return MeshGeoClassificationE::Edge;
   else
-    return GeoClassificationE::Face;
+    return MeshGeoClassificationE::Face;
 }
 
-GeoClassificationE get_edge_geo_classification(const MeshSpec& spec, MeshEntityPtr edge)
+MeshGeoClassificationE get_edge_geo_classification(const MeshSpec& spec, MeshEntityPtr edge)
 {
   MeshEntityPtr verts[MAX_DOWN];
   get_downward(edge, 0, verts);
-  GeoClassificationE g1 = get_geo_classification(spec, verts[0]->get_point_orig(0));
-  GeoClassificationE g2 = get_geo_classification(spec, verts[1]->get_point_orig(0));
+  MeshGeoClassificationE g1 = get_mesh_geo_classification(spec, verts[0]->get_point_orig(0));
+  MeshGeoClassificationE g2 = get_mesh_geo_classification(spec, verts[1]->get_point_orig(0));
 
-  return static_cast<GeoClassificationE>(std::max(static_cast<int>(g1), static_cast<int>(g2)));
+  return static_cast<MeshGeoClassificationE>(std::max(static_cast<int>(g1), static_cast<int>(g2)));
 }
 
 MeshEntityPtr get_closest_entity(std::shared_ptr<Mesh> mesh, int dim, const utils::Point& pt, double tol=1e-13)
@@ -71,13 +71,13 @@ MeshEntityPtr get_closest_entity(std::shared_ptr<Mesh> mesh, int dim, const util
   return closestEntity;
 }  
 
-MeshEntityPtr get_closest_vert(std::shared_ptr<Mesh> mesh, const utils::Point& pt)
+MeshEntityPtr get_closest_vert_mesh_test(std::shared_ptr<Mesh> mesh, const utils::Point& pt)
 {
   return get_closest_entity(mesh, 0, pt, 1);
 }
 
 
-void expect_near(const utils::Point& pt1, const utils::Point& pt2, double tol)
+void expect_near_mesh_test(const utils::Point& pt1, const utils::Point& pt2, double tol)
 {
   EXPECT_NEAR(pt1.x, pt2.x, tol);
   EXPECT_NEAR(pt1.y, pt2.y, tol);
@@ -187,11 +187,11 @@ TEST(Mesh, TopologyUp)
     if (!vert)
       continue;
 
-    auto g     = get_geo_classification(spec, vert->get_point_orig(0));
+    auto g     = get_mesh_geo_classification(spec, vert->get_point_orig(0));
     int nedges = vert->count_up();
-    if (g == GeoClassificationE::Vertex)
+    if (g == MeshGeoClassificationE::Vertex)
       EXPECT_EQ(nedges, 2);
-    else if (g == GeoClassificationE::Edge)
+    else if (g == MeshGeoClassificationE::Edge)
       EXPECT_EQ(nedges, 3);
     else // Face
       EXPECT_EQ(nedges, 4);
@@ -211,9 +211,9 @@ TEST(Mesh, TopologyUp)
 
     auto g     = get_edge_geo_classification(spec, edge);
     int nfaces = edge->count_up();
-    if (g == GeoClassificationE::Edge)
+    if (g == MeshGeoClassificationE::Edge)
       EXPECT_EQ(nfaces, 1);
-    else if (g == GeoClassificationE::Face)
+    else if (g == MeshGeoClassificationE::Face)
       EXPECT_EQ(nfaces, 2);
     else // Vertex
       EXPECT_TRUE(false);
@@ -568,8 +568,8 @@ TEST(Mesh, Centroid3D)
   auto el  = mesh->create_quad_from_verts(v1, v2, v3, v4);
   auto tri = mesh->create_triangle_from_verts(v1, v2, v3);
 
-  expect_near(compute_quad_centroid_3d(el), utils::Point(1, 0, 1), 1e-13);
-  expect_near(compute_tri_centroid_3d(tri), utils::Point(4.0 / 3.0, 0, 2.0 / 3.0), 1e-13);
+  expect_near_mesh_test(compute_quad_centroid_3d(el), utils::Point(1, 0, 1), 1e-13);
+  expect_near_mesh_test(compute_tri_centroid_3d(tri), utils::Point(4.0 / 3.0, 0, 2.0 / 3.0), 1e-13);
 }
 
 TEST(Mesh, ErrorChecking)
@@ -890,7 +890,7 @@ TEST(Mesh, ConvertXiToRange)
   EXPECT_NEAR(convert_xi_coords_to_range(-1, 1, 0.25), -0.5, 1e-13);
   EXPECT_NEAR(convert_xi_coords_to_range(-1, 1, 0),    -1.0, 1e-13);
 
-  expect_near(convert_xi_coords_to_range(-1, 1, {0.75, 0.25}), utils::Point(0.5, -0.5), 1e-13);
+  expect_near_mesh_test(convert_xi_coords_to_range(-1, 1, {0.75, 0.25}), utils::Point(0.5, -0.5), 1e-13);
 }
 
 TEST(Mesh, ConvertXiFromRange)
@@ -899,7 +899,7 @@ TEST(Mesh, ConvertXiFromRange)
   EXPECT_NEAR(convert_xi_coords_from_range(-1, 1, -0.5), 0.25, 1e-13);
   EXPECT_NEAR(convert_xi_coords_from_range(-1, 1, 0),    0.5,  1e-13);
 
-  expect_near(convert_xi_coords_from_range(-1, 1, {0.5, -0.5}), utils::Point(0.75, 0.25), 1e-13);
+  expect_near_mesh_test(convert_xi_coords_from_range(-1, 1, {0.5, -0.5}), utils::Point(0.75, 0.25), 1e-13);
 }
 
 namespace {
@@ -1155,8 +1155,8 @@ TEST(Mesh, ParallelCounts)
   EXPECT_EQ(count_valid(mesh->get_edges()), 4);
   EXPECT_EQ(count_valid(mesh->get_elements()), 1);
 
-  auto lowerVert = get_closest_vert(mesh, {xMidpoint, spec.ymin});
-  auto upperVert = get_closest_vert(mesh, {xMidpoint, spec.ymax});
+  auto lowerVert = get_closest_vert_mesh_test(mesh, {xMidpoint, spec.ymin});
+  auto upperVert = get_closest_vert_mesh_test(mesh, {xMidpoint, spec.ymax});
 
   int otherRank = 1 - utils::impl::comm_rank(mesh->get_comm());
   EXPECT_EQ(lowerVert->count_remote_shared_entities(), 1);
@@ -1192,7 +1192,7 @@ TEST(Mesh, RemoteSharedEntities)
 
   if (utils::impl::comm_size(MPI_COMM_WORLD) == 4 || utils::impl::comm_size(MPI_COMM_WORLD) == 8)
   {
-    auto vert = get_closest_vert(mesh, {(spec.xmin + spec.xmax) / 2, (spec.ymin + spec.ymax) / 2, 0});
+    auto vert = get_closest_vert_mesh_test(mesh, {(spec.xmin + spec.xmax) / 2, (spec.ymin + spec.ymax) / 2, 0});
     EXPECT_EQ(vert->count_remote_shared_entities(), 3);
   }
 }
@@ -1223,10 +1223,10 @@ TEST(Mesh, RemoteSharedEntitiesPeriodicSquare)
 
   if (utils::impl::comm_rank(MPI_COMM_WORLD) == 0)
   {
-    auto vertLL = get_closest_vert(mesh, {spec.xmin, spec.ymin});
-    auto vertLR = get_closest_vert(mesh, {xmid, spec.ymin});
-    auto vertTL = get_closest_vert(mesh, {spec.xmin, ymid});
-    auto vertTR = get_closest_vert(mesh, {xmid, ymid});
+    auto vertLL = get_closest_vert_mesh_test(mesh, {spec.xmin, spec.ymin});
+    auto vertLR = get_closest_vert_mesh_test(mesh, {xmid, spec.ymin});
+    auto vertTL = get_closest_vert_mesh_test(mesh, {spec.xmin, ymid});
+    auto vertTR = get_closest_vert_mesh_test(mesh, {xmid, ymid});
 
     EXPECT_EQ(vertLL->count_remote_shared_entities(), 3);
     EXPECT_EQ(vertLR->count_remote_shared_entities(), 3);

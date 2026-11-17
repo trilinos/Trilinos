@@ -18,19 +18,19 @@ void test_stk_search_sphere_hier_UnionBoxes()
 {
   using namespace stk::search;
 
-  Point<NumT> ptA( 2, 100, 1000);
-  Point<NumT> ptB(11, 100, 1000);
+  stk::search::Point<NumT> ptA( 2, 100, 1000);
+  stk::search::Point<NumT> ptB(11, 100, 1000);
 
   const NumT radiusA = 1;
   const NumT radiusB = 5;
 
-  Sphere<NumT> sphereA(ptA, radiusA);
-  Sphere<NumT> sphereB(ptB, radiusB);
+  stk::search::Sphere<NumT> sphereA(ptA, radiusA);
+  stk::search::Sphere<NumT> sphereB(ptB, radiusB);
 
-  Sphere<NumT> resultSph;
+  stk::search::Sphere<NumT> resultSph;
   UnionBoxes(sphereA, sphereB, resultSph);
 
-  Point<NumT> resultCtr = resultSph.center();
+  stk::search::Point<NumT> resultCtr = resultSph.center();
 
   EXPECT_FLOAT_EQ(8.5, resultCtr[0]);
   EXPECT_FLOAT_EQ(100,   resultCtr[1]);
@@ -52,19 +52,19 @@ TEST( stk_search_sphere_hier, UnionBoxesASwallowsB )
 {
   using namespace stk::search;
 
-  Point<float> ptA(2, 100, 1000);
-  Point<float> ptB(4, 100, 1000);
+  stk::search::Point<float> ptA(2, 100, 1000);
+  stk::search::Point<float> ptB(4, 100, 1000);
 
   const float radiusA = 5;
   const float radiusB = 1;
 
-  Sphere<float> sphereA(ptA, radiusA);
-  Sphere<float> sphereB(ptB, radiusB);
+  stk::search::Sphere<float> sphereA(ptA, radiusA);
+  stk::search::Sphere<float> sphereB(ptB, radiusB);
 
-  Sphere<float> resultSph;
+  stk::search::Sphere<float> resultSph;
   UnionBoxes(sphereA, sphereB, resultSph);
 
-  Point<float> resultCtr = resultSph.center();
+  stk::search::Point<float> resultCtr = resultSph.center();
 
   EXPECT_FLOAT_EQ(2, resultCtr[0]);
   EXPECT_FLOAT_EQ(100,   resultCtr[1]);
@@ -76,19 +76,19 @@ TEST( stk_search_sphere_hier, UnionBoxesBSwallowsA )
 {
   using namespace stk::search;
 
-  Point<float> ptA(2, 100, 1000);
-  Point<float> ptB(4, 100, 1000);
+  stk::search::Point<float> ptA(2, 100, 1000);
+  stk::search::Point<float> ptB(4, 100, 1000);
 
   const float radiusA = 1;
   const float radiusB = 5;
 
-  Sphere<float> sphereA(ptA, radiusA);
-  Sphere<float> sphereB(ptB, radiusB);
+  stk::search::Sphere<float> sphereA(ptA, radiusA);
+  stk::search::Sphere<float> sphereB(ptB, radiusB);
 
-  Sphere<float> resultSph;
+  stk::search::Sphere<float> resultSph;
   UnionBoxes(sphereA, sphereB, resultSph);
 
-  Point<float> resultCtr = resultSph.center();
+  stk::search::Point<float> resultCtr = resultSph.center();
 
   EXPECT_FLOAT_EQ(4, resultCtr[0]);
   EXPECT_FLOAT_EQ(100,   resultCtr[1]);
@@ -100,7 +100,7 @@ std::vector<stk::search::Sphere<float> > makeTestSphereArray(const int numSphere
                                                              const int numSpheres_Z) {
   using namespace stk::search;
   typedef float                             num_type;
-  typedef Sphere<num_type>                  sphere_type;
+  typedef stk::search::Sphere<num_type>                  sphere_type;
   typedef typename sphere_type::point_type  point_type;
 
   const num_type startX = 0;
@@ -131,7 +131,7 @@ std::vector<stk::search::Sphere<float> > makeTestSphereArray(const int numSphere
 TEST( stk_search_sphere_hier, KDTreeSpheresFromSpheres) {
   using namespace stk::search;
   typedef float                             num_type;
-  typedef Sphere<num_type>                  sphere_type;
+  typedef stk::search::Sphere<num_type>                  sphere_type;
 
   const int numSpheres_X = 4;
   const int numSpheres_Y = 3;
@@ -158,7 +158,7 @@ TEST( stk_search_sphere_hier, KDTreeSpheresFromSpheres) {
 TEST( stk_search_sphere_hier, TightenedKDTreeSpheresFromSpheres) {
   using namespace stk::search;
   typedef float                             num_type;
-  typedef Sphere<num_type>                  sphere_type;
+  typedef stk::search::Sphere<num_type>                  sphere_type;
   typedef typename sphere_type::point_type  point_type;
 
   const int numSpheres_X = 4;

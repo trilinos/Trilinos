@@ -82,9 +82,9 @@ void ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh_layout(const BulkData & 
 
   Kokkos::Profiling::pushRegion("NGP MPI bookkeeping setup - procs and mesh indices offsets");
 
-  const std::vector<int> comm_procs = impl::assemble_comm_procs_list(mesh, fieldRanks, includeGhosts);
+  const std::vector<int> comm_procs = impl::assemble_comm_procs_list(ngpMesh, fieldRanks, includeGhosts);
   const size_t num_comm_procs = comm_procs.size();
-  const size_t totalMeshIndicesOffsets = impl::compute_total_mesh_indices_offsets(mesh, fieldRanks, comm_procs, includeGhosts);
+  const size_t totalMeshIndicesOffsets = impl::compute_total_mesh_indices_offsets(ngpMesh, fieldRanks, comm_procs, includeGhosts);
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("NGP MPI bookkeeping setup - offsets allocation");
@@ -111,14 +111,17 @@ void ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh_layout(const BulkData & 
 
   Kokkos::Profiling::pushRegion("NGP MPI bookkeeping setup - offset inits");
 
-  impl::fill_host_buffer_offsets(hostBufferOffsets,
-                                 hostMeshIndicesOffsets,
-                                 mesh,
-                                 fields,
-                                 comm_procs,
-                                 fieldRanks,
-                                 includeGhosts);
-  Kokkos::deep_copy(deviceMeshIndicesOffsets, hostMeshIndicesOffsets);
+  impl::fill_buffer_offsets<NgpSpace>(hostBufferOffsets,
+                                      hostMeshIndicesOffsets,
+                                      deviceMeshIndicesOffsets,
+                                      ngpMesh,
+                                      fieldDataOnDevice,
+                                      mesh,
+                                      fields,
+                                      comm_procs,
+                                      fieldRanks,
+                                      rankFieldOffsets,
+                                      includeGhosts);
 
   Kokkos::Profiling::popRegion();
 
@@ -184,7 +187,6 @@ void ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh_layout(const BulkData & 
                                             fieldDataOnDevice,
                                             deviceMeshIndicesOffsets,
                                             ngpMesh,
-                                            mesh,
                                             fieldRanks,
                                             rankFieldOffsets,
                                             iproc,
@@ -210,7 +212,6 @@ void ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh_layout(const BulkData & 
                                             fieldDataOnDevice,
                                             deviceMeshIndicesOffsets,
                                             ngpMesh,
-                                            mesh,
                                             fieldRanks,
                                             rankFieldOffsets,
                                             iproc,
@@ -247,7 +248,6 @@ void ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh_layout(const BulkData & 
                                               selfSendData,
                                               deviceMeshIndicesOffsets,
                                               ngpMesh,
-                                              mesh,
                                               fieldRanks,
                                               rankFieldOffsets,
                                               iproc,
@@ -287,7 +287,6 @@ void ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh_layout(const BulkData & 
                                               deviceRecvData,
                                               deviceMeshIndicesOffsets,
                                               ngpMesh,
-                                              mesh,
                                               fieldRanks,
                                               rankFieldOffsets,
                                               iproc,
@@ -311,7 +310,6 @@ void ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh_layout(const BulkData & 
                                               selfSendData,
                                               deviceMeshIndicesOffsets,
                                               ngpMesh,
-                                              mesh,
                                               fieldRanks,
                                               rankFieldOffsets,
                                               iproc,
@@ -350,7 +348,6 @@ void ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh_layout(const BulkData & 
                                               deviceRecvData,
                                               deviceMeshIndicesOffsets,
                                               ngpMesh,
-                                              mesh,
                                               fieldRanks,
                                               rankFieldOffsets,
                                               iproc,
@@ -390,7 +387,6 @@ void ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh_layout(const BulkData & 
                                               deviceRecvData,
                                               deviceMeshIndicesOffsets,
                                               ngpMesh,
-                                              mesh,
                                               fieldRanks,
                                               rankFieldOffsets,
                                               iproc,
@@ -428,6 +424,9 @@ void ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh(const BulkData & mesh,
                                                         bool deterministic)
 {
   STK_ThrowRequireMsg(!fields.empty(), "Shouldn't get to here with empty fields vector.");
+  STK_ThrowRequireMsg(not ngpMesh.needs_update(),
+                      "NGP parallel data exchange called with an NgpMesh that is out of date with BulkData.  "
+                      "Please first re-acquire the NgpMesh to automatically update it.");
   constexpr bool isHostSpace = std::is_same_v<NgpSpace, ngp::HostSpace>;
   if constexpr (isHostSpace) {
     verify_all_same_host_data_layout(fields);
@@ -457,13 +456,14 @@ void ngp_parallel_data_exchange_sym_pack_unpack(const BulkData & mesh,
     //or STK_USE_DEVICE_MESH is defined but the user explicitly requests HostSpace.
     HostMesh hostNgpMesh(mesh);
     ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh<Scalar, OP, NgpSpace>(mesh, hostNgpMesh, fields, includeGhosts, deterministic);
-    return;
   }
-
-  //If operatingOnHost is false, i.e., NgpSpace == DeviceSpace, then it is correct
-  //to use get_updated_ngp_mesh(mesh).
-  auto& ngpMesh = get_updated_ngp_mesh(mesh);
-  ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh<Scalar, OP, NgpSpace>(mesh, ngpMesh, fields, includeGhosts, deterministic);
+  else {
+    //If operatingOnHost is false, i.e., NgpSpace == DeviceSpace, then it is correct
+    //to use get_updated_ngp_mesh(mesh).  Keeping this in the else branch means a host space is never
+    //instantiated with a DeviceMesh.
+    auto& ngpMesh = get_updated_ngp_mesh(mesh);
+    ngp_parallel_data_exchange_sym_pack_unpack_ngpmesh<Scalar, OP, NgpSpace>(mesh, ngpMesh, fields, includeGhosts, deterministic);
+  }
 }
 
 } // namespace stk::mesh

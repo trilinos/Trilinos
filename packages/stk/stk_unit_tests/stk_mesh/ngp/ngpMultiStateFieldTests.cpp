@@ -1680,7 +1680,7 @@ NGP_TEST_F(NgpMultiStateFieldTest, updateUnmodifiedBucketWithSyncBasedRotation_a
 }
 
 template <typename Space = stk::ngp::HostSpace>
-class TestConstFieldDataBytes : public stk::mesh::ConstFieldDataBytes<Space>
+class MultiStateTestConstFieldDataBytes : public stk::mesh::ConstFieldDataBytes<Space>
 {
 public:
   using stk::mesh::ConstFieldDataBytes<Space>::ConstFieldDataBytes;
@@ -1726,8 +1726,8 @@ NGP_TEST_F(NgpMultiStateFieldTest, deviceRotationUpdatesAllStates)
 
   auto dataBytesOld = fieldOld.data_bytes<const std::byte, stk::ngp::DeviceSpace>();
   auto dataBytesNew = fieldNew.data_bytes<const std::byte, stk::ngp::DeviceSpace>();
-  auto* testDataBytesOld = static_cast<TestConstFieldDataBytes<stk::ngp::DeviceSpace>*>(&dataBytesOld);
-  auto* testDataBytesNew = static_cast<TestConstFieldDataBytes<stk::ngp::DeviceSpace>*>(&dataBytesNew);
+  auto* testDataBytesOld = static_cast<MultiStateTestConstFieldDataBytes<stk::ngp::DeviceSpace>*>(&dataBytesOld);
+  auto* testDataBytesNew = static_cast<MultiStateTestConstFieldDataBytes<stk::ngp::DeviceSpace>*>(&dataBytesNew);
 
   const int fieldMetaDataModCountOld = testDataBytesOld->get_field_meta_data_mod_count();
   const int fieldMetaDataModCountNew = testDataBytesNew->get_field_meta_data_mod_count();
@@ -1743,8 +1743,8 @@ NGP_TEST_F(NgpMultiStateFieldTest, deviceRotationUpdatesAllStates)
 
   dataBytesOld = fieldOld.data_bytes<const std::byte, stk::ngp::DeviceSpace>();
   dataBytesNew = fieldNew.data_bytes<const std::byte, stk::ngp::DeviceSpace>();
-  testDataBytesOld = static_cast<TestConstFieldDataBytes<stk::ngp::DeviceSpace>*>(&dataBytesOld);
-  testDataBytesNew = static_cast<TestConstFieldDataBytes<stk::ngp::DeviceSpace>*>(&dataBytesNew);
+  testDataBytesOld = static_cast<MultiStateTestConstFieldDataBytes<stk::ngp::DeviceSpace>*>(&dataBytesOld);
+  testDataBytesNew = static_cast<MultiStateTestConstFieldDataBytes<stk::ngp::DeviceSpace>*>(&dataBytesNew);
 
   const int rotatedFieldMetaDataModCountOld = testDataBytesOld->get_field_meta_data_mod_count();
   const int rotatedFieldMetaDataModCountNew = testDataBytesNew->get_field_meta_data_mod_count();

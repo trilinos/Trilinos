@@ -353,6 +353,24 @@ public:
     deviceMesh.batch_change_entity_parts(entityView, addPartOrdinals, removePartOrdinals);
   }
 
+  void check_field_data(stk::mesh::Entity entity, stk::mesh::Field<double>& field)
+  {
+    auto& deviceMesh = stk::mesh::get_updated_ngp_mesh(*bulk);
+    auto fieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+
+    Kokkos::parallel_for(1,
+      KOKKOS_LAMBDA(const int) {
+        auto fastMeshIndex = deviceMesh.device_mesh_index(entity);
+        auto fieldEntityValues = fieldData.entity_values(fastMeshIndex);
+
+        for (stk::mesh::ComponentIdx i : fieldEntityValues.components()) {
+          auto fieldValue = static_cast<double>(fieldEntityValues(i));
+          NGP_EXPECT_EQ(fieldValue, 1.0);
+        }
+      }
+    );
+  }
+
   stk::mesh::MetaData* meta;
   std::shared_ptr<stk::mesh::BulkData> bulk;
 };
@@ -1241,24 +1259,6 @@ public:
     bulk = builder.create();
     meta = &bulk->mesh_meta_data();
   }
-
-  void check_field_data(stk::mesh::Entity entity, stk::mesh::Field<double>& field)
-  {
-    auto& deviceMesh = stk::mesh::get_updated_ngp_mesh(*bulk);
-    auto fieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
-
-    Kokkos::parallel_for(1,
-      KOKKOS_LAMBDA(const int) {
-        auto fastMeshIndex = deviceMesh.device_mesh_index(entity);
-        auto fieldEntityValues = fieldData.entity_values(fastMeshIndex);
-
-        for (stk::mesh::ComponentIdx i : fieldEntityValues.components()) {
-          auto fieldValue = static_cast<double>(fieldEntityValues(i));
-          NGP_EXPECT_EQ(fieldValue, 1.0);
-        }
-      }
-    );
-  };
 };
 
 NGP_TEST_F(DeviceMeshParallelMeshModTester_NoAura_2D, check_change_entity_parts_keyhole_elem_ranked_and_shared_nodes_unranked)
@@ -1460,6 +1460,60 @@ NGP_TEST_F(DeviceMeshParallelMeshModTester_NoAura, check_change_entity_parts_ran
   } else {
     check_device_bucket_part_membership({elem3},  {"block_1"}, {"block_2"});
     check_device_bucket_part_membership({node13}, {"block_1"}, {"block_2"});
+  }
+}
+
+NGP_TEST_F(DeviceMeshParallelMeshModTester_NoAura_2D, check_change_entity_parts_ranked_removal_denial_node_shared_by_three_procs)
+{
+  if (stk::parallel_machine_size(stk::parallel_machine_world()) != 3) { GTEST_SKIP(); }
+  auto myRank = stk::parallel_machine_rank(stk::parallel_machine_world());
+
+  auto& block1Part = meta->declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
+  auto& block2Part = meta->declare_part_with_topology("block_2", stk::topology::QUAD_4_2D);
+  auto& block3Part = meta->declare_part_with_topology("block_3", stk::topology::QUAD_4_2D);
+
+  //   7---8
+  //   | 3 |
+  //   4---5---6
+  //   | 1 | 2 |
+  //   1---2---3
+  std::string desc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
+                     "1,2,QUAD_4_2D,2,3,6,5,block_1\n"
+                     "2,3,QUAD_4_2D,4,5,8,7,block_3\n"
+                     "|dimension:2";
+  setup_mesh(desc);
+
+  auto elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
+  auto node2 = bulk->get_entity(stk::topology::NODE_RANK, 2);
+  auto node4 = bulk->get_entity(stk::topology::NODE_RANK, 4);
+  auto node5 = bulk->get_entity(stk::topology::NODE_RANK, 5);
+
+  if (myRank == 0) {
+    check_entity_ownership({node5}, {Status::isOwned, Status::isShared, Status::notInAura});
+    check_device_bucket_part_membership({node5}, {block1Part.name(), block3Part.name()}, {block2Part.name()});
+  } else {
+    check_entity_ownership({node5}, {Status::notOwned, Status::isShared, Status::notInAura});
+    check_device_bucket_part_membership({node5}, {block1Part.name(), block3Part.name()}, {block2Part.name()});
+  }
+
+  if (myRank == 0) {
+    change_entity_parts_in_parallel({elem1}, {block2Part.name()}, {block1Part.name()});
+  } else {
+    change_entity_parts_in_parallel({}, {}, {});
+  }
+  Kokkos::fence();
+
+  if (myRank == 0) {
+    check_device_bucket_part_membership({elem1}, {block2Part.name()}, {block1Part.name()});
+    check_device_bucket_part_membership({node2}, {block1Part.name(), block2Part.name()}, {});
+    check_device_bucket_part_membership({node4}, {block2Part.name(), block3Part.name()}, {block1Part.name()});
+    check_device_bucket_part_membership({node5}, {block1Part.name(), block2Part.name(), block3Part.name()}, {});
+  } else if (myRank == 1) {
+    check_device_bucket_part_membership({node2}, {block1Part.name(), block2Part.name()}, {});
+    check_device_bucket_part_membership({node5}, {block1Part.name(), block2Part.name(), block3Part.name()}, {});
+  } else {
+    check_device_bucket_part_membership({node4}, {block2Part.name(), block3Part.name()}, {block1Part.name()});
+    check_device_bucket_part_membership({node5}, {block1Part.name(), block2Part.name(), block3Part.name()}, {});
   }
 }
 
@@ -1970,6 +2024,62 @@ NGP_TEST_F(DeviceMeshParallelMeshModTester_WithAura, change_entity_parts_add_ran
   }
 }
 
+class DeviceMeshParallelMeshModTester_WithAura_2D : public DeviceMeshParallelTester
+{
+public:
+  DeviceMeshParallelMeshModTester_WithAura_2D()
+    : DeviceMeshParallelTester(2, stk::mesh::BulkData::AUTO_AURA)
+  {}
+};
+
+NGP_TEST_F(DeviceMeshParallelMeshModTester_WithAura_2D, check_change_entity_parts_elem_remove_ranked_part_both_procs)
+{
+  if (stk::parallel_machine_size(stk::parallel_machine_world()) != 2) { GTEST_SKIP(); }
+
+  auto& block1Part = meta->declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
+  auto& block2Part = meta->declare_part_with_topology("block_2", stk::topology::QUAD_4_2D);
+
+  stk::mesh::Field<double>& oneField = meta->declare_field<double>(stk::topology::NODE_RANK, "field_of_one");
+  double initValZero = 0.0;
+  stk::mesh::put_field_on_mesh(oneField, block1Part, &initValZero);
+  stk::mesh::put_field_on_mesh(oneField, block2Part, &initValZero);
+
+  std::string desc = "0,1,QUAD_4_2D,1,2,5,6,block_1\n"
+                     "1,2,QUAD_4_2D,2,3,4,5,block_1\n"
+                     "|dimension:2";
+  setup_mesh(desc);
+
+  stk::mesh::field_fill(1.0, oneField);
+
+  const int myRank = stk::parallel_machine_rank(stk::parallel_machine_world());
+  auto elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
+  auto elem2 = bulk->get_entity(stk::topology::ELEM_RANK, 2);
+  auto node1 = bulk->get_entity(stk::topology::NODE_RANK, 1);
+  auto node2 = bulk->get_entity(stk::topology::NODE_RANK, 2);
+  auto node3 = bulk->get_entity(stk::topology::NODE_RANK, 3);
+  auto node4 = bulk->get_entity(stk::topology::NODE_RANK, 4);
+  auto node5 = bulk->get_entity(stk::topology::NODE_RANK, 5);
+  auto node6 = bulk->get_entity(stk::topology::NODE_RANK, 6);
+
+  if (myRank == 0) {
+    check_entity_ownership({elem2}, {Status::notOwned, Status::notShared, Status::isInAura});
+    check_entity_ownership({node3, node4}, {Status::notOwned, Status::notShared, Status::isInAura});
+    change_entity_parts_in_parallel({elem1}, {block2Part.name()}, {block1Part.name()});
+  } else {
+    check_entity_ownership({elem1}, {Status::notOwned, Status::notShared, Status::isInAura});
+    check_entity_ownership({node1, node6}, {Status::notOwned, Status::notShared, Status::isInAura});
+    change_entity_parts_in_parallel({elem2}, {block2Part.name()}, {block1Part.name()});
+  }
+  Kokkos::fence();
+
+  check_entity_ownership({node2, node5}, {myRank == 0 ? Status::isOwned : Status::notOwned, Status::isShared, Status::notInAura});
+  check_device_bucket_part_membership({elem1, elem2}, {block2Part.name()}, {block1Part.name()});
+  check_device_bucket_part_membership({node1, node2, node3, node4, node5, node6}, {block2Part.name()}, {block1Part.name()});
+
+  check_field_data(node2, oneField);
+  check_field_data(node5, oneField);
+}
+
 class DeviceMeshParallelTester_WithGhosting : public DeviceMeshParallelTester
 {
 public:
@@ -2470,6 +2580,10 @@ NGP_TEST_F(DeviceMeshParallelMeshModTester_WithGhosting, change_entity_parts_rem
   auto elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
   auto elem2 = bulk->get_entity(stk::topology::ELEM_RANK, 2);
   auto node1 = bulk->get_entity(stk::topology::NODE_RANK, 1);
+  auto node5 = bulk->get_entity(stk::topology::NODE_RANK, 5);
+  auto node6 = bulk->get_entity(stk::topology::NODE_RANK, 6);
+  auto node7 = bulk->get_entity(stk::topology::NODE_RANK, 7);
+  auto node8 = bulk->get_entity(stk::topology::NODE_RANK, 8);
   auto node12 = bulk->get_entity(stk::topology::NODE_RANK, 12);
 
   bulk->modification_begin();
@@ -2498,6 +2612,8 @@ NGP_TEST_F(DeviceMeshParallelMeshModTester_WithGhosting, change_entity_parts_rem
     check_device_bucket_part_membership({node1}, {"block_1", ghostPart}, {"block_2", newPart});
     check_device_bucket_part_membership({node12}, {"block_2"}, {"block_1", newPart, ghostPart});
   }
+  check_entity_ownership({node5, node6, node7, node8}, {rank == 0 ? Status::isOwned : Status::notOwned, Status::isShared, Status::notInAura});
+  check_device_bucket_part_membership({node5, node6, node7, node8}, {"block_1", "block_2"}, {newPart});
 }
 
 NGP_TEST_F(DeviceMeshParallelMeshModTester_WithGhosting, change_entity_parts_add_and_remove_ranked_part_by_different_owning_procs_ghosted_to_all_procs)

@@ -64,7 +64,7 @@ public:
   {
     auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldRank);
     auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm);
-  
+
     broker = std::make_shared<stk::transfer_util::TransferMainBroker>(comm, sendBulk, recvBulk, settings);
   }
 
@@ -1039,7 +1039,7 @@ TEST(TransferMainBroker, elementSendMesh_masterElementInterpolationToGaussPoint)
   auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, stk::topology::NODE_RANK, numSendCopies);
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider = std::make_shared<stk::search::MasterElementProviderIntrepid2>();
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
- 
+
   unsigned numRecvCopies = masterElemProvider->num_integration_points(hex8Topo);
   EXPECT_EQ(8u, numRecvCopies);
   auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, stk::topology::ELEM_RANK, numRecvCopies);
@@ -1072,7 +1072,7 @@ TEST(TransferMainBroker, elementSendMesh_masterElementInterpolationToGaussPointF
   auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, stk::topology::NODE_RANK, numSendCopies);
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider = std::make_shared<stk::search::MasterElementProviderIntrepid2>();
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
- 
+
   unsigned numRecvCopies = masterElemProvider->num_integration_points(hex8Topo);
   EXPECT_EQ(8u, numRecvCopies);
   auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, stk::topology::ELEM_RANK, numRecvCopies);
@@ -1141,7 +1141,7 @@ TEST(TransferMainBroker, twoDimSendMeshTri3_masterElementInterpolationToCentroid
   stk::ParallelMachine comm = stk::parallel_machine_world();
   if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
 
-  std::string mesh = "textmesh:" 
+  std::string mesh = "textmesh:"
                      "0,1,TRI_3_2D,1,2,6, block_1\n"
                      "0,2,TRI_3_2D,2,7,6, block_1\n"
                      "0,3,TRI_3_2D,2,3,7, block_1\n"

@@ -18,13 +18,14 @@
 #include "StkMeshIoBroker.hpp"                    // for StkMeshIoBroker
 #include "stk_io/IossBridge.hpp"                  // for get_field_role, is_...
 #include "stk_io/OutputParams.hpp"                // for OutputParams
+#include "stk_mesh/base/Types.hpp"                // for PartVector, FieldVe...
 #include "stk_mesh/base/BulkData.hpp"             // for BulkData
 #include "stk_mesh/base/FieldBase.hpp"            // for FieldBase
 #include "stk_mesh/base/GetEntities.hpp"          // for get_entities
 #include "stk_mesh/base/MetaData.hpp"             // for MetaData, is_auto_d...
 #include "stk_mesh/base/Part.hpp"                 // for Part
 #include "stk_mesh/base/Selector.hpp"             // for Selector, operator&
-#include "stk_mesh/base/Types.hpp"                // for PartVector, FieldVe...
+#include "stk_mesh/base/ExodusTranslator.hpp"
 #include "stk_topology/topology.hpp"              // for topology, topology:...
 #include "stk_util/diag/StringUtil.hpp"           // for make_lower
 #include "stk_util/util/ReportHandler.hpp"        // for ThrowRequire
@@ -96,6 +97,17 @@ int get_max_name_length(const stk::mesh::MetaData& meta)
   return maxNameLength;
 }
 
+void fill_element_block_parts(const stk::mesh::PartVector& elemParts,
+                              stk::mesh::PartVector& blockParts)
+{
+  blockParts.clear();
+  for(stk::mesh::Part* part : elemParts) {
+    if (stk::mesh::is_element_block(*part)) {
+      blockParts.push_back(part);
+    }
+  }
+}
+
 size_t get_entities(stk::io::OutputParams &params,
                         const stk::mesh::Part &part,
                         stk::mesh::EntityRank type,
@@ -110,6 +122,22 @@ size_t get_entities(stk::io::OutputParams &params,
 
     const bool sortById = true;
     stk::mesh::get_entities(params.bulk_data(), type, selector, entities, sortById);
+    const stk::mesh::MetaData& meta = part.mesh_meta_data();
+    if (stk::mesh::is_element_block(part) && type == meta.side_rank()) {
+      stk::mesh::PartVector blockParts;
+
+      auto newEnd = std::remove_if(entities.begin(), entities.end(),
+        [&](stk::mesh::Entity ent) {
+          fill_element_block_parts(params.bulk_data().bucket(ent).supersets(), blockParts);
+          if (blockParts.size() > 1) {
+            return true;
+          }
+          return false;
+        }
+      );
+      entities.erase(newEnd, entities.end());
+    }
+
     return entities.size();
 }
 

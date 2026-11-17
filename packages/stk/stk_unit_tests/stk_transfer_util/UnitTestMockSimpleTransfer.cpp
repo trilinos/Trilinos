@@ -972,6 +972,165 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_copyToElement_GaussPoint)
   test_gauss_point_transfer(eval, recvRank);
 }
 
+// Transfer fields share a name with a field on a different rank (e.g. nodal and integration point
+// "temperature"). Field specs built from pointers must be validated against those pointers, not
+// re-resolved by name across all ranks.
+class MockSimpleTransferSameNameFieldTest : public MockSimpleTransferTest
+{
+ public:
+  void declare_field_on_part(stk::mesh::MetaData& meta, stk::mesh::EntityRank rank, const stk::mesh::Part* part)
+  {
+    stk::mesh::Field<double>& field = meta.declare_field<double>(rank, m_sendFieldName);
+    if(nullptr != part) {
+      const unsigned spatialDim = meta.spatial_dimension();
+      std::vector<double> initialValue(spatialDim, 0.0);
+      stk::mesh::put_field_on_mesh(field, *part, spatialDim, initialValue.data());
+    }
+  }
+
+  // otherFieldOnMesh:     put the same-name field (on sendOtherRank/recvOtherRank) on the universal part
+  // sendFieldOnTransferPart: if false, the send field lives only on an empty part, i.e. it is
+  //                          genuinely missing from the transfer part block_1
+  void setup_transfer_with_same_name_field(stk::transfer::spmd::SimpleTransfer& transfer,
+                                           stk::mesh::EntityRank sendRank,
+                                           stk::mesh::EntityRank recvRank,
+                                           stk::mesh::EntityRank sendOtherRank,
+                                           stk::mesh::EntityRank recvOtherRank,
+                                           bool otherFieldOnMesh,
+                                           bool sendFieldOnTransferPart = true)
+  {
+    ASSERT_NE(sendRank, sendOtherRank);
+    ASSERT_NE(recvRank, recvOtherRank);
+
+    setup_copies(1);
+
+    m_sendBulk = stk::unit_test_util::build_mesh(m_sendSpatialDim, m_comm);
+    m_recvBulk = stk::unit_test_util::build_mesh(m_recvSpatialDim, m_comm);
+
+    stk::mesh::MetaData& sendMeta = m_sendBulk->mesh_meta_data();
+    stk::mesh::MetaData& recvMeta = m_recvBulk->mesh_meta_data();
+
+    declare_field_on_part(sendMeta, sendOtherRank, otherFieldOnMesh ? &sendMeta.universal_part() : nullptr);
+    declare_field_on_part(recvMeta, recvOtherRank, otherFieldOnMesh ? &recvMeta.universal_part() : nullptr);
+
+    const stk::mesh::Part* sendFieldPart = sendFieldOnTransferPart
+        ? &sendMeta.universal_part() : &sendMeta.declare_part("unused_part", sendRank);
+    declare_field_on_part(sendMeta, sendRank, sendFieldPart);
+    stk::io::fill_mesh(m_sendMeshSpec, *m_sendBulk);
+
+    setup_mesh_with_field(*m_recvBulk, m_recvMeshSpec, m_recvFieldName, recvRank, m_numRecvCopies);
+
+    m_sendField = sendMeta.get_field(sendRank, m_sendFieldName);
+    m_recvField = recvMeta.get_field(recvRank, m_recvFieldName);
+
+    ASSERT_TRUE(nullptr != m_sendField);
+    ASSERT_TRUE(nullptr != m_recvField);
+    ASSERT_TRUE(nullptr != sendMeta.get_field(sendOtherRank, m_sendFieldName));
+    ASSERT_TRUE(nullptr != recvMeta.get_field(recvOtherRank, m_recvFieldName));
+
+    // Pointer-based specs; add_send_field(FieldBase&) only records the field name
+    transfer.add_send_field(stk::transfer::FieldSpec(m_sendField));
+    transfer.add_recv_field(stk::transfer::FieldSpec(m_recvField));
+
+    transfer.add_send_part_name(m_sendPartName);
+    transfer.add_recv_part_name(m_recvPartName);
+  }
+};
+
+TEST_F(MockSimpleTransferSameNameFieldTest, nodeSendMesh_copyToNode_sameNameElementField_noAmbiguousNameWarning)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
+
+  stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer_with_same_name_field(transfer, sendRank, recvRank,
+                                      stk::topology::ELEM_RANK, stk::topology::ELEM_RANK, true);
+  stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
+
+  transfer.setup_copy_nearest_transfer(*m_sendBulk, *m_recvBulk,
+                                       stk::topology::NODE_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                       m_masterElemProvider, m_extrapolateOption);
+
+  testing::internal::CaptureStderr();
+  transfer.initialize();
+  const std::string stderrOutput = testing::internal::GetCapturedStderr();
+
+  EXPECT_EQ(std::string::npos, stderrOutput.find("get_field_by_name WARNING")) << stderrOutput;
+
+  transfer.apply();
+
+  test_node_transfer(eval, recvRank);
+}
+
+TEST_F(MockSimpleTransferSameNameFieldTest, elementSendMesh_patchRecoveryToNode_sameNameUnregisteredNodeField)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
+  initialize_volume_transfer_variables(2,2,2);
+
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
+
+  stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  // The same-name send-side nodal field is declared but not put on any part. A name lookup across
+  // all ranks finds it before the element field, and the part check would wrongly reject block_1.
+  setup_transfer_with_same_name_field(transfer, sendRank, recvRank,
+                                      stk::topology::NODE_RANK, stk::topology::ELEM_RANK, false);
+  stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
+
+  transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::ELEMENT_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                         m_masterElemProvider, m_extrapolateOption);
+  EXPECT_NO_THROW(transfer.initialize());
+  transfer.apply();
+
+  test_node_transfer(eval, recvRank);
+}
+
+TEST_F(MockSimpleTransferSameNameFieldTest, elementSendMesh_patchRecoveryToNode_sameNameNodeFieldMasksMissingElementField)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
+  initialize_volume_transfer_variables(2,2,2);
+
+  stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  // The send element field is not defined on block_1, but a same-name nodal field is defined
+  // everywhere. A name lookup across all ranks validates the nodal field and misses the error.
+  setup_transfer_with_same_name_field(transfer, sendRank, recvRank,
+                                      stk::topology::NODE_RANK, stk::topology::ELEM_RANK, true, false);
+
+  transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::ELEMENT_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                         m_masterElemProvider, m_extrapolateOption);
+  try {
+    transfer.initialize();
+    FAIL() << "Expected the part check to reject the send field missing from block_1";
+  }
+  catch(const std::logic_error& e) {
+    EXPECT_NE(std::string::npos, std::string(e.what()).find("is not defined on send parts block_1")) << e.what();
+  }
+}
+
 using MockSimpleIndexedTransferTest = MockSimpleTransferTest;
 
 class SimpleIndexedTransfer : public stk::transfer::spmd::SimpleTransfer {

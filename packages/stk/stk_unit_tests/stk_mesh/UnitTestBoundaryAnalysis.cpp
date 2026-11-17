@@ -58,7 +58,6 @@
 #include "stk_util/util/NamedPair.hpp"
 namespace stk { namespace mesh { class Part; } }
 
-static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 using stk::mesh::MetaData;
 
@@ -137,7 +136,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   std::vector<size_t> count;
   stk::mesh::Selector locally_owned(fem_meta.locally_owned_part());
   stk::mesh::count_entities(locally_owned, bulk_data, count);
-  const unsigned num_entities = count[NODE_RANK] + count[element_rank];
+  const unsigned num_entities = count[stk::topology::NODE_RANK] + count[element_rank];
 
   // Declare the shell entities, placing them in the shell part
   std::vector<stk::mesh::Entity> shells;
@@ -152,8 +151,8 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   unsigned node_list[5] = {20, 25, 30, 35, 40};
   for (unsigned i = 0; i < num_shells; ++i) {
     stk::mesh::Entity shell = shells[i];
-    stk::mesh::Entity node1 = bulk_data.get_entity(NODE_RANK, node_list[i]);
-    stk::mesh::Entity node2 = bulk_data.get_entity(NODE_RANK, node_list[i+1]);
+    stk::mesh::Entity node1 = bulk_data.get_entity(stk::topology::NODE_RANK, node_list[i]);
+    stk::mesh::Entity node2 = bulk_data.get_entity(stk::topology::NODE_RANK, node_list[i+1]);
     bulk_data.declare_relation(shell, node1, 0);
     bulk_data.declare_relation(shell, node2, 1);
   }
@@ -173,7 +172,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
       rank_of_entity = element_rank;
     }
     else {
-      rank_of_entity = NODE_RANK;
+      rank_of_entity = stk::topology::NODE_RANK;
     }
     stk::mesh::Entity closure_entity =
         bulk_data.get_entity(rank_of_entity, ids_of_entities_in_closure[i]);

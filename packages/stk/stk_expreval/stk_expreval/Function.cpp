@@ -55,7 +55,7 @@ class CFunction<CExtern0> : public CFunctionBase
 public:
   typedef CExtern0 Signature;
 
-  explicit CFunction<CExtern0>(Signature function)
+  explicit CFunction(Signature function)
     : CFunctionBase(0),
       m_function(function)
   {}
@@ -82,7 +82,7 @@ class CFunction<CExtern1> : public CFunctionBase
 public:
   typedef CExtern1 Signature;
 
-  explicit CFunction<Signature>(Signature function)
+  explicit CFunction(Signature function)
     : CFunctionBase(1),
       m_function(function)
   {}
@@ -109,7 +109,7 @@ class CFunction<CExtern2> : public CFunctionBase
 public:
   typedef CExtern2 Signature;
 
-  explicit CFunction<Signature>(Signature function)
+  explicit CFunction(Signature function)
     : CFunctionBase(2),
       m_function(function)
   {}
@@ -135,7 +135,7 @@ class CFunction<CExtern3> : public CFunctionBase
 public:
   typedef CExtern3 Signature;
 
-  explicit CFunction<Signature>(Signature function)
+  explicit CFunction(Signature function)
     : CFunctionBase(3),
       m_function(function)
   {}
@@ -161,7 +161,7 @@ class CFunction<CExtern4> : public CFunctionBase
 public:
   typedef CExtern4 Signature;
 
-  explicit CFunction<Signature>(Signature function)
+  explicit CFunction(Signature function)
     : CFunctionBase(4),
       m_function(function)
   {}
@@ -187,7 +187,7 @@ class CFunction<CExtern5> : public CFunctionBase
 public:
   typedef CExtern5 Signature;
 
-  explicit CFunction<Signature>(Signature function)
+  explicit CFunction(Signature function)
     : CFunctionBase(5),
       m_function(function)
   {}
@@ -213,7 +213,7 @@ class CFunction<CExtern8> : public CFunctionBase
 public:
   typedef CExtern8 Signature;
 
-  explicit CFunction<Signature>(Signature function)
+  explicit CFunction(Signature function)
     : CFunctionBase(8),
       m_function(function)
   {}

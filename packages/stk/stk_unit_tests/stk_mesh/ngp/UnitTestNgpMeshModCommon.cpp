@@ -226,5 +226,17 @@ TEST_F(NgpMeshMod, PartCorrectnessAfterDeviceMeshUpdate_NoEntitiesEver)
   }
 }
 
+NGP_TEST_F(NgpMeshMod, deviceMeshOfEmptyBulkHasConnectivityPool)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  build_empty_mesh(1, 1);
+
+  // Relations declared on device are allocated from this pool, so it must exist even before the host
+  // BulkData has ever been modified.
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+  EXPECT_GT(ngpMesh.get_mesh_connectivity().get_pool_capacity(), 0u);
+}
+
 }  // namespace
 #endif
