@@ -116,6 +116,9 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
       const FineStencilSpec& fineStencil,
       int interpolationOrder) const;
 
+  FineStencilSpec MakeCoarseStencilMetadata(
+      const StructuredGraphSpec& coarseStencil) const;
+
  private:
   //@{
 

@@ -172,6 +172,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInp
     fineLevel.DeclareInput("numDimensions", NoFactory::get(), this);
     fineLevel.DeclareInput("lNodesPerDim", NoFactory::get(), this);
   } else {
+    fineLevel.DeclareInput("structuredFineStencil", this, this);
     Input(fineLevel, "numDimensions");
     Input(fineLevel, "lNodesPerDim");
   }
@@ -472,6 +473,29 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeriveCoarseRAP
   return coarseStencil;
 }
 
+// Convert the graph stencil built for Ac into the fine-stencil metadata needed
+// when Ac becomes A on the next level.  The structured graph contains a dense
+// block for every nodal offset, so all row/column DOF pairs are represented.
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::FineStencilSpec
+StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MakeCoarseStencilMetadata(
+    const StructuredGraphSpec& coarseStencil) const {
+  FineStencilSpec metadata;
+  metadata.numDimensions = coarseStencil.numDimensions;
+  metadata.dofsPerNode   = coarseStencil.dofsPerNode;
+  metadata.stencilOffsets = coarseStencil.stencilOffsets;
+  metadata.entries.reserve(
+      coarseStencil.stencilOffsets.size() *
+      Teuchos::as<size_t>(coarseStencil.dofsPerNode) *
+      Teuchos::as<size_t>(coarseStencil.dofsPerNode));
+  for (const StencilOffset& offset : coarseStencil.stencilOffsets)
+    for (LO rowDof = 0; rowDof < coarseStencil.dofsPerNode; ++rowDof)
+      for (LO columnDof = 0; columnDof < coarseStencil.dofsPerNode; ++columnDof)
+        metadata.entries.push_back(FineStencilEntry{
+            offset, rowDof, columnDof});
+  return metadata;
+}
+
 // Prebuild sparsity structure of coarse matrix
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructuredGraph(
@@ -642,9 +666,13 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
     }
 
     const FineStencilSpec fineStencil =
-        DetectFineStencil(*A, numDimensions, lFineNodesPerDim);
+        fineLevel.GetLevelID() == 0
+            ? DetectFineStencil(*A, numDimensions, lFineNodesPerDim)
+            : fineLevel.Get<FineStencilSpec>("structuredFineStencil", this);
     const StructuredGraphSpec graphSpec =
         DeriveCoarseRAPStencil(fineStencil, interpolationOrder);
+    Set(coarseLevel, "structuredFineStencil",
+        MakeCoarseStencilMetadata(graphSpec));
 
     {
       RCP<ParameterList> RAPparams;
