@@ -59,7 +59,7 @@ void DiagonalPreconditionerOp::describe(Teuchos::FancyOStream& out_arg,
     case Teuchos::VERB_HIGH:
     case Teuchos::VERB_EXTREME: {
       if (BDP_ != Teuchos::null) {
-        RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> H = BDP_->createCrsMatrix();
+        RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> H = BDP_->getInverseBlockDiagonal();
         if (H != Teuchos::null) H->describe(out_arg, verbLevel);
       }
       break;

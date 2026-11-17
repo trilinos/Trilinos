@@ -40,7 +40,7 @@ class tDiagonalPreconditionerFactory_tpetra : public UnitTest {
 
   bool test_createPrec(int verbosity, std::ostream& os, int blocksize);
   bool test_initializePrec(int verbosity, std::ostream& os);
-  bool test_canApply(int verbosity, std::ostream& os);
+  bool test_canApply(int verbosity, std::ostream& os, int blocksize);
   bool test_blkdiag_exact_2x2_blocks(int verbosity, std::ostream& os);
 
  protected:

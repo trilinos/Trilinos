@@ -32,6 +32,7 @@
 #include "Teko_Utilities.hpp"
 #include "Teko_TpetraHelpers.hpp"
 
+#include <string>
 #include <vector>
 #include <cmath>
 
@@ -69,43 +70,24 @@ RCP<crs_t> buildLaplace2DMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO nx
   return problem->BuildMatrix();
 }
 
+// Every rank owns 4 rows holding the same two 2x2 blocks, so the blocks never
+// straddle a rank boundary regardless of the number of MPI ranks.
 RCP<crs_t> buildTwoByTwoBlockDiagMatrix(const RCP<const Teuchos::Comm<int>>& comm) {
-  auto map = rcp(new const map_t(4, 0, comm));
-  auto A   = rcp(new crs_t(map, 2));
+  const GO numGlobal = 4 * comm->getSize();
+  auto map           = rcp(new const map_t(numGlobal, 4, 0, comm));
+  auto A             = rcp(new crs_t(map, 2));
 
-  // block 1:
-  // [2 1]
-  // [1 3]
-  {
-    GO row = 0;
-    std::vector<GO> cols{0, 1};
-    std::vector<ST> vals{2.0, 1.0};
-    A->insertGlobalValues(row, Teuchos::ArrayView<const GO>(cols),
-                          Teuchos::ArrayView<const ST>(vals));
-  }
-  {
-    GO row = 1;
-    std::vector<GO> cols{0, 1};
-    std::vector<ST> vals{1.0, 3.0};
-    A->insertGlobalValues(row, Teuchos::ArrayView<const GO>(cols),
-                          Teuchos::ArrayView<const ST>(vals));
-  }
+  // block 1:   block 2:
+  // [2 1]      [4 1]
+  // [1 3]      [1 2]
+  const ST blockVals[4][2] = {{2.0, 1.0}, {1.0, 3.0}, {4.0, 1.0}, {1.0, 2.0}};
 
-  // block 2:
-  // [4 1]
-  // [1 2]
-  {
-    GO row = 2;
-    std::vector<GO> cols{2, 3};
-    std::vector<ST> vals{4.0, 1.0};
-    A->insertGlobalValues(row, Teuchos::ArrayView<const GO>(cols),
-                          Teuchos::ArrayView<const ST>(vals));
-  }
-  {
-    GO row = 3;
-    std::vector<GO> cols{2, 3};
-    std::vector<ST> vals{1.0, 2.0};
-    A->insertGlobalValues(row, Teuchos::ArrayView<const GO>(cols),
+  const GO offset = map->getMinGlobalIndex();
+  for (GO i = 0; i < 4; ++i) {
+    const GO blockStart = offset + 2 * (i / 2);
+    std::vector<GO> cols{blockStart, blockStart + 1};
+    std::vector<ST> vals{blockVals[i][0], blockVals[i][1]};
+    A->insertGlobalValues(offset + i, Teuchos::ArrayView<const GO>(cols),
                           Teuchos::ArrayView<const ST>(vals));
   }
 
@@ -115,7 +97,7 @@ RCP<crs_t> buildTwoByTwoBlockDiagMatrix(const RCP<const Teuchos::Comm<int>>& com
 
 void fillVector(vec_t& v, const std::vector<ST>& vals) {
   for (size_t i = 0; i < vals.size(); ++i) {
-    v.replaceGlobalValue(static_cast<GO>(i), vals[i]);
+    v.replaceLocalValue(static_cast<LO>(i), vals[i]);
   }
 }
 
@@ -187,24 +169,30 @@ int tDiagonalPreconditionerFactory_tpetra::runTest(int verbosity, std::ostream& 
 
   failstrm << "tDiagonalPreconditionerFactory_tpetra";
 
-  status = test_createPrec(verbosity, failstrm, 1);
-  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"createPrec\" ... PASSED", "   \"createPrec\" ... FAILED");
-  allTests &= status;
-  failcount += status ? 0 : 1;
-  totalrun++;
+  for (int blocksize : {1, 2}) {
+    const std::string bs = " (blocksize " + std::to_string(blocksize) + ")";
 
-  status = test_initializePrec(verbosity, failstrm);
-  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"initializePrec\" ... PASSED",
-                       "   \"initializePrec\" ... FAILED");
-  allTests &= status;
-  failcount += status ? 0 : 1;
-  totalrun++;
+    status = test_createPrec(verbosity, failstrm, blocksize);
+    Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"createPrec\"" + bs + " ... PASSED",
+                         "   \"createPrec\"" + bs + " ... FAILED");
+    allTests &= status;
+    failcount += status ? 0 : 1;
+    totalrun++;
 
-  status = test_canApply(verbosity, failstrm);
-  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"canApply\" ... PASSED", "   \"canApply\" ... FAILED");
-  allTests &= status;
-  failcount += status ? 0 : 1;
-  totalrun++;
+    status = test_initializePrec(verbosity, failstrm);
+    Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"initializePrec\"" + bs + " ... PASSED",
+                         "   \"initializePrec\"" + bs + " ... FAILED");
+    allTests &= status;
+    failcount += status ? 0 : 1;
+    totalrun++;
+
+    status = test_canApply(verbosity, failstrm, blocksize);
+    Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"canApply\"" + bs + " ... PASSED",
+                         "   \"canApply\"" + bs + " ... FAILED");
+    allTests &= status;
+    failcount += status ? 0 : 1;
+    totalrun++;
+  }
 
   status = test_blkdiag_exact_2x2_blocks(verbosity, failstrm);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"blkdiag_exact_2x2_blocks\" ... PASSED",
@@ -246,7 +234,8 @@ bool tDiagonalPreconditionerFactory_tpetra::test_createPrec(int verbosity, std::
   return true;
 }
 
-bool tDiagonalPreconditionerFactory_tpetra::test_canApply(int verbosity, std::ostream& os) {
+bool tDiagonalPreconditionerFactory_tpetra::test_canApply(int verbosity, std::ostream& os,
+                                                          int blocksize) {
   RCP<const Tpetra::Map<LO, GO, NT>> domain_ = tpetraF->getDomainMap();
   RCP<const Tpetra::Map<LO, GO, NT>> range_  = tpetraF->getRangeMap();
 
@@ -256,8 +245,26 @@ bool tDiagonalPreconditionerFactory_tpetra::test_canApply(int verbosity, std::os
   Y->putScalar(0.0);
   Z->putScalar(1.0);
 
-  // Let X = diag(F). Then applying the preconditioner to X should yield a vector of ones
-  tpetraF->getLocalDiagCopy(*X);
+  // Let X = B * ones, where B is the block diagonal of F used by the preconditioner
+  // (local row i is in block i / blocksize, see buildParameterList). Then applying
+  // the preconditioner, inv(B), to X should yield a vector of ones.
+  {
+    const auto rowMap = tpetraF->getRowMap();
+    const auto colMap = tpetraF->getColMap();
+    typename crs_t::local_inds_host_view_type inds;
+    typename crs_t::values_host_view_type vals;
+    auto Xdata = X->getLocalViewHost(Tpetra::Access::OverwriteAll);
+    for (LO i = 0; i < static_cast<LO>(tpetraF->getLocalNumRows()); ++i) {
+      tpetraF->getLocalRowView(i, inds, vals);
+      ST sum = 0.0;
+      for (size_t k = 0; k < inds.extent(0); ++k) {
+        const LO j = rowMap->getLocalElement(colMap->getGlobalElement(inds(k)));
+        if (j != Teuchos::OrdinalTraits<LO>::invalid() && j / blocksize == i / blocksize)
+          sum += vals(k);
+      }
+      Xdata(i, 0) = sum;
+    }
+  }
 
   // Build Thyra wrappers
   MultiVector tX =
@@ -267,11 +274,6 @@ bool tDiagonalPreconditionerFactory_tpetra::test_canApply(int verbosity, std::os
 
   // Do the apply via thyra
   Teko::applyOp(pop, tX, tY, 1.0, 0.0);
-
-  // Copy Thyra result back to Y
-  RCP<const Thyra::TpetraVector<ST, LO, GO, NT>> thyraY =
-      Teuchos::rcp_dynamic_cast<const Thyra::TpetraVector<ST, LO, GO, NT>>(tY, true);
-  Y->assign(*(thyraY->getConstTpetraVector()));
 
   // Compare solutions
   double znrm, dnrm;
