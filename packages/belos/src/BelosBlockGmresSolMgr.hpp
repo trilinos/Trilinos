@@ -34,6 +34,9 @@
 #include "BelosStatusTestOutput.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include <stdexcept>
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -105,6 +108,7 @@ private:
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
   typedef Teuchos::ScalarTraits<MagnitudeType> MT;
+  using ComplexType = std::complex<MagnitudeType>;
 
 public:
 
@@ -200,6 +204,9 @@ public:
    */
   bool isLOADetected() const override { return loaDetected_; }
 
+  MagnitudeType getConditionEstimate() const {return condEstimate_;}
+  Teuchos::ArrayRCP<ComplexType> getEigenEstimates() const {return eigenEstimates_;}
+
   //@}
 
   //! @name Set methods
@@ -273,6 +280,9 @@ private:
   // Method for checking current status test against defined linear problem.
   bool checkStatusTest();
 
+  // Compute the condition number estimate
+  void compute_condnum_hessenberg(const DM& H, const int N);
+
   // Linear problem.
   Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > problem_;
 
@@ -301,6 +311,7 @@ private:
   static constexpr bool showMaxResNormOnly_default_ = false;
   static constexpr bool flexibleGmres_default_ = false;
   static constexpr bool keepHessenberg_default_ = false;
+  static constexpr bool genCondEst_default_ = false;
   static constexpr bool expResTest_default_ = false;
   static constexpr int blockSize_default_ = 1;
   static constexpr int numBlocks_default_ = 300;
@@ -317,6 +328,7 @@ private:
   int maxRestarts_, maxIters_, numIters_;
   int blockSize_, numBlocks_, verbosity_, outputStyle_, outputFreq_;
   bool adaptiveBlockSize_, showMaxResNormOnly_, isFlexible_, keepHessenberg_, expResTest_;
+  bool genCondEst_;
   std::string orthoType_;
   std::string impResScale_, expResScale_;
 
@@ -331,6 +343,8 @@ private:
   bool isSet_, isSTSet_;
   bool needsIterRebuild_;
   bool loaDetected_;
+  MagnitudeType condEstimate_;
+  Teuchos::ArrayRCP<ComplexType> eigenEstimates_;
 };
 
 
@@ -354,6 +368,7 @@ BlockGmresSolMgr<ScalarType,MV,OP,DM>::BlockGmresSolMgr() :
   isFlexible_(flexibleGmres_default_),
   keepHessenberg_(keepHessenberg_default_),
   expResTest_(expResTest_default_),
+  genCondEst_(genCondEst_default_),
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
   expResScale_(expResScale_default_),
@@ -388,6 +403,7 @@ BlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &probl
   isFlexible_(flexibleGmres_default_),
   keepHessenberg_(keepHessenberg_default_),
   expResTest_(expResTest_default_),
+  genCondEst_(genCondEst_default_),
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
   expResScale_(expResScale_default_),
@@ -458,6 +474,8 @@ BlockGmresSolMgr<ScalarType,MV,OP,DM>::getValidParameters() const
       "Whether the raw upper Hessenberg matrix should be stored separately\n"
       "from the QR-factored least squares system. Useful for harmonic Ritz\n"
       "pair computation from the GMRES iteration state.");
+    pl->set("Estimate Condition Number", static_cast<bool>(genCondEst_default_),
+      "Whether or not to estimate the condition number of the preconditioned system.");
     pl->set("Explicit Residual Test", static_cast<bool>(expResTest_default_),
       "Whether the explicitly computed residual should be used in the convergence test.");
     pl->set("Implicit Residual Scaling", static_cast<const char *>(impResScale_default_),
@@ -618,6 +636,20 @@ void BlockGmresSolMgr<ScalarType,MV,OP,DM>::setParameters( const Teuchos::RCP<Te
     params_->set("Output Frequency", outputFreq_);
     if (outputTest_ != Teuchos::null)
       outputTest_->setOutputFrequency( outputFreq_ );
+  }
+
+  // Condition estimate
+  if (params->isParameter ("Estimate Condition Number")) {
+    genCondEst_ = params->get ("Estimate Condition Number", genCondEst_default_);
+
+    if (!params->isParameter("Keep Hessenberg"))
+      keepHessenberg_ = true;
+
+    if (genCondEst_)
+      TEUCHOS_TEST_FOR_EXCEPTION(!keepHessenberg_, std::runtime_error, "Belos::BlockGmresSolMgr: \"Estimate Condition Number\" = true requires \"Keep Hessenberg\" = true")
+
+    // Update parameter in our list.
+    params_->set("Estimate Condition Number", genCondEst_);
   }
 
   // Create output manager if we need to.
@@ -1030,10 +1062,22 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
       block_gmres_iter->initializeGmres(newstate);
       int numRestarts = 0;
 
+      bool doCondEst = genCondEst_;
+      eigenEstimates_.resize(0);
+      condEstimate_ = -Teuchos::ScalarTraits<MagnitudeType>::one();
+
       while(1) {
         // tell block_gmres_iter to iterate
         try {
           block_gmres_iter->iterate();
+
+          if (doCondEst) {
+            // Compute condition estimate
+            auto state = block_gmres_iter->getState();
+            auto H = *state.H;
+            compute_condnum_hessenberg(H, std::min(DMT::GetNumRows(H), DMT::GetNumCols(H)));
+            doCondEst = false;
+          }
 
           ////////////////////////////////////////////////////////////////////////////////////
           //
@@ -1364,6 +1408,82 @@ describe (Teuchos::FancyOStream &out,
   }
 }
 
+template<class ScalarType, class MV, class OP, class DM>
+void BlockGmresSolMgr<ScalarType,MV,OP,DM>::
+compute_condnum_hessenberg (const DM& H, const int N)
+{
+  TEUCHOS_ASSERT(N>0);
+  // Get the N x N submatrix of H
+  auto H_copy = DMT::SubviewCopy(H, N, N);
+
+  int info = 0;
+  Teuchos::LAPACK<int,ScalarType> lapack;
+
+  MagnitudeType lambda_min;
+  MagnitudeType lambda_max;
+
+  if constexpr (!Teuchos::ScalarTraits<ScalarType>::isComplex) {
+    // Real and imaginary parts
+    auto wr = DMT::Create(N, 1);
+    auto wi = DMT::Create(N, 1);
+
+    // Query required work space size
+    auto work_query = DMT::Create(1, 1);
+    lapack.HSEQR('E', 'N', N, 1, N, DMT::GetRawHostPtr(*H_copy), N, DMT::GetRawHostPtr(*wr), DMT::GetRawHostPtr(*wi), nullptr, 1, DMT::GetRawHostPtr(*work_query), -1, &info);
+    TEUCHOS_ASSERT(info == 0);
+    int lwork = DMT::ValueConst(*work_query, 0, 0);
+    // Allocate work space
+    auto work = DMT::Create(lwork, 1);
+    lapack.HSEQR('E', 'N', N, 1, N, DMT::GetRawHostPtr(*H_copy), N, DMT::GetRawHostPtr(*wr), DMT::GetRawHostPtr(*wi), nullptr, 1, DMT::GetRawHostPtr(*work), lwork, &info);
+    TEUCHOS_ASSERT(info == 0);
+
+    eigenEstimates_.resize(N);
+    {
+      auto ev = ComplexType(DMT::ValueConst(*wr, 0, 0), DMT::ValueConst(*wi, 0, 0));
+      auto abs_ev = std::abs(ev);
+      lambda_min = abs_ev;
+      lambda_max = abs_ev;
+    }
+    for (int k = 0; k < N; k++) {
+      auto ev = ComplexType(DMT::ValueConst(*wr, k, 0), DMT::ValueConst(*wi, k, 0));
+      eigenEstimates_[k] = ev;
+      auto abs_ev = std::abs(ev);
+      lambda_min = std::min(lambda_min, abs_ev);
+      lambda_max = std::max(lambda_max, abs_ev);
+    }
+  } else {
+    // Real and imaginary parts
+    auto w = DMT::Create(N, 1);
+
+    // Query required work space size
+    auto work_query = DMT::Create(1, 1);
+    lapack.HSEQR('E', 'N', N, 1, N, DMT::GetRawHostPtr(*H_copy), N, DMT::GetRawHostPtr(*w), nullptr, 1, DMT::GetRawHostPtr(*work_query), -1, &info);
+    TEUCHOS_ASSERT(info == 0);
+    int lwork = Teuchos::ScalarTraits<ScalarType>::real(DMT::ValueConst(*work_query, 0, 0));
+    // Allocate work space
+    auto work = DMT::Create(lwork, 1);
+    lapack.HSEQR('E', 'N', N, 1, N, DMT::GetRawHostPtr(*H_copy), N, DMT::GetRawHostPtr(*w), nullptr, 1, DMT::GetRawHostPtr(*work), lwork, &info);
+    TEUCHOS_ASSERT(info == 0);
+
+    eigenEstimates_.resize(N);
+    {
+      auto ev = DMT::ValueConst(*w, 0, 0);
+      auto abs_ev = std::abs(ev);
+      lambda_min = abs_ev;
+      lambda_max = abs_ev;
+    }
+    for (int k = 0; k < N; k++) {
+      auto ev = DMT::ValueConst(*w, k, 0);
+      eigenEstimates_[k] = ev;
+      auto abs_ev = std::abs(ev);
+      lambda_min = std::min(lambda_min, abs_ev);
+      lambda_max = std::max(lambda_max, abs_ev);
+    }
+  }
+  // It's OK for the condition number to be Inf.
+  condEstimate_ = lambda_max / lambda_min;
+
+} /* compute_condnum_hessenberg */
 
 } // end Belos namespace
 
