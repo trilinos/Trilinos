@@ -236,3 +236,48 @@ def launch_container(container_engine, source_dir, packageEnablesFile, image, ta
         """
         print(message)
         exit(1)
+
+
+def ensure_podman_machine():
+    proc = subprocess.run(["podman", "machine", "list", "--format", "json"], capture_output=True, text=True)
+    assert proc.returncode == 0
+
+    try:
+        machines = json.loads(proc.stdout.strip())
+    except json.JSONDecodeError:
+        # Fallback if older podman version doesn't support json format perfectly
+        machines = []
+
+    # Handle initialization if no machines exist
+    if not machines or len(machines) == 0:
+        logger.debug("No Podman machine found. Initializing 'podman-machine-default'...")
+        proc = subprocess.run(["podman", "machine", "init"], capture_output=False, text=True)
+        assert proc.returncode == 0
+        logger.debug("Initialization successful.")
+        # Reload machine list to include the newly created machine
+        proc = subprocess.run(["podman", "machine", "list", "--format", "json"], capture_output=True, text=True)
+        assert proc.returncode == 0
+        try:
+            machines = json.loads(proc.stdout.strip())
+        except json.JSONDecodeError:
+            exit(1)
+
+    # Check running state of the default/first machine
+    target_machine = machines[0]
+    machine_name = target_machine.get("Name", "podman-machine-default")
+    is_running = target_machine.get("Running", False)
+
+    if is_running:
+        logger.debug(f"Podman machine '{machine_name}' is already running.")
+    else:
+        logger.debug(f"Podman machine '{machine_name}' is stopped. Starting it now.")
+        proc = subprocess.run(["podman", "machine", "start"], capture_output=False, text=True)
+        if proc.returncode != 0:
+            # Handle edge case where it's already starting or active but misreported
+            if "already running" in proc.stderr.strip().lower():
+                logger.debug(f"Podman machine '{machine_name}' is now active.")
+            else:
+                logger.debug(f"Failed to start machine")
+                exit(1)
+        else:
+            logger.debug(f"Podman machine '{machine_name}' started successfully.")

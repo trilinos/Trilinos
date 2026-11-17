@@ -9,6 +9,7 @@ import questionary
 import argparse
 from shutil import which
 import os
+import sys
 from pprint import pformat
 import subprocess
 from github import Github
@@ -22,7 +23,8 @@ from tools import (is_valid_pr_number,
                    generate_package_enables,
                    image_available,
                    pull_image,
-                   launch_container)
+                   launch_container,
+                   ensure_podman_machine)
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -77,6 +79,9 @@ logger.debug(f"container_engine_cmd = {container_engine_cmd}")
 if container_engine_cmd is None:
     logger.warning(f"No command \"{container_engine}\" in path. Aborting.")
     exit(1)
+# On Mac: make sure that we can get a running machine
+if container_engine == "podman" and sys.platform == "darwin":
+    ensure_podman_machine()
 
 ##################################################
 # Check that cmake is available
