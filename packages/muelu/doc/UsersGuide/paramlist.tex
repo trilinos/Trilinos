@@ -193,7 +193,7 @@
 \cbb{use kokkos refactor}{bool}{false}{Switch on the new \kokkos based version for on-node parallelism.}
           
 \cbb{rap: triple product}{bool}{false}{Use all-at-once triple matrix product kernel}
-
+          
 \cbb{rap: prebuild coarse graph}{bool}{false}{Prebuild the coarse graph and pass it to the triple matrix product kernel.}
           
 \cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
@@ -209,6 +209,8 @@
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
           
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
+          
+\cbb{sa: eigen-analysis type}{string}{power-method}{Algorithm for eigen-analysis for SA.  Options: "power-method" (default), "cg", "lanczos", "gmres" or "arnoldi". "cg" is an alias for "lanczos" and "gmres" is an alias for "arnoldi".}
           
 \cbb{sa: use edge matrix for smoothing}{bool}{false}{If true, smooth the edge prolongator with the edge matrix (mass + curl curl). In general this does violate the commuting relationship. If false smooth with the user provided CurlCurl matrix.}
           

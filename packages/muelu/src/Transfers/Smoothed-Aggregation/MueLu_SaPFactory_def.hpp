@@ -43,6 +43,7 @@ RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   SET_VALID_ENTRY("sa: nodal damping factor");
   SET_VALID_ENTRY("sa: calculate eigenvalue estimate");
   SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
+  SET_VALID_ENTRY("sa: eigen-analysis type");
   SET_VALID_ENTRY("sa: use rowsumabs diagonal scaling");
   SET_VALID_ENTRY("sa: enforce constraints");
   SET_VALID_ENTRY("tentative: calculate qr");
@@ -55,6 +56,8 @@ RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   SET_VALID_ENTRY("use kokkos refactor");
 #undef SET_VALID_ENTRY
   validParamList->set("sa: maxwell1 smoothing", false);
+
+  validParamList->getEntry("sa: eigen-analysis type").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("power-method", "cg", "lanczos", "gmres", "arnoldi"))));
 
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
   validParamList->set<RCP<const FactoryBase>>("P", Teuchos::null, "Tentative prolongator factory");
@@ -154,6 +157,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
   const SC dampingFactor                   = as<SC>(pL.get<double>("sa: damping factor"));
   const LO maxEigenIterations              = as<LO>(pL.get<int>("sa: eigenvalue estimate num iterations"));
   const bool estimateMaxEigen              = pL.get<bool>("sa: calculate eigenvalue estimate");
+  const std::string eigenAnalysisType      = pL.get<std::string>("sa: eigen-analysis type");
   const bool useAbsValueRowSum             = pL.get<bool>("sa: use rowsumabs diagonal scaling");
   const bool doQRStep                      = pL.get<bool>("tentative: calculate qr");
   const bool enforceConstraints            = pL.get<bool>("sa: enforce constraints");
@@ -182,7 +186,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
-          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = " << maxEigenIterations << ((useAbsValueRowSum) ? ", use rowSumAbs diagonal)" : ", use point diagonal)") << std::endl;
+          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (method = " << eigenAnalysisType << ", max iters = " << maxEigenIterations << ((useAbsValueRowSum) ? ", use rowSumAbs diagonal)" : ", use point diagonal)") << std::endl;
           Coordinate stopTol = 1e-4;
           if (useAbsValueRowSum) {
             const bool returnReciprocal = true;
@@ -193,9 +197,20 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
                                                                              useAutomaticDiagTol);
             TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
                                        "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
-            lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
-          } else
-            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol, diagonalReplacementTolerance);
+            if (eigenAnalysisType == "power-method")
+              lambdaMax = Utilities::PowerMethod(*A, invDiag, GetOStream(Statistics2), maxEigenIterations, stopTol);
+            else if ((eigenAnalysisType == "cg") || (eigenAnalysisType == "lanczos"))
+              lambdaMax = Utilities::KrylovMethod(*A, invDiag, "Pseudo Block CG", GetOStream(Statistics2), maxEigenIterations, stopTol);
+            else if ((eigenAnalysisType == "gmres") || (eigenAnalysisType == "arnoldi"))
+              lambdaMax = Utilities::KrylovMethod(*A, invDiag, "Block GMRES", GetOStream(Statistics2), maxEigenIterations, stopTol);
+          } else {
+            if (eigenAnalysisType == "power-method")
+              lambdaMax = Utilities::PowerMethod(*A, GetOStream(Statistics2), true, maxEigenIterations, stopTol, diagonalReplacementTolerance);
+            else if ((eigenAnalysisType == "cg") || (eigenAnalysisType == "lanczos"))
+              lambdaMax = Utilities::KrylovMethod(*A, "Pseudo Block CG", GetOStream(Statistics2), true, maxEigenIterations, stopTol, diagonalReplacementTolerance);
+            else if ((eigenAnalysisType == "gmres") || (eigenAnalysisType == "arnoldi"))
+              lambdaMax = Utilities::KrylovMethod(*A, "Block GMRES", GetOStream(Statistics2), true, maxEigenIterations, stopTol, diagonalReplacementTolerance);
+          }
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -298,7 +313,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = CurlCurl->GetMaxEigenvalueEstimate();
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
-          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = " << maxEigenIterations << ((useAbsValueRowSum) ? ", use rowSumAbs diagonal)" : ", use point diagonal)") << std::endl;
+          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (method = " << eigenAnalysisType << ", max iters = " << maxEigenIterations << ((useAbsValueRowSum) ? ", use rowSumAbs diagonal)" : ", use point diagonal)") << std::endl;
           Coordinate stopTol = 1e-4;
           if (useAbsValueRowSum) {
             const bool returnReciprocal = true;
@@ -309,9 +324,20 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
                                                                              useAutomaticDiagTol);
             TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
                                        "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
-            lambdaMax = Utilities::PowerMethod(*CurlCurl, invDiag, maxEigenIterations, stopTol);
-          } else
-            lambdaMax = Utilities::PowerMethod(*CurlCurl, true, maxEigenIterations, stopTol, diagonalReplacementTolerance);
+            if (eigenAnalysisType == "power-method")
+              lambdaMax = Utilities::PowerMethod(*CurlCurl, invDiag, GetOStream(Statistics2), maxEigenIterations, stopTol);
+            else if ((eigenAnalysisType == "cg") || (eigenAnalysisType == "lanczos"))
+              lambdaMax = Utilities::KrylovMethod(*CurlCurl, invDiag, "Pseudo Block CG", GetOStream(Statistics2), maxEigenIterations, stopTol);
+            else if ((eigenAnalysisType == "gmres") || (eigenAnalysisType == "arnoldi"))
+              lambdaMax = Utilities::KrylovMethod(*CurlCurl, invDiag, "Block GMRES", GetOStream(Statistics2), maxEigenIterations, stopTol);
+          } else {
+            if (eigenAnalysisType == "power-method")
+              lambdaMax = Utilities::PowerMethod(*CurlCurl, GetOStream(Statistics2), true, maxEigenIterations, stopTol, diagonalReplacementTolerance);
+            else if ((eigenAnalysisType == "cg") || (eigenAnalysisType == "lanczos"))
+              lambdaMax = Utilities::KrylovMethod(*CurlCurl, "Pseudo Block CG", GetOStream(Statistics2), true, maxEigenIterations, stopTol, diagonalReplacementTolerance);
+            else if ((eigenAnalysisType == "gmres") || (eigenAnalysisType == "arnoldi"))
+              lambdaMax = Utilities::KrylovMethod(*CurlCurl, "Block GMRES", GetOStream(Statistics2), true, maxEigenIterations, stopTol, diagonalReplacementTolerance);
+          }
           CurlCurl->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;

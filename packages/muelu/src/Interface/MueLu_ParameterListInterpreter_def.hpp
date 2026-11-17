@@ -2496,7 +2496,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   test_and_set_param_2list<double>(paramList, defaultList, "sa: rowsumabs diagonal replacement value", Pparams);
   test_and_set_param_2list<bool>(paramList, defaultList, "sa: rowsumabs use automatic diagonal tolerance", Pparams);
   test_and_set_param_2list<bool>(paramList, defaultList, "sa: enforce constraints", Pparams);
-  // test_and_set_param_2list<std::string>(paramList, defaultList, "sa: eigen-analysis type", Pparams);
+  test_and_set_param_2list<std::string>(paramList, defaultList, "sa: eigen-analysis type", Pparams);
   test_and_set_param_2list<bool>(paramList, defaultList, "tentative: calculate qr", Pparams);
 
   if ((multigridAlgo == "smoothed reitzinger") && (levelID > 0)) {

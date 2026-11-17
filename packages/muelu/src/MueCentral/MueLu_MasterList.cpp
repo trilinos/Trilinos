@@ -815,7 +815,7 @@ namespace MueLu {
          ("synchronize factory timers","synchronize factory timers")
       
          ("rap: triple product","rap: triple product")
-
+      
          ("rap: prebuild coarse graph","rap: prebuild coarse graph")
       
          ("energy minimization: enable","multigrid algorithm")
@@ -844,7 +844,7 @@ namespace MueLu {
       
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
       
-         ("sa: eigen-analysis type","sa: eigen-analysis type")
+         ("eigen-analysis type","sa: eigen-analysis type")
       
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
       

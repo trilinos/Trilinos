@@ -13,6 +13,8 @@
           
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
           
+\cbb{sa: eigen-analysis type}{string}{power-method}{Algorithm for eigen-analysis for SA.  Options: "power-method" (default), "cg", "lanczos", "gmres" or "arnoldi". "cg" is an alias for "lanczos" and "gmres" is an alias for "arnoldi".}
+          
 \cbb{sa: use edge matrix for smoothing}{bool}{false}{If true, smooth the edge prolongator with the edge matrix (mass + curl curl). In general this does violate the commuting relationship. If false smooth with the user provided CurlCurl matrix.}
           
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
