@@ -502,11 +502,6 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
     RCP<Matrix>& Ac, const RCP<Matrix>& P,
     const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
     const StructuredGraphSpec& graphSpec) const {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      P->getDomainMap()->lib() != Xpetra::UseTpetra,
-      Exceptions::RuntimeError,
-      "StructuredRAPFactory::GetStructuredGraph requires the Tpetra backend.");
-
   Teuchos::Array<Tpetra::Experimental::StencilOffset> stencilOffsets;
   stencilOffsets.reserve(graphSpec.stencilOffsets.size());
   for (const StencilOffset& offset : graphSpec.stencilOffsets)
