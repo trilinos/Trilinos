@@ -384,9 +384,9 @@ template class NemSlice<int>;
 template class NemSlice<int64_t>;
 
 template <typename INT>
-void NemSlice<INT>::print_input(Machine_Description *machine, LB_Description<INT> *lb,
-                                Problem_Description *prob, Solver_Description *solver,
-                                Weight_Description *weight)
+void NemSlice<INT>::print_input(Machine_Description *machine_desc, LB_Description<INT> *lb_desc,
+                                Problem_Description *prob, Solver_Description *solver_desc,
+                                Weight_Description *weight_desc)
 {
   fmt::print("{} version {}\n", UTIL_NAME, ELB_VERSION);
 
@@ -403,53 +403,53 @@ void NemSlice<INT>::print_input(Machine_Description *machine, LB_Description<INT
   /*                         Machine_Description PARAMETERS                                */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   fmt::print("Machine Description\n");
-  if (machine->num_boxes > 1) {
-    fmt::print("\tCluster of {} boxes\n", machine->num_boxes);
+  if (machine_desc->num_boxes > 1) {
+    fmt::print("\tCluster of {} boxes\n", machine_desc->num_boxes);
     fmt::print("\tarchitecture of each box: ");
   }
   else {
     fmt::print("\tarchitecture: ");
   }
-  switch (machine->type) {
+  switch (machine_desc->type) {
   case MachineType::HCUBE: fmt::print("hypercube\n"); break;
   case MachineType::MESH: fmt::print("mesh\n"); break;
   default: fmt::print("invalid/unknown\n"); break;
   }
 
-  if (machine->num_boxes > 1) {
+  if (machine_desc->num_boxes > 1) {
     fmt::print("\tdimension(s) of each box: ");
   }
   else {
     fmt::print("\tdimension(s): ");
   }
 
-  switch (machine->type) {
-  case MachineType::HCUBE: fmt::print("{}\n", machine->dim[0]); break;
+  switch (machine_desc->type) {
+  case MachineType::HCUBE: fmt::print("{}\n", machine_desc->dim[0]); break;
 
   case MachineType::MESH:
-    for (int cnt = 0; cnt < (machine->num_dims) - 1; cnt++) {
-      fmt::print("{}x", machine->dim[cnt]);
+    for (int cnt = 0; cnt < (machine_desc->num_dims) - 1; cnt++) {
+      fmt::print("{}x", machine_desc->dim[cnt]);
     }
 
-    fmt::print("{}\n", machine->dim[(machine->num_dims) - 1]);
+    fmt::print("{}\n", machine_desc->dim[(machine_desc->num_dims) - 1]);
     break;
   default:; /* do nothing */
   }
-  fmt::print("\ttotal number of processors: {}\n", machine->num_procs);
+  fmt::print("\ttotal number of processors: {}\n", machine_desc->num_procs);
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                       LOAD BALANCE PARAMETERS                             */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   fmt::print("Load Balance Parameters\n");
-  switch (lb->type) {
+  switch (lb_desc->type) {
   case Balance::MULTIKL:
     fmt::print("\ttype: multilevel\n");
-    fmt::print("\tnumber of sections: {}\n", lb->num_sects);
+    fmt::print("\tnumber of sections: {}\n", lb_desc->num_sects);
     break;
 
   case Balance::SPECTRAL:
     fmt::print("\ttype: spectral\n");
-    fmt::print("\tnumber of sections: {}\n", lb->num_sects);
+    fmt::print("\tnumber of sections: {}\n", lb_desc->num_sects);
     break;
 
   case Balance::INERTIAL: fmt::print("\ttype: inertial\n"); break;
@@ -472,34 +472,34 @@ void NemSlice<INT>::print_input(Machine_Description *machine, LB_Description<INT
 
   case Balance::INFILE:
     fmt::print("\ttype: input from file\n");
-    fmt::print("\tfile name: {}\n", lb->file);
+    fmt::print("\tfile name: {}\n", lb_desc->file);
     break;
   default:; /* do nothing */
   }
   fmt::print("\trefinement: ");
-  switch (lb->refine) {
+  switch (lb_desc->refine) {
   case Balance::KL_REFINE: fmt::print("Kernighan-Lin\n"); break;
 
   case Balance::NO_REFINE: fmt::print("none\n"); break;
   default:; /* do nothing */
   }
-  if (lb->cnctd_dom) {
+  if (lb_desc->cnctd_dom) {
     fmt::print("\tConnected Domain enforced\n");
   }
-  if (lb->outfile) {
+  if (lb_desc->outfile) {
     fmt::print("\toutput assignment vector\n");
-    fmt::print("\tfile name: {}\n", lb->file);
+    fmt::print("\tfile name: {}\n", lb_desc->file);
   }
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                         EIGENSOLVER PARAMETERS                            */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-  if (lb->type == Balance::MULTIKL || lb->type == Balance::SPECTRAL) {
+  if (lb_desc->type == Balance::MULTIKL || lb_desc->type == Balance::SPECTRAL) {
     fmt::print("Eigensolver Parameters\n");
-    fmt::print("\teignsolver tolerance: {}\n", solver->tolerance);
-    if (solver->rqi_flag == SolverOptions::USE_RQI) {
+    fmt::print("\teignsolver tolerance: {}\n", solver_desc->tolerance);
+    if (solver_desc->rqi_flag == SolverOptions::USE_RQI) {
       fmt::print("\tusing RQI/Symmlq eigensolver\n");
-      fmt::print("\tnumber of vertices to coarsen down to: {}\n", solver->vmax);
+      fmt::print("\tnumber of vertices to coarsen down to: {}\n", solver_desc->vmax);
     }
   }
 
@@ -507,23 +507,23 @@ void NemSlice<INT>::print_input(Machine_Description *machine, LB_Description<INT
   /*                          WEIGHTING PARAMETERS                             */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   fmt::print("Weighting Parameters\n");
-  if (weight->type == NO_WEIGHT) {
+  if (weight_desc->type == NO_WEIGHT) {
     fmt::print("\tno weighting\n");
   }
-  else if (weight->type & READ_EXO) {
+  else if (weight_desc->type & READ_EXO) {
     fmt::print("\tweights from: ExodusII file\n");
-    fmt::print("\ttime index: {}\n", weight->exo_tindx);
-    fmt::print("\tvariable index: {}\n", weight->exo_vindx);
-    fmt::print("\tvariable name: {}\n", weight->exo_varname);
+    fmt::print("\ttime index: {}\n", weight_desc->exo_tindx);
+    fmt::print("\tvariable index: {}\n", weight_desc->exo_vindx);
+    fmt::print("\tvariable name: {}\n", weight_desc->exo_varname);
   }
-  else if (weight->type & EL_BLK) {
+  else if (weight_desc->type & EL_BLK) {
     fmt::print("\tElement Block weights specified\n");
-    for (size_t cnt = 0; cnt < weight->elemblk.size(); cnt++) {
-      fmt::print("\telement block: {}, weight: {}\n", weight->elemblk[cnt],
-                 weight->elemblk_wgt[cnt]);
+    for (size_t cnt = 0; cnt < weight_desc->elemblk.size(); cnt++) {
+      fmt::print("\telement block: {}, weight: {}\n", weight_desc->elemblk[cnt],
+                 weight_desc->elemblk_wgt[cnt]);
     }
   }
-  else if (weight->type & EDGE_WGT) {
+  else if (weight_desc->type & EDGE_WGT) {
     fmt::print("\tedge weights turned on\n");
   }
 

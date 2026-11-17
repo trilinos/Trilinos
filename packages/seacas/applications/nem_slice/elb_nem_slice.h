@@ -12,7 +12,7 @@
 template <typename INT> class NemSlice
 {
 public:
-  NemSlice(int argc, char *argv[]) : time1(0), time2(0), argc(argc), argv(argv) {}
+  NemSlice(int argc_in, char *argv_in[]) : time1(0), time2(0), argc(argc_in), argv(argv_in) {}
 
   int run()
   {
@@ -64,7 +64,7 @@ private:
   int    argc;
   char **argv;
 
-  void print_input(Machine_Description * /*machine*/, LB_Description<INT> * /*lb*/,
-                   Problem_Description * /*prob*/, Solver_Description * /*solver*/,
-                   Weight_Description * /*weight*/);
+  void print_input(Machine_Description * /*machine_desc*/, LB_Description<INT> * /*lb_desc*/,
+                   Problem_Description * /*prob*/, Solver_Description * /*solver_desc*/,
+                   Weight_Description * /*weight_desc*/);
 };
