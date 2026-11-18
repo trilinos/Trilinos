@@ -1862,7 +1862,7 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE) {
       fnotoken_time += timer_factornotoken.seconds();
-      std::cout << "Basker factor_notoken total time: " << fnotoken_time << std::endl;
+      std::cout << " Basker factor_notoken total time: " << fnotoken_time << std::endl;
     }
 
     if(err == BASKER_ERROR)

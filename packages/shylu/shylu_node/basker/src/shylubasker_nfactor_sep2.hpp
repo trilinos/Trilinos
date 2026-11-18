@@ -666,13 +666,6 @@ namespace BaskerNS
     Int nnz = 0;
 
     //Over each blk    
-    /*
-    if(lvl ==(l+1))
-    {
-      last_blk = LL_size(leader_idx);
-    }
-    */
-    
     // X += B(:, k)
     {
       Int bl = l+1;
@@ -730,28 +723,9 @@ namespace BaskerNS
     
     // copy C = X
     {
-      Int bl = l+1;
-  
-      /*
-      Int A_row = (lvl==1)?(2):S(bl)(kid)%(LU_size(A_col));
-      //maybe no???
-      if((S(bl)(kid) > 14) &&
-         (S(bl)(kid) > LU_size(A_col)) &&
-         (lvl != 1))
-      {
-        //printf("test cm %d %d %d \n",
-        //     kid, S(bl)(kid), LU_size(A_col));
-
-        Int tm = (S(bl)(kid)+1)/16;
-        A_row  = ((S(bl)(kid)+1) - (tm*16))%LU_size(A_col);
-      }
-
-      // printf("kid: %d leader_idx: %d bl: %d \n",
-      //        kid, leader_idx, bl);
-      */
-
       //For recounting patterns in dense blk
       //Need better sparse update
+      Int bl = l+1;
       ENTRY_1DARRAY   X   = LL(leader_idx)(bl).ews;
       INT_1DARRAY    ws   = LL(leader_idx)(bl).iws;
       const Int      nrow = LL(leader_idx)(bl).nrow;
