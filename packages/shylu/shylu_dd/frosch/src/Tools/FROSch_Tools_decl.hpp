@@ -216,6 +216,16 @@ namespace FROSch {
                                 RCP<const CrsGraph<LO,GO,NO> > &outputGraph,
                                 RCP<const Map<LO,GO,NO> > &outputMap);
 
+    /*! \brief Same layers as calling ExtendOverlapByOneLayer(graph,...) overlap times, but imports only missing rows per layer
+     * \param[out] layerSizes Local size after each layer
+     * \return The overlapping map, sorted by global index
+     */
+    template <class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > ExtendOverlapByLayers_Threaded(RCP<const CrsGraph<LO,GO,NO> > graph,
+                                                             RCP<const Map<LO,GO,NO> > startMap,
+                                                             int overlap,
+                                                             Array<LO> &layerSizes);
+
     /*! \brief Sort the Xpetra::Map by the global IDs \c x
      * \param[in] inputMap Unsorted input map
      */

@@ -16,6 +16,8 @@
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
 
+#include <Kokkos_UnorderedMap.hpp>
+
 
 namespace FROSch {
 
@@ -898,6 +900,106 @@ namespace FROSch {
         outputMap = outputGraph->getColMap();
 
         return 0;
+    }
+
+    template <class LO,class GO,class NO>
+    RCP<const Map<LO,GO,NO> > ExtendOverlapByLayers_Threaded(RCP<const CrsGraph<LO,GO,NO> > graph,
+                                                             RCP<const Map<LO,GO,NO> > startMap,
+                                                             int overlap,
+                                                             Array<LO> &layerSizes)
+    {
+        FROSCH_DETAILTIMER_START(extendOverlapByLayersThreadedTime,"ExtendOverlapByLayers_Threaded");
+        using HostSpace = Kokkos::DefaultHostExecutionSpace;
+        const GO INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+        RCP<const Map<LO,GO,NO> > rowMap = graph->getRowMap();
+        RCP<const Map<LO,GO,NO> > colMap = graph->getColMap();
+        const LO numRows = rowMap->getLocalNumElements();
+        const LO numCols = colMap->getLocalNumElements();
+
+        // rowOf[k] = -1: row of gidOf[k] not held yet
+        Kokkos::UnorderedMap<GO,LO,HostSpace> known(numCols+startMap->getLocalNumElements());
+        Array<GO> gidOf;
+        Array<LO> rowOf;
+        Array<size_t> rowPtr(1,0);
+        Array<LO> cols;
+        auto getOrInsert = [&](const GO gid) {
+            auto result = known.insert(gid,(LO) gidOf.size());
+            while (result.failed()) {
+                known.rehash(max<uint32_t>(2*known.capacity(),128));
+                result = known.insert(gid,(LO) gidOf.size());
+            }
+            if (result.success()) {
+                gidOf.push_back(gid);
+                rowOf.push_back(-1);
+                return (LO) (gidOf.size()-1);
+            }
+            return known.value_at(result.index());
+        };
+
+        Array<LO> knownOfCol(numCols);
+        for (LO c=0; c<numCols; c++) knownOfCol[c] = getOrInsert(colMap->getGlobalElement(c));
+        rowPtr.reserve(numRows+1);
+        cols.reserve(graph->getLocalNumEntries());
+        for (LO i=0; i<numRows; i++) {
+            ArrayView<const LO> indices;
+            graph->getLocalRowView(i,indices);
+            for (LO j=0; j<(LO) indices.size(); j++) cols.push_back(knownOfCol[indices[j]]);
+            rowOf[getOrInsert(rowMap->getGlobalElement(i))] = i;
+            rowPtr.push_back(cols.size());
+        }
+
+        Array<LO> set, next;
+        ArrayView<const GO> startGIDs = startMap->getLocalElementList();
+        set.reserve(startGIDs.size());
+        for (LO s=0; s<(LO) startGIDs.size(); s++) set.push_back(getOrInsert(startGIDs[s]));
+        Array<uint64_t> bits;
+        layerSizes.resize(0);
+        for (int layer=0; layer<overlap; layer++) {
+            Array<GO> missing;
+            for (LO s=0; s<(LO) set.size(); s++) if (rowOf[set[s]] < 0) missing.push_back(gidOf[set[s]]);
+
+            RCP<const Map<LO,GO,NO> > fetchMap = MapFactory<LO,GO,NO>::Build(rowMap->lib(),INVALID,missing(),0,rowMap->getComm());
+            RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(rowMap,fetchMap);
+            RCP<CrsGraph<LO,GO,NO> > fetched = CrsGraphFactory<LO,GO,NO>::Build(fetchMap,graph->getGlobalMaxNumRowEntries());
+            fetched->doImport(*graph,*scatter,ADD);
+            for (LO m=0; m<(LO) missing.size(); m++) {
+                ArrayView<const GO> indices;
+                fetched->getGlobalRowView(missing[m],indices);
+                for (LO j=0; j<(LO) indices.size(); j++) cols.push_back(getOrInsert(indices[j]));
+                rowOf[getOrInsert(missing[m])] = rowPtr.size()-1;
+                rowPtr.push_back(cols.size());
+            }
+
+            bits.assign((gidOf.size()+63)/64,0);
+            const LO* setPtr = set.getRawPtr();
+            const LO* rowOfPtr = rowOf.getRawPtr();
+            const size_t* rowPtrPtr = rowPtr.getRawPtr();
+            const LO* colsPtr = cols.getRawPtr();
+            uint64_t* bitsPtr = bits.getRawPtr();
+            HostSpace hostSpace;
+            Kokkos::parallel_for("FROSch::ExtendOverlapByLayers_Threaded::mark",
+                                 Kokkos::RangePolicy<HostSpace,Kokkos::IndexType<LO> >(hostSpace,0,(LO) set.size()),
+                                 [=](const LO s) {
+                const LO p = rowOfPtr[setPtr[s]];
+                for (size_t j=rowPtrPtr[p]; j<rowPtrPtr[p+1]; j++) {
+                    const LO c = colsPtr[j];
+                    Kokkos::atomic_fetch_or(&bitsPtr[c/64],uint64_t(1) << (c%64));
+                }
+            });
+            hostSpace.fence();
+
+            next.resize(0);
+            for (size_t w=0; w<(size_t) bits.size(); w++) {
+                for (uint64_t b=bits[w]; b; b&=b-1) next.push_back(LO(w*64+Kokkos::countr_zero(b)));
+            }
+            set.swap(next);
+            layerSizes.push_back(set.size());
+        }
+
+        Array<GO> finalGIDs(set.size());
+        for (LO s=0; s<(LO) set.size(); s++) finalGIDs[s] = gidOf[set[s]];
+        sort(finalGIDs);
+        return MapFactory<LO,GO,NO>::Build(rowMap->lib(),INVALID,finalGIDs(),0,rowMap->getComm());
     }
 
     template <class LO,class GO,class NO>
