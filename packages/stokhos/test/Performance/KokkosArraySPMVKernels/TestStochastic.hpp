@@ -1225,14 +1225,6 @@ void performance_test_driver_all( const int pdeg ,
 
     //------------------------------
 
-    const std::vector<double> perf_flat_original =
-      test_product_flat_original_matrix<Scalar,Device>(
-        var_degree , nGrid , nIter , symmetric );
-
-    const std::vector<double> perf_flat_commuted =
-      test_product_flat_commuted_matrix<Scalar,Device>(
-        var_degree , nGrid , nIter , symmetric );
-
     const std::vector<double> perf_matrix =
       test_product_tensor_diagonal_matrix<Scalar,Device>(
         var_degree , nGrid , nIter , symmetric );
