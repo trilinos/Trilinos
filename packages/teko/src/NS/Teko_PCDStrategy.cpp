@@ -197,12 +197,7 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList& pl,
                                               const InverseLibrary& invLib) {
   Teko_DEBUG_SCOPE("PCDStrategy::initializeFromParameterList", 10);
 
-  std::string invStr = "", invFStr = "", invSStr = "";
-#if defined(Teko_ENABLE_Amesos)
-  invStr = "Amesos";
-#elif defined(Teko_ENABLE_Amesos2)
-  invStr = "Amesos2";
-#endif
+  std::string invStr = "Amesos2", invFStr = "", invSStr = "";
 
   massInverseType_ = Diagonal;
 
@@ -251,18 +246,19 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList& pl,
       pcdParams_->isParameter("Tag"), std::logic_error,
       "Teko: Parameter \"Tag\" is not allowed in the sublist \"" + pcdParams_->name() + "\"");
 
-  Teko_DEBUG_MSG_BEGIN(5) DEBUG_STREAM << "PCD Strategy Parameters: " << std::endl;
-  DEBUG_STREAM << "   inv type   = \"" << invStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv F type = \"" << invFStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv Laplace type = \"" << invSStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv Mass type = \"" << Teko::getDiagonalName(massInverseType_) << "\""
-               << std::endl;
-  DEBUG_STREAM << "PCD Strategy Parameter list: " << std::endl;
-  pl.print(DEBUG_STREAM);
+  Teko_DEBUG_MSG_BEGIN(5)
+    DEBUG_STREAM << "PCD Strategy Parameters: " << std::endl;
+    DEBUG_STREAM << "   inv type   = \"" << invStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv F type = \"" << invFStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv Laplace type = \"" << invSStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv Mass type = \"" << Teko::getDiagonalName(massInverseType_) << "\""
+                 << std::endl;
+    DEBUG_STREAM << "PCD Strategy Parameter list: " << std::endl;
+    pl.print(DEBUG_STREAM);
   Teko_DEBUG_MSG_END()
 
-      // build velocity inverse factory
-      invFactoryF_ = invLib.getInverseFactory(invFStr);
+  // build velocity inverse factory
+  invFactoryF_ = invLib.getInverseFactory(invFStr);
 
   if (invFStr == invSStr)
     invFactoryS_ = invFactoryF_;

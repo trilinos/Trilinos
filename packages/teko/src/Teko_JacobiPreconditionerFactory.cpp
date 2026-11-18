@@ -42,28 +42,11 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(
 }
 
 //! Initialize from a parameter list
-void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList& pl)
-#if 0
-{
-   RCP<const InverseLibrary> invLib = getInverseLibrary();
-
-   // get string specifying inverse
-   std::string invStr = pl.get<std::string>("Inverse Type");
-#if defined(Teko_ENABLE_Amesos)
-   if(invStr=="") invStr = "Amesos";
-#elif defined(Teko_ENABLE_Amesos2)
-   if(invStr=="") invStr= "Amesos2";
-#endif
-
-   // based on parameter type build a strategy
-   invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(invLib->getInverseFactory(invStr)));
-}
-#endif
-{
+void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList& pl) {
   Teko_DEBUG_SCOPE("JacobiPreconditionerFactory::initializeFromParameterList", 10);
-  Teko_DEBUG_MSG_BEGIN(9);
-  DEBUG_STREAM << "Parameter list: " << std::endl;
-  pl.print(DEBUG_STREAM);
+  Teko_DEBUG_MSG_BEGIN(9)
+    DEBUG_STREAM << "Parameter list: " << std::endl;
+    pl.print(DEBUG_STREAM);
   Teko_DEBUG_MSG_END();
 
   const std::string inverse_type        = "Inverse Type";
@@ -74,12 +57,7 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   RCP<const InverseLibrary> invLib = getInverseLibrary();
 
   // get string specifying default inverse
-  std::string invStr = "";
-#if defined(Teko_ENABLE_Amesos)
-  invStr = "Amesos";
-#elif defined(Teko_ENABLE_Amesos2)
-  invStr = "Amesos2";
-#endif
+  std::string invStr = "Amesos2";
 
   std::string precStr = "None";
   if (pl.isParameter(inverse_type)) invStr = pl.get<std::string>(inverse_type);

@@ -199,10 +199,11 @@ void PresLaplaceLSCStrategy::initializeState(const BlockedLinearOp& A,
   state->alpha_ = 1.0 / num;
   state->aiD_   = Thyra::scale(state->alpha_, invD);
 
-  Teko_DEBUG_MSG_BEGIN(5) DEBUG_STREAM << "PL-LSC Alpha Parameter = " << state->alpha_ << std::endl;
+  Teko_DEBUG_MSG_BEGIN(5)
+    DEBUG_STREAM << "PL-LSC Alpha Parameter = " << state->alpha_ << std::endl;
   Teko_DEBUG_MSG_END()
 
-      state->setInitialized(true);
+  state->setInitialized(true);
 }
 
 /** Compute the inverses required for the LSC Schur complement
@@ -254,12 +255,7 @@ void PresLaplaceLSCStrategy::computeInverses(const BlockedLinearOp& A,
 void PresLaplaceLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList& pl,
                                                          const InverseLibrary& invLib) {
   // get string specifying inverse
-  std::string invStr = "", invVStr = "", invPStr = "";
-#if defined(Teko_ENABLE_Amesos)
-  invStr = "Amesos";
-#elif defined(Teko_ENABLE_Amesos2)
-  invStr = "Amesos2";
-#endif
+  std::string invStr = "Amesos2", invVStr = "", invPStr = "";
 
   bool useLDU = false;
   scaleType_  = AbsRowSum;
@@ -283,20 +279,21 @@ void PresLaplaceLSCStrategy::initializeFromParameterList(const Teuchos::Paramete
   if (invVStr == "") invVStr = invStr;
   if (invPStr == "") invPStr = invStr;
 
-  Teko_DEBUG_MSG_BEGIN(5) DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
-  DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
-  DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
-  DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
-  DEBUG_STREAM << "   scale type    = " << getDiagonalName(scaleType_) << std::endl;
-  DEBUG_STREAM << "LSC  Pressure Laplace Strategy Parameter list: " << std::endl;
-  pl.print(DEBUG_STREAM);
+  Teko_DEBUG_MSG_BEGIN(5)
+    DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
+    DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
+    DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
+    DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
+    DEBUG_STREAM << "   scale type    = " << getDiagonalName(scaleType_) << std::endl;
+    DEBUG_STREAM << "LSC  Pressure Laplace Strategy Parameter list: " << std::endl;
+    pl.print(DEBUG_STREAM);
   Teko_DEBUG_MSG_END()
 
-      // build velocity inverse factory
-      invFactoryV_ = invLib.getInverseFactory(invVStr);
-  invFactoryP_     = invFactoryV_;  // by default these are the same
-  if (invVStr != invPStr)           // if different, build pressure inverse factory
+  // build velocity inverse factory
+  invFactoryV_ = invLib.getInverseFactory(invVStr);
+  invFactoryP_ = invFactoryV_;  // by default these are the same
+  if (invVStr != invPStr)       // if different, build pressure inverse factory
     invFactoryP_ = invLib.getInverseFactory(invPStr);
 
   // set other parameters
