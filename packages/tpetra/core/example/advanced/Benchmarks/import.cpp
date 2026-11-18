@@ -9,19 +9,6 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 
-#ifdef HAVE_TPETRACORE_EPETRA
-#include <Epetra_Import.h>
-#include <Epetra_Map.h>
-#include <Epetra_Vector.h>
-#ifdef EPETRA_MPI
-#include <Epetra_MpiComm.h>
-#include <mpi.h>
-#else
-#include <Epetra_SerialComm.h>
-#include <Teuchos_DefaultSerialComm.hpp>
-#endif  // EPETRA_MPI
-#endif  // HAVE_TPETRACORE_EPETRA
-
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Import.hpp>
 #include <Tpetra_Vector.hpp>
@@ -42,7 +29,7 @@ using Tpetra::global_size_t;
 
 using ST = Tpetra::Vector<>::scalar_type;
 using LO = Tpetra::Vector<>::local_ordinal_type;
-using GO = int;  // So Epetra and Tpetra can use the same GID lists
+using GO = int;  // Use a single GO type for the benchmark GID lists.
 
 // Create a new timer with the given name if it hasn't already been
 // created, else get the previously created timer with that name.
@@ -119,73 +106,6 @@ void benchmarkTpetraImport(ArrayView<const GO> srcGlobalElts,
   }
 }
 
-#ifdef HAVE_TPETRACORE_EPETRA
-void benchmarkEpetraImport(ArrayView<const int> srcGlobalElts,
-                           ArrayView<const int> destGlobalElts,
-                           const int indexBase,
-                           const Epetra_Comm& comm,
-                           const int numMapCreateTrials,
-                           const int numImportCreateTrials,
-                           const int numVectorCreateTrials,
-                           const int numImportExecTrials) {
-  const int INVALID = -1;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      numMapCreateTrials < 1 && numImportCreateTrials > 0, std::invalid_argument,
-      "numMapCreateTrials must be > 0 if numImportCreateTrials > 0.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      numImportCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument,
-      "numImportCreateTrials must be > 0 if numImportExecTrials > 0.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      numVectorCreateTrials < 1 && numMapCreateTrials > 0, std::invalid_argument,
-      "numVectorCreateTrials must be > 0 if numMapCreateTrials > 0.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      numVectorCreateTrials < 1 && numImportExecTrials > 0, std::invalid_argument,
-      "numVectorCreateTrials must be > 0 if numImportExecTrials > 0.");
-
-  RCP<Time> mapCreateTimer    = getTimer("Epetra: Map: Create");
-  RCP<Time> importCreateTimer = getTimer("Epetra: Import: Create");
-  RCP<Time> vectorCreateTimer = getTimer("Epetra: Vector: Create");
-  RCP<Time> importExecTimer   = getTimer("Epetra: Import: Execute");
-
-  RCP<Epetra_Map> srcMap, destMap;
-  {
-    TimeMonitor timeMon(*mapCreateTimer);
-    for (int k = 0; k < numMapCreateTrials; ++k) {
-      const int srcNumElts     = as<int>(srcGlobalElts.size());
-      const int* const srcElts = srcGlobalElts.getRawPtr();
-      srcMap                   = rcp(new Epetra_Map(INVALID, srcNumElts, srcElts, indexBase, comm));
-
-      const int destNumElts     = as<int>(destGlobalElts.size());
-      const int* const destElts = destGlobalElts.getRawPtr();
-      destMap                   = rcp(new Epetra_Map(INVALID, destNumElts, destElts, indexBase, comm));
-    }
-  }
-  RCP<Epetra_Import> import;
-  {
-    TimeMonitor timeMon(*importCreateTimer);
-    for (int k = 0; k < numImportCreateTrials; ++k) {
-      import = rcp(new Epetra_Import(*srcMap, *destMap));
-    }
-  }
-  RCP<Epetra_Vector> srcVec, destVec;
-  {
-    TimeMonitor timeMon(*vectorCreateTimer);
-    // This benchmarks both vector creation and vector destruction.
-    for (int k = 0; k < numVectorCreateTrials; ++k) {
-      srcVec  = rcp(new Epetra_Vector(*srcMap));
-      destVec = rcp(new Epetra_Vector(*destMap));
-    }
-  }
-  {
-    TimeMonitor timeMon(*importExecTimer);
-    for (int k = 0; k < numImportExecTrials; ++k) {
-      (void)destVec->Import(*srcVec, *import, Add);
-    }
-  }
-}
-#endif  // HAVE_TPETRACORE_EPETRA
-
 void createGidLists(Array<GO>& srcGlobalElts,
                     Array<GO>& destGlobalElts,
                     const int numProcs,
@@ -201,7 +121,7 @@ void createGidLists(Array<GO>& srcGlobalElts,
   const GO myEndSrcGid   = myStartSrcGid + numEltsPerProc - 1;  // inclusive
 
   // Put the GIDs in reverse order, to simulate a noncontiguously
-  // ordered Map.  Neither Epetra nor Tpetra optimize for this case.
+  // ordered Map.  Tpetra does not optimize for this case.
   for (int k = 0; k < numEltsPerProc; ++k) {
     const GO curGid = myStartSrcGid + as<GO>(k);
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -249,18 +169,7 @@ int main(int argc, char* argv[]) {
 
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   {
-    RCP<const Teuchos::Comm<int> > tpetraComm;
-#ifdef HAVE_TPETRACORE_EPETRA
-#ifdef EPETRA_MPI
-    Epetra_MpiComm epetraComm(MPI_COMM_WORLD);
-    tpetraComm = Tpetra::getDefaultComm();
-#else
-    Epetra_SerialComm epetraComm;
-    tpetraComm = rcp(new Teuchos::SerialComm<int>);
-#endif  // EPETRA_MPI
-#else
-    tpetraComm     = Tpetra::getDefaultComm();
-#endif  // HAVE_TPETRACORE_EPETRA
+    RCP<const Teuchos::Comm<int> > tpetraComm = Tpetra::getDefaultComm();
 
     const int numProcs  = tpetraComm->getSize();
     const int myRank    = tpetraComm->getRank();
@@ -269,12 +178,7 @@ int main(int argc, char* argv[]) {
     // Benchmark parameters
     int numEltsPerProc = 100000;
     int numTrials      = 100;
-#ifdef HAVE_TPETRACORE_EPETRA
-    bool runEpetra = true;
-#else
-    bool runEpetra = false;
-#endif  // HAVE_TPETRACORE_EPETRA
-    bool runTpetra = true;
+    bool runTpetra     = true;
 
     CommandLineProcessor cmdp;
     cmdp.setOption("numEltsPerProc", &numEltsPerProc,
@@ -283,8 +187,6 @@ int main(int argc, char* argv[]) {
     cmdp.setOption("numTrials", &numTrials,
                    "Number of times to repeat each "
                    "operation in a timing loop");
-    cmdp.setOption("runEpetra", "noEpetra", &runEpetra,
-                   "Whether to run the Epetra benchmark");
     cmdp.setOption("runTpetra", "noTpetra", &runTpetra,
                    "Whether to run the Tpetra benchmark");
     const CommandLineProcessor::EParseCommandLineReturn parseResult =
@@ -302,11 +204,6 @@ int main(int argc, char* argv[]) {
                                  "numTrials must be nonnegative.");
       TEUCHOS_TEST_FOR_EXCEPTION(numEltsPerProc < 0, std::invalid_argument,
                                  "numEltsPerProc must be nonnegative.");
-#ifndef HAVE_TPETRACORE_EPETRA
-      TEUCHOS_TEST_FOR_EXCEPTION(runEpetra, std::invalid_argument,
-                                 "Tpetra was not built with "
-                                 "Epetra enable, so you cannot run the Epetra benchmark.");
-#endif  // HAVE_TPETRACORE_EPETRA
     }
 
     // Derived benchmark parameters
@@ -321,7 +218,6 @@ int main(int argc, char* argv[]) {
            << "Command-line options:" << endl
            << "  numEltsPerProc: " << numEltsPerProc << endl
            << "  numTrials: " << numTrials << endl
-           << "  runEpetra: " << (runEpetra ? "true" : "false") << endl
            << "  runTpetra: " << (runTpetra ? "true" : "false") << endl
            << endl;
     }
@@ -330,14 +226,6 @@ int main(int argc, char* argv[]) {
     Array<GO> srcGlobalElts, destGlobalElts;
     createGidLists(srcGlobalElts, destGlobalElts, numProcs, myRank,
                    numEltsPerProc, indexBase);
-#ifdef HAVE_TPETRACORE_EPETRA
-    if (runEpetra) {
-      benchmarkEpetraImport(srcGlobalElts, destGlobalElts, indexBase,
-                            epetraComm,
-                            numMapCreateTrials, numImportCreateTrials,
-                            numVectorCreateTrials, numImportExecTrials);
-    }
-#endif  // HAVE_TPETRACORE_EPETRA
     if (runTpetra) {
       benchmarkTpetraImport(srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
                             numMapCreateTrials, numImportCreateTrials,
