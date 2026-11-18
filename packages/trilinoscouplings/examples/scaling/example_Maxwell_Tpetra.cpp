@@ -15,8 +15,8 @@
     This example uses the following Trilinos packages:
     \li        Pamgen to generate a Hexahedral mesh.
     \li        Intrepid2 to build the discretization matrices and right-hand side.
-    \li        Epetra to handle the global matrix and vector.
-    \li        ML to solve the linear system.
+    \li        Tpetra to handle the global matrix and vector.
+    \li        MueLu to precondition the linear system.
 
 
 
@@ -2577,20 +2577,6 @@ void TestPreconditioner_Stratimikos(char ProblemType[],
                                     RCP<Tpetra_MultiVector> & coords,
                                     RCP<Tpetra_MultiVector> & x,
                                     RCP<Tpetra_MultiVector> & b) {
-
-  /* Build the rest of the Stratimikos list */
-  SList.sublist("Preconditioner Types").sublist("ML").set("Base Method Defaults","refmaxwell");
-
-  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").set("D0","substitute const D0");
-  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").set("M0inv","substitute const M0inv");
-  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").set("M1","substitute const M1");
-  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").set("Ms","substitute const Ms");
-  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 11list").set("x-coordinates","substitute x-coordinates");
-  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 11list").set("y-coordinates","substitute y-coordinates");
-  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 11list").set("z-coordinates","substitute z-coordinates");
-  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 22list").set("x-coordinates","substitute x-coordinates");
-  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 22list").set("y-coordinates","substitute y-coordinates");
-  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 22list").set("z-coordinates","substitute z-coordinates");
 
   SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("D0","substitute D0");
   SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M0inv","substitute M0inv");
