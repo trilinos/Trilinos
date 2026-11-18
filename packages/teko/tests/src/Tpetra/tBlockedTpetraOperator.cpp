@@ -16,6 +16,8 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Thyra_DefaultProductMultiVector.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
@@ -490,6 +492,14 @@ RCP<const crs_t> getBlockMatrix(const Teko::TpetraHelpers::BlockedTpetraOperator
   return rcp_dynamic_cast<const crs_t>(shell.GetBlock(i, j), true);
 }
 
+std::vector<RCP<const crs_t>> getShellBlocks(
+    const Teko::TpetraHelpers::BlockedTpetraOperator& shell, int numBlocks) {
+  std::vector<RCP<const crs_t>> blocks;
+  for (int i = 0; i < numBlocks; i++)
+    for (int j = 0; j < numBlocks; j++) blocks.push_back(getBlockMatrix(shell, i, j));
+  return blocks;
+}
+
 // Compare the sub-blocks built by two shells from identical input: they must be bitwise
 // identical, otherwise sub-block assembly is nondeterministic.  Must be called before either
 // shell is reordered (GetBlock indexes the current, possibly reordered, operator).
@@ -577,15 +587,15 @@ std::string checkMappingRoundTrip(const Teko::TpetraHelpers::BlockedTpetraOperat
 // and beta = 1 (the blocked apply accumulates with beta = 1), and check that repeated device
 // applies are bitwise reproducible.  Isolates the SpMV from the Teko/Thyra layers.
 // Collective.
-std::string checkBlockSpmv(const Teko::TpetraHelpers::BlockedTpetraOperator& shell, int numBlocks,
-                           ST tolerance) {
+std::string checkBlockSpmv(const std::vector<RCP<const crs_t>>& blocks, int numBlocks, ST tolerance,
+                           const std::string& name) {
   std::ostringstream ss;
-  ss << "\n      per-block device SpMV vs. host CSR reference (flat shell):";
+  ss << "\n      per-block device SpMV vs. host CSR reference (" << name << " shell):";
 
   bool anyBad = false;
   for (int i = 0; i < numBlocks; i++) {
     for (int j = 0; j < numBlocks; j++) {
-      const auto M = getBlockMatrix(shell, i, j);
+      const auto M = blocks[i * numBlocks + j];
       const int w  = 3;
 
       mv_t xj(M->getDomainMap(), w);
@@ -644,8 +654,251 @@ std::string checkBlockSpmv(const Teko::TpetraHelpers::BlockedTpetraOperator& she
       }
     }
   }
-  ss << "\n      per-block SpMV summary: " << (anyBad ? "MISMATCHES FOUND" : "all blocks ok");
+  ss << "\n      per-block SpMV summary (" << name
+     << " shell): " << (anyBad ? "MISMATCHES FOUND" : "all blocks ok");
   return ss.str();
+}
+
+// Number of non-finite entries in v, summed over all ranks.  Collective.
+int countNonFinite(const mv_t& v) {
+  const auto vH  = v.getLocalViewHost(Tpetra::Access::ReadOnly);
+  int localCount = 0;
+  for (size_t i = 0; i < vH.extent(0); i++)
+    for (size_t j = 0; j < vH.extent(1); j++)
+      if (!std::isfinite(vH(i, j))) localCount++;
+  int count = 0;
+  Teuchos::reduceAll(*v.getMap()->getComm(), Teuchos::REDUCE_SUM, localCount,
+                     Teuchos::outArg(count));
+  return count;
+}
+
+// Rank-local layout of v (reported from rank 0 only).
+std::string describeLayout(const mv_t& v) {
+  const auto vD = v.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  std::ostringstream ss;
+  ss << "local " << v.getLocalLength() << "x" << v.getNumVectors() << ", stride "
+     << (v.isConstantStride() ? std::to_string(v.getStride()) : std::string("non-constant"))
+     << ", view extents " << vD.extent(0) << "x" << vD.extent(1) << ", device ptr "
+     << static_cast<const void*>(vD.data());
+  return ss.str();
+}
+
+// Gather (rank, GID, column) of every non-finite entry onto rank 0.  Collective.
+std::string listNonFinite(const mv_t& v, int maxEntries = 20) {
+  const auto map  = v.getMap();
+  const auto comm = map->getComm();
+  const auto vH   = v.getLocalViewHost(Tpetra::Access::ReadOnly);
+
+  std::vector<double> records;  // rank, gid, column
+  for (size_t i = 0; i < vH.extent(0); i++)
+    for (size_t j = 0; j < vH.extent(1); j++)
+      if (!std::isfinite(vH(i, j)))
+        records.insert(records.end(),
+                       {static_cast<double>(comm->getRank()),
+                        static_cast<double>(map->getGlobalElement(static_cast<LO>(i))),
+                        static_cast<double>(j)});
+
+  const int numRanks = comm->getSize();
+  int myCount        = static_cast<int>(records.size());
+  std::vector<int> counts(numRanks, 0), displs(numRanks, 0);
+  Teuchos::gather<int, int>(&myCount, 1, counts.data(), 1, 0, *comm);
+  for (int p = 1; p < numRanks; p++) displs[p] = displs[p - 1] + counts[p - 1];
+  std::vector<double> all(comm->getRank() == 0 ? displs.back() + counts.back() : 0);
+  Teuchos::gatherv<int, double>(records.data(), myCount, all.data(), counts.data(), displs.data(),
+                                0, *comm);
+
+  std::ostringstream ss;
+  for (size_t k = 0; k < all.size() && static_cast<int>(k / 3) < maxEntries; k += 3)
+    ss << " (rank " << static_cast<int>(all[k]) << ", GID " << static_cast<GO>(all[k + 1])
+       << ", col " << static_cast<int>(all[k + 2]) << ")";
+  return ss.str();
+}
+
+// y = alpha * M * x + beta * y0 computed on the host from an explicit column-map import of x.
+// Collective.
+mv_t hostReferenceApply(const crs_t& M, const mv_t& x, const mv_t& y0, ST alpha, ST beta) {
+  const int w = static_cast<int>(x.getNumVectors());
+  mv_t xcol(M.getColMap(), w);
+  Tpetra::Import<LO, GO, NT> importer(M.getDomainMap(), M.getColMap());
+  xcol.doImport(x, importer, Tpetra::INSERT);
+
+  mv_t y(M.getRangeMap(), w);
+  {
+    const auto lcl = M.getLocalMatrixHost();
+    const auto xh  = xcol.getLocalViewHost(Tpetra::Access::ReadOnly);
+    const auto y0h = y0.getLocalViewHost(Tpetra::Access::ReadOnly);
+    const auto yh  = y.getLocalViewHost(Tpetra::Access::OverwriteAll);
+    for (LO row = 0; row < lcl.numRows(); row++) {
+      for (int c = 0; c < w; c++) {
+        ST sum = 0.0;
+        for (auto k = lcl.graph.row_map(row); k < lcl.graph.row_map(row + 1); k++)
+          sum += lcl.values(k) * xh(lcl.graph.entries(k), c);
+        yh(row, c) = alpha * sum + (beta == 0.0 ? 0.0 : beta * y0h(row, c));
+      }
+    }
+  }
+  return y;
+}
+
+// Re-run a leaf apply that turned finite inputs into non-finite output in several ways, to
+// separate the possible causes.  Collective.
+void diagnoseLeafApply(const crs_t& M, const mv_t& X, const mv_t& Ybefore, const mv_t& Yafter,
+                       ST alpha, ST beta, std::ostringstream& log) {
+  const int w = static_cast<int>(X.getNumVectors());
+  log << "\n          non-finite entries in output:" << listNonFinite(Yafter);
+
+  // (a) same matrix, fresh copies of the inputs
+  {
+    mv_t Xa(X, Teuchos::Copy);
+    mv_t Ya(Ybefore, Teuchos::Copy);
+    M.apply(Xa, Ya, Teuchos::NO_TRANS, alpha, beta);
+    log << "\n          (a) same matrix, fresh input copies:       " << countNonFinite(Ya)
+        << " non-finite";
+  }
+  // (b) deep copy of the matrix, i.e. a fresh SpMV handle and column-map import cache
+  {
+    crs_t Mb(M, Teuchos::Copy);
+    mv_t Yb(Ybefore, Teuchos::Copy);
+    Mb.apply(X, Yb, Teuchos::NO_TRANS, alpha, beta);
+    log << "\n          (b) deep-copied matrix (fresh handle):     " << countNonFinite(Yb)
+        << " non-finite";
+  }
+  // (c) one column at a time (rank-1 SpMV path instead of the multi-vector path)
+  {
+    int nonFinite = 0;
+    for (int c = 0; c < w; c++) {
+      vec_t yc(*Ybefore.getVector(c), Teuchos::Copy);
+      M.apply(*X.getVector(c), yc, Teuchos::NO_TRANS, alpha, beta);
+      nonFinite += countNonFinite(yc);
+    }
+    log << "\n          (c) same matrix, column by column:         " << nonFinite << " non-finite";
+  }
+  // (d) same matrix, multi-vector apply with beta = 1 on a zeroed output
+  {
+    mv_t Yd(Ybefore.getMap(), w);
+    if (beta != 0.0) Yd.update(beta, Ybefore, 0.0);
+    M.apply(X, Yd, Teuchos::NO_TRANS, alpha, 1.0);
+    log << "\n          (d) same matrix, beta = 1 on prescaled y:  " << countNonFinite(Yd)
+        << " non-finite";
+  }
+  // (e) host reference
+  {
+    const mv_t Yref = hostReferenceApply(M, X, Ybefore, alpha, beta);
+    ApplyErrorStats stats;
+    accumulateApplyError(Yafter, Yref, 0, stats);
+    log << "\n          (e) host reference: " << countNonFinite(Yref)
+        << " non-finite; device result vs. host reference: " << describe(stats, 1e-12);
+  }
+}
+
+// Replay a (possibly nested) Thyra blocked apply leaf by leaf, exactly as
+// Thyra::DefaultBlockedLinearOp::applyImpl does, checking every leaf CrsMatrix::apply for
+// non-finite inputs and outputs.  Collective.
+void instrumentedApply(const Thyra::LinearOpBase<ST>& op, const Thyra::MultiVectorBase<ST>& X,
+                       Thyra::MultiVectorBase<ST>& Y, ST alpha, ST beta, const std::string& path,
+                       std::ostringstream& log, bool& introduced,
+                       const std::vector<RCP<const crs_t>>& blocks, int numBlocks) {
+  using TOE = Thyra::TpetraOperatorVectorExtraction<ST, LO, GO, NT>;
+
+  if (const auto blk = dynamic_cast<const Thyra::BlockedLinearOpBase<ST>*>(&op)) {
+    const auto range =
+        rcp_dynamic_cast<const Thyra::DefaultProductVectorSpace<ST>>(blk->productRange(), true);
+    const auto domain =
+        rcp_dynamic_cast<const Thyra::DefaultProductVectorSpace<ST>>(blk->productDomain(), true);
+    const auto Xp =
+        Thyra::castOrCreateSingleBlockProductMultiVector<ST>(domain, Teuchos::rcpFromRef(X));
+    const auto Yp =
+        Thyra::nonconstCastOrCreateSingleBlockProductMultiVector<ST>(range, Teuchos::rcpFromRef(Y));
+
+    for (int i = 0; i < range->numBlocks(); i++) {
+      const auto Yi = Yp->getNonconstMultiVectorBlock(i);
+      for (int j = 0; j < domain->numBlocks(); j++) {
+        const auto opij      = blk->getBlock(i, j);
+        const std::string ij = path + "(" + std::to_string(i) + "," + std::to_string(j) + ")";
+        const ST b           = (j == 0) ? beta : 1.0;
+        if (nonnull(opij))
+          instrumentedApply(*opij, *Xp->getMultiVectorBlock(j), *Yi, alpha, b, ij, log, introduced,
+                            blocks, numBlocks);
+        else if (j == 0)
+          Thyra::scale(beta, Yi.ptr());
+      }
+    }
+    return;
+  }
+
+  const auto tpetraOp = dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>*>(&op);
+  TEUCHOS_ASSERT(tpetraOp != nullptr);
+  const auto M  = rcp_dynamic_cast<const crs_t>(tpetraOp->getConstTpetraOperator(), true);
+  const auto tX = TOE::getConstTpetraMultiVector(Teuchos::rcpFromRef(X));
+  const auto tY = TOE::getTpetraMultiVector(Teuchos::rcpFromRef(Y));
+
+  const mv_t Xcopy(*tX, Teuchos::Copy);
+  const mv_t Ybefore(*tY, Teuchos::Copy);
+  const int nfX      = countNonFinite(*tX);
+  const int nfBefore = countNonFinite(*tY);
+
+  M->apply(*tX, *tY, Teuchos::NO_TRANS, alpha, beta);
+  const int nfAfter = countNonFinite(*tY);
+
+  const bool aliased = tX->getLocalViewDevice(Tpetra::Access::ReadOnly).data() ==
+                       tY->getLocalViewDevice(Tpetra::Access::ReadOnly).data();
+
+  // identify the leaf by its original (unreordered) block indices
+  std::string original = "?";
+  for (size_t b = 0; b < blocks.size(); b++)
+    if (blocks[b].get() == M.get())
+      original = "(" + std::to_string(b / numBlocks) + "," + std::to_string(b % numBlocks) + ")";
+
+  log << "\n        leaf " << path << " = original block " << original << ": "
+      << M->getGlobalNumRows() << "x" << M->getGlobalNumCols() << " nnz "
+      << M->getGlobalNumEntries() << ", beta " << beta
+      << ", non-finite X/Y-before/Y-after = " << nfX << "/" << nfBefore << "/" << nfAfter
+      << (aliased ? ", X AND Y ALIAS" : "") << "\n          X: " << describeLayout(*tX)
+      << "\n          Y: " << describeLayout(*tY);
+
+  const bool inputsFinite = nfX == 0 && (beta == 0.0 || nfBefore == 0);
+  if (inputsFinite && nfAfter > 0 && !introduced) {
+    introduced = true;
+    log << "\n          ^^^ NON-FINITE VALUES INTRODUCED BY THIS CrsMatrix::apply ^^^";
+    diagnoseLeafApply(*M, Xcopy, Ybefore, *tY, alpha, beta, log);
+  }
+}
+
+// Replay shell.apply(x, y) with y initially zero, exactly as TpetraOperatorWrapper::apply
+// does, but with the Thyra apply instrumented leaf by leaf.  Collective.
+std::string instrumentedShellApply(const Teko::TpetraHelpers::BlockedTpetraOperator& shell,
+                                   const mv_t& x, const std::string& name,
+                                   const std::vector<RCP<const crs_t>>& blocks, int numBlocks) {
+  const auto strategy = shell.getMapStrategy();
+  const auto op       = shell.getThyraOp();
+  const int w         = static_cast<int>(x.getNumVectors());
+
+  RCP<Thyra::MultiVectorBase<ST>> tX = Thyra::createMembers(op->domain(), w);
+  RCP<Thyra::MultiVectorBase<ST>> tY = Thyra::createMembers(op->range(), w);
+  Thyra::assign(tX.ptr(), 0.0);
+  Thyra::assign(tY.ptr(), 0.0);
+
+  mv_t y(shell.getRangeMap(), w);
+  strategy->copyTpetraIntoThyra(x, tX.ptr());
+  strategy->copyTpetraIntoThyra(y, tY.ptr());
+
+  std::ostringstream log;
+  log << "\n      instrumented leaf-by-leaf replay of the " << name
+      << " shell apply (leaf paths are in the shell's own, possibly reordered, block indices):";
+  bool introduced = false;
+  instrumentedApply(*op, *tX, *tY, 1.0, 0.0, "", log, introduced, blocks, numBlocks);
+
+  strategy->copyThyraIntoTpetra(tY, y);
+  const int nfReplay = countNonFinite(y);
+
+  mv_t yActual(shell.getRangeMap(), w);
+  shell.apply(x, yActual);
+  const int nfActual = countNonFinite(yActual);
+
+  log << "\n        " << name << " replay result: " << nfReplay
+      << " non-finite; actual shell.apply on same input: " << nfActual << " non-finite"
+      << (introduced ? "" : " (no leaf apply introduced non-finite values)");
+  return log.str();
 }
 
 }  // namespace
@@ -1021,6 +1274,10 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   std::string blockReport;
   const bool blocksSame = compareShellBlocks(flatShell, reorderShell, numBlocks, blockReport);
 
+  // capture the sub-block matrices now: after reordering, GetBlock indexes the reordered op
+  const auto flatBlocks    = getShellBlocks(flatShell, numBlocks);
+  const auto reorderBlocks = getShellBlocks(reorderShell, numBlocks);
+
   Teko::BlockReorderManager brm;
   switch (total) {
     case 0:
@@ -1154,10 +1411,14 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
       }
 
       diag << checkMappingRoundTrip(flatShell, *xFirstFail, "flat")
-           << checkMappingRoundTrip(reorderShell, *xFirstFail, "reordered");
+           << checkMappingRoundTrip(reorderShell, *xFirstFail, "reordered")
+           << instrumentedShellApply(reorderShell, *xFirstFail, "reordered", reorderBlocks,
+                                     numBlocks)
+           << instrumentedShellApply(flatShell, *xFirstFail, "flat", flatBlocks, numBlocks);
     }
 
-    diag << checkBlockSpmv(flatShell, numBlocks, tolerance_);
+    diag << checkBlockSpmv(reorderBlocks, numBlocks, tolerance_, "reordered")
+         << checkBlockSpmv(flatBlocks, numBlocks, tolerance_, "flat");
     failMsg = diag.str();
   }
   TEST_ASSERT(allOk && blocksSame, failMsg);
