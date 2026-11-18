@@ -134,29 +134,6 @@ Below are links to other related documentation:
 Documentation</a></b>: This is the main documentation page for the %Thyra
 package which provides an outline for all %Thyra software.
 
-<li><b><a href="../../../../../../epetra/thyra/doc/html/index.html">ANA Operator/Vector
-Adapters for Epetra</a></b>: This software allows the creation of
-<tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt>,
-<tt>Thyra::MultiVectorBase</tt>, and <tt>Thyra::LinearOpBase</tt> objects out
-of Epetra objects.
-
-<li><b><a href="../../../../../../amesos/thyra/doc/html/index.html">ANA Linear Solver
-Adapters for Amesos</a></b>: This software defines the implementation of the
-extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
-<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of
-<tt>Amesos_BaseSolver</tt> implementations.  These adapters allow a client to
-take any <tt>Epetra_RowMatrix</tt> object embedded in a
-<tt>Thyra::EpetraLinearOp</tt> object and immediately use to to define a
-direct linear solver.
-
-<li><b><a href="../../../../../../aztecoo/thyra/doc/html/index.html">ANA Linear Solver
-Adapters for AztecOO</a></b>: This software defines the implementation of the
-extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
-<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of the <tt>AztecOO</tt>
-class.  These adapters allow a client to take any <tt>Epetra_RowMatrix</tt>
-object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
-to to define an iterative linear solver such as GMRES or CG.
-
 </ul>
 
 */
@@ -302,7 +279,7 @@ numerical algorithms to be written in a general form to support a number of
 different scalar types (e.g. real, complex, extended precision etc.).  While
 the interfaces, the composite classes, and many of the concrete
 implementations are fully templated some are not and can only support one
-scalar type (e.g. see the Epetra/Thyra adapters).
+ scalar type.
 
 See the <tt>Thyra::sillyCgSolve()</tt> and <tt>Thyra::sillyPowerMethod()</tt>
 examples for how this templating is used.
@@ -920,12 +897,6 @@ Click \ref Thyra_Op_Vec_adapters_MPI_concrete_std_grp "here" if you want to
 know about some general, yet very efficient, concrete implementations of
 MPI-based SPMD vector spaces, vectors and multi-vectors.
 
-<li> <b><a href="../../../../../../epetra/thyra/doc/html/index.html">Epetra to Thyra Operator/Vector Adapters</a></b> (separate doxygen collection)
-
-Click <a href="../../../../../../epetra/thyra/doc/html/index.html">here</a> if
-you want to know about some general code that takes Epetra objects and creates
-%Thyra wrappers for them.
-
 </ol>
 
 </ol>
@@ -1328,9 +1299,6 @@ linear operators.
 package with an example linear ANA algorithm for the power method for
 estimating the dominate eigen value of a matrix.
 
-These example programs are meant to mimic the power method example
-program shown in the <a href="../../../../../../epetra/doc/html/index.html#example">Epetra
-documentation</a>.
 
 The power method ANA is implemented in the function
 <tt>sillyPowerMethod()</tt> and its implementation is shown below:
