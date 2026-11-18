@@ -278,7 +278,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryNonLegacyFallbackRejects, M, MA, Sca
   Xpetra::UnderlyingLib lib = testMap.lib();
   using io_type             = Xpetra::IO<Scalar, LO, GO, Node>;
 
-  TEST_THROW(io_type::Read("test.mtx", lib, comm, true), std::exception);
+  TEST_THROW(io_type::Read("test.mtx", lib, comm, true), std::runtime_error);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(IO, BinaryCustomColMap, M, MA, Scalar, LO, GO, Node) {
