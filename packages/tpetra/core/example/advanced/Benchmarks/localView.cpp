@@ -69,9 +69,9 @@ void setCmdLineOpts(CmdLineOpts& opts,
                     Teuchos::CommandLineProcessor& clp) {
   // Set default values of command-line options.
 
-  opts.numTrials    = 250;
-  opts.lclNumRows   = 10000;
-  opts.numEntPerRow = 10;
+  opts.numTrials     = 250;
+  opts.lclNumRows    = 10000;
+  opts.numEntPerRow  = 10;
   opts.testTpetra    = true;
   opts.testTpetraLen = true;
   opts.testKokkos    = true;
