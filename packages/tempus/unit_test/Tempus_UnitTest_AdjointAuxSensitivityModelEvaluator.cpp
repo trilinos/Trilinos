@@ -9,7 +9,9 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -227,6 +229,57 @@ TEUCHOS_UNIT_TEST(AdjointAuxSensitivityModelEvaluator, W_Solve)
   out << "|W*x - b| = " << Thyra::norm_2(*r) << ", |b| = " << Thyra::norm_2(*b)
       << std::endl;
   TEST_COMPARE(Thyra::norm_2(*r), <=, 1.0e-12 * Thyra::norm_2(*b));
+}
+
+// ************************************************************
+// The factory of W rejects, when reinitializing, an operator that is not
+// block triangular or has another number of blocks, and leaves the solver
+// unchanged (it checks the operator before reinitializing the diagonal
+// blocks).
+TEUCHOS_UNIT_TEST(BlockedTriangularLinearOpWithSolveFactory,
+                  ReinitializeRejected)
+{
+  typedef Thyra::LinearOpBase<double> LinearOp;
+  typedef Thyra::PhysicallyBlockedLinearOpBase<double> PBLOB;
+  SinCosSetup setup;
+  RCP<AuxME> aux = setup.createAuxME("Time Integral");
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > lowsf =
+      aux->get_W_factory();
+  // The two W differ in their diagonal blocks
+  RCP<LinearOp> W  = evalW(*aux, randomInArgs(*aux, 0.5, 3.0, 0.7));
+  RCP<LinearOp> W2 = evalW(*aux, randomInArgs(*aux, 0.5, 1.5, 0.4));
+  RCP<Thyra::LinearOpWithSolveBase<double> > W_lows =
+      Thyra::linearOpWithSolve<double>(*lowsf, W);
+
+  // Relative residual of the solve of op*x = b with W_lows
+  auto solveResidual = [&](const LinearOp& op) {
+    RCP<Vector> b = Thyra::createMember(op.range());
+    Thyra::randomize(-1.0, 1.0, b.ptr());
+    RCP<Vector> x = Thyra::createMember(op.domain());
+    Thyra::assign(x.ptr(), 0.0);
+    Thyra::solve<double>(*W_lows, Thyra::NOTRANS, *b, x.ptr());
+    RCP<Vector> r = b->clone_v();
+    Thyra::apply(op, Thyra::NOTRANS, *x, r.ptr(), 1.0, -1.0);
+    return Thyra::norm_2(*r) / Thyra::norm_2(*b);
+  };
+
+  // W2 with a block above the diagonal, and its first diagonal block alone
+  RCP<const PBLOB> W2_blo   = Teuchos::rcp_dynamic_cast<const PBLOB>(W2, true);
+  RCP<const LinearOp> W2_10 = W2_blo->getBlock(1, 0).assert_not_null();
+  RCP<const LinearOp> notTriangular =
+      Thyra::block2x2<double>(W2_blo->getBlock(0, 0), Thyra::adjoint(W2_10),
+                              W2_10, W2_blo->getBlock(1, 1));
+  RCP<const LinearOp> oneBlock = Thyra::block1x1<double>(W2_blo->getBlock(0, 0));
+  TEST_THROW(Thyra::initializeOp<double>(*lowsf, notTriangular, W_lows.ptr()),
+             std::logic_error);
+  TEST_THROW(Thyra::initializeOp<double>(*lowsf, oneBlock, W_lows.ptr()),
+             std::logic_error);
+
+  // W_lows still solves W, and can be reinitialized with W2
+  TEST_COMPARE(solveResidual(*W), <=, 1.0e-12);
+  Thyra::initializeOp<double>(*lowsf, W2, W_lows.ptr());
+  TEST_COMPARE(solveResidual(*W2), <=, 1.0e-12);
+  TEST_COMPARE(solveResidual(*W), >, 1.0e-6);
 }
 
 // ************************************************************
