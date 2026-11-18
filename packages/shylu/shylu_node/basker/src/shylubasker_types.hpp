@@ -12,6 +12,13 @@
 
 #include <exception>
 #include "Teuchos_TestForException.hpp"
+#include "ShyLU_NodeBasker_config.h"
+#ifdef HAVE_SHYLU_NODEBASKER_SCOTCH
+  #include "scotch.h"
+#endif
+#ifdef HAVE_SHYLU_NODEBASKER_METIS
+ #include "metis.h"
+#endif
 
 //#define BASKER_DEBUG
 
@@ -152,7 +159,13 @@ enum BASKER_INCOMPLETE_CODE
 #define MATRIX_VIEW_2DARRAY       Kokkos::View<MATRIX_VIEW_1DARRAY*,  BASKER_EXE_SPACE>
 #define THREAD_1DARRAY            Kokkos::View<BASKER_THREAD*,        BASKER_EXE_SPACE>
 
-#define INT_1DARRAY_PAIRS        Kokkos::View<std::pair<Int,Int>*,  BASKER_EXE_SPACE>
+#define INT_1DARRAY_PAIRS         Kokkos::View<std::pair<Int,Int>*,  BASKER_EXE_SPACE>
+
+#ifdef HAVE_SHYLU_NODEBASKER_METIS
+#define METIS_1DARRAY             Kokkos::View<idx_t*,  BASKER_EXE_SPACE>
+#define METIS_2DARRAY             Kokkos::View<idx_t**, BASKER_EXE_SPACE>
+#endif
+
 //Macro Memory Calls
 //MALLOC
 #define MALLOC_INT_1DARRAY_PAIRS(a,s)   \
