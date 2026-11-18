@@ -178,7 +178,6 @@ int main(int argc, char* argv[]) {
     // Benchmark parameters
     int numEltsPerProc = 100000;
     int numTrials      = 100;
-    bool runTpetra     = true;
 
     CommandLineProcessor cmdp;
     cmdp.setOption("numEltsPerProc", &numEltsPerProc,
@@ -187,8 +186,6 @@ int main(int argc, char* argv[]) {
     cmdp.setOption("numTrials", &numTrials,
                    "Number of times to repeat each "
                    "operation in a timing loop");
-    cmdp.setOption("runTpetra", "noTpetra", &runTpetra,
-                   "Whether to run the Tpetra benchmark");
     const CommandLineProcessor::EParseCommandLineReturn parseResult =
         cmdp.parse(argc, argv);
     if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
@@ -218,7 +215,6 @@ int main(int argc, char* argv[]) {
            << "Command-line options:" << endl
            << "  numEltsPerProc: " << numEltsPerProc << endl
            << "  numTrials: " << numTrials << endl
-           << "  runTpetra: " << (runTpetra ? "true" : "false") << endl
            << endl;
     }
 
@@ -226,11 +222,9 @@ int main(int argc, char* argv[]) {
     Array<GO> srcGlobalElts, destGlobalElts;
     createGidLists(srcGlobalElts, destGlobalElts, numProcs, myRank,
                    numEltsPerProc, indexBase);
-    if (runTpetra) {
-      benchmarkTpetraImport(srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
-                            numMapCreateTrials, numImportCreateTrials,
-                            numVectorCreateTrials, numImportExecTrials);
-    }
+    benchmarkTpetraImport(srcGlobalElts, destGlobalElts, indexBase, tpetraComm,
+                          numMapCreateTrials, numImportCreateTrials,
+                          numVectorCreateTrials, numImportExecTrials);
     TimeMonitor::report(tpetraComm.ptr(), std::cout);
   }
   return EXIT_SUCCESS;

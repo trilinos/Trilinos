@@ -167,15 +167,11 @@ int main(int argc, char* argv[]) {
     int numIndsPerProc = 100000;
     int numTrials      = 1000;
 
-    bool runTpetra = true;
-
     CommandLineProcessor cmdp;
     cmdp.setOption("numIndsPerProc", &numIndsPerProc,
                    "Number of global indices "
                    "owned by each process");
     cmdp.setOption("numTrials", &numTrials, "Number of timing loop iterations for each event to time");
-    cmdp.setOption("runTpetra", "noTpetra", &runTpetra,
-                   "Whether to run the Tpetra benchmark");
     const CommandLineProcessor::EParseCommandLineReturn parseResult =
         cmdp.parse(argc, argv);
     if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
@@ -196,7 +192,6 @@ int main(int argc, char* argv[]) {
            << "Command-line options:" << endl
            << "  numIndsPerProc: " << numIndsPerProc << endl
            << "  numTrials: " << numTrials << endl
-           << "  runTpetra: " << (runTpetra ? "true" : "false") << endl
            << endl;
     }
 
@@ -207,14 +202,12 @@ int main(int argc, char* argv[]) {
     const int numVecDotTrials    = numTrials;
 
     // Run the benchmark
-    if (runTpetra) {
-      benchmarkTpetra(tpetraComm, numIndsPerProc, indexBase,
-                      numMapCreateTrials,
-                      numVecCreateTrials,
-                      numVecRandTrials,
-                      numVecNormTrials,
-                      numVecDotTrials);
-    }
+    benchmarkTpetra(tpetraComm, numIndsPerProc, indexBase,
+                    numMapCreateTrials,
+                    numVecCreateTrials,
+                    numVecRandTrials,
+                    numVecNormTrials,
+                    numVecDotTrials);
     TimeMonitor::report(tpetraComm.ptr(), std::cout);
   }
   return EXIT_SUCCESS;
