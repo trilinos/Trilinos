@@ -226,8 +226,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
   using row_map_type          = local_matrix_type::row_map_type::non_const_type;
   using values_type           = local_matrix_type::values_type::non_const_type;
   using index_type            = local_matrix_type::index_type::non_const_type;
-  auto prefixSumEntriesPerRow = row_map_type(
-      Kokkos::ViewAllocateWithoutInitializing("prefixSumEntriesPerRow"), numMyRows + 1);
+  auto prefixSumEntriesPerRow = row_map_type("prefixSumEntriesPerRow", numMyRows + 1);
 
   const auto invalid = Teuchos::OrdinalTraits<GO>::invalid();
 
@@ -315,8 +314,8 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
       prefixSumEntriesPerRow, localColumnIndices, values);
 
   auto lcl_mat = Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type(
-      "localMat", numMyRows, maxNumEntriesSubblock, totalNumOwnedCols, values,
-      prefixSumEntriesPerRow, localColumnIndices);
+      "localMat", numMyRows, static_cast<LO>(colMap->getLocalNumElements()), totalNumOwnedCols,
+      values, prefixSumEntriesPerRow, localColumnIndices);
 
   RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> mat =
       rcp(new Tpetra::CrsMatrix<ST, LO, GO, NT>(lcl_mat, rowMap, colMap, domainMap, rangeMap));
