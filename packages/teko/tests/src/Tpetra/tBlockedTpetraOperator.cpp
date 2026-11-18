@@ -30,6 +30,9 @@
 
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+
+#include "KokkosKernels_config.h"
 
 #include "tBlockedTpetraOperator.hpp"
 
@@ -40,9 +43,13 @@
 #include "Teko_BlockedTpetraOperator.hpp"
 #include "Teko_TpetraHelpers.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <iomanip>
+#include <iostream>
 #include <limits>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -222,6 +229,10 @@ struct ApplyErrorStats {
   int worstOwner  = -1;
   ST worstTestVal = 0.0;
   ST worstRefVal  = 0.0;
+
+  // relative error of every column of every trial, in order
+  std::vector<ST> history;
+  int width = 0;
 };
 
 // Find the entry of column j with the largest absolute error.  Collective.
@@ -281,10 +292,12 @@ void accumulateApplyError(const mv_t& test, const mv_t& ref, int trial, ApplyErr
   ref.norm2(Teuchos::ArrayView<ST>(refNorm));
 
   stats.numTrials++;
+  stats.width = width;
   for (int j = 0; j < width; j++) {
     // fall back to the absolute error if the reference is identically zero
     const ST relErr   = refNorm[j] > 0.0 ? errNorm[j] / refNorm[j] : errNorm[j];
     const bool finite = std::isfinite(relErr);
+    stats.history.push_back(relErr);
 
     // norms are global, so every rank takes the same branch here
     const bool firstNonFinite = !finite && stats.allFinite;
@@ -319,6 +332,319 @@ std::string describe(const ApplyErrorStats& stats, ST tolerance) {
        << "), test = " << stats.worstTestVal << ", ref = " << stats.worstRefVal
        << ", test - ref = " << (stats.worstTestVal - stats.worstRefVal);
   }
+  if (!passed(stats, tolerance) && stats.width > 0) {
+    ss << std::setprecision(3) << "\n      relative error per trial (one value per column):";
+    for (size_t k = 0; k < stats.history.size(); k++) {
+      if (k % stats.width == 0) ss << "\n        trial " << k / stats.width << ":";
+      ss << " " << stats.history[k];
+    }
+  }
+  return ss.str();
+}
+
+// The test driver sends failure messages to a log file (failure.log by default), which CI
+// does not capture.  Also echo failures to stdout on rank 0 so they show up in the CI log.
+void echoFailure(const Teuchos::Comm<int>& comm, bool ok, const std::string& msg) {
+  if (!ok && comm.getRank() == 0) std::cout << msg << std::endl;
+}
+
+// Gather onto rank 0 the partitioning (local rows and block sizes per rank) and every entry
+// where any two of yf (flat), yr (reordered), ys (monolithic) differ by more than
+// tolerance * ||ys(:, j)||.  Returns the formatted report on rank 0 and an empty string
+// elsewhere.  Collective.
+std::string describeLargeEntries(const mv_t& yf, const mv_t& yr, const mv_t& ys,
+                                 const std::vector<std::vector<GO>>& vars, ST tolerance,
+                                 int maxEntries = 100) {
+  const auto map     = ys.getMap();
+  const auto comm    = map->getComm();
+  const int myRank   = comm->getRank();
+  const int numRanks = comm->getSize();
+  const int width    = static_cast<int>(ys.getNumVectors());
+  const int numBlks  = static_cast<int>(vars.size());
+  const LO numLocal  = static_cast<LO>(ys.getLocalLength());
+
+  std::vector<ST> refNorm(width);
+  ys.norm2(Teuchos::ArrayView<ST>(refNorm));
+
+  std::map<GO, int> blockOf;
+  for (int b = 0; b < numBlks; b++)
+    for (const GO gid : vars[b]) blockOf[gid] = b;
+
+  const auto yfH = yf.getLocalViewHost(Tpetra::Access::ReadOnly);
+  const auto yrH = yr.getLocalViewHost(Tpetra::Access::ReadOnly);
+  const auto ysH = ys.getLocalViewHost(Tpetra::Access::ReadOnly);
+
+  // each record: gid, block, column, flat, reordered, monolithic
+  const int recLen = 6;
+  std::vector<double> records;
+  for (LO i = 0; i < numLocal; i++) {
+    const GO gid  = map->getGlobalElement(i);
+    const auto it = blockOf.find(gid);
+    for (int j = 0; j < width; j++) {
+      const ST scale = tolerance * (refNorm[j] > 0.0 ? refNorm[j] : 1.0);
+      const ST f = yfH(i, j), r = yrH(i, j), s = ysH(i, j);
+      const ST d = std::max({std::abs(r - f), std::abs(f - s), std::abs(r - s)});
+      if (!std::isfinite(d) || d > scale) {
+        records.insert(records.end(), {static_cast<double>(gid),
+                                       static_cast<double>(it == blockOf.end() ? -1 : it->second),
+                                       static_cast<double>(j), f, r, s});
+      }
+    }
+  }
+
+  // per rank: number of local rows, size of each block, number of doubles in records
+  std::vector<int> layout(numBlks + 2);
+  layout[0] = numLocal;
+  for (int b = 0; b < numBlks; b++) layout[b + 1] = static_cast<int>(vars[b].size());
+  layout[numBlks + 1] = static_cast<int>(records.size());
+
+  const int layoutLen = numBlks + 2;
+  std::vector<int> allLayout(myRank == 0 ? layoutLen * numRanks : 0);
+  Teuchos::gather<int, int>(layout.data(), layoutLen, allLayout.data(), layoutLen, 0, *comm);
+
+  std::vector<int> counts(numRanks, 0), displs(numRanks, 0);
+  if (myRank == 0) {
+    for (int p = 0; p < numRanks; p++) {
+      counts[p] = allLayout[p * layoutLen + numBlks + 1];
+      displs[p] = (p == 0) ? 0 : displs[p - 1] + counts[p - 1];
+    }
+  }
+  std::vector<double> allRecords(myRank == 0 ? displs.back() + counts.back() : 0);
+  Teuchos::gatherv<int, double>(records.data(), static_cast<int>(records.size()), allRecords.data(),
+                                counts.data(), displs.data(), 0, *comm);
+
+  if (myRank != 0) return "";
+
+  std::ostringstream ss;
+  ss << std::scientific << std::setprecision(16);
+  ss << "\n      partitioning:";
+  for (int p = 0; p < numRanks; p++) {
+    ss << "\n        rank " << p << ": " << allLayout[p * layoutLen]
+       << " local rows, block sizes [";
+    for (int b = 0; b < numBlks; b++) ss << " " << allLayout[p * layoutLen + b + 1];
+    ss << " ], " << counts[p] / recLen << " entries out of tolerance";
+  }
+
+  const int numRecords = static_cast<int>(allRecords.size()) / recLen;
+  ss << "\n      entries where flat/reordered/matrix disagree by more than tolerance * ||matrix||"
+     << " (" << numRecords << " total, showing up to " << maxEntries << "):";
+  int shown = 0;
+  for (int p = 0; p < numRanks && shown < maxEntries; p++) {
+    for (int k = displs[p]; k < displs[p] + counts[p] && shown < maxEntries; k += recLen, shown++) {
+      const double* rec = &allRecords[k];
+      ss << "\n        rank " << p << " GID " << static_cast<GO>(rec[0]) << " block "
+         << static_cast<int>(rec[1]) << " col " << static_cast<int>(rec[2]) << ": flat = " << rec[3]
+         << ", reordered = " << rec[4] << ", matrix = " << rec[5]
+         << ", reordered - flat = " << (rec[4] - rec[3])
+         << ", flat - matrix = " << (rec[3] - rec[5]);
+    }
+  }
+  return ss.str();
+}
+
+// ---------------------------------------------------------------------------------------
+// Diagnostics run by test_reorder on failure.  Each one isolates one stage of the blocked
+// apply (block assembly, vector plumbing, per-block SpMV, synchronization).
+// ---------------------------------------------------------------------------------------
+
+std::string describeConfiguration(const Teuchos::Comm<int>& comm) {
+  using exec_space = NT::execution_space;
+  using mem_space  = NT::memory_space;
+
+  const char* launchBlocking = std::getenv("CUDA_LAUNCH_BLOCKING");
+
+  std::ostringstream ss;
+  ss << "\n      configuration: " << comm.getSize() << " ranks, Kokkos " << KOKKOS_VERSION
+     << ", Kokkos Kernels " << KOKKOSKERNELS_VERSION << ", execution space " << exec_space::name()
+     << ", memory space " << mem_space::name();
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  ss << ", cuSPARSE TPL enabled";
+#else
+  ss << ", cuSPARSE TPL disabled";
+#endif
+  ss << ", Tpetra assumes GPU-aware MPI = "
+     << (Tpetra::Details::Behavior::assumeMpiIsGPUAware() ? "yes" : "no")
+     << ", CUDA_LAUNCH_BLOCKING = " << (launchBlocking ? launchBlocking : "(unset)");
+  return ss.str();
+}
+
+// Report whether a value computed from global reductions agrees on every rank.  Collective.
+std::string checkRankConsistency(const Teuchos::Comm<int>& comm, ST value,
+                                 const std::string& name) {
+  ST minVal = 0.0, maxVal = 0.0;
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_MIN, value, Teuchos::outArg(minVal));
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, value, Teuchos::outArg(maxVal));
+
+  std::ostringstream ss;
+  ss << std::scientific << std::setprecision(16);
+  ss << "\n      cross-rank consistency of " << name << ": ";
+  if (minVal == maxVal)
+    ss << "identical on all ranks";
+  else
+    ss << "DIFFERS ACROSS RANKS (min = " << minVal << ", max = " << maxVal << ")";
+  return ss.str();
+}
+
+RCP<const crs_t> getBlockMatrix(const Teko::TpetraHelpers::BlockedTpetraOperator& shell, int i,
+                                int j) {
+  return rcp_dynamic_cast<const crs_t>(shell.GetBlock(i, j), true);
+}
+
+// Compare the sub-blocks built by two shells from identical input: they must be bitwise
+// identical, otherwise sub-block assembly is nondeterministic.  Must be called before either
+// shell is reordered (GetBlock indexes the current, possibly reordered, operator).
+// Collective.
+bool compareShellBlocks(const Teko::TpetraHelpers::BlockedTpetraOperator& a,
+                        const Teko::TpetraHelpers::BlockedTpetraOperator& b, int numBlocks,
+                        std::string& report) {
+  const auto comm = a.getRangeMap()->getComm();
+
+  std::ostringstream ss;
+  ss << "\n      sub-block assembly determinism (flat shell vs. reordered shell, before reorder):";
+  bool allSame = true;
+  for (int i = 0; i < numBlocks; i++) {
+    for (int j = 0; j < numBlocks; j++) {
+      const auto Ma = getBlockMatrix(a, i, j);
+      const auto Mb = getBlockMatrix(b, i, j);
+
+      const bool sameMaps = Ma->getRowMap()->isSameAs(*Mb->getRowMap()) &&
+                            Ma->getColMap()->isSameAs(*Mb->getColMap()) &&
+                            Ma->getDomainMap()->isSameAs(*Mb->getDomainMap()) &&
+                            Ma->getRangeMap()->isSameAs(*Mb->getRangeMap());
+
+      const auto la = Ma->getLocalMatrixHost();
+      const auto lb = Mb->getLocalMatrixHost();
+
+      int localStructDiffs = 0;
+      int localValueDiffs  = 0;
+      if (la.numRows() != lb.numRows() || la.nnz() != lb.nnz()) {
+        localStructDiffs++;
+      } else {
+        for (LO r = 0; r <= la.numRows(); r++)
+          if (la.graph.row_map(r) != lb.graph.row_map(r)) localStructDiffs++;
+        for (size_t k = 0; localStructDiffs == 0 && k < la.nnz(); k++) {
+          const GO ca = Ma->getColMap()->getGlobalElement(la.graph.entries(k));
+          const GO cb = Mb->getColMap()->getGlobalElement(lb.graph.entries(k));
+          if (ca != cb) localStructDiffs++;
+          if (la.values(k) != lb.values(k)) localValueDiffs++;
+        }
+      }
+
+      int structDiffs = 0, valueDiffs = 0;
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, localStructDiffs,
+                         Teuchos::outArg(structDiffs));
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, localValueDiffs, Teuchos::outArg(valueDiffs));
+
+      if (!sameMaps || structDiffs != 0 || valueDiffs != 0) {
+        allSame = false;
+        ss << "\n        block (" << i << "," << j << "): DIFFERS - maps "
+           << (sameMaps ? "same" : "DIFFERENT") << ", " << structDiffs
+           << " structural differences, " << valueDiffs << " value differences";
+      }
+    }
+  }
+  if (allSame) ss << " all " << numBlocks * numBlocks << " blocks bitwise identical";
+  report = ss.str();
+  return allSame;
+}
+
+// Copy x into the shell's Thyra product layout and back; the result must equal x bitwise.
+// Isolates the vector plumbing (one2many/many2one, Import/Export, reorder flattening).
+// Collective.
+std::string checkMappingRoundTrip(const Teko::TpetraHelpers::BlockedTpetraOperator& shell,
+                                  const mv_t& x, const std::string& name) {
+  const auto strategy = shell.getMapStrategy();
+  const auto op       = shell.getThyraOp();
+
+  ApplyErrorStats stats;
+  for (int trial = 0; trial < 2; trial++) {
+    RCP<Thyra::MultiVectorBase<ST>> tX = Thyra::createMembers(op->domain(), x.getNumVectors());
+    Thyra::assign(tX.ptr(), 0.0);
+    strategy->copyTpetraIntoThyra(x, tX.ptr());
+
+    mv_t x2(x.getMap(), x.getNumVectors());
+    strategy->copyThyraIntoTpetra(tX, x2);
+    accumulateApplyError(x2, x, trial, stats);
+  }
+
+  std::ostringstream ss;
+  ss << "\n      Tpetra -> Thyra -> Tpetra round trip (" << name
+     << " shell, expected exactly 0): " << describe(stats, 0.0);
+  return ss.str();
+}
+
+// For every sub-block, compare the device SpMV against a host CSR reference with beta = 0
+// and beta = 1 (the blocked apply accumulates with beta = 1), and check that repeated device
+// applies are bitwise reproducible.  Isolates the SpMV from the Teko/Thyra layers.
+// Collective.
+std::string checkBlockSpmv(const Teko::TpetraHelpers::BlockedTpetraOperator& shell, int numBlocks,
+                           ST tolerance) {
+  std::ostringstream ss;
+  ss << "\n      per-block device SpMV vs. host CSR reference (flat shell):";
+
+  bool anyBad = false;
+  for (int i = 0; i < numBlocks; i++) {
+    for (int j = 0; j < numBlocks; j++) {
+      const auto M = getBlockMatrix(shell, i, j);
+      const int w  = 3;
+
+      mv_t xj(M->getDomainMap(), w);
+      xj.randomize();
+      mv_t y0(M->getRangeMap(), w);
+      mv_t y0repeat(M->getRangeMap(), w);
+      mv_t r(M->getRangeMap(), w);
+      r.randomize();
+      mv_t y1(r, Teuchos::Copy);
+
+      M->apply(xj, y0);
+      M->apply(xj, y0repeat);
+      M->apply(xj, y1, Teuchos::NO_TRANS, 1.0, 1.0);
+
+      // host reference: import x into the column map and do a serial CSR product
+      mv_t xcol(M->getColMap(), w);
+      Tpetra::Import<LO, GO, NT> importer(M->getDomainMap(), M->getColMap());
+      xcol.doImport(xj, importer, Tpetra::INSERT);
+
+      mv_t ref0(M->getRangeMap(), w);
+      mv_t ref1(M->getRangeMap(), w);
+      {
+        const auto lcl   = M->getLocalMatrixHost();
+        const auto xh    = xcol.getLocalViewHost(Tpetra::Access::ReadOnly);
+        const auto rh    = r.getLocalViewHost(Tpetra::Access::ReadOnly);
+        const auto ref0h = ref0.getLocalViewHost(Tpetra::Access::OverwriteAll);
+        const auto ref1h = ref1.getLocalViewHost(Tpetra::Access::OverwriteAll);
+        for (LO row = 0; row < lcl.numRows(); row++) {
+          for (int c = 0; c < w; c++) {
+            ST sum = 0.0;
+            for (auto k = lcl.graph.row_map(row); k < lcl.graph.row_map(row + 1); k++)
+              sum += lcl.values(k) * xh(lcl.graph.entries(k), c);
+            ref0h(row, c) = sum;
+            ref1h(row, c) = rh(row, c) + sum;
+          }
+        }
+      }
+
+      ApplyErrorStats beta0, beta1, repeat;
+      accumulateApplyError(y0, ref0, 0, beta0);
+      accumulateApplyError(y1, ref1, 0, beta1);
+      accumulateApplyError(y0repeat, y0, 0, repeat);
+
+      const bool bad =
+          !passed(beta0, tolerance) || !passed(beta1, tolerance) || !passed(repeat, 0.0);
+      anyBad |= bad;
+      ss << "\n        block (" << i << "," << j << ") " << M->getGlobalNumRows() << "x"
+         << M->getGlobalNumCols() << ", nnz " << M->getGlobalNumEntries() << ": "
+         << (bad ? "MISMATCH" : "ok") << std::scientific << std::setprecision(3)
+         << " (beta=0 rel err " << beta0.maxRelErr << ", beta=1 rel err " << beta1.maxRelErr
+         << ", repeat rel diff " << repeat.maxRelErr << ")";
+      if (bad) {
+        ss << "\n          beta=0: " << describe(beta0, tolerance)
+           << "\n          beta=1: " << describe(beta1, tolerance)
+           << "\n          repeat: " << describe(repeat, 0.0);
+      }
+    }
+  }
+  ss << "\n      per-block SpMV summary: " << (anyBad ? "MISMATCHES FOUND" : "all blocks ok");
   return ss.str();
 }
 
@@ -466,10 +792,11 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
 
     accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(passed(stats, tolerance_), "\n   tBlockedTpetraOperator::test_vector_constr: "
-                                             << "testing tolerance over many matrix vector "
-                                                "multiplies: "
-                                             << describe(stats, tolerance_));
+  std::string failMsg =
+      std::string("\n   tBlockedTpetraOperator::test_vector_constr: ") +
+      "testing tolerance over many matrix vector multiplies: " + describe(stats, tolerance_);
+  TEST_ASSERT(passed(stats, tolerance_), failMsg);
+  echoFailure(*comm_tpetra, status, failMsg);
 
   A->scale(2.0);  // double everything
 
@@ -491,11 +818,10 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
 
     accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(passed(stats, tolerance_),
-              "\n   tBlockedTpetraOperator::test_vector_constr (rebuild): "
-                  << "testing tolerance over many matrix vector "
-                     "multiplies: "
-                  << describe(stats, tolerance_));
+  failMsg = std::string("\n   tBlockedTpetraOperator::test_vector_constr (rebuild): ") +
+            "testing tolerance over many matrix vector multiplies: " + describe(stats, tolerance_);
+  TEST_ASSERT(passed(stats, tolerance_), failMsg);
+  echoFailure(*comm_tpetra, status, failMsg);
 
   return allPassed;
 }
@@ -544,10 +870,11 @@ bool tBlockedTpetraOperator::test_single_block(int verbosity, std::ostream& os) 
 
     accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(passed(stats, tolerance_), "\n   tBlockedTpetraOperator::test_single_block: "
-                                             << "testing tolerance over many matrix vector "
-                                                "multiplies: "
-                                             << describe(stats, tolerance_));
+  std::string failMsg =
+      std::string("\n   tBlockedTpetraOperator::test_single_block: ") +
+      "testing tolerance over many matrix vector multiplies: " + describe(stats, tolerance_);
+  TEST_ASSERT(passed(stats, tolerance_), failMsg);
+  echoFailure(*comm_tpetra, status, failMsg);
 
   A->scale(2.0);  // double everything
 
@@ -569,11 +896,10 @@ bool tBlockedTpetraOperator::test_single_block(int verbosity, std::ostream& os) 
 
     accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(passed(stats, tolerance_),
-              "\n   tBlockedTpetraOperator::test_single_block (rebuild): "
-                  << "testing tolerance over many matrix vector "
-                     "multiplies: "
-                  << describe(stats, tolerance_));
+  failMsg = std::string("\n   tBlockedTpetraOperator::test_single_block (rebuild): ") +
+            "testing tolerance over many matrix vector multiplies: " + describe(stats, tolerance_);
+  TEST_ASSERT(passed(stats, tolerance_), failMsg);
+  echoFailure(*comm_tpetra, status, failMsg);
 
   return allPassed;
 }
@@ -622,10 +948,11 @@ bool tBlockedTpetraOperator::test_noncontig(int verbosity, std::ostream& os) {
 
     accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(passed(stats, tolerance_), "\n   tBlockedTpetraOperator::test_noncontig: "
-                                             << "testing tolerance over many matrix vector "
-                                                "multiplies: "
-                                             << describe(stats, tolerance_));
+  std::string failMsg =
+      std::string("\n   tBlockedTpetraOperator::test_noncontig: ") +
+      "testing tolerance over many matrix vector multiplies: " + describe(stats, tolerance_);
+  TEST_ASSERT(passed(stats, tolerance_), failMsg);
+  echoFailure(*comm_tpetra, status, failMsg);
 
   A->scale(2.0);  // double everything
 
@@ -647,10 +974,10 @@ bool tBlockedTpetraOperator::test_noncontig(int verbosity, std::ostream& os) {
 
     accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(passed(stats, tolerance_), "\n   tBlockedTpetraOperator::test_noncontig (rebuild): "
-                                             << "testing tolerance over many matrix vector "
-                                                "multiplies: "
-                                             << describe(stats, tolerance_));
+  failMsg = std::string("\n   tBlockedTpetraOperator::test_noncontig (rebuild): ") +
+            "testing tolerance over many matrix vector multiplies: " + describe(stats, tolerance_);
+  TEST_ASSERT(passed(stats, tolerance_), failMsg);
+  echoFailure(*comm_tpetra, status, failMsg);
 
   return allPassed;
 }
@@ -689,6 +1016,11 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   Teko::TpetraHelpers::BlockedTpetraOperator flatShell(vars, A, "Af");
   Teko::TpetraHelpers::BlockedTpetraOperator reorderShell(vars, A, "Ar");
 
+  // the two shells are built from identical input, so their blocks must be bitwise identical
+  const int numBlocks = static_cast<int>(vars.size());
+  std::string blockReport;
+  const bool blocksSame = compareShellBlocks(flatShell, reorderShell, numBlocks, blockReport);
+
   Teko::BlockReorderManager brm;
   switch (total) {
     case 0:
@@ -724,6 +1056,7 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
 
   // second applies of the same input, used to detect run-to-run nondeterminism
   Tpetra::MultiVector<ST, LO, GO, NT> yf2(A->getRangeMap(), width);
+  Tpetra::MultiVector<ST, LO, GO, NT> yr2(A->getRangeMap(), width);
   Tpetra::MultiVector<ST, LO, GO, NT> ys2(A->getRangeMap(), width);
 
   int numtests = 10;
@@ -731,7 +1064,14 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   ApplyErrorStats flatVsMatrix;
   ApplyErrorStats reorderVsMatrix;
   ApplyErrorStats flatRepeat;
+  ApplyErrorStats reorderRepeat;
   ApplyErrorStats matrixRepeat;
+
+  // input and entry-level report for the first trial that exceeds the tolerance
+  RCP<mv_t> xFirstFail;
+  int firstFailTrial = -1;
+  std::string largeEntries;
+
   for (int i = 0; i < numtests; i++) {
     x.randomize();
 
@@ -740,30 +1080,88 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
     A->apply(x, ys);
 
     flatShell.apply(x, yf2);
+    reorderShell.apply(x, yr2);
     A->apply(x, ys2);
 
     accumulateApplyError(yr, yf, i, reorderVsFlat);
     accumulateApplyError(yf, ys, i, flatVsMatrix);
     accumulateApplyError(yr, ys, i, reorderVsMatrix);
     accumulateApplyError(yf2, yf, i, flatRepeat);
+    accumulateApplyError(yr2, yr, i, reorderRepeat);
     accumulateApplyError(ys2, ys, i, matrixRepeat);
+
+    // the stats are built from global norms, so every rank agrees on this branch
+    const bool okSoFar = passed(reorderVsFlat, tolerance_) && passed(flatVsMatrix, tolerance_) &&
+                         passed(reorderVsMatrix, tolerance_);
+    if (!okSoFar && firstFailTrial < 0) {
+      firstFailTrial = i;
+      xFirstFail     = rcp(new mv_t(x, Teuchos::Copy));
+      largeEntries   = describeLargeEntries(yf, yr, ys, vars, tolerance_);
+    }
   }
 
-  // On failure, report all comparisons so it is clear which operator deviates.  The repeat
-  // comparisons are informational only (a nonzero value means the SpMV, or the blocked apply
-  // built on it, is not bitwise reproducible from run to run); they are not asserted.
   const bool allOk = passed(reorderVsFlat, tolerance_) && passed(flatVsMatrix, tolerance_) &&
                      passed(reorderVsMatrix, tolerance_);
-  TEST_ASSERT(allOk, "   tBlockedTpetraOperator::test_reorder"
-                         << tstr << " (pattern = " << brm.toString() << "): "
-                         << "testing tolerance over many matrix vector multiplies"
-                         << "\n    reordered vs. flat:   " << describe(reorderVsFlat, tolerance_)
-                         << "\n    flat vs. matrix:      " << describe(flatVsMatrix, tolerance_)
-                         << "\n    reordered vs. matrix: " << describe(reorderVsMatrix, tolerance_)
-                         << "\n    (informational) flat vs. flat, repeated apply: "
-                         << describe(flatRepeat, tolerance_)
-                         << "\n    (informational) matrix vs. matrix, repeated apply: "
-                         << describe(matrixRepeat, tolerance_));
+
+  // On failure, run every diagnostic and report to stdout as well as the failure log.  The
+  // repeat comparisons and the diagnostics are informational; only allOk and blocksSame are
+  // asserted.
+  std::string failMsg;
+  if (!allOk || !blocksSame) {
+    std::ostringstream diag;
+    diag << "\n   tBlockedTpetraOperator::test_reorder" << tstr << " (pattern = " << brm.toString()
+         << "): FAILED; diagnostics follow" << describeConfiguration(*comm_tpetra)
+         << "\n    reordered vs. flat:   " << describe(reorderVsFlat, tolerance_)
+         << "\n    flat vs. matrix:      " << describe(flatVsMatrix, tolerance_)
+         << "\n    reordered vs. matrix: " << describe(reorderVsMatrix, tolerance_)
+         << "\n    flat vs. flat, repeated apply (expected exactly 0): "
+         << describe(flatRepeat, 0.0)
+         << "\n    reordered vs. reordered, repeated apply (expected exactly 0): "
+         << describe(reorderRepeat, 0.0)
+         << "\n    matrix vs. matrix, repeated apply (expected exactly 0): "
+         << describe(matrixRepeat, 0.0)
+         << checkRankConsistency(*comm_tpetra, reorderVsFlat.maxRelErr, "reordered vs. flat error")
+         << checkRankConsistency(*comm_tpetra, flatVsMatrix.maxRelErr, "flat vs. matrix error")
+         << checkRankConsistency(*comm_tpetra, reorderVsMatrix.maxRelErr,
+                                 "reordered vs. matrix error")
+         << blockReport;
+
+    if (firstFailTrial >= 0) {
+      diag << "\n      first failing trial: " << firstFailTrial << largeEntries;
+
+      // re-run the failing input, once as-is and once with a full fence around every apply,
+      // to see whether the failure is reproducible and whether it is synchronization related
+      for (const bool fenced : {false, true}) {
+        mv_t yf3(A->getRangeMap(), width);
+        mv_t yr3(A->getRangeMap(), width);
+        mv_t ys3(A->getRangeMap(), width);
+        if (fenced) Kokkos::fence();
+        flatShell.apply(*xFirstFail, yf3);
+        if (fenced) Kokkos::fence();
+        reorderShell.apply(*xFirstFail, yr3);
+        if (fenced) Kokkos::fence();
+        A->apply(*xFirstFail, ys3);
+        if (fenced) Kokkos::fence();
+
+        ApplyErrorStats rf, fm, rm;
+        accumulateApplyError(yr3, yf3, 0, rf);
+        accumulateApplyError(yf3, ys3, 0, fm);
+        accumulateApplyError(yr3, ys3, 0, rm);
+        diag << "\n      re-run of failing input" << (fenced ? " with Kokkos::fence()" : "")
+             << ":\n        reordered vs. flat:   " << describe(rf, tolerance_)
+             << "\n        flat vs. matrix:      " << describe(fm, tolerance_)
+             << "\n        reordered vs. matrix: " << describe(rm, tolerance_);
+      }
+
+      diag << checkMappingRoundTrip(flatShell, *xFirstFail, "flat")
+           << checkMappingRoundTrip(reorderShell, *xFirstFail, "reordered");
+    }
+
+    diag << checkBlockSpmv(flatShell, numBlocks, tolerance_);
+    failMsg = diag.str();
+  }
+  TEST_ASSERT(allOk && blocksSame, failMsg);
+  echoFailure(*comm_tpetra, status, failMsg);
 
   return allPassed;
 }
