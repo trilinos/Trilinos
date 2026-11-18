@@ -35,6 +35,7 @@
 #include "Tpetra_Details_Behavior.hpp"
 
 #include "KokkosKernels_config.h"
+#include "KokkosSparse_spmv.hpp"
 
 #include "tBlockedTpetraOperator.hpp"
 
@@ -54,6 +55,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace Teko {
@@ -740,6 +742,25 @@ mv_t hostReferenceApply(const crs_t& M, const mv_t& x, const mv_t& y0, ST alpha,
   return y;
 }
 
+// How Tpetra will apply M on rank 0: whether X is imported into a cached column-map
+// multivector, and whether the merge-path SpMV algorithm is selected (Tpetra only does so for
+// cuSPARSE builds, using the same rule as below).
+std::string describeApplyPath(const crs_t& M) {
+  const LO nrows     = static_cast<LO>(M.getLocalNumRows());
+  const LO maxRowNnz = static_cast<LO>(M.getLocalMaxNumRowEntries());
+  const LO imbalance = nrows != 0 ? maxRowNnz - static_cast<LO>(M.getLocalNumEntries() / nrows) : 0;
+  const size_t thresh  = Tpetra::Details::Behavior::rowImbalanceThreshold();
+  const bool mergePath = size_t(imbalance) >= thresh;
+
+  std::ostringstream ss;
+  ss << "rank 0: local rows " << nrows << ", local nnz " << M.getLocalNumEntries() << ", importer "
+     << (M.getGraph()->getImporter().is_null() ? "none" : "yes") << ", column map "
+     << M.getColMap()->getLocalNumElements() << " (domain map "
+     << M.getDomainMap()->getLocalNumElements() << "), row imbalance " << imbalance
+     << " (threshold " << thresh << ", merge path " << (mergePath ? "yes" : "no") << ")";
+  return ss.str();
+}
+
 // Re-run a leaf apply that turned finite inputs into non-finite output in several ways, to
 // separate the possible causes.  Collective.
 void diagnoseLeafApply(const crs_t& M, const mv_t& X, const mv_t& Ybefore, const mv_t& Yafter,
@@ -788,6 +809,85 @@ void diagnoseLeafApply(const crs_t& M, const mv_t& X, const mv_t& Ybefore, const
     accumulateApplyError(Yafter, Yref, 0, stats);
     log << "\n          (e) host reference: " << countNonFinite(Yref)
         << " non-finite; device result vs. host reference: " << describe(stats, 1e-12);
+  }
+  // (f) same matrix and SpMV handle, but bypassing Tpetra's cached column-map import buffer:
+  // import X into the column map by hand and call localApply
+  {
+    mv_t xcol(M.getColMap(), w);
+    Tpetra::Import<LO, GO, NT> importer(M.getDomainMap(), M.getColMap());
+    xcol.doImport(X, importer, Tpetra::INSERT);
+    mv_t Yf(Ybefore, Teuchos::Copy);
+    M.localApply(xcol, Yf, Teuchos::NO_TRANS, alpha, beta);
+    log << "\n          (f) same handle, hand-imported X, localApply: " << countNonFinite(Yf)
+        << " non-finite";
+  }
+  // (g) deep copy whose first apply (which initializes the SpMV handle) uses beta = 1
+  {
+    crs_t Mg(M, Teuchos::Copy);
+    mv_t Ywarm(Ybefore.getMap(), w);
+    Mg.apply(X, Ywarm, Teuchos::NO_TRANS, alpha, 1.0);
+    mv_t Yg(Ybefore, Teuchos::Copy);
+    Mg.apply(X, Yg, Teuchos::NO_TRANS, alpha, beta);
+    log << "\n          (g) deep copy warmed up with beta = 1 first:  " << countNonFinite(Yg)
+        << " non-finite";
+  }
+  // (i) KokkosSparse::spmv called directly on the local matrix with SPMV_NATIVE, which never
+  // dispatches to a TPL such as cuSPARSE; (j) the same with SPMV_DEFAULT on an int-rowptr copy
+  // of the matrix, which is what Tpetra does and which dispatches to cuSPARSE when enabled.
+  // Both use a fresh KokkosKernels handle and a hand-imported column-map X.
+  {
+    mv_t xcol(M.getColMap(), w);
+    Tpetra::Import<LO, GO, NT> importer(M.getDomainMap(), M.getColMap());
+    xcol.doImport(X, importer, Tpetra::INSERT);
+
+    using lcl_t     = crs_t::local_matrix_device_type;
+    using dev_t     = lcl_t::device_type;
+    using int_lcl_t = KokkosSparse::CrsMatrix<ST, LO, dev_t, void, int>;
+
+    const lcl_t A_lcl = M.getLocalMatrixDevice();
+
+    // int-valued copy of the row pointers, converted on the host
+    typename int_lcl_t::row_map_type::non_const_type rowptrsInt("rowptrs_int",
+                                                                A_lcl.graph.row_map.extent(0));
+    {
+      const auto rowptrsH =
+          Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A_lcl.graph.row_map);
+      const auto rowptrsIntH = Kokkos::create_mirror_view(rowptrsInt);
+      for (size_t k = 0; k < rowptrsH.extent(0); k++)
+        rowptrsIntH(k) = static_cast<int>(rowptrsH(k));
+      Kokkos::deep_copy(rowptrsInt, rowptrsIntH);
+    }
+    const int_lcl_t A_int("A_int", A_lcl.numRows(), A_lcl.numCols(), A_lcl.nnz(), A_lcl.values,
+                          rowptrsInt, A_lcl.graph.entries);
+
+    for (const bool native : {true, false}) {
+      mv_t Yk(Ybefore, Teuchos::Copy);
+      {
+        const auto xv = xcol.getLocalViewDevice(Tpetra::Access::ReadOnly);
+        const auto yv = Yk.getLocalViewDevice(Tpetra::Access::ReadWrite);
+        using XV      = std::remove_const_t<decltype(xv)>;
+        using YV      = std::remove_const_t<decltype(yv)>;
+        if (native) {
+          KokkosSparse::SPMVHandle<dev_t, lcl_t, XV, YV> handle(KokkosSparse::SPMV_NATIVE);
+          KokkosSparse::spmv(&handle, KokkosSparse::NoTranspose, alpha, A_lcl, xv, beta, yv);
+        } else {
+          KokkosSparse::SPMVHandle<dev_t, int_lcl_t, XV, YV> handle(KokkosSparse::SPMV_DEFAULT);
+          KokkosSparse::spmv(&handle, KokkosSparse::NoTranspose, alpha, A_int, xv, beta, yv);
+        }
+        Kokkos::fence();
+      }
+      log << (native ? "\n          (i) KokkosSparse::spmv, SPMV_NATIVE (no TPL):   "
+                     : "\n          (j) KokkosSparse::spmv, int rowptrs, default:   ")
+          << countNonFinite(Yk) << " non-finite";
+    }
+  }
+  // (h) with beta = 0 the output must be overwritten, never read: pre-fill it with NaN
+  if (beta == 0.0) {
+    mv_t Yh(Ybefore.getMap(), w);
+    Yh.putScalar(std::numeric_limits<ST>::quiet_NaN());
+    M.apply(X, Yh, Teuchos::NO_TRANS, alpha, beta);
+    log << "\n          (h) beta = 0 with NaN-filled output:          " << countNonFinite(Yh)
+        << " non-finite (expected 0)";
   }
 }
 
@@ -853,8 +953,8 @@ void instrumentedApply(const Thyra::LinearOpBase<ST>& op, const Thyra::MultiVect
       << M->getGlobalNumRows() << "x" << M->getGlobalNumCols() << " nnz "
       << M->getGlobalNumEntries() << ", beta " << beta
       << ", non-finite X/Y-before/Y-after = " << nfX << "/" << nfBefore << "/" << nfAfter
-      << (aliased ? ", X AND Y ALIAS" : "") << "\n          X: " << describeLayout(*tX)
-      << "\n          Y: " << describeLayout(*tY);
+      << (aliased ? ", X AND Y ALIAS" : "") << "\n          " << describeApplyPath(*M)
+      << "\n          X: " << describeLayout(*tX) << "\n          Y: " << describeLayout(*tY);
 
   const bool inputsFinite = nfX == 0 && (beta == 0.0 || nfBefore == 0);
   if (inputsFinite && nfAfter > 0 && !introduced) {
