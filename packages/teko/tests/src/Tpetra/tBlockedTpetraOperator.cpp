@@ -26,6 +26,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -39,6 +40,10 @@
 #include "Teko_BlockedTpetraOperator.hpp"
 #include "Teko_TpetraHelpers.hpp"
 
+#include <cmath>
+#include <iomanip>
+#include <limits>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -198,6 +203,125 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> assemble_noncontig_matrix(
   return noncontigMat;
 }
 
+// Running summary of the relative error ||test - ref|| / ||ref|| (per column)
+// over many trials, along with enough detail about the worst column to
+// diagnose a failure.
+struct ApplyErrorStats {
+  ST maxRelErr   = 0.0;
+  bool allFinite = true;
+  int numTrials  = 0;
+
+  // details of the column with the largest relative error
+  int worstTrial  = -1;
+  int worstColumn = -1;
+  ST worstErrNorm = 0.0;
+  ST worstRefNorm = 0.0;
+
+  // details of the entry with the largest absolute error in the worst column
+  GO worstGid     = -1;
+  int worstOwner  = -1;
+  ST worstTestVal = 0.0;
+  ST worstRefVal  = 0.0;
+};
+
+// Find the entry of column j with the largest absolute error.  Collective.
+void locateWorstEntry(const mv_t& e, const mv_t& test, const mv_t& ref, int j,
+                      ApplyErrorStats& stats) {
+  const auto comm   = ref.getMap()->getComm();
+  const int myRank  = comm->getRank();
+  const auto eH     = e.getLocalViewHost(Tpetra::Access::ReadOnly);
+  const auto testH  = test.getLocalViewHost(Tpetra::Access::ReadOnly);
+  const auto refH   = ref.getLocalViewHost(Tpetra::Access::ReadOnly);
+  const auto inf    = std::numeric_limits<ST>::infinity();
+  const LO numLocal = static_cast<LO>(ref.getLocalLength());
+
+  ST localMax = -1.0;
+  LO localIdx = -1;
+  for (LO i = 0; i < numLocal; i++) {
+    const ST absErr = std::isfinite(eH(i, j)) ? std::abs(eH(i, j)) : inf;
+    if (absErr > localMax) {
+      localMax = absErr;
+      localIdx = i;
+    }
+  }
+
+  ST globalMax = -1.0;
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, localMax, Teuchos::outArg(globalMax));
+
+  const int candidate = (localIdx >= 0 && localMax == globalMax) ? myRank : comm->getSize();
+  int owner           = comm->getSize();
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, candidate, Teuchos::outArg(owner));
+  if (owner >= comm->getSize()) return;  // no rows anywhere
+
+  GO gid    = -1;
+  ST vals[] = {0.0, 0.0};
+  if (myRank == owner) {
+    gid     = ref.getMap()->getGlobalElement(localIdx);
+    vals[0] = testH(localIdx, j);
+    vals[1] = refH(localIdx, j);
+  }
+  Teuchos::broadcast(*comm, owner, Teuchos::outArg(gid));
+  Teuchos::broadcast(*comm, owner, 2, vals);
+
+  stats.worstGid     = gid;
+  stats.worstOwner   = owner;
+  stats.worstTestVal = vals[0];
+  stats.worstRefVal  = vals[1];
+}
+
+// Accumulate the per-column relative error of test against ref.  Collective.
+void accumulateApplyError(const mv_t& test, const mv_t& ref, int trial, ApplyErrorStats& stats) {
+  const int width = static_cast<int>(ref.getNumVectors());
+  std::vector<ST> errNorm(width);
+  std::vector<ST> refNorm(width);
+
+  mv_t e(test, Teuchos::Copy);
+  e.update(-1.0, ref, 1.0);
+  e.norm2(Teuchos::ArrayView<ST>(errNorm));
+  ref.norm2(Teuchos::ArrayView<ST>(refNorm));
+
+  stats.numTrials++;
+  for (int j = 0; j < width; j++) {
+    // fall back to the absolute error if the reference is identically zero
+    const ST relErr   = refNorm[j] > 0.0 ? errNorm[j] / refNorm[j] : errNorm[j];
+    const bool finite = std::isfinite(relErr);
+
+    // norms are global, so every rank takes the same branch here
+    const bool firstNonFinite = !finite && stats.allFinite;
+    if (firstNonFinite || (finite && stats.allFinite && relErr > stats.maxRelErr)) {
+      stats.maxRelErr    = relErr;
+      stats.worstTrial   = trial;
+      stats.worstColumn  = j;
+      stats.worstErrNorm = errNorm[j];
+      stats.worstRefNorm = refNorm[j];
+      locateWorstEntry(e, test, ref, j, stats);
+    }
+    stats.allFinite &= finite;
+  }
+}
+
+bool passed(const ApplyErrorStats& stats, ST tolerance) {
+  return stats.allFinite && stats.maxRelErr <= tolerance;
+}
+
+std::string describe(const ApplyErrorStats& stats, ST tolerance) {
+  std::ostringstream ss;
+  ss << std::scientific << std::setprecision(16);
+  ss << "max relative error = " << stats.maxRelErr << " (tolerance = " << tolerance << ") over "
+     << stats.numTrials << " trials";
+  if (!stats.allFinite) ss << " [NON-FINITE VALUES DETECTED]";
+  if (stats.worstTrial >= 0) {
+    ss << "\n      worst column: trial " << stats.worstTrial << ", column " << stats.worstColumn
+       << ", ||test - ref|| = " << stats.worstErrNorm << ", ||ref|| = " << stats.worstRefNorm;
+  }
+  if (stats.worstOwner >= 0) {
+    ss << "\n      worst entry:  GID " << stats.worstGid << " (rank " << stats.worstOwner
+       << "), test = " << stats.worstTestVal << ", ref = " << stats.worstRefVal
+       << ", test - ref = " << (stats.worstTestVal - stats.worstRefVal);
+  }
+  return ss.str();
+}
+
 }  // namespace
 
 void tBlockedTpetraOperator::buildBlockGIDs(std::vector<std::vector<GO>>& gids,
@@ -234,7 +358,11 @@ void tBlockedTpetraOperator::buildBlockGIDs(std::vector<std::vector<GO>>& gids,
                  numLocal);
 }
 
-void tBlockedTpetraOperator::initializeTest() { tolerance_ = 1e-14; }
+// The blocked and reordered operators sum the block contributions in a different
+// order than a monolithic SpMV, and the SpMV kernel itself (e.g. cuSPARSE) need not be
+// bitwise reproducible, so only agreement to within a modest multiple of machine
+// epsilon can be expected.
+void tBlockedTpetraOperator::initializeTest() { tolerance_ = 1e-12; }
 
 int tBlockedTpetraOperator::runTest(int verbosity, std::ostream& stdstrm, std::ostream& failstrm,
                                     int& totalrun) {
@@ -274,14 +402,14 @@ int tBlockedTpetraOperator::runTest(int verbosity, std::ostream& stdstrm, std::o
 
   status = test_reorder(verbosity, failstrm, 1);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"reorder(composite reorder = " << 1 << ")\" ... PASSED",
-                       "   \"reorder(composite reorder)\" ... FAILED");
+                       "   \"reorder(composite reorder = " << 1 << ")\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_reorder(verbosity, failstrm, 2);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"reorder(composite reorder = " << 2 << ")\" ... PASSED",
-                       "   \"reorder(composite reorder)\" ... FAILED");
+                       "   \"reorder(composite reorder = " << 2 << ")\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
@@ -329,36 +457,19 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
 
   // test the operator against a lot of random vectors
   int numtests = 50;
-  ST max       = 0.0;
-  ST min       = 1.0;
+  ApplyErrorStats stats;
   for (int i = 0; i < numtests; i++) {
-    std::vector<ST> norm(width);
-    std::vector<ST> rel(width);
     x.randomize();
 
     shell.apply(x, y);
     A->apply(x, ys);
 
-    Tpetra::MultiVector<ST, LO, GO, NT> e(y, Teuchos::Copy);
-    e.update(-1.0, ys, 1.0);
-    e.norm2(Teuchos::ArrayView<ST>(norm));
-
-    // compute relative error
-    ys.norm2(Teuchos::ArrayView<ST>(rel));
-    for (int j = 0; j < width; j++) {
-      max = max > norm[j] / rel[j] ? max : norm[j] / rel[j];
-      min = min < norm[j] / rel[j] ? min : norm[j] / rel[j];
-    }
+    accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(max >= min, "\n   tBlockedTpetraOperator::test_vector_constr: "
-                              << toString(status) << ": "
-                              << "sanity checked - " << max << " >= " << min);
-  TEST_ASSERT(max <= tolerance_, "\n   tBlockedTpetraOperator::test_vector_constr: "
-                                     << toString(status) << ": "
-                                     << "testing tolerance over many matrix vector multiplies ( "
-                                     << max << " <= "
-                                     << "testing tolerance over many matrix vector multiplies ( "
-                                     << max << " <= " << tolerance_ << " )");
+  TEST_ASSERT(passed(stats, tolerance_), "\n   tBlockedTpetraOperator::test_vector_constr: "
+                                             << "testing tolerance over many matrix vector "
+                                                "multiplies: "
+                                             << describe(stats, tolerance_));
 
   A->scale(2.0);  // double everything
 
@@ -371,34 +482,20 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
 
   // test the operator against a lot of random vectors
   numtests = 50;
-  max      = 0.0;
-  min      = 1.0;
+  stats    = ApplyErrorStats();
   for (int i = 0; i < numtests; i++) {
-    std::vector<ST> norm(width);
-    std::vector<ST> rel(width);
     x.randomize();
 
     shell.apply(x, y);
     A->apply(x, ys);
 
-    Tpetra::MultiVector<ST, LO, GO, NT> e(y, Teuchos::Copy);
-    e.update(-1.0, ys, 1.0);
-    e.norm2(Teuchos::ArrayView<ST>(norm));
-
-    // compute relative error
-    ys.norm2(Teuchos::ArrayView<ST>(rel));
-    for (int j = 0; j < width; j++) {
-      max = max > norm[j] / rel[j] ? max : norm[j] / rel[j];
-      min = min < norm[j] / rel[j] ? min : norm[j] / rel[j];
-    }
+    accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(max >= min, "\n   tBlockedTpetraOperator::test_vector_constr (rebuild): "
-                              << toString(status) << ": "
-                              << "sanity checked - " << max << " >= " << min);
-  TEST_ASSERT(max <= tolerance_, "\n   tBlockedTpetraOperator::test_vector_constr (rebuild): "
-                                     << toString(status) << ": "
-                                     << "testing tolerance over many matrix vector multiplies ( "
-                                     << max << " <= " << tolerance_ << " )");
+  TEST_ASSERT(passed(stats, tolerance_),
+              "\n   tBlockedTpetraOperator::test_vector_constr (rebuild): "
+                  << "testing tolerance over many matrix vector "
+                     "multiplies: "
+                  << describe(stats, tolerance_));
 
   return allPassed;
 }
@@ -438,36 +535,19 @@ bool tBlockedTpetraOperator::test_single_block(int verbosity, std::ostream& os) 
 
   // test the operator against a lot of random vectors
   int numtests = 50;
-  ST max       = 0.0;
-  ST min       = 1.0;
+  ApplyErrorStats stats;
   for (int i = 0; i < numtests; i++) {
-    std::vector<ST> norm(width);
-    std::vector<ST> rel(width);
     x.randomize();
 
     shell.apply(x, y);
     A->apply(x, ys);
 
-    Tpetra::MultiVector<ST, LO, GO, NT> e(y, Teuchos::Copy);
-    e.update(-1.0, ys, 1.0);
-    e.norm2(Teuchos::ArrayView<ST>(norm));
-
-    // compute relative error
-    ys.norm2(Teuchos::ArrayView<ST>(rel));
-    for (int j = 0; j < width; j++) {
-      max = max > norm[j] / rel[j] ? max : norm[j] / rel[j];
-      min = min < norm[j] / rel[j] ? min : norm[j] / rel[j];
-    }
+    accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(max >= min, "\n   tBlockedTpetraOperator::test_single_block: "
-                              << toString(status) << ": "
-                              << "sanity checked - " << max << " >= " << min);
-  TEST_ASSERT(max <= tolerance_, "\n   tBlockedTpetraOperator::test_single_block: "
-                                     << toString(status) << ": "
-                                     << "testing tolerance over many matrix vector multiplies ( "
-                                     << max << " <= "
-                                     << "testing tolerance over many matrix vector multiplies ( "
-                                     << max << " <= " << tolerance_ << " )");
+  TEST_ASSERT(passed(stats, tolerance_), "\n   tBlockedTpetraOperator::test_single_block: "
+                                             << "testing tolerance over many matrix vector "
+                                                "multiplies: "
+                                             << describe(stats, tolerance_));
 
   A->scale(2.0);  // double everything
 
@@ -480,34 +560,20 @@ bool tBlockedTpetraOperator::test_single_block(int verbosity, std::ostream& os) 
 
   // test the operator against a lot of random vectors
   numtests = 50;
-  max      = 0.0;
-  min      = 1.0;
+  stats    = ApplyErrorStats();
   for (int i = 0; i < numtests; i++) {
-    std::vector<ST> norm(width);
-    std::vector<ST> rel(width);
     x.randomize();
 
     shell.apply(x, y);
     A->apply(x, ys);
 
-    Tpetra::MultiVector<ST, LO, GO, NT> e(y, Teuchos::Copy);
-    e.update(-1.0, ys, 1.0);
-    e.norm2(Teuchos::ArrayView<ST>(norm));
-
-    // compute relative error
-    ys.norm2(Teuchos::ArrayView<ST>(rel));
-    for (int j = 0; j < width; j++) {
-      max = max > norm[j] / rel[j] ? max : norm[j] / rel[j];
-      min = min < norm[j] / rel[j] ? min : norm[j] / rel[j];
-    }
+    accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(max >= min, "\n   tBlockedTpetraOperator::test_single_block (rebuild): "
-                              << toString(status) << ": "
-                              << "sanity checked - " << max << " >= " << min);
-  TEST_ASSERT(max <= tolerance_, "\n   tBlockedTpetraOperator::test_single_block (rebuild): "
-                                     << toString(status) << ": "
-                                     << "testing tolerance over many matrix vector multiplies ( "
-                                     << max << " <= " << tolerance_ << " )");
+  TEST_ASSERT(passed(stats, tolerance_),
+              "\n   tBlockedTpetraOperator::test_single_block (rebuild): "
+                  << "testing tolerance over many matrix vector "
+                     "multiplies: "
+                  << describe(stats, tolerance_));
 
   return allPassed;
 }
@@ -547,36 +613,19 @@ bool tBlockedTpetraOperator::test_noncontig(int verbosity, std::ostream& os) {
 
   // test the operator against a lot of random vectors
   int numtests = 50;
-  ST max       = 0.0;
-  ST min       = 1.0;
+  ApplyErrorStats stats;
   for (int i = 0; i < numtests; i++) {
-    std::vector<ST> norm(width);
-    std::vector<ST> rel(width);
     x.randomize();
 
     shell.apply(x, y);
     A->apply(x, ys);
 
-    Tpetra::MultiVector<ST, LO, GO, NT> e(y, Teuchos::Copy);
-    e.update(-1.0, ys, 1.0);
-    e.norm2(Teuchos::ArrayView<ST>(norm));
-
-    // compute relative error
-    ys.norm2(Teuchos::ArrayView<ST>(rel));
-    for (int j = 0; j < width; j++) {
-      max = max > norm[j] / rel[j] ? max : norm[j] / rel[j];
-      min = min < norm[j] / rel[j] ? min : norm[j] / rel[j];
-    }
+    accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(max >= min, "\n   tBlockedTpetraOperator::test_noncontig: "
-                              << toString(status) << ": "
-                              << "sanity checked - " << max << " >= " << min);
-  TEST_ASSERT(max <= tolerance_, "\n   tBlockedTpetraOperator::test_noncontig: "
-                                     << toString(status) << ": "
-                                     << "testing tolerance over many matrix vector multiplies ( "
-                                     << max << " <= "
-                                     << "testing tolerance over many matrix vector multiplies ( "
-                                     << max << " <= " << tolerance_ << " )");
+  TEST_ASSERT(passed(stats, tolerance_), "\n   tBlockedTpetraOperator::test_noncontig: "
+                                             << "testing tolerance over many matrix vector "
+                                                "multiplies: "
+                                             << describe(stats, tolerance_));
 
   A->scale(2.0);  // double everything
 
@@ -589,34 +638,19 @@ bool tBlockedTpetraOperator::test_noncontig(int verbosity, std::ostream& os) {
 
   // test the operator against a lot of random vectors
   numtests = 50;
-  max      = 0.0;
-  min      = 1.0;
+  stats    = ApplyErrorStats();
   for (int i = 0; i < numtests; i++) {
-    std::vector<ST> norm(width);
-    std::vector<ST> rel(width);
     x.randomize();
 
     shell.apply(x, y);
     A->apply(x, ys);
 
-    Tpetra::MultiVector<ST, LO, GO, NT> e(y, Teuchos::Copy);
-    e.update(-1.0, ys, 1.0);
-    e.norm2(Teuchos::ArrayView<ST>(norm));
-
-    // compute relative error
-    ys.norm2(Teuchos::ArrayView<ST>(rel));
-    for (int j = 0; j < width; j++) {
-      max = max > norm[j] / rel[j] ? max : norm[j] / rel[j];
-      min = min < norm[j] / rel[j] ? min : norm[j] / rel[j];
-    }
+    accumulateApplyError(y, ys, i, stats);
   }
-  TEST_ASSERT(max >= min, "\n   tBlockedTpetraOperator::test_noncontig (rebuild): "
-                              << toString(status) << ": "
-                              << "sanity checked - " << max << " >= " << min);
-  TEST_ASSERT(max <= tolerance_, "\n   tBlockedTpetraOperator::test_noncontig (rebuild): "
-                                     << toString(status) << ": "
-                                     << "testing tolerance over many matrix vector multiplies ( "
-                                     << max << " <= " << tolerance_ << " )");
+  TEST_ASSERT(passed(stats, tolerance_), "\n   tBlockedTpetraOperator::test_noncontig (rebuild): "
+                                             << "testing tolerance over many matrix vector "
+                                                "multiplies: "
+                                             << describe(stats, tolerance_));
 
   return allPassed;
 }
@@ -627,7 +661,8 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
 
   RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
-  std::string tstr = total ? "(composite reorder)" : "(flat reorder)";
+  std::string tstr =
+      total ? "(composite reorder = " + std::to_string(total) + ")" : "(flat reorder)";
 
   TEST_MSG("\n   tBlockedTpetraOperator::test_reorder" << tstr << ": "
                                                        << "Running on " << comm_tpetra->getSize()
@@ -685,35 +720,50 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
                       << std::endl);
 
   // test the operator against a lot of random vectors
+  Tpetra::MultiVector<ST, LO, GO, NT> ys(A->getRangeMap(), width);
+
+  // second applies of the same input, used to detect run-to-run nondeterminism
+  Tpetra::MultiVector<ST, LO, GO, NT> yf2(A->getRangeMap(), width);
+  Tpetra::MultiVector<ST, LO, GO, NT> ys2(A->getRangeMap(), width);
+
   int numtests = 10;
-  ST max       = 0.0;
-  ST min       = 1.0;
+  ApplyErrorStats reorderVsFlat;
+  ApplyErrorStats flatVsMatrix;
+  ApplyErrorStats reorderVsMatrix;
+  ApplyErrorStats flatRepeat;
+  ApplyErrorStats matrixRepeat;
   for (int i = 0; i < numtests; i++) {
-    std::vector<ST> norm(width);
-    std::vector<ST> rel(width);
     x.randomize();
 
     flatShell.apply(x, yf);
     reorderShell.apply(x, yr);
+    A->apply(x, ys);
 
-    Tpetra::MultiVector<ST, LO, GO, NT> e(yf, Teuchos::Copy);
-    e.update(-1.0, yr, 1.0);
-    e.norm2(Teuchos::ArrayView<ST>(norm));
+    flatShell.apply(x, yf2);
+    A->apply(x, ys2);
 
-    // compute relative error
-    yf.norm2(Teuchos::ArrayView<ST>(rel));
-    for (int j = 0; j < width; j++) {
-      max = max > norm[j] / rel[j] ? max : norm[j] / rel[j];
-      min = min < norm[j] / rel[j] ? min : norm[j] / rel[j];
-    }
+    accumulateApplyError(yr, yf, i, reorderVsFlat);
+    accumulateApplyError(yf, ys, i, flatVsMatrix);
+    accumulateApplyError(yr, ys, i, reorderVsMatrix);
+    accumulateApplyError(yf2, yf, i, flatRepeat);
+    accumulateApplyError(ys2, ys, i, matrixRepeat);
   }
-  TEST_ASSERT(max >= min, "   tBlockedTpetraOperator::test_reorder"
-                              << tstr << ": " << toString(status) << ": "
-                              << "sanity checked - " << max << " >= " << min);
-  TEST_ASSERT(max <= tolerance_, "   tBlockedTpetraOperator::test_reorder"
-                                     << tstr << ": " << toString(status) << ": "
-                                     << "testing tolerance over many matrix vector multiplies ( "
-                                     << max << " <= " << tolerance_ << " )");
+
+  // On failure, report all comparisons so it is clear which operator deviates.  The repeat
+  // comparisons are informational only (a nonzero value means the SpMV, or the blocked apply
+  // built on it, is not bitwise reproducible from run to run); they are not asserted.
+  const bool allOk = passed(reorderVsFlat, tolerance_) && passed(flatVsMatrix, tolerance_) &&
+                     passed(reorderVsMatrix, tolerance_);
+  TEST_ASSERT(allOk, "   tBlockedTpetraOperator::test_reorder"
+                         << tstr << " (pattern = " << brm.toString() << "): "
+                         << "testing tolerance over many matrix vector multiplies"
+                         << "\n    reordered vs. flat:   " << describe(reorderVsFlat, tolerance_)
+                         << "\n    flat vs. matrix:      " << describe(flatVsMatrix, tolerance_)
+                         << "\n    reordered vs. matrix: " << describe(reorderVsMatrix, tolerance_)
+                         << "\n    (informational) flat vs. flat, repeated apply: "
+                         << describe(flatRepeat, tolerance_)
+                         << "\n    (informational) matrix vs. matrix, repeated apply: "
+                         << describe(matrixRepeat, tolerance_));
 
   return allPassed;
 }
