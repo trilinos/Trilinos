@@ -3,6 +3,8 @@ ADD_SUBDIRECTORIES(
     InterfacePartitionOfUnity
     InterfaceSets
     LocalPartitionOfUnityBasis
+    OverlapLayers
+    OverlapStrategies
     SolverFactory
 )
 
