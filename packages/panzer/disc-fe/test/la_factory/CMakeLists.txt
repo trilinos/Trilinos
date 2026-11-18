@@ -42,7 +42,7 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test)
 
-SET(FILES tTpetraLinearObjFactory.cpp tTpetra_GlbEvalData.cpp UnitTest_GlobalIndexer.cpp tBlockedTpetraLinearObjFactory.cpp)
+SET(FILES tTpetraLinearObjFactory.cpp tTpetra_GlbEvalData.cpp UnitTest_GlobalIndexer.cpp tBlockedTpetraLinearObjFactory.cpp tTpetraFEGraphAssembly.cpp)
 
 IF(PANZER_HAVE_EPETRA_STACK)
   APPEND_SET(FILES tBlockedLinearObjFactory.cpp
@@ -85,3 +85,22 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
   NUM_MPI_PROCS 2
 )
+
+# Time (and compare) building the FE graph on device vs. by insertion, on a
+# structured hex mesh.  The test runs a small mesh and checks the graphs are identical.
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/cartesian_topology)
+TRIBITS_ADD_EXECUTABLE(
+  FEGraphAssemblyBenchmark
+  SOURCES FEGraphAssemblyBenchmark.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/cartesian_topology/CartesianConnManager.cpp
+  COMM mpi
+  )
+
+TRIBITS_ADD_TEST(
+  FEGraphAssemblyBenchmark
+  NAME FEGraphAssembly_Identical
+  ARGS "--nx=6 --ny=5 --nz=4 --px=2 --py=2 --pz=1 --repetitions=1"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+  )
