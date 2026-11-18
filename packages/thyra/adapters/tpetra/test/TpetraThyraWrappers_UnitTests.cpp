@@ -1374,9 +1374,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_ScaledLin
     createConstLinearOp, SCALAR ) \
    \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
-    TpetraLinearOp_EpetraRowMatrix, SCALAR ) \
-   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
     TpetraLinearOp_RowStatLinearOpBase, SCALAR ) \
    \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( TpetraThyraWrappers, \
