@@ -268,10 +268,10 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   {
     out << "\nTest reverse iterators dereferenced out of bounds ...\n";
-    TEST_THROW( *(a.rbegin()-1), Teuchos::RangeError );
-    TEST_THROW( *a.rend(), Teuchos::RangeError );
-    TEST_THROW( *(getConst(a).rbegin()-1), Teuchos::RangeError );
-    TEST_THROW( *getConst(a).rend(), Teuchos::RangeError );
+    TEST_THROW( std::ignore = *(a.rbegin()-1), Teuchos::RangeError );
+    TEST_THROW( std::ignore = *a.rend(), Teuchos::RangeError );
+    TEST_THROW( std::ignore = *(getConst(a).rbegin()-1), Teuchos::RangeError );
+    TEST_THROW( std::ignore = *getConst(a).rend(), Teuchos::RangeError );
   }
 #endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
