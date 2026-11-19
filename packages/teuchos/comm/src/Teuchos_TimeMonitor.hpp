@@ -501,8 +501,16 @@ public:
   ///   TimeMonitor::report (myComm.ptr (), ...);
   ///   \endcode
   ///
-  /// \param out [out] Output stream to which to write.  This will
-  ///   only be used on the process with rank 0 in the communicator.
+  /// \param out [out] Output stream to which to write.  With "Table"
+  ///   format, only the process with rank 0 in the communicator
+  ///   writes to it.  With "YAML" format, every process writes the
+  ///   full report to it.  To write the YAML report only once, wrap
+  ///   the stream in a FancyOStream that writes only on rank 0:
+  ///   \code
+  ///   RCP<FancyOStream> fos = getFancyOStream (rcpFromRef (std::cout));
+  ///   fos->setOutputToRootOnly (0);
+  ///   TimeMonitor::report (*fos, params);
+  ///   \endcode
   ///
   /// \param filter [in] Filter for timer labels.  If filter is not
   ///   empty, this method will only print timers whose labels begin
@@ -632,8 +640,8 @@ public:
   ///
   /// \param comm [in] Communicator over which to compute timer
   ///   statistics.
-  /// \param out [out] Output stream to which to write (on Proc 0 of
-  ///   the given communicator only).
+  /// \param out [out] Output stream to which to write.  Every process
+  ///   writes the full report to it.
   /// \param yamlStyle [in] Whether to print YAML output in "compact"
   ///   or "spacious" style.
   /// \param filter [in] Filter for timer labels.  If filter is not
