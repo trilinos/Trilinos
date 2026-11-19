@@ -49,8 +49,9 @@ parameter list (e.g. read from a file) and use it to build
 <tt>Thyra::PreconditionerFactoryBase</tt> objects.
 
 The testing program is driven by
-<tt>test_tpetra_stratimikos_solver_driver.cpp</tt> and uses input files such
-as <tt>FourByFour.belos.np.xml</tt>, <tt>TpetraBelosTest.xml</tt>, and
+<tt>test_tpetra_stratimikos_solver_driver.cpp</tt> and uses
+<tt>FourByFour.belos.np.xml</tt>. The separate <tt>test_tpetra_belos.cpp</tt>
+program uses <tt>TpetraBelosTest.xml</tt> and
 <tt>stratimikos_BelosPrec_ParameterList.xml</tt>.
 
 Here is the main driver itself:
