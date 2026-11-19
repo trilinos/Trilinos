@@ -102,7 +102,7 @@ void MakeContiguousMaps(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdi
 
   // Must create GloballyContiguous DomainMap (which is a permutation of Matrix_'s
   // DomainMap) and the corresponding permuted ColumnMap.
-  //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
+  //   Tpetra_GID  --------->   LID   ----------> HYPRE_GID
   //           via DomainMap.LID()       via GloballyContiguousDomainMap.GID()
   RCP<const map_type> RowMap      = Matrix.getRowMap();
   RCP<const map_type> DomainMap   = Matrix.getDomainMap();
