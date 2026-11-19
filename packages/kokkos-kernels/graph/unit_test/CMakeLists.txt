@@ -46,11 +46,7 @@ if(KK_ENABLE_GRAPH_TESTS)
       COMPONENTS graph)
   endif()
 
-  if(KOKKOS_ENABLE_OPENMPTARGET)
-    # KOKKOSKERNELS_ADD_UNIT_TEST(graph_openmptarget
-    #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Graph.cpp
-    #   COMPONENTS graph)
-  endif()
+
 
   #####################
   #                   #

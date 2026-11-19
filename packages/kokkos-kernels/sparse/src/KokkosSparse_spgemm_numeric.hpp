@@ -218,9 +218,22 @@ void spgemm_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t
     return;
   }
 
-  if (Impl::is_spgemm_algorithm_native(algo)) {
-    // Never call a TPL if serial/debug is requested (this is needed for
-    // testing)
+  // Decide at runtime whether to fallback to native. In general, we fall back if the TPL for
+  // this algo/exec space requires sorted inputs, and the user has not told us that the inputs are sorted.
+  bool useFallback = !spgemmHandle->get_input_sorted() &&
+                     Impl::algorithm_may_require_sorted_input<c_exec_t, /* NonReuse */ false>(algo);
+  // rocSPARSE can handle unsorted inputs when certain nnz/row and intermediate product
+  // limits are satisfied. Check the actual matrices to avoid an unnecessary fallback.
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+  if (useFallback &&
+      Impl::spgemm_numeric_tpl_spec_avail<
+          const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
+          Internal_blno_row_view_t_, Internal_blno_nnz_view_t_, Internal_bscalar_nnz_view_t_, Internal_clno_row_view_t_,
+          Internal_clno_nnz_view_t_, Internal_cscalar_nnz_view_t_>::value) {
+    if (Impl::rocsparse_can_handle_unsorted_inputs(c_exec_t(), const_a_r, const_b_r)) useFallback = false;
+  }
+#endif
+  if (Impl::is_spgemm_algorithm_native(algo) || useFallback) {
     KokkosSparse::Impl::SPGEMM_NUMERIC<
         const_handle_type,  // KernelHandle,
         Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_, Internal_blno_row_view_t_,

@@ -62,12 +62,7 @@ if(KOKKOS_ENABLE_SYCL)
     COMPONENTS batched_sla)
 endif()
 
-if(KOKKOS_ENABLE_OPENMPTARGET)
-  # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   batched_sla_openmptarget
-  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Batched_Sparse.cpp
-  #   COMPONENTS batched_sla)
-endif()
+
 
 #####################
 #                   #

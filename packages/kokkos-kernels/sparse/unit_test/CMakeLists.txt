@@ -46,15 +46,7 @@ if(KOKKOS_ENABLE_SYCL)
     COMPONENTS sparse)
 endif()
 
-if(KOKKOS_ENABLE_OPENMPTARGET)
-  # kokkoskernels_add_unit_test(sparse_openmptarget
-  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Sparse.cpp
-  #   COMPONENTS sparse)
 
-  # kokkoskernels_add_unit_test(blocksparse_openmptarget
-  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_BlockSparse.cpp
-  #   COMPONENTS sparse)
-endif()
 
 #####################
 #                   #

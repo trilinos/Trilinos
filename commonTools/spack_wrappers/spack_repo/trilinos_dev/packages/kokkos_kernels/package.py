@@ -5,6 +5,7 @@ from spack.package import *
 
 class KokkosKernels(BuiltinKokkosKernels):
 
+    version("5.3.0", sha256="0d320eace1fc314291c74b3d4d87f9be9ca81584b187f5c50cbb24cdef81787e")
     version("5.2.2", sha256="4b95ac27319714a393b9a9ddf3a77fb7ffe751fe215a02084dd781856814d55f")
     version("5.2.1", sha256="346068d9c3bf25293f0460a8edc16cb02edf327d2c4197840ecd26ac37844df7")
     version("5.2.0", sha256="57f278e7a25940f9a1237d8b370a1de7f09ea282626b4594e4880042181acdcd")
@@ -17,6 +18,7 @@ class KokkosKernels(BuiltinKokkosKernels):
     version("4.7.03", sha256="902701e3481b2c535925a02e0918baed6f82186a25297e45314712b0905d9780")
     version("4.7.02", sha256="2d3b3e10ac112e382b88c50d66e4222ce543fca5d42be6d8376a684b82b8b238")
 
+    depends_on("kokkos@5.3.0", when="@5.3.0")
     depends_on("kokkos@5.2.2", when="@5.2.2")
     depends_on("kokkos@5.2.1", when="@5.2.1")
     depends_on("kokkos@5.2.0", when="@5.2.0")

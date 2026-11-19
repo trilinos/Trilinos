@@ -215,4 +215,38 @@ inline rocblas_side side_mode_kk_to_rocblas(const char kkSide[]) {
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
 
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
+#include "KokkosKernels_ArithTraits.hpp"
+#include <oneapi/mkl/blas.hpp>
+
+namespace KokkosBlas {
+namespace Impl {
+
+/// \brief This function converts KK transpose mode to oneMKL transpose mode
+inline oneapi::mkl::transpose mode_kk_to_onemkl(char mode_kk) {
+  switch (toupper(mode_kk)) {
+    case 'N': return oneapi::mkl::transpose::nontrans;
+    case 'T': return oneapi::mkl::transpose::trans;
+    case 'C': return oneapi::mkl::transpose::conjtrans;
+    default:;
+  }
+  throw std::invalid_argument("Invalid mode for oneMKL (should be one of N, T, C)");
+}
+
+template <typename T, bool is_complex = false>
+struct kokkos_to_std_type_map {
+  using type = T;
+};
+
+// e.g., map Kokkos::complex<float> to std::complex<float>
+template <typename T>
+struct kokkos_to_std_type_map<T, true> {
+  using type = std::complex<typename KokkosKernels::ArithTraits<T>::mag_type>;
+};
+
+}  // namespace Impl
+}  // namespace KokkosBlas
+
+#endif  // KOKKOSKERNELS_ENABLE_TPL_MKL && KOKKOS_ENABLE_SYCL
+
 #endif  // KOKKOSBLAS_TPL_SPEC_HPP_
