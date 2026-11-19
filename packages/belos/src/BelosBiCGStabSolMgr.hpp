@@ -33,13 +33,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/BiCGStab/BiCGStabExFile.cpp
-    This is an example of how to use the Belos::BiCGStabSolMgr solver manager.
-*/
-/** \example epetra/example/BiCGStab/PrecBiCGStabExFile.cpp
-    This is an example of how to use the Belos::BiCGStabSolMgr solver manager with an Ifpack preconditioner.
-*/
-
 /*! \class Belos::BiCGStabSolMgr
  *
  *  \brief The Belos::BiCGStabSolMgr provides a powerful and fully-featured solver manager over the pseudo-block BiCGStab iteration.
