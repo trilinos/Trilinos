@@ -95,6 +95,10 @@ def parse_workflow(workflow_file, pr_number):
                 if len(extraArgs) > 0 and extraArgs[0] == "--extra-configure-args":
                     cmake_extra_args = "=".join(extraArgs[1:])
                     cmake_extra_args = cmake_extra_args.replace("${GITHUB_WORKSPACE}", "/workspace/trilinos/source").replace(";", " ")
+            if "skip-create-packageenables" in withBlock:
+                skipPackageEnables = withBlock["skip-create-packageenables"]
+            else:
+                skipPackageEnables = False
         else:
             logger.debug("Could not parse job")
             continue
@@ -103,7 +107,8 @@ def parse_workflow(workflow_file, pr_number):
                               "tag": tag,
                               "genconfig_build_id": genconfig_build_id,
                               "cmake_extra_args": cmake_extra_args,
-                              "dashboard_build_name": dashboard_build_name}
+                              "dashboard_build_name": dashboard_build_name,
+                              "skipPackageEnables": skipPackageEnables}
         logger.debug(f"\"{jobname}\" added")
 
     return pr_builds
@@ -166,7 +171,7 @@ def launch_container(container_engine, source_dir, packageEnablesFile, image, ta
             "-e" "TRILINOS_BUILD_DIR=/workspace/trilinos/build",
             "-e" "TRILINOS_INSTALL_DIR=/workspace/trilinos/install"]
     # mount package enables file
-    if packageEnablesFile.exists():
+    if packageEnablesFile is not None and packageEnablesFile.exists():
         cmd += ["-v", f"{packageEnablesFile.absolute()}:/workspace/packageEnables.cmake"]
     # set environment variable for GenConfig
     cmd += ["-e", f"GENCONFIG_BUILD_ID={genconfig_build_id}"]
@@ -213,6 +218,9 @@ def launch_container(container_engine, source_dir, packageEnablesFile, image, ta
             requests_ca_bundle = os.environ["REQUESTS_CA_BUNDLE"]
             cmd += ["-v", f"{requests_ca_bundle}:/certs/requests-cert.crt:ro",
                     "-e", "REQUESTS_CA_BUNDLE=/certs/requests-cert.crt"]
+
+    # set timezone
+    cmd += ["--tz", "local"]
 
     # image to run
     cmd += [f"{image}:{tag}"]
