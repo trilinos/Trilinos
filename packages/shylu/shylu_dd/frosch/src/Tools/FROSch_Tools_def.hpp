@@ -925,7 +925,7 @@ namespace FROSch {
         auto getOrInsert = [&](const GO gid) {
             auto result = known.insert(gid,(LO) gidOf.size());
             while (result.failed()) {
-                known.rehash(max<uint32_t>(2*known.capacity(),128));
+                known.rehash(std::max<uint32_t>(2*known.capacity(),128));
                 result = known.insert(gid,(LO) gidOf.size());
             }
             if (result.success()) {

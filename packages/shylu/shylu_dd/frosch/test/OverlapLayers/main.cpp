@@ -131,7 +131,7 @@ namespace {
         int maxLength = 1;
         for (int p=0; p<numProcs; p++) maxLength = std::max(maxLength,lengths[p]);
         sendBuffer.resize(maxLength,GO(0));
-        Array<GO> recvBuffer(maxLength*numProcs);
+        Array<GO> recvBuffer((size_t) maxLength*numProcs);
         gatherAll<int,GO>(*comm,maxLength,sendBuffer.getRawPtr(),maxLength*numProcs,recvBuffer.getRawPtr());
 
         Adjacency adj;
