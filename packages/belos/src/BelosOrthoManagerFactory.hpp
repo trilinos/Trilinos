@@ -362,4 +362,3 @@ namespace Belos {
 } // namespace Belos
 
 #endif // __Belos_OrthoManagerFactory_hpp
-

@@ -48,4 +48,3 @@ registerLinearSolverFactory ()
 } // namespace Details
 } // namespace Belos
 
-

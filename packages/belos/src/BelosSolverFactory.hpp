@@ -576,4 +576,3 @@ isSupported (const std::string& solverName) const
 #include "BelosSolverFactory_Belos.hpp"
 
 #endif // __Belos_SolverFactory_hpp
-
