@@ -24,3 +24,4 @@ explicit_package_bases = true
 
 [project.scripts]
 dev-container = "TrilinosDevContainers.script:main"
+caskify = "TrilinosDevContainers.caskify:main"

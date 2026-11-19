@@ -94,40 +94,39 @@ def parse_workflow(workflow_file):
 
 
 def parse_workflow_images(source_dir, container_engine):
-    if container_engine in ("podman", "docker"):
-        images = set()
-        for workflow in [source_dir/'.github'/'workflows'/'AT2.yml',
-                         source_dir/'.github'/'workflows'/'nightly.yml',
-                         source_dir/'.github'/'workflows'/'weekly.yml']:
-            assert workflow.exists()
-            images |= parse_workflow(workflow)
-        return images
-    elif container_engine == "cask":
-        images = set()
-        # TODO: hook up cask ready images
-        raise NotImplementedError()
-        return images
-    else:
-        raise NotImplementedError(f"Unknown container_engine: \"{container_engine}\"")
+    images = set()
+    for workflow in [source_dir/'.github'/'workflows'/'AT2.yml',
+                     source_dir/'.github'/'workflows'/'nightly.yml',
+                     source_dir/'.github'/'workflows'/'weekly.yml']:
+        assert workflow.exists()
+        images |= parse_workflow(workflow)
+    if container_engine == "cask":
+        images = set([(image[0], image[1]+"_cask") for image in images])
+    return images
 
 
 def image_available(container_engine, image, tag):
     if container_engine == "podman":
         cmd = [container_engine, "image", "exists", f"{image}:{tag}"]
-    else:
+    elif container_engine == "docker":
         cmd = [container_engine, "image", "inspect", f"{image}:{tag}"]
+    elif container_engine == "cask":
+        cmd = ["podman", "image", "exists", f"{image}:{tag}"]
     ret = subprocess.run(cmd,
                          capture_output=True, universal_newlines=True)
     return ret.returncode == 0
 
 
 def pull_image(container_engine, image, tag):
+    if container_engine == "cask":
+        container_engine = "podman"
+        return
     cmd = [container_engine, "pull", f"{image}:{tag}"]
-    subprocess.run(cmd,
-                   capture_output=False, universal_newlines=True)
+    ret = subprocess.run(cmd,
+                         capture_output=False, universal_newlines=True)
 
 
-def launch_container(container_engine, source_dir, build_dir, image, tag, unparsed_args):
+def launch_container(container_engine, container_engine_cmd, source_dir, build_dir, image, tag, unparsed_args):
     """
     We map:
      source_dir -> /workspace/trilinos/source
@@ -213,20 +212,30 @@ def launch_container(container_engine, source_dir, build_dir, image, tag, unpars
             print(message)
             exit(1)
     elif container_engine == "cask":
-        cmd = [container_engine]
+        cmd = [str(container_engine_cmd)]
         cmd += unparsed_args
         # mount source directory from host
-        cmd += ["--dir", f"{source_dir}:/workspace/trilinos/source"]
-        # mount build directory from host
-        # TODO: Check that CASK supports multiple "--dir" args. If not, print a warning and use a container-only build dir
-        cmd += ["--dir", f"{build_dir}:/workspace/trilinos/build"]
-        cmd += ["--agents_image", f"{image}:{tag}"]
+        cmd += ["--dir", f"{source_dir}"]
+
         # map GPU
         if which("nvidia-smi") is not None and image.find("cuda") >= 0:
             cmd += ["--gpu", "nvidia"]
-        logger.debug(f"{container_engine} command = {cmd}")
+        # cmd += ["--agents-image", f"{image}:{tag}"]
+        cmd += ["--agents-image", "registry-ex.sandia.gov/asc-do/agent-sandboxes/cask/agents-default:latest"]
+
+        # prepare environment script
+        with open(source_dir/"commonTools"/"containers"/"env.sh", "w") as f:
+            f.write("#!/bin/bash\n")
+            f.write(f"export TRILINOS_DIR=/workspace/trilinos/source\n")
+            f.write(f"export TRILINOS_BUILD_DIR=/workspace/trilinos/build\n")
+            f.write(f"export TRILINOS_INSTALL_DIR=/workspace/trilinos/install\n")
+            f.write("source $TRILINOS_DIR/sampleScripts/configurations/helpers.sh\n")
+
+        cmd = " ".join(cmd)
+        logger.info(f"{container_engine} command = {cmd}")
         ret = subprocess.run(cmd,
-                             capture_output=False, universal_newlines=True)
+                             capture_output=False, universal_newlines=True, shell=True,
+                             )
     else:
         raise NotImplementedError(f"Unknown container engine: \"{container_engine}\"")
 

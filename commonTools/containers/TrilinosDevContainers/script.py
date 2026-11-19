@@ -63,17 +63,6 @@ def main():
     questionary.print(logo)
 
     ##################################################
-    # Check that the requested container engine is available
-    container_engine_cmd = which(container_engine)
-    logger.debug(f"container_engine_cmd = {container_engine_cmd}")
-    if container_engine_cmd is None:
-        logger.warning(f"No command \"{container_engine}\" in path. Aborting.")
-        exit(1)
-    # On Mac: make sure that we can get a running machine
-    if container_engine == "podman" and sys.platform == "darwin":
-        ensure_podman_machine()
-
-    ##################################################
     # Trilinos source directory
 
     if args.source is not None:
@@ -88,17 +77,49 @@ def main():
     logger.debug(f"trilinos_source = {trilinos_source}")
 
     ##################################################
+    # Check that the requested container engine is available
+    container_engine_cmd = which(container_engine)
+    if container_engine == "cask" and container_engine_cmd is None:
+        common_cask_location = Path.home()/"cask"/"launchers"/"cask"
+        logger.debug("Did not find cask. Trying ")
+        if common_cask_location.exists():
+            logger.debug(f"Using frequently used cask location f{common_cask_location}")
+            container_engine_cmd = common_cask_location
+        elif questionary.confirm(f"Cannot find cask. Clone it now?", default=True).ask():
+            assert not common_cask_location.parent.parent.exists()
+            import subprocess
+            ret = subprocess.run("git clone https://cee-gitlab.sandia.gov/asc-do/agent-sandboxes/cask cask",
+                                 shell=True,
+                                 capture_output=False,
+                                 universal_newlines=True,
+                                 cwd=common_cask_location.parent.parent.parent)
+            assert ret.returncode == 0
+            container_engine_cmd = common_cask_location
+    logger.debug(f"container_engine_cmd = {container_engine_cmd}")
+    if container_engine_cmd is None:
+        logger.warning(f"No command \"{container_engine}\" in path. Aborting.")
+        exit(1)
+    # On Mac: make sure that we can get a running machine
+    if container_engine == "podman" and sys.platform == "darwin":
+        ensure_podman_machine()
+
+
+    ##################################################
     # Trilinos build directory
-    if args.build is not None:
-        trilinos_build = args.build
-    else:
-        trilinos_build = questionary.path("Where should Trilinos be built?", default=str(Path.home()/"builds"/"trilinos")).ask()
-    trilinos_build = Path(trilinos_build)
-    if not trilinos_build.exists():
-        if questionary.confirm(f"Build directory \"{trilinos_build}\" does not exist. Create?", default=True).ask():
-            trilinos_build.mkdir(parents=True)
+    if container_engine != "cask":
+        if args.build is not None:
+            trilinos_build = args.build
         else:
-            exit()
+            trilinos_build = questionary.path("Where should Trilinos be built?", default=str(Path.home()/"builds"/"trilinos")).ask()
+
+        trilinos_build = Path(trilinos_build)
+        if not trilinos_build.exists():
+            if questionary.confirm(f"Build directory \"{trilinos_build}\" does not exist. Create?", default=True).ask():
+                trilinos_build.mkdir(parents=True)
+            else:
+                exit()
+    else:
+        trilinos_build = "Configured via CASK project config"
 
     ##################################################
     # Available container images
@@ -130,8 +151,23 @@ def main():
     logger.debug(f"image_avail = {image_avail}")
     if not image_avail:
         pull_image(container_engine, image, tag)
+        image_avail = image_available(container_engine, image, tag)
+
+        if not image_avail:
+            if questionary.confirm(f"CASK image not available. Build it now?", default=True).ask():
+                import subprocess
+                tag_base = tag.split("_")[0]
+                ret = subprocess.run(f"caskify --os=ubi --no-nexus {image}:{tag_base} {image}:{tag}",
+                                     shell=True,
+                                     capture_output=False,
+                                     universal_newlines=True,
+                                     cwd=trilinos_source/"commonTools"/"containers")
+                assert ret.returncode == 0
+            else:
+                exit(1)
+
 
     ##################################################
     # Launch container
 
-    launch_container(container_engine, trilinos_source, trilinos_build, image, tag, unparsed_args)
+    launch_container(container_engine, container_engine_cmd, trilinos_source, trilinos_build, image, tag, unparsed_args)
