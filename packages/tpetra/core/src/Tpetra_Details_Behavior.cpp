@@ -7,6 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
+#include "Kokkos_Core.hpp"
 #include "Teuchos_EnvVariables.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_TestForException.hpp"
