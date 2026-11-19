@@ -13,17 +13,28 @@
 #ifndef PHX_TEMPLATEMANAGER_HPP
 #define PHX_TEMPLATEMANAGER_HPP
 
+#include "Phalanx_config.hpp"
+
+// The deprecated form below takes its object type as a Sacado placeholder
+// expression and stores base class pointers. Configuring with
+// Phalanx_HIDE_DEPRECATED_CODE=ON replaces it with the typed form.
+// Code using get(), set(), has(), build(), buildObjects(), disable(),
+// isEnabled(), reset(), getAsBase(), forEach() and forEachBase() compiles
+// with either one.
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+
+#include "Phalanx_TemplateManager_Typed.hpp"
+
+#else
+
 #include <typeinfo>
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
 
-#include "Sacado_mpl_size.hpp"
-#include "Sacado_mpl_find.hpp"
-#include "Sacado_mpl_for_each.hpp"
 #include "Sacado_mpl_apply.hpp"
 
-#include "Phalanx_config.hpp"
+#include "Phalanx_TypeList.hpp"
 
 namespace PHX {
 
@@ -64,6 +75,16 @@ namespace PHX {
       }
     };
 
+    template <typename BuilderOpT, typename T>
+    static auto invokeBuilder(const BuilderOpT& builder, int)
+      -> decltype(builder.template build<T>())
+    { return builder.template build<T>(); }
+
+    template <typename BuilderOpT, typename T>
+    static auto invokeBuilder(const BuilderOpT& builder, long)
+      -> decltype(builder.template operator()<T>())
+    { return builder.template operator()<T>(); }
+
     template <typename BuilderOpT>
     struct BuildObject {
       std::vector< Teuchos::RCP<BaseT> >& objects;
@@ -73,10 +94,10 @@ namespace PHX {
                   std::vector<bool>& disabled_,
 		  const BuilderOpT& builder_) :
 	objects(objects_),disabled(disabled_),builder(builder_) {}
-      template <typename T> void operator()(T) const {
-	int idx = Sacado::mpl::find<TypeSeq,T>::value;
+      template <typename T> void operator()() const {
+	constexpr std::size_t idx = PHX::mpl::index_v<T,TypeSeq>;
         if (!disabled[idx])
-          objects[idx] = builder.template build<T>();
+          objects[idx] = invokeBuilder<BuilderOpT,T>(builder,0);
       }
     };
 
@@ -109,7 +130,11 @@ namespace PHX {
     //! Destructor
     ~TemplateManager();
 
-    //! Build objects for each ScalarT
+    /** \brief Build objects for each ScalarT
+
+        The builder either has a member `build<T>()` or is a generic lambda
+        called as `builder.template operator()<T>()`.
+    */
     template <typename BuilderOpT>
     void buildObjects(const BuilderOpT& builder);
 
@@ -126,33 +151,131 @@ namespace PHX {
 
     //! Get RCP to object corrensponding to ScalarT as ObjectT<ScalarT>
     template<typename ScalarT>
+    PHALANX_DEPRECATED_MSG("Use get<T>(). See packages/phalanx/scripts/migrate_template_manager.py.")
     Teuchos::RCP< typename Sacado::mpl::apply<ObjectT,ScalarT>::type > getAsObject();
 
     //! Get RCP to object corrensponding to ScalarT as ObjectT<ScalarT>
     template<typename ScalarT>
+    PHALANX_DEPRECATED_MSG("Use get<T>(). See packages/phalanx/scripts/migrate_template_manager.py.")
     Teuchos::RCP< const typename Sacado::mpl::apply<ObjectT,ScalarT>::type > getAsObject() const;
 
     //! Return an iterator that points to the first type object
+    PHALANX_DEPRECATED_MSG("Use forEach() or forEachBase(). See packages/phalanx/scripts/migrate_template_manager.py.")
     typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator begin();
 
     //! Return an iterator that points to the first type object
+    PHALANX_DEPRECATED_MSG("Use forEach() or forEachBase(). See packages/phalanx/scripts/migrate_template_manager.py.")
     typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator
     begin() const;
 
     //! Return an iterator that points one past the last type object
+    PHALANX_DEPRECATED_MSG("Use forEach() or forEachBase(). See packages/phalanx/scripts/migrate_template_manager.py.")
     typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator end();
 
     //! Return an iterator that points one past the last type object
+    PHALANX_DEPRECATED_MSG("Use forEach() or forEachBase(). See packages/phalanx/scripts/migrate_template_manager.py.")
     typename PHX::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator
     end() const;
 
     //! Delete the underlying type. Used to clean out unused types.
     template <typename BuilderOpT>
+    PHALANX_DEPRECATED_MSG("Use reset<T>(). See packages/phalanx/scripts/migrate_template_manager.py.")
     void deleteType();
 
     //! Disable the type so that it is not allocated.
     template <typename BuilderOpT>
+    PHALANX_DEPRECATED_MSG("Use disable<T>(). See packages/phalanx/scripts/migrate_template_manager.py.")
     void disableType();
+
+    //! Builds a Concrete<T>(args...) for each enabled type T.
+    template <template <typename> class Concrete, typename... Args>
+    void build(const Args&... args)
+    {
+      buildObjects([&]<typename T>() -> Teuchos::RCP<BaseT> {
+        return Teuchos::rcp(new Concrete<T>(args...));
+      });
+    }
+
+    //! Stores obj for type T, replacing any existing object.
+    template <typename T>
+    void set(const Teuchos::RCP<typename Sacado::mpl::apply<ObjectT,T>::type>& obj)
+    { objects[PHX::mpl::index_v<T,TypeSeq>] = obj; }
+
+    //! Returns the object for type T (null if not built).
+    template <typename T>
+    Teuchos::RCP<typename Sacado::mpl::apply<ObjectT,T>::type> get()
+    {
+      return Teuchos::rcp_dynamic_cast<typename Sacado::mpl::apply<ObjectT,T>::type>(
+        objects[PHX::mpl::index_v<T,TypeSeq>], true);
+    }
+
+    //! Returns the object for type T (null if not built).
+    template <typename T>
+    Teuchos::RCP<const typename Sacado::mpl::apply<ObjectT,T>::type> get() const
+    {
+      return Teuchos::rcp_dynamic_cast<const typename Sacado::mpl::apply<ObjectT,T>::type>(
+        objects[PHX::mpl::index_v<T,TypeSeq>], true);
+    }
+
+    //! Returns true if an object is stored for type T.
+    template <typename T>
+    bool has() const
+    { return Teuchos::nonnull(objects[PHX::mpl::index_v<T,TypeSeq>]); }
+
+    //! Prevents later calls to build() and buildObjects() from building type T. Does not remove an existing object.
+    template <typename T>
+    void disable()
+    { disabled[PHX::mpl::index_v<T,TypeSeq>] = true; }
+
+    //! Returns false if disable<T>() was called.
+    template <typename T>
+    bool isEnabled() const
+    { return !disabled[PHX::mpl::index_v<T,TypeSeq>]; }
+
+    //! Removes the object for type T.
+    template <typename T>
+    void reset()
+    { objects[PHX::mpl::index_v<T,TypeSeq>] = Teuchos::null; }
+
+    /** \brief Calls `f.template operator()<T>(obj)` with the object for
+        each type T that has one, in type list order.
+    */
+    template <typename F>
+    void forEach(F&& f)
+    {
+      PHX::mpl::for_each_type<TypeSeq>([&]<typename T>() {
+        if (auto p = this->template get<T>(); Teuchos::nonnull(p))
+          f.template operator()<T>(*p);
+      });
+    }
+
+    //! Const version of forEach(); the object is passed as const.
+    template <typename F>
+    void forEach(F&& f) const
+    {
+      PHX::mpl::for_each_type<TypeSeq>([&]<typename T>() {
+        if (auto p = this->template get<T>(); Teuchos::nonnull(p))
+          f.template operator()<T>(*p);
+      });
+    }
+
+    //! Calls `f(BaseT&)` for each type that has an object, in type list order.
+    template <typename F>
+    void forEachBase(F&& f)
+    {
+      for (auto& p : objects)
+        if (Teuchos::nonnull(p))
+          f(*p);
+    }
+
+    //! Calls `f(const BaseT&)` for each type that has an object, in type list order.
+    template <typename F>
+    void forEachBase(F&& f) const
+    {
+      for (const auto& p : objects)
+        if (Teuchos::nonnull(p))
+          f(static_cast<const BaseT&>(*p));
+    }
 
   private:
 
@@ -170,5 +293,7 @@ namespace PHX {
 
 // Include template iterator definition
 #include "Phalanx_TemplateIterator.hpp"
+
+#endif // PHALANX_HIDE_DEPRECATED_CODE
 
 #endif

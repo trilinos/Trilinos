@@ -255,8 +255,8 @@ int main(int argc,char * argv[])
 
    // evaluate physics
    out << "EVALUTE" << std::endl;
-   ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
-   ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+   ae_tm.get<panzer::Traits::Residual>()->evaluate(input);
+   ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
 
    out << "RAN SUCCESSFULLY!" << std::endl;
 

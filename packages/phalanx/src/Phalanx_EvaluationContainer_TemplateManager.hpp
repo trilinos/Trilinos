@@ -19,11 +19,26 @@ using namespace Sacado::mpl::placeholders;
 
 namespace PHX {
 
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+  namespace detail {
+    template<typename Traits>
+    struct EvaluationContainerOf {
+      template<typename EvalT> using type = PHX::EvaluationContainer<EvalT,Traits>;
+    };
+  }
+#endif
+
   template<typename Traits>
   class EvaluationContainer_TemplateManager : 
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+    public PHX::TemplateManager<typename Traits::EvalTypes,
+                                PHX::detail::EvaluationContainerOf<Traits>::template type,
+                                PHX::EvaluationContainerBase<Traits> > {
+#else
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				PHX::EvaluationContainerBase<Traits>,
 				PHX::EvaluationContainer<_,Traits> > {
+#endif
 
   public:
 

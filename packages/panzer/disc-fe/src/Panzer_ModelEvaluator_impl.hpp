@@ -77,7 +77,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   , oneTimeDirichletBeta_(0.0)
   , build_volume_field_managers_(true)
   , build_bc_field_managers_(true)
-  , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
+  , active_evaluation_types_(PHX::mpl::size_v<panzer::Traits::EvalTypes>, true)
   , write_matrix_count_(0)
 {
   using Teuchos::RCP;
@@ -133,7 +133,7 @@ ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>
   , oneTimeDirichletBeta_(0.0)
   , build_volume_field_managers_(true)
   , build_bc_field_managers_(true)
-  , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
+  , active_evaluation_types_(PHX::mpl::size_v<panzer::Traits::EvalTypes>, true)
   , write_matrix_count_(0)
 {
   using Teuchos::RCP;
@@ -946,7 +946,7 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
 
   // evaluate dirichlet boundary conditions
   RCP<panzer::LinearObjContainer> counter
-     = ae_tm_.template getAsObject<panzer::Traits::Residual>()->evaluateOnlyDirichletBCs(ae_inargs);
+     = ae_tm_.template get<panzer::Traits::Residual>()->evaluateOnlyDirichletBCs(ae_inargs);
 
   // allocate the result container
   RCP<panzer::LinearObjContainer> result = lof_->buildLinearObjContainer(); // we use a new global container
@@ -1240,7 +1240,7 @@ evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
     // Zero values in ghosted container objects
     thGhostedContainer->initializeMatrix(0.0);
 
-    ae_tm_.template getAsObject<panzer::Traits::Hessian>()->evaluate(ae_inargs);
+    ae_tm_.template get<panzer::Traits::Hessian>()->evaluate(ae_inargs);
   }
 
   // HACK: set A to null before calling responses to avoid touching the
@@ -1341,7 +1341,7 @@ evalModel_D2fDxDp(int pIndex,
     // Zero values in ghosted container objects
     thGhostedContainer->initializeMatrix(0.0);
 
-    ae_tm_.template getAsObject<panzer::Traits::Hessian>()->evaluate(ae_inargs);
+    ae_tm_.template get<panzer::Traits::Hessian>()->evaluate(ae_inargs);
   }
 
   // HACK: set A to null before calling responses to avoid touching the
@@ -1578,7 +1578,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     Thyra::assign(thGhostedContainer->get_f_th().ptr(),0.0);
     thGhostedContainer->initializeMatrix(0.0);
 
-    ae_tm_.template getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
+    ae_tm_.template get<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
   else if(!Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
 
@@ -1592,7 +1592,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     // Zero values in ghosted container objects
     Thyra::assign(thGhostedContainer->get_f_th().ptr(),0.0);
 
-    ae_tm_.template getAsObject<panzer::Traits::Residual>()->evaluate(ae_inargs);
+    ae_tm_.template get<panzer::Traits::Residual>()->evaluate(ae_inargs);
   }
   else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
@@ -1609,7 +1609,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     // Zero values in ghosted container objects
     thGhostedContainer->initializeMatrix(0.0);
 
-    ae_tm_.template getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
+    ae_tm_.template get<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
 
   // HACK: set A to null before calling responses to avoid touching the
@@ -2020,7 +2020,7 @@ evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
 
    if(totalParameterCount>0) {
      PANZER_FUNC_TIME_MONITOR_DIFF("panzer::ModelEvaluator::evalModel(df/dp)",dfdp_eval);
-     ae_tm_.getAsObject<panzer::Traits::Tangent>()->evaluate(ae_inargs);
+     ae_tm_.get<panzer::Traits::Tangent>()->evaluate(ae_inargs);
    }
 }
 

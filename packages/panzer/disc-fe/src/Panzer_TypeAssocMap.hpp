@@ -11,7 +11,7 @@
 #ifndef __Panzer_TypeAssocMap_hpp__
 #define __Panzer_TypeAssocMap_hpp__
 
-#include "Sacado_mpl_for_each.hpp"
+#include "Phalanx_TypeList.hpp"
 
 namespace panzer {
 
@@ -25,7 +25,7 @@ public:
 
   TypeAssocMap() 
   {
-    const int sz = Sacado::mpl::size<TypesVector>::value;
+    constexpr std::size_t sz = PHX::mpl::size_v<TypesVector>;
     mapValues_.resize(sz);
   }
 
@@ -33,7 +33,7 @@ public:
   template <typename T>
   void set(ValueType v) 
   { 
-    const int idx = Sacado::mpl::find<TypesVector,T>::value;
+    constexpr std::size_t idx = PHX::mpl::index_v<T,TypesVector>;
     mapValues_[idx] = v; 
   }
 
@@ -41,13 +41,13 @@ public:
   template <typename T>
   ValueType get() const 
   { 
-    const int idx = Sacado::mpl::find<TypesVector,T>::value;
+    constexpr std::size_t idx = PHX::mpl::index_v<T,TypesVector>;
     return mapValues_[idx]; 
   }
 
   template <typename BuilderOpT>
   void buildObjects(const BuilderOpT & builder)
-  { Sacado::mpl::for_each_no_kokkos<TypesVector>(BuildObjects<BuilderOpT>(mapValues_,builder)); }
+  { PHX::mpl::for_each_type<TypesVector>(BuildObjects<BuilderOpT>(mapValues_,builder)); }
 
 public:
 
@@ -58,8 +58,8 @@ public:
     const BuilderOpT & builder_;
     BuildObjects(std::vector<ValueType> & mv,const BuilderOpT& builder) : mv_(mv), builder_(builder) {}
 
-    template <typename T> void operator()(T) const { 
-      const int idx = Sacado::mpl::find<TypesVector,T>::value;
+    template <typename T> void operator()() const {
+      constexpr std::size_t idx = PHX::mpl::index_v<T,TypesVector>;
       mv_[idx] = builder_.template build<T>(); 
     }
   };

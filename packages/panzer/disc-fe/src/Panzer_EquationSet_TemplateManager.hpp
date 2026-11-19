@@ -30,9 +30,15 @@ namespace panzer {
     */
   template<typename Traits>
   class EquationSet_TemplateManager :
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+    public PHX::TemplateManager<typename Traits::EvalTypes,
+                                panzer::EquationSet,
+                                panzer::EquationSetBase> {
+#else
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				panzer::EquationSetBase,
                                 panzer::EquationSet<_> > {
+#endif
 
   public:
 

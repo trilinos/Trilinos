@@ -11,8 +11,6 @@
 #ifndef PHX_DFAD_TRAITS_HPP
 #define PHX_DFAD_TRAITS_HPP
 
-#include "Sacado_mpl_vector.hpp"
-#include "Sacado_mpl_find.hpp"
 #include "Phalanx_Traits.hpp"
 
 // Include User Data Types
@@ -39,7 +37,7 @@ namespace PHX {
     // ******************************************************************
     struct Residual { typedef RealType ScalarT; };
     struct Jacobian { typedef FadType ScalarT;  };
-    typedef Sacado::mpl::vector<Residual, Jacobian> EvalTypes;
+    typedef PHX::mpl::type_list<Residual, Jacobian> EvalTypes;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
@@ -53,11 +51,11 @@ namespace PHX {
 
   template<>
   struct eval_scalar_types<PHX::MyTraits::Residual> 
-  { typedef Sacado::mpl::vector<PHX::MyTraits::RealType> type; };
+  { typedef PHX::mpl::type_list<PHX::MyTraits::RealType> type; };
 
   template<>
   struct eval_scalar_types<PHX::MyTraits::Jacobian> 
-  { typedef Sacado::mpl::vector<PHX::MyTraits::RealType,PHX::MyTraits::FadType> type; };
+  { typedef PHX::mpl::type_list<PHX::MyTraits::RealType,PHX::MyTraits::FadType> type; };
 
 }
 

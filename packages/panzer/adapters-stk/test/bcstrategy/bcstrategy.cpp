@@ -193,8 +193,8 @@ namespace panzer {
     x->PutScalar(1.0);
     input.beta = 1.0;
 
-    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Residual>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
 
     // Check residual values.  Evaluation should have put (x - 5.0)
     // into each residual.  With initial guess of 1.0, check to make

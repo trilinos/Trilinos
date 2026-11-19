@@ -19,12 +19,16 @@
 #include "Kokkos_DynRankView_Fad.hpp"
 #endif
 #include "Phalanx_config.hpp"
+#include "Phalanx_TypeList.hpp"
 
 namespace PHX {
   
   struct TraitsBase {};
 
-  template <typename mpl_vector> struct eval_scalar_types;
+  /** \brief Specialize for each evaluation type, providing a nested
+      \c type that is a PHX::mpl::type_list of the scalar types fields
+      of that evaluation type may use. */
+  template <typename EvalT> struct eval_scalar_types;
 
   // template <typename T> 
   // struct eval_scalar_types

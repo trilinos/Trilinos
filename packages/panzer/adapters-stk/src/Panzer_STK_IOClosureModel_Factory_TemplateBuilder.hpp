@@ -20,7 +20,7 @@
 
 namespace panzer_stk {
 
-  /** \brief Builder functor used with Sacado::mpl::TemplateManager to
+  /** \brief Builder functor used with PHX::TemplateManager to
     * construct one panzer_stk::IOClosureModelFactory<EvalT> per
     * evaluation type, each wrapping the same underlying closure model
     * factory template manager, mesh, and output field selection.
@@ -61,10 +61,10 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
       if(plConstr_)
         return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
-                            (new panzer_stk::IOClosureModelFactory<EvalT>(cmf_tm_.template getAsObject<EvalT>(),mesh_,outputList_)) );
+                            (new panzer_stk::IOClosureModelFactory<EvalT>(cmf_tm_.template get<EvalT>(),mesh_,outputList_)) );
       else
         return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
-                            (new panzer_stk::IOClosureModelFactory<EvalT>(cmf_tm_.template getAsObject<EvalT>(),mesh_,nodalFields_,cellFields_)) );
+                            (new panzer_stk::IOClosureModelFactory<EvalT>(cmf_tm_.template get<EvalT>(),mesh_,nodalFields_,cellFields_)) );
     }
     
   private:

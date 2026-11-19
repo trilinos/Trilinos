@@ -399,7 +399,7 @@ int main(int argc,char * argv[])
        ghostCont->initialize();
        container->initialize();
      }
-     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+     ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
    }
    stackedTimer->stop("Jacobian Assembly");
 

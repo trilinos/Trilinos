@@ -30,9 +30,15 @@ namespace panzer {
     */
   template<typename Traits>
   class AssemblyEngine_TemplateManager :
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+    public PHX::TemplateManager<typename Traits::EvalTypes,
+                                panzer::AssemblyEngine,
+                                panzer::Base> {
+#else
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				panzer::Base,
                                 panzer::AssemblyEngine<_> > {
+#endif
 
   public:
 

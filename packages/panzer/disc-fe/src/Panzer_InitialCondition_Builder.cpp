@@ -52,8 +52,8 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
                                                       << ic_block_closure_models);
 
     // Only the residual is used by initial conditions
-    std::vector<bool> active_evaluation_types(Sacado::mpl::size<panzer::Traits::EvalTypes>::value,false);
-    int residual_index = Sacado::mpl::find<panzer::Traits::EvalTypes,panzer::Traits::Residual>::value;
+    std::vector<bool> active_evaluation_types(PHX::mpl::size_v<panzer::Traits::EvalTypes>,false);
+    constexpr std::size_t residual_index = PHX::mpl::index_v<panzer::Traits::Residual,panzer::Traits::EvalTypes>;
     active_evaluation_types[residual_index] = true;
     pb->setActiveEvaluationTypes(active_evaluation_types);
 
@@ -68,11 +68,10 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     setupData.worksets_ = wkstContainer.getWorksets(wd);
     setupData.orientations_ = wkstContainer.getOrientations();
 
-    int i=0;
-    for (auto eval_type=fm->begin(); eval_type != fm->end(); ++eval_type,++i) {
-      if (active_evaluation_types[i])
-        eval_type->postRegistrationSetup(setupData,*fm,false,false,nullptr);
-    }
+    PHX::mpl::for_each_type<panzer::Traits::EvalTypes>([&]<typename EvalT>() {
+      if (active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>])
+        fm->postRegistrationSetupForType<EvalT>(setupData,false,false,nullptr);
+    });
 
     phx_ic_field_managers[blockId] = fm;
 
@@ -114,8 +113,8 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
                                                       << ic_block_closure_models);
 
     // Only the residual is used by initial conditions
-    std::vector<bool> active_evaluation_types(Sacado::mpl::size<panzer::Traits::EvalTypes>::value,false);
-    int residual_index = Sacado::mpl::find<panzer::Traits::EvalTypes,panzer::Traits::Residual>::value;
+    std::vector<bool> active_evaluation_types(PHX::mpl::size_v<panzer::Traits::EvalTypes>,false);
+    constexpr std::size_t residual_index = PHX::mpl::index_v<panzer::Traits::Residual,panzer::Traits::EvalTypes>;
     active_evaluation_types[residual_index] = true;
     pb->setActiveEvaluationTypes(active_evaluation_types);
 
@@ -133,11 +132,10 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     setupData.worksets_ = wkstContainer.getWorksets(wd);
     setupData.orientations_ = wkstContainer.getOrientations();
 
-    int i=0;
-    for (auto eval_type=fm->begin(); eval_type != fm->end(); ++eval_type,++i) {
-      if (active_evaluation_types[i])
-        eval_type->postRegistrationSetup(setupData,*fm,false,false,nullptr);
-    }
+    PHX::mpl::for_each_type<panzer::Traits::EvalTypes>([&]<typename EvalT>() {
+      if (active_evaluation_types[PHX::mpl::index_v<EvalT,panzer::Traits::EvalTypes>])
+        fm->postRegistrationSetupForType<EvalT>(setupData,false,false,nullptr);
+    });
 
     phx_ic_field_managers[blockId] = fm;
 

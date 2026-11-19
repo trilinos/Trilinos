@@ -180,8 +180,8 @@ namespace panzer {
                                         panzer::EpetraLinearObjContainer::Mat,*eGlobal);
     panzer::AssemblyEngineInArgs input(eGhosted,eGlobal);
 
-    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Residual>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
   }
 
   Teuchos::RCP<panzer::BasisIRLayout> buildLinearBasis(std::size_t worksetSize)

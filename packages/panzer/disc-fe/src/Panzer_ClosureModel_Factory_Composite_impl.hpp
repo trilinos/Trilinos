@@ -82,9 +82,9 @@ buildClosureModels(const std::string& model_id,
   // Loop over factories
   for (std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >::const_iterator factory = m_factories.begin(); factory != m_factories.end(); ++factory) {
     
-    (*factory)->template getAsObject<EvalT>()->setThrowOnModelNotFound(false);
+    (*factory)->template get<EvalT>()->setThrowOnModelNotFound(false);
     RCP< vector< RCP<Evaluator<panzer::Traits> > > > tmp_evaluators =
-      (*factory)->template getAsObject<EvalT>()->buildClosureModels(model_id,copy_of_my_model,fl,ir,default_params,user_data,global_data,fm);
+      (*factory)->template get<EvalT>()->buildClosureModels(model_id,copy_of_my_model,fl,ir,default_params,user_data,global_data,fm);
 
     if (tmp_evaluators->size() > 0) {
       for (vector< RCP<Evaluator<panzer::Traits> > >::const_iterator eval = tmp_evaluators->begin(); eval != tmp_evaluators->end(); ++eval)
@@ -115,7 +115,7 @@ buildClosureModels(const std::string& model_id,
     for (std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >::const_iterator factory = m_factories.begin(); factory != m_factories.end(); ++factory) {
 
       RCP< vector< RCP<Evaluator<panzer::Traits> > > > tmp_evaluators =
-	(*factory)->getAsObject<EvalT>()->buildClosureModels(model_id,set,copy_of_models,default_params,user_data,global_data,fm);
+	(*factory)->get<EvalT>()->buildClosureModels(model_id,set,copy_of_models,default_params,user_data,global_data,fm);
 
       if (tmp_evaluators->size() > 0) {
 	
