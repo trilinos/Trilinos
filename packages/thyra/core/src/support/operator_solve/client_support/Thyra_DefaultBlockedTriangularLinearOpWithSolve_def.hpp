@@ -28,7 +28,8 @@ namespace Thyra {
 
 template<class Scalar>
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::DefaultBlockedTriangularLinearOpWithSolve()
-  : blockFillIsActive_(false), numDiagBlocks_(0)
+  : blockFillIsActive_(false), numDiagBlocks_(0),
+    hasLowerBlocks_(false), hasUpperBlocks_(false)
 {}
 
 
@@ -49,6 +50,16 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setBlocks(
 {
   assertAndSetBlockStructure(*blocks);
   blocks_.initialize(blocks);
+}
+
+
+template<class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertBlockTriangular(
+  const PhysicallyBlockedLinearOpBase<Scalar> &blocks
+  )
+{
+  bool hasLower, hasUpper;
+  getBlockStructure(blocks, hasLower, hasUpper);
 }
 
 
@@ -128,6 +139,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
   diagonalBlocks_.resize(numDiagBlocks_);
   productRange_ = null;
   productDomain_ = null;
+  removeOffDiagonalBlocks();
   blockFillIsActive_ = true;
 }
 
@@ -148,6 +160,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
   productDomain_ = productDomain_in;
   numDiagBlocks_ = productRange_in->numBlocks();
   diagonalBlocks_.resize(numDiagBlocks_);
+  removeOffDiagonalBlocks();
   blockFillIsActive_ = true;
 }
 
@@ -166,7 +179,9 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::acceptsBlock(
 {
   assertBlockFillIsActive(true);
   assertBlockRowCol(i,j);
-  return false; // ToDo: Change this once we accept off-diagonal blocks
+  // The diagonal blocks are set with setLOWSBlock(), and the off-diagonal
+  // blocks with setBlocks() after the block fill
+  return false;
 }
 
 
@@ -177,7 +192,11 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstBlock(
   )
 {
   assertBlockFillIsActive(true);
-  TEUCHOS_TEST_FOR_EXCEPT("Error, we don't support off-diagonal LOB objects yet!");
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    "Error, DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstBlock(): "
+    "the diagonal blocks are set with setNonconstLOWSBlock(), and the off-diagonal "
+    "blocks with setNonconstBlocks() after the block fill!"
+    );
 }
 
 
@@ -188,7 +207,11 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setBlock(
   )
 {
   assertBlockFillIsActive(true);
-  TEUCHOS_TEST_FOR_EXCEPT("Error, we don't support off-diagonal LOB objects yet!");
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    "Error, DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setBlock(): "
+    "the diagonal blocks are set with setLOWSBlock(), and the off-diagonal "
+    "blocks with setBlocks() after the block fill!"
+    );
 }
 
 
@@ -225,6 +248,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::uninitialize()
   productDomain_ = Teuchos::null;
   numDiagBlocks_ = 0;
   diagonalBlocks_.resize(0);
+  removeOffDiagonalBlocks();
 }
 
 
@@ -286,7 +310,7 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::blockExists(
   assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
   if (i!=j)
-    return false; // ToDo: Update this when off-diagonals are supported!
+    return nonnull(getOffDiagonalBlock(i,j));
   return !is_null(diagonalBlocks_[i].getConstObj());
 } 
 
@@ -308,10 +332,14 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getNonconstBlock(
   const int i, const int j
   )
 {
-  assertBlockFillIsActive(true);
+  assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
-  if (i!=j)
-    return Teuchos::null; // ToDo: Update when off-diagonals are supported!
+  if (i!=j) {
+    if (is_null(blocks_.getConstObj()))
+      return Teuchos::null;
+    // Throws if the blocks were set with setBlocks()
+    return blocks_.getNonconstObj()->getNonconstBlock(i,j);
+  }
   return this->getNonconstLOWSBlock(i,j);
 } 
 
@@ -322,10 +350,10 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getBlock(
   const int i, const int j
   ) const
 {
-  assertBlockFillIsActive(true);
+  assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
   if (i!=j)
-    return Teuchos::null; // ToDo: Update when off-diagonals are supported!
+    return getOffDiagonalBlock(i,j);
   return this->getLOWSBlock(i,j);
 } 
 
@@ -403,7 +431,7 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::opSupportedImpl(
     if ( !opSupported(*diagonalBlocks_[k].getConstObj(),M_trans) )
       return false;
   }
-  return true;
+  return offDiagonalBlocksSupport(M_trans);
   // ToDo: To be safe we really should do a collective reduction of all
   // clusters of processes.  However, for the typical use case, every block
   // will return the same info and we should be safe!
@@ -436,10 +464,13 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::applyImpl(
   //
   // =>
   //
-  // Y[i] = beta+Y[i] + alpha*op(Op)[i]*X[i], for i=0...numDiagBlocks-1
+  // Y[i] = beta*Y[i] + alpha*sum_j op(M)[i,j]*X[j], for i=0...numDiagBlocks-1
   //
-  // ToDo: Update to handle off diagonal blocks when needed!
+  // where op(M)[i,j] is op(M[i,j]) for op = NOTRANS or CONJ, and op(M[j,i])
+  // for op = TRANS or CONJTRANS (see getOpOffDiagonalBlock()).
   //
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
 
   const ProductMultiVectorBase<Scalar>
     &X = dyn_cast<const ProductMultiVectorBase<Scalar> >(X_in);
@@ -447,10 +478,18 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::applyImpl(
     &Y = dyn_cast<ProductMultiVectorBase<Scalar> >(*Y_inout);
   
   for ( int i = 0; i < numDiagBlocks_; ++ i ) {
+    const RCP<MultiVectorBase<Scalar> > Y_i = Y.getNonconstMultiVectorBlock(i);
     Thyra::apply( *diagonalBlocks_[i].getConstObj(), M_trans,
-      *X.getMultiVectorBlock(i), Y.getNonconstMultiVectorBlock(i).ptr(),
-      alpha, beta
+      *X.getMultiVectorBlock(i), Y_i.ptr(), alpha, beta
       );
+    for ( int j = 0; j < numDiagBlocks_; ++j ) {
+      const RCP<const LinearOpBase<Scalar> >
+        opM_ij = getOpOffDiagonalBlock(M_trans,i,j);
+      if (nonnull(opM_ij)) {
+        Thyra::apply( *opM_ij, M_trans, *X.getMultiVectorBlock(j), Y_i.ptr(),
+          alpha, ST::one() );
+      }
+    }
   }
 
 }
@@ -470,7 +509,8 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsImpl(
     if ( !Thyra::solveSupports( *diagonalBlocks_[k].getConstObj(), M_trans ) )
       return false;
   }
-  return true;
+  // The off-diagonal blocks are applied in the block substitution
+  return offDiagonalBlocksSupport(M_trans);
   // ToDo: To be safe we really should do a collective reduction of all
   // clusters of processes.  However, for the typical use case, every block
   // will return the same info and we should be safe!
@@ -530,32 +570,64 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveImpl(
 #endif // THYRA_DEBUG  
 
   //
-  // Y = alpha * inv(op(M)) * X + beta*Y
+  // X = inv(op(M)) * B
   //
-  // =>
+  // => block substitution.  If op(M) is block lower triangular (M block lower
+  // triangular and op = NOTRANS or CONJ, or M block upper triangular and
+  // op = TRANS or CONJTRANS):
   //
-  // X[i] = inv(op(Op[i]))*B[i], for i=0...numDiagBlocks-1
+  // X[i] = inv(op(M)[i,i])*( B[i] - sum_{j<i} op(M)[i,j]*X[j] ),
+  //   for i=0...numDiagBlocks-1
   //
-  // ToDo: Update to handle off diagonal blocks when needed!
+  // and if op(M) is block upper triangular:
   //
+  // X[i] = inv(op(M)[i,i])*( B[i] - sum_{j>i} op(M)[i,j]*X[j] ),
+  //   for i=numDiagBlocks-1...0
+  //
+  // (op(M)[i,j] as in applyImpl()).  With only diagonal blocks, the blocks
+  // are solved independently.  The solve criteria are passed to the solves
+  // of the diagonal blocks.
+  //
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
 
   const ProductMultiVectorBase<Scalar>
     &B = dyn_cast<const ProductMultiVectorBase<Scalar> >(B_in);
   ProductMultiVectorBase<Scalar>
     &X = dyn_cast<ProductMultiVectorBase<Scalar> >(*X_inout);
 
+  const bool opIsUpper =
+    ( real_trans(M_trans) == NOTRANS ? hasUpperBlocks_ : hasLowerBlocks_ );
+
   bool converged = true;
-  for ( int i = 0; i < numDiagBlocks_; ++ i ) {
+  for ( int k = 0; k < numDiagBlocks_; ++ k ) {
+    const int i = ( opIsUpper ? numDiagBlocks_-1-k : k );
     const RCP<const LinearOpWithSolveBase<Scalar> >
       Op_k = diagonalBlocks_[i].getConstObj();
     Op_k->setOStream(this->getOStream());
     Op_k->setVerbLevel(this->getVerbLevel());
-     SolveStatus<Scalar> status =
-       Thyra::solve( *Op_k, M_trans, *B.getMultiVectorBlock(i),
-                     X.getNonconstMultiVectorBlock(i).ptr(), solveCriteria );
-     if (status.solveStatus != SOLVE_STATUS_CONVERGED)
-       converged = false;
-    // ToDo: Pass in solve criteria when needed!
+    // B[i] minus the off-diagonal blocks times the solved blocks of X
+    RCP<const MultiVectorBase<Scalar> > B_i = B.getMultiVectorBlock(i);
+    RCP<MultiVectorBase<Scalar> > R_i;
+    const int j_begin = ( opIsUpper ? i+1 : 0 );
+    const int j_end = ( opIsUpper ? numDiagBlocks_ : i );
+    for ( int j = j_begin; j < j_end; ++j ) {
+      const RCP<const LinearOpBase<Scalar> >
+        opM_ij = getOpOffDiagonalBlock(M_trans,i,j);
+      if (nonnull(opM_ij)) {
+        if (is_null(R_i))
+          R_i = B_i->clone_mv();
+        Thyra::apply( *opM_ij, M_trans, *X.getMultiVectorBlock(j), R_i.ptr(),
+          -ST::one(), ST::one() );
+      }
+    }
+    if (nonnull(R_i))
+      B_i = R_i;
+    SolveStatus<Scalar> status =
+      Thyra::solve( *Op_k, M_trans, *B_i,
+                    X.getNonconstMultiVectorBlock(i).ptr(), solveCriteria );
+    if (status.solveStatus != SOLVE_STATUS_CONVERGED)
+      converged = false;
   }
 
    SolveStatus<Scalar> solveStatus;
@@ -635,6 +707,15 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructu
   const PhysicallyBlockedLinearOpBase<Scalar>& blocks
   )
 {
+  // Checked in all builds: apply and solve access the blocks (i,j) of blocks
+  // for i,j < numDiagBlocks_
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    blocks.productRange()->numBlocks() != numDiagBlocks_, std::logic_error,
+    "Error, DefaultBlockedTriangularLinearOpWithSolve<Scalar>::"
+    "assertAndSetBlockStructure(blocks): the blocked operator has "
+    << blocks.productRange()->numBlocks() << " block rows, but this operator has "
+    << numDiagBlocks_ << " diagonal blocks!"
+    );
 #ifdef THYRA_DEBUG
   THYRA_ASSERT_VEC_SPACES(
     "DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructure(blocks)",
@@ -644,12 +725,95 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructu
     "DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructure(blocks)",
     *blocks.domain(), *this->domain()
     );
-  // ToDo: Make sure that all of the blocks are above or below the diagonal
-  // but not both!
-#else
-  (void)blocks;
 #endif
-  // ToDo: Set if this is an upper or lower triangular block operator.
+  // Sets the flags only if blocks is block triangular, so that a rejected
+  // operator leaves this object unchanged
+  getBlockStructure(blocks, hasLowerBlocks_, hasUpperBlocks_);
+}
+
+
+template<class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getBlockStructure(
+  const PhysicallyBlockedLinearOpBase<Scalar> &blocks,
+  bool &hasLower, bool &hasUpper
+  )
+{
+  const int numBlocks = blocks.productRange()->numBlocks();
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    blocks.productDomain()->numBlocks() != numBlocks, std::logic_error,
+    "Error, DefaultBlockedTriangularLinearOpWithSolve<Scalar>: the blocked "
+    "operator has " << numBlocks << " block rows and "
+    << blocks.productDomain()->numBlocks() << " block columns!"
+    );
+  // The off-diagonal blocks must all be above or all be below the diagonal
+  bool lower = false, upper = false;
+  for ( int i = 0; i < numBlocks; ++i ) {
+    for ( int j = 0; j < numBlocks; ++j ) {
+      if ( i != j && nonnull(blocks.getBlock(i,j)) ) {
+        if (i > j)
+          lower = true;
+        else
+          upper = true;
+      }
+    }
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION( lower && upper, std::logic_error,
+    "Error, DefaultBlockedTriangularLinearOpWithSolve<Scalar>: the blocked "
+    "operator has nonzero blocks both below and above the diagonal, it is not "
+    "block triangular!"
+    );
+  hasLower = lower;
+  hasUpper = upper;
+}
+
+
+template<class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::removeOffDiagonalBlocks()
+{
+  blocks_.uninitialize();
+  hasLowerBlocks_ = false;
+  hasUpperBlocks_ = false;
+}
+
+
+template<class Scalar>
+RCP<const LinearOpBase<Scalar> >
+DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getOffDiagonalBlock(
+  const int i, const int j
+  ) const
+{
+  const RCP<const PhysicallyBlockedLinearOpBase<Scalar> >
+    blocks = blocks_.getConstObj();
+  if ( i == j || is_null(blocks) )
+    return Teuchos::null;
+  return blocks->getBlock(i,j);
+}
+
+
+template<class Scalar>
+RCP<const LinearOpBase<Scalar> >
+DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getOpOffDiagonalBlock(
+  const EOpTransp M_trans, const int i, const int j
+  ) const
+{
+  return ( real_trans(M_trans) == NOTRANS
+    ? getOffDiagonalBlock(i,j) : getOffDiagonalBlock(j,i) );
+}
+
+
+template<class Scalar>
+bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::offDiagonalBlocksSupport(
+  const EOpTransp M_trans
+  ) const
+{
+  for ( int i = 0; i < numDiagBlocks_; ++i ) {
+    for ( int j = 0; j < numDiagBlocks_; ++j ) {
+      const RCP<const LinearOpBase<Scalar> > M_ij = getOffDiagonalBlock(i,j);
+      if ( nonnull(M_ij) && !Thyra::opSupported(*M_ij,M_trans) )
+        return false;
+    }
+  }
+  return true;
 }
 
 
