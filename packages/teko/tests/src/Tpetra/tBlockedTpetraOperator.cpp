@@ -761,12 +761,109 @@ std::string describeApplyPath(const crs_t& M) {
   return ss.str();
 }
 
+// Access to CrsMatrix's protected cache of the column-map multivector that apply() imports X
+// into and then hands to the SpMV, through the standard derived-class pointer-to-member idiom.
+struct CrsMatrixImportCache : crs_t {
+  static RCP<mv_t> crs_t::*importMV() { return &CrsMatrixImportCache::importMV_; }
+};
+
+// Rank-local description of a multivector's DualView, read without triggering any sync:
+// sync flags, host and device strides/spans/pointers, and the raw contents of both sides.
+std::string describeDualViewState(const mv_t& v, const std::string& name) {
+  const auto dv = v.getWrappedDualView().implGetDualView();
+  const auto h  = dv.view_host();
+  const auto d  = dv.view_device();
+
+  // copy the device side into a fresh host allocation, leaving the DualView untouched
+  const auto dOnHost = Kokkos::create_mirror(Kokkos::HostSpace(), d);
+  Kokkos::deep_copy(dOnHost, d);
+
+  std::ostringstream ss;
+  ss << std::scientific << std::setprecision(16);
+  ss << "\n            " << name << ": " << h.extent(0) << "x" << h.extent(1) << ", need_sync_host "
+     << v.need_sync_host() << ", need_sync_device " << v.need_sync_device()
+     << "\n              host:   strides (" << h.stride(0) << "," << h.stride(1) << "), span "
+     << h.span() << ", ptr " << static_cast<const void*>(h.data())
+     << "\n              device: strides (" << d.stride(0) << "," << d.stride(1) << "), span "
+     << d.span() << ", ptr " << static_cast<const void*>(d.data());
+  const size_t rows = std::min<size_t>(h.extent(0), 8);
+  for (size_t i = 0; i < rows; i++) {
+    ss << "\n              row " << i << " host:  ";
+    for (size_t j = 0; j < h.extent(1); j++) ss << " " << h(i, j);
+    ss << "\n              row " << i << " device:";
+    for (size_t j = 0; j < dOnHost.extent(1); j++) ss << " " << dOnHost(i, j);
+  }
+  return ss.str();
+}
+
+// Send a rank-local string from root to every rank (so rank 0 can print it).  Collective.
+std::string broadcastString(const Teuchos::Comm<int>& comm, int root, const std::string& s) {
+  int len = static_cast<int>(s.size());
+  Teuchos::broadcast(comm, root, Teuchos::outArg(len));
+  std::vector<char> buf(s.begin(), s.end());
+  buf.resize(len);
+  if (len > 0) Teuchos::broadcast(comm, root, len, buf.data());
+  return std::string(buf.begin(), buf.end());
+}
+
+// Lowest rank whose part of v contains a non-finite value, or 0 if none.  Collective.
+int firstRankWithNonFinite(const mv_t& v) {
+  const auto comm = v.getMap()->getComm();
+  const auto vH   = v.getLocalViewHost(Tpetra::Access::ReadOnly);
+  bool mine       = false;
+  for (size_t i = 0; i < vH.extent(0); i++)
+    for (size_t j = 0; j < vH.extent(1); j++) mine |= !std::isfinite(vH(i, j));
+  const int candidate = mine ? comm->getRank() : comm->getSize();
+  int owner           = comm->getSize();
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, candidate, Teuchos::outArg(owner));
+  return owner < comm->getSize() ? owner : 0;
+}
+
+// Inspect the cached column-map multivector of M right after the failing apply, compared with
+// what a correct import of X gives, plus the import plan and the inputs to Tpetra's
+// host-vs-device decision.  Reported from the rank that owns the non-finite output.  Collective.
+std::string inspectImportCache(const crs_t& M, const mv_t& X, const mv_t& Yafter) {
+  const auto comm   = M.getComm();
+  const int owner   = firstRankWithNonFinite(Yafter);
+  const auto cached = M.*CrsMatrixImportCache::importMV();
+  const auto imp    = M.getGraph()->getImporter();
+
+  // what the column-map multivector should contain
+  mv_t xcol(M.getColMap(), X.getNumVectors());
+  if (!imp.is_null()) xcol.doImport(X, *imp, Tpetra::INSERT);
+
+  std::ostringstream ss;
+  ss << "\n          cached column-map import state (rank " << owner << "):";
+  if (comm->getRank() == owner) {
+    if (imp.is_null()) {
+      ss << "\n            no importer";
+    } else {
+      ss << "\n            import plan: same " << imp->getNumSameIDs() << ", permute "
+         << imp->getNumPermuteIDs() << ", remote " << imp->getNumRemoteIDs() << ", export "
+         << imp->getNumExportIDs() << ", remote LIDs contiguous " << imp->areRemoteLIDsContiguous();
+    }
+    ss << "\n            granular transfers "
+       << Tpetra::Details::Behavior::enableGranularTransfers() << ", MV kernel location threshold "
+       << Tpetra::Details::Behavior::multivectorKernelLocationThreshold()
+       << "\n            source X: need_sync_host " << X.need_sync_host() << ", need_sync_device "
+       << X.need_sync_device() << " (copyAndPermute runs on host iff need_sync_device and "
+       << "local length " << X.getLocalLength() << " <= threshold)";
+    if (cached.is_null())
+      ss << "\n            importMV_ is null";
+    else
+      ss << describeDualViewState(*cached, "cached importMV_ (as left by the failing apply)");
+    ss << describeDualViewState(xcol, "expected (fresh import of the same X)");
+  }
+  return broadcastString(*comm, owner, ss.str());
+}
+
 // Re-run a leaf apply that turned finite inputs into non-finite output in several ways, to
 // separate the possible causes.  Collective.
 void diagnoseLeafApply(const crs_t& M, const mv_t& X, const mv_t& Ybefore, const mv_t& Yafter,
                        ST alpha, ST beta, std::ostringstream& log) {
   const int w = static_cast<int>(X.getNumVectors());
   log << "\n          non-finite entries in output:" << listNonFinite(Yafter);
+  log << inspectImportCache(M, X, Yafter);
 
   // (a) same matrix, fresh copies of the inputs
   {
@@ -888,6 +985,25 @@ void diagnoseLeafApply(const crs_t& M, const mv_t& X, const mv_t& Ybefore, const
     M.apply(X, Yh, Teuchos::NO_TRANS, alpha, beta);
     log << "\n          (h) beta = 0 with NaN-filled output:          " << countNonFinite(Yh)
         << " non-finite (expected 0)";
+  }
+  // (k) candidate fix: put the cached column-map multivector in a clean, device-current state
+  // (putScalar(0)) before the apply; (l) candidate fix: drop the cache so apply() allocates a
+  // new one.  (l) runs last because it discards the cache.
+  {
+    crs_t& Mmut       = const_cast<crs_t&>(M);
+    const auto cached = Mmut.*CrsMatrixImportCache::importMV();
+    if (!cached.is_null()) {
+      cached->putScalar(0.0);
+      mv_t Yk(Ybefore, Teuchos::Copy);
+      M.apply(X, Yk, Teuchos::NO_TRANS, alpha, beta);
+      log << "\n          (k) cached import MV zeroed before apply:     " << countNonFinite(Yk)
+          << " non-finite";
+    }
+    Mmut.*CrsMatrixImportCache::importMV() = Teuchos::null;
+    mv_t Yl(Ybefore, Teuchos::Copy);
+    M.apply(X, Yl, Teuchos::NO_TRANS, alpha, beta);
+    log << "\n          (l) cached import MV dropped before apply:    " << countNonFinite(Yl)
+        << " non-finite";
   }
 }
 
