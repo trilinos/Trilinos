@@ -45,6 +45,7 @@
 
 #include "Teko_BlockedTpetraOperator.hpp"
 #include "Teko_TpetraHelpers.hpp"
+#include "Teko_BlockingTpetra.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -69,6 +70,31 @@ using Thyra::createMember;
 using Thyra::LinearOpBase;
 using Thyra::LinearOpTester;
 using Thyra::VectorBase;
+
+// Device functors for the assembly check (kept out of the anonymous namespace so that they
+// have external linkage for device compilation).
+namespace assembly_detail {
+
+template <class LocalMap, class GOView>
+struct LocalToGlobal {
+  LocalMap map;
+  GOView out;
+  KOKKOS_INLINE_FUNCTION void operator()(const Teko::LO i) const {
+    out(i) = map.getGlobalElement(i);
+  }
+};
+
+template <class LocalMap, class GOView, class LOView>
+struct GlobalToLocal {
+  LocalMap map;
+  GOView gids;
+  LOView out;
+  KOKKOS_INLINE_FUNCTION void operator()(const Teko::LO i) const {
+    out(i) = map.getLocalElement(gids(i));
+  }
+};
+
+}  // namespace assembly_detail
 
 namespace {
 
@@ -502,6 +528,342 @@ std::vector<RCP<const crs_t>> getShellBlocks(
   return blocks;
 }
 
+// Send a rank-local string from root to every rank (so rank 0 can print it).  Collective.
+std::string broadcastString(const Teuchos::Comm<int>& comm, int root, const std::string& s) {
+  int len = static_cast<int>(s.size());
+  Teuchos::broadcast(comm, root, Teuchos::outArg(len));
+  std::vector<char> buf(s.begin(), s.end());
+  buf.resize(len);
+  if (len > 0) Teuchos::broadcast(comm, root, len, buf.data());
+  return std::string(buf.begin(), buf.end());
+}
+
+// ---------------------------------------------------------------------------------------
+// Sub-block assembly check.  Teko's buildSubBlock assembles each block on device
+// (Kokkos parallel_scan/parallel_reduce, KokkosSparse::sort_crs_matrix,
+// Tpetra::Details::makeColMap with Kokkos::Bitset and the domain map's device lookup) and
+// hands the local matrix to the CrsMatrix constructor, which builds the graph and the column
+// map Import.  Verify every product of that pipeline, on host and device.
+// ---------------------------------------------------------------------------------------
+
+enum AssemblyIssue {
+  kLocalDeviceVsHost = 0,
+  kLocalDeviceVsOtherShell,
+  kCrsValidity,
+  kGraphState,
+  kMapDeviceTables,
+  kImporterDeviceVsHost,
+  kImporterVsOtherShell,
+  kImporterVsReference,
+  kValuesVsA,
+  kNumAssemblyIssues
+};
+
+const char* assemblyIssueName(int k) {
+  static const char* names[] = {"local matrix device vs. host",
+                                "local matrix device vs. other shell",
+                                "CRS validity (row_map, sorted/unique/in-range columns)",
+                                "graph state (fill complete, storage optimized)",
+                                "map device tables (local<->global) vs. host",
+                                "Import LID/PID arrays device vs. host",
+                                "Import vs. other shell",
+                                "Import vs. fresh Import(domainMap, colMap)",
+                                "values vs. entries of A"};
+  return names[k];
+}
+
+struct AssemblyIssues {
+  int count[kNumAssemblyIssues] = {};
+  std::ostringstream detail;
+  int numDetails = 0;
+  void add(int k, const std::string& msg) {
+    count[k]++;
+    if (numDetails < 12) {
+      detail << "\n            " << msg;
+      numDetails++;
+    }
+  }
+};
+
+template <class View>
+auto deviceToHost(const View& v) {
+  return Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v);
+}
+
+// Number of local entries where the device-side local<->global tables of m disagree with the
+// host-side lookup.
+int checkMapDeviceTables(const map_t& m) {
+  using dev_t     = NT::device_type;
+  using exec_t    = NT::execution_space;
+  const LO n      = static_cast<LO>(m.getLocalNumElements());
+  const auto lmap = m.getLocalMap();
+
+  Kokkos::View<GO*, dev_t> gidsD("gids", n);
+  Kokkos::View<LO*, dev_t> lidsD("lids", n);
+  Kokkos::parallel_for(
+      "Teko test: local to global", Kokkos::RangePolicy<exec_t>(0, n),
+      assembly_detail::LocalToGlobal<decltype(lmap), decltype(gidsD)>{lmap, gidsD});
+  Kokkos::parallel_for(
+      "Teko test: global to local", Kokkos::RangePolicy<exec_t>(0, n),
+      assembly_detail::GlobalToLocal<decltype(lmap), decltype(gidsD), decltype(lidsD)>{lmap, gidsD,
+                                                                                       lidsD});
+  Kokkos::fence();
+  const auto gidsH = deviceToHost(gidsD);
+  const auto lidsH = deviceToHost(lidsD);
+
+  int bad = 0;
+  for (LO i = 0; i < n; i++)
+    if (gidsH(i) != m.getGlobalElement(i) || lidsH(i) != i) bad++;
+  return bad;
+}
+
+template <class DualView>
+std::vector<LO> dualViewHost(const DualView& dv) {
+  const auto h = dv.view_host();
+  return std::vector<LO>(h.data(), h.data() + h.extent(0));
+}
+
+template <class DualView>
+std::vector<LO> dualViewDevice(const DualView& dv) {
+  const auto h = deviceToHost(dv.view_device());
+  return std::vector<LO>(h.data(), h.data() + h.extent(0));
+}
+
+using import_t = Tpetra::Import<LO, GO, NT>;
+
+// Compare the four LID lists, export PIDs and counts of two Imports (host side).
+std::string compareImports(const import_t& a, const import_t& b) {
+  std::ostringstream ss;
+  if (a.getNumSameIDs() != b.getNumSameIDs())
+    ss << " numSame " << a.getNumSameIDs() << "/" << b.getNumSameIDs();
+  if (dualViewHost(a.getPermuteToLIDs_dv()) != dualViewHost(b.getPermuteToLIDs_dv()))
+    ss << " permuteToLIDs";
+  if (dualViewHost(a.getPermuteFromLIDs_dv()) != dualViewHost(b.getPermuteFromLIDs_dv()))
+    ss << " permuteFromLIDs";
+  if (dualViewHost(a.getRemoteLIDs_dv()) != dualViewHost(b.getRemoteLIDs_dv())) ss << " remoteLIDs";
+  if (dualViewHost(a.getExportLIDs_dv()) != dualViewHost(b.getExportLIDs_dv())) ss << " exportLIDs";
+  const auto pa = a.getExportPIDs();
+  const auto pb = b.getExportPIDs();
+  if (std::vector<int>(pa.begin(), pa.end()) != std::vector<int>(pb.begin(), pb.end()))
+    ss << " exportPIDs";
+  return ss.str();
+}
+
+// Device vs. host consistency of an Import's LID lists.
+std::string checkImportDeviceVsHost(const import_t& imp) {
+  std::ostringstream ss;
+  const auto check = [&ss](const auto& dv, const char* name) {
+    if (dv.need_sync_host() || dv.need_sync_device())
+      ss << " " << name << "(need_sync host " << dv.need_sync_host() << " device "
+         << dv.need_sync_device() << ")";
+    if (dualViewHost(dv) != dualViewDevice(dv)) ss << " " << name << "(contents differ)";
+  };
+  check(imp.getPermuteToLIDs_dv(), "permuteToLIDs");
+  check(imp.getPermuteFromLIDs_dv(), "permuteFromLIDs");
+  check(imp.getRemoteLIDs_dv(), "remoteLIDs");
+  check(imp.getExportLIDs_dv(), "exportLIDs");
+  return ss.str();
+}
+
+// Expected entries of block (i,j), indexed by local block row: block column GID -> value,
+// rebuilt on the host directly from A with Teko's public Blocking helpers.
+using ExpectedRows = std::vector<std::map<GO, ST>>;
+using gid_vec_t    = Tpetra::Vector<GO, LO, GO, NT>;
+
+ExpectedRows expectedBlockEntries(const crs_t& A, const std::vector<GO>& rowGids,
+                                  const gid_vec_t& colContigGids) {
+  ExpectedRows rows(rowGids.size());
+  const auto cH = colContigGids.getLocalViewHost(Tpetra::Access::ReadOnly);
+  for (size_t r = 0; r < rowGids.size(); r++) {
+    const LO lrow = A.getRowMap()->getLocalElement(rowGids[r]);
+    crs_t::local_inds_host_view_type inds;
+    crs_t::values_host_view_type vals;
+    A.getLocalRowView(lrow, inds, vals);
+    for (size_t k = 0; k < inds.extent(0); k++) {
+      const GO g = static_cast<GO>(cH(inds(k), 0));
+      if (g >= 0) rows[r][g] = vals(k);
+    }
+  }
+  return rows;
+}
+
+void checkOneBlock(const crs_t& M, const crs_t& Mother, const ExpectedRows& expected,
+                   const std::string& where, AssemblyIssues& issues) {
+  const auto lclH = M.getLocalMatrixHost();
+  const auto lclD = M.getLocalMatrixDevice();
+  const auto rowD = deviceToHost(lclD.graph.row_map);
+  const auto colD = deviceToHost(lclD.graph.entries);
+  const auto valD = deviceToHost(lclD.values);
+
+  // (1) device vs. host local matrix
+  {
+    bool same = rowD.extent(0) == lclH.graph.row_map.extent(0) &&
+                colD.extent(0) == lclH.graph.entries.extent(0) &&
+                valD.extent(0) == lclH.values.extent(0);
+    for (size_t k = 0; same && k < rowD.extent(0); k++) same = rowD(k) == lclH.graph.row_map(k);
+    for (size_t k = 0; same && k < colD.extent(0); k++) same = colD(k) == lclH.graph.entries(k);
+    for (size_t k = 0; same && k < valD.extent(0); k++) same = valD(k) == lclH.values(k);
+    if (!same) issues.add(kLocalDeviceVsHost, where + ": device local matrix differs from host");
+  }
+
+  // (2) device local matrix vs. the other shell's (built from identical input)
+  {
+    const auto oD  = Mother.getLocalMatrixDevice();
+    const auto oRw = deviceToHost(oD.graph.row_map);
+    const auto oCl = deviceToHost(oD.graph.entries);
+    const auto oVl = deviceToHost(oD.values);
+    bool same      = oRw.extent(0) == rowD.extent(0) && oCl.extent(0) == colD.extent(0) &&
+                oVl.extent(0) == valD.extent(0);
+    for (size_t k = 0; same && k < rowD.extent(0); k++) same = rowD(k) == oRw(k);
+    for (size_t k = 0; same && k < colD.extent(0); k++)
+      same =
+          M.getColMap()->getGlobalElement(colD(k)) == Mother.getColMap()->getGlobalElement(oCl(k));
+    for (size_t k = 0; same && k < valD.extent(0); k++) same = valD(k) == oVl(k);
+    if (!same)
+      issues.add(kLocalDeviceVsOtherShell,
+                 where + ": device local matrix differs from other shell");
+  }
+
+  // (3) CRS validity of the device data
+  {
+    const LO nrows = static_cast<LO>(rowD.extent(0)) - 1;
+    const LO ncols = static_cast<LO>(M.getColMap()->getLocalNumElements());
+    std::ostringstream why;
+    if (nrows != static_cast<LO>(M.getRowMap()->getLocalNumElements())) why << " nrows";
+    if (lclD.numCols() != ncols) why << " numCols " << lclD.numCols() << "!=" << ncols;
+    if (rowD.extent(0) == 0 || rowD(0) != 0)
+      why << " row_map(0)";
+    else if (rowD(nrows) != colD.extent(0))
+      why << " row_map(n)!=nnz";
+    for (LO r = 0; r < nrows && why.str().empty(); r++) {
+      if (rowD(r + 1) < rowD(r)) why << " row_map decreasing at " << r;
+      for (auto k = rowD(r); k < rowD(r + 1); k++) {
+        if (colD(k) < 0 || colD(k) >= ncols) why << " col out of range in row " << r;
+        if (k > rowD(r) && colD(k) <= colD(k - 1)) why << " unsorted/duplicate in row " << r;
+      }
+    }
+    if (!why.str().empty()) issues.add(kCrsValidity, where + ":" + why.str());
+  }
+
+  // (4) graph state
+  if (!M.isFillComplete() || !M.isStorageOptimized())
+    issues.add(kGraphState, where + ": fillComplete " + std::to_string(M.isFillComplete()) +
+                                " storageOptimized " + std::to_string(M.isStorageOptimized()));
+
+  // (5) map device tables
+  {
+    const int bad = checkMapDeviceTables(*M.getRowMap()) + checkMapDeviceTables(*M.getColMap()) +
+                    checkMapDeviceTables(*M.getDomainMap()) +
+                    checkMapDeviceTables(*M.getRangeMap());
+    if (bad > 0) issues.add(kMapDeviceTables, where + ": " + std::to_string(bad) + " bad entries");
+  }
+
+  // (6) Import: device vs. host, other shell, fresh reference
+  {
+    const auto imp  = M.getGraph()->getImporter();
+    const auto impO = Mother.getGraph()->getImporter();
+    if (imp.is_null() != impO.is_null()) {
+      issues.add(kImporterVsOtherShell, where + ": importer null in only one shell");
+    } else if (!imp.is_null()) {
+      const std::string dh = checkImportDeviceVsHost(*imp);
+      if (!dh.empty()) issues.add(kImporterDeviceVsHost, where + ":" + dh);
+      const std::string vo = compareImports(*imp, *impO);
+      if (!vo.empty()) issues.add(kImporterVsOtherShell, where + ":" + vo);
+      const import_t ref(M.getDomainMap(), M.getColMap());
+      const std::string vr = compareImports(*imp, ref);
+      if (!vr.empty()) issues.add(kImporterVsReference, where + ":" + vr);
+    }
+  }
+
+  // (7) values (from the device copy) vs. the entries of A
+  {
+    const LO nrows = static_cast<LO>(rowD.extent(0)) - 1;
+    int bad        = 0;
+    for (LO r = 0; r < nrows && r < static_cast<LO>(expected.size()); r++) {
+      std::map<GO, ST> got;
+      for (auto k = rowD(r); k < rowD(r + 1); k++)
+        got[M.getColMap()->getGlobalElement(colD(k))] = valD(k);
+      if (got != expected[r]) bad++;
+    }
+    if (nrows != static_cast<LO>(expected.size())) bad++;
+    if (bad > 0) issues.add(kValuesVsA, where + ": " + std::to_string(bad) + " rows differ from A");
+  }
+}
+
+// Verify every sub-block of both shells.  Returns true if all checks pass.  Collective.
+bool checkAssembly(const crs_t& A, const std::vector<std::vector<GO>>& vars,
+                   const std::vector<RCP<const crs_t>>& flatBlocks,
+                   const std::vector<RCP<const crs_t>>& reorderBlocks, int numBlocks,
+                   std::string& report) {
+  namespace Blocking = Teko::TpetraHelpers::Blocking;
+  const auto comm    = A.getComm();
+
+  // column -> block-contiguous GID vectors from Teko's public helper, plus their host/device
+  // consistency
+  std::vector<RCP<gid_vec_t>> colContig(numBlocks);
+  int colVecBadLocal = 0;
+  for (int j = 0; j < numBlocks; j++) {
+    colContig[j]    = Blocking::getSubBlockColumnGIDs(A, Blocking::buildSubMap(vars[j], *comm));
+    const auto dv   = colContig[j]->getWrappedDualView().implGetDualView();
+    const auto dOnH = deviceToHost(dv.view_device());
+    const auto h    = dv.view_host();
+    for (size_t k = 0; k < h.extent(0); k++)
+      if (h(k, 0) != dOnH(k, 0)) colVecBadLocal++;
+  }
+
+  std::ostringstream ss;
+  ss << "\n      sub-block assembly check (every block of both shells, host and device):";
+  bool allOk = true;
+
+  int colVecBad = 0;
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, colVecBadLocal, Teuchos::outArg(colVecBad));
+  if (colVecBad > 0) {
+    allOk = false;
+    ss << "\n        getSubBlockColumnGIDs vectors: " << colVecBad
+       << " entries differ between host and device";
+  }
+
+  const std::vector<std::pair<std::string, const std::vector<RCP<const crs_t>>*>> shells = {
+      {"flat", &flatBlocks}, {"reordered", &reorderBlocks}};
+  for (size_t s = 0; s < shells.size(); s++) {
+    const auto& blocks = *shells[s].second;
+    const auto& other  = *shells[1 - s].second;
+    AssemblyIssues issues;
+    for (int i = 0; i < numBlocks; i++) {
+      for (int j = 0; j < numBlocks; j++) {
+        const auto expected     = expectedBlockEntries(A, vars[i], *colContig[j]);
+        const std::string where = "rank " + std::to_string(comm->getRank()) + " block (" +
+                                  std::to_string(i) + "," + std::to_string(j) + ")";
+        checkOneBlock(*blocks[i * numBlocks + j], *other[i * numBlocks + j], expected, where,
+                      issues);
+      }
+    }
+
+    int counts[kNumAssemblyIssues];
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, int(kNumAssemblyIssues), issues.count, counts);
+    int total = 0;
+    for (int k = 0; k < kNumAssemblyIssues; k++) total += counts[k];
+
+    ss << "\n        " << shells[s].first
+       << " shell: " << (total == 0 ? "all checks pass" : "ISSUES FOUND");
+    for (int k = 0; k < kNumAssemblyIssues; k++)
+      if (counts[k] > 0) ss << "\n          " << assemblyIssueName(k) << ": " << counts[k];
+
+    if (total > 0) {
+      allOk = false;
+      // details from the lowest rank that found something
+      const int candidate = issues.numDetails > 0 ? comm->getRank() : comm->getSize();
+      int owner           = comm->getSize();
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, candidate, Teuchos::outArg(owner));
+      if (owner < comm->getSize())
+        ss << "\n          first issues:" << broadcastString(*comm, owner, issues.detail.str());
+    }
+  }
+
+  report = ss.str();
+  return allOk;
+}
+
 // Compare the sub-blocks built by two shells from identical input: they must be bitwise
 // identical, otherwise sub-block assembly is nondeterministic.  Must be called before either
 // shell is reordered (GetBlock indexes the current, possibly reordered, operator).
@@ -794,16 +1156,6 @@ std::string describeDualViewState(const mv_t& v, const std::string& name) {
     for (size_t j = 0; j < dOnHost.extent(1); j++) ss << " " << dOnHost(i, j);
   }
   return ss.str();
-}
-
-// Send a rank-local string from root to every rank (so rank 0 can print it).  Collective.
-std::string broadcastString(const Teuchos::Comm<int>& comm, int root, const std::string& s) {
-  int len = static_cast<int>(s.size());
-  Teuchos::broadcast(comm, root, Teuchos::outArg(len));
-  std::vector<char> buf(s.begin(), s.end());
-  buf.resize(len);
-  if (len > 0) Teuchos::broadcast(comm, root, len, buf.data());
-  return std::string(buf.begin(), buf.end());
 }
 
 // Lowest rank whose part of v contains a non-finite value, or 0 if none.  Collective.
@@ -1494,6 +1846,11 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   const auto flatBlocks    = getShellBlocks(flatShell, numBlocks);
   const auto reorderBlocks = getShellBlocks(reorderShell, numBlocks);
 
+  // verify every product of sub-block assembly, on host and device
+  std::string assemblyReport;
+  const bool assemblyOk =
+      checkAssembly(*A, vars, flatBlocks, reorderBlocks, numBlocks, assemblyReport);
+
   Teko::BlockReorderManager brm;
   switch (total) {
     case 0:
@@ -1580,7 +1937,7 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   // repeat comparisons and the diagnostics are informational; only allOk and blocksSame are
   // asserted.
   std::string failMsg;
-  if (!allOk || !blocksSame) {
+  if (!allOk || !blocksSame || !assemblyOk) {
     std::ostringstream diag;
     diag << "\n   tBlockedTpetraOperator::test_reorder" << tstr << " (pattern = " << brm.toString()
          << "): FAILED; diagnostics follow" << describeConfiguration(*comm_tpetra)
@@ -1597,7 +1954,7 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
          << checkRankConsistency(*comm_tpetra, flatVsMatrix.maxRelErr, "flat vs. matrix error")
          << checkRankConsistency(*comm_tpetra, reorderVsMatrix.maxRelErr,
                                  "reordered vs. matrix error")
-         << blockReport;
+         << blockReport << assemblyReport;
 
     if (firstFailTrial >= 0) {
       diag << "\n      first failing trial: " << firstFailTrial << largeEntries;
@@ -1637,7 +1994,7 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
          << checkBlockSpmv(flatBlocks, numBlocks, tolerance_, "flat");
     failMsg = diag.str();
   }
-  TEST_ASSERT(allOk && blocksSame, failMsg);
+  TEST_ASSERT(allOk && blocksSame && assemblyOk, failMsg);
   echoFailure(*comm_tpetra, status, failMsg);
 
   return allPassed;
