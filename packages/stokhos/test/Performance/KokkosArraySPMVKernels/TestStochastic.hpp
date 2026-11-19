@@ -1207,12 +1207,6 @@ void performance_test_driver_all( const int pdeg ,
             << "\"PolyDegree\" , "
             << "\"#Bases\" , "
             << "\"#TensorEntry\" , "
-            << "\"VectorSize\" , "
-            << "\"Original-Flat MXV-Time\" , "
-            << "\"Original-Flat MXV-Speedup\" , "
-            << "\"Original-Flat MXV-GFLOPS\" , "
-            << "\"Commuted-Flat MXV-Speedup\" , "
-            << "\"Commuted-Flat MXV-GFLOPS\" , "
             << "\"Block-Diagonal MXV-Speedup\" , "
             << "\"Block-Diagonal MXV-GFLOPS\" , "
             << "\"Block-Crs-Tensor MXV-Speedup\" , "
@@ -1233,32 +1227,14 @@ void performance_test_driver_all( const int pdeg ,
       test_product_tensor_matrix<Scalar,Stokhos::CrsProductTensor<Scalar,Device>,Device>(
         var_degree , nGrid , nIter , symmetric );
 
-    if ( perf_flat_commuted[0] != perf_flat_original[0] ||
-         perf_flat_commuted[3] != perf_flat_original[3] ) {
-      std::cout << "ERROR: Original and commuted matrix sizes do not match"
-                << std::endl
-                << "  original size = " << perf_flat_original[0]
-                << " , nonzero = " << perf_flat_original[3]
-                << std::endl
-                << "  commuted size = " << perf_flat_commuted[0]
-                << " , nonzero = " << perf_flat_commuted[3]
-                << std::endl ;
-    }
-
     std::cout << nGrid << " , "
               << nvar << " , "
               << pdeg << " , "
               << perf_crs_tensor[4] << " , "
               << perf_crs_tensor[3] << " , "
-              << perf_flat_original[0] << " , "
-              << perf_flat_original[1] << " , "
-              << perf_flat_original[1] / perf_flat_original[1] << " , "
-              << perf_flat_original[2] << " , "
-              << perf_flat_original[1] / perf_flat_commuted[1] << " , "
-              << perf_flat_commuted[2] << " , "
-              << perf_flat_original[1] / perf_matrix[1] << " , "
+              << perf_matrix[1] / perf_matrix[1] << " , "
               << perf_matrix[2] << " , "
-              << perf_flat_original[1] / perf_crs_tensor[1] << " , "
+              << perf_matrix[1] / perf_crs_tensor[1] << " , "
               << perf_crs_tensor[2] << " , "
               << std::endl ;
   }
