@@ -61,8 +61,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     clp.setOption("xml", &xmlFileName, "read parameters from a file. Otherwise, this example uses by default an hard-coded parameter list.");
     int translatedmuelu = true;
     clp.setOption("muelu2", &translatedmuelu, "use muelu through XML parameter translation and ParameterListInterpreter");
-    int ml = true;
-
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -72,12 +70,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     if (comm->getRank() == 0) {
       std::cout << xpetraParameters << matrixParameters;
-    }
-
-    // choose ML and Tpetra
-    if (ml && xpetraParameters.GetLib() == Xpetra::UseTpetra) {
-      ml = false;
-      std::cout << "ML preconditionner can only be built if --linAlgebra=Epetra. Option --ml ignored" << std::endl;
     }
 
     //
