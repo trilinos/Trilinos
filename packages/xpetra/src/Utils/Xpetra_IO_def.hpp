@@ -58,7 +58,7 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fil
     return;
   }
 
-  throw Exceptions::BadCast("Could not cast to EpetraMap or TpetraMap in map writing");
+  throw Exceptions::BadCast("Could not cast to a Tpetra-backed map in map writing");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -75,8 +75,6 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fil
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>::writeDenseFile(fileName, TVec);
     return;
   }
-
-  throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in multivector writing");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -92,10 +90,8 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::WriteLOMV(const std::string&
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>::writeDenseFile(fileName, TVec);
     return;
   } else {
-    throw Exceptions::RuntimeError("Xpetra cannot write MV<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> when the underlying library is Epetra.");
+    throw Exceptions::RuntimeError("Xpetra can only write this multivector type when it is backed by Tpetra.");
   }
-
-  throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in multivector writing");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -111,10 +107,10 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::WriteGOMV(const std::string&
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>::writeDenseFile(fileName, TVec);
     return;
   } else {
-    throw Exceptions::RuntimeError("Xpetra cannot write MV<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> when the underlying library is Epetra.");
+    throw Exceptions::RuntimeError("Xpetra can only write this multivector type when it is backed by Tpetra.");
   }
 
-  throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in multivector writing");
+  throw Exceptions::BadCast("Could not cast to a Tpetra-backed multivector in multivector writing");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -147,7 +143,7 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fil
     return;
   }
 
-  throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
+  throw Exceptions::BadCast("Could not cast to a Tpetra-backed matrix in matrix writing");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -230,7 +226,7 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scala
 
       return A;
     } else {
-      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseTpetra.");
     }
   } else {
     // Custom file format (binary)
@@ -347,7 +343,7 @@ IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(const std::string& filename,
 
       return A;
     } else {
-      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseTpetra.");
     }
   } else {
     // Read in on rank 0.
@@ -519,7 +515,7 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, L
     RCP<MultiVector> rmv      = Xpetra::toXpetra(TMV);
     return rmv;
   } else {
-    throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseTpetra.");
   }
 
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
@@ -563,7 +559,7 @@ RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, LocalOrdina
 
     return Xpetra::toXpetra(tMap);
   } else {
-    throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
+    throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseTpetra.");
   }
 
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
