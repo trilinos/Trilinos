@@ -67,8 +67,8 @@ class SolverFactoryParent :
 {
 protected:
   // SolverFactoryParent should never be created directly. Usually it will be
-  // created through derived classes EpetraSolverFactory, TpetraSolverFactory,
-  // BelosSolverFactory, or XpetraSolverFactory. If you are doing custom types
+  // created through derived classes TpetraSolverFactory, BelosSolverFactory,
+  // or XpetraSolverFactory. If you are doing custom types
   // and include BelosSolverFactory_Generic.hpp you should explicitly use
   // GenericSolverFactory, not SolverFactory, which will avoid an error trying
   // to construct here. GenericSolverFactory is special because it registers
@@ -256,8 +256,8 @@ void registerSolverSubclassForTypes (const std::string & solverName) {
 // If this compile fails then the error is likely that BelosSolverFactory.hpp
 // was included directly but the specific sub class of SolverFactoryParent was
 // not included. Examples are:
-//   BelosSolverFactory_Belos.hpp, BelosSolverFactory_Epetra.hpp,
-//   BelosSolverFactory_Tpetra.hpp, BelosSolverFactory_Xpetra.hpp
+//   BelosSolverFactory_Belos.hpp, BelosSolverFactory_Tpetra.hpp,
+//   BelosSolverFactory_Xpetra.hpp
 // These were setup to be automatically included through the corresponding
 // adapter includes so something may have gone wrong with that.
 template<class SC, class MV, class OP, class DM = DefaultDenseMatrix<int,SC>>

@@ -50,10 +50,8 @@ namespace Details {
 ///   the comments in Belos_Details_registerLinearSolverFactory.cpp in
 ///   this directory.  As a work-around, you may invoke
 ///   Belos::Details::Tpetra::registerLinearSolverFactory() for the
-///   Tpetra specialization, or
-///   Belos::Details::Epetra::registerLinearSolverFactory() for the
-///   Epetra specialization.  Either of these requires an extern
-///   declaration in your code.
+///   Tpetra specialization.  This requires an extern declaration in
+///   your code.
 void registerLinearSolverFactory ();
 
 } // namespace Details

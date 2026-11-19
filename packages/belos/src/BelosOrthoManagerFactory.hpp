@@ -44,8 +44,8 @@ namespace Belos {
   /// This class' template parameters are the same as those of \c
   /// MatOrthoManager: Scalar is the scalar type (of entries in the
   /// multivector), MV is the multivector type, and OP is the operator
-  /// type.  For example: Scalar=double, MV=Epetra_MultiVector, and
-  /// OP=Epetra_Operator.
+  /// type.  For example: Scalar=double, MV=Tpetra::MultiVector, and
+  /// OP=Tpetra::Operator.
   template<class Scalar, class MV, class OP, class DM = DefaultDenseMatrix<int, Scalar>>
   class OrthoManagerFactory {
   private:
