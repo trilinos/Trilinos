@@ -1846,11 +1846,6 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   const auto flatBlocks    = getShellBlocks(flatShell, numBlocks);
   const auto reorderBlocks = getShellBlocks(reorderShell, numBlocks);
 
-  // verify every product of sub-block assembly, on host and device
-  std::string assemblyReport;
-  const bool assemblyOk =
-      checkAssembly(*A, vars, flatBlocks, reorderBlocks, numBlocks, assemblyReport);
-
   Teko::BlockReorderManager brm;
   switch (total) {
     case 0:
@@ -1932,6 +1927,13 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
 
   const bool allOk = passed(reorderVsFlat, tolerance_) && passed(flatVsMatrix, tolerance_) &&
                      passed(reorderVsMatrix, tolerance_);
+
+  // Verify every product of sub-block assembly, on host and device.  This runs after the
+  // trials (assembly products do not change during them) so that its device allocations do
+  // not alter the memory state the trials see.
+  std::string assemblyReport;
+  const bool assemblyOk =
+      checkAssembly(*A, vars, flatBlocks, reorderBlocks, numBlocks, assemblyReport);
 
   // On failure, run every diagnostic and report to stdout as well as the failure log.  The
   // repeat comparisons and the diagnostics are informational; only allOk and blocksSame are
