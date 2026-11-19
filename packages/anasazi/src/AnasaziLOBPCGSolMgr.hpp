@@ -38,57 +38,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
-/// \example LOBPCGEpetra.cpp
-/// \brief Use LOBPCG with Epetra test problem from Galeri.
-///
-/// This example computes the eigenvalues of largest magnitude of an
-/// eigenvalue problem $A x = \lambda x$, using Anasazi's
-/// implementation of the LOBPCG method, with Epetra linear algebra.
-/// It uses the Galeri package to construct the test problem.
-///
-/// \example LOBPCGEpetraEx.cpp
-/// \brief Use LOBPCG with Epetra test problem (computed here).
-///
-/// This example computes the eigenvalues of largest magnitude of an
-/// eigenvalue problem $A x = \lambda x$, using Anasazi's
-/// implementation of the LOBPCG method, with Epetra linear algebra.
-/// It constructs the test problem within the example itself.
-///
-/// \example LOBPCGEpetraFile.cpp
-/// \brief Use LOBPCG with Epetra test problem loaded from file.
-///
-/// This example computes the eigenvalues of largest magnitude of an
-/// eigenvalue problem $A x = \lambda x$, using Anasazi's
-/// implementation of the LOBPCG method, with Epetra linear algebra.
-/// The example loads the matrix from a file whose name is specified
-/// at the command line.
-///
-/// \example LOBPCGEpetraExGen.cpp
-/// \brief Use LOBPCG with Epetra, for a generalized eigenvalue problem.
-///
-/// This example computes the eigenvalues of largest magnitude of an
-/// generalized eigenvalue problem, using Anasazi's implementation of
-/// the LOBPCG method, with Epetra linear algebra.
-///
-/// \example LOBPCGEpetraExGenPrecIfpack.cpp
-/// \brief Use LOBPCG with Epetra and Ifpack preconditioner.
-///
-/// This example computes the eigenvalues of largest magnitude of an
-/// generalized eigenvalue problem, using Anasazi's implementation of
-/// the LOBPCG method, with Epetra linear algebra.  It preconditions
-/// LOBPCG with an Ifpack incomplete Cholesky preconditioner.
-///
-/// \example LOBPCGEpetraExGenShifted.cpp
-/// \brief Use LOBPCG with Epetra, with shifted eigenvalue problem
-///
-/// This example computes the eigenvalues of largest magnitude of the
-/// discretized 2-D Laplacian operator, using Anasazi's implementation
-/// of the LOBPCG method.  This problem constructs a shifted
-/// eigenproblem that targets the smallest eigenvalues around a
-/// certain value (sigma).  This operator is discretized using linear
-/// finite elements and constructed as an Epetra matrix, then passed
-/// shifted using EpetraExt utilities.
-
 namespace Anasazi {
 
 /*! \class LOBPCGSolMgr
