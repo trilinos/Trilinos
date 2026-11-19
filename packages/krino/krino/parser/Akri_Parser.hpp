@@ -12,6 +12,7 @@
 #include <Akri_YAML.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <string>
+#include <vector>
 
 namespace krino { class Simulation; }
 
@@ -62,6 +63,9 @@ public:
   // this node (key has no value).  Returns the node holding the options, or an empty node if key is
   // absent; dooms if key has any other value.
   Node get_options_if_present(const std::string& key) const;
+
+  // The keys of this map, in order (none if it is not a map).
+  std::vector<std::string> keys() const;
 
   template<typename T>
   bool get_if_present(const std::string& key, T& result) const
@@ -158,6 +162,8 @@ public:
   Node get_sequence_if_present(const std::string& key) const { return Node(); }
   Node get_scalar_if_present(const std::string& key) const { return Node(); }
   Node get_options_if_present(const std::string& key) const { return Node(); }
+
+  std::vector<std::string> keys() const { return {}; }
 
   template<typename T>
   bool get_if_present(const std::string& key, T& result) const { return false; }

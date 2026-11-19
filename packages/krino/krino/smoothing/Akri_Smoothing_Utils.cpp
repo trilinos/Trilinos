@@ -8,7 +8,9 @@
 
 #include <Akri_Smoothing_Utils.hpp>
 
+#include <array>
 #include <tuple>
+#include <vector>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -45,7 +47,7 @@ static unsigned get_index_in_sorted_entities(const stk::mesh::BulkData &mesh,
   return std::distance(sortedEntitiesBeg, iter);
 }
 
-static unsigned get_index_of_node_in_sorted_owned_or_shared_nodes(const stk::mesh::BulkData &mesh,
+unsigned get_index_of_node_in_sorted_owned_or_shared_nodes(const stk::mesh::BulkData & mesh,
     const DistributedEntityVector & nodes,
     const stk::mesh::Entity node)
 {
@@ -68,12 +70,127 @@ DistributedEntityVector get_sorted_owned_nodes_and_unowned_shared_nodes(const st
   return nodes;
 }
 
+bool is_vertex_node_of_its_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Entity node)
+{
+  // In a conforming mesh a node is a vertex of all its elements or of none.
+  const StkMeshEntities nodeElems{mesh.begin_elements(node), mesh.end_elements(node)};
+  return !nodeElems.empty() &&
+      is_vertex_node_of_element(
+          mesh.bucket(nodeElems[0]).topology(), mesh.begin_element_ordinals(node)[0]);
+}
+
+static std::vector<stk::mesh::Entity>
+get_vertex_nodes(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & nodes)
+{
+  std::vector<stk::mesh::Entity> vertexNodes;
+  vertexNodes.reserve(nodes.size());
+  for (auto node : nodes)
+    if (is_vertex_node_of_its_elements(mesh, node)) vertexNodes.push_back(node);
+  return vertexNodes;
+}
+
+DistributedEntityVector get_sorted_owned_and_unowned_shared_vertex_nodes(
+    const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elemSelector)
+{
+  const DistributedEntityVector nodes =
+      get_sorted_owned_nodes_and_unowned_shared_nodes(mesh, elemSelector);
+  const std::vector<stk::mesh::Entity> ownedNodes(nodes.begin_local(), nodes.end_local());
+  const std::vector<stk::mesh::Entity> sharedUnownedNodes(nodes.begin_remote(), nodes.end_remote());
+  return DistributedEntityVector(mesh.parallel(),
+      get_vertex_nodes(mesh, ownedNodes),
+      get_vertex_nodes(mesh, sharedUnownedNodes));
+}
+
+StkMeshEntities element_vertex_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity elem)
+{
+  const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
+  return StkMeshEntities{elemNodes, elemNodes + mesh.bucket(elem).topology().base().num_nodes()};
+}
+
+NodeLocations get_vertex_node_locations_of_quadratic_elements(const stk::mesh::BulkData & mesh,
+    const CoordinatesFieldRef coordsField,
+    const std::vector<stk::mesh::Entity> & elems)
+{
+  const unsigned dim = coordsField.dim();
+  const auto coordsData = coordsField.data<double>();
+  NodeLocations vertexNodeLocations;
+  for (auto elem : elems)
+  {
+    const stk::topology topology = mesh.bucket(elem).topology();
+    if (topology == topology.base()) continue;
+    for (auto vertexNode : element_vertex_nodes(mesh, elem))
+    {
+      const auto x = coordsData.entity_values(vertexNode);
+      stk::math::Vector3d location = stk::math::Vector3d::ZERO;
+      for (unsigned j = 0; j < dim; ++j)
+        location[j] = x(stk::mesh::ComponentIdx(j));
+      vertexNodeLocations.emplace(vertexNode, location);
+    }
+  }
+  return vertexNodeLocations;
+}
+
+template <typename COORDS_DATA>
+static bool is_vertex_node_moved(const COORDS_DATA & coordsData,
+    const unsigned dim,
+    const stk::mesh::Entity vertexNode,
+    const NodeLocations & vertexNodeLocationsBeforeSmoothing)
+{
+  const auto iter = vertexNodeLocationsBeforeSmoothing.find(vertexNode);
+  STK_ThrowRequireMsg(iter != vertexNodeLocationsBeforeSmoothing.end(),
+      "Missing location before smoothing for a vertex node of a quadratic element.");
+  const auto x = coordsData.entity_values(vertexNode);
+  for (unsigned j = 0; j < dim; ++j)
+    if (x(stk::mesh::ComponentIdx(j)) != iter->second[j])
+      return true;
+  return false;
+}
+
+void set_mid_edge_nodes_of_moved_edges_to_edge_midpoints(const stk::mesh::BulkData & mesh,
+    const CoordinatesFieldRef coordsField,
+    const std::vector<stk::mesh::Entity> & elems,
+    const NodeLocations & vertexNodeLocationsBeforeSmoothing)
+{
+  const unsigned dim = coordsField.dim();
+  {
+    auto coordsData = coordsField.data<double, stk::mesh::ReadWrite>();
+    std::array<unsigned, 3> edgeNodeOrdinals;
+    for (auto elem : elems)
+    {
+      const stk::topology topology = mesh.bucket(elem).topology();
+      if (topology == topology.base()) continue;
+      const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
+      for (unsigned e = 0; e < topology.num_edges(); ++e)
+      {
+        STK_ThrowRequireMsg(topology.edge_topology(e).num_nodes() == 3,
+            "Smoothing quadratic elements needs a single mid-edge node on each edge, not so for "
+                << topology << ".");
+        topology.edge_node_ordinals(e, edgeNodeOrdinals.data());
+        const stk::mesh::Entity midNode = elemNodes[edgeNodeOrdinals[2]];
+        if (!mesh.bucket(midNode).owned()) continue;
+        const stk::mesh::Entity node0 = elemNodes[edgeNodeOrdinals[0]];
+        const stk::mesh::Entity node1 = elemNodes[edgeNodeOrdinals[1]];
+        if (!is_vertex_node_moved(coordsData, dim, node0, vertexNodeLocationsBeforeSmoothing) &&
+            !is_vertex_node_moved(coordsData, dim, node1, vertexNodeLocationsBeforeSmoothing))
+          continue;
+        const auto x0 = coordsData.entity_values(node0);
+        const auto x1 = coordsData.entity_values(node1);
+        auto xMid = coordsData.entity_values(midNode);
+        for (unsigned j = 0; j < dim; ++j)
+          xMid(stk::mesh::ComponentIdx(j)) =
+              0.5 * (x0(stk::mesh::ComponentIdx(j)) + x1(stk::mesh::ComponentIdx(j)));
+      }
+    }
+  }
+  parallel_sync_fields(mesh, {&coordsField.field()});
+}
+
 static void fill_node_indices_for_element(const stk::mesh::BulkData &mesh,
     const DistributedEntityVector & nodes,
     const stk::mesh::Entity elem,
     unsigned * elemNodeIndices)
 {
-  const StkMeshEntities elemNodes{mesh.begin_nodes(elem), mesh.end_nodes(elem)};
+  const StkMeshEntities elemNodes = element_vertex_nodes(mesh, elem);
   for (unsigned i=0; i<elemNodes.size(); ++i)
     elemNodeIndices[i] = get_index_of_node_in_sorted_owned_or_shared_nodes(mesh, nodes, elemNodes[i]);
 }
@@ -87,7 +204,7 @@ void MeshElemNodeIndices::build_for_mesh(const stk::mesh::BulkData & mesh,
   for (auto & elem : elems)
   {
     myElemNodeStartingIndices.push_back(numIndices);
-    numIndices += mesh.bucket(elem).topology().num_nodes();
+    numIndices += mesh.bucket(elem).topology().base().num_nodes(); // vertex nodes only
   }
   myElemNodeStartingIndices.push_back(numIndices);
 

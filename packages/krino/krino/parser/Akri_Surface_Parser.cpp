@@ -10,13 +10,20 @@
 
 #include <Akri_AnalyticSurf.hpp>
 #include <Akri_AuxMetaData.hpp>
+#include <Akri_FacetFileReader.hpp>
+#include <Akri_FacetFileSurface.hpp>
 #include <Akri_MeshSurface.hpp>
 #include <Akri_Parser.hpp>
+#include <Akri_Transformation.hpp>
+#include <Akri_TransformedSurface.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
+#include <stk_util/environment/EnvData.hpp>
 #include <stk_util/environment/RuntimeDoomed.hpp>
 
+#include <algorithm>
 #include <cmath>
+#include <optional>
 
 namespace krino {
 
@@ -341,8 +348,44 @@ parse_cylinder(const Parser::Node & ic_node)
   return std::make_shared<Cylinder>(stk::math::Vector3d(p1.data()), stk::math::Vector3d(p2.data()), radius, sign);
 }
 
-std::shared_ptr<Faceted_Surface_From_File>
-parse_facets(const Parser::Node & ic_node, const stk::diag::Timer &parent_timer)
+// The sharp feature options of a faceted surface: sharp_feature_angle (in degrees) turns on its
+// sharp features, and open_boundary_edges_are_sharp_features also makes its open boundary edges
+// features.
+struct SharpFeatureOptions
+{
+  std::optional<double> featureAngleInDegrees;
+  bool areOpenBoundaryEdgesFeatures{false};
+};
+
+static SharpFeatureOptions
+parse_sharp_feature_options(const Parser::Node & ic_node, const std::string & surfaceType)
+{
+  SharpFeatureOptions options;
+  double featureAngle = 0.;
+  if (ic_node.get_if_present("sharp_feature_angle", featureAngle))
+  {
+    if (!(featureAngle > 0. && featureAngle < 180.))
+      stk::RuntimeDoomedAdHoc() << "sharp_feature_angle for " << surfaceType
+                                << " must be more than 0 and less than 180 degrees.\n";
+    options.featureAngleInDegrees = featureAngle;
+  }
+  ic_node.get_if_present(
+      "open_boundary_edges_are_sharp_features", options.areOpenBoundaryEdgesFeatures);
+  if (options.areOpenBoundaryEdgesFeatures && !options.featureAngleInDegrees)
+    stk::RuntimeDoomedAdHoc() << "open_boundary_edges_are_sharp_features for " << surfaceType
+                              << " needs a sharp_feature_angle.\n";
+  return options;
+}
+
+static void
+set_sharp_feature_options(MeshFacetedSurface & surface, const SharpFeatureOptions & options)
+{
+  if (options.featureAngleInDegrees)
+    surface.set_sharp_feature_angle(
+        *options.featureAngleInDegrees, options.areOpenBoundaryEdgesFeatures);
+}
+
+static std::shared_ptr<Surface> parse_facets(const Parser::Node & ic_node)
 {
   const auto oldDoomedCount = stk::get_doomed_count();
 
@@ -378,7 +421,7 @@ parse_facets(const Parser::Node & ic_node, const stk::diag::Timer &parent_timer)
       if (scaleSpecified)
         stk::RuntimeDoomedAdHoc() << "Cannot specify both scale and " << scaleComponents[i] << "\n";
       if (scaleVec[i] <= 0.0)
-        stk::RuntimeDoomedAdHoc() << scaleComponents[i] << " for facets must be >= 0.\n";
+        stk::RuntimeDoomedAdHoc() << scaleComponents[i] << " for facets must be > 0.\n";
     }
   }
 
@@ -403,34 +446,40 @@ parse_facets(const Parser::Node & ic_node, const stk::diag::Timer &parent_timer)
     }
   }
 
+  // Facets are read into a connected surface (MeshFacetedSurface), by default with coincident
+  // vertices merged so that facets meeting at a point share its vertex.
+  bool mergeCoincidentVertices = true;
+  ic_node.get_if_present("merge_coincident_vertices", mergeCoincidentVertices);
+
+  const SharpFeatureOptions sharpFeatureOptions = parse_sharp_feature_options(ic_node, "facets");
+  if (sharpFeatureOptions.featureAngleInDegrees && !mergeCoincidentVertices)
+    stk::RuntimeDoomedAdHoc()
+        << "sharp_feature_angle for facets needs merge_coincident_vertices.\n";
+
   std::transform(facet_format.begin(), facet_format.end(), facet_format.begin(), ::toupper);
+  if (!is_facet_file_format(facet_format))
+    stk::RuntimeDoomedAdHoc() << "Unrecognized facet format: " << facet_format;
 
   if (had_new_parse_error(oldDoomedCount))
     return nullptr;
 
-  std::shared_ptr<Faceted_Surface_From_File> surface;
-  if (facet_format == "STL")
-    surface = std::make_shared<STLSurface>(parent_timer, facet_filename, sign, scaleVec);
-  else if (facet_format == "FAC")
-    surface = std::make_shared<FACSurface>(parent_timer, facet_filename, sign, scaleVec);
-  else if (facet_format == "PLY")
-    surface = std::make_shared<PLYSurface>(parent_timer, facet_filename, sign, scaleVec);
-  else if (facet_format == "EXO")
-    surface = std::make_shared<EXOSurface>(parent_timer, facet_filename, sign, scaleVec);
-  else
-  {
-    stk::RuntimeDoomedAdHoc() << "Unrecognized facet format: " << facet_format;
-    return nullptr;
-  }
-
+  auto surface = std::make_shared<FacetFileSurface>(stk::EnvData::parallel_comm(),
+      facet_format,
+      facet_filename,
+      sign,
+      scaleVec,
+      mergeCoincidentVertices);
   surface->set_remove_coincident_facets(removeCoincidentFacets);
   surface->set_check_watertight(checkWatertight);
   if (watertightBounds.size() == 6)
-    surface->set_watertight_bounding_box(BoundingBox(stk::math::Vector3d(watertightBounds[0],watertightBounds[1],watertightBounds[2]), stk::math::Vector3d(watertightBounds[3],watertightBounds[4],watertightBounds[5])));
+    surface->set_watertight_bounding_box(BoundingBox(
+        stk::math::Vector3d(watertightBounds[0], watertightBounds[1], watertightBounds[2]),
+        stk::math::Vector3d(watertightBounds[3], watertightBounds[4], watertightBounds[5])));
+  set_sharp_feature_options(*surface, sharpFeatureOptions);
   return surface;
 }
 
-std::shared_ptr<FacetedSurfaceBase>
+std::shared_ptr<MeshSurface>
 parse_mesh_surface(const Parser::Node & ic_node, const stk::mesh::MetaData & meta)
 {
   const auto oldDoomedCount = stk::get_doomed_count();
@@ -471,6 +520,9 @@ parse_mesh_surface(const Parser::Node & ic_node, const stk::mesh::MetaData & met
     }
   }
 
+  const SharpFeatureOptions sharpFeatureOptions =
+      parse_sharp_feature_options(ic_node, "mesh surface");
+
   if (!auxMeta.has_part(surface_name))
   {
     stk::RuntimeDoomedAdHoc() << "Could not locate a surface named " << surface_name;
@@ -492,16 +544,13 @@ parse_mesh_surface(const Parser::Node & ic_node, const stk::mesh::MetaData & met
   const stk::mesh::Part & io_part = auxMeta.get_part(surface_name);
   const stk::mesh::Selector surfaceSelector = stk::mesh::Selector(io_part);
 
-  std::shared_ptr<FacetedSurfaceBase> surface;
-  if (meta.spatial_dimension() == 2)
-    surface = std::make_shared<MeshSurface<Facet2d>>(meta, *coords, surfaceSelector, sign);
-  else
-    surface = std::make_shared<MeshSurface<Facet3d>>(meta, *coords, surfaceSelector, sign);
+  auto surface = std::make_shared<MeshSurface>(meta, *coords, surfaceSelector, sign);
 
   surface->set_remove_coincident_facets(removeCoincidentFacets);
   surface->set_check_watertight(checkWatertight);
   if (watertightBounds.size() == 6)
     surface->set_watertight_bounding_box(BoundingBox(stk::math::Vector3d(watertightBounds[0],watertightBounds[1],watertightBounds[2]), stk::math::Vector3d(watertightBounds[3],watertightBounds[4],watertightBounds[5])));
+  set_sharp_feature_options(*surface, sharpFeatureOptions);
   return surface;
 }
 
@@ -555,11 +604,80 @@ parse_implicit_neural_representation(const Parser::Node & ic_node)
 
 }
 
-std::shared_ptr<Surface>
-Surface_Parser::parse(
-    const Parser::Node & parserNode,
+// A vector of 3 reals for key in a motion, or of 2 with z = 0 for those that are not rotations.
+static std::optional<stk::math::Vector3d> parse_motion_vector(const Parser::Node & motionNode,
+    const std::string & key,
+    const bool isRotation,
+    const std::string & surfaceType)
+{
+  std::vector<double> values;
+  if (!motionNode.get_if_present(key, values))
+    return std::nullopt;
+  if (values.size() == 3)
+    return stk::math::Vector3d(values.data());
+  if (!isRotation && values.size() == 2)
+    return stk::math::Vector3d(values[0], values[1], 0.);
+  stk::RuntimeDoomedAdHoc() << "Expecting " << (isRotation ? "3" : "2 or 3") << " real values for " << key
+                            << " in the motion of " << surfaceType << ".\n";
+  return std::nullopt;
+}
+
+// The motion of a surface, given by the map motion in its options, if present (see Transformation).
+static std::optional<Transformation> parse_motion(const Parser::Node & surfaceNode, const std::string & surfaceType)
+{
+  const Parser::Node motionNode = surfaceNode.get_if_present("motion");
+  if (!motionNode)
+    return std::nullopt;
+  if (!motionNode.is_map())
+  {
+    stk::RuntimeDoomedAdHoc() << "The motion of " << surfaceType << " must be a map of "
+                              << "translational_velocity, rotational_velocity, reference_point, initial_displacement and initial_rotation.\n";
+    return std::nullopt;
+  }
+
+  static const std::vector<std::string> motionKeys{"translational_velocity", "rotational_velocity", "reference_point", "initial_displacement", "initial_rotation"};
+  for (auto & key : motionNode.keys())
+    if (std::find(motionKeys.begin(), motionKeys.end(), key) == motionKeys.end())
+      stk::RuntimeDoomedAdHoc() << "Unrecognized " << key << " in the motion of " << surfaceType << ".\n";
+
+  Transformation motion;
+  if (const auto v = parse_motion_vector(motionNode, "translational_velocity", false, surfaceType))
+    motion.set_translational_velocity(*v);
+  if (const auto v = parse_motion_vector(motionNode, "rotational_velocity", true, surfaceType))
+    motion.set_rotational_velocity(*v);
+  if (const auto v = parse_motion_vector(motionNode, "reference_point", false, surfaceType))
+    motion.set_reference_point(*v);
+  if (const auto v = parse_motion_vector(motionNode, "initial_displacement", false, surfaceType))
+    motion.set_initial_displacement(*v);
+  if (const auto v = parse_motion_vector(motionNode, "initial_rotation", true, surfaceType))
+    motion.set_initial_rotation(*v);
+  return motion;
+}
+
+// The surface, moved by the motion in its options if there is one.
+static std::shared_ptr<Surface> with_motion_if_present(std::shared_ptr<Surface> surface,
+    const Parser::Node & surfaceNode,
+    const std::string & surfaceType)
+{
+  const auto oldDoomedCount = stk::get_doomed_count();
+  const std::optional<Transformation> motion = parse_motion(surfaceNode, surfaceType);
+  if (!surface || had_new_parse_error(oldDoomedCount))
+    return nullptr;
+  if (!motion)
+    return surface;
+
+  const Plane * plane = dynamic_cast<const Plane *>(surface.get());
+  if (nullptr != plane && plane->needs_offset_from_extent())
+  {
+    stk::RuntimeDoomedAdHoc() << "Motion is not supported for a plane at a fraction_of_mesh_extent.\n";
+    return nullptr;
+  }
+  return std::make_shared<TransformedSurface>(surface, *motion);
+}
+
+std::shared_ptr<Surface> Surface_Parser::parse(const Parser::Node & parserNode,
     const stk::mesh::MetaData & meta,
-    const stk::diag::Timer & parentTimer)
+    const stk::diag::Timer & /*parentTimer*/)
 {
   if (parserNode.is_scalar())
   {
@@ -583,49 +701,49 @@ Surface_Parser::parse(
   surfaceNode = parserNode.get_options_if_present("sphere");
   if (surfaceNode)
   {
-    return parse_sphere(surfaceNode);
+    return with_motion_if_present(parse_sphere(surfaceNode), surfaceNode, "sphere");
   }
 
   surfaceNode = parserNode.get_options_if_present("ellipsoid");
   if (surfaceNode)
   {
-    return parse_ellipsoid(surfaceNode);
+    return with_motion_if_present(parse_ellipsoid(surfaceNode), surfaceNode, "ellipsoid");
   }
 
   surfaceNode = parserNode.get_options_if_present("cuboid");
   if (surfaceNode)
   {
-    return parse_cuboid(surfaceNode);
+    return with_motion_if_present(parse_cuboid(surfaceNode), surfaceNode, "cuboid");
   }
 
   surfaceNode = parserNode.get_options_if_present("plane");
   if (surfaceNode)
   {
-    return parse_plane(surfaceNode);
+    return with_motion_if_present(parse_plane(surfaceNode), surfaceNode, "plane");
   }
 
   surfaceNode = parserNode.get_options_if_present("cylinder");
   if (surfaceNode)
   {
-    return parse_cylinder(surfaceNode);
+    return with_motion_if_present(parse_cylinder(surfaceNode), surfaceNode, "cylinder");
   }
 
   surfaceNode = parserNode.get_options_if_present("string_function");
   if (surfaceNode)
   {
-    return parse_string_function(surfaceNode);
+    return with_motion_if_present(parse_string_function(surfaceNode), surfaceNode, "string_function");
   }
 
   surfaceNode = parserNode.get_options_if_present("facets");
   if (surfaceNode)
   {
-    return parse_facets(surfaceNode, parentTimer);
+    return with_motion_if_present(parse_facets(surfaceNode), surfaceNode, "facets");
   }
 
   surfaceNode = parserNode.get_options_if_present("implicit_neural_representation");
   if (surfaceNode)
   {
-    return parse_implicit_neural_representation(surfaceNode);
+    return with_motion_if_present(parse_implicit_neural_representation(surfaceNode), surfaceNode, "implicit_neural_representation");
   }
 
   surfaceNode = parserNode.get_options_if_present("random");
@@ -633,7 +751,7 @@ Surface_Parser::parse(
   {
     int seed = 0;
     surfaceNode.get_if_present("seed", seed);
-    return std::make_shared<Random>(seed);
+    return with_motion_if_present(std::make_shared<Random>(seed), surfaceNode, "random");
   }
 
   /*
@@ -646,13 +764,13 @@ Surface_Parser::parse(
    */
   if (parserNode.get_scalar_if_present("mesh"))
   {
-    return parse_mesh_surface(parserNode, meta);
+    return with_motion_if_present(parse_mesh_surface(parserNode, meta), parserNode, "mesh");
   }
 
   const Parser::Node meshNode = parserNode.get_map_if_present("mesh");
   if (meshNode)
   {
-    return parse_mesh_surface(meshNode, meta);
+    return with_motion_if_present(parse_mesh_surface(meshNode, meta), meshNode, "mesh");
   }
 
   return nullptr;

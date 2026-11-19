@@ -20,7 +20,6 @@ template<class T>
 inline size_t
 storage_size(const std::vector<T> & vec) {return (sizeof(std::vector<T>) + vec.capacity()*sizeof(T)); }
 
-class Transformation;
 
 enum Surface_Type
 {
@@ -37,10 +36,12 @@ enum Surface_Type
   FACETED_SURFACE_2D,
   FACETED_SURFACE_3D,
   INR,
+  TRANSFORMED_SURFACE,
   // Never, ever, ever add an entry after MAX_SURFACE_TYPE.  Never.
   MAX_SURFACE_TYPE
 };
 
+class CubitJournal;
 class Surface;
 typedef std::vector<Surface *> SurfaceVec;
 typedef std::vector< std::unique_ptr<Surface> > SurfaceAutoVec;
@@ -50,7 +51,7 @@ typedef std::vector< std::unique_ptr<Surface> > SurfaceAutoVec;
 class Surface {
 
 public:
-  Surface() { Surface::set_transformation(nullptr); }
+  Surface() = default;
   virtual ~Surface() {}
 
   typedef BoundingBox BoundingBoxType;
@@ -73,10 +74,27 @@ public:
   virtual bool can_approximate_closest_point_normal() const { return false; }
   virtual stk::math::Vector3d closest_point_normal(const stk::math::Vector3d &x) const;
 
+  // For debugging: adds the surface in (or near) the region to the journal's current group.  By
+  // default, an approximation: the zero contour of point_signed_distance on a grid of the region.
+  virtual void add_to_journal(CubitJournal & journal, const BoundingBoxType & region) const;
+
   virtual std::pair<int, double> compute_intersection_with_segment(const stk::math::Vector3d &pt0, const stk::math::Vector3d &pt1, const double edgeCrossingTol) const;
+  // Every position, as the fraction of the way from pt0 to pt1, where the segment crosses the
+  // surface, in order, leaving out those within edgeCrossingTol of its ends.  Unlike
+  // compute_intersection_with_segment these include crossings that the signs at the ends do not
+  // show, as where a segment crosses the surface twice beside a sharp edge.  By default, the
+  // crossing given by compute_intersection_with_segment, with the sign of an end within
+  // edgeCrossingTol of the surface taken from the point that far into the segment.
+  virtual void fill_segment_crossings(const stk::math::Vector3d & pt0,
+      const stk::math::Vector3d & pt1,
+      const double edgeCrossingTol,
+      std::vector<double> & crossingPositions) const;
 
   // for debugging memory usage
   virtual size_t storage_size() const = 0;
+
+  // Whether the surface is different at different times given to prepare_to_compute.
+  virtual bool changes_with_time() const { return false; }
 
   virtual bool has_corners() const { return false; }
   virtual bool has_edges() const { return false; }
@@ -84,17 +102,9 @@ public:
   virtual void fill_triangle_intersection_parametric_coordinates(const std::array<stk::math::Vector3d,3> & /*faceNodes*/, std::vector<stk::math::Vector3d> & /*intersectionParamCoords*/) const {}
   virtual void fill_tetrahedon_intersection_parametric_coordinates(const std::array<stk::math::Vector3d,4> & /*tetNodes*/, std::vector<stk::math::Vector3d> & /*intersectionParamCoords*/) const {}
 
-  // methods related to moving surfaces (transformations)
-  virtual void set_transformation(Transformation * trans) { my_transformation = trans; }
-  Transformation * get_transformation() { return my_transformation; }
-  const Transformation * get_transformation() const { return my_transformation; }
-
   // queries
   virtual Surface_Type type() const = 0;
   virtual std::string output() const;
-
-protected:
-  Transformation * my_transformation;
 };
 
 class SurfaceThatTakesAdvantageOfNarrowBandAndThereforeMightHaveWrongSign : public Surface {

@@ -17,7 +17,8 @@
 
 #include <Akri_BoundingBox.hpp>
 #include <Akri_Surface.hpp>
-#include <Akri_MeshSurface.hpp>
+#include <Akri_FacetFileSurface.hpp>
+#include <stk_util/environment/EnvData.hpp>
 #include <Akri_AnalyticSurf.hpp>
 
 namespace pykrino {
@@ -153,7 +154,10 @@ PyCylinder::PyCylinder(
     sign)) {}
 
 PySTLSurface::PySTLSurface(const std::string & filename)
-: PySurface(std::make_shared<krino::STLSurface>(filename)) {}
+    : PySurface(std::make_shared<krino::FacetFileSurface>(
+          stk::EnvData::parallel_comm(), "STL", filename, 1, stk::math::Vector3d(1., 1., 1.)))
+{
+}
 
 void bind_surfaces(py::module_ &m)
 {

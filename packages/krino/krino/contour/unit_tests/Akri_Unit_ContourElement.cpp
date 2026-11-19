@@ -9,7 +9,7 @@
 #include <Akri_ContourElement.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_Facet.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetCoordinates.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_ParametricElementLibrary.hpp>
 #include <gtest/gtest.h>
@@ -66,9 +66,9 @@ TEST(SingleElementFixture, LS_Element_Tet4)
   const double length_scale = 1.0; // Used for snapping facets to vertices of element when distance is small compared to length_scale
   ls_elem.compute_subelement_decomposition(length_scale);
 
-  Faceted_Surface<Facet3d> faceted_surface;
+  FacetCoordinates faceted_surface(3);
   ls_elem.build_subelement_facets(faceted_surface);
-  const auto & facets = faceted_surface.get_facets_3d();
+  const std::vector<Facet3d> facets = faceted_surface.make_facets<Facet3d>();
 
   ASSERT_EQ(1u, facets.size());
 
@@ -118,7 +118,7 @@ public:
       distanceField.data<double, stk::mesh::ReadWrite>().entity_values(node)() = nodalLevelset[n];
     }
   }
-  void build_facets_in_element(const stk::mesh::Entity elem, FacetedSurfaceBase & facetedSurface)
+  void build_facets_in_element(const stk::mesh::Entity elem, FacetAppender & facetedSurface)
   {
     facetedSurface.clear();
     ContourElement contourElement(AuxMetaData::get(mMesh.mesh_meta_data()).parametric_element_library(), mMesh, elem, this->get_coordinates_field(), myIsovarField, 0.);
@@ -127,9 +127,9 @@ public:
   }
   void expect_num_facets_in_element(const int dim, const stk::mesh::Entity elem, const size_t goldNumFacets)
   {
-    std::unique_ptr<FacetedSurfaceBase> facetedSurface = FacetedSurfaceBase::build(dim);
-    build_facets_in_element(elem, *facetedSurface);
-    EXPECT_EQ(goldNumFacets, facetedSurface->size());
+    FacetCoordinates facetedSurface(dim);
+    build_facets_in_element(elem, facetedSurface);
+    EXPECT_EQ(goldNumFacets, facetedSurface.num_facets());
   }
 
 protected:

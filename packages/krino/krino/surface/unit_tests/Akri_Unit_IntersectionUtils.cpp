@@ -183,4 +183,41 @@ TEST(IntersectionUtils, appendTriangleEdgeIntersection_noPlaneCrossingAppendsNot
   EXPECT_TRUE(intParamCoords.empty());
 }
 
+TEST(IntersectionUtils, appendTriangleEdgeIntersection_edgeInPlaneAppendsNothing)
+{
+  const std::array<stk::math::Vector3d, 3> tri{
+      stk::math::Vector3d(0, 0, 0), stk::math::Vector3d(1, 0, 0), stk::math::Vector3d(0, 1, 0)};
+  const auto [triArea, triNormal] = CalcTriangle3<double>::area_and_normal(tri);
+
+  std::vector<stk::math::Vector3d> intParamCoords;
+  // In the plane but for roundoff of opposite signs at its ends, as for an edge of a surface that a
+  // face of the mesh contains: the crossing location would be anywhere along it.
+  append_triangle_edge_intersection_parametric_coordinates(tri,
+      triArea,
+      triNormal,
+      stk::math::Vector3d(-0.5, 0.25, 1.e-16),
+      stk::math::Vector3d(1.5, 0.25, -1.e-16),
+      intParamCoords);
+
+  EXPECT_TRUE(intParamCoords.empty());
+}
+
+TEST(IntersectionUtils, appendTriangleEdgeIntersection_edgeSlightlyOutOfPlaneAppendsCoords)
+{
+  const std::array<stk::math::Vector3d, 3> tri{
+      stk::math::Vector3d(0, 0, 0), stk::math::Vector3d(1, 0, 0), stk::math::Vector3d(0, 1, 0)};
+  const auto [triArea, triNormal] = CalcTriangle3<double>::area_and_normal(tri);
+
+  std::vector<stk::math::Vector3d> intParamCoords;
+  // Tilted out of the plane, it crosses it at (0.5,0.25,0), inside the triangle.
+  append_triangle_edge_intersection_parametric_coordinates(tri,
+      triArea,
+      triNormal,
+      stk::math::Vector3d(-0.5, 0.25, 1.e-6),
+      stk::math::Vector3d(1.5, 0.25, -1.e-6),
+      intParamCoords);
+
+  ASSERT_EQ(1u, intParamCoords.size());
+  expect_eq(stk::math::Vector3d(0.5, 0.25, 0.), intParamCoords[0]);
+}
 }

@@ -28,8 +28,12 @@ public:
   virtual void fill_elements_that_intersect_distance_interval(const stk::mesh::BulkData &, const Surface_Identifier, const std::array<double,2>, std::vector<stk::mesh::Entity> &) const override
     { STK_ThrowRequireMsg(false, "Unimplemented"); }
 
-  virtual bool might_have_interior_or_face_intersections() const override { STK_ThrowRequireMsg(false, "Unimplemented"); return false; }
-  virtual bool snapped_elements_may_have_new_intersections() const override { STK_ThrowRequireMsg(false, "Unimplemented"); return false; }
+    virtual bool might_have_interior_or_face_intersections() const override { return false; }
+    virtual bool snapped_elements_may_have_new_intersections() const override
+    {
+      STK_ThrowRequireMsg(false, "Unimplemented");
+      return false;
+    }
 
   virtual void append_element_intersection_points(const stk::mesh::BulkData &,
     const NodeToCapturedDomainsMap &,

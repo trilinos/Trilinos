@@ -445,7 +445,8 @@ static double compute_linearized_tet10_volume(const std::array<stk::math::Vector
          compute_subtet_volume(elementNodeCoords, {{6,4,5,8}});
 }
 
-static double compute_tri_or_tet_volume(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
+double compute_element_volume(
+    const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
 {
   stk::topology elemTopology = mesh.bucket(element).topology();
 
@@ -460,7 +461,8 @@ static double compute_tri_or_tet_volume(const stk::mesh::BulkData & mesh, stk::m
     return compute_linearized_tet10_volume(elementNodeCoords);
   }
 
-  STK_ThrowRequireMsg(elemTopology == stk::topology::TRIANGLE_3_2D, "Topology " << elemTopology << " not supported in compute_tri_or_tet_volume.");
+  STK_ThrowRequireMsg(elemTopology == stk::topology::TRIANGLE_3_2D,
+      "Topology " << elemTopology << " not supported in compute_element_volume.");
   const auto elementNodeCoords = gather_tri_coordinates(mesh, element, coordsField);
   return compute_tri_volume(elementNodeCoords);
 }
@@ -717,7 +719,7 @@ static std::vector<stk::mesh::Entity> get_owned_vertex_nodes_with_nodal_volume_b
         if (blockSelector(elemBucket) && is_vertex_node_of_element(elemBucket.topology(), nodeElemOrds[iElem]))
         {
           isVertexNodeOfSelectedElem = true;
-          nodalVolume += compute_tri_or_tet_volume(mesh, element, coordsField);
+          nodalVolume += compute_element_volume(mesh, element, coordsField);
         }
 
         if (nodalVolume >= threshold)
@@ -1521,8 +1523,8 @@ check_shared_entity_nodes(const stk::mesh::BulkData & mesh)
 
 //--------------------------------------------------------------------------------
 
-bool
-check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
+bool check_face_and_edge_relations(
+    const stk::mesh::BulkData & mesh, const bool doRequireThatEdgesAreFullyConnectedIn3d)
 {
   const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
@@ -1531,6 +1533,8 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
 
   for (stk::mesh::EntityRank entity_rank = stk::topology::EDGE_RANK; entity_rank <= stk::topology::FACE_RANK; ++entity_rank)
   {
+    const bool doRequireFullyConnected = doRequireThatEdgesAreFullyConnectedIn3d ||
+        entity_rank != stk::topology::EDGE_RANK || meta.side_rank() == stk::topology::EDGE_RANK;
     const stk::mesh::BucketVector & buckets = mesh.get_buckets( entity_rank, not_ghost_selector );
 
     stk::mesh::BucketVector::const_iterator ib = buckets.begin();
@@ -1548,7 +1552,7 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
         std::vector<stk::mesh::Entity> entity_elems;
         stk::mesh::get_entities_through_relations(mesh, entity_nodes, stk::topology::ELEMENT_RANK, entity_elems);
 
-        if (entity_elems.empty())
+        if (entity_elems.empty() || (!doRequireFullyConnected && mesh.num_elements(entity) == 0))
         {
           krinolog << "Relation error, entity not attached to any elements: " << stk::diag::dendl;
           krinolog << "Entity: " << debug_entity_1line(mesh, entity) << stk::diag::dendl;
@@ -1629,7 +1633,7 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
               }
             }
           }
-          if (!already_attached && should_be_attached)
+          if (!already_attached && should_be_attached && doRequireFullyConnected)
           {
 
             krinolog << "Relation error, entity is not attached to element: " << stk::diag::dendl;
@@ -2340,6 +2344,11 @@ bool connectivity_of_side_with_nodes_is_good(const stk::mesh::BulkData & mesh,
   return true;
 }
 
+static bool is_shell_edge_side_topology(const stk::topology sideTopology)
+{
+  return sideTopology == stk::topology::SHELL_SIDE_BEAM_2 || sideTopology == stk::topology::SHELL_SIDE_BEAM_3;
+}
+
 bool
 check_element_side_connectivity(const stk::mesh::BulkData & mesh, const stk::mesh::Part & exterior_boundary_part, const stk::mesh::Part & active_part)
 {
@@ -2371,6 +2380,11 @@ check_element_side_connectivity(const stk::mesh::BulkData & mesh, const stk::mes
       elementNodes.assign(mesh.begin_nodes(element), mesh.end_nodes(element));
       for (unsigned iside=0; iside<num_sides; ++iside)
       {
+        // The "edge sides" of a shell are not volume element sides. Depending on the shell surface, they
+        // legitimately have 1 (open rim), 2, or more shells, plus any volume elements sharing the nodes.
+        if (is_shell_edge_side_topology(elementTopology.side_topology(iside)))
+          continue;
+
         stk::mesh::Entity existing_element_side = find_entity_by_ordinal(mesh, element, mesh.mesh_meta_data().side_rank(), iside);
         if ((mesh.is_valid(existing_element_side) && mesh.bucket(existing_element_side).member(exterior_boundary_part)) ||
             (useWorkroundForMissingExteriorBoundaryPartOnShellSides && mesh.is_valid(existing_element_side) && mesh.bucket(existing_element_side).topology().is_shell()))
@@ -2393,6 +2407,8 @@ check_element_side_connectivity(const stk::mesh::BulkData & mesh, const stk::mes
     for ( auto && side : *bucket )
     {
       if (useWorkroundForMissingExteriorBoundaryPartOnShellSides && mesh.bucket(side).topology().is_shell())
+        continue;
+      if (is_shell_edge_side_topology(mesh.bucket(side).topology()))
         continue;
       sideNodes.assign(mesh.begin_nodes(side), mesh.end_nodes(side));
       if (!connectivity_of_side_with_nodes_is_good(mesh, active_part, sideNodes, sideEntities, activeSideElements))
@@ -2555,14 +2571,17 @@ static int determine_new_owner_for_owned_face_or_edge_to_assure_selected_owned_e
   return newOwner;
 }
 
+static bool fix_face_and_edge_ownership_to_assure_selected_owned_element_without_using_aura(
+    stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector);
+
 bool fix_face_and_edge_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
 {
-  // This method exploits aura to choose which processor the faces and edges should be owned by
+  if (mesh.parallel_size() == 1) return false;
   if (!mesh.is_automatic_aura_on())
-  {
-    // Make no changes, hope for the best.
-    return false;
-  }
+    return fix_face_and_edge_ownership_to_assure_selected_owned_element_without_using_aura(
+        mesh, elementSelector);
+
+  // This method exploits aura to choose which processor the faces and edges should be owned by
 
   const int parallelRank = mesh.parallel_rank();
   stk::mesh::Selector faceEdgeSelector = mesh.mesh_meta_data().locally_owned_part() & elementSelector;
@@ -2678,25 +2697,26 @@ size_t get_index_of_entity_in_sorted(const stk::mesh::BulkData& mesh, const std:
   return std::distance(sortedEntities.begin(), iter);
 };
 
-static std::vector<int> unpack_procs_that_have_selected_elements_for_nodes(const stk::mesh::BulkData & mesh,
-    const std::vector<stk::mesh::Entity> & sortedNodes,
-    stk::CommSparse &commSparse)
+static std::vector<int> unpack_procs_that_have_selected_elements(const stk::mesh::BulkData & mesh,
+    const std::vector<stk::mesh::Entity> & sortedEntities,
+    stk::CommSparse & commSparse)
 {
-  std::vector<int> procsWithSelectedElem(sortedNodes.size(), mesh.parallel_size());
+  std::vector<int> procsWithSelectedElem(sortedEntities.size(), mesh.parallel_size());
   stk::unpack_communications(commSparse, [&](int procId)
   {
     stk::CommBuffer & buffer = commSparse.recv_buffer(procId);
 
     while ( buffer.remaining() )
     {
-      stk::mesh::EntityId nodeId;
-      commSparse.recv_buffer(procId).unpack(nodeId);
-      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
-      STK_ThrowRequire(mesh.is_valid(node));
-      const auto iter = std::lower_bound(sortedNodes.begin(), sortedNodes.end(), node, stk::mesh::EntityLess(mesh));
-      if (iter != sortedNodes.end() && *iter == node)
+      stk::mesh::EntityKey entityKey;
+      commSparse.recv_buffer(procId).unpack(entityKey);
+      stk::mesh::Entity entity = mesh.get_entity(entityKey);
+      STK_ThrowRequire(mesh.is_valid(entity));
+      const auto iter = std::lower_bound(
+          sortedEntities.begin(), sortedEntities.end(), entity, stk::mesh::EntityLess(mesh));
+      if (iter != sortedEntities.end() && *iter == entity)
       {
-        const size_t index = std::distance(sortedNodes.begin(), iter);
+        const size_t index = std::distance(sortedEntities.begin(), iter);
         procsWithSelectedElem[index] = std::min(procsWithSelectedElem[index], procId);
       }
     }
@@ -2732,7 +2752,8 @@ static bool fix_node_ownership_to_assure_selected_owned_element_without_using_au
 
   stk::CommSparse commSparse(mesh.parallel());
   pack_for_owning_procs(mesh, unownedNodesWithSelectedElems, commSparse);
-  const std::vector<int> newOwners = unpack_procs_that_have_selected_elements_for_nodes(mesh, ownedNodesWithoutSelectedElems, commSparse);
+  const std::vector<int> newOwners =
+      unpack_procs_that_have_selected_elements(mesh, ownedNodesWithoutSelectedElems, commSparse);
 
   std::vector<stk::mesh::EntityProc> entitiesToMove;
   STK_ThrowRequire(newOwners.size() == ownedNodesWithoutSelectedElems.size());
@@ -2745,6 +2766,77 @@ static bool fix_node_ownership_to_assure_selected_owned_element_without_using_au
 
   mesh.change_entity_owner(entitiesToMove);
   return true;
+}
+
+// Whether this processor owns an element of the face or edge that would keep it as owner in the
+// aura version: a selected element, and a coincident shell if the face or edge has one.
+static bool face_or_edge_has_locally_owned_selected_element(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Entity faceOrEdge,
+    const stk::mesh::Selector & elementSelector)
+{
+  const StkMeshEntities entityElements{
+      mesh.begin_elements(faceOrEdge), mesh.end_elements(faceOrEdge)};
+  const bool hasCoincidentShell = has_coincident_shell(mesh, faceOrEdge, entityElements);
+  const stk::topology entityTopology = mesh.bucket(faceOrEdge).topology();
+  for (auto elem : entityElements)
+    if (mesh.bucket(elem).owned() &&
+        (!hasCoincidentShell ||
+            is_coincident_shell(mesh.bucket(elem).topology(), entityTopology)) &&
+        is_entity_selected(mesh, elementSelector, elem))
+      return true;
+  return false;
+}
+
+// Without aura, the owner of a face or edge does not see the elements of other processors, so the
+// processors that own a selected element of a shared face or edge tell its owner, which moves it to
+// the lowest of them if it does not own one itself.
+static bool fix_face_and_edge_ownership_to_assure_selected_owned_element_without_using_aura(
+    stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
+{
+  std::vector<stk::mesh::Entity> ownedWithoutSelectedElems;
+  std::vector<stk::mesh::Entity> sharedUnownedWithSelectedElems;
+
+  for (auto && edgeOrFaceRank : {stk::topology::EDGE_RANK, stk::topology::FACE_RANK})
+  {
+    for (auto && bucket : mesh.buckets(edgeOrFaceRank))
+    {
+      if (bucket->owned())
+      {
+        for (auto && faceOrEdge : *bucket)
+          if (!face_or_edge_has_locally_owned_selected_element(mesh, faceOrEdge, elementSelector))
+            ownedWithoutSelectedElems.push_back(faceOrEdge);
+      }
+      else if (bucket->shared())
+      {
+        for (auto && faceOrEdge : *bucket)
+          if (face_or_edge_has_locally_owned_selected_element(mesh, faceOrEdge, elementSelector))
+            sharedUnownedWithSelectedElems.push_back(faceOrEdge);
+      }
+    }
+  }
+
+  if (stk::is_true_on_all_procs(mesh.parallel(), ownedWithoutSelectedElems.empty())) return false;
+
+  std::sort(ownedWithoutSelectedElems.begin(),
+      ownedWithoutSelectedElems.end(),
+      stk::mesh::EntityLess(mesh));
+
+  stk::CommSparse commSparse(mesh.parallel());
+  pack_for_owning_procs(mesh, sharedUnownedWithSelectedElems, commSparse);
+  const std::vector<int> newOwners =
+      unpack_procs_that_have_selected_elements(mesh, ownedWithoutSelectedElems, commSparse);
+
+  std::vector<stk::mesh::EntityProc> entitiesToMove;
+  for (size_t i = 0; i < ownedWithoutSelectedElems.size(); ++i)
+    if (newOwners[i] < mesh.parallel_size()) // otherwise no processor has a better claim
+      entitiesToMove.emplace_back(ownedWithoutSelectedElems[i], newOwners[i]);
+
+  if (stk::is_true_on_any_proc(mesh.parallel(), !entitiesToMove.empty()))
+  {
+    mesh.change_entity_owner(entitiesToMove);
+    return true;
+  }
+  return false;
 }
 
 bool fix_node_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
@@ -2769,13 +2861,6 @@ static int does_face_or_edge_have_an_element_with_the_same_owning_proc(const stk
 bool
 check_face_and_edge_ownership(const stk::mesh::BulkData & mesh)
 {
-  // This method exploits aura to choose which processor the faces and edges should be owned by
-  if (!mesh.is_automatic_aura_on())
-  {
-    // Skip check if we don't have aura
-    return true;
-  }
-
   stk::mesh::Selector locallyOwnedSelector(mesh.mesh_meta_data().locally_owned_part());
 
   bool error = false;
@@ -3362,17 +3447,16 @@ void parallel_sync_all_fields(const stk::mesh::BulkData & mesh)
   parallel_sync_fields(mesh, mesh.mesh_meta_data().get_fields());
 }
 
-static bool mesh_has_selected_higher_order_elements_locally(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
+bool mesh_has_quadratic_element_parts(const stk::mesh::MetaData & meta)
 {
-  for ( auto && bucket_ptr : mesh.get_buckets(stk::topology::ELEMENT_RANK, elementSelector) )
-    if (bucket_ptr->topology() != bucket_ptr->topology().base())
+  for (auto * part : meta.get_parts())
+  {
+    const stk::topology topology = part->topology();
+    if (topology.rank() == stk::topology::ELEMENT_RANK && topology != topology.base() &&
+        !stk::mesh::is_topology_root_part(*part))
       return true;
+  }
   return false;
-}
-
-bool mesh_has_selected_higher_order_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
-{
-  return stk::is_true_on_any_proc(mesh.parallel(), mesh_has_selected_higher_order_elements_locally(mesh,elementSelector));
 }
 
 } // namespace krino

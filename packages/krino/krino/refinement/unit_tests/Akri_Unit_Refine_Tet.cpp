@@ -277,6 +277,29 @@ TEST_F(RightTetSurroundedByEdgeTetsRefinement, markedAnyTransitionElementForEver
   test_refinement_of_transition_element_leads_to_refinement_of_parent(indexOfCentralElement);
 }
 
+TEST_F(RightTet10SurroundedByEdgeTetsRefinement,
+    markedAnyTransitionElementForEveryEdgeConfiguration_parentElementGetsFullyRefined)
+{
+  if (!is_valid_proc_size_for_test()) return;
+
+  const int indexOfCentralElement = 0;
+  test_refinement_of_transition_element_leads_to_refinement_of_parent(indexOfCentralElement);
+}
+
+TEST_F(UMRRegularTetRefinement, refinementThenUnrefinementTest)
+{
+  if (!is_valid_proc_size_for_test()) return;
+
+  test_refinement_of_elements_spanning_x_equal_0_then_unrefinement({72, 512, 2892}, {546, 72, 8});
+}
+
+TEST_F(UMRRegularTet10Refinement, refinementThenUnrefinementTest)
+{
+  if (!is_valid_proc_size_for_test()) return;
+
+  test_refinement_of_elements_spanning_x_equal_0_then_unrefinement({72, 512, 2892}, {546, 72, 8});
+}
+
 TEST_F(UMRRegularTetRefinement, fuzzTest)
 {
   if(!is_valid_proc_size_for_test())
@@ -444,12 +467,18 @@ TEST_F(UMRRegularTetRefinement, performanceRefinementThenUnrefinementTest)
 
 TEST_F(RegularTetRefinement, meshRefinedTwiceWithParentAndChildrenMovedToNewProc_unrefinementCausesParentToReturnToOriginatingProc)
 {
-  if(!is_valid_proc_size_for_test() || this->parallel_size() == 1)
-    return;
+  // The fixture is for 1 processor, but its mesh is built on any number, all on processor 0.
+  if (this->parallel_size() != 2) return;
 
   perform_iterations_of_uniform_refinement_with_general_element_marker(2);
 
-  move_owned_elements_with_given_ids_and_owned_attached_entities_to_processor({1004, 1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057}, 1);
+  // A parent on processor 0 that is itself a child, and its children, move to processor 1.
+  const std::vector<stk::mesh::EntityId> idsOfElemsToMove =
+      get_ids_of_owned_child_that_is_a_parent_and_its_children_on_proc_0();
+  stk::mesh::EntityId movedParentId = idsOfElemsToMove.empty() ? 0 : idsOfElemsToMove[0];
+  all_reduce_max(mMesh.parallel(), movedParentId);
+  ASSERT_NE(0u, movedParentId);
+  move_owned_elements_with_given_ids_and_owned_attached_entities_to_processor(idsOfElemsToMove, 1);
 
   EXPECT_TRUE(mBuilder.check_boundary_sides());
   EXPECT_TRUE(check_face_and_edge_ownership(mMesh));
@@ -460,7 +489,8 @@ TEST_F(RegularTetRefinement, meshRefinedTwiceWithParentAndChildrenMovedToNewProc
   EXPECT_TRUE(mBuilder.check_boundary_sides());
   EXPECT_TRUE(check_face_and_edge_ownership(mMesh));
 
-  stk::mesh::Entity movedParentElement = mMesh.get_entity(stk::topology::ELEMENT_RANK, 1004);
+  stk::mesh::Entity movedParentElement =
+      mMesh.get_entity(stk::topology::ELEMENT_RANK, movedParentId);
   if (mMesh.is_valid(movedParentElement))
   {
     EXPECT_EQ(0, mMesh.parallel_owner_rank(movedParentElement));

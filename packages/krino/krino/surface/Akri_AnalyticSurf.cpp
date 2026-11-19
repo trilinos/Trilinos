@@ -6,14 +6,16 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <Akri_AnalyticSurf.hpp>
-#include <Akri_Transformation.hpp>
-#include <Akri_IntersectionUtils.hpp>
-#include <Akri_Triangle.hpp>
-#include <Akri_ML_Models.hpp>
-
+#include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
+
+#include <Akri_AnalyticSurf.hpp>
+#include <Akri_IntersectionUtils.hpp>
+#include <Akri_ML_Models.hpp>
+#include <Akri_Transformation.hpp>
+#include <Akri_Triangle.hpp>
 
 namespace krino{
 
@@ -27,21 +29,6 @@ Cylinder::Cylinder(const stk::math::Vector3d endPt1,  // first endpoint of axis
     myRadius(radius),
     myDistSign(sign)
 {
-  set_axis_and_bounding_box();
-}
-
-void
-Cylinder::prepare_to_compute(const double time, const BoundingBox & /*point_bbox*/, const double /*truncation_length*/)
-{
-  if (NULL == my_transformation)
-  {
-    return;
-  }
-
-  my_transformation->update(time);
-  my_transformation->apply(myEndPt1);
-  my_transformation->apply(myEndPt2);
-
   set_axis_and_bounding_box();
 }
 
@@ -158,16 +145,6 @@ Sphere::Sphere(const stk::math::Vector3d & center,
 {
 }
 
-void
-Sphere::prepare_to_compute(const double time, const BoundingBox & /*point_bbox*/, const double /*truncation_length*/)
-{
-  if (nullptr != my_transformation)
-  {
-    my_transformation->update(time);
-    my_transformation->apply(myCenter);
-  }
-}
-
 void Sphere::insert_into(BoundingBox & bbox) const
 {
   const stk::math::Vector3d min(myCenter[0]-myRadius, myCenter[1]-myRadius, myCenter[2]-myRadius);
@@ -229,9 +206,8 @@ Ellipsoid::Ellipsoid(
   if (!rotationVec.empty())
   {
     STK_ThrowAssert(rotationVec.size() == 3);
-    stk::math::Vector3d pointRotation(-rotationVec[0], -rotationVec[1], -rotationVec[2]); // myRotation is the rotation used for the query point locations, which is the opposite of the rotation of the ellipsoid
     myRotation = std::make_unique<Quaternion>();
-    myRotation->set_from_rotation_vector(pointRotation);
+    myRotation->set_from_rotation_vector(stk::math::Vector3d(rotationVec[0], rotationVec[1], rotationVec[2]));
   }
 
   set_bounding_box();
@@ -240,25 +216,19 @@ Ellipsoid::Ellipsoid(
 void
 Ellipsoid::set_bounding_box()
 {
-  const stk::math::Vector3d min = myCenter-mySemiAxes;
-  const stk::math::Vector3d max = myCenter+mySemiAxes;
-
   myBoundingBox.clear();
   if (!myRotation)
   {
-    myBoundingBox.accommodate(min);
-    myBoundingBox.accommodate(max);
+    myBoundingBox.accommodate(myCenter-mySemiAxes);
+    myBoundingBox.accommodate(myCenter+mySemiAxes);
   }
   else
   {
-    myBoundingBox.accommodate(myRotation->reverse_rotate_3d_vector(stk::math::Vector3d(min[0],min[1],min[2])));
-    myBoundingBox.accommodate(myRotation->reverse_rotate_3d_vector(stk::math::Vector3d(min[0],min[1],max[2])));
-    myBoundingBox.accommodate(myRotation->reverse_rotate_3d_vector(stk::math::Vector3d(min[0],max[1],min[2])));
-    myBoundingBox.accommodate(myRotation->reverse_rotate_3d_vector(stk::math::Vector3d(min[0],max[1],max[2])));
-    myBoundingBox.accommodate(myRotation->reverse_rotate_3d_vector(stk::math::Vector3d(max[0],min[1],min[2])));
-    myBoundingBox.accommodate(myRotation->reverse_rotate_3d_vector(stk::math::Vector3d(max[0],min[1],max[2])));
-    myBoundingBox.accommodate(myRotation->reverse_rotate_3d_vector(stk::math::Vector3d(max[0],max[1],min[2])));
-    myBoundingBox.accommodate(myRotation->reverse_rotate_3d_vector(stk::math::Vector3d(max[0],max[1],max[2])));
+    // The corners of the box around the unrotated ellipsoid, rotated about its center.
+    for (int i : {-1, 1})
+      for (int j : {-1, 1})
+        for (int k : {-1, 1})
+          myBoundingBox.accommodate(myCenter + myRotation->rotate_3d_vector(stk::math::Vector3d(i*mySemiAxes[0], j*mySemiAxes[1], k*mySemiAxes[2])));
   }
 }
 
@@ -267,7 +237,7 @@ Ellipsoid::point_signed_distance(const stk::math::Vector3d &x) const
 {
   stk::math::Vector3d delta = x-myCenter;
   if (myRotation)
-    delta = myRotation->rotate_3d_vector(delta);
+    delta = myRotation->reverse_rotate_3d_vector(delta);
   // Exact signed distance for a sphere; an approximate distance otherwise.
   const double dx = delta[0]/mySemiAxes[0];
   const double dy = delta[1]/mySemiAxes[1];
@@ -286,7 +256,6 @@ Cuboid::Cuboid(const stk::math::Vector3d & center,
 {
   if (!rotationVec.zero_length())
   {
-    // myRotation is the rotation used for the cuboid, which is the opposite of the rotation of the query points
     myRotation = std::make_unique<Quaternion>();
     myRotation->set_from_rotation_vector(rotationVec);
   }
@@ -318,10 +287,10 @@ stk::math::Vector3d Cuboid::vertex_location(const unsigned i) const
     {{-1,-1,+1}}, {{+1,-1,+1}}, {{+1,+1,+1}}, {{-1,+1,+1}}
   }};
   const std::array<int,3> & delta = vertexDeltas[i];
-  const stk::math::Vector3d locationInCuboidCoords(myCenter[0]+delta[0]*myHalfDimensions[0], myCenter[1]+delta[1]*myHalfDimensions[1], myCenter[2]+delta[2]*myHalfDimensions[2]);
+  const stk::math::Vector3d offsetInCuboidCoords(delta[0]*myHalfDimensions[0], delta[1]*myHalfDimensions[1], delta[2]*myHalfDimensions[2]);
   if (!myRotation)
-    return locationInCuboidCoords;
-  return myRotation->rotate_3d_vector(locationInCuboidCoords);
+    return myCenter + offsetInCuboidCoords;
+  return myCenter + myRotation->rotate_3d_vector(offsetInCuboidCoords);
 }
 
 double
@@ -366,6 +335,46 @@ void Cuboid::fill_tetrahedon_intersection_parametric_coordinates(const std::arra
     for (unsigned i=0; i<8; ++i)
       append_tetrahedron_intersection_parametric_coordinates(tetNodes, vertex_location(i), intParamCoords);
   }
+}
+
+void Cuboid::fill_segment_crossings(const stk::math::Vector3d & pt0,
+    const stk::math::Vector3d & pt1,
+    const double edgeCrossingTol,
+    std::vector<double> & crossingPositions) const
+{
+  crossingPositions.clear();
+
+  // Clip the segment, in the cuboid's frame, to the slab of each pair of faces: it is inside the
+  // cuboid between where it enters the last slab and leaves the first.
+  stk::math::Vector3d p0 = pt0 - myCenter;
+  stk::math::Vector3d p1 = pt1 - myCenter;
+  if (myRotation)
+  {
+    p0 = myRotation->reverse_rotate_3d_vector(p0);
+    p1 = myRotation->reverse_rotate_3d_vector(p1);
+  }
+  const stk::math::Vector3d dir = p1 - p0;
+  double enter = -std::numeric_limits<double>::max();
+  double leave = std::numeric_limits<double>::max();
+  for (unsigned i = 0; i < 3; ++i)
+  {
+    if (dir[i] == 0.)
+    {
+      // Parallel to these faces: outside or on one of them, the segment does not cross the cuboid.
+      if (std::abs(p0[i]) >= myHalfDimensions[i]) return;
+      continue;
+    }
+    double t0 = (-myHalfDimensions[i] - p0[i]) / dir[i];
+    double t1 = (myHalfDimensions[i] - p0[i]) / dir[i];
+    if (t0 > t1) std::swap(t0, t1);
+    enter = std::max(enter, t0);
+    leave = std::min(leave, t1);
+  }
+  if (!(enter < leave)) return; // misses the cuboid, or only touches it
+
+  for (const double position : {enter, leave})
+    if (position > edgeCrossingTol && position < 1. - edgeCrossingTol)
+      crossingPositions.push_back(position);
 }
 
 Plane::Plane(const stk::math::Vector3d & normal,
@@ -460,7 +469,7 @@ LevelSet_String_Function::LevelSet_String_Function(const std::string & expressio
 double
 LevelSet_String_Function::point_signed_distance(const stk::math::Vector3d &coord) const
 {
-  return myExpression.evaluate(coord);
+  return myExpression.evaluate(myTime, coord);
 }
 
 Implicit_Neural_Representation::Implicit_Neural_Representation(const std::string & modelBaseName)

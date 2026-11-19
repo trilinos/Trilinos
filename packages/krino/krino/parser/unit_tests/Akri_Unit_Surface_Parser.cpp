@@ -9,7 +9,10 @@
 
 #include <Akri_Surface_Parser.hpp>
 
+#include <Akri_FacetFileSurface.hpp>
+
 #include <Akri_AnalyticSurf.hpp>
+#include <Akri_BoundingBox.hpp>
 #include <Akri_Parser.hpp>
 #include <Akri_Surface.hpp>
 
@@ -665,7 +668,7 @@ not_a_surface:
 }
 
 // -----------------------------------------------------------------------------
-// facets negative tests only. Positive tests would require actual files.
+// facets
 // -----------------------------------------------------------------------------
 
 TEST_F(SurfaceParserTest, FacetsMissingFilenameReturnsNullAndDooms)
@@ -693,6 +696,168 @@ facets:
 
   EXPECT_EQ(surface, nullptr);
   EXPECT_GT(stk::get_doomed_count(), oldDoomedCount);
+}
+
+// Facet files are read into a connected surface, which reads its file when first prepared, so these
+// files need not exist.
+TEST_F(SurfaceParserTest, FacetsOfEveryFormatAreConnected)
+{
+  for (const std::string format : {"STL", "FAC", "PLY", "EXO", "stl"})
+  {
+    const unsigned oldDoomedCount = stk::get_doomed_count();
+    std::shared_ptr<Surface> surface =
+        parse_surface("facets:\n  filename: dummy.file\n  format: " + format + "\n");
+    EXPECT_NE(nullptr, std::dynamic_pointer_cast<FacetFileSurface>(surface)) << format;
+    EXPECT_EQ(stk::get_doomed_count(), oldDoomedCount) << format;
+  }
+}
+
+TEST_F(SurfaceParserTest, FacetsConnectedWithRemoveCoincidentAndWatertightOptions)
+{
+  for (const std::string merge : {"true", "false"})
+  {
+    const unsigned oldDoomedCount = stk::get_doomed_count();
+    std::shared_ptr<Surface> surface = parse_surface(R"yaml(
+facets:
+  filename: dummy.ply
+  format: PLY
+  remove_coincident_facets: true
+  check_watertight: true
+  watertight_bounding_box: [0, 0, 0, 1, 1, 1]
+  merge_coincident_vertices: )yaml" +
+        merge + "\n");
+    EXPECT_NE(nullptr, std::dynamic_pointer_cast<FacetFileSurface>(surface)) << merge;
+    EXPECT_EQ(stk::get_doomed_count(), oldDoomedCount) << merge;
+  }
+}
+
+// Sharp features are off unless sharp_feature_angle is given, with or without open boundary edges
+// as features.
+TEST_F(SurfaceParserTest, FacetsWithSharpFeatureAngle_haveSharpFeatures)
+{
+  const std::string facets = "facets:\n  filename: dummy.ply\n  format: PLY\n";
+  for (const std::string options : {"",
+           "  sharp_feature_angle: 135\n",
+           "  sharp_feature_angle: 135\n  open_boundary_edges_are_sharp_features: true\n"})
+  {
+    const unsigned oldDoomedCount = stk::get_doomed_count();
+    const auto surface =
+        std::dynamic_pointer_cast<FacetFileSurface>(parse_surface(facets + options));
+    ASSERT_NE(nullptr, surface) << options;
+    EXPECT_EQ(stk::get_doomed_count(), oldDoomedCount) << options;
+    const bool hasSharpFeatures = !options.empty();
+    EXPECT_EQ(hasSharpFeatures, surface->has_edges()) << options;
+    EXPECT_EQ(hasSharpFeatures, surface->has_corners()) << options;
+  }
+}
+
+// A sharp feature angle out of range, open boundary edges as features without an angle, and sharp
+// features without merged vertices (an unconnected surface) are input errors.
+TEST_F(SurfaceParserTest, FacetsWithInvalidSharpFeatureOptions_returnsNullAndDooms)
+{
+  const std::string facets = "facets:\n  filename: dummy.ply\n  format: PLY\n";
+  for (const std::string options : {"  sharp_feature_angle: 0\n",
+           "  sharp_feature_angle: 180\n",
+           "  sharp_feature_angle: -30\n",
+           "  open_boundary_edges_are_sharp_features: true\n",
+           "  sharp_feature_angle: 135\n  merge_coincident_vertices: false\n"})
+  {
+    const unsigned oldDoomedCount = stk::get_doomed_count();
+    EXPECT_EQ(nullptr, parse_surface(facets + options)) << options;
+    EXPECT_GT(stk::get_doomed_count(), oldDoomedCount) << options;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// motion: a surface with a motion is a TransformedSurface placed by it
+// -----------------------------------------------------------------------------
+
+const BoundingBox anyBox(stk::math::Vector3d(-10.,-10.,-10.), stk::math::Vector3d(10.,10.,10.));
+
+TEST_F(SurfaceParserTest, SphereWithMotion_placedByItsMotion)
+{
+  std::shared_ptr<Surface> sphere = parse_surface(R"yaml(
+sphere:
+  center: [1.0, 0.0, 0.0]
+  radius: 0.5
+  motion:
+    translational_velocity: [0.0, 2.0, 0.0]
+    initial_displacement: [0.0, 0.0, 1.0]
+)yaml");
+
+  ASSERT_NE(sphere, nullptr);
+  EXPECT_EQ(TRANSFORMED_SURFACE, sphere->type());
+  sphere->prepare_to_compute(0., anyBox, 0.);
+  EXPECT_DOUBLE_EQ(-0.5, sphere->point_signed_distance(stk::math::Vector3d(1., 0., 1.)));
+  sphere->prepare_to_compute(1.5, anyBox, 0.);
+  EXPECT_DOUBLE_EQ(-0.5, sphere->point_signed_distance(stk::math::Vector3d(1., 3., 1.)));
+}
+
+// Flat syntax, and a rotation about a reference point: a quarter turn per unit time about z
+// through (1,1,0), after an initial quarter turn the other way, with the reference point moving.
+TEST_F(SurfaceParserTest, FlatCuboidWithEveryMotionKey_placedByItsMotion)
+{
+  std::shared_ptr<Surface> cuboid = parse_surface(R"yaml(
+cuboid:
+center: [2.0, 1.0, 0.0]
+dimensions: [0.2, 0.2, 0.2]
+motion:
+  reference_point: [1.0, 1.0, 0.0]
+  initial_rotation: [0.0, 0.0, -1.5707963267948966]
+  initial_displacement: [0.0, 0.0, 3.0]
+  rotational_velocity: [0.0, 0.0, 1.5707963267948966]
+  translational_velocity: [1.0, 0.0, 0.0]
+)yaml");
+
+  ASSERT_NE(cuboid, nullptr);
+  EXPECT_EQ(TRANSFORMED_SURFACE, cuboid->type());
+  cuboid->prepare_to_compute(0., anyBox, 0.);
+  EXPECT_NEAR(-0.1, cuboid->point_signed_distance(stk::math::Vector3d(1., 0., 3.)), 1.e-12);
+  // At time 2: turned a quarter turn the first way in all, about the reference point now at (3,1,3).
+  cuboid->prepare_to_compute(2., anyBox, 0.);
+  EXPECT_NEAR(-0.1, cuboid->point_signed_distance(stk::math::Vector3d(3., 2., 3.)), 1.e-12);
+}
+
+TEST_F(SurfaceParserTest, MotionWithTwoComponentVectors_zIsZero)
+{
+  std::shared_ptr<Surface> sphere = parse_surface(R"yaml(
+sphere:
+  center: [0.0, 0.0, 0.0]
+  radius: 0.5
+  motion:
+    translational_velocity: [0.9, 0.0]
+    initial_displacement: [0.0, 1.0]
+)yaml");
+
+  ASSERT_NE(sphere, nullptr);
+  sphere->prepare_to_compute(1., anyBox, 0.);
+  EXPECT_DOUBLE_EQ(-0.5, sphere->point_signed_distance(stk::math::Vector3d(0.9, 1., 0.)));
+}
+
+TEST_F(SurfaceParserTest, SurfaceWithoutMotion_notTransformed)
+{
+  std::shared_ptr<Surface> sphere = parse_surface(R"yaml(
+sphere:
+  center: [0.0, 0.0, 0.0]
+  radius: 0.5
+)yaml");
+  ASSERT_NE(sphere, nullptr);
+  EXPECT_EQ(SPHERE, sphere->type());
+}
+
+TEST_F(SurfaceParserTest, BadMotion_returnsNullAndDooms)
+{
+  for (const std::string motion : {
+           "  motion:\n    translational_velocity: [1.0]\n",
+           "  motion:\n    rotational_velocity: [0.0, 1.0]\n",
+           "  motion:\n    translation_velocity: [1.0, 0.0, 0.0]\n",
+           "  motion: fast\n"})
+  {
+    const unsigned oldDoomedCount = stk::get_doomed_count();
+    std::shared_ptr<Surface> surface = parse_surface("sphere:\n  center: [0.0, 0.0, 0.0]\n  radius: 0.5\n" + motion);
+    EXPECT_EQ(surface, nullptr) << motion;
+    EXPECT_GT(stk::get_doomed_count(), oldDoomedCount) << motion;
+  }
 }
 
 #else

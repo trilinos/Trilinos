@@ -20,6 +20,9 @@ class Phase_Support;
 class Surface_Identifier;
 
 bool is_part_to_check_for_snapping_compatibility(const Phase_Support & phaseSupport, const AuxMetaData & auxMeta, const stk::mesh::EntityRank targetRank, const stk::mesh::Part & part);
+// The sides whose parts snapping keeps nodes on: the exposed boundary, io side parts and
+// nonconformal side parts.
+stk::mesh::Selector get_snapping_compatibility_side_selector(const stk::mesh::BulkData & mesh);
 bool parts_are_compatible_for_snapping(const stk::mesh::BulkData & mesh, stk::mesh::Entity possible_snap_node, stk::mesh::Entity fixed_node);
 std::vector<bool> which_intersection_point_nodes_are_compatible_for_snapping(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, const std::vector<stk::mesh::Entity> & intersectionPointNodes);
 void filter_which_intersection_point_nodes_are_compatible_for_snapping(const stk::mesh::BulkData & mesh,

@@ -34,7 +34,7 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace sierra { namespace Sctl { class Event; } }
 namespace krino { class AuxMetaData; }
-namespace krino { class FacetedSurfaceBase; }
+namespace krino { class MeshFacetedSurface; }
 namespace krino { class IC_Alg; }
 namespace krino { class ParallelErrorMessage; }
 namespace krino { class ContourElement; }
@@ -142,8 +142,8 @@ public:
   FieldRef get_time_of_arrival_element_speed_field() const {return myTimeOfArrivalElementSpeedField;}
   void set_time_of_arrival_block_speed(const std::string & blockName, const double blockSpeed);
 
-  FacetedSurfaceBase & get_facets() { return *facets; }
-  const FacetedSurfaceBase & get_facets() const { return *facets; }
+  MeshFacetedSurface & get_facets() { return *facets; }
+  const MeshFacetedSurface & get_facets() const { return *facets; }
 
   void narrow_band_multiplier( double multiplier ) { my_narrow_band_multiplier = multiplier; }
   const double & narrow_band_size() const { return my_narrow_band_size; }
@@ -174,7 +174,8 @@ public:
   std::vector<stk::mesh::Part *> & get_compute_surface_distance_parts() { return my_compute_surface_distance_parts; }
   void compute_surface_distance(const double narrowBandSize=0.0, const double farFieldValue=0.0);
 
-  static void initialize(stk::mesh::MetaData & meta);
+  static void initialize(stk::mesh::MetaData & meta) { initialize(meta, 0.); }
+  static void initialize(stk::mesh::MetaData & meta, const double time);
   void initialize(const double time = 0.0);
   bool can_create_adaptive_initial_facets_from_initial_surfaces_because_initial_distance_is_solely_from_initial_surfaces() const;
   static void build_initial_facets(stk::mesh::MetaData & meta);
@@ -263,7 +264,7 @@ private:
   std::unique_ptr<IC_Alg> my_IC_alg;
 
     // vector of current facets
-  std::unique_ptr<FacetedSurfaceBase> facets;
+  std::unique_ptr<MeshFacetedSurface> facets;
 
   std::vector<String_Function_Expression> myInterfaceVelocity;
 

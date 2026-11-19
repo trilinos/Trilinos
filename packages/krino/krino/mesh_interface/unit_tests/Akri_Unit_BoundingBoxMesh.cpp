@@ -11,6 +11,7 @@
 #include <stk_math/StkVector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_topology/topology.hpp>
@@ -19,6 +20,8 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
+#include <string>
 #include <vector>
 
 namespace krino {
@@ -55,7 +58,142 @@ void expect_coordinates_within_domain(const stk::mesh::BulkData & mesh,
   }
 }
 
+struct GeneratedMeshCounts
+{
+  size_t numNodes;
+  size_t numEdges;
+  size_t numElements;
+};
+
+const stk::math::Vector3d quadraticTestMinCorner(0., 0., 0.);
+const stk::math::Vector3d quadraticTestMaxCorner(1., 1.2, 0.8);
+const double quadraticTestMeshSize = 0.4;
+
+std::unique_ptr<BoundingBoxMesh> generate_mesh(const stk::topology elemTopology, const BoundingBoxMeshStructureType structureType)
+{
+  auto bboxMesh = std::make_unique<BoundingBoxMesh>(elemTopology, MPI_COMM_WORLD); // CHECK: ALLOW MPI_COMM_WORLD
+  bboxMesh->set_mesh_structure_type(structureType);
+  bboxMesh->set_domain(BoundingBoxMesh::BoundingBoxType(quadraticTestMinCorner, quadraticTestMaxCorner), quadraticTestMeshSize);
+  bboxMesh->populate_mesh();
+  return bboxMesh;
+}
+
+GeneratedMeshCounts counts_of_linear_mesh_with_edges(const stk::topology linearTopology, const BoundingBoxMeshStructureType structureType)
+{
+  std::unique_ptr<BoundingBoxMesh> linearMesh = generate_mesh(linearTopology, structureType);
+  stk::mesh::create_edges(linearMesh->bulk_data());
+  const auto counts = global_entity_counts(linearMesh->bulk_data());
+  return {counts[stk::topology::NODE_RANK], counts[stk::topology::EDGE_RANK], counts[stk::topology::ELEM_RANK]};
+}
+
+void expect_mid_edge_nodes_at_edge_midpoints(const stk::mesh::BulkData & mesh)
+{
+  const stk::mesh::FieldBase & coordsField = *mesh.mesh_meta_data().coordinate_field();
+  const unsigned dim = mesh.mesh_meta_data().spatial_dimension();
+  std::array<unsigned,3> edgeNodeOrdinals;
+  for (const auto * bucketPtr : mesh.buckets(stk::topology::ELEMENT_RANK))
+  {
+    const stk::topology elemTopology = bucketPtr->topology();
+    for (const auto elem : *bucketPtr)
+    {
+      const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
+      for (unsigned iEdge = 0; iEdge < elemTopology.num_edges(); ++iEdge)
+      {
+        elemTopology.edge_node_ordinals(iEdge, edgeNodeOrdinals.data());
+        const double * x0 = static_cast<const double*>(stk::mesh::field_data(coordsField, elemNodes[edgeNodeOrdinals[0]]));
+        const double * x1 = static_cast<const double*>(stk::mesh::field_data(coordsField, elemNodes[edgeNodeOrdinals[1]]));
+        const double * xMid = static_cast<const double*>(stk::mesh::field_data(coordsField, elemNodes[edgeNodeOrdinals[2]]));
+        for (unsigned i = 0; i < dim; ++i)
+        {
+          EXPECT_NEAR(0.5*(x0[i] + x1[i]), xMid[i], 1.e-12);
+        }
+      }
+    }
+  }
+}
+
+void expect_quadratic_domain_sides(const stk::mesh::BulkData & mesh, const stk::topology sideTopology)
+{
+  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const std::vector<std::string> sideNames = (meta.spatial_dimension() == 2) ?
+      std::vector<std::string>{"Xminus", "Xplus", "Yminus", "Yplus"} :
+      std::vector<std::string>{"Xminus", "Xplus", "Yminus", "Yplus", "Zminus", "Zplus"};
+  for (const auto & sideName : sideNames)
+  {
+    const stk::mesh::Part * sidePart = meta.get_part(sideName);
+    ASSERT_NE(nullptr, sidePart);
+    std::vector<size_t> sideCounts;
+    const stk::mesh::Selector sideSelector(*sidePart);
+    stk::mesh::comm_mesh_counts(mesh, sideCounts, &sideSelector);
+    EXPECT_LT(0u, sideCounts[meta.side_rank()]);
+    for (const auto * bucketPtr : mesh.get_buckets(meta.side_rank(), *sidePart))
+    {
+      EXPECT_EQ(sideTopology, bucketPtr->topology());
+    }
+  }
+}
+
+// A quadratic generated mesh is its linear mesh with a node at the midpoint of each edge: one for
+// each edge, however the mesh is decomposed.
+void expect_quadratic_mesh_is_linear_mesh_with_mid_edge_nodes(const stk::topology quadraticTopology, const BoundingBoxMeshStructureType structureType)
+{
+  const GeneratedMeshCounts linearCounts = counts_of_linear_mesh_with_edges(quadraticTopology.base(), structureType);
+
+  std::unique_ptr<BoundingBoxMesh> quadraticMesh = generate_mesh(quadraticTopology, structureType);
+  const auto counts = global_entity_counts(quadraticMesh->bulk_data());
+  EXPECT_EQ(linearCounts.numNodes + linearCounts.numEdges, counts[stk::topology::NODE_RANK]);
+  EXPECT_EQ(linearCounts.numElements, counts[stk::topology::ELEM_RANK]);
+
+  expect_mid_edge_nodes_at_edge_midpoints(quadraticMesh->bulk_data());
+  if (quadraticMesh->has_flat_boundaries())
+  {
+    expect_coordinates_within_domain(quadraticMesh->bulk_data(), quadraticTestMinCorner, quadraticTestMaxCorner);
+    expect_quadratic_domain_sides(quadraticMesh->bulk_data(), quadraticTopology.side_topology());
+  }
+}
+
 } // namespace
+
+// With different numbers of cells in y and z, every node is still where its id puts it: in the
+// domain, with each side on one wall of it.
+TEST(BoundingBoxMesh, Hex8_DifferentCellCountsInYAndZ_NodesInTheDomain)
+{
+  std::unique_ptr<BoundingBoxMesh> bboxMesh = generate_mesh(stk::topology::HEXAHEDRON_8, CUBIC_BOUNDING_BOX_MESH);
+  const auto counts = global_entity_counts(bboxMesh->bulk_data());
+  EXPECT_EQ(4u*4u*3u, counts[stk::topology::NODE_RANK]);
+  EXPECT_EQ(3u*3u*2u, counts[stk::topology::ELEM_RANK]);
+  expect_coordinates_within_domain(bboxMesh->bulk_data(), quadraticTestMinCorner, quadraticTestMaxCorner);
+}
+
+TEST(BoundingBoxMesh, Tri6Cubic_LinearMeshWithMidEdgeNodes)
+{
+  expect_quadratic_mesh_is_linear_mesh_with_mid_edge_nodes(stk::topology::TRIANGLE_6_2D, CUBIC_BOUNDING_BOX_MESH);
+}
+
+TEST(BoundingBoxMesh, Tri6TriangularLattice_LinearMeshWithMidEdgeNodes)
+{
+  expect_quadratic_mesh_is_linear_mesh_with_mid_edge_nodes(stk::topology::TRIANGLE_6_2D, TRIANGULAR_LATTICE_BOUNDING_BOX_MESH);
+}
+
+TEST(BoundingBoxMesh, Tri6FlatWalledTriangularLattice_LinearMeshWithMidEdgeNodes)
+{
+  expect_quadratic_mesh_is_linear_mesh_with_mid_edge_nodes(stk::topology::TRIANGLE_6_2D, FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH);
+}
+
+TEST(BoundingBoxMesh, Tet10Cubic_LinearMeshWithMidEdgeNodes)
+{
+  expect_quadratic_mesh_is_linear_mesh_with_mid_edge_nodes(stk::topology::TETRAHEDRON_10, CUBIC_BOUNDING_BOX_MESH);
+}
+
+TEST(BoundingBoxMesh, Tet10BCC_LinearMeshWithMidEdgeNodes)
+{
+  expect_quadratic_mesh_is_linear_mesh_with_mid_edge_nodes(stk::topology::TETRAHEDRON_10, BCC_BOUNDING_BOX_MESH);
+}
+
+TEST(BoundingBoxMesh, Tet10FlatWalledBCC_LinearMeshWithMidEdgeNodes)
+{
+  expect_quadratic_mesh_is_linear_mesh_with_mid_edge_nodes(stk::topology::TETRAHEDRON_10, FLAT_WALLED_BCC_BOUNDING_BOX_MESH);
+}
 
 TEST(BoundingBoxMesh, Hex8_UnitCube_ProducesExpectedLattice)
 {

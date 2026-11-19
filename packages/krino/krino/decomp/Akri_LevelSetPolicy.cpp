@@ -152,15 +152,21 @@ static PhaseVec create_named_phases_with_void_phase_for_any_negative_levelset(co
   const unsigned numPhases = 1 << numLevelSets;
   for (unsigned phase = 0; phase < numPhases; ++phase)
   {
-    std::string phaseName;
+    std::string signs;
+    bool anyLsIsNeg = false;
     PhaseTag tag;
     for (unsigned ls = 0; ls < numLevelSets; ++ls)
     {
       const bool lsIsNeg = (phase >> ls) % 2 == 0;
       const int lsSign = lsIsNeg ? -1 : 1;
       tag.add(Surface_Identifier(ls), lsSign);
-      phaseName = (lsIsNeg ? "void" : "");
+      signs += (lsIsNeg ? "-" : "+");
+      anyLsIsNeg = anyLsIsNeg || lsIsNeg;
     }
+    // Phases with the same name must have the same signs, so with several level sets each void
+    // phase is named by its signs.
+    const std::string phaseName =
+        !anyLsIsNeg ? "" : ((numLevelSets == 1) ? "void" : "void_" + signs);
     namedPhases.push_back(NamedPhase(phaseName, tag));
   }
   return namedPhases;

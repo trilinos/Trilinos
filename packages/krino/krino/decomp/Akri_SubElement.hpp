@@ -57,6 +57,17 @@ public:
 
   virtual void build_quadratic_subelements(CDMesh & mesh);
   virtual void cut_face_interior_intersection_points(CDMesh & mesh, int level = 0);
+  // Split this subelement at the first crossing of one of its edges that the signs at the ends
+  // do not show, if any; returns whether it was split.
+  bool cut_first_multiple_edge_crossing(CDMesh & mesh);
+  // Split this subelement in two at edgeNode, on its edge between its nodes i0 and i1, without
+  // regard to signs.
+  virtual void bisect_edge(const int i0, const int i1, const SubElementNode * edgeNode);
+  // Split this leaf into the subelements joining its faces to node, inside it.
+  virtual void split_interior_at_node(const SubElementNode * node);
+  // Split this leaf into the subelements joining the edges of its face opposite its node
+  // oppositeNode to node, on that face, and to the opposite node.
+  virtual void split_face_at_node(const int oppositeNode, const SubElementNode * node);
 
   static void get_edge_position(const SubElementNode * n0, const SubElementNode * n1, const SubElementNode * n2, double & position );
 
@@ -110,6 +121,8 @@ public:
   virtual void determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains) override;
+  virtual void bisect_edge(const int i0, const int i1, const SubElementNode * edgeNode) override;
+  virtual void split_interior_at_node(const SubElementNode * node) override;
 
 protected:
   void perform_decomposition(CDMesh & mesh, const InterfaceID interface_key, const std::array<int,3> & node_signs);
@@ -162,6 +175,9 @@ public:
   virtual void determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains) override;
+  virtual void bisect_edge(const int i0, const int i1, const SubElementNode * edgeNode) override;
+  virtual void split_interior_at_node(const SubElementNode * node) override;
+  virtual void split_face_at_node(const int oppositeNode, const SubElementNode * node) override;
 
 protected:
   void perform_decomposition(CDMesh & mesh, const InterfaceID interface_key, const std::array<int,4> & node_signs);
@@ -190,7 +206,10 @@ private:
   SubElement_Tet_4();
 
   bool determine_diagonal_for_cut_triangular_face(const Simplex_Generation_Method & simplexMethod, const bool globalIDsAreParallelConsistent, const NodeVec & lnodes, const int i0, const int i1, const int i2, const int i3, const int i5);
-  void cut_face_intersection_point_with_permutation(CDMesh & mesh, const std::array<int,4> & permuteNodes, const std::array<int,4> & permuteSides, const std::vector<double> & faceNodeWeights, const std::vector<int> & sortedDomains);
+  void cut_face_intersection_point_with_permutation(CDMesh & mesh,
+      const std::array<int, 4> & permuteNodes,
+      const std::vector<double> & faceNodeWeights,
+      const std::vector<int> & sortedDomains);
 };
 
 class SubElement_Tet_10 : public SubElement {
@@ -212,6 +231,8 @@ public:
   : my_entity(),
     my_entityId(0),
     my_is_prolonged_flag(false),
+    my_node_sign(-2),
+    my_node_score(1.),
     my_cached_owner(in_owner)
   {}
 
@@ -219,6 +240,8 @@ public:
   virtual bool is_mesh_node() const { return false; }
   virtual NodeVec get_parents() const { throw std::runtime_error("Incorrect usage of SubElementNode.  The type of node does not have parents."); }
   virtual size_t get_num_parents() const { throw std::runtime_error("Incorrect usage of SubElementNode.  The type of node does not have parents."); }
+  // Without copying the parents, as get_parents does.
+  virtual const SubElementNode * get_parent(const size_t /*i*/) const { throw std::runtime_error("Incorrect usage of SubElementNode.  The type of node does not have parents."); }
   virtual std::vector<double> get_parent_weights() const { throw std::runtime_error("Incorrect usage of SubElementNode.  The type of node does not have parents."); }
   virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const = 0;
   virtual void prolongate_fields(const CDMesh & mesh) const = 0;
@@ -251,12 +274,13 @@ public:
   void set_node_domains(const std::vector<int> & nodeDomains) const { my_sorted_node_domains = nodeDomains; }
   const std::vector<int> & get_sorted_node_domains() const { return my_sorted_node_domains; }
   void insert_node_domains(const std::vector<int> & domainsToAdd) const;
+  // Add the domains, keeping repeats: the node has as many of each domain as the more of it and the
+  // domains added have, so a corner {0,0,0} added to a node with {0} gives {0,0,0}.
+  void add_node_domains_counting_repeats(const std::vector<int> & sortedDomainsToAdd) const;
   bool captures_intersection_point_domains(const std::vector<int> & intersectionPointDomains) const;
   bool captures_interface(const InterfaceID & interface) const;
   bool captures_intersection_point_domains(const InterfaceID & interface) const;
   static bool higher_priority_by_score_then_ancestry(const SubElementNode & a, const SubElementNode & b, const bool globalIDsAreParallelConsistent);
-  static bool less_by_entity_id(const SubElementNode & a, const SubElementNode & b);
-  static bool less_by_coordinates_then_by_entity_id(const SubElementNode & a, const SubElementNode & b);
   bool node_sign_is_set() const { return my_node_sign != -2; }
   void set_node_sign(const int sign) const { my_node_sign = (my_node_sign == 0 || my_node_sign == -sign) ? 0 : sign; }
   int get_node_sign() const { STK_ThrowRequire(node_sign_is_set()); return my_node_sign; }
@@ -323,6 +347,7 @@ public:
 
   virtual NodeVec get_parents() const override { return my_parents; }
   virtual size_t get_num_parents() const override { return my_parents.size(); }
+  virtual const SubElementNode * get_parent(const size_t i) const override { return my_parents[i]; }
   virtual std::vector<double> get_parent_weights() const override { return my_weights; }
 
 private:
@@ -391,6 +416,7 @@ public:
 
   virtual NodeVec get_parents() const override { return NodeVec{my_parent1,my_parent2}; }
   virtual size_t get_num_parents() const override { return 2; }
+  virtual const SubElementNode * get_parent(const size_t i) const override { return (i == 0) ? my_parent1 : my_parent2; }
   virtual std::vector<double> get_parent_weights() const override { return std::vector<double>{0.5,0.5}; }
 
 protected:

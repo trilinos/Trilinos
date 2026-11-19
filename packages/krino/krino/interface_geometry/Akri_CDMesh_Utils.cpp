@@ -50,6 +50,20 @@ bool is_part_to_check_for_snapping_compatibility(const Phase_Support & phaseSupp
     (&part == &exposedBoundaryPart || stk::io::is_part_io_part(part) || phaseSupport.is_nonconformal(part));
 }
 
+stk::mesh::Selector get_snapping_compatibility_side_selector(const stk::mesh::BulkData & mesh)
+{
+  const AuxMetaData & auxMeta = AuxMetaData::get(mesh.mesh_meta_data());
+  const Phase_Support & phaseSupport = Phase_Support::get(mesh.mesh_meta_data());
+  const stk::mesh::EntityRank sideRank = mesh.mesh_meta_data().side_rank();
+
+  stk::mesh::PartVector sideParts;
+  for (auto && part : mesh.mesh_meta_data().get_parts())
+    if (is_part_to_check_for_snapping_compatibility(phaseSupport, auxMeta, sideRank, *part))
+      sideParts.push_back(part);
+
+  return stk::mesh::selectUnion(sideParts);
+}
+
 static stk::mesh::PartVector get_nonconformal_parts_to_check(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, const stk::mesh::EntityRank targetRank, const std::vector<stk::mesh::Entity> & targetEntities)
 {
   stk::mesh::PartVector partsToCheck;

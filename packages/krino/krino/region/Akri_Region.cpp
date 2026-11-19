@@ -16,6 +16,7 @@
 #include <Akri_BoundingBoxMesh.hpp>
 #include <Akri_MeshInputOptions.hpp>
 #include <stk_mesh/base/Field.hpp>
+#include <cmath>
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <Akri_LevelSet.hpp>
@@ -40,6 +41,7 @@
 #include <Akri_RefinementManager.hpp>
 #include <Akri_Surface_Manager.hpp>
 #include <Akri_RefinementSupport.hpp>
+#include <Akri_SmoothMeshRespectingMeshBasedGeometry.hpp>
 #include <Ioss_GroupingEntity.h>
 #include <Ioss_Region.h>
 #include <stk_util/environment/RuntimeDoomed.hpp>
@@ -122,6 +124,16 @@ void Region::commit()
     auto_aura_option = stk::mesh::BulkData::AUTO_AURA;
     cdfem_support.register_cdfem_snap_displacements_field();
   }
+  else if (myInitialMeshSmoothing.smooth && krino::CDFEM_Support::is_active(meta))
+  {
+    // The smoothing's displacements are kept with the snap displacements, so that the first step of a
+    // transient simulation undoes them before decomposing again (see smooth_initial_mesh).
+    cdfem_support.register_cdfem_snap_displacements_field();
+  }
+
+  // Smoothing respecting the mesh-based geometry needs the sides of the shared nodes.
+  if (myInitialMeshSmoothing.smooth)
+    auto_aura_option = stk::mesh::BulkData::AUTO_AURA;
 
   if (refinementSupport.get_initial_refinement_levels() > 0 || refinementSupport.get_interface_maximum_refinement_level() > 0 ||
       (krino::CDFEM_Support::is_active(meta) && cdfem_support.get_post_cdfem_refinement_levels() > 0))
@@ -184,17 +196,18 @@ static void refine_elements_near_interface(RefinementManager & refinement,
     const RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
     const int numRefinementSteps,
-    const bool doInitializeLS)
+    const bool doInitializeLS,
+    const double time)
 {
   std::function<void(int)> mark_elements_near_interface =
-      [&mesh, &refinementSupport, numRefinementSteps, doInitializeLS]
+      [&mesh, &refinementSupport, numRefinementSteps, doInitializeLS, time]
        (int num_refinements)
       {
         if (doInitializeLS)
-          LevelSet::initialize(mesh.mesh_meta_data());
+          LevelSet::initialize(mesh.mesh_meta_data(), time);
         if (num_refinements < numRefinementSteps)
         {
-          const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh.mesh_meta_data());
+          const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh.mesh_meta_data(), time);
           krino::mark_possible_cut_elements_for_adaptivity(mesh,
               refinementSupport.get_non_interface_conforming_refinement(),
               *interfaceGeometry,
@@ -210,18 +223,19 @@ static void refine_interface_elements(RefinementManager & refinement,
     const RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
     const int numRefinementSteps,
-    const bool doInitializeLS)
+    const bool doInitializeLS,
+    const double time)
 {
   std::function<void(int)> marker_function =
-      [&mesh, &refinementSupport, numRefinementSteps, doInitializeLS]
+      [&mesh, &refinementSupport, numRefinementSteps, doInitializeLS, time]
        (int num_refinements)
       {
         if (doInitializeLS)
-          LevelSet::initialize(mesh.mesh_meta_data());
+          LevelSet::initialize(mesh.mesh_meta_data(), time);
         if(num_refinements < numRefinementSteps)
         {
           const auto & auxMeta = krino::AuxMetaData::get(mesh.mesh_meta_data());
-          const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh.mesh_meta_data());
+          const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh.mesh_meta_data(), time);
           mark_interface_elements_for_adaptivity(mesh,
                 refinementSupport.get_non_interface_conforming_refinement(),
                 *interfaceGeometry,
@@ -236,18 +250,19 @@ static void refine_interface_elements(RefinementManager & refinement,
 
 static void refine_elements_that_intersect_interval(RefinementManager & refinement,
     const RefinementSupport & refinementSupport,
-    stk::mesh::BulkData & mesh)
+    stk::mesh::BulkData & mesh,
+    const double time)
 {
   const int numRefinementSteps = 2*refinementSupport.get_interface_maximum_refinement_level(); // Make sure refinement completes so that elements touching interval are fully refined
   std::function<void(int)> mark_elements_that_intersect_interval =
-      [&mesh, &refinementSupport, numRefinementSteps]
+      [&mesh, &refinementSupport, numRefinementSteps, time]
        (int num_refinements)
       {
         constexpr bool isDefaultCoarsen = true;
-        LevelSet::initialize(mesh.mesh_meta_data());
+        LevelSet::initialize(mesh.mesh_meta_data(), time);
         if (num_refinements < numRefinementSteps)
         {
-          const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh.mesh_meta_data());
+          const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh.mesh_meta_data(), time);
           krino::mark_elements_that_intersect_interval(mesh,
               refinementSupport.get_non_interface_conforming_refinement(),
               *interfaceGeometry,
@@ -264,17 +279,18 @@ static void refine_based_on_indicator_field(RefinementManager & refinement,
     const krino::RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
     const int targetCount,
-    const int numRefinementSteps)
+    const int numRefinementSteps,
+    const double time)
 {
   zero_error_indicator(mesh);
   const auto & indicatorFieldName = refinementSupport.get_nonconformal_adapt_indicator_name();
 
   std::function<void(int)> marker_function =
-        [&refinement, &mesh, numRefinementSteps, targetCount, indicatorFieldName]
+        [&refinement, &mesh, numRefinementSteps, targetCount, indicatorFieldName, time]
          (int num_refinements)
         {
           zero_error_indicator(mesh);
-          LevelSet::initialize(mesh.mesh_meta_data());
+          LevelSet::initialize(mesh.mesh_meta_data(), time);
           if(num_refinements < numRefinementSteps)
           {
             mark_based_on_indicator_field(mesh, refinement, indicatorFieldName, numRefinementSteps,  num_refinements, targetCount);
@@ -284,7 +300,7 @@ static void refine_based_on_indicator_field(RefinementManager & refinement,
   perform_multilevel_adaptivity(refinement, mesh, marker_function, refinementSupport.get_do_not_refine_or_unrefine_selector(), refinementSupport.get_rebalance_interval());
 }
 
-void do_adaptive_refinement(const krino::RefinementSupport & refinementSupport, const bool doInitializeLS, stk::mesh::BulkData & mesh)
+void do_adaptive_refinement(const krino::RefinementSupport & refinementSupport, const bool doInitializeLS, stk::mesh::BulkData & mesh, const double time)
 {
   stk::diag::TimeBlock adapt_timer__(refinementSupport.get_timer());
 
@@ -295,11 +311,11 @@ void do_adaptive_refinement(const krino::RefinementSupport & refinementSupport, 
 
   if (targetCount > 0)
   {
-    refine_based_on_indicator_field(refinement, refinementSupport, mesh, targetCount, numRefinementLevels);
+    refine_based_on_indicator_field(refinement, refinementSupport, mesh, targetCount, numRefinementLevels, time);
   }
   else if (refinementSupport.has_refinement_interval())
   {
-    refine_elements_that_intersect_interval(refinement, refinementSupport, mesh);
+    refine_elements_that_intersect_interval(refinement, refinementSupport, mesh, time);
   }
   else
   {
@@ -307,10 +323,10 @@ void do_adaptive_refinement(const krino::RefinementSupport & refinementSupport, 
     if (doNearbyRefinementBeforeInterfaceRefinement)
     {
       const int numNearbyRefinementSteps = numRefinementLevels;
-      refine_elements_near_interface(refinement, refinementSupport, mesh, numNearbyRefinementSteps, doInitializeLS);
+      refine_elements_near_interface(refinement, refinementSupport, mesh, numNearbyRefinementSteps, doInitializeLS, time);
     }
     const int numInterfaceRefinementSteps = doNearbyRefinementBeforeInterfaceRefinement ? numRefinementLevels : (2*numRefinementLevels); // Make sure refinement completes so that interfacial elements are fully refined
-    refine_interface_elements(refinement, refinementSupport, mesh, numInterfaceRefinementSteps, doInitializeLS);
+    refine_interface_elements(refinement, refinementSupport, mesh, numInterfaceRefinementSteps, doInitializeLS, time);
   }
 }
 
@@ -333,10 +349,10 @@ void do_post_adapt_uniform_refinement(const Simulation & simulation, const Refin
       FieldRef marker_field = refinement.get_marker_field_and_sync_to_host();
 
       std::function<void(int)> marker_function =
-          [&mesh, marker_field, num_levels]
+          [&mesh, marker_field, num_levels, &simulation]
            (int num_refinements)
           {
-            LevelSet::initialize(mesh.mesh_meta_data());
+            LevelSet::initialize(mesh.mesh_meta_data(), simulation.get_current_time());
             if (num_refinements < num_levels)
             {
               stk::mesh::field_fill(1, marker_field);
@@ -403,7 +419,7 @@ void Region::initialize()
     if (refinementSupport.get_initial_refinement_levels() > 0)
       refinement.do_uniform_refinement(refinementSupport.get_initial_refinement_levels());
 
-    do_adaptive_refinement(refinementSupport, doInitializeLSDuringRefinement, bulk);
+    do_adaptive_refinement(refinementSupport, doInitializeLSDuringRefinement, bulk, get_current_time());
 
     do_post_adapt_uniform_refinement(my_simulation, refinementSupport, auxMeta, bulk);
   }
@@ -413,10 +429,10 @@ void Region::initialize()
     const int num_init_decomp_cycles = cdfem_support.get_num_initial_decomposition_cycles();
     for (int icycle=0; icycle<num_init_decomp_cycles; ++icycle)
     {
-      LevelSet::initialize(mesh_meta_data());
+      LevelSet::initialize(mesh_meta_data(), get_current_time());
       // initialize does not end with facets constructed so manually construct so they can be used for decomposition
       LevelSet::build_initial_facets(mesh_meta_data());
-      const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh_meta_data());
+      const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh_meta_data(), get_current_time());
       krino::CDMesh::decompose_mesh(bulk, *interfaceGeometry, my_simulation.get_time_step_count(), {});
     }
 
@@ -428,7 +444,10 @@ void Region::initialize()
     }
   }
 
-  LevelSet::initialize(mesh_meta_data());
+  if (myInitialMeshSmoothing.smooth)
+    smooth_initial_mesh(bulk);
+
+  LevelSet::initialize(mesh_meta_data(), get_current_time());
 
   if (my_simulation.is_transient())
   {
@@ -439,6 +458,33 @@ void Region::initialize()
   LevelSet::clear_initialization_data(mesh_meta_data()); // reclaim memory, harmless to call multiple times after we are done initializing
 
   turn_off_output_for_empty_io_parts(mesh_bulk_data(), auxMeta.active_part());
+}
+
+void Region::smooth_initial_mesh(stk::mesh::BulkData & mesh)
+{
+  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const AuxMetaData & auxMeta = AuxMetaData::get(meta);
+  const CoordinatesFieldRef coordsField(auxMeta.get_current_coordinates().field(), meta.spatial_dimension());
+
+  // With CDFEM, the displacements are added to the snap displacements, which the first step of a
+  // transient simulation undoes (unsnap_mesh): the next decomposition starts from the unsmoothed mesh,
+  // whose child nodes are on their parent edges.
+  FieldRef cdfemSnapField;
+  if (krino::CDFEM_Support::is_active(meta))
+    cdfemSnapField = CDFEM_Support::get(meta).get_cdfem_snap_displacements_field();
+  if (cdfemSnapField.valid())
+    stk::mesh::field_axpby(-1.0, coordsField, +1.0, cdfemSnapField);
+
+  if (!myInitialMeshSmoothing.boundaryNodesSlide)
+    smooth_mesh_keeping_boundary_nodes_fixed(mesh, coordsField, auxMeta.active_part());
+  else if (myInitialMeshSmoothing.sharpFeatureAngleInDegrees)
+    smooth_mesh_respecting_mesh_based_geometry(mesh, coordsField, auxMeta.active_part(),
+        std::cos(*myInitialMeshSmoothing.sharpFeatureAngleInDegrees * M_PI / 180.));
+  else
+    smooth_mesh_respecting_mesh_based_geometry(mesh, coordsField, auxMeta.active_part());
+
+  if (cdfemSnapField.valid())
+    stk::mesh::field_axpby(+1.0, coordsField, +1.0, cdfemSnapField);
 }
 
 static void unsnap_mesh(const CDFEM_Support & cdfemSupport)
@@ -472,7 +518,7 @@ void Region::execute()
     auto & bulk = mesh_bulk_data();
     const auto & auxMeta = AuxMetaData::get(mesh_meta_data());
 
-    do_adaptive_refinement(refinementSupport, doInitializeLSDuringRefinement, bulk);
+    do_adaptive_refinement(refinementSupport, doInitializeLSDuringRefinement, bulk, get_current_time());
     do_post_adapt_uniform_refinement(my_simulation, refinementSupport, auxMeta, bulk);
     mesh_topology_has_changed();
   }
@@ -483,12 +529,15 @@ void Region::execute()
   const Surface_Manager & surfaceManager = Surface_Manager::get(mesh_meta_data());
   for(auto&& ls : surfaceManager.get_levelsets())
   {
-    ls->advance_semilagrangian_using_velocity_string_expression(timeN, timeNp1);
+    if (!ls->get_interface_velocity().empty())
+      ls->advance_semilagrangian_using_velocity_string_expression(timeN, timeNp1);
+    else if (ls->get_reinitialize_every_step())
+      ls->initialize(timeNp1);
   }
 
   if (krino::CDFEM_Support::is_active(mesh_meta_data()))
   {
-    const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh_meta_data());
+    const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh_meta_data(), get_current_time());
     if (refinementSupport.get_interface_maximum_refinement_level() > 0)
     {
       const auto & auxMeta = AuxMetaData::get(mesh_meta_data());

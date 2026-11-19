@@ -8,6 +8,7 @@
 
 #include <Akri_SubElement.hpp>
 #include <Akri_SubElementNodeAncestry.hpp>
+#include <Akri_SubElementNodeOrder.hpp>
 
 namespace krino {
 
@@ -20,7 +21,9 @@ void SubElementNodeAncestry::print(std::ostream & os) const
   else
   {
     os << "{ ";
-    for (auto&& parent : get_parents())
+    const auto byId = [](const SubElementNodeAncestry & a, const SubElementNodeAncestry & b)
+    { return less_by_global_id_because_it_doesnt_impact_structure(a, b); };
+    for (auto&& parent : SortedAncestriesOfParents(*my_node, byId))
     {
       parent.print(os);
       os << " ";

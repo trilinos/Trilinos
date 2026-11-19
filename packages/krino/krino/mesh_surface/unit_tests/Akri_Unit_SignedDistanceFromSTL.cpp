@@ -1,5 +1,5 @@
 #include <Akri_BoundingBox.hpp>
-#include <Akri_MeshSurface.hpp>
+#include <Akri_FacetFileSurface.hpp>
 #include <Akri_OutputUtils.hpp>
 #include <Akri_ScopedTestFile.hpp>
 #include <gtest/gtest.h>
@@ -29,8 +29,8 @@ random_point_in_bbox(const krino::BoundingBox bbox)
   return stk::math::Vector3d(randX, randY, randZ);
 }
 
-std::vector<double>
-compute_surface_signed_distance_values(krino::FacetedSurfaceBase & distanceSurface, const std::vector<stk::math::Vector3d> & queryPoints)
+std::vector<double> compute_surface_signed_distance_values(
+    krino::Surface & distanceSurface, const std::vector<stk::math::Vector3d> & queryPoints)
 {
   const krino::BoundingBox pointBbox = compute_point_bbox(queryPoints);
   distanceSurface.prepare_to_compute(0., pointBbox, 0.);
@@ -38,7 +38,7 @@ compute_surface_signed_distance_values(krino::FacetedSurfaceBase & distanceSurfa
   std::vector<double> signedDistances;
   for (auto & x : queryPoints)
   {
-    const double signedDist = distanceSurface.point_distance(x, 0., 0., true);
+    const double signedDist = distanceSurface.point_signed_distance(x);
     signedDistances.push_back(signedDist);
   }
   return signedDistances;
@@ -65,9 +65,11 @@ TEST(ComputeDistanceToSTL, randomQueryPointsBothInsideAndOutsideSphereInSerial_g
   const krino::ScopedTestFile stlFile("sphere.stl", comm);
   krino::write_stl_for_sphere(stlFile.name(), radius, meshSize, comm);
 
-  krino::STLSurface distanceSurface(stlFile.name());
+  krino::FacetFileSurface distanceSurface(
+      comm, "STL", stlFile.name(), 1, stk::math::Vector3d(1., 1., 1.));
 
-  krino::BoundingBox boundingBox = distanceSurface.get_bounding_box();
+  krino::BoundingBox boundingBox;
+  distanceSurface.insert_into(boundingBox);
   boundingBox.scale(2.0);
 
   const std::vector<stk::math::Vector3d> queryPoints = compute_random_locations_in_box(boundingBox, 20);
@@ -82,9 +84,11 @@ TEST(ComputeDistanceToSTL, randomQueryPointsBothInsideAndOutsideSphereInSerial_g
 
 void compute_training_data(const std::string filename, const unsigned numQueryPoints)
 {
-  krino::STLSurface distanceSurface(filename);
+  krino::FacetFileSurface distanceSurface(
+      MPI_COMM_WORLD, "STL", filename, 1, stk::math::Vector3d(1., 1., 1.));
 
-  krino::BoundingBox boundingBox = distanceSurface.get_bounding_box();
+  krino::BoundingBox boundingBox;
+  distanceSurface.insert_into(boundingBox);
   boundingBox.scale(1.2); // TODO: play with this scaling factor
 
   const std::vector<stk::math::Vector3d> queryPoints = compute_random_locations_in_box(boundingBox, numQueryPoints);

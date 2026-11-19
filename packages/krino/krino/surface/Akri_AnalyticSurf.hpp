@@ -10,7 +10,7 @@
 #define Akri_AnalyticSurf_h
 
 #include <Akri_BoundingBox.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_Surface.hpp>
 #include <Akri_Transformation.hpp>
 
 #include <memory>
@@ -38,7 +38,6 @@ public:
   virtual Surface_Type type() const override { return CYLINDER; }
   virtual size_t storage_size() const override { return sizeof(Cylinder); }
 
-  virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length) override;
   virtual double point_signed_distance(const stk::math::Vector3d &x) const override;
   virtual bool can_approximate_closest_point_normal() const override { return true; }
   virtual stk::math::Vector3d closest_point_normal(const stk::math::Vector3d &x) const override;
@@ -72,7 +71,6 @@ public:
   virtual Surface_Type type() const override { return SPHERE; }
   virtual size_t storage_size() const override { return sizeof(Sphere); }
 
-  virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length) override;
   virtual double point_signed_distance(const stk::math::Vector3d &x) const override;
   virtual bool can_approximate_closest_point_normal() const override { return true; }
   virtual stk::math::Vector3d closest_point_normal(const stk::math::Vector3d &x) const override;
@@ -86,6 +84,9 @@ private:
   double myRadius;
 };
 
+// The rotationVec of an Ellipsoid or Cuboid turns it about its center: it is a rotation vector, along
+// the axis with length the angle in radians, by the right hand rule (see Quaternion).  An empty or
+// zero rotationVec leaves its axes along x, y and z.
 class Ellipsoid : public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
 public:
   Ellipsoid(
@@ -116,6 +117,7 @@ private:
   BoundingBox myBoundingBox;
 };
 
+// See Ellipsoid for the rotationVec.
 class Cuboid: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
 public:
   Cuboid(const stk::math::Vector3d & center,
@@ -136,6 +138,10 @@ public:
   virtual bool does_intersect(const BoundingBox & bbox) const override { return bbox.intersects(myBoundingBox); }
   void fill_triangle_intersection_parametric_coordinates(const std::array<stk::math::Vector3d,3> & faceNodes, std::vector<stk::math::Vector3d> & intParamCoords) const override;
   void fill_tetrahedon_intersection_parametric_coordinates(const std::array<stk::math::Vector3d,4> & tetNodes, std::vector<stk::math::Vector3d> & intParamCoords) const override;
+  void fill_segment_crossings(const stk::math::Vector3d & pt0,
+      const stk::math::Vector3d & pt1,
+      const double edgeCrossingTol,
+      std::vector<double> & crossingPositions) const override;
 
   virtual bool has_corners() const override { return true; }
   virtual bool has_edges() const override { return true; }
@@ -237,6 +243,8 @@ private:
   void my_srand(unsigned int seed) const {iseed = seed;}
 };
 
+// The level set given by an expression of x, y, z and t, at the time given to prepare_to_compute (0
+// before that).
 class LevelSet_String_Function: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {
 public:
   LevelSet_String_Function(const std::string & expression);
@@ -246,6 +254,8 @@ public:
   virtual Surface_Type type() const override { return STRING_FUNCTION; }
   virtual size_t storage_size() const override { return sizeof(LevelSet_String_Function); }
 
+  virtual void prepare_to_compute(const double time, const BoundingBox & /*point_bbox*/, const double /*truncation_length*/) override { myTime = time; }
+  virtual bool changes_with_time() const override { return myExpression.uses_time(); }
   virtual double point_signed_distance(const stk::math::Vector3d &x) const override;
   void insert_into(BoundingBox & bbox) const override { bbox.accommodate(myBoundingBox); }
   bool does_intersect(const BoundingBox & bbox) const override { return bbox.intersects(myBoundingBox); }
@@ -255,6 +265,7 @@ public:
 private:
   String_Function_Expression myExpression;
   BoundingBox myBoundingBox;
+  double myTime{0.};
 };
 
 class Implicit_Neural_Representation: public SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign {

@@ -76,6 +76,19 @@ public:
 protected:
 };
 
+class RightTet10SurroundedByEdgeTetsRefinement
+    : public RefinementFixture<RightTet10SurroundedByEdgeTets>
+{
+public:
+  RightTet10SurroundedByEdgeTetsRefinement()
+  {
+    set_valid_proc_sizes_for_test({1, 2, 3, 4});
+    this->build_mesh_from_spec_in_blocks(meshSpec, {1, 2, 2, 2, 2, 2, 2});
+  }
+
+protected:
+};
+
 class RightTetSurroundedByFaceTetsRefinement : public RefinementFixture<RightTetSurroundedByFaceTets>
 {
 public:

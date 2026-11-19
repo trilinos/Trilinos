@@ -32,9 +32,9 @@ Compute_Surface_Distance::calculate(
 }
 
 static void compute_distance_to_facets(const stk::mesh::BulkData & mesh,
-    const FacetedSurfaceBase & facets,
-    const stk::mesh::Field<double>& coordinates,
-    const stk::mesh::Field<double>& distance,
+    const MeshFacetedSurface & facets,
+    const stk::mesh::Field<double> & coordinates,
+    const stk::mesh::Field<double> & distance,
     const stk::mesh::Selector & volume_selector,
     const double narrowBandSize,
     const double userFarFieldValue)
@@ -55,13 +55,13 @@ static void compute_distance_to_facets(const stk::mesh::BulkData & mesh,
   }
 }
 
-void print_facet_info(const FacetedSurfaceBase & facets, stk::ParallelMachine parallel)
+void print_facet_info(const MeshFacetedSurface & facets, stk::ParallelMachine parallel)
 {
   constexpr int vec_size = 3;
   std::array <unsigned,vec_size> local_sizes, global_min, global_max;
   local_sizes[0] = facets.storage_size();
-  local_sizes[1] = facets.size();
-  local_sizes[2] = facets.size()+facets.nonlocal_size();
+  local_sizes[1] = facets.num_owned_facets();
+  local_sizes[2] = facets.num_owned_facets() + facets.num_ghosted_facets();
 
   stk::all_reduce_min( parallel, local_sizes.data(), global_min.data(), vec_size );
   stk::all_reduce_max( parallel, local_sizes.data(), global_max.data(), vec_size );
@@ -87,7 +87,8 @@ Compute_Surface_Distance::calculate(
   stk::diag::Timer timer( "Compute Surface Distance", parent_timer );
   stk::diag::TimeBlock timer_(timer);
 
-  std::unique_ptr<FacetedSurfaceBase> facets = build_mesh_surface(mesh.mesh_meta_data(), coordinates, surfaceSelector, +1);
+  std::unique_ptr<MeshSurface> facets =
+      build_mesh_surface(mesh.mesh_meta_data(), coordinates, surfaceSelector, +1);
 
   FieldRef coordsField(coordinates);
   const BoundingBox nodeBbox = compute_nodal_bbox(mesh, volume_selector & stk::mesh::selectField(distance), coordsField);

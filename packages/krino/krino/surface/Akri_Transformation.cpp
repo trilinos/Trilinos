@@ -63,45 +63,42 @@ Quaternion::reverse_rotate_3d_vector(const stk::math::Vector3d & v) const
   return use_quaternion_to_rotate_3d_vector(std::array<double,4>{q[0],-q[1],-q[2],-q[3]}, v);
 }
 
-void
-Transformation::initialize( const stk::math::Vector3d & initial_displacement, const stk::math::Vector3d & initial_rotation, const stk::math::Vector3d & reference_point )
+Quaternion
+Quaternion::after(const Quaternion & first) const
 {
-  my_reference_point = reference_point;
-  my_update_orientation.set_from_rotation_vector(initial_rotation);
-  my_update_offset = initial_displacement - my_update_orientation.rotate_3d_vector(my_reference_point);
-  my_reference_point += initial_displacement;
+  // The Hamilton product q*first.
+  const std::array<double,4> & p = first.q;
+  Quaternion product;
+  product.q = {{q[0]*p[0] - q[1]*p[1] - q[2]*p[2] - q[3]*p[3],
+      q[0]*p[1] + q[1]*p[0] + q[2]*p[3] - q[3]*p[2],
+      q[0]*p[2] - q[1]*p[3] + q[2]*p[0] + q[3]*p[1],
+      q[0]*p[3] + q[1]*p[2] - q[2]*p[1] + q[3]*p[0]}};
+  return product;
 }
 
-void
-Transformation::initialize()
+stk::math::Vector3d
+Quaternion::rotation_vector() const
 {
-  // this form of initialization assumes that set_initial_displacement() and set_initial_rotation() have been called or are zero
-  const stk::math::Vector3d initial_displacement = my_update_offset;
-  my_update_offset = initial_displacement - my_update_orientation.rotate_3d_vector(my_reference_point);
-  my_reference_point += initial_displacement;
+  // q and -q are the same rotation: take the one with q[0] >= 0, whose angle is at most pi.
+  const double sign = (q[0] < 0.) ? -1. : 1.;
+  const stk::math::Vector3d axisTimesSinHalfAngle(sign*q[1], sign*q[2], sign*q[3]);
+  const double sinHalfAngle = axisTimesSinHalfAngle.length();
+  if (sinHalfAngle == 0.)
+    return stk::math::Vector3d::ZERO;
+  const double angle = 2.*std::atan2(sinHalfAngle, sign*q[0]);
+  return (angle/sinHalfAngle) * axisTimesSinHalfAngle;
 }
 
-void
-Transformation::update( const double time ) const
+RigidTransformation
+Transformation::rigid_transformation_at(const double time) const
 {
-  if (my_last_update > 0. && time == my_last_update)
-  {
-    return;
-  }
-
-  const double dt = time - my_last_update;
-  const stk::math::Vector3d update_rotation_angle = dt*my_rotational_velocity;
-  my_update_orientation.set_from_rotation_vector(update_rotation_angle);
-  my_update_offset = my_reference_point - my_update_orientation.rotate_3d_vector(my_reference_point) + my_translational_velocity * dt;
-  my_reference_point += my_translational_velocity * dt;
-
-  my_last_update = time;
-}
-
-void
-Transformation::apply( stk::math::Vector3d & x0 ) const
-{
-  x0 = my_update_orientation.rotate_3d_vector(x0) + my_update_offset;
+  Quaternion initialRotation;
+  initialRotation.set_from_rotation_vector(myInitialRotation);
+  Quaternion rotationSinceTimeZero;
+  rotationSinceTimeZero.set_from_rotation_vector(time*my_rotational_velocity);
+  const Quaternion rotation = rotationSinceTimeZero.after(initialRotation);
+  const stk::math::Vector3d translation = my_reference_point + myInitialDisplacement + time*my_translational_velocity - rotation.rotate_3d_vector(my_reference_point);
+  return RigidTransformation(rotation, translation);
 }
 
 } // namespace krino

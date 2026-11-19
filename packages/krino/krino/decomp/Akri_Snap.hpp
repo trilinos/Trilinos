@@ -8,6 +8,8 @@
 
 #ifndef KRINO_INCLUDE_AKRI_SNAP_H_
 #define KRINO_INCLUDE_AKRI_SNAP_H_
+#include <Akri_CDFEM_Support.hpp>
+#include <Akri_CutQualityEstimator.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_NodeToCapturedDomains.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -21,9 +23,8 @@ class SharpFeatureInfo;
 class IntersectionPoint;
 class QualityMetric;
 
-typedef std::map<stk::mesh::Entity, std::vector<std::pair<size_t,bool>>> mapFromEntityToIntPtIndexAndSnapAllowed;
-
-NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(const stk::mesh::BulkData & mesh,
+NodeToCapturedDomainsMap
+snap_as_much_as_possible_while_maintaining_quality(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & potentialParentElementSelector,
     const stk::mesh::Selector & decomposedParentElementSelector,
     const FieldRef coordsField,
@@ -32,26 +33,18 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
     const bool globalIDsAreParallelConsistent,
     const double snappingSharpFeatureAngleInDegrees,
     const double minIntPtWeightForEstimatingCutQuality,
-    const double maxSnapForEdges);
+    const double maxEdgeSnap,
+    const double minWeightAtNode,
+    const Snap_Selection snapSelection);
 
 void undo_previous_snaps_using_interpolation(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, FieldRef cdfemSnapField, const FieldSet & snapFields);
 void snap_fields_using_interpolation(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, FieldRef cdfemSnapField, const FieldSet & interpFields);
 
-stk::math::Vector3d compute_intersection_point_location(const int dim, const FieldRef coordsField, const IntersectionPoint & intersectionPoint);
-
 mapFromEntityToIntPtIndexAndSnapAllowed get_node_to_intersection_point_indices_and_which_snaps_allowed(const stk::mesh::BulkData & mesh,
     const SharpFeatureInfo * sharpFeatureInfo,
-    const double maxSnapForEdges,
+    const double maxEdgeSnap,
+    const double minWeightAtNode,
     const std::vector<IntersectionPoint> & intersectionPoints);
-
-std::map<std::vector<int>, std::map<stk::mesh::EntityId,double>> determine_quality_per_node_per_domain(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Selector & elementSelector,
-    const FieldRef coordsField,
-    const std::vector<IntersectionPoint> & intersectionPoints,
-    const mapFromEntityToIntPtIndexAndSnapAllowed & nodeToIntPtIndicesAndWhichSnapsAllowed,
-    const QualityMetric &qualityMetric,
-    const double minIntPtWeightForEstimatingCutQuality,
-    const bool globalIDsAreParallelConsistent);
 
 }
 

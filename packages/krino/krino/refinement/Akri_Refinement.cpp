@@ -1,28 +1,28 @@
-#include <Akri_HexRefiner.hpp>
-#include <Akri_Refinement.hpp>
 #include <iostream>
-
+#include <map>
 #include <numeric>
 
+#include <Akri_DiagWriter.hpp>
+#include <Akri_Edge.hpp>
+#include <Akri_EntityIdPool.hpp>
+#include <Akri_HexRefiner.hpp>
+#include <Akri_MOAB_TetRefiner.hpp>
+#include <Akri_MeshHelpers.hpp>
+#include <Akri_NodeRefiner.hpp>
+#include <Akri_ParallelErrorMessage.hpp>
+#include <Akri_QuadRefiner.hpp>
+#include <Akri_QualityMetric.hpp>
+#include <Akri_Refinement.hpp>
+#include <Akri_RefinerUtils.hpp>
+#include <Akri_TransitionElementEdgeMarker.hpp>
+#include <Akri_TriRefiner.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/DestroyElements.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
-#include <Akri_ParallelErrorMessage.hpp>
-#include <Akri_DiagWriter.hpp>
 #include <stk_util/util/ReportHandler.hpp>
-#include <Akri_Edge.hpp>
-#include <Akri_EntityIdPool.hpp>
-#include <Akri_MeshHelpers.hpp>
-#include <Akri_MOAB_TetRefiner.hpp>
-#include <Akri_NodeRefiner.hpp>
-#include <Akri_TransitionElementEdgeMarker.hpp>
-#include <Akri_QuadRefiner.hpp>
-#include <Akri_QualityMetric.hpp>
-#include <Akri_TriRefiner.hpp>
-#include <Akri_RefinerUtils.hpp>
 
 namespace krino {
 
@@ -1315,6 +1315,22 @@ void Refinement::update_element_rebalance_weights_incorporating_parallel_owner_c
   }
 }
 
+// The refined edge nodes of quadratic elements are the parents' mid-edge nodes, so they survive
+// unrefinement as mid-edge nodes only.
+static void remove_refined_edge_node_part_from_surviving_nodes(stk::mesh::BulkData & mesh,
+    stk::mesh::Part & refinedEdgeNodePart,
+    const std::vector<stk::mesh::Entity> & refinedEdgeNodes)
+{
+  std::vector<stk::mesh::Entity> survivingOwnedNodes;
+  for (auto && node : refinedEdgeNodes)
+    if (mesh.is_valid(node) && mesh.bucket(node).owned() &&
+        mesh.bucket(node).member(refinedEdgeNodePart))
+      survivingOwnedNodes.push_back(node);
+  mesh.change_entity_parts(survivingOwnedNodes,
+      stk::mesh::ConstPartVector{},
+      stk::mesh::ConstPartVector{&refinedEdgeNodePart});
+}
+
 void Refinement::adapt_elements_and_sides(const EdgeMarkerInterface & edgeMarker, const bool doingRefinement)
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
@@ -1347,8 +1363,16 @@ void Refinement::adapt_elements_and_sides(const EdgeMarkerInterface & edgeMarker
 
     adapt_elements_and_store_sides_to_create(edgeMarker, bucketsData, doingRefinement, sideRequests, elementsToDelete, elementsThatAreNoLongerParents, bucketDataForNewChildElementsThatMightNeedToBeRefined);
 
+    // Before the old children are destroyed, so that the shared edges of the sides attached to the
+    // new children stay in the owned closure.
+    attach_existing_edges_to_active_elements();
+
     stk::mesh::destroy_elements_no_mod_cycle(mesh, elementsToDelete, mesh.mesh_meta_data().universal_part());
     remove_parent_parts(elementsThatAreNoLongerParents);
+    if (!doingRefinement)
+      remove_refined_edge_node_part_from_surviving_nodes(mesh,
+          refined_edge_node_part(),
+          myNodeRefiner.get_sorted_edge_nodes_that_will_be_removed_by_unrefinement());
 
     mesh.modification_end();
 
@@ -1357,6 +1381,9 @@ void Refinement::adapt_elements_and_sides(const EdgeMarkerInterface & edgeMarker
       myNodeRefiner.assign_refined_quad_face_node_parent_ids(mesh, myRefinedQuadFaceNodeParentIdsField);
       myNodeRefiner.assign_refined_edge_node_parent_ids(mesh, myRefinedEdgeNodeParentIdsField);
     }
+
+    refine_and_attach_edges(); // before the sides, which are connected to the edges of their
+                               // elements
 
     if(stk::is_true_on_any_proc(mesh.parallel(), !sideRequests.empty()))
     {
@@ -1381,11 +1408,198 @@ void Refinement::adapt_elements_and_sides(const EdgeMarkerInterface & edgeMarker
 
     STK_ThrowRequireMsg(stk::is_true_on_all_procs(mesh.parallel(), !logicError), "Unexpected error in adapt_elements_and_sides");
 
+    refine_and_attach_edges();
+
     if(stk::is_true_on_any_proc(mesh.parallel(), !sideRequests.empty()))
     {
       batch_create_sides(mesh, sideRequests);
     }
   }
+}
+
+static stk::mesh::Entity find_edge_with_nodes(
+    const stk::mesh::BulkData & mesh, const stk::mesh::Entity node0, const stk::mesh::Entity node1)
+{
+  for (auto edge : StkMeshEntities{mesh.begin_edges(node0), mesh.end_edges(node0)})
+  {
+    const stk::mesh::Entity * edgeNodes = mesh.begin_nodes(edge);
+    if ((edgeNodes[0] == node0 && edgeNodes[1] == node1) ||
+        (edgeNodes[0] == node1 && edgeNodes[1] == node0))
+      return edge;
+  }
+  return stk::mesh::Entity();
+}
+
+// A missing edge (node0,node1) of a child element is half of a refined parent edge if one of its
+// nodes is the refined edge node of that parent edge, and the other is one of the parent edge's
+// nodes.  Parent edges stay attached to their parent elements, so the parent edge exists whenever
+// the mesh had an edge there.
+stk::mesh::Entity Refinement::find_parent_of_missing_edge(
+    const stk::mesh::Entity node0, const stk::mesh::Entity node1) const
+{
+  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  for (const auto & [edgeNode, otherNode] :
+      {std::make_pair(node0, node1), std::make_pair(node1, node0)})
+  {
+    if (!is_refined_edge_node(edgeNode)) continue;
+    const std::array<stk::mesh::Entity, 2> parentNodes = get_edge_parent_nodes(edgeNode);
+    if (!mesh.is_valid(parentNodes[0]) || !mesh.is_valid(parentNodes[1])) continue;
+    if (otherNode == parentNodes[0] || otherNode == parentNodes[1])
+    {
+      const stk::mesh::Entity parentEdge =
+          find_edge_with_nodes(mesh, parentNodes[0], parentNodes[1]);
+      if (mesh.is_valid(parentEdge)) return parentEdge;
+    }
+  }
+  return stk::mesh::Entity();
+}
+
+// Attaches each locally owned leaf element to the existing edges along its element edges.  Called
+// in the modification cycle that creates new children, because a shared side attached to them can
+// use an edge that, on this processor, only the deleted children use.
+void Refinement::attach_existing_edges_to_active_elements()
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  if (myMeta.side_rank() == stk::topology::EDGE_RANK) return;
+  if (mesh.get_buckets(stk::topology::EDGE_RANK, myMeta.universal_part()).empty()) return;
+
+  const stk::mesh::Selector activeOwnedElements = myMeta.locally_owned_part() & !parent_part();
+  std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> edgesToAttach;
+  std::array<stk::mesh::Entity, 3> edgeNodes;
+  for (auto * bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, activeOwnedElements))
+  {
+    const stk::topology elemTopology = bucketPtr->topology();
+    const unsigned numEdges = elemTopology.num_edges();
+    for (auto elem : *bucketPtr)
+    {
+      if (mesh.num_edges(elem) == numEdges) continue;
+      const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
+      for (unsigned iEdge = 0; iEdge < numEdges; ++iEdge)
+      {
+        if (mesh.is_valid(find_entity_by_ordinal(mesh, elem, stk::topology::EDGE_RANK, iEdge)))
+          continue;
+        elemTopology.edge_nodes(elemNodes, iEdge, edgeNodes.data());
+        const stk::mesh::Entity existingEdge =
+            find_edge_with_nodes(mesh, edgeNodes[0], edgeNodes[1]);
+        if (mesh.is_valid(existingEdge)) edgesToAttach.emplace_back(existingEdge, elem);
+      }
+    }
+  }
+
+  for (const auto & [edge, elem] : edgesToAttach)
+    attach_entity_to_element_if_not_already_attached(mesh, edge, elem);
+}
+
+// In 3D, explicit edge entities (not sides) are carried through refinement like sides: each element
+// edge of an active element is attached to the existing edge with the same nodes, or, if it is half
+// of a refined parent edge, to a new child edge with the parent edge's parts.  Edges are only
+// created where a parent edge is split; element edges with no edge before refinement get none.
+// Edges used only by deleted children are deleted with them, and parent edges stay attached to
+// their parent elements.  LINE_2 edges are refined with linear elements and LINE_3 edges with
+// quadratic ones; the mid-edge node of a child LINE_3 edge is the elements' node on that edge.
+void Refinement::refine_and_attach_edges()
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  if (myMeta.side_rank() == stk::topology::EDGE_RANK)
+    return; // edges are sides, refined with the sides
+  const bool haveEdges = !mesh.get_buckets(stk::topology::EDGE_RANK,
+                                  myMeta.locally_owned_part() | myMeta.globally_shared_part())
+                              .empty();
+  if (!stk::is_true_on_any_proc(mesh.parallel(), haveEdges)) return;
+
+  struct EdgeToCreate
+  {
+    stk::mesh::Entity element;
+    stk::topology topology;
+    // Oriented like the parent edge, so the same on every processor; the third is the mid-edge node
+    // of a LINE_3 edge, the element's node on that edge.
+    std::array<stk::mesh::Entity, 3> nodes;
+    stk::mesh::PartVector parts;
+  };
+  std::vector<EdgeToCreate> edgesToCreate;
+  std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> edgesToAttach;
+
+  const stk::mesh::Selector activeOwnedElements = myMeta.locally_owned_part() &
+      (myActivePart ? stk::mesh::Selector(*myActivePart) :
+                      stk::mesh::Selector(myMeta.universal_part())) &
+      !parent_part();
+  std::array<stk::mesh::Entity, 3> edgeNodes;
+  for (auto * bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, activeOwnedElements))
+  {
+    const stk::topology elemTopology = bucketPtr->topology();
+    const unsigned numEdges = elemTopology.num_edges();
+    for (auto elem : *bucketPtr)
+    {
+      if (mesh.num_edges(elem) == numEdges) continue;
+      const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
+      for (unsigned iEdge = 0; iEdge < numEdges; ++iEdge)
+      {
+        if (mesh.is_valid(find_entity_by_ordinal(mesh, elem, stk::topology::EDGE_RANK, iEdge)))
+          continue;
+        elemTopology.edge_nodes(elemNodes, iEdge, edgeNodes.data());
+        const stk::mesh::Entity existingEdge =
+            find_edge_with_nodes(mesh, edgeNodes[0], edgeNodes[1]);
+        if (mesh.is_valid(existingEdge))
+        {
+          edgesToAttach.emplace_back(existingEdge, elem);
+          continue;
+        }
+        const stk::mesh::Entity parentEdge =
+            find_parent_of_missing_edge(edgeNodes[0], edgeNodes[1]);
+        const stk::topology edgeTopology = elemTopology.edge_topology(iEdge);
+        if (mesh.is_valid(parentEdge) && mesh.bucket(parentEdge).topology() == edgeTopology)
+        {
+          // The child edge goes from one end of the parent edge to its refined node.
+          const stk::mesh::Entity * parentEdgeNodes = mesh.begin_nodes(parentEdge);
+          const bool hasParentStart =
+              edgeNodes[0] == parentEdgeNodes[0] || edgeNodes[1] == parentEdgeNodes[0];
+          const stk::mesh::Entity parentEnd =
+              hasParentStart ? parentEdgeNodes[0] : parentEdgeNodes[1];
+          const stk::mesh::Entity refinedNode =
+              (edgeNodes[0] == parentEnd) ? edgeNodes[1] : edgeNodes[0];
+          std::array<stk::mesh::Entity, 3> childEdgeNodes{};
+          childEdgeNodes[0] = hasParentStart ? parentEnd : refinedNode;
+          childEdgeNodes[1] = hasParentStart ? refinedNode : parentEnd;
+          if (edgeTopology.num_nodes() == 3) childEdgeNodes[2] = edgeNodes[2];
+          edgesToCreate.push_back(EdgeToCreate{
+              elem, edgeTopology, childEdgeNodes, get_removable_parts(mesh, parentEdge)});
+        }
+      }
+    }
+  }
+
+  if (!stk::is_true_on_any_proc(mesh.parallel(), !edgesToCreate.empty() || !edgesToAttach.empty()))
+    return;
+
+  mesh.modification_begin();
+  for (const auto & [edge, elem] : edgesToAttach)
+    attach_entity_to_element_if_not_already_attached(mesh, edge, elem);
+
+  std::vector<stk::mesh::EntityId> newEdgeIds;
+  mesh.generate_new_ids(stk::topology::EDGE_RANK, edgesToCreate.size(), newEdgeIds);
+  std::map<std::pair<stk::mesh::Entity, stk::mesh::Entity>, stk::mesh::Entity> createdEdges;
+  for (size_t i = 0; i < edgesToCreate.size(); ++i)
+  {
+    const auto & [elem, edgeTopology, childEdgeNodes, parts] = edgesToCreate[i];
+    const auto key = std::minmax(childEdgeNodes[0], childEdgeNodes[1]);
+    auto iter = createdEdges.find(key);
+    if (iter == createdEdges.end())
+    {
+      stk::mesh::PartVector edgeParts = parts;
+      edgeParts.push_back(&myMeta.get_topology_root_part(edgeTopology));
+      if (myActivePart) edgeParts.push_back(myActivePart);
+      const stk::mesh::Entity edge = mesh.declare_edge(newEdgeIds[i], edgeParts);
+      for (unsigned n = 0; n < edgeTopology.num_nodes(); ++n)
+        mesh.declare_relation(edge, childEdgeNodes[n], n);
+      iter = createdEdges.emplace(key, edge).first;
+    }
+    attach_entity_to_element_if_not_already_attached(mesh, iter->second, elem);
+  }
+
+  const bool oldOption = mesh.use_entity_ids_for_resolving_sharing();
+  mesh.set_use_entity_ids_for_resolving_sharing(false);
+  mesh.modification_end(); // resolves edges created on several processors by their nodes
+  mesh.set_use_entity_ids_for_resolving_sharing(oldOption);
 }
 
 void Refinement::remove_parent_parts(const std::vector<stk::mesh::Entity> & elements)
@@ -1455,11 +1669,16 @@ void Refinement::finalize()
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
   activate_selected_entities_touching_active_elements(
       mesh, myMeta.side_rank(), myMeta.universal_part(), *myActivePart);
+  if (myMeta.side_rank() != stk::topology::EDGE_RANK)
+    activate_selected_entities_touching_active_elements(
+        mesh, stk::topology::EDGE_RANK, myMeta.universal_part(), *myActivePart);
   fix_node_ownership_to_assure_selected_owned_element(mesh, *myActivePart);
 }
 
 bool Refinement::does_mesh_have_only_vertex_elements() const
 {
+  if (!mesh_has_quadratic_element_parts(myMeta)) return true;
+
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
   const stk::mesh::Selector selector = mesh.mesh_meta_data().locally_owned_part();
 
@@ -1620,6 +1839,11 @@ void Refinement::fully_unrefine_mesh()
   mesh.modification_begin();
   destroy_custom_ghostings();
   stk::mesh::destroy_elements_no_mod_cycle(mesh, allChildElems, mesh.mesh_meta_data().universal_part());
+  std::vector<stk::mesh::Entity> refinedEdgeNodes;
+  stk::mesh::get_selected_entities(
+      refined_edge_node_part(), mesh.buckets(stk::topology::NODE_RANK), refinedEdgeNodes);
+  remove_refined_edge_node_part_from_surviving_nodes(
+      mesh, refined_edge_node_part(), refinedEdgeNodes);
   mesh.change_entity_parts(ownedParentElems, addParts, stk::mesh::ConstPartVector{myParentPart});
   mesh.modification_end();
 }

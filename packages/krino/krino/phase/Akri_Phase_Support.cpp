@@ -18,6 +18,7 @@
 
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_DiagWriter.hpp>
+#include <Akri_MeshHelpers.hpp>
 #include <Akri_TopologyData.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
@@ -1074,6 +1075,23 @@ void Phase_Support::set_all_decomposed_blocks_selector()
     if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK && is_decomposed(*part))
       decomposedParts.push_back(part);
   all_decomposed_blocks_selector = stk::mesh::selectUnion(decomposedParts);
+}
+
+bool Phase_Support::has_quadratic_decomposed_blocks() const
+{
+  // force_cdfem_use_case_for_minimal_unit_tests decomposes the universal part: any element part may
+  // be decomposed.
+  if (all_decomposed_blocks_selector == stk::mesh::Selector(meta().universal_part()))
+    return mesh_has_quadratic_element_parts(meta());
+
+  stk::mesh::PartVector decomposedParts;
+  all_decomposed_blocks_selector.get_parts(decomposedParts);
+  for (auto * part : decomposedParts)
+  {
+    const stk::topology topology = part->topology();
+    if (topology != topology.base()) return true;
+  }
+  return false;
 }
 
 bool Phase_Support::is_decomposed(const stk::mesh::Part & part) const

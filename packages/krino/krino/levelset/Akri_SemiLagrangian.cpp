@@ -7,7 +7,7 @@
 #include <Akri_CSG_Surface.hpp>
 #include <Akri_SemiLagrangian.hpp>
 
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_MeshFacetedSurface.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_NodalBoundingBox.hpp>
@@ -28,26 +28,16 @@ ExtensionVelocityFunction build_extension_velocity_at_closest_point_using_string
   return extv;
 }
 
-template <typename FACET>
-ExtensionVelocityFunction build_extension_velocity_at_closest_point_using_facets_with_velocity(const FacetedSurfaceBase & facets)
+ExtensionVelocityFunction build_extension_velocity_at_closest_point_using_facets_with_velocity(
+    const MeshFacetedSurface & facets)
 {
-  const auto & facetsWithVelocity = facets.as_derived_type<FACET>();
-  auto extv = [&](const double /*time*/, const stk::math::Vector3d & closestPt)
-  {
-    const auto * nearest = facetsWithVelocity.get_closest_facet(closestPt);
-    return nearest->velocity_at_closest_point(closestPt);
-  };
+  auto extv = [&facets](const double /*time*/, const stk::math::Vector3d & closestPt)
+  { return facets.velocity_at_closest_point(closestPt); };
   return extv;
 }
 
-ExtensionVelocityFunction build_extension_velocity_at_closest_point_using_facets_with_velocity(const int dim, const FacetedSurfaceBase & facets)
-{
-  if (dim == 2)
-      return build_extension_velocity_at_closest_point_using_facets_with_velocity<FacetWithVelocity2d>(facets);
-  return build_extension_velocity_at_closest_point_using_facets_with_velocity<FacetWithVelocity3d>(facets);
-}
-
-ExtensionVelocityFunction build_extension_velocity_using_velocity_at_closest_point(const FacetedSurfaceBase & facets, const ExtensionVelocityFunction & velAtClosestPt)
+ExtensionVelocityFunction build_extension_velocity_using_velocity_at_closest_point(
+    const MeshFacetedSurface & facets, const ExtensionVelocityFunction & velAtClosestPt)
 {
   auto extv = [&](const double time, const stk::math::Vector3d & pt)
   {
@@ -57,38 +47,17 @@ ExtensionVelocityFunction build_extension_velocity_using_velocity_at_closest_poi
   return extv;
 }
 
-template <typename FACET>
-double compute_max_facet_velocity_magnitude(const double time,
-    const std::vector<FACET> & facets,
+static double compute_max_facet_velocity_magnitude(const double time,
+    const FacetMesh & facets,
     const std::vector<String_Function_Expression> & interfaceVelocity)
 {
-  constexpr int NUMFACETNODES = FACET::DIM;
   double maxSqrMag = 0.;
-  for (auto & facet : facets)
+  for (unsigned v = 0; v < facets.num_owned_facet_vertices(); ++v)
   {
-    for (int n=0; n<NUMFACETNODES; ++n)
-    {
-      const double velSqrMag = (evaluate_vector_at_location(time, facet.facet_vertex(n), interfaceVelocity)).length_squared();
-      if (velSqrMag > maxSqrMag)
-        maxSqrMag = velSqrMag;
-    }
-  }
-  return std::sqrt(maxSqrMag);
-}
-
-template <typename FACET>
-double compute_max_facet_velocity_magnitude_for_facets_with_velocity(const FacetedSurfaceBase & facets)
-{
-  const auto & facetsWithVelocity = facets.as_derived_type<FACET>();
-  double maxSqrMag = 0.;
-  for (auto & facet : facetsWithVelocity.get_facets())
-  {
-    for (auto & vel : facet.get_velocity())
-    {
-      const double velSqrMag = vel.length_squared();
-      if (velSqrMag > maxSqrMag)
-        maxSqrMag = velSqrMag;
-    }
+    const double velSqrMag =
+        (evaluate_vector_at_location(time, facets.vertex_coordinates(v), interfaceVelocity))
+            .length_squared();
+    if (velSqrMag > maxSqrMag) maxSqrMag = velSqrMag;
   }
   return std::sqrt(maxSqrMag);
 }
@@ -99,36 +68,32 @@ static void pad_bounding_box_using_time_step_and_velocity_magnitude(BoundingBox 
   bbox.pad(paddingFactorOfSafety*velocityMagnitude*dt);  // Need something better?
 }
 
-BoundingBox compute_padded_node_bounding_box_for_semilagrangian_using_string_velocity_expressions(const stk::mesh::BulkData & mesh,
+BoundingBox compute_padded_node_bounding_box_for_semilagrangian_using_string_velocity_expressions(
+    const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & activeFieldSelector,
     const double timeN,
     const double timeNp1,
     const FieldRef coordsField,
     const std::vector<String_Function_Expression> & interfaceVelocity,
-    const FacetedSurfaceBase & facets)
+    const MeshFacetedSurface & facets)
 {
   BoundingBox nodeBBox = krino::compute_nodal_bbox(mesh, activeFieldSelector, coordsField);
 
   const double timeMid = 0.5*(timeN+timeNp1);
-  const double velMag = (2==mesh.mesh_meta_data().spatial_dimension()) ?
-      compute_max_facet_velocity_magnitude(timeMid, facets.get_facets_2d(), interfaceVelocity) :
-      compute_max_facet_velocity_magnitude(timeMid, facets.get_facets_3d(), interfaceVelocity);
+  const double velMag =
+      compute_max_facet_velocity_magnitude(timeMid, facets.facet_mesh(), interfaceVelocity);
   pad_bounding_box_using_time_step_and_velocity_magnitude(nodeBBox, timeNp1-timeN, velMag);
   return nodeBBox;
 }
 
-BoundingBox compute_padded_node_bounding_box_for_semilagrangian_using_facets_with_velocity(const stk::mesh::BulkData & mesh,
+BoundingBox compute_padded_node_bounding_box_for_semilagrangian(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & activeFieldSelector,
     const double dt,
     const FieldRef coordsField,
-    const FacetedSurfaceBase & facets)
+    const double maxVelocityMagnitude)
 {
   BoundingBox nodeBBox = krino::compute_nodal_bbox(mesh, activeFieldSelector, coordsField);
-
-  const double velMag = (2==mesh.mesh_meta_data().spatial_dimension()) ?
-      compute_max_facet_velocity_magnitude_for_facets_with_velocity<FacetWithVelocity2d>(facets) :
-      compute_max_facet_velocity_magnitude_for_facets_with_velocity<FacetWithVelocity3d>(facets);
-  pad_bounding_box_using_time_step_and_velocity_magnitude(nodeBBox, dt, velMag);
+  pad_bounding_box_using_time_step_and_velocity_magnitude(nodeBBox, dt, maxVelocityMagnitude);
   return nodeBBox;
 }
 
@@ -248,7 +213,8 @@ static std::function<double(const stk::math::Vector3d & pt)> build_initial_dista
   return fn;
 }
 
-static std::function<double(const stk::math::Vector3d & pt)> build_distance_at_departure_point(const FacetedSurfaceBase & facets)
+static std::function<double(const stk::math::Vector3d & pt)>
+build_distance_at_departure_point(const MeshFacetedSurface & facets)
 {
   auto fn = [&facets](const stk::math::Vector3d & departurePt)
     {
@@ -258,7 +224,9 @@ static std::function<double(const stk::math::Vector3d & pt)> build_distance_at_d
   return fn;
 }
 
-static std::function<double(const stk::math::Vector3d & pt, const int sign)> build_narrow_band_distance_at_departure_point(const FacetedSurfaceBase & facets, const double narrowBandSize)
+static std::function<double(const stk::math::Vector3d & pt, const int sign)>
+build_narrow_band_distance_at_departure_point(
+    const MeshFacetedSurface & facets, const double narrowBandSize)
 {
   auto fn = [&facets, narrowBandSize](const stk::math::Vector3d & departurePt, const int sign)
     {
@@ -318,7 +286,7 @@ void build_nonadaptive_facets(const stk::mesh::BulkData & mesh,
     const FieldRef coordsField,
     const FieldRef distField,
     const double lengthScale,
-    FacetedSurfaceBase & facets)
+    FacetAppender & facets)
 {
   facets.clear();
   ParametricElementLibrary & parametricElemLibrary = AuxMetaData::get(mesh.mesh_meta_data()).parametric_element_library();
@@ -357,7 +325,8 @@ static void calc_semilagrangian_nodal_distance(const int dim,
   }
 }
 
-void calc_single_step_nonadaptive_semilagrangian_nodal_distance_and_build_facets(const stk::mesh::BulkData & mesh,
+void calc_single_step_nonadaptive_semilagrangian_nodal_distance_and_build_facets(
+    const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & activeFieldSelector,
     const double timeN,
     const double timeNp1,
@@ -366,8 +335,8 @@ void calc_single_step_nonadaptive_semilagrangian_nodal_distance_and_build_facets
     const ExtensionVelocityFunction & extension_velocity,
     const double narrowBandSize,
     const double avgEdgeLength,
-    const FacetedSurfaceBase & facetsN,
-    FacetedSurfaceBase & facetsNp1)
+    const MeshFacetedSurface & facetsN,
+    FacetAppender & facetsNp1)
 {
   const int dim = mesh.mesh_meta_data().spatial_dimension();
 
@@ -395,16 +364,18 @@ bool has_any_chance_of_cut_edge(const std::array<stk::math::Vector3d,NVERT> & co
   return false;
 }
 
-static void adaptively_append_facets_for_tri_mesh_element_using_semilagrangian_distance(const stk::mesh::BulkData & mesh,
+static void adaptively_append_facets_for_tri_mesh_element_using_semilagrangian_distance(
+    const stk::mesh::BulkData & mesh,
     const FieldRef coordsField,
     const FieldRef isoField,
     const stk::mesh::Entity elem,
-    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> & departure_point_at_point,
+    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> &
+        departure_point_at_point,
     const std::function<double(const stk::math::Vector3d & pt)> & distance_at_departure_point,
     const double lengthScale,
     const int minDepth,
     const int maxDepth,
-    FacetedSurfaceBase & facets)
+    FacetAppender & facets)
 {
   const StkMeshEntities elemNodes{mesh.begin_nodes(elem), mesh.end_nodes(elem)};
   const std::array<stk::math::Vector3d,3> nodeCoords = get_triangle_vector(mesh, coordsField, elemNodes, 2);
@@ -417,16 +388,18 @@ static void adaptively_append_facets_for_tri_mesh_element_using_semilagrangian_d
   }
 }
 
-static void adaptively_append_facets_for_tet_mesh_element_using_semilagrangian_distance(const stk::mesh::BulkData & mesh,
+static void adaptively_append_facets_for_tet_mesh_element_using_semilagrangian_distance(
+    const stk::mesh::BulkData & mesh,
     const FieldRef coordsField,
     const FieldRef isoField,
     const stk::mesh::Entity elem,
-    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> & departure_point_at_point,
+    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> &
+        departure_point_at_point,
     const std::function<double(const stk::math::Vector3d & pt)> & distance_at_departure_point,
     const double lengthScale,
     const int minDepth,
     const int maxDepth,
-    FacetedSurfaceBase & facets)
+    FacetAppender & facets)
 {
   const StkMeshEntities elemNodes{mesh.begin_nodes(elem), mesh.end_nodes(elem)};
   const std::array<stk::math::Vector3d,4> nodeCoords = get_tetrahedron_vector(mesh, coordsField, elemNodes);
@@ -444,12 +417,13 @@ static void adaptively_append_facets_for_mesh_element_using_semilagrangian_dista
     const FieldRef coordsField,
     const FieldRef isoField,
     const stk::mesh::Entity elem,
-    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> & departure_point_at_point,
+    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> &
+        departure_point_at_point,
     const std::function<double(const stk::math::Vector3d & pt)> & distance_at_departure_point,
     const double lengthScale,
     const int minDepth,
     const int maxDepth,
-    FacetedSurfaceBase & facets)
+    FacetAppender & facets)
 {
   if (2 == dim)
   {
@@ -466,12 +440,13 @@ static void build_adaptive_facets_using_semilagrangian_distance(const int dim,
     const stk::mesh::Selector & activeFieldSelector,
     const FieldRef coordsField,
     const FieldRef distField,
-    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> & departure_point_at_point,
+    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> &
+        departure_point_at_point,
     const std::function<double(const stk::math::Vector3d & pt)> & distance_at_departure_point,
     const double avgEdgeLength,
     const int minDepth,
     const int maxDepth,
-    FacetedSurfaceBase & facets)
+    FacetAppender & facets)
 {
   facets.clear();
   for ( auto * bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, activeFieldSelector) )
@@ -482,14 +457,15 @@ static void build_adaptive_facets_using_semilagrangian_distance(const int dim,
   }
 }
 
-void build_initial_adaptive_facets_after_nodal_distance_is_initialized_from_initial_surfaces(const stk::mesh::BulkData & mesh,
+void build_initial_adaptive_facets_after_nodal_distance_is_initialized_from_initial_surfaces(
+    const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & activeFieldSelector,
     const double time,
     const FieldRef coordsField,
     const FieldRef distField,
     const double avgEdgeLength,
     const CSG_Surface & initSurfaces,
-    FacetedSurfaceBase & facets)
+    FacetAppender & facets)
 {
   const int dim = mesh.mesh_meta_data().spatial_dimension();
 
@@ -502,7 +478,8 @@ void build_initial_adaptive_facets_after_nodal_distance_is_initialized_from_init
   build_adaptive_facets_using_semilagrangian_distance(dim, mesh, activeFieldSelector, coordsField, distField, departure_point_at_point, initial_distance_at_point, avgEdgeLength, minDepth, maxDepth, facets);
 }
 
-void calc_single_step_semilagrangian_nodal_distance_and_build_facets(const stk::mesh::BulkData & mesh,
+void calc_single_step_semilagrangian_nodal_distance_and_build_facets(
+    const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & activeFieldSelector,
     const double timeN,
     const double timeNp1,
@@ -511,8 +488,8 @@ void calc_single_step_semilagrangian_nodal_distance_and_build_facets(const stk::
     const ExtensionVelocityFunction & extension_velocity,
     const double narrowBandSize,
     const double avgEdgeLength,
-    const FacetedSurfaceBase & facetsN,
-    FacetedSurfaceBase & facetsNp1)
+    const MeshFacetedSurface & facetsN,
+    FacetAppender & facetsNp1)
 {
   const int minDepth = 2;
   const int maxDepth = 5;
@@ -536,8 +513,8 @@ void predict_semilagrangian_nodal_distance_and_build_facets(const stk::mesh::Bul
     const ExtensionVelocityFunction & extension_velocity,
     const double narrowBandSize,
     const double avgEdgeLength,
-    const FacetedSurfaceBase & facetsN,
-    FacetedSurfaceBase & facetsPred)
+    const MeshFacetedSurface & facetsN,
+    FacetAppender & facetsPred)
 {
   const int minDepth = 1;
   const int maxDepth = 2;
@@ -562,8 +539,8 @@ void correct_semilagrangian_nodal_distance_and_build_facets(const stk::mesh::Bul
     const ExtensionVelocityFunction & extension_velocity_pred,
     const double narrowBandSize,
     const double avgEdgeLength,
-    const FacetedSurfaceBase & facetsN,
-    FacetedSurfaceBase & facetsNp1)
+    const MeshFacetedSurface & facetsN,
+    FacetAppender & facetsNp1)
 {
   const int minDepth = 2;
   const int maxDepth = 5;

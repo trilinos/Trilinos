@@ -1,160 +1,235 @@
 #include <Akri_PlatoKrinoInterface.hpp>
 
+#include <algorithm>
+#include <cctype>
 #include <memory>
+#include <set>
 
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_io/IossBridge.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_math/StkVector.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_AnalyticSurf.hpp>
+#include <Akri_BoundingBoxMesh.hpp>
 #include <Akri_CSG_Surface.hpp>
 #include <Akri_CSG_Tree.hpp>
+#include <Akri_FacetFileReader.hpp>
+#include <Akri_FacetFileSurface.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_LevelSetPolicy.hpp>
 #include <Akri_LevelSetShapeSensitivities.hpp>
+#include <Akri_MeshCloneUtils.hpp>
 #include <Akri_MeshFromFile.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_NodalSurfaceDistance.hpp>
 #include <Akri_OutputUtils.hpp>
+#include <Akri_ParallelErrorMessage.hpp>
 #include <Akri_Phase_Support.hpp>
 
 namespace PlatoKrinoInterface {
 
-//--- pimpl: the actual krino mesh state --------------------------------------
-
-class LevelSetMesh::Impl
-{
-public:
-  std::unique_ptr<krino::MeshInterface> mesh;
-  std::vector<krino::LS_Field> lsFields;
-  bool doSnapping = false;
-  bool doComputeClosestPointSensitivities = false;
-
-  stk::mesh::BulkData & bulk() { return mesh->bulk_data(); }
-  const stk::mesh::BulkData & bulk() const { return mesh->bulk_data(); }
-  stk::mesh::MetaData & meta() { return mesh->meta_data(); }
-  const stk::mesh::MetaData & meta() const { return mesh->meta_data(); }
-
-  void check_index(const unsigned lsIndex) const
-  {
-    STK_ThrowRequireMsg(lsIndex < lsFields.size(),
-        "PlatoKrinoInterface: level set index " << lsIndex << " out of range (" << lsFields.size() << " level sets).");
-  }
-};
-
-LevelSetMesh::LevelSetMesh() : myImpl(std::make_unique<Impl>()) {}
-LevelSetMesh::~LevelSetMesh() = default;
-LevelSetMesh::LevelSetMesh(LevelSetMesh &&) noexcept = default;
-LevelSetMesh & LevelSetMesh::operator=(LevelSetMesh &&) noexcept = default;
-
-LevelSetMesh::Impl & LevelSetMesh::impl() { return *myImpl; }
-const LevelSetMesh::Impl & LevelSetMesh::impl() const { return *myImpl; }
-
-unsigned LevelSetMesh::spatial_dimension() const { return myImpl->meta().spatial_dimension(); }
-unsigned LevelSetMesh::num_level_sets() const { return myImpl->lsFields.size(); }
-
-//--- local conversions -------------------------------------------------------
-
 namespace {
 
 stk::math::Vector3d to_vec(const std::array<double,3> & a) { return stk::math::Vector3d(a[0], a[1], a[2]); }
-std::array<double,3> to_array(const stk::math::Vector3d & v) { return {{v[0], v[1], v[2]}}; }
 
-ShapeSensitivity convert(const krino::LevelSetShapeSensitivity & sens)
+// Logs to err why levelSetField can't be a level set field of mesh: it must be a nodal double field
+// of mesh, on every node.
+void check_level_set_field(krino::ParallelErrorMessage & err,
+    const stk::mesh::FieldBase & levelSetField,
+    const stk::mesh::BulkData & mesh)
 {
-  ShapeSensitivity out;
-  out.interfaceNodeId = sens.interfaceNodeId;
-  out.parentNodeIds = sens.parentNodeIds;
-  out.dCoordsdParentLevelSets.reserve(sens.dCoordsdParentLevelSets.size());
-  for (auto & d : sens.dCoordsdParentLevelSets)
-    out.dCoordsdParentLevelSets.push_back(to_array(d));
-  return out;
+  const std::string fieldDescription = "Level set field " + levelSetField.name();
+  if (&levelSetField.get_mesh() != &mesh)
+  {
+    err << fieldDescription << " is a field of another mesh.\n";
+    return;
+  }
+  if (levelSetField.entity_rank() != stk::topology::NODE_RANK)
+  {
+    err << fieldDescription << " is not a nodal field.\n";
+    return;
+  }
+  if (!levelSetField.type_is<double>())
+  {
+    err << fieldDescription << " is not a double field.\n";
+    return;
+  }
+  const stk::mesh::BucketVector & bucketsWithoutField =
+      mesh.get_buckets(stk::topology::NODE_RANK, !stk::mesh::selectField(levelSetField));
+  if (!bucketsWithoutField.empty())
+    err << fieldDescription << " is not on every node, e.g. node "
+        << mesh.identifier((*bucketsWithoutField.front())[0]) << " on processor "
+        << mesh.parallel_rank() << ".\n";
 }
 
-std::vector<ShapeSensitivity> convert(const std::vector<krino::LevelSetShapeSensitivity> & sensitivities)
+std::vector<stk::mesh::FieldBase *>
+declare_level_set_fields(stk::mesh::MetaData & meta, const unsigned numLevelSets)
 {
-  std::vector<ShapeSensitivity> out;
-  out.reserve(sensitivities.size());
-  for (auto & sens : sensitivities)
-    out.push_back(convert(sens));
-  return out;
+  std::vector<stk::mesh::FieldBase *> fields;
+  for (unsigned i = 0; i < numLevelSets; ++i)
+  {
+    const std::string name = (numLevelSets == 1) ? "LS" : "LS" + std::to_string(i);
+    auto & field = meta.declare_field<double>(stk::topology::NODE_RANK, name);
+    stk::mesh::put_field_on_mesh(field, meta.universal_part(), nullptr);
+    fields.push_back(&field);
+  }
+  return fields;
 }
 
-stk::mesh::Selector build_output_selector(const stk::mesh::MetaData & meta, const stk::mesh::Part & activePart, const bool includeVoidPhase)
+// The upper-case extension of fileName, which names its facet file format.
+std::string facet_file_format(const std::string & fileName)
 {
-  if (includeVoidPhase)
-    return activePart;
+  const size_t dot = fileName.find_last_of('.');
+  std::string format = (dot == std::string::npos) ? "" : fileName.substr(dot + 1);
+  std::transform(format.begin(),
+      format.end(),
+      format.begin(),
+      [](const unsigned char c) { return static_cast<char>(std::toupper(c)); });
+  return format;
+}
 
-  stk::mesh::PartVector outputParts;
-  for (auto * part : meta.get_parts())
-    if (stk::io::is_part_io_part(*part) && part->name().find("_void") == std::string::npos)
-      outputParts.push_back(part);
-  return activePart & stk::mesh::selectUnion(outputParts);
+// The conforming blocks of the material, where every level set is positive.
+stk::mesh::Selector material_blocks_selector(
+    const stk::mesh::MetaData & meta, const std::vector<krino::LS_Field> & lsFields)
+{
+  krino::PhaseTag materialPhase;
+  for (const auto & lsField : lsFields)
+    materialPhase.add(lsField.identifier, +1);
+  return krino::Phase_Support::get(meta).get_selector_of_blocks_with_phase(materialPhase);
 }
 
 } // anonymous namespace
 
-//--- Workflow A: read + setup ------------------------------------------------
+//--- background mesh ---------------------------------------------------------
 
-LevelSetMesh read_and_setup_mesh_for_levelset_decomposition(
-    const std::string & fileName,
-    MPI_Comm comm,
-    const unsigned numLevelSets,
-    const bool doSnapping,
-    const bool doComputeClosestPointSensitivities,
-    const std::string & decompMethod)
+class BackgroundMesh::Impl
 {
-  LevelSetMesh result;
-  LevelSetMesh::Impl & impl = result.impl();
-  impl.doSnapping = doSnapping;
-  impl.doComputeClosestPointSensitivities = doComputeClosestPointSensitivities;
+public:
+  std::unique_ptr<krino::MeshInterface> mesh;
+  std::vector<stk::mesh::FieldBase *> levelSetFields;
+};
 
-  impl.mesh = std::make_unique<krino::MeshFromFile>(fileName, comm, decompMethod);
+BackgroundMesh::BackgroundMesh(std::unique_ptr<Impl> impl) : myImpl(std::move(impl)) {}
+BackgroundMesh::~BackgroundMesh() = default;
+BackgroundMesh::BackgroundMesh(BackgroundMesh &&) noexcept = default;
+BackgroundMesh & BackgroundMesh::operator=(BackgroundMesh &&) noexcept = default;
 
-  stk::mesh::MetaData & meta = impl.meta();
-  impl.lsFields = krino::LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(meta, numLevelSets);
-
-  krino::setup_fields_for_conforming_decomposition(meta, impl.lsFields, doSnapping, doComputeClosestPointSensitivities);
-
-  impl.mesh->populate_mesh();
-  krino::activate_all_entities(impl.bulk(), krino::AuxMetaData::get(meta).active_part());
-
-  return result;
+BackgroundMesh BackgroundMesh::read(const std::string & fileName,
+    MPI_Comm comm,
+    const std::string & decompMethod,
+    const BackgroundMeshOptions & options)
+{
+  auto impl = std::make_unique<Impl>();
+  impl->mesh = std::make_unique<krino::MeshFromFile>(fileName, comm, decompMethod);
+  impl->levelSetFields = declare_level_set_fields(impl->mesh->meta_data(), options.numLevelSets);
+  impl->mesh->populate_mesh();
+  return BackgroundMesh(std::move(impl));
 }
 
-//--- Workflow B: initialize --------------------------------------------------
-
-void initialize_levelset_field_from_geometry(LevelSetMesh & mesh, const Geometry & geometry, const unsigned lsIndex)
+BackgroundMesh BackgroundMesh::bounding_box(const unsigned dim,
+    const std::array<double, 3> & minCorner,
+    const std::array<double, 3> & maxCorner,
+    const double meshSize,
+    MPI_Comm comm,
+    const BackgroundMeshOptions & options)
 {
-  LevelSetMesh::Impl & impl = mesh.impl();
-  impl.check_index(lsIndex);
+  STK_ThrowRequireMsg(
+      dim == 2 || dim == 3, "BackgroundMesh::bounding_box: dimension must be 2 or 3.");
+  auto impl = std::make_unique<Impl>();
+  auto bboxMesh = std::make_unique<krino::BoundingBoxMesh>(
+      (dim == 2) ? stk::topology::TRIANGLE_3_2D : stk::topology::TETRAHEDRON_4, comm);
+  bboxMesh->set_mesh_structure_type((dim == 2) ?
+          krino::FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH :
+          krino::FLAT_WALLED_BCC_BOUNDING_BOX_MESH);
+  bboxMesh->set_domain(
+      krino::BoundingBoxMesh::BoundingBoxType(to_vec(minCorner), to_vec(maxCorner)), meshSize);
+  impl->levelSetFields = declare_level_set_fields(bboxMesh->meta_data(), options.numLevelSets);
+  bboxMesh->populate_mesh();
+  impl->mesh = std::move(bboxMesh);
+  return BackgroundMesh(std::move(impl));
+}
+
+stk::mesh::BulkData & BackgroundMesh::bulk_data() { return myImpl->mesh->bulk_data(); }
+const stk::mesh::BulkData & BackgroundMesh::bulk_data() const { return myImpl->mesh->bulk_data(); }
+unsigned BackgroundMesh::num_level_sets() const { return myImpl->levelSetFields.size(); }
+
+stk::mesh::FieldBase & BackgroundMesh::level_set_field(const unsigned lsIndex) const
+{
+  STK_ThrowRequireMsg(lsIndex < myImpl->levelSetFields.size(),
+      "BackgroundMesh: level set index " << lsIndex << " out of range ("
+                                         << myImpl->levelSetFields.size() << " level sets).");
+  return *myImpl->levelSetFields[lsIndex];
+}
+
+//--- level set initializers --------------------------------------------------
+
+void initialize_field_from_geometry(const stk::mesh::BulkData & mesh,
+    stk::mesh::FieldBase & levelSetField,
+    const Geometry & geometry)
+{
+  krino::ParallelErrorMessage err(mesh.parallel());
+  check_level_set_field(err, levelSetField, mesh);
+  if (geometry.spheres.empty() && geometry.planes.empty() && geometry.facetFiles.empty())
+    err << "The geometry has no spheres, planes or facet files.\n";
+  for (const auto & sphere : geometry.spheres)
+    if (!(sphere.radius > 0.)) err << "Sphere radius " << sphere.radius << " is not positive.\n";
+  for (const auto & plane : geometry.planes)
+    if (to_vec(plane.normal).length() == 0.) err << "Plane normal is zero.\n";
+  for (const auto & facetFile : geometry.facetFiles)
+    if (!krino::is_facet_file_format(facet_file_format(facetFile.fileName)))
+      err << "Facet file " << facetFile.fileName
+          << " is not STL, FAC, PLY or EXO (from its extension).\n";
+  if (!geometry.facetFiles.empty() && mesh.mesh_meta_data().spatial_dimension() != 3)
+    err << "Facet files need a 3D mesh.\n";
+  err.require_empty("initialize_field_from_geometry: invalid arguments.");
 
   std::vector<std::shared_ptr<krino::Surface>> surfaces;
   for (const auto & sphere : geometry.spheres)
     surfaces.emplace_back(std::make_shared<krino::Sphere>(to_vec(sphere.center), sphere.radius));
+  // krino::Plane unitizes its normal, so scale the offset with it.
   for (const auto & plane : geometry.planes)
-    surfaces.emplace_back(std::make_shared<krino::Plane>(to_vec(plane.normal), plane.offset));
+  {
+    const stk::math::Vector3d normal = to_vec(plane.normal);
+    const double normalLength = normal.length();
+    surfaces.emplace_back(
+        std::make_shared<krino::Plane>(normal / normalLength, plane.offset / normalLength));
+  }
+  // Like the other surfaces, a facet file surface of sign 1 is negative inside.
+  for (const auto & facetFile : geometry.facetFiles)
+    surfaces.emplace_back(std::make_shared<krino::FacetFileSurface>(mesh.parallel(),
+        facet_file_format(facetFile.fileName),
+        facetFile.fileName,
+        facetFile.materialInside ? 1 : -1,
+        to_vec(facetFile.scale)));
 
-  STK_ThrowRequireMsg(!surfaces.empty(), "initialize_levelset_field_from_geometry: geometry has no spheres or planes.");
-
+  // Negate the signed distance to the union, which is negative inside it, so that the material is
+  // positive.
   krino::CSG_Surface csgSurface(krino::CSGTree::unite(surfaces));
-  krino::compute_nodal_surface_distance(impl.bulk(), impl.meta().coordinate_field(), impl.lsFields[lsIndex].isovar, csgSurface);
+  krino::compute_nodal_surface_distance(
+      mesh, mesh.mesh_meta_data().coordinate_field(), krino::FieldRef(levelSetField), csgSurface);
+  stk::mesh::field_scale(-1., levelSetField);
 }
 
-void initialize_levelset_field_from_function(LevelSetMesh & mesh, const LevelSetValueFunction & valueFn, const unsigned lsIndex)
+void initialize_field_from_function(const stk::mesh::BulkData & mesh,
+    stk::mesh::FieldBase & levelSetField,
+    const LevelSetValueFunction & valueFn)
 {
-  LevelSetMesh::Impl & impl = mesh.impl();
-  impl.check_index(lsIndex);
+  krino::ParallelErrorMessage err(mesh.parallel());
+  check_level_set_field(err, levelSetField, mesh);
+  err.require_empty("initialize_field_from_function: invalid arguments.");
 
-  const unsigned nDim = impl.meta().spatial_dimension();
-  const krino::FieldRef coordsField = impl.meta().coordinate_field();
-  const krino::FieldRef distanceField = impl.lsFields[lsIndex].isovar;
+  const unsigned nDim = mesh.mesh_meta_data().spatial_dimension();
+  const krino::FieldRef coordsField = mesh.mesh_meta_data().coordinate_field();
+  const krino::FieldRef distanceField(levelSetField);
 
-  const stk::mesh::BucketVector & buckets = impl.bulk().get_buckets(stk::topology::NODE_RANK, stk::mesh::selectField(distanceField));
+  const stk::mesh::BucketVector & buckets =
+      mesh.get_buckets(stk::topology::NODE_RANK, stk::mesh::selectField(distanceField));
   auto distData = distanceField.data<double, stk::mesh::ReadWrite>();
   auto coordData = coordsField.data<double>();
 
@@ -169,46 +244,231 @@ void initialize_levelset_field_from_function(LevelSetMesh & mesh, const LevelSet
     }
   }
 
-  stk::mesh::communicate_field_data(impl.bulk(), {&distanceField.field()});
+  stk::mesh::communicate_field_data(mesh, {&levelSetField});
 }
 
-//--- Workflow B: cut ---------------------------------------------------------
-
-void decompose_mesh(LevelSetMesh & mesh)
+void set_field_values(const stk::mesh::BulkData & mesh,
+    stk::mesh::FieldBase & levelSetField,
+    const std::vector<stk::mesh::EntityId> & nodeIds,
+    const std::vector<double> & values)
 {
-  LevelSetMesh::Impl & impl = mesh.impl();
-  krino::decompose_mesh_to_conform_to_levelsets(impl.bulk(), impl.lsFields, impl.doSnapping, impl.doComputeClosestPointSensitivities);
+  krino::ParallelErrorMessage err(mesh.parallel());
+  check_level_set_field(err, levelSetField, mesh);
+  if (nodeIds.size() != values.size())
+  {
+    err << nodeIds.size() << " node ids but " << values.size() << " values on processor "
+        << mesh.parallel_rank() << ".\n";
+  }
+  else
+  {
+    constexpr size_t maxNumMissingNodesToReport = 5;
+    size_t numMissingNodes = 0;
+    for (const stk::mesh::EntityId nodeId : nodeIds)
+    {
+      if (mesh.is_valid(mesh.get_entity(stk::topology::NODE_RANK, nodeId))) continue;
+      if (numMissingNodes++ < maxNumMissingNodesToReport)
+        err << "Node " << nodeId << " is not on processor " << mesh.parallel_rank() << ".\n";
+    }
+    if (numMissingNodes > maxNumMissingNodesToReport)
+      err << numMissingNodes - maxNumMissingNodesToReport << " more nodes are not on processor "
+          << mesh.parallel_rank() << ".\n";
+  }
+  err.require_empty("set_field_values: invalid arguments.");
+
+  auto levelSetData = krino::FieldRef(levelSetField).data<double, stk::mesh::ReadWrite>();
+  for (size_t i = 0; i < nodeIds.size(); ++i)
+    levelSetData.entity_values(mesh.get_entity(stk::topology::NODE_RANK, nodeIds[i]))() = values[i];
+
+  stk::mesh::communicate_field_data(mesh, {&levelSetField});
 }
 
-//--- Workflow C: shape sensitivities -----------------------------------------
+//--- conforming mesh ---------------------------------------------------------
 
-std::vector<ShapeSensitivity> get_shape_sensitivities(const LevelSetMesh & mesh, const unsigned lsIndex)
+class ConformingMeshWithSensitivities::Impl
 {
-  const LevelSetMesh::Impl & impl = mesh.impl();
+public:
+  std::shared_ptr<stk::mesh::MetaData> meta;
+  std::unique_ptr<stk::mesh::BulkData> mesh;
+  std::unique_ptr<krino::ConformingDecompositionWithSensitivities> decomposition;
+  krino::ShapeSensitivityMethod sensitivityMethod =
+      krino::ShapeSensitivityMethod::EDGE_DIRECTION_USING_EDGE_GRADIENT;
+
+  void check_index(const unsigned lsIndex) const
+  {
+    const size_t numLevelSets = decomposition->levelset_fields().size();
+    STK_ThrowRequireMsg(lsIndex < numLevelSets,
+        "PlatoKrinoInterface: level set index " << lsIndex << " out of range (" << numLevelSets
+                                                << " level sets).");
+  }
+};
+
+// Copies the level set values of the copied background field into the krino level set field, if
+// they are different fields (the background field can have the krino field's name).
+static void copy_level_set_values(stk::mesh::BulkData & mesh,
+    const stk::mesh::FieldBase & copiedBackgroundField,
+    const krino::FieldRef levelSetField)
+{
+  if (&copiedBackgroundField == &levelSetField.field()) return;
+
+  const krino::FieldRef fromField(copiedBackgroundField);
+  auto fromData = fromField.data<double>();
+  auto toData = levelSetField.data<double, stk::mesh::ReadWrite>();
+  for (auto * bucketPtr : mesh.get_buckets(stk::topology::NODE_RANK,
+           stk::mesh::selectField(fromField) & stk::mesh::selectField(levelSetField)))
+    for (auto node : *bucketPtr)
+      toData.entity_values(node)() = fromData.entity_values(node)();
+  stk::mesh::communicate_field_data(mesh, {&levelSetField.field()});
+}
+
+ConformingMeshWithSensitivities::ConformingMeshWithSensitivities(
+    const stk::mesh::BulkData & backgroundMesh,
+    const std::vector<const stk::mesh::FieldBase *> & levelSetFields,
+    const DecompositionOptions & options)
+    : myImpl(std::make_unique<Impl>())
+{
+  krino::ParallelErrorMessage err(backgroundMesh.parallel());
+  if (levelSetFields.empty()) err << "There are no level set fields.\n";
+  for (size_t i = 0; i < levelSetFields.size(); ++i)
+  {
+    if (levelSetFields[i] == nullptr)
+      err << "Level set field " << i << " is null.\n";
+    else
+      check_level_set_field(err, *levelSetFields[i], backgroundMesh);
+  }
+  err.require_empty("ConformingMeshWithSensitivities: invalid level set fields.");
+
+  Impl & impl = *myImpl;
+  impl.sensitivityMethod = options.sensitivityMethod;
+
+  stk::mesh::MeshBuilder builder(backgroundMesh.parallel());
+  builder.set_aura_option(backgroundMesh.is_automatic_aura_on() ?
+          stk::mesh::BulkData::AUTO_AURA :
+          stk::mesh::BulkData::NO_AUTO_AURA);
+  impl.meta = builder.create_meta_data();
+  krino::clone_meta_data_parts_and_fields(backgroundMesh.mesh_meta_data(), *impl.meta);
+  krino::clone_io_attributes_and_surface_to_block_mapping(
+      backgroundMesh.mesh_meta_data(), *impl.meta);
+  krino::AuxMetaData & auxMeta = krino::AuxMetaData::create(*impl.meta);
+
+  const std::vector<krino::LS_Field> lsFields = krino::LSPerInterfacePolicy::
+      setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(
+          *impl.meta, levelSetFields.size());
+  // With several level sets, each level set's interface is restricted to the material boundary.
+  const stk::mesh::Selector materialBlocks = material_blocks_selector(*impl.meta, lsFields);
+  impl.decomposition = std::make_unique<krino::ConformingDecompositionWithSensitivities>(
+      *impl.meta, lsFields, options.doSnapping, &materialBlocks);
+
+  impl.mesh = builder.create(impl.meta);
+  impl.meta->commit();
+  krino::clone_bulk_data(backgroundMesh, *impl.mesh);
+  // krino needs the exposed and interior block boundary sides, which a mesh krino reads has but the
+  // background mesh need not.
+  stk::mesh::create_exposed_block_boundary_sides(
+      *impl.mesh, impl.meta->universal_part(), {&auxMeta.exposed_boundary_part()});
+  stk::mesh::create_interior_block_boundary_sides(
+      *impl.mesh, impl.meta->universal_part(), {&auxMeta.block_boundary_part()});
+  krino::activate_all_entities(*impl.mesh, auxMeta.active_part());
+
+  for (size_t i = 0; i < levelSetFields.size(); ++i)
+  {
+    const stk::mesh::FieldBase * copiedField =
+        impl.meta->get_field(stk::topology::NODE_RANK, levelSetFields[i]->name());
+    STK_ThrowRequireMsg(copiedField != nullptr,
+        "ConformingMeshWithSensitivities: the copy has no level set field "
+            << levelSetFields[i]->name() << ".");
+    copy_level_set_values(*impl.mesh, *copiedField, lsFields[i].isovar);
+  }
+
+  impl.decomposition->decompose();
+}
+
+ConformingMeshWithSensitivities::~ConformingMeshWithSensitivities() = default;
+ConformingMeshWithSensitivities::ConformingMeshWithSensitivities(
+    ConformingMeshWithSensitivities &&) noexcept = default;
+ConformingMeshWithSensitivities &
+ConformingMeshWithSensitivities::operator=(ConformingMeshWithSensitivities &&) noexcept = default;
+
+stk::mesh::BulkData & ConformingMeshWithSensitivities::bulk_data() { return *myImpl->mesh; }
+const stk::mesh::BulkData & ConformingMeshWithSensitivities::bulk_data() const
+{
+  return *myImpl->mesh;
+}
+unsigned ConformingMeshWithSensitivities::num_level_sets() const
+{
+  return myImpl->decomposition->levelset_fields().size();
+}
+
+std::vector<krino::LevelSetShapeSensitivity>
+ConformingMeshWithSensitivities::shape_sensitivities(const unsigned lsIndex) const
+{
+  const Impl & impl = *myImpl;
   impl.check_index(lsIndex);
-  return convert(krino::get_levelset_shape_sensitivities(impl.bulk(), impl.lsFields[lsIndex], impl.doComputeClosestPointSensitivities));
+  return impl.decomposition->sensitivities(lsIndex, impl.sensitivityMethod);
 }
 
-std::vector<std::vector<ShapeSensitivity>> get_all_shape_sensitivities(const LevelSetMesh & mesh)
+std::vector<std::vector<krino::LevelSetShapeSensitivity>>
+ConformingMeshWithSensitivities::all_shape_sensitivities() const
 {
-  const LevelSetMesh::Impl & impl = mesh.impl();
-  const std::vector<std::vector<krino::LevelSetShapeSensitivity>> allSens =
-      krino::get_levelset_shape_sensitivities(impl.bulk(), impl.lsFields, impl.doComputeClosestPointSensitivities);
-
-  std::vector<std::vector<ShapeSensitivity>> out;
-  out.reserve(allSens.size());
-  for (auto & perLevelSet : allSens)
-    out.push_back(convert(perLevelSet));
-  return out;
+  const Impl & impl = *myImpl;
+  return impl.decomposition->all_sensitivities(impl.sensitivityMethod);
 }
 
-//--- Workflow B: write -------------------------------------------------------
-
-void write_decomposed_mesh(LevelSetMesh & mesh, const std::string & fileName, const bool includeVoidPhase, const int step, const double time)
+stk::mesh::Selector ConformingMeshWithSensitivities::material_selector() const
 {
-  LevelSetMesh::Impl & impl = mesh.impl();
-  const stk::mesh::Selector outputSelector = build_output_selector(impl.meta(), krino::AuxMetaData::get(impl.meta()).active_part(), includeVoidPhase);
-  krino::fix_ownership_and_output_composed_mesh_with_fields(impl.bulk(), outputSelector, fileName, step, time);
+  const Impl & impl = *myImpl;
+  return krino::AuxMetaData::get(*impl.meta).active_part() &
+      material_blocks_selector(*impl.meta, impl.decomposition->levelset_fields());
+}
+
+stk::mesh::Selector ConformingMeshWithSensitivities::void_selector() const
+{
+  const Impl & impl = *myImpl;
+  const krino::Phase_Support & phaseSupport = krino::Phase_Support::get(*impl.meta);
+  std::set<unsigned> voidBlockOrdinals;
+  for (const auto & lsField : impl.decomposition->levelset_fields())
+    for (const unsigned blockOrdinal :
+        phaseSupport.get_negative_levelset_block_ordinals(lsField.identifier))
+      voidBlockOrdinals.insert(blockOrdinal);
+  stk::mesh::PartVector voidBlocks;
+  for (const unsigned blockOrdinal : voidBlockOrdinals)
+    voidBlocks.push_back(&impl.meta->get_part(blockOrdinal));
+  return krino::AuxMetaData::get(*impl.meta).active_part() & stk::mesh::selectUnion(voidBlocks);
+}
+
+stk::mesh::Selector
+ConformingMeshWithSensitivities::interface_selector(const unsigned lsIndex) const
+{
+  const Impl & impl = *myImpl;
+  impl.check_index(lsIndex);
+  return material_selector() &
+      krino::Phase_Support::get(*impl.meta)
+          .get_negative_levelset_interface_selector(
+              impl.decomposition->levelset_fields()[lsIndex].identifier);
+}
+
+template <size_t NNODES>
+krino::InterfaceFacetsWithSensitivities<NNODES>
+ConformingMeshWithSensitivities::interface_facets(const unsigned lsIndex) const
+{
+  const Impl & impl = *myImpl;
+  impl.check_index(lsIndex);
+  return impl.decomposition->facets_and_sensitivities<NNODES>(lsIndex, impl.sensitivityMethod);
+}
+
+template krino::InterfaceFacetsWithSensitivities<2>
+ConformingMeshWithSensitivities::interface_facets<2>(const unsigned lsIndex) const;
+template krino::InterfaceFacetsWithSensitivities<3>
+ConformingMeshWithSensitivities::interface_facets<3>(const unsigned lsIndex) const;
+
+void ConformingMeshWithSensitivities::write_decomposed_mesh(
+    const std::string & fileName, const bool includeVoidPhase, const int step, const double time)
+{
+  Impl & impl = *myImpl;
+  const stk::mesh::Selector outputSelector = includeVoidPhase ?
+      stk::mesh::Selector(krino::AuxMetaData::get(*impl.meta).active_part()) :
+      material_selector();
+  krino::fix_ownership_and_output_composed_mesh_with_fields(
+      *impl.mesh, outputSelector, fileName, step, time);
 }
 
 } // namespace PlatoKrinoInterface

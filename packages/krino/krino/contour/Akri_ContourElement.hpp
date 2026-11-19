@@ -15,7 +15,7 @@
 #include <map>
 
 #include <Akri_DiagWriter.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetAppender.hpp>
 #include <Akri_Facet.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_ParametricElement.hpp>
@@ -77,7 +77,7 @@ public:
   void dump_subelement_structure( void ) const;
   void dump_subelement_details( void ) const;
 
-  void build_subelement_facets( FacetedSurfaceBase & facets );
+  void build_subelement_facets(FacetAppender & facets);
 
   int gather_intg_pts( const int intg_pt_sign,
 		       sierra::ArrayContainer<double,DIM,NINT> & intg_pt_locations,

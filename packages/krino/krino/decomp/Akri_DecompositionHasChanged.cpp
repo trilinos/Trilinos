@@ -6,6 +6,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <limits>
+
 #include <Akri_CDFEM_Parent_Edges.hpp>
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_CDMesh_Utils.hpp>
@@ -21,7 +26,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
-#include <array>
 
 namespace krino {
 
@@ -150,7 +154,55 @@ static bool node_has_matching_interface_within_tolerance(const stk::mesh::BulkDa
   return false;
 }
 
-static void fill_interface_nodes_with_and_without_matching_crossing(const stk::mesh::BulkData & mesh,
+void fill_neighbor_nodes(const stk::mesh::BulkData & mesh,
+    stk::mesh::Entity node,
+    const stk::mesh::Selector & elementSelector,
+    std::vector<stk::mesh::Entity> & neighborNodes);
+
+static double shortest_active_edge_length(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Part & activePart,
+    const stk::mesh::Entity node)
+{
+  const int dim = mesh.mesh_meta_data().spatial_dimension();
+  const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
+  auto coordsData = coordsField.data<double>();
+  const stk::math::Vector3d nodeCoords(coordsData.entity_values(node), dim);
+  std::vector<stk::mesh::Entity> neighborNodes;
+  fill_neighbor_nodes(mesh, node, activePart, neighborNodes);
+  double shortestSqrLength = std::numeric_limits<double>::max();
+  for (auto && nbr : neighborNodes)
+    shortestSqrLength = std::min(shortestSqrLength,
+        (stk::math::Vector3d(coordsData.entity_values(nbr), dim) - nodeCoords).length_squared());
+  return neighborNodes.empty() ? 0. : std::sqrt(shortestSqrLength);
+}
+
+// Nodes at sharp features, such as a corner, can be on the interface without a crossing of their
+// edges there.
+static bool node_is_on_sharp_featured_interface_of_its_phase(const stk::mesh::BulkData & mesh,
+    const InterfaceGeometry & interfaceGeometry,
+    const stk::mesh::Part & activePart,
+    const Phase_Support & phaseSupport,
+    const std::vector<Surface_Identifier> & surfaceIDs,
+    const double snapTol,
+    const stk::mesh::Entity node)
+{
+  const PhaseTag nodePhase = determine_phase_for_entity(mesh, node, phaseSupport);
+  const double tol = snapTol * shortest_active_edge_length(mesh, activePart, node);
+  for (size_t i = 0; i < surfaceIDs.size(); ++i)
+  {
+    const InterfaceID interface(i, i);
+    if (phase_matches_interface(
+            phaseSupport.has_one_levelset_per_phase(), surfaceIDs, nodePhase, interface) &&
+        interfaceGeometry.node_is_on_sharp_featured_interface(mesh, node, interface, tol))
+      return true;
+  }
+  return false;
+}
+
+static void
+fill_interface_nodes_with_and_without_matching_crossing(const stk::mesh::BulkData & mesh,
+    const InterfaceGeometry & interfaceGeometry,
+    const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     const std::vector<Surface_Identifier> & surfaceIDs,
@@ -170,7 +222,15 @@ static void fill_interface_nodes_with_and_without_matching_crossing(const stk::m
     {
       for ( auto && node : *bucket )
       {
-        if (node_has_matching_interface_within_tolerance(mesh, phaseSupport, surfaceIDs, node, nodesToInterfacesWithinTolerance))
+        if (node_has_matching_interface_within_tolerance(
+                mesh, phaseSupport, surfaceIDs, node, nodesToInterfacesWithinTolerance) ||
+            node_is_on_sharp_featured_interface_of_its_phase(mesh,
+                interfaceGeometry,
+                activePart,
+                phaseSupport,
+                surfaceIDs,
+                cdfemSupport.get_snapper().get_edge_tolerance(),
+                node))
           interfaceNodesWithMatchingCrossing.push_back(node);
         else
           interfaceNodesWithoutMatchingCrossing.push_back(node);
@@ -180,6 +240,8 @@ static void fill_interface_nodes_with_and_without_matching_crossing(const stk::m
 }
 
 static bool interface_nodes_have_matching_edge_crossing(const stk::mesh::BulkData & mesh,
+    const InterfaceGeometry & interfaceGeometry,
+    const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport,
     const std::vector<Surface_Identifier> & surfaceIDs,
@@ -188,7 +250,16 @@ static bool interface_nodes_have_matching_edge_crossing(const stk::mesh::BulkDat
 {
   std::vector<stk::mesh::Entity> interfaceNodesWithMatchingCrossing;
   std::vector<stk::mesh::Entity> interfaceNodesWithoutMatchingCrossing;
-  fill_interface_nodes_with_and_without_matching_crossing(mesh, cdfemSupport, phaseSupport, surfaceIDs, parentToChildMapper, edgeIntersections, interfaceNodesWithMatchingCrossing, interfaceNodesWithoutMatchingCrossing);
+  fill_interface_nodes_with_and_without_matching_crossing(mesh,
+      interfaceGeometry,
+      activePart,
+      cdfemSupport,
+      phaseSupport,
+      surfaceIDs,
+      parentToChildMapper,
+      edgeIntersections,
+      interfaceNodesWithMatchingCrossing,
+      interfaceNodesWithoutMatchingCrossing);
 
   if (stk::is_true_on_all_procs(mesh.parallel(), interfaceNodesWithoutMatchingCrossing.empty()))
     return true;
@@ -289,8 +360,8 @@ bool decomposition_has_changed(const stk::mesh::BulkData & mesh,
   if (!snap_displacements_are_small_on_nodes_with_interfaces(mesh, activePart, cdfemSupport, phaseSupport))
     return true;
 
-  const NodeToCapturedDomainsMap nodesToCapturedDomains;
-  const std::vector<IntersectionPoint> edgeIntersections = interfaceGeometry.get_edge_intersection_points(mesh, nodesToCapturedDomains);
+  const std::vector<IntersectionPoint> edgeIntersections =
+      interfaceGeometry.get_all_edge_intersection_points(mesh);
 
   const bool addHigherOrderMidSideNodes = false;
   ParentsToChildMapper parentToChildMapper;
@@ -298,8 +369,16 @@ bool decomposition_has_changed(const stk::mesh::BulkData & mesh,
 
   const std::vector<Surface_Identifier> & surfaceIDs = interfaceGeometry.get_surface_identifiers();
 
-  if (edges_with_crossings_have_matching_interface_nodes(mesh, cdfemSupport, phaseSupport, surfaceIDs, parentToChildMapper, edgeIntersections) &&
-      interface_nodes_have_matching_edge_crossing(mesh, cdfemSupport, phaseSupport, surfaceIDs, parentToChildMapper, edgeIntersections))
+  if (edges_with_crossings_have_matching_interface_nodes(
+          mesh, cdfemSupport, phaseSupport, surfaceIDs, parentToChildMapper, edgeIntersections) &&
+      interface_nodes_have_matching_edge_crossing(mesh,
+          interfaceGeometry,
+          activePart,
+          cdfemSupport,
+          phaseSupport,
+          surfaceIDs,
+          parentToChildMapper,
+          edgeIntersections))
   {
     return false;
   }

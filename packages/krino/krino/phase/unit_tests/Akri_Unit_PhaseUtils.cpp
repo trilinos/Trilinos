@@ -24,10 +24,10 @@
 namespace krino {
 
 namespace {
-constexpr int INSIDE = -1;
-constexpr int OUTSIDE = +1;
+constexpr int INSIDE_SIGN = -1;
+constexpr int OUTSIDE_SIGN = +1;
 
-Surface_Identifier ls(const unsigned id) { return Surface_Identifier(id); }
+Surface_Identifier surf_id(const unsigned id) { return Surface_Identifier(id); }
 
 NamedPhase make_phase(const std::string & name, const Surface_Identifier surf, const int sign)
 {
@@ -44,14 +44,14 @@ NamedPhase make_phase(const std::string & name, const Surface_Identifier surf, c
 TEST(GetIndicesOfPhasesThatDependOnSurface, OneLSPerPhase_ReturnsEveryIndex)
 {
   PhaseVec meshPhases;
-  meshPhases.push_back(make_phase("A", ls(0), INSIDE));
-  meshPhases.push_back(make_phase("B", ls(1), INSIDE));
-  meshPhases.push_back(make_phase("C", ls(2), INSIDE));
+  meshPhases.push_back(make_phase("A", surf_id(0), INSIDE_SIGN));
+  meshPhases.push_back(make_phase("B", surf_id(1), INSIDE_SIGN));
+  meshPhases.push_back(make_phase("C", surf_id(2), INSIDE_SIGN));
 
   // With one level set per phase, every level set impacts every phase,
   // so the queried surface identifier is irrelevant.
   const std::vector<unsigned> indices =
-      get_indices_of_phases_that_depend_on_surface(true, meshPhases, ls(7));
+      get_indices_of_phases_that_depend_on_surface(true, meshPhases, surf_id(7));
 
   const std::vector<unsigned> expected = {0u, 1u, 2u};
   EXPECT_EQ(expected, indices);
@@ -61,19 +61,19 @@ TEST(GetIndicesOfPhasesThatDependOnSurface, OneLSPerPhase_EmptyMesh_ReturnsEmpty
 {
   const PhaseVec meshPhases;
   const std::vector<unsigned> indices =
-      get_indices_of_phases_that_depend_on_surface(true, meshPhases, ls(0));
+      get_indices_of_phases_that_depend_on_surface(true, meshPhases, surf_id(0));
   EXPECT_TRUE(indices.empty());
 }
 
 TEST(GetIndicesOfPhasesThatDependOnSurface, NotOneLSPerPhase_ReturnsOnlyDependentPhases)
 {
   PhaseVec meshPhases;
-  meshPhases.push_back(make_phase("neg0", ls(0), INSIDE));  // depends on surface 0
-  meshPhases.push_back(make_phase("neg1", ls(1), INSIDE));  // depends on surface 1
-  meshPhases.push_back(make_phase("pos0", ls(0), OUTSIDE)); // depends on surface 0
+  meshPhases.push_back(make_phase("neg0", surf_id(0), INSIDE_SIGN));  // depends on surface 0
+  meshPhases.push_back(make_phase("neg1", surf_id(1), INSIDE_SIGN));  // depends on surface 1
+  meshPhases.push_back(make_phase("pos0", surf_id(0), OUTSIDE_SIGN)); // depends on surface 0
 
   const std::vector<unsigned> indices =
-      get_indices_of_phases_that_depend_on_surface(false, meshPhases, ls(0));
+      get_indices_of_phases_that_depend_on_surface(false, meshPhases, surf_id(0));
 
   // Phases 0 and 2 reference surface 0 (either sign); phase 1 does not.
   const std::vector<unsigned> expected = {0u, 2u};
@@ -83,10 +83,10 @@ TEST(GetIndicesOfPhasesThatDependOnSurface, NotOneLSPerPhase_ReturnsOnlyDependen
 TEST(GetIndicesOfPhasesThatDependOnSurface, NotOneLSPerPhase_PositiveSideCounts)
 {
   PhaseVec meshPhases;
-  meshPhases.push_back(make_phase("pos5", ls(5), OUTSIDE));
+  meshPhases.push_back(make_phase("pos5", surf_id(5), OUTSIDE_SIGN));
 
   const std::vector<unsigned> indices =
-      get_indices_of_phases_that_depend_on_surface(false, meshPhases, ls(5));
+      get_indices_of_phases_that_depend_on_surface(false, meshPhases, surf_id(5));
 
   const std::vector<unsigned> expected = {0u};
   EXPECT_EQ(expected, indices);
@@ -95,11 +95,11 @@ TEST(GetIndicesOfPhasesThatDependOnSurface, NotOneLSPerPhase_PositiveSideCounts)
 TEST(GetIndicesOfPhasesThatDependOnSurface, NotOneLSPerPhase_NoDependence_ReturnsEmpty)
 {
   PhaseVec meshPhases;
-  meshPhases.push_back(make_phase("neg0", ls(0), INSIDE));
-  meshPhases.push_back(make_phase("neg1", ls(1), INSIDE));
+  meshPhases.push_back(make_phase("neg0", surf_id(0), INSIDE_SIGN));
+  meshPhases.push_back(make_phase("neg1", surf_id(1), INSIDE_SIGN));
 
   const std::vector<unsigned> indices =
-      get_indices_of_phases_that_depend_on_surface(false, meshPhases, ls(9));
+      get_indices_of_phases_that_depend_on_surface(false, meshPhases, surf_id(9));
 
   EXPECT_TRUE(indices.empty());
 }
@@ -109,18 +109,18 @@ TEST(GetIndicesOfPhasesThatDependOnSurface, NotOneLSPerPhase_MultiSurfacePhase)
   // A phase whose tag mentions several surfaces should be reported for each
   // of those surfaces, but not for an unrelated one.
   NamedPhase multi("multi");
-  multi.tag().add(ls(0), INSIDE);
-  multi.tag().add(ls(1), OUTSIDE);
+  multi.tag().add(surf_id(0), INSIDE_SIGN);
+  multi.tag().add(surf_id(1), OUTSIDE_SIGN);
 
   PhaseVec meshPhases;
   meshPhases.push_back(multi);
 
   EXPECT_EQ((std::vector<unsigned>{0u}),
-      get_indices_of_phases_that_depend_on_surface(false, meshPhases, ls(0)));
+      get_indices_of_phases_that_depend_on_surface(false, meshPhases, surf_id(0)));
   EXPECT_EQ((std::vector<unsigned>{0u}),
-      get_indices_of_phases_that_depend_on_surface(false, meshPhases, ls(1)));
+      get_indices_of_phases_that_depend_on_surface(false, meshPhases, surf_id(1)));
   EXPECT_TRUE(
-      get_indices_of_phases_that_depend_on_surface(false, meshPhases, ls(2)).empty());
+      get_indices_of_phases_that_depend_on_surface(false, meshPhases, surf_id(2)).empty());
 }
 
 //--------------------------------------------------------------------
@@ -187,8 +187,8 @@ TEST_F(PhaseConversionFixture, ConformingPart_MappedToToPhaseConformingPart)
   const unsigned nonconf = declare_block("block_1_nonconformal");
   const unsigned confA = declare_block("block_1_A");
   const unsigned confB = declare_block("block_1_B");
-  const PhaseTag phaseA = phase_tag(0, INSIDE);
-  const PhaseTag phaseB = phase_tag(0, OUTSIDE);
+  const PhaseTag phaseA = phase_tag(0, INSIDE_SIGN);
+  const PhaseTag phaseB = phase_tag(0, OUTSIDE_SIGN);
 
   phasePartInfo.setup_conforming_part(numParts(), confA, nonconf, orig, phaseA);
   phasePartInfo.setup_conforming_part(numParts(), confB, nonconf, orig, phaseB);
@@ -212,9 +212,9 @@ TEST_F(PhaseConversionFixture, InterfacePart_TouchingSideConverted_RemapsToNewIn
   const unsigned confC = declare_block("block_1_C");
   const unsigned ifaceAB = declare_surface("surface_block_1_A_B");
   const unsigned ifaceCB = declare_surface("surface_block_1_C_B");
-  const PhaseTag phaseA = phase_tag(0, INSIDE);
-  const PhaseTag phaseB = phase_tag(0, OUTSIDE);
-  const PhaseTag phaseC = phase_tag(1, INSIDE);
+  const PhaseTag phaseA = phase_tag(0, INSIDE_SIGN);
+  const PhaseTag phaseB = phase_tag(0, OUTSIDE_SIGN);
+  const PhaseTag phaseC = phase_tag(1, INSIDE_SIGN);
 
   phasePartInfo.setup_conforming_part(numParts(), confA, nonconf, orig, phaseA);
   phasePartInfo.setup_conforming_part(numParts(), confB, nonconf, orig, phaseB);
@@ -244,9 +244,9 @@ TEST_F(PhaseConversionFixture, InterfacePart_OppositeSideConverted_RemapsToNewIn
   const unsigned confC = declare_block("block_1_C");
   const unsigned ifaceAB = declare_surface("surface_block_1_A_B");
   const unsigned ifaceAC = declare_surface("surface_block_1_A_C");
-  const PhaseTag phaseA = phase_tag(0, INSIDE);
-  const PhaseTag phaseB = phase_tag(0, OUTSIDE);
-  const PhaseTag phaseC = phase_tag(1, INSIDE);
+  const PhaseTag phaseA = phase_tag(0, INSIDE_SIGN);
+  const PhaseTag phaseB = phase_tag(0, OUTSIDE_SIGN);
+  const PhaseTag phaseC = phase_tag(1, INSIDE_SIGN);
 
   phasePartInfo.setup_conforming_part(numParts(), confA, nonconf, orig, phaseA);
   phasePartInfo.setup_conforming_part(numParts(), confB, nonconf, orig, phaseB);
@@ -272,8 +272,8 @@ TEST_F(PhaseConversionFixture, InterfacePart_CollapsesToRemoval_AlsoRemovesInter
   const unsigned ifaceAB = declare_surface("surface_block_1_A_B");
   const unsigned supersetIface = declare_surface("surface_block_1");
   declare_superset(supersetIface, ifaceAB);
-  const PhaseTag phaseA = phase_tag(0, INSIDE);
-  const PhaseTag phaseB = phase_tag(0, OUTSIDE);
+  const PhaseTag phaseA = phase_tag(0, INSIDE_SIGN);
+  const PhaseTag phaseB = phase_tag(0, OUTSIDE_SIGN);
 
   phasePartInfo.setup_conforming_part(numParts(), confA, nonconf, orig, phaseA);
   phasePartInfo.setup_conforming_part(numParts(), confB, nonconf, orig, phaseB);
@@ -306,9 +306,9 @@ TEST_F(PhaseConversionFixture, InterfacePartMatchingNeitherSide_IsAbsentAndSuper
   const unsigned ifaceBC = declare_surface("surface_block_1_B_C");
   const unsigned supersetIface = declare_surface("surface_block_1");
   declare_superset(supersetIface, ifaceBC);
-  const PhaseTag phaseA = phase_tag(0, INSIDE);
-  const PhaseTag phaseB = phase_tag(0, OUTSIDE);
-  const PhaseTag phaseC = phase_tag(1, INSIDE);
+  const PhaseTag phaseA = phase_tag(0, INSIDE_SIGN);
+  const PhaseTag phaseB = phase_tag(0, OUTSIDE_SIGN);
+  const PhaseTag phaseC = phase_tag(1, INSIDE_SIGN);
 
   phasePartInfo.setup_conforming_part(numParts(), confA, nonconf, orig, phaseA);
   phasePartInfo.setup_conforming_part(numParts(), confB, nonconf, orig, phaseB);
@@ -331,8 +331,8 @@ TEST_F(PhaseConversionFixture, NonElementNonSidePartsAreIgnored)
   const unsigned nonconf = declare_block("block_1_nonconformal");
   const unsigned confA = declare_block("block_1_A");
   const unsigned confB = declare_block("block_1_B");
-  const PhaseTag phaseA = phase_tag(0, INSIDE);
-  const PhaseTag phaseB = phase_tag(0, OUTSIDE);
+  const PhaseTag phaseA = phase_tag(0, INSIDE_SIGN);
+  const PhaseTag phaseB = phase_tag(0, OUTSIDE_SIGN);
   phasePartInfo.setup_conforming_part(numParts(), confA, nonconf, orig, phaseA);
   phasePartInfo.setup_conforming_part(numParts(), confB, nonconf, orig, phaseB);
 

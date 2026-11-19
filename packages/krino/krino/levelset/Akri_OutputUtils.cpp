@@ -11,13 +11,18 @@
 #include <Akri_OutputUtils.hpp>
 #include <Akri_config.hpp>
 
+#include <algorithm>
+#include <cstdint>
+#include <memory>
 #include <string>
+#include <utility>
 
 #include <stk_io/DatabasePurpose.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/FileUtils.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_Facet.hpp>
+#include <Akri_FacetMesh.hpp>
 #include <Akri_FacetsFromSides.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Ioss_SubSystem.h>
@@ -133,27 +138,24 @@ std::string create_file_name(const std::string & fileBaseName, const int fileInd
 
 void write_shells_for_surfaces(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const std::vector<stk::mesh::Part*> & surfaces, const stk::mesh::Part & activePart, const std::string & fileBaseName, const int fileIndex)
 {
-  std::unique_ptr<FacetedSurfaceBase> interfaceFacets = FacetedSurfaceBase::build(mesh.mesh_meta_data().spatial_dimension());
+  std::vector<std::pair<stk::mesh::Selector, stk::mesh::Selector>>
+      interfaceAndNegativeSideBlockSelectors;
   for (auto * surface : surfaces)
-  {
-    const stk::mesh::Selector interfaceSelector = *surface;
-    const stk::mesh::Selector negativeSideBlockSelector = stk::mesh::selectUnion(mesh.mesh_meta_data().get_blocks_touching_surface(surface));
-    append_interface_conforming_facets(mesh, interfaceSelector, negativeSideBlockSelector, activePart, coordsField, *interfaceFacets);
-  }
-  write_facets(mesh, *interfaceFacets, fileBaseName, fileIndex);
+    interfaceAndNegativeSideBlockSelectors.emplace_back(*surface,
+        stk::mesh::selectUnion(mesh.mesh_meta_data().get_blocks_touching_surface(surface)));
+  write_facets(build_facet_mesh_from_interface_sides(
+                   mesh, interfaceAndNegativeSideBlockSelectors, activePart, coordsField),
+      fileBaseName,
+      fileIndex);
 }
 
-template<class FACET>
-void write_facets( const std::vector<FACET> & facets, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm)
+// The results database and region for writing facets as step fileIndex of the files fileBaseName.
+static std::unique_ptr<Ioss::Region> create_facets_region(const std::string & fileBaseName,
+    const int fileIndex,
+    const stk::ParallelMachine comm,
+    Ioss::PropertyManager properties)
 {
-  int numFacets = facets.size();
-  const int nodesPerFacet = FACET::DIM;
-  const int numNodes = numFacets * nodesPerFacet;
-  const unsigned numProcs = stk::parallel_machine_size(comm);
-  const int procId = stk::parallel_machine_rank(comm);
-
   // Type (ExodusII) is hard-wired at this time.
-  Ioss::PropertyManager properties;
   enable_compose_results_if_supported(properties);
   const std::string fileName = create_file_name(fileBaseName, fileIndex);
   properties.add(Ioss::Property("base_filename", create_file_name(fileBaseName, 0)));
@@ -161,9 +163,16 @@ void write_facets( const std::vector<FACET> & facets, const std::string & fileBa
     properties.add(Ioss::Property("state_offset", fileIndex));
   Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", fileName, Ioss::WRITE_RESULTS, comm, properties);
   STK_ThrowRequireMsg(db != nullptr && db->ok(), "ERROR: Could not open output database '" << fileName << "' of type 'exodus'\n");
-  Ioss::Region io(db, "FacetRegion");
+  auto io = std::make_unique<Ioss::Region>(db, "FacetRegion");
+  io->property_add(Ioss::Property("title", std::string("level set interface facets")));
+  return io;
+}
 
-  // find offsets for consistent global numbering
+// The number of facets on the lower processors, for consistent global element numbering.
+static int get_facet_offset(const int numFacets, const stk::ParallelMachine comm)
+{
+  const unsigned numProcs = stk::parallel_machine_size(comm);
+  const int procId = stk::parallel_machine_rank(comm);
   int elem_start = 0;
   if ( numProcs > 1 ) {
     std::vector< int > numFaces(numProcs);
@@ -174,95 +183,96 @@ void write_facets( const std::vector<FACET> & facets, const std::string & fileBa
       elem_start += numFaces[i];
     }
   }
+  return elem_start;
+}
 
-  const std::string description = "level set interface facets";
-  io.property_add(Ioss::Property("title", description));
-  io.begin_mode(Ioss::STATE_DEFINE_MODEL);
+static std::string get_shell_element_type(const unsigned dim)
+{
+  return (3 == dim) ? "trishell3" : "shellline2d2";
+}
 
-  Ioss::NodeBlock *nb = new Ioss::NodeBlock(db, "nodeblock_1", numNodes, nodesPerFacet);
-  io.add(nb);
-  nb->property_add(Ioss::Property("locally_owned_count", numNodes));
-
-  std::string el_type;
-  if constexpr (FACET::DIM == 3)
-    el_type = "trishell3";
-  else
-    el_type = "shellline2d2";
-
-  Ioss::ElementBlock *eb = new Ioss::ElementBlock(db, "block_1", el_type, numFacets);
-  io.add(eb);
-
-  io.end_mode(Ioss::STATE_DEFINE_MODEL);
-  io.begin_mode(Ioss::STATE_MODEL);
-
-  // loop over elements and node to create maps
-  {
-    std::vector< int > nmap, emap;
-    nmap.reserve(numNodes);
-    emap.reserve(numFacets);
-
-    for ( unsigned n=0, e=0; e<facets.size(); ++e ) {
-      emap.push_back(elem_start + e + 1);
-      for ( int j = 0; j < nodesPerFacet; ++j ) {
-        nmap.push_back(nodesPerFacet*elem_start + n + 1);
-        ++n;
-      }
-    }
-    nb->put_field_data("ids", nmap);
-    eb->put_field_data("ids", emap);
-  }
-
-  if (nb->get_database()->needs_shared_node_information())
-  {
-    std::vector<int> owningProcessor(numNodes, procId);
-    nb->put_field_data("owning_processor", owningProcessor);
-  }
-
-  // generate coordinates
-  {
-    std::vector< double > xyz;
-    xyz.reserve(FACET::DIM*numNodes);
-
-    for ( auto&& facet : facets ) {
-      for ( int j = 0; j < nodesPerFacet; ++j ) {
-        const stk::math::Vector3d & vert = facet.facet_vertex(j);
-        xyz.push_back(vert[0]);
-        xyz.push_back(vert[1]);
-        if (3 == FACET::DIM) xyz.push_back(vert[2]);
-      }
-    }
-    nb->put_field_data("mesh_model_coordinates", xyz);
-  }
-
-  // generate connectivity
-  {
-    std::vector< int > conn;
-    conn.reserve(numNodes);
-    for ( int n = 0; n < numNodes; ++n ) {
-      conn.push_back(nodesPerFacet*elem_start + n+1);
-    }
-    eb->put_field_data("connectivity", conn);
-  }
-
-  io.end_mode(Ioss::STATE_MODEL);
-
-  // write fake transient
+static void write_fake_transient(Ioss::Region & io, const int fileIndex)
+{
   io.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
   io.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
   io.begin_mode(Ioss::STATE_TRANSIENT);
-  const int currentOutputStep = io.add_state(1.0*fileIndex);
+  const int currentOutputStep = io.add_state(1.0 * fileIndex);
   io.begin_state(currentOutputStep);
   io.end_state(currentOutputStep);
   io.end_mode(Ioss::STATE_TRANSIENT);
 }
 
-void write_facets(const stk::mesh::BulkData & mesh, const FacetedSurfaceBase & facets, const std::string & fileBaseName, const int fileIndex)
+void write_facets(const FacetMesh & facets, const std::string & fileBaseName, const int fileIndex)
 {
-  if (2 == mesh.mesh_meta_data().spatial_dimension())
-    krino::write_facets(facets.get_facets_2d(), fileBaseName, fileIndex, mesh.parallel());
-  else
-    krino::write_facets(facets.get_facets_3d(), fileBaseName, fileIndex, mesh.parallel());
+  const stk::ParallelMachine comm = facets.comm();
+  const unsigned dim = facets.spatial_dimension();
+  const int procId = stk::parallel_machine_rank(comm);
+  const int numFacets = facets.num_owned_facets();
+  const size_t numNodes = facets.num_owned_facet_vertices();
+  const bool sharedVertices = facets.has_shared_vertices();
+  const std::vector<int> owners =
+      sharedVertices ? facets.compute_vertex_owners() : std::vector<int>(numNodes, procId);
+  const int64_t numOwnedNodes = std::count(owners.begin(), owners.end(), procId);
+
+  // Vertex ids are 64 bit.
+  Ioss::PropertyManager properties;
+  properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
+  properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
+  std::unique_ptr<Ioss::Region> io =
+      create_facets_region(fileBaseName, fileIndex, comm, properties);
+  Ioss::DatabaseIO * db = io->get_database();
+
+  const int elemStart = get_facet_offset(numFacets, comm);
+  // Without shared vertices, each facet's vertices are numbered after those of the facets before
+  // it, across the processors in order.
+  auto node_id = [&](const unsigned v) -> int64_t
+  { return sharedVertices ? int64_t(facets.vertex_id(v)) : int64_t(dim) * elemStart + v + 1; };
+
+  io->begin_mode(Ioss::STATE_DEFINE_MODEL);
+
+  Ioss::NodeBlock * nb = new Ioss::NodeBlock(db, "nodeblock_1", numNodes, dim);
+  io->add(nb);
+  nb->property_add(Ioss::Property("locally_owned_count", numOwnedNodes));
+
+  Ioss::ElementBlock * eb =
+      new Ioss::ElementBlock(db, "block_1", get_shell_element_type(dim), numFacets);
+  io->add(eb);
+
+  io->end_mode(Ioss::STATE_DEFINE_MODEL);
+  io->begin_mode(Ioss::STATE_MODEL);
+
+  std::vector<int64_t> nodeIds;
+  std::vector<double> xyz;
+  nodeIds.reserve(numNodes);
+  xyz.reserve(dim * numNodes);
+  for (size_t v = 0; v < numNodes; ++v)
+  {
+    nodeIds.push_back(node_id(v));
+    const stk::math::Vector3d & coords = facets.vertex_coordinates(v);
+    for (unsigned d = 0; d < dim; ++d)
+      xyz.push_back(coords[d]);
+  }
+  nb->put_field_data("ids", nodeIds);
+  if (db->needs_shared_node_information()) nb->put_field_data("owning_processor", owners);
+  nb->put_field_data("mesh_model_coordinates", xyz);
+
+  std::vector<int64_t> elemIds;
+  std::vector<int64_t> conn;
+  elemIds.reserve(numFacets);
+  conn.reserve(dim * numFacets);
+  for (int f = 0; f < numFacets; ++f)
+  {
+    elemIds.push_back(elemStart + f + 1);
+    for (unsigned v : facets.facet_vertices(f))
+      conn.push_back(node_id(v));
+  }
+  eb->put_field_data("ids", elemIds);
+  eb->put_field_data("connectivity", conn);
+
+  io->end_mode(Ioss::STATE_MODEL);
+
+  write_fake_transient(*io, fileIndex);
 }
 
 stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector)
@@ -359,10 +369,6 @@ void write_stl(const std::string &filename,
   myfile.close();
 }
 
-// Explicit template instantiation
-
-template void write_facets<Facet2d>( const std::vector<Facet2d> & facets, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm);
-template void write_facets<Facet3d>( const std::vector<Facet3d> & facets, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm);
 
 }
 

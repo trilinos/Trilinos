@@ -124,6 +124,9 @@ public:
 
   void set_all_decomposed_blocks_selector();
   const stk::mesh::Selector & get_all_decomposed_blocks_selector() const { return all_decomposed_blocks_selector; }
+  // Whether any of the decomposed blocks is quadratic, from the parts of their selector (the same
+  // on every processor), so that this needs no communication.
+  bool has_quadratic_decomposed_blocks() const;
   bool is_decomposed(const stk::mesh::Part & part) const;
 
   void register_blocks_for_level_set(const Surface_Identifier levelSetIdentifier,

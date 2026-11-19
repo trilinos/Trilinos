@@ -6,50 +6,54 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <gtest/gtest.h>
-
-#include <string>
+#include <functional>
 #include <memory>
 #include <random>
+#include <string>
 
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/SkinBoundary.hpp>
-#include <stk_io/IossBridge.hpp>
+#include <gtest/gtest.h>
 
+#include <Akri_AnalyticSurf.hpp>
+#include <Akri_AnalyticSurfaceInterfaceGeometry.hpp>
 #include <Akri_BoundingBox.hpp>
 #include <Akri_BoundingBoxMesh.hpp>
 #include <Akri_CDFEM_Support.hpp>
-#include <Akri_AnalyticSurf.hpp>
-#include <Akri_AnalyticSurfaceInterfaceGeometry.hpp>
 #include <Akri_CDMesh.hpp>
 #include <Akri_CDMesh_Utils.hpp>
-#include <Akri_DiagWriter.hpp>
-#include <Akri_Interface_Name_Generator.hpp>
-#include <Akri_LevelSetPolicy.hpp>
-#include <Akri_MeshHelpers.hpp>
-#include <Akri_MeshClone.hpp>
-#include <Akri_LS_Field.hpp>
-#include <Akri_Phase_Support.hpp>
-#include <Akri_FieldRef.hpp>
+#include <Akri_ClosestPointRedistance.hpp>
 #include <Akri_CreateInterfaceGeometry.hpp>
+#include <Akri_DiagWriter.hpp>
+#include <Akri_FacetsFromSides.hpp>
+#include <Akri_FieldRef.hpp>
+#include <Akri_Interface_Name_Generator.hpp>
+#include <Akri_LS_Field.hpp>
+#include <Akri_LevelSetPolicy.hpp>
 #include <Akri_LevelSet_Phase_Utils.hpp>
-#include <Akri_QualityMetric.hpp>
-#include <Akri_RebalanceUtils.hpp>
-#include <Akri_Snap.hpp>
-
-#include <Akri_Unit_BoundingBoxMesh.hpp>
-#include <Akri_Unit_Single_Element_Fixtures.hpp>
 #include <Akri_LogRedirecter.hpp>
+#include <Akri_MeshClone.hpp>
+#include <Akri_MeshDiagnostics.hpp>
+#include <Akri_MeshFacetedSurface.hpp>
+#include <Akri_MeshHelpers.hpp>
 #include <Akri_MeshQuality.hpp>
-#include <Akri_RefinementSupport.hpp>
-#include <Akri_Unit_DecompositionFixture.hpp>
 #include <Akri_MeshSpecs.hpp>
 #include <Akri_OutputUtils.hpp>
+#include <Akri_Phase_Support.hpp>
+#include <Akri_QualityMetric.hpp>
+#include <Akri_RebalanceUtils.hpp>
 #include <Akri_RefinementManager.hpp>
+#include <Akri_RefinementSupport.hpp>
 #include <Akri_ScopedTestFile.hpp>
+#include <Akri_SecondOrderMeshSpecs.hpp>
+#include <Akri_Snap.hpp>
 #include <Akri_UnitTestUtils.hpp>
+#include <Akri_Unit_BoundingBoxMesh.hpp>
+#include <Akri_Unit_DecompositionFixture.hpp>
+#include <Akri_Unit_Single_Element_Fixtures.hpp>
+#include <stk_io/IossBridge.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 
 namespace krino
 {
@@ -550,6 +554,83 @@ TEST_F(RegularTriSingleLSDecompositionFixture, decompose)
   EXPECT_EQ(2u, entities.size());
   mMesh.get_entities(stk::topology::ELEMENT_RANK, get_aux_meta().get_part("block_1_P+"), entities);
   EXPECT_EQ(1u, entities.size());
+}
+
+// A linear tri, 0-2-1, beside two that split its edge 0-1 at node 3, a child of 0 and 1 (as of
+// refinement or an earlier decomposition):
+//        4
+//       /|\      tris 0-3-4 and 3-1-4
+//      / | \     above the edge 0-1,
+//     0--3--1
+//      \   /     tri 0-2-1 below it
+//       \ /
+//        2
+struct TriEdgeWithChildNode
+{
+  TriEdgeWithChildNode() = default;
+  static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TRIANGLE_3_2D;
+  std::vector<stk::math::Vector2d> nodeLocs{{
+      {0.0, 0.0},
+      {1.0, 0.0},
+      {0.5, -0.5},
+      {0.5, 0.0},
+      {0.5, 0.5},
+  }};
+  std::vector<std::array<unsigned, 3>> allElementConn{{{0, 2, 1}}, {{0, 3, 4}}, {{3, 1, 4}}};
+};
+
+typedef DecompositionFixture<TriEdgeWithChildNode, LSPerInterfacePolicy, 1>
+    TriEdgeWithChildNodeSingleLSFixture;
+
+// Intersecting quadratic elements as linear ones, as snapping does, leaves out only their mid-side
+// nodes: the edge 0-1 of the linear tri keeps its child node 3, so that the level set, -1 at 0 and
+// +1 at 3 and 1, crosses it a quarter of the way from 0 (not halfway, as on a linear edge without
+// the child), as when not intersecting them as linear.
+TEST_F(TriEdgeWithChildNodeSingleLSFixture,
+    intersectingQuadraticElementsAsLinear_linearEdgeKeepsItsChildNode)
+{
+  if (stk::parallel_machine_size(mComm) > 1) return;
+
+  StkMeshTriFixture::build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1, 1, 1});
+  setup_ls_fields();
+  set_level_set({0, 1, 2, 3, 4}, {-1., 1., 1., 1., 1.});
+  mMesh.modification_begin();
+  mMesh.change_entity_parts(
+      get_node(3), stk::mesh::PartVector{&cdfem_support().get_child_node_part()});
+  mMesh.modification_end();
+  store_child_node_parent_ids_and_weights(mMesh,
+      cdfem_support().get_parent_node_ids_field(),
+      cdfem_support().get_parent_node_weights_field(),
+      get_node(3),
+      {get_node(0), get_node(1)},
+      {0.5, 0.5});
+
+  std::unique_ptr<InterfaceGeometry> geometry =
+      create_levelset_geometry(mMesh.mesh_meta_data().spatial_dimension(),
+          get_aux_meta().active_part(),
+          cdfem_support(),
+          Phase_Support::get(mMesh.mesh_meta_data()),
+          levelset_fields());
+  for (const bool intersectQuadraticElementsAsLinear : {false, true})
+  {
+    geometry->set_intersect_quadratic_elements_as_linear(intersectQuadraticElementsAsLinear);
+    unsigned numPointsOnEdge = 0;
+    for (auto && point : geometry->get_edge_intersection_points(mMesh, NodeToCapturedDomainsMap{}))
+    {
+      const auto & nodes = point.get_nodes();
+      for (unsigned i = 0; i < 2; ++i)
+      {
+        if (nodes[i] == get_node(0) && nodes[1 - i] == get_node(1))
+        {
+          ++numPointsOnEdge;
+          EXPECT_NEAR(0.75, point.get_weights()[i], 1.e-12)
+              << "intersecting quadratic elements as linear " << intersectQuadraticElementsAsLinear;
+        }
+      }
+    }
+    EXPECT_EQ(1u, numPointsOnEdge)
+        << "intersecting quadratic elements as linear " << intersectQuadraticElementsAsLinear;
+  }
 }
 
 class DecompositionFixtureWithoutRegisteringFields : public RegularTriSingleLSDecompositionFixture
@@ -1061,6 +1142,74 @@ TEST_F(UMRRegularTriOn1Or2Procs3LSPerPhase, Random_Decompositions)
     CDMesh::reset_mesh_to_original_undecomposed_state(mMesh);
     cdmesh = std::make_unique<CDMesh>(mMesh);
   }
+}
+
+// Decomposing a quadratic mesh again and again, with random level sets on all its nodes, mid-side
+// nodes included, each time from the undecomposed state: the reset makes the mid-side nodes active
+// again, so their fields are stashed for prolongation.  When snapping, the elements are treated as
+// the linear elements of their vertices, so the mid-side nodes' values never make the edges
+// inconsistent.
+template <typename MESHSPEC>
+class QuadraticMesh3LSPerPhase : public DecompositionFixture<MESHSPEC, LSPerPhasePolicy, 3>
+{
+public:
+  using Base = DecompositionFixture<MESHSPEC, LSPerPhasePolicy, 3>;
+  void decompose_random_levelsets(const int numCases, const std::string & name, const bool snap)
+  {
+    this->set_valid_proc_sizes_for_test({1,2,4});
+    if (!this->is_valid_proc_size_for_test()) return;
+
+    this->build_mesh_from_spec(this->meshSpec);
+    this->setup_ls_fields();
+
+    this->cdfem_support().set_cdfem_edge_degeneracy_handling(snap ? SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE : SNAP_TO_NODE);
+    this->cdfem_support().register_cdfem_snap_displacements_field();
+    this->cdfem_support().finalize_fields();
+
+    std::mt19937 mt(std::mt19937::default_seed + stk::parallel_machine_rank(this->mComm));
+
+    for (int i = 0; i < numCases; ++i)
+    {
+      randomize_levelset_fields_and_parallel_sync_fields(this->mMesh, this->get_coordinates_field(), this->levelset_fields(), mt);
+      stk::mesh::field_copy(this->levelset_fields()[0].isovar.field(), this->levelset_fields()[1].isovar.field());
+      stk::mesh::field_scale(-1., this->levelset_fields()[1].isovar.field());
+      stk::mesh::field_fill(0., this->levelset_fields()[2].isovar.field());
+
+      this->attempt_decompose_mesh();
+      this->check_mesh_consistency();
+      this->check_nonfatal_error(name, i);
+
+      CDMesh::reset_mesh_to_original_undecomposed_state(this->mMesh);
+      this->cdmesh = std::make_unique<CDMesh>(this->mMesh);
+    }
+  }
+};
+
+using UMRRegularTri6On1Or2Or4Procs3LSPerPhase = QuadraticMesh3LSPerPhase<UMRRegularTri6>;
+using UMRRegularTet10On1Or2Or4Procs3LSPerPhase = QuadraticMesh3LSPerPhase<UMRRegularTet10>;
+
+TEST_F(UMRRegularTri6On1Or2Or4Procs3LSPerPhase, Random_CutOnlyDecompositions)
+{
+  const bool snap = false;
+  decompose_random_levelsets(num_random_test_cases(200, 1000), "Random_UMRRegularTri6_cutonly_iter", snap);
+}
+
+TEST_F(UMRRegularTet10On1Or2Or4Procs3LSPerPhase, Random_CutOnlyDecompositions)
+{
+  const bool snap = false;
+  decompose_random_levelsets(num_random_test_cases(100, 500), "Random_UMRRegularTet10_cutonly_iter", snap);
+}
+
+TEST_F(UMRRegularTri6On1Or2Or4Procs3LSPerPhase, Random_SnappedDecompositions)
+{
+  const bool snap = true;
+  decompose_random_levelsets(num_random_test_cases(200, 1000), "Random_UMRRegularTri6_iter", snap);
+}
+
+TEST_F(UMRRegularTet10On1Or2Or4Procs3LSPerPhase, Random_SnappedDecompositions)
+{
+  const bool snap = true;
+  decompose_random_levelsets(num_random_test_cases(100, 500), "Random_UMRRegularTet10_iter", snap);
 }
 
 class UMRRegularTetOn1Or2Procs3LSPerPhase : public DecompositionFixture<UMRRegularTet, LSPerPhasePolicy, 3>
@@ -1587,6 +1736,184 @@ TEST_F(CDMeshTestsRightTri3LSPerPhase, Tri3_3LS_TriplePointDebug)
   write_mesh(outputFile.name());
 }
 
+namespace
+{
+// A tet symmetric about the plane x=0, which contains its edge from node 1 to node 2.
+struct TetSymmetricAboutXZeroPlane
+{
+  TetSymmetricAboutXZeroPlane() = default;
+  static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TETRAHEDRON_4;
+  std::vector<stk::math::Vector3d> nodeLocs{{
+      {-1.0, 0.0, 0.0},
+      {0.0, 1.5, 0.0},
+      {0.0, 0.0, 1.0},
+      {1.0, 0.0, 0.0},
+  }};
+
+  std::array<unsigned, 4> TetConn{{0, 1, 2, 3}};
+  std::vector<std::array<unsigned, 4>> allElementConn{TetConn};
+};
+
+// The same tet, with the node ids of the mesh of the cdfem_hidden_interface rtest: 3, 4, 1, 2.
+struct TetSymmetricAboutXZeroPlaneWithRtestNodeIds
+{
+  TetSymmetricAboutXZeroPlaneWithRtestNodeIds() = default;
+  static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TETRAHEDRON_4;
+  std::vector<stk::math::Vector3d> nodeLocs{{
+      {0.0, 0.0, 1.0},
+      {1.0, 0.0, 0.0},
+      {-1.0, 0.0, 0.0},
+      {0.0, 1.5, 0.0},
+  }};
+
+  std::array<unsigned, 4> TetConn{{2, 3, 0, 1}};
+  std::vector<std::array<unsigned, 4>> allElementConn{TetConn};
+};
+} // namespace
+
+// The level sets of the cdfem_hidden_interface rtest: 2(1-y), 2(y-0.2), x and -x.  The plane of
+// the interface between the last two phases, x=0, contains an edge of the tet, and crosses its
+// other edges only where another phase is smallest, so its crossings are only inside the tet.
+template <typename MESHSPEC>
+class SymmetricTet4LSPerPhaseFixture : public DecompositionFixture<MESHSPEC, LSPerPhasePolicy, 4>
+{
+public:
+  using DecompositionFixture<MESHSPEC, LSPerPhasePolicy, 4>::mMesh;
+  using DecompositionFixture<MESHSPEC, LSPerPhasePolicy, 4>::meshSpec;
+  using DecompositionFixture<MESHSPEC, LSPerPhasePolicy, 4>::levelset_fields;
+  using DecompositionFixture<MESHSPEC, LSPerPhasePolicy, 4>::get_aux_meta;
+  using DecompositionFixture<MESHSPEC, LSPerPhasePolicy, 4>::attempt_decompose_mesh;
+  using DecompositionFixture<MESHSPEC, LSPerPhasePolicy, 4>::setup_ls_fields;
+  SymmetricTet4LSPerPhaseFixture()
+  {
+    this->build_mesh_from_spec(meshSpec);
+    setup_ls_fields();
+  }
+
+  void decompose_and_expect_exact_phase_volumes()
+  {
+    std::vector<std::vector<double>> nodeLS;
+    for (auto && x : meshSpec.nodeLocs)
+      nodeLS.push_back({2. * (1. - x[1]), 2. * (x[1] - 0.2), x[0], -x[0]});
+    set_level_sets(
+        mMesh, levelset_fields(), this->get_ids_of_nodes_with_given_indices({0, 1, 2, 3}), nodeLS);
+
+    attempt_decompose_mesh();
+
+    const std::array<double, 4> exactVolumes{
+        1. / 72., 0.0657777777777778, 0.2101666666666667, 0.2101666666666667};
+    for (unsigned phase = 0; phase < 4; ++phase)
+    {
+      const stk::mesh::Selector phaseSelector =
+          get_aux_meta().get_part("block_1_P" + std::to_string(phase)) &
+          get_aux_meta().active_part();
+      const double volume =
+          compute_volume_or_surface_area(mMesh, stk::topology::ELEMENT_RANK, phaseSelector);
+      EXPECT_NEAR(exactVolumes[phase], volume, 1.e-8) << "phase " << phase;
+    }
+  }
+};
+
+typedef SymmetricTet4LSPerPhaseFixture<TetSymmetricAboutXZeroPlane>
+    CDMeshTestsSymmetricTet4LSPerPhase;
+typedef SymmetricTet4LSPerPhaseFixture<TetSymmetricAboutXZeroPlaneWithRtestNodeIds>
+    CDMeshTestsSymmetricTet4LSPerPhaseRtestNodeIds;
+
+TEST_F(CDMeshTestsSymmetricTet4LSPerPhase, onlyCutting_exactPhaseVolumes)
+{
+  if (stk::parallel_machine_size(mComm) > 1) return;
+  decompose_and_expect_exact_phase_volumes();
+}
+
+TEST_F(CDMeshTestsSymmetricTet4LSPerPhase, onlyCuttingWithSharpFeaturesFirst_exactPhaseVolumes)
+{
+  if (stk::parallel_machine_size(mComm) > 1) return;
+  cdfem_support().set_cut_sharp_features_before_surfaces(true);
+  decompose_and_expect_exact_phase_volumes();
+}
+
+TEST_F(CDMeshTestsSymmetricTet4LSPerPhaseRtestNodeIds, onlyCutting_exactPhaseVolumes)
+{
+  if (stk::parallel_machine_size(mComm) > 1) return;
+  decompose_and_expect_exact_phase_volumes();
+}
+
+TEST_F(CDMeshTestsSymmetricTet4LSPerPhaseRtestNodeIds,
+    onlyCuttingWithSharpFeaturesFirst_exactPhaseVolumes)
+{
+  if (stk::parallel_machine_size(mComm) > 1) return;
+  cdfem_support().set_cut_sharp_features_before_surfaces(true);
+  decompose_and_expect_exact_phase_volumes();
+}
+
+// The level sets of the np1_phase_tet_snap case of the cdfem_hidden_interface rtest, on its tet:
+// four planes, n.x + offset with unit normals n, and 0 for the last phase (its level set has no
+// initial condition).  The last phase is a small pocket (volume 0.00399) inside the tet, where the
+// four planes are positive, that reaches none of the sides of the tet.
+//
+// The decision documented here: such a pocket is not captured.  An element is cut only by the
+// interfaces with crossings on its sides, so the pocket's volume goes to the phases around it, and
+// the decomposition is that of the four planes alone, exactly.  The corners and crossings of the
+// planes that are cut are found as for those planes alone: the pocket's phase, smallest there,
+// does not make them fake.  (It did: the corner of the four phases, inside the pocket, was not cut,
+// and edges beside it were cut where another phase is smallest, 5 fake crossings and 7e-4 off in
+// a phase volume.)
+class HiddenPocketTet4LSPerPhaseFixture
+    : public DecompositionFixture<TetSymmetricAboutXZeroPlane, LSPerPhasePolicy, 5>
+{
+public:
+  HiddenPocketTet4LSPerPhaseFixture()
+  {
+    build_mesh_from_spec(meshSpec);
+    setup_ls_fields();
+  }
+
+  void decompose_and_expect_pocket_left_to_the_phases_around_it()
+  {
+    const std::array<std::pair<stk::math::Vector3d, double>, 4> planes{{
+        {{0.6, 0.4, 0.6}, -0.256},
+        {{0., 0., -1.}, 0.3},
+        {{-0.6, 0.4, 0.6}, -0.256},
+        {{0., -1., 0.}, 0.45},
+    }};
+    std::vector<std::vector<double>> nodeLS;
+    for (auto && x : meshSpec.nodeLocs)
+    {
+      std::vector<double> ls;
+      for (auto && [normal, offset] : planes)
+        ls.push_back(Dot(normal.unit_vector(), x) + offset);
+      ls.push_back(0.);
+      nodeLS.push_back(ls);
+    }
+    set_level_sets(
+        mMesh, levelset_fields(), get_ids_of_nodes_with_given_indices({0, 1, 2, 3}), nodeLS);
+
+    attempt_decompose_mesh();
+
+    // The exact volumes of the phases of the four planes alone, without the pocket.  With it, they
+    // would be 0.1247116700965180, 0.1169529130557613, 0.1247116700965180, 0.1296386568770508 and
+    // 0.003985089874151927.
+    const std::array<double, 5> volumesWithoutPocket{
+        0.1256761141829901, 0.1181866340764859, 0.1256761141829901, 0.1304611375575339, 0.};
+    for (unsigned phase = 0; phase < 5; ++phase)
+    {
+      const stk::mesh::Selector phaseSelector =
+          get_aux_meta().get_part("block_1_P" + std::to_string(phase)) &
+          get_aux_meta().active_part();
+      const double volume =
+          compute_volume_or_surface_area(mMesh, stk::topology::ELEMENT_RANK, phaseSelector);
+      EXPECT_NEAR(volumesWithoutPocket[phase], volume, 1.e-12) << "phase " << phase;
+    }
+    EXPECT_EQ(0u, cdmesh->num_fake_crossings_cut());
+  }
+};
+
+TEST_F(HiddenPocketTet4LSPerPhaseFixture, onlyCutting_pocketLeftToThePhasesAroundIt)
+{
+  if (stk::parallel_machine_size(mComm) > 1) return;
+  decompose_and_expect_pocket_left_to_the_phases_around_it();
+}
+
 class TwoRightTrisOn1Or2Procs3LSPerPhaseDecompositionFixture : public DecompositionFixture<TwoRightTrisSharingDiagonal, LSPerPhasePolicy, 3>
 {
 public:
@@ -1770,7 +2097,10 @@ TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
 
 typedef CompleteDecompositionFixture<SimpleStkFixture3d, LSPerPhasePolicy, 3>
     CDMeshTests3DLSPerPhase;
-TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
+// Random level sets on two tets with an internal sideset, only cutting, with a large edge
+// tolerance.
+static void
+decompose_random_levelsets_on_two_tet4_with_internal_sideset(CDMeshTests3DLSPerPhase & test)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   const int parallel_size = stk::parallel_machine_size(pm);
@@ -1778,28 +2108,28 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
 
   if (parallel_size > 2) return;
 
-  stk::mesh::BulkData & mesh = fixture.bulk_data();
-  stk::mesh::MetaData & meta = fixture.meta_data();
+  stk::mesh::BulkData & mesh = test.fixture.bulk_data();
+  stk::mesh::MetaData & meta = test.fixture.meta_data();
   AuxMetaData & aux_meta = AuxMetaData::get(meta);
 
   // Use a large snap tolerance to make snapping more common since it is a frequent source
   // of parallel bugs
-  cdfemSupport.set_cdfem_edge_tol(0.1);
-  cdfemSupport.set_simplex_generation_method(CUT_QUADS_BY_GLOBAL_IDENTIFIER);
+  test.cdfemSupport.set_cdfem_edge_tol(0.1);
+  test.cdfemSupport.set_simplex_generation_method(CUT_QUADS_BY_GLOBAL_IDENTIFIER);
 
   const stk::topology tet4 = stk::topology::TETRAHEDRON_4;
-  auto & block1_part = declare_input_block("block_1", tet4);
-  auto & block2_part = declare_input_block("block_2", tet4);
-  auto & surface_part = declare_input_surface("surface_1",
+  auto & block1_part = test.declare_input_block("block_1", tet4);
+  auto & block2_part = test.declare_input_block("block_2", tet4);
+  auto & surface_part = test.declare_input_surface("surface_1",
       tet4.side_topology(),
       {block1_part.mesh_meta_data_ordinal(), block2_part.mesh_meta_data_ordinal()});
 
-  register_ls_on_blocks({&block1_part, &block2_part});
+  test.register_ls_on_blocks({&block1_part, &block2_part});
 
-  commit();
+  test.commit();
 
   build_two_tet4_mesh_np2(
-      *this, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
+      test, block1_part, block2_part, surface_part, parallel_rank, parallel_size);
 
   stk::mesh::create_exposed_block_boundary_sides(
       mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
@@ -1810,15 +2140,16 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
-    randomize_levelset_fields_and_parallel_sync_fields(mesh, coord_field, levelset_fields(), mt);
+    randomize_levelset_fields_and_parallel_sync_fields(
+        mesh, test.coord_field, test.levelset_fields(), mt);
 
     try
     {
-      decompose_mesh();
+      test.decompose_mesh();
     }
     catch (const std::exception & exception)
     {
-      std::cout << log.get_log() << std::endl;
+      std::cout << test.log.get_log() << std::endl;
       std::cout << "Decomposing mesh failed with exception:\n";
       std::cout << exception.what() << "\n";
       ASSERT_TRUE(false);
@@ -1828,19 +2159,33 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
     EXPECT_TRUE(check_face_and_edge_ownership(mesh));
     EXPECT_TRUE(check_face_and_edge_relations(mesh));
     EXPECT_TRUE(check_shared_entity_nodes(mesh));
-    EXPECT_TRUE(krino_mesh->check_element_side_parts());
+    EXPECT_TRUE(test.krino_mesh->check_element_side_parts());
 
-    if (HasNonfatalFailure())
+    if (::testing::Test::HasNonfatalFailure())
     {
       std::cout << "Failure on iteration " << i << std::endl;
       std::ostringstream fname;
       fname << "Random_TwoTet4_InternalSideset_iter_" << i << ".e";
-      fixture.write_results(fname.str());
+      test.fixture.write_results(fname.str());
       ASSERT_TRUE(false);
     }
 
-    krino_mesh = std::make_unique<CDMesh>(mesh);
+    test.krino_mesh = std::make_unique<CDMesh>(mesh);
   }
+}
+
+TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
+{
+  decompose_random_levelsets_on_two_tet4_with_internal_sideset(*this);
+}
+
+// With the sharp features cut first.  The planes of a cut element, fit to crossings moved onto
+// nodes within the large edge tolerance, need not meet at their sharp edges: a leaf no interface
+// crosses, whose phase is evaluated, can be where no phase is on the right side of every plane.
+TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset_SharpFeaturesFirst)
+{
+  cdfemSupport.set_cut_sharp_features_before_surfaces(true);
+  decompose_random_levelsets_on_two_tet4_with_internal_sideset(*this);
 }
 
 TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset_Snap)
@@ -2296,6 +2641,102 @@ TEST_F(CDMeshTestsTriTouchingLineFromBelow,
 {
   if (!is_valid_proc_size_for_test()) return;
   decompose_with_plane_and_expect_elements_on_correct_side();
+}
+
+// Decomposes the bounding box mesh with the planar level set x-0.4, then redistances every node
+// using the facets set_interface_conforming_facets makes from the interface sides, as
+// LevelSet::interface_conforming_redistance does.  The distance to the plane is exact.
+static void expect_interface_conforming_redistance_of_plane_to_be_exact(BoundingBoxMesh & bboxMesh,
+    const FieldRef coordsField,
+    const FieldRef lsField,
+    const Surface_Identifier lsIdentifier,
+    const std::function<void()> & decompose)
+{
+  stk::mesh::MetaData & meta = bboxMesh.meta_data();
+  AuxMetaData & auxMeta = AuxMetaData::get(meta);
+  const unsigned dim = meta.spatial_dimension();
+  bboxMesh.set_domain(BoundingBoxMesh::BoundingBoxType(stk::math::Vector3d::ZERO,
+                          stk::math::Vector3d(1., 1., (dim == 3) ? 1. : 0.)),
+      0.25);
+  bboxMesh.populate_mesh();
+  stk::mesh::BulkData & mesh = bboxMesh.bulk_data();
+  stk::mesh::create_exposed_block_boundary_sides(
+      mesh, meta.universal_part(), {&auxMeta.exposed_boundary_part(), &auxMeta.active_part()});
+
+  const double planeX = 0.4;
+  auto set_levelset = [&](const double scale)
+  {
+    auto coordsData = coordsField.data<double>();
+    auto lsData = lsField.data<double, stk::mesh::ReadWrite>();
+    for (auto * bucket :
+        mesh.get_buckets(stk::topology::NODE_RANK, stk::mesh::selectField(lsField)))
+      for (auto node : *bucket)
+        lsData.entity_values(node)() = scale * (coordsData.entity_values(node)(0_comp) - planeX);
+  };
+  set_levelset(1.);
+  decompose();
+
+  const Phase_Support & phaseSupport = Phase_Support::get(meta);
+  MeshFacetedSurface facets(mesh.parallel(), dim, std::vector<stk::math::Vector3d>{});
+  set_interface_conforming_facets(mesh,
+      phaseSupport.get_negative_levelset_interface_selector(lsIdentifier),
+      phaseSupport.get_negative_levelset_block_selector(lsIdentifier),
+      auxMeta.active_part(),
+      coordsField,
+      facets);
+  size_t numFacets = facets.num_owned_facets(), globalNumFacets = 0;
+  stk::all_reduce_sum(mesh.parallel(), &numFacets, &globalNumFacets, 1);
+  EXPECT_LT(0u, globalNumFacets);
+  EXPECT_TRUE(facets.facet_mesh().has_shared_vertices()); // connected: the vertices are the nodes
+
+  // A level set with the right signs but the wrong distances, for the redistance to correct.
+  set_levelset(3.);
+  std::vector<stk::mesh::Entity> nodes;
+  stk::mesh::get_selected_entities(auxMeta.active_part() & stk::mesh::selectField(lsField) &
+          (meta.locally_owned_part() | meta.globally_shared_part()),
+      mesh.buckets(stk::topology::NODE_RANK),
+      nodes);
+  const ClosestPointRedistance redistance(mesh, coordsField, lsField);
+  redistance.redistance_given_nodes_using_facets(facets, nodes, 0., false, 0.);
+
+  auto coordsData = coordsField.data<double>();
+  auto lsData = lsField.data<double>();
+  for (auto node : nodes)
+  {
+    const double x = coordsData.entity_values(node)(0_comp);
+    EXPECT_NEAR(x - planeX, lsData.entity_values(node)(), 1.e-12)
+        << "node " << mesh.identifier(node) << " at x=" << x;
+  }
+}
+
+TEST_F(CDMeshTestsBboxMesh2D, planarLevelSet_interfaceConformingRedistanceIsExact)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 4) return;
+  register_ls_on_blocks({&AuxMetaData::get(fixture.meta_data()).get_part("block_1")});
+  expect_interface_conforming_redistance_of_plane_to_be_exact(fixture,
+      coord_field,
+      get_ls_field(),
+      levelset_fields()[0].identifier,
+      [&]()
+      {
+        commit();
+        decompose_mesh();
+      });
+}
+
+TEST_F(CDMeshTestsBboxMesh3D, planarLevelSet_interfaceConformingRedistanceIsExact)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 4) return;
+  register_ls_on_blocks({&AuxMetaData::get(fixture.meta_data()).get_part("block_1")});
+  expect_interface_conforming_redistance_of_plane_to_be_exact(fixture,
+      coord_field,
+      get_ls_field(),
+      levelset_fields()[0].identifier,
+      [&]()
+      {
+        commit();
+        decompose_mesh();
+      });
 }
 
 } // namespace krino

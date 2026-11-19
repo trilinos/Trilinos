@@ -59,21 +59,12 @@ static stk::math::Vector3d calculate_tri_or_tet_volume_weighted_gradient(const s
   return volOrArea*grad;
 }
 
-double compute_tri_or_tet_volume(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Entity elem)
-{
-  const StkMeshEntities elemNodes{mesh.begin_nodes(elem), mesh.end_nodes(elem)};
-  STK_ThrowAssert(elemNodes.size() == 4 || elemNodes.size() == 3);
-  if (elemNodes.size() == 4)
-    return compute_tet_volume(get_tetrahedron_vector(mesh, coordsField, elemNodes));
-  return compute_tri_volume(get_triangle_vector(mesh, coordsField, elemNodes, 2));
-}
-
 static double calculate_nodal_volume(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elemSelector, const stk::mesh::Entity node)
 {
   double nodalVol = 0.;
   for (auto elem : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
     if (is_entity_selected(mesh, elemSelector, elem))
-      nodalVol += compute_tri_or_tet_volume(mesh, coordsField, elem);
+      nodalVol += compute_element_volume(mesh, elem, coordsField);
   return nodalVol;
 }
 
@@ -132,7 +123,6 @@ void update_nodal_gradient(const stk::mesh::BulkData & mesh, const FieldRef coor
 
   stk::mesh::communicate_field_data(mesh, {&gradientField.field()});
 }
-
 }
 
 

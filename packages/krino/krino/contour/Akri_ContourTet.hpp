@@ -13,7 +13,7 @@
 #include <stk_math/StkVector.hpp>
 
 namespace krino {
-class FacetedSurfaceBase;
+class FacetAppender;
 
 class ContourTet
 {
@@ -28,12 +28,13 @@ public:
   static unsigned get_permuted_case_id(const unsigned caseId);
   static unsigned compute_case_id(const std::array<int,4> & nodeSigns);
 
-  static void append_facets_for_tet4(const std::array<stk::math::Vector3d,4> & coords,
-    const std::array<double,4> & dist,
-    FacetedSurfaceBase & facets);
-  static void append_facets_for_tet4_with_tet10_distance(const std::array<stk::math::Vector3d,4> & coords,
-    const std::array<double,10> & tet10Dist,
-    FacetedSurfaceBase & facets);
+  static void append_facets_for_tet4(const std::array<stk::math::Vector3d, 4> & coords,
+      const std::array<double, 4> & dist,
+      FacetAppender & facets);
+  static void
+  append_facets_for_tet4_with_tet10_distance(const std::array<stk::math::Vector3d, 4> & coords,
+      const std::array<double, 10> & tet10Dist,
+      FacetAppender & facets);
 };
 
 }
