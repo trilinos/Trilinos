@@ -13,13 +13,6 @@
 #include "shylubasker_types.hpp"
 #include "shylubasker_sswrapper.hpp"
 
-#ifdef HAVE_SHYLU_NODEBASKER_SCOTCH
-  #include "scotch.h"
-#endif
-#ifdef HAVE_SHYLU_NODEBASKER_METIS
- #include "metis.h"
-#endif
-
 //#define BASKER_DEBUG_ORDER_SCOTCH
 //#define BASKER_TIMER
 
@@ -368,6 +361,9 @@ namespace BaskerNS
    partition_graph<graph_integral_type>& sg
   )
   {
+    if (Options.verbose == BASKER_TRUE) {
+      std::cout << std::endl << " + Calling Nested-dissection with METIS (# doms = " << num_domains << ") + " << std::endl;
+    }
     Int num_levels = num_domains; 
     Int num_doms   = pow(2.0, (double)(num_levels+1)) - 1;
     bool run_nd_on_leaves  = Options.run_nd_on_leaves;
@@ -660,7 +656,6 @@ namespace BaskerNS
       // debug: merging all the subdomains into one domain
       //metis_sep_sizes(0) = metis_size;
       //for (int i=1; i < 2*num_leaves-1; i++) metis_sep_sizes(i) = 0;
-
       // debug: merging the first two subdomains
       //metis_sep_sizes(0) += metis_sep_sizes(1);
       //metis_sep_sizes(1) = 0;
@@ -921,9 +916,7 @@ namespace BaskerNS
             }
             time_metis += timer_metis.seconds();
 
-            Int dom1 = 0;
-            Int dom2 = 0;
-            Int sep  = 0;
+            Int dom1 = 0, dom2 = 0, sep  = 0;
             for(Int i = 0; i < metis_size_k; i++)
             {
               if (metis_part_k[i] == 0) {
@@ -1042,7 +1035,7 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   int Basker<Int,Entry,Exe_Space>::dissect_metis_kway
   (
-    Int metis_size_k,
+    idx_t metis_size_k,
     idx_t *options,
     METIS_1DARRAY &metis_rowptr,
     METIS_1DARRAY &metis_colidx,

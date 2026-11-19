@@ -402,7 +402,7 @@ namespace BaskerNS
 
     #ifdef HAVE_SHYLU_NODEBASKER_METIS
     BASKER_INLINE
-    int dissect_metis_kway (Int metis_size_k,
+    int dissect_metis_kway (idx_t metis_size_k,
                             idx_t *options,
                             METIS_1DARRAY &metis_rowptr,
                             METIS_1DARRAY &metis_colidx,
@@ -771,10 +771,12 @@ namespace BaskerNS
     void t_basker_barrier(const TeamMember &thread,
                           const Int my_kid,
                           const Int leader_kid, 
-                          const Int size,
+                          const Int num_threads_in_team,
                           const Int function_n,
                           const Int k, 
-                          const Int lvl);
+                          const Int lvl,
+                          const Int max_thread = -1,
+                          const Int num_threads = -1);
     inline
     Int basker_barrier_sep(const TeamMember &thread,
                            const Int my_kid,
@@ -784,6 +786,7 @@ namespace BaskerNS
                            const Int function_n,
                            const Int k, 
                            const Int lvl,
+                           const Int max_threads,
                            const bool flag);
                           
     //basker_util.hpp

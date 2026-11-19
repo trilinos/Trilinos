@@ -12,6 +12,7 @@
 
 #include <exception>
 #include "Teuchos_TestForException.hpp"
+
 #include "ShyLU_NodeBasker_config.h"
 #ifdef HAVE_SHYLU_NODEBASKER_SCOTCH
   #include "scotch.h"

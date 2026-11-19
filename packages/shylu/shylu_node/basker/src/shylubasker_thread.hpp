@@ -95,8 +95,8 @@ namespace BaskerNS
     inline
     void BarrierLeader(Int my_leader, Int my_id, Int task, Int k)
     {
-      printf("Entering barrier. leader: %d id: %d task: %d k: %d token: %d \n", 
-          my_leader, my_id, task, token[my_leader][task]);
+      //printf("Entering barrier. leader: %d id: %d task: %d k: %d token: %d \n", 
+      //    my_leader, my_id, task, token[my_leader][task]);
       //jdb: change from my_lead == my_id
       if(my_leader == my_id)
       {
@@ -114,35 +114,51 @@ namespace BaskerNS
     inline
     void BarrierDomain
     (
-     Int my_leader, 
-     Int my_id, 
-     Int task, 
-     Int lsize, 
-     Int k, 
-     Int l
+     Int my_leader,
+     Int my_id,
+     Int barrier_id,
+     Int num_threads_in_team,
+     Int tug,
+     Int lvl,
+     Int max_thread,
+     Int num_threads
     )
     {
-      Int ltask = (l*ntasks) + task;
-      //printf("Enter Domain Barrier. leader=%d, lsize=%d (%d:%d), my_id=%d, task=%d, k=%d, l=%d -> ltask=%d\n",
-      //        my_leader, lsize, my_leader,my_leader+lsize-1, my_id, task, k, l, ltask); fflush(stdout);
+      Int task_id = (lvl*ntasks) + barrier_id;
+      Int last_thread = (my_leader+num_threads_in_team)-1;
+      //printf("Enter Domain Barrier. leader=%d, num_threads_in_team=%d (%d:%d), my_id=%d, barrier_id=%d, tug=%d, lvl=%d -> task_id=%d, max_thread=%d\n",
+      //        my_leader, num_threads_in_team, my_leader,last_thread, my_id, barrier_id, tug, lvl, task_id, max_thread); fflush(stdout);
       #if 0 // debug
-      if (token[my_id][ltask] == k) {
-        printf( "\n BarrierDomain already k ??\n " );
+      if (token[my_id][task_id] == tug) {
+        printf( "\n BarrierDomain already tug ??\n " );
         exit(0);
       }
       #endif
-      //printf("my_id=%d, my_leader=%d: set token[%d][%d] = %d ?\n", my_id,my_leader, my_id, ltask, k); fflush(stdout);
-      token[my_id][ltask] = k;
-      for(Int dp = (my_leader+lsize)-1; dp >= my_leader; dp--)
+      if (max_thread > 0) {
+        // Partial Factorization
+        if (my_leader >= max_thread) {
+          //right-half of tree, skip
+          //printf("> Enter Domain Barrier. leader=%d, num_threads_in_team=%d (%d:%d), my_id=%d, barrier_id=%d, tug=%d, lvl=%d -> task_id=%d, max_thread=%d, skip\n",
+          //        my_leader, num_threads_in_team, my_leader,last_thread, my_id, barrier_id, tug, lvl, task_id, max_thread); fflush(stdout);
+          return;
+        }
+        if (last_thread == num_threads-1) {
+          // root of tree, wait for half of threads
+          last_thread = (num_threads/2)-1;
+        }
+      }
+      //printf("my_id=%d, my_leader=%d: set token[%d][%d] = %d, start checking %d .. %d ?\n", my_id,my_leader, my_id, task_id, tug, last_thread,my_leader); fflush(stdout);
+      token[my_id][task_id] = tug;
+      for(Int dp = last_thread; dp >= my_leader; dp--)
       {
-        //printf(" > my_id=%d: checking location token[%d][%d] = %d ?\n", my_id, dp, ltask, k); fflush(stdout);
+        //printf(" > my_id=%d: checking location token[%d][%d] = %d ?\n", my_id, dp, task_id, tug); fflush(stdout);
         ///volatile Int ldp = token[dp][task];
-        while(token[dp][ltask] != k);
-        //printf("kid: %d location: %d \n", my_id, token[dp][ltask]);
+        while(token[dp][task_id] != tug);
+        //printf("kid: %d location: %d \n", my_id, token[dp][task_id]);
 
       }
-      //printf("Leave Domain Barrier. leader=%d, lsize=%d (%d:%d), my_id=%d, task=%d, k=%d, l=%d -> ltask=%d\n",
-      //        my_leader, lsize, my_leader,my_leader+lsize-1, my_id, task, k, l, ltask); fflush(stdout);
+      //printf("Leave Domain Barrier. leader=%d, num_threads_in_team=%d (%d:%d), my_id=%d, task=%d, tug=%d, lvl=%d -> task_id=%d\n",
+      //        my_leader, num_threads_in_team, my_leader,last_thread, my_id, task, tug, lvl, task_id); fflush(stdout);
     }//end Barrier_Domain
 
     inline

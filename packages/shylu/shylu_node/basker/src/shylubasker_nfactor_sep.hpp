@@ -995,35 +995,41 @@ namespace BaskerNS
   (
    const TeamMember &thread,
    const Int my_kid,
-   const Int leader_kid, 
-   const Int size,
-   const Int function_n,
-   const Int k, 
-   const Int lvl
+   const Int leader_kid,
+   const Int num_threads_in_team,
+   const Int barrier_id,
+   const Int tug,
+   const Int lvl,
+   const Int max_thread,
+   const Int num_threads
   )
   {
-    //printf("before call. lkid: %d kid: %d task: %d size: %d k: %d \n",
-    //               leader_kid, my_kid, function_n, size, k);
+    //printf("before call. lkid: %d kid: %d task: %d num_threads: %d tug: %d \n",
+    //               leader_kid, my_kid, barrier_id, num_threads_in_team, tug);
 
     #ifdef HAVE_VTUNE
     //__itt_pause();
     #endif
 
-    //printf( " t_basker_barrier(size = %d, thread.team_size = %d: my_id = %d, leader_id = %d)\n",size,thread.team_size(), my_kid,leader_kid ); fflush(stdout);
-    if(size <= thread.team_size())
+    //printf( " t_basker_barrier(num_threads = %d, thread.team_size = %d: my_id = %d, leader_id = %d)\n",num_threads_in_team,thread.team_size(), my_kid,leader_kid ); fflush(stdout);
+    if(num_threads <= thread.team_size())
     {
       // synch only within team
+      //printf( " Barriering within team\n" ); fflush(stdout);
       thread.team_barrier();
     }
     else
     {
       // synch between teams (two sibling teams in ND tree)
+      //printf( " Barriering within domain\n" ); fflush(stdout);
       basker_barrier.BarrierDomain(leader_kid,
-         my_kid, 
-         function_n,
-         size, 
-         k, 
-         lvl);
+         my_kid,
+         barrier_id,
+         num_threads_in_team,
+         tug,
+         lvl,
+         max_thread,
+         num_threads);
     }
 
     #ifdef HAVE_VTUNE
@@ -1039,12 +1045,13 @@ namespace BaskerNS
    const TeamMember &thread,
    const Int my_kid,
    const Int my_leader,
-   const Int num_threads_in,
-   const Int size,
-   const Int function_n,
+   const Int num_threads,
+   const Int num_threads_in_team,
+   const Int barrier_id,
    const Int k,
    const Int lvl,
-   const bool flag
+   const Int max_threads,
+   const bool check_error
   )
   {
     Int info = BASKER_SUCCESS;
@@ -1052,9 +1059,10 @@ namespace BaskerNS
     thread.team_barrier();
     #else
     t_basker_barrier(thread, my_kid, my_leader, 
-                     size, function_n, k, lvl);
-    if (flag) {
-      for(Int tid = 0; tid < num_threads_in; tid++) {
+                     num_threads_in_team, barrier_id, k, lvl,
+                     max_threads, num_threads);
+    if (check_error) {
+      for(Int tid = 0; tid < num_threads; tid++) {
         if (thread_array(tid).error_type != BASKER_SUCCESS) {
           info = BASKER_ERROR;
         }

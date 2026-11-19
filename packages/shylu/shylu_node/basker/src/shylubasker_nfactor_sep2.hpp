@@ -156,9 +156,11 @@ namespace BaskerNS
     //barrier k = 0 usedl1
     //#define USE_TEAM_BARRIER_NFACTOR_SEP2
     // TODO: can we skip synching with empty threads/blocks for dense-schur option?
-    Int b_size = pow(2, 1);
+    Int num_threads_in_team = pow(2, 1);
     info = basker_barrier_sep(thread, kid, my_leader, num_threads,
-                              b_size, 0, LU(U_col)(U_row).scol, 0, true);
+                              num_threads_in_team, 0, LU(U_col)(U_row).scol, 0,
+                              (Options.partial_facto == 0 ? -1 : num_threads/2),
+                              true);
     #ifdef BASKER_DEBUG_NFACTOR_SEP2
     printf("\n done with 1st UPPER, kid: %d \n\n", kid); fflush(stdout);
     #endif
@@ -183,7 +185,7 @@ namespace BaskerNS
         if(kid%((Int)pow(2, l)) == 0)
         {
           //my_leader = find_leader(kid,l);
-          //b_size    = pow(2,l+1);
+          //num_threads_in_team    = pow(2,l+1);
           #ifdef BASKER_DEBUG_NFACTOR_SEP2
           printf("\n SEP UPPER, kid: %d \n",
                  kid);
@@ -215,9 +217,11 @@ namespace BaskerNS
 
     // Barrier
     my_leader = find_leader(kid, lvl-1);
-    b_size    = pow(2, lvl);
+    num_threads_in_team    = pow(2, lvl);
     info = basker_barrier_sep(thread, kid, my_leader, num_threads,
-                              b_size, 3, LU(U_col)(U_row).scol, 0, true);
+                              num_threads_in_team, 3, LU(U_col)(U_row).scol, 0,
+                              (Options.partial_facto == 0 ? -1 : num_threads/2),
+                              true);
     #ifdef BASKER_DEBUG_NFACTOR_SEP2
     printf("\n done with UPPER, kid: %d \n\n", kid);
     printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
@@ -310,12 +314,14 @@ namespace BaskerNS
 
           // Barrier since multiple thread uppdate
           my_leader = find_leader(kid, lvl-1);
-          b_size    = pow(2, lvl);
+          num_threads_in_team    = pow(2, lvl);
           info = basker_barrier_sep(thread, kid, my_leader, num_threads,
-                                    b_size, 4, k, lvl-1, true);
+                                    num_threads_in_team, 4, k, lvl-1,
+                                    (Options.partial_facto == 0 ? -1 : num_threads/2),
+                                    true);
           #ifdef BASKER_DEBUG_NFACTOR_SEP2
-          printf("barrier test-4 done: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d, info = %d \n",
-                 kid, k, my_leader, b_size, lvl, info); fflush(stdout);
+          printf("barrier test-4 done: kid = %d, k = %d, leader = %d, num_threads_in_team = %d, lvl = %d, info = %d \n",
+                 kid, k, my_leader, num_threads_in_team, lvl, info); fflush(stdout);
           #endif
 
           #ifdef BASKER_TIMER
@@ -340,12 +346,14 @@ namespace BaskerNS
 
           // Barrier
           my_leader = find_leader(kid, lvl-1);
-          b_size    = pow(2, lvl);
+          num_threads_in_team    = pow(2, lvl);
           info = basker_barrier_sep(thread, kid, my_leader, num_threads,
-                                    b_size, 5, k, lvl-1, false);
+                                    num_threads_in_team, 5, k, lvl-1,
+                                    (Options.partial_facto == 0 ? -1 : num_threads/2),
+                                    false);
           #ifdef BASKER_DEBUG_NFACTOR_SEP2
-          printf("barrier test-5 done: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d \n",
-                 kid, k, my_leader, b_size, lvl); fflush(stdout);
+          printf("barrier test-5 done: kid = %d, k = %d, leader = %d, num_threads_in_team = %d, lvl = %d \n",
+                 kid, k, my_leader, num_threads_in_team, lvl); fflush(stdout);
           #endif
           #ifdef BASKER_TIMER
           time_facoff += timer_facoff.seconds();
@@ -390,7 +398,7 @@ namespace BaskerNS
   {
     Int my_leader = find_leader(kid,l);
     #ifndef USE_TEAM_BARRIER_NFACTOR_SEP2
-    Int b_size    = pow(2, l+1);
+    Int num_threads_in_team    = pow(2, l+1);
     #endif
 
     //loop over sublevels to perform 
@@ -416,9 +424,11 @@ namespace BaskerNS
       }
       //Barrier
       my_leader = find_leader(kid,sl);
-      b_size    = pow(2,sl+1);
+      num_threads_in_team    = pow(2,sl+1);
       basker_barrier_sep(thread, kid, my_leader, num_threads,
-                         b_size, 1, k+k_offset, sl, false);
+                         num_threads_in_team, 1, k+k_offset, sl,
+                         (Options.partial_facto == 0 ? -1 : num_threads/2),
+                         false);
 
       if(kid%((Int)pow(2,sl)) == 0 &&
          thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
@@ -430,7 +440,9 @@ namespace BaskerNS
       //printf("[2] Barrier test, kid: %d leader: %d k: %d sl: %d \n",
       //     kid, my_leader, k, sl);
       basker_barrier_sep(thread, kid, my_leader, num_threads,
-                         b_size, 2, k+k_offset, sl, false);
+                         num_threads_in_team, 2, k+k_offset, sl,
+                         (Options.partial_facto == 0 ? -1 : num_threads/2),
+                         false);
     }//over all sublevels
 
     if(thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
@@ -573,10 +585,8 @@ namespace BaskerNS
         {
           printf("kid: %d  COPY INDEX %d %d to %d %d \n",
                  kid, my_idx, blk, leader_idx, blk);
-          printf("t_b_col_copy, kid: %d wsize: %d \n", 
-                 kid, ws_size);
           printf("t_b_col_copy,kid:%d ps: %d XL: %d %d X: %d %d\n",
-                 kid, p_size, leader_idx, blk, my_idx, blk);
+                 kid, p_sizeL, leader_idx, blk, my_idx, blk);
         }
         #endif
 
@@ -592,8 +602,8 @@ namespace BaskerNS
                    LL(my_idx)(blk).iws_size,
                    LL(leader_idx)(blk).iws_size);
 
-            printf("Adding X(%d)%f to XL(%d) %f, leader: %d kid: %d\n",
-                   jj+brow, X[jj], jj, XL[jj], team_leader, kid);
+            printf("Adding X(%d)=%f to XL(%d)=%f, leader: %d kid: %d\n",
+                   jj, X[jj], jj, XL[jj], team_leader, kid);
 
           }
           #endif
@@ -604,7 +614,7 @@ namespace BaskerNS
             if(lower == BASKER_TRUE)
             {
               printf("Atomic Adding X(%d) %f to XL(%d) %f, kid: %d\n",
-                     jj+brow, X[jj], jj, XL[jj], kid);
+                     jj, X[jj], jj, XL[jj], kid);
             }
             #endif
 
@@ -616,12 +626,10 @@ namespace BaskerNS
         #ifdef BASKER_DEBUG_NFACTOR_SEP2
         if(lower == BASKER_TRUE)
         {
-          printf("----DEBUG--- X %d %d brow: %d kid: %d ws_size: %d\n",
-                 my_idx, blk, brow, kid, ws_size);
-          for(Int j = 0; j< ws_size; ++j)
+          for(Int jj = 0; jj < LL(my_idx)(blk).nrow; ++jj)
           {
-            printf("X[%d,%d] = %f , ptern: %d color: %d kid: %d \n",
-                   j, j+brow, X[j], pattern[j], color[j],kid);
+            printf("X[%d] = %f , color[%d] = %d (kid: %d) \n",
+                   jj, X[jj], color[jj],jj, kid);
           }
         }
         #endif
@@ -665,15 +673,13 @@ namespace BaskerNS
     BASKER_MATRIX     &C = thread_array(kid).C;  
     Int nnz = 0;
 
+    Int bl = l+1;
+    Int my_row_leader = S(0)(find_leader(kid,lvl-1));
+    Int A_col = S(lvl)(kid);
+    Int A_row = S(bl)(kid) - my_row_leader;
     //Over each blk    
     // X += B(:, k)
     {
-      Int bl = l+1;
-      Int A_col = S(lvl)(kid);
-
-      Int my_row_leader = S(0)(find_leader(kid,lvl-1));
-      Int A_row = S(bl)(kid) - my_row_leader;
-
       BASKER_MATRIX *Bp;
       if(A_row != (LU_size(A_col)-1))
       {
@@ -704,8 +710,8 @@ namespace BaskerNS
         Int B_row = B.row_idx(i);
 
         #ifdef BASKER_DEBUG_NFACTOR_SEP2
-        printf("Scanning_2 A: %d %d lvl %d l: %d bl:%d brow: % d %d K: %d \n",
-               B_row, j, lvl, l, bl, brow, B.srow, kid);
+        printf("Scanning_2 A: %d lvl %d l: %d bl:%d %d K: %d \n",
+               B_row, lvl, l, bl, B.srow, kid);
         printf("Adding Aval: %f to xval: %f \n", 
                X[B_row], B.val(i));
         #endif
@@ -731,8 +737,8 @@ namespace BaskerNS
       const Int      nrow = LL(leader_idx)(bl).nrow;
       Int *color   = &(ws(0));
       #ifdef BASKER_DEBUG_NFACTOR_SEP2
-      printf("moving, kid: %d  A: %d %d %d %d p_size: %d \n", 
-             kid, A_col, A_row, team_leader, bl,p_size);
+      printf("moving, kid: %d  A: %d %d %d %d \n", 
+             kid, A_col, A_row, team_leader, bl);
       #endif
 
       //over all dim(S)
@@ -741,8 +747,8 @@ namespace BaskerNS
         //Int j = pattern[jj];
         Int j = jj;
         #ifdef BASKER_DEBUG_NFACTOR_SEP2
-        printf("considering: %d %d %f, kid: %d\n",
-               j,brow,X[j], kid);
+        printf("considering: x[%d] = %f, kid: %d\n",
+               j,X[j], kid);
         #endif
 
         if (X(j) != zero)
@@ -751,7 +757,7 @@ namespace BaskerNS
           {
             #ifdef BASKER_DEBUG_NFACTOR_SEP2
             printf("moving X[%d] %f kid: %d nnz: %d Csize: %d \n",
-                   j+brow, X(j), kid, nnz, C.nrow);
+                   j, X(j), kid, nnz, C.nrow);
             #endif
             C.row_idx(nnz) = j;
             C.val(nnz)     = X(j);
@@ -763,7 +769,7 @@ namespace BaskerNS
           {
             #ifdef BASKER_DEBUG_NFACTOR_SEP2
             printf("counting [%d] %f kid: %d \n",
-                   j+brow, X[j], kid);
+                   j, X[j], kid);
             #endif
             BASKER_ASSERT("1==0", "copy, should never call");
           }
