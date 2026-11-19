@@ -415,18 +415,6 @@ and <tt>Thyra::DampenedNewtonNonlinearSolver</tt>.
 \subsection thyra_adapters_sec Thyra adapters to other packages
 
 Module: \ref thyra_adapters_grp
-
-
-\subsubsection thyra_adapters_epetra_sec Thyra/Epetra adapters
-
-Module: \ref Epetra_Thyra_Op_Vec_adapters_grp
-
-This software allows the creation/conversion of Thyra objects and Epetra
-objects.  Examples include <tt>Thyra::EpetraLinearOp</tt>,
-<tt>Thyra::EpetraVector</tt>, <tt>Thyra::EpetraMultiVector</tt>, and
-<tt>Thyra::EpetraVectorSpace</tt>.
-
-
 \subsubsection thyra_adapters_tpetra_sec Thyra/Tpetra adapters
 
 Module: \ref Tpetra_Thyra_Op_Vec_adapters_grp
@@ -435,17 +423,6 @@ This software allows the creation/conversion of Thyra objects and Tpetra
 objects.  Examples include <tt>Thyra::TpetraLinearOp</tt>,
 <tt>Thyra::TpetraVector</tt>, <tt>Thyra::TpetraMultiVector</tt>, and
 <tt>Thyra::TpetraVectorSpace</tt>.
-
-
-\subsubsection thyra_adapters_epetraext_sec Thyra/EpetraExt adapters
-
-Module: \ref EpetraExt_Thyra_Op_Vec_adapters_grp
-
-Included here are various adapters between Epetra and EpetraExt based code and
-Thyra interfaces.  For example, one will find the
-<tt>Thyra::EpetraModelEvaluator</tt> class in this collection of code.
-
-
 \subsection thyra_browse_sec Browse all of Thyra as a single doxygen collection
 
 You can browse all of %Thyra as a <A HREF="../../browser/doc/html/index.html">single
@@ -637,7 +614,7 @@ order, are:
 <li> Roscoe Bartlett (rabartl@sandia.gov) <a href="http://www.cs.sandia.gov/~rabartl">[website]</a>:
      %Thyra lead developer, Stratimikos lead developer, MOOCHO lead developer
 <li> Todd Coffey (tscoffe@sandia.gov) : Rythmos lead developer
-<li> Michael Heroux (maherou@sandia.gov): Trilinos lead, Epetra and AztecOO lead developer
+<li> Michael Heroux (): Former Trilinos lead
 <li> Kevin Long (krlong@sandia.gov) : %Sundance lead developer
 <li> Roger Pawlowski (rppawlo@sandia.gov) : %NOX lead developer
 <li> Eric Phipps (etphipp@sandia.gov) : %LOCA lead developer
@@ -655,9 +632,9 @@ Below is a partial list of software related to %Thyra.
 Wrappers for %Thyra Linear Solver and Preconditioner Adapters</a></b>:
 Stratimikos contains neatly packaged access to all of the %Thyra linear solver
 and preconditioner wrappers.  Currently, these allow the creation of linear
-solvers for nearly any <tt>Epetra_RowMatrix</tt> object.  However, the Belos
-implementation allows for the arbitrary implemention of the linear operators
-and vector spaces.
+ solvers for nearly any linear operator.  However, the Belos
+ implementation allows for the arbitrary implementation of the linear operators
+ and vector spaces.
 
 <li><b><a href="../../../moocho/doc/html/index.html">MOOCHO/Thyra:
 Adapters that take %Thyra Nonlinear Model Evaluator objects and express them as

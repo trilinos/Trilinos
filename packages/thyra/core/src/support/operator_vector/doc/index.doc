@@ -132,12 +132,6 @@ Below are links to other related documentation:
 Documentation</a></b>: This is the main documentation page for the %Thyra
 package which provides an outline for all %Thyra software.
 
-<li><b><a href="../../../../../../epetra/thyra/doc/html/index.html">ANA Operator/Vector
-Adapters for Epetra</a></b>: This software allows the creation of
-<tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt>,
-<tt>Thyra::MultiVectorBase</tt>, and <tt>Thyra::LinearOpBase</tt> objects out
-of Epetra objects.
-
 </ul>
 
 */
