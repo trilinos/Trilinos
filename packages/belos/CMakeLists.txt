@@ -15,23 +15,9 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 # factorization.  TSQR is used to implement an OrthoManager and a
 # MatOrthoManager (which only uses TSQR in the Euclidean-inner-product
 # case).  TSQR is enabled by default if the KokkosTSQR and Tpetra
-# packages are enabled, but users have control over
-# Tpetra_ENABLE_TSQR.  Note that the Epetra adapter for TSQR currently
-# lives in Tpetra.
+# packages are enabled, but users have control over Tpetra_ENABLE_TSQR.
 #
-# mfh 05 Sep 2012: Back in 2010, I had to put Epetra's TSQR adapter in
-# Tpetra.  This was because an external software package was linking
-# to Epetra without using Trilinos' Makefile.export mechanism to
-# consider which Trilinos libraries to use.  Making Epetra optionally
-# depend on Kokkos (to make TSQR work) changed the list of libraries,
-# and that software package wasn't doing the right thing to adjust.
-# In any case, I chose at the time to put Epetra's TSQR adapter in
-# Tpetra, since Tpetra already had an optional dependency on Epetra.
-# So, for better or worse, you won't be able to use TSQR with Epetra
-# unless you enable both Epetra and Tpetra in your Trilinos build.
-# HAVE_BELOS_TSQR will correctly reflect this: it won't be defined 
-# unless both Epetra and Tpetra are enabled in your Trilinos build.
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra AND Tpetra_ENABLE_TSQR)
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND Tpetra_ENABLE_TSQR)
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT ON)
 ELSE()
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT OFF)
@@ -39,7 +25,7 @@ ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_BELOS_TSQR
-  "Enable TSQR (Tall Skinny QR factorization) as an orthogonalization method in Belos.  You must build Trilinos with both Epetra _and_ Tpetra enabled in order to use TSQR with Epetra objects."
+  "Enable TSQR (Tall Skinny QR factorization) as an orthogonalization method in Belos.  You must build Trilinos with Tpetra enabled in order to use TSQR with Tpetra objects."
   "${${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT}")
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
