@@ -8,12 +8,6 @@
 /* BlockCrs has default layout right and it can be compile time changed with the following cmake option */
 #cmakedefine TPETRA_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT
 
-/* Define if want to build with epetra enabled */
-#cmakedefine HAVE_TPETRACORE_EPETRA
-#ifdef HAVE_TPETRACORE_EPETRA
-#  define HAVE_TPETRA_EPETRA
-#endif // HAVE_TPETRACORE_EPETRA
-
 /* Define if want to build teuchos-debug */
 #cmakedefine HAVE_TPETRA_DEBUG
 
