@@ -204,7 +204,6 @@ void report_spmv_performance_models(const Teuchos::RCP<const Matrix> &A, int nre
       double permute_time = (num_permutes == 0) ? 0.0 : 2.0 * PM.latency_corrected_stream_vector_lookup(num_permutes * sizeof(LO)) + 2.0 * PM.latency_corrected_stream_vector_lookup(num_permutes * sizeof(SC)) + avg_latency;
 
       // Exports [pack] - 1 read LO [exportLIDs], 1 read SC [values], 1 write SC [buffer]
-      // This is what Epetra does at least
       size_t num_exports = importer->getNumExportIDs();
       double export_time = (num_exports == 0) ? 0.0 : PM.latency_corrected_stream_vector_lookup(num_exports * sizeof(LO)) + 2.0 * PM.latency_corrected_stream_vector_lookup(num_exports * sizeof(SC)) + avg_latency;
 

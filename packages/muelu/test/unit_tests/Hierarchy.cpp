@@ -1130,7 +1130,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy3levelFacManagers, Sc
   ifpackType = "RELAXATION";
   ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
   smooProto = Teuchos::rcp(new TrilinosSmoother(ifpackType, ifpackList));
-  TEUCHOS_TEST_FOR_EXCEPTION(smooProto == Teuchos::null, MueLu::Exceptions::Incompatible, "MueLu: UnitTest::Hierarchy::SetupHierarchy3levelFacManagers: Dynamic cast to IfpackSmoother failed. Epetra needs Scalar=double, LocalOrdinal=GlobalOrdinal=int and Node=Serial.");
+  TEUCHOS_TEST_FOR_EXCEPTION(smooProto == Teuchos::null, MueLu::Exceptions::Incompatible, "MueLu: UnitTest::Hierarchy::SetupHierarchy3levelFacManagers: Construction of TrilinosSmoother failed.");
 
   RCP<SmootherFactory> preSmooFact;
   RCP<SmootherFactory> postSmooFact;

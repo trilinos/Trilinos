@@ -276,7 +276,6 @@ TRIBITS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "Belos converged"
 )
 
-# not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
 IF(${PACKAGE_NAME}_ENABLE_Belos)
   TRIBITS_ADD_EXECUTABLE(
     Reuse

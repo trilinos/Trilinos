@@ -144,9 +144,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GenericRFactory, SymmetricProblem, Scalar, Loc
 
   // since A is chosen symmetric, it is P^T = R
   // check P^T * P = R * P
-  // note: the Epetra matrix-matrix multiplication using implicit transpose is buggy in parallel case
-  //       (for multiplication of a square matrix with a rectangular matrix)
-  //       however it seems to work for two rectangular matrices
   Teuchos::RCP<Xpetra::Matrix<Scalar, LO, GO, Node> > RP  = Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply(*R1, false, *P1, false, out);
   Teuchos::RCP<Xpetra::Matrix<Scalar, LO, GO, Node> > PtP = Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply(*P1, true, *P1, false, out);
 

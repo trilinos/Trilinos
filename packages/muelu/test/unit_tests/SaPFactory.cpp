@@ -40,11 +40,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, Test0, Scalar, LocalOrdinal, Globa
   out << *sapFactory << std::endl;
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-  out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2)." << std::endl;
-
-}  // SaPFactory_EpetraVsTpetra
-
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, ConstrainRowOptimalScalarPDE, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include "MueLu_UseShortNames.hpp"
 
@@ -103,9 +98,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, ConstrainRowOptimalScalarPDE, Scal
 
 }  // SaPFactory_ConstrainRowOptimalScalarPDE
 
-#define MUELU_ETI_GROUP(SC, LO, GO, Node)                                            \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, Test0, SC, LO, GO, Node)          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, EpetraVsTpetra, SC, LO, GO, Node) \
+#define MUELU_ETI_GROUP(SC, LO, GO, Node)                                   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, Test0, SC, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, ConstrainRowOptimalScalarPDE, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>

@@ -79,7 +79,6 @@ bool BelosAdaptersTestResults(int numIters, RCP<MV>& X, Teuchos::FancyOStream& o
   switch (TestHelpers::Parameters::getDefaultComm()->getSize()) {
     case 0: TEST_EQUALITY(numIters, 5); break;
     case 4:
-      // Epetra TEST_EQUALITY(numIters, 6);
       // Tpetra TEST_EQUALITY(numIters, 7);
       break;
     default:;
@@ -166,8 +165,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BelosAdapters, XpetraOp_TpetraMV, Scalar, Loca
 #include <MueLu_ETI_4arg.hpp>
 
 // run Tpetra based tests
-// These tests use the original belos/tpetra MultiVecTraits which are not guarded and have no specializations
-// for Epetra. Therefore, carefully choose valid Tpetra instantiations.
+// These tests use the original belos/tpetra MultiVecTraits which are not guarded.
+// Therefore, carefully choose valid Tpetra instantiations.
 #if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT) && defined(HAVE_TPETRA_INST_SERIAL)
 typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode SerialNode;
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BelosAdapters, XpetraOp_TpetraMV, double, int, int, SerialNode)
