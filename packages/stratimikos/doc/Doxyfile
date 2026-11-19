@@ -7,7 +7,7 @@
 # each package then doxygen hangs.
 TAGFILES += \
   $(TRILINOS_HOME)/packages/common/tag_files/belos.tag=$(TRILINOS_HOME)/packages/belos/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/BelosThyra.tag=$(TRILINOS_HOME)/packages/belos/thyra/doc/html
+  $(TRILINOS_HOME)/packages/common/tag_files/BelosThyra.tag=$(TRILINOS_HOME)/packages/stratimikos/adapters/belos/doc/html
 #
 # Package options
 #
@@ -18,21 +18,16 @@ HTML_FOOTER            = ../../common/footer.html
 # What and how documentation is extracted
 #
 INPUT                  = ./index.doc ./groups.doc ../src \
-                         ../adapters/amesos/src \
-                         ../adapters/aztecoo/src \
-                         ../adapters/belos/src \
-                         ../adapters/ifpack/src \
-                         ../adapters/ml/src
+                         ../adapters/amesos2/src \
+                         ../adapters/belos/src
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATTERNS       =
 EXAMPLE_PATH           = ../test \
-                         ../example \
-                         ../test/test_single_stratimikos_solver.cpp \ 
-                         ../example/simple_stratimikos_example.cpp \
-                         ../example/MixedOrderPhysicsBasedPreconditioner.cpp
+                         ../example/tpetra \
+                         ../adapters/belos/test/LOWSFactory
 IMAGE_PATH             = 
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES
