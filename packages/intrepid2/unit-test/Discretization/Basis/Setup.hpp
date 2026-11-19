@@ -63,7 +63,7 @@ auto setup_output_stream(const bool verbose, const std::string& test_name, const
         << "|                      Mauro Perego  (mperego@sandia.gov),                     |\n"
         << "|                      Kyungjoo Kim  (kyukim@sandia.gov).                      |\n"
         << empty << std::endl
-        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid            |\n"
+        << "|  Intrepid2's website: https://trilinos.github.io/docs/intrepid2/index.html  |\n"
         << "|  Trilinos website:   http://trilinos.sandia.gov                              |\n"
         << empty << std::endl
         << sep   << std::endl;

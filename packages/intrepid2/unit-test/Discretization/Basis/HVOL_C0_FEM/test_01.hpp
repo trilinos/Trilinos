@@ -51,7 +51,7 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "|                 Unit Test (Basis_HVOL_C0_FEM)                              |\n"
         << "|                                                                             |\n"
-        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
+        << "|  Intrepid2's website: https://trilinos.github.io/docs/intrepid2/index.html  |\n"
         << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
         << "|                                                                             |\n"
         << "===============================================================================\n";

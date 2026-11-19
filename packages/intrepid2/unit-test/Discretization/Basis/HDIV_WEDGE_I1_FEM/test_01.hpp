@@ -61,7 +61,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
   << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
   << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n"
   << "|                                                                             |\n"
-  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
+  << "|  Intrepid2's website: https://trilinos.github.io/docs/intrepid2/index.html  |\n"
   << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
   << "|                                                                             |\n"
   << "===============================================================================\n";
