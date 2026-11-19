@@ -30,7 +30,7 @@ RCP<const ParameterList> RepartitionInterface<LocalOrdinal, GlobalOrdinal, Node>
   RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
   validParamList->set<RCP<const FactoryBase> >("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
-  validParamList->set<RCP<const FactoryBase> >("AmalgamatedPartition", Teuchos::null, "(advanced) Factory generating the AmalgamatedPartition (e.g. an IsorropiaInterface)");
+  validParamList->set<RCP<const FactoryBase> >("AmalgamatedPartition", Teuchos::null, "(advanced) Factory generating the AmalgamatedPartition");
 
   return validParamList;
 }

@@ -84,7 +84,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     blkSmooEquivOlapSchwarz.xml
     block_diagonal_drop.xml
     blocknumber.mm
-    circ_nsp_dependency.xml
     comboP.xml
     comp_rotations.xml
     conchas_milestone_zoltan.xml
@@ -104,7 +103,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     Gblks.dat
     generalBlkSmoothing.xml
     iso_poisson.xml
-    isorropia.xml
     map_rankWithoutUnknowns.m
     material.mm
     material.xml

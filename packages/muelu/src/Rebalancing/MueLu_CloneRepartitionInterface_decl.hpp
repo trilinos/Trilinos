@@ -25,7 +25,7 @@ namespace MueLu {
   @class CloneRepartitionInterface
   @brief Helper class which transforms an "Partition" array generated from a block in a blocked operator to a new "Partition" vector for another compatible block in the blocked operator.
 
-  This class is meant to be used with another {Zoltan,Zoltan2,Isorropia,...}Interface class which generates a "Partition" vector for a specific block to be rebalanced.
+  This class is meant to be used with another {Zoltan,Zoltan2,...}Interface class which generates a "Partition" vector for a specific block to be rebalanced.
   This class reuses the rebalancing and creates a compatible "Partition" array for another block.
 
   @note This class is used for blocked operators only.
