@@ -85,6 +85,8 @@ void zoltanParams_hier_free() {
   }
 
   free(zph);
+  zph = NULL;
+  num_levels = 0;
 }
 
 void zoltanParams_hier_set_num_levels(int levels) {
@@ -284,7 +286,7 @@ void zoltanParams_read_file(Zoltan &lb, char *file,
   }
 #endif
 
-  while (fscanf(fp, "%s %s\n", str1, str2) == 2) {
+  while (fscanf(fp, "%499s %499s\n", str1, str2) == 2) {
     ierr = lb.Set_Param(str1, str2);
     if (ierr != ZOLTAN_OK) {
       fprintf(stderr,"Zoltan_Set_Param failed to set param <%s> to <%s>",str1,str2);
@@ -301,7 +303,10 @@ void zoltanParams_read_file(Zoltan &lb, char *file,
       zoltanParams_hier_setup(lb);
 
       /* the rest of the file contains hierarchical balancing parameters */
-      fscanf(fp, "%d", &numlevels);
+      if (fscanf(fp, "%d", &numlevels) != 1) {
+	fprintf(stderr,"zoltanParams_read_file: could not read number of levels\n");
+	break;
+      }
 #ifdef DEBUG
       printf("[%d] read in numlevels=%d\n", mypid, numlevels);
 #endif
@@ -314,7 +319,7 @@ void zoltanParams_read_file(Zoltan &lb, char *file,
 	  if (proc == mypid) zoltanParams_hier_set_partition(level, partition);
 	}
 	/* then parameters until we get LEVEL END */
-	while ((fscanf(fp, "%s %s\n", str1, str2) == 2) &&
+	while ((fscanf(fp, "%499s %499s\n", str1, str2) == 2) &&
 	       (strcmp(str1, "LEVEL") != 0) &&
 	       (strcmp(str2, "END") != 0)) {
 	  

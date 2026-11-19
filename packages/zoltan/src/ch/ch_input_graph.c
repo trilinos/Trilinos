@@ -129,23 +129,41 @@ float   **eweights 		/* edge weight list data */
     while (!end_flag)
 	j = read_int(fin, &end_flag);
 
+    /* Validate weight dimensions read from the file; they size the weight
+       allocations and index the weight arrays below. */
+    if ((using_vwgts && *vwgt_dim < 1) || (using_ewgts && *ewgt_dim < 1)) {
+	printf("ERROR in graph file `%s':", inname);
+	printf(" Invalid weight dimension.\n");
+	ZOLTAN_FILE_close(fin);
+	return(1);
+    }
+
     /* Allocate space for rows and columns. */
-    *start = (int *) malloc((unsigned) (*nvtxs + 1) * sizeof(int));
+    /* Compute sizes in size_t to avoid 32-bit wrap-around. */
+    *start = (int *) malloc(((size_t) (*nvtxs) + 1) * sizeof(int));
     if (narcs != 0)
-	*adjacency = (int *) malloc((unsigned) (2 * narcs + 1) * sizeof(int));
+	*adjacency = (int *) malloc((2 * (size_t) narcs + 1) * sizeof(int));
     else
 	*adjacency = NULL;
 
     if (using_vwgts)
-	*vweights = (float *) malloc((unsigned) (*nvtxs) * (*vwgt_dim) * sizeof(float));
+	*vweights = (float *) malloc((size_t) (*nvtxs) * (*vwgt_dim) * sizeof(float));
     else
 	*vweights = NULL;
 
     if (using_ewgts)
 	*eweights = (float *)
-                     malloc((unsigned) (2 * narcs + 1) * (*ewgt_dim) * sizeof(float));
+                     malloc((2 * (size_t) narcs + 1) * (*ewgt_dim) * sizeof(float));
     else
 	*eweights = NULL;
+
+    if (*start == NULL || (narcs != 0 && *adjacency == NULL)
+	|| (using_vwgts && *vweights == NULL)
+	|| (using_ewgts && *eweights == NULL)) {
+	printf("ERROR in graph file `%s': Insufficient memory.\n", inname);
+	ZOLTAN_FILE_close(fin);
+	return(1);
+    }
 
     adjptr = *adjacency;
     ewptr = *eweights;

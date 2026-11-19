@@ -334,10 +334,12 @@ int main(int argc, char *argv[])
           fp = fopen("months.txt", "r");
           if (!fp)
             printf("ERROR: Couldn't open file months.txt\n");
-          while (fscanf(fp, "%d", &CITESEER[i])==1){
-            ++i;
+          else {
+            while (i < 200 && fscanf(fp, "%d", &CITESEER[i])==1){
+              ++i;
+            }
+            fclose(fp);
           }
-          fclose(fp);
         }
         MPI_Bcast (CITESEER, 200, MPI_INT, 0, zoltan_get_global_comm());
       }
@@ -359,8 +361,14 @@ int main(int argc, char *argv[])
       if (mesh.data_type == ZOLTAN_HYPERGRAPH ) {
         if (Test.Vtx_Inc>0)
           mesh.visible_nvtx += Test.Vtx_Inc; /* Increment uniformly */
-        else
+        else if (iteration <= 200)
           mesh.visible_nvtx = CITESEER[iteration-1]; /* Citeseer document matrix. */
+        else {
+          Gen_Error(0, "fatal: Citeseer data supports at most 200 iterations\n");
+          error_report(Proc);
+          print_output = 0;
+          goto End;
+        }
       }
       else{
         Gen_Error(0, "fatal: \"vertex increment\" only works on hypergraphs\n");

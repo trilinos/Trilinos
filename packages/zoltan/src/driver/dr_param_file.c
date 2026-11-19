@@ -89,6 +89,8 @@ void zoltanParams_hier_free() {
   }
 
   free(zph);
+  zph = NULL;
+  num_levels = 0;
 }
 
 void zoltanParams_hier_set_num_levels(int levels) {
@@ -310,7 +312,10 @@ void zoltanParams_read_file(struct Zoltan_Struct *lb, char *file,
       zoltanParams_hier_setup(lb);
 
       /* the rest of the file contains hierarchical balancing parameters */
-      fscanf(fp, "%d", &numlevels);
+      if (fscanf(fp, "%d", &numlevels) != 1) {
+	fprintf(stderr,"zoltanParams_read_file: could not read number of levels\n");
+	break;
+      }
 #ifdef DEBUG
       printf("[%d] read in numlevels=%d\n", mypid, numlevels);
 #endif

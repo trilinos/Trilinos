@@ -131,14 +131,14 @@ int index			/* index of vector parameter; -1 if scalar */
     /* All parameter setting routines have been called, now finish up. */
 
     if (status == 1) {		/* Parameter name never found */
-	sprintf(msg, "Parameter `%s' not found; not reset to `%s'.\n", 
+	snprintf(msg, sizeof(msg), "Parameter `%s' not found; not reset to `%s'.\n",
                 name, val);
         ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	ZOLTAN_FREE(&name);
     	ZOLTAN_FREE(&val);
     }
     else if (status == 2) {
-	sprintf(msg, "Invalid value `%s' for parameter `%s'; default "
+	snprintf(msg, sizeof(msg), "Invalid value `%s' for parameter `%s'; default "
                      "value will be used.\n", val, name);
         ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	ZOLTAN_FREE(&name);

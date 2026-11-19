@@ -201,11 +201,22 @@ int error = 0;  /* flag to indicate status */
           inptr = inVals;
           for (k=0; k<amt; k++){
             ZOLTAN_FILE_gets(line, 128, f);
-            sscanf(line, "%d %d", &edge, &vtx);
+            if (sscanf(line, "%d %d", &edge, &vtx) != 2){
+              fprintf(stderr,"%s Invalid matrix entry\n",yo);
+              error = 1;
+              return error;
+            }
             if (pio_info->matrix_obj==ROWS){
               tmp = edge;
               edge = vtx;
               vtx = tmp;
+            }
+            /* Entries are 1-based; validate against the header dimensions
+             * before they are used as array indices. */
+            if ((edge < 1) || (edge > *nEdge) || (vtx < 1) || (vtx > *nVtx)){
+              fprintf(stderr,"%s Matrix entry out of range\n",yo);
+              error = 1;
+              return error;
             }
             edge--;           /* so we can use it as array index */
 	    vtx--;            /* Want the same numbering, start from 0 */
@@ -295,18 +306,34 @@ int error = 0;  /* flag to indicate status */
       for (k=0; k<gnz; k++){
         ZOLTAN_FILE_gets(line, 128, f);
         if (mm_is_pattern(matcode)) {
-          sscanf(line, "%d %d", &(myIJV[k].i), &(myIJV[k].j));
+          if (sscanf(line, "%d %d", &(myIJV[k].i), &(myIJV[k].j)) != 2){
+            fprintf(stderr,"%s Invalid matrix entry\n",yo);
+            error = 1;
+            return error;
+          }
           myIJV[k].v = 1.;
         }
         else {
-          sscanf(line, "%d %d %f", &(myIJV[k].i), &(myIJV[k].j),
-                 &(myIJV[k].v));
+          if (sscanf(line, "%d %d %f", &(myIJV[k].i), &(myIJV[k].j),
+                 &(myIJV[k].v)) != 3){
+            fprintf(stderr,"%s Invalid matrix entry\n",yo);
+            error = 1;
+            return error;
+          }
         }
 
         if (pio_info->matrix_obj==ROWS){
           tmp = myIJV[k].i;
           myIJV[k].i = myIJV[k].j;
           myIJV[k].j = tmp;
+        }
+        /* Entries are 1-based; validate against the header dimensions
+         * before they are used as array indices. */
+        if ((myIJV[k].i < 1) || (myIJV[k].i > *nEdge) ||
+            (myIJV[k].j < 1) || (myIJV[k].j > *nVtx)){
+          fprintf(stderr,"%s Matrix entry out of range\n",yo);
+          error = 1;
+          return error;
         }
         --(myIJV[k].i);
         --(myIJV[k].j); /* Want to start at 0 */
