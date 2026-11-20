@@ -515,7 +515,7 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, L
     RCP<MultiVector> rmv      = Xpetra::toXpetra(TMV);
     return rmv;
   } else {
-      throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseTpetra.");
+    throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseTpetra.");
   }
 
   TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
