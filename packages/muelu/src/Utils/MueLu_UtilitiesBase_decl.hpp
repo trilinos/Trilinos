@@ -203,31 +203,60 @@ class UtilitiesBase {
   /*! @brief Power method.
 
     @param A matrix
+    @param out output stream
     @param scaleByDiag if true, estimate the largest eigenvalue of \f$ D^; A \f$.
     @param niters maximum number of iterations
     @param tolerance stopping tolerance
     @param diagonalReplacementTolernace tolernace for assuming the diagonal is zero
-    @verbose if true, print iteration information
     @seed  seed for randomizing initial guess
 
     (Shamelessly grabbed from tpetra/examples.)
   */
-  static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true,
-                            LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, Magnitude diagonalReplacementTol = Teuchos::ScalarTraits<Scalar>::eps() * 100, bool verbose = false, unsigned int seed = 123);
+  static Scalar PowerMethod(const Matrix& A, Teuchos::FancyOStream& out, bool scaleByDiag = true,
+                            LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, Magnitude diagonalReplacementTol = Teuchos::ScalarTraits<Scalar>::eps() * 100, unsigned int seed = 123);
 
   /*! @brief Power method.
 
     @param A matrix
     @param diagInvVec reciprocal of matrix diagonal
+    @param out output stream
     @param niters maximum number of iterations
     @param tolerance stopping tolerance
-    @verbose if true, print iteration information
     @seed  seed for randomizing initial guess
 
     (Shamelessly grabbed from tpetra/examples.)
   */
-  static Scalar PowerMethod(const Matrix& A, const RCP<Vector>& diagInvVec,
-                            LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123);
+  static Scalar PowerMethod(const Matrix& A, const RCP<Vector>& diagInvVec, Teuchos::FancyOStream& out,
+                            LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, unsigned int seed = 123);
+
+  /*! @brief Compute eigenvalue approximations using a Krylov method.
+
+    @param A matrix
+    @param belosMethod Krylov method from Belos to use
+    @param out output stream
+    @param scaleByDiag if true, estimate the largest eigenvalue of \f$ D^; A \f$.
+    @param niters maximum number of iterations
+    @param tolerance stopping tolerance
+    @param diagonalReplacementTolernace tolernace for assuming the diagonal is zero
+    @seed  seed for randomizing initial guess
+  */
+  static Scalar KrylovMethod(const Matrix& A, const std::string& belosMethod, Teuchos::FancyOStream& out, bool scaleByDiag = true,
+                             LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, Magnitude diagonalReplacementTol = Teuchos::ScalarTraits<Scalar>::eps() * 100, unsigned int seed = 123);
+
+  /*! @brief Compute eigenvalue approximations using a Krylov method.
+
+    @param A matrix
+    @param diagInvVec reciprocal of matrix diagonal
+    @param belosMethod Krylov method from Belos to use
+    @param out output stream
+    @param niters maximum number of iterations
+    @param tolerance stopping tolerance
+    @seed  seed for randomizing initial guess
+
+    (Shamelessly grabbed from tpetra/examples.)
+  */
+  static Scalar KrylovMethod(const Matrix& A, const RCP<Vector>& diagInvVec, const std::string& belosMethod, Teuchos::FancyOStream& out,
+                             LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, unsigned int seed = 123);
 
   static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os);
 

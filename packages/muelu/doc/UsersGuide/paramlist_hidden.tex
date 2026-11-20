@@ -282,7 +282,7 @@
 \cbb{synchronize factory timers}{bool}{false}{Add barriers before and after Factory Build() calls.}
         
 \cbb{rap: triple product}{bool}{false}{Use all-at-once triple matrix product kernel}
-
+        
 \cbb{rap: prebuild coarse graph}{bool}{false}{Prebuild the coarse graph and pass it to the triple matrix product kernel.}
         
 \cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
@@ -311,7 +311,7 @@
         
 \cbb{sa: calculate eigenvalue estimate}{bool}{false}{Force calculation of eigenvalue estimate during prolongator smoothing.}
         
-\cbb{sa: eigen-analysis type}{string}{power-method}{Algorithm for eigen-analysis for SA.  Options: "power-method" (default) or "cg".}
+\cbb{sa: eigen-analysis type}{string}{power-method}{Algorithm for eigen-analysis for SA.  Options: "power-method" (default), "cg", "lanczos", "gmres" or "arnoldi". "cg" is an alias for "lanczos" and "gmres" is an alias for "arnoldi".}
         
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
         

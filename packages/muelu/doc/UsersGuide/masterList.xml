@@ -1390,8 +1390,11 @@
       <name>sa: eigen-analysis type</name>
       <type>string</type>
       <default>power-method</default>
-      <description>Algorithm for eigen-analysis for SA.  Options: "power-method" (default) or "cg".</description>
-      <visible>false</visible>
+      <description>Algorithm for eigen-analysis for SA.  Options: "power-method" (default), "cg", "lanczos", "gmres" or "arnoldi". "cg" is an alias for "lanczos" and "gmres" is an alias for "arnoldi".</description>
+      <visible>true</visible>
+      <name-ML>eigen-analysis type</name-ML>
+      <default-ML>power-method</default-ML>
+      <compatibility-ML>ML2MueLuParameterTranslator</compatibility-ML>
     </parameter>
 
 

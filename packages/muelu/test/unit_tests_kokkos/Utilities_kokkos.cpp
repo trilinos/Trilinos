@@ -528,13 +528,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, TransformFunctions, Scalar, 
 
   // PowerMethod
   {
-    auto powerRes = Utils::PowerMethod(*A);
+    auto powerRes = Utils::PowerMethod(*A, out);
 
     auto inversDiag = Utils::GetMatrixDiagonalInverse(*A);
-    auto powerRes2  = Utils::PowerMethod(*A, inversDiag);
+    auto powerRes2  = Utils::PowerMethod(*A, inversDiag, out);
 
     TEST_INEQUALITY(powerRes, Scalar(0.0));
     TEST_INEQUALITY(powerRes2, Scalar(0.0));
+  }
+
+  // CG
+  {
+    auto cgRes = Utils::KrylovMethod(*A, "Pseudo Block CG", out);
+
+    auto inversDiag = Utils::GetMatrixDiagonalInverse(*A);
+    auto cgRes2     = Utils::KrylovMethod(*A, inversDiag, "Pseudo Block CG", out);
+
+    TEST_INEQUALITY(cgRes, Scalar(0.0));
+    TEST_INEQUALITY(cgRes2, Scalar(0.0));
+  }
+
+  // GMRES
+  {
+    auto gmresRes = Utils::KrylovMethod(*A, "Block GMRES", out);
+
+    auto inversDiag = Utils::GetMatrixDiagonalInverse(*A);
+    auto gmresRes2  = Utils::KrylovMethod(*A, inversDiag, "Block GMRES", out);
+
+    TEST_INEQUALITY(gmresRes, Scalar(0.0));
+    TEST_INEQUALITY(gmresRes2, Scalar(0.0));
   }
 }  // TransformFunctions
 
