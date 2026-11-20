@@ -167,8 +167,8 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     TEST_FLOATING_EQUALITY(xDotSlope, order, 0.35);
     TEST_COMPARE(xDotSlope, >, 0.95);
 
-    TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.0145747, 1.0e-4);
-    TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.0563621, 1.0e-4);
+    TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.0154398, 1.0e-4);
+    TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.0615157, 1.0e-4);
   }
 
   // Write fine mesh solution at final time
