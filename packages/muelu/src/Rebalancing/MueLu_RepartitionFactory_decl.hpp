@@ -39,7 +39,7 @@ namespace MueLu {
   This factory acts on both the number of partitions and a vector (usually created by Zoltan) that indicates to which partitions
   the current level's system matrix's DOFS belong.
 
-  We always call the Interface routines in ZoltanInterface, Zoltan2Interface or IsorropiaInterface, but they have special short-cuts
+  We always call the Interface routines in ZoltanInterface or Zoltan2Interface, but they have special short-cuts
   if no rebalancing is necessary (then return "Partition = null") or all data is moved to one processor.
 
   ## Input/output of RepartitionInterface ##

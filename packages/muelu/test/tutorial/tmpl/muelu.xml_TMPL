@@ -73,43 +73,46 @@
       <Parameter name="Output filename"                     type="string" value="aggs_level%LEVELID_proc%PROCID.txt"/>
     </ParameterList>
 
+    <ParameterList name="myTransferCoordinatesFact">
+      <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
+    </ParameterList>
+
     <ParameterList name="myRAPFact">
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="$PROLONGATOR"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
       <ParameterList name="TransferFactories">
         <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
+        <Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/>
      </ParameterList>
     </ParameterList>
 
-	<!-- =======================  REPARTITIONING  ======================= -->
+    <!-- =======================  REPARTITIONING  ======================= -->
 
-	<!-- amalgamation of coarse level matrix -->
-    <ParameterList name="myRebAmalgFact">
-      <Parameter name="factory"                             type="string" value="AmalgamationFactory"/>
+    <ParameterList name="myRepartitionHeuristicFact">
+      <Parameter name="factory"                             type="string" value="RepartitionHeuristicFactory"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
+      <Parameter name="repartition: min rows per proc"      type="int"    value="800"/>
+      <Parameter name="repartition: max imbalance"          type="double" value="1.1"/>
+      <Parameter name="repartition: start level"            type="int"    value="1"/>
     </ParameterList>
 
-    <ParameterList name="myIsorropiaInterface">
-      <Parameter name="factory"                             type="string" value="IsorropiaInterface"/>
+    <ParameterList name="myZoltan2Interface">
+      <Parameter name="factory"                             type="string" value="Zoltan2Interface"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
-      <Parameter name="UnAmalgamationInfo"                  type="string" value="myRebAmalgFact"/>
+      <Parameter name="number of partitions"                type="string" value="myRepartitionHeuristicFact"/>
+      <Parameter name="repartition: heuristic target rows per process" type="string" value="myRepartitionHeuristicFact"/>
+      <Parameter name="Coordinates"                         type="string" value="myTransferCoordinatesFact"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="algorithm"                         type="string" value="multijagged"/>
+      </ParameterList>
     </ParameterList>
-
-    <ParameterList name="myRepartitionInterface">
-      <Parameter name="factory"                             type="string" value="RepartitionInterface"/>
-      <Parameter name="A"                                   type="string" value="myRAPFact"/>
-      <Parameter name="AmalgamatedPartition"                type="string" value="myIsorropiaInterface"/>
-    </ParameterList>
-
 
     <ParameterList name="myRepartitionFact">
       <Parameter name="factory"                             type="string" value="RepartitionFactory"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
-      <Parameter name="Partition"                           type="string" value="myRepartitionInterface"/>
-      <Parameter name="repartition: min rows per proc"      type="int"    value="800"/>
-      <Parameter name="repartition: max imbalance"          type="double" value="1.1"/>
-      <Parameter name="repartition: start level"            type="int"    value="1"/>
+      <Parameter name="Partition"                           type="string" value="myZoltan2Interface"/>
+      <Parameter name="number of partitions"                type="string" value="myRepartitionHeuristicFact"/>
       <Parameter name="repartition: remap parts"            type="bool"   value="false"/>
     </ParameterList>
 
@@ -118,6 +121,7 @@
       <Parameter name="type"                                type="string" value="Interpolation"/>
       <Parameter name="P"                                   type="string" value="$PROLONGATOR"/>
       <Parameter name="Nullspace"                           type="string" value="PA-AMG"/>
+      <Parameter name="Coordinates"                         type="string" value="myTransferCoordinatesFact"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceRestrictionFact">
@@ -192,6 +196,7 @@
       <Parameter name="Smoother"                            type="string"   value="$SMOOTHER"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
       <Parameter name="Nullspace"                           type="string"   value="$MANAGER_NULLSPACE"/>
+      <Parameter name="Coordinates"                         type="string"   value="$MANAGER_COORDINATES"/>
       <!--<Parameter name="Ptent"                               type="string"   value="PA-AMG"/>-->
       <Parameter name="P"                                   type="string"   value="$MANAGER_PROLONGATOR"/>
       <Parameter name="R"                                   type="string"   value="$MANAGER_RESTRICTOR"/>
