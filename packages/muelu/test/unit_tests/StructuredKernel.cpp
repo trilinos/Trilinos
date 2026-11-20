@@ -316,10 +316,9 @@ bool canRunStructuredKernelTest(Teuchos::FancyOStream& out) {
   constexpr bool hostMemory =
       std::is_same<typename Node::device_type::memory_space,
                    Kokkos::HostSpace>::value;
-  const bool canRun = hostMemory &&
-                      TestHelpers::Parameters::getLib() == Xpetra::UseTpetra;
+  const bool canRun = hostMemory;
   if (!canRun)
-    out << "The direct StructuredRAPKernel test requires host-memory Tpetra; "
+    out << "The direct StructuredRAPKernel test requires host memory; "
            "skipping this test."
         << std::endl;
   return canRun;

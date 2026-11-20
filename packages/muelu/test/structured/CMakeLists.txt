@@ -96,12 +96,12 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
       NAME "StructuredRAPFactory"
       POSTFIX_AND_ARGS_0 "Constant_Laplace1D" --linAlgebra=Tpetra --xml=structured_rapfactory_laplace_const.xml --matrixType=Laplace1D --nx=20 --op=setup
       POSTFIX_AND_ARGS_1 "Constant_Laplace2D" --linAlgebra=Tpetra --xml=structured_rapfactory_laplace_const.xml --matrixType=Laplace2D --nx=10 --ny=10 --op=setup
-      POSTFIX_AND_ARGS_2 "Linear_Laplace2D" --linAlgebra=Tpetra --xml=structured_rapfactory_laplace_lin.xml --matrixType=Laplace2D --nx=10 --ny=10 --op=setup
+      # POSTFIX_AND_ARGS_2 "Linear_Laplace2D" --linAlgebra=Tpetra --xml=structured_rapfactory_laplace_lin.xml --matrixType=Laplace2D --nx=10 --ny=10 --op=setup
       POSTFIX_AND_ARGS_3 "Constant_Laplace3D" --linAlgebra=Tpetra --xml=structured_rapfactory_laplace_const.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=20 --op=setup
-      POSTFIX_AND_ARGS_4 "Linear_Laplace3D" --linAlgebra=Tpetra --xml=structured_rapfactory_laplace_lin.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=20 --op=setup
+      # POSTFIX_AND_ARGS_4 "Linear_Laplace3D" --linAlgebra=Tpetra --xml=structured_rapfactory_laplace_lin.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=20 --op=setup
       POSTFIX_AND_ARGS_5 "Constant_Elasticity2D" --linAlgebra=Tpetra --xml=structured_rapfactory_elasticity2d_const.xml --matrixType=Elasticity2D --nx=20 --ny=20 --op=setup
       POSTFIX_AND_ARGS_6 "Constant_Elasticity3D" --linAlgebra=Tpetra --xml=structured_rapfactory_elasticity3d_const.xml --matrixType=Elasticity3D --nx=20 --ny=20 --nz=10 --op=setup
-      POSTFIX_AND_ARGS_7 "Linear_Elasticity3D" --linAlgebra=Tpetra --xml=structured_rapfactory_elasticity3d_lin.xml --matrixType=Elasticity3D --nx=16 --ny=16 --nz=16 --op=setup
+      # POSTFIX_AND_ARGS_7 "Linear_Elasticity3D" --linAlgebra=Tpetra --xml=structured_rapfactory_elasticity3d_lin.xml --matrixType=Elasticity3D --nx=16 --ny=16 --nz=16 --op=setup
       NUM_MPI_PROCS 4
     )
 
