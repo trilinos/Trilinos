@@ -31,6 +31,8 @@ namespace FROSch {
             AddingLayersStrategy_ = LayersFromMatrix;
         } else if (!this->ParameterList_->get("Adding Layers Strategy","CrsGraph").compare("Old")) {
             AddingLayersStrategy_ = LayersOld;
+        } else if (!this->ParameterList_->get("Adding Layers Strategy","CrsGraph").compare("Threaded")) {
+            AddingLayersStrategy_ = LayersThreaded;
         } else {
             FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator: Specify a valid strategy for adding layers.");
         }
@@ -184,6 +186,11 @@ namespace FROSch {
 
         // Adding Layers of Elements to the overlapping subdomains
         ConstXCrsGraphPtr overlappingGraph = this->OverlappingMatrix_->getCrsGraph();
+        Array<LO> threadedLayerSizes;
+        if (AddingLayersStrategy_==LayersThreaded) {
+            this->OverlappingMap_ = (overlap>0) ? ExtendOverlapByLayers_Threaded(overlappingGraph,this->OverlappingMap_,overlap,threadedLayerSizes)
+                                                : SortMapByGlobalIndex(this->OverlappingMap_);
+        }
         for (int i=0; i<overlap; i++) {
             switch (AddingLayersStrategy_) {
                 case LayersFromGraph:
@@ -198,12 +205,16 @@ namespace FROSch {
                     ExtendOverlapByOneLayer_Old(this->OverlappingMatrix_,this->OverlappingMap_,this->OverlappingMatrix_,this->OverlappingMap_);
                     break;
 
+                case LayersThreaded:
+                    break;
+
                 default:
                     FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator: Specify a valid strategy for adding layers.");
             }
             if (verbosity==All) {
                 FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
-                local = (LO) max((LO) this->OverlappingMap_->getLocalNumElements(),(LO) 0);
+                local = (AddingLayersStrategy_==LayersThreaded) ? threadedLayerSizes[i] : (LO) this->OverlappingMap_->getLocalNumElements();
+                local = max(local,(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
                 avg = max(sum/double(this->MpiComm_->getSize()),0.0);
                 reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));
@@ -246,6 +257,9 @@ namespace FROSch {
 
                 case LayersOld:
                     if (this->Verbose_) cout << "FROSch::AlgebraicOverlappingOperator : The overlapping map is already sorted" << endl;
+                    break;
+
+                case LayersThreaded:
                     break;
 
                 default:

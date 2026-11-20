@@ -114,3 +114,39 @@ ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelP
 COMM mpi
 NUM_MPI_PROCS 8
 )
+
+##################################
+# Overlap Determination Threaded #
+##################################
+## Tpetra
+TRIBITS_ADD_TEST(
+overlap
+NAME test_overlap_Threaded_DIM2_DPN1_TPETRA
+ARGS "--M=5 --DIM=2 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Threaded.xml"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+overlap
+NAME test_overlap_Threaded_DIM2_DPN2_TPETRA
+ARGS "--M=5 --DIM=2 --O=2 --DPN=2 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Threaded.xml"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+overlap
+NAME test_overlap_Threaded_DIM3_DPN1_TPETRA
+ARGS "--M=5 --DIM=3 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Threaded.xml"
+COMM mpi
+NUM_MPI_PROCS 8
+)
+
+TRIBITS_ADD_TEST(
+overlap
+NAME test_overlap_Threaded_DIM3_DPN3_TPETRA
+ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Threaded.xml"
+COMM mpi
+NUM_MPI_PROCS 8
+)
