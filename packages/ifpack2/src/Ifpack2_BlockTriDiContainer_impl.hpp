@@ -308,7 +308,7 @@ struct AsyncableImport {
 
   local_ordinal_type_1d_view dm2cm;  // permutation
 
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_NEXTSILICON)
   using exec_instance_1d_std_vector = std::vector<execution_space>;
   exec_instance_1d_std_vector exec_instances;
 #endif
@@ -419,7 +419,7 @@ struct AsyncableImport {
   }
 
   void createExecutionSpaceInstances() {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_NEXTSILICON)
     // The following line creates 8 streams:
     exec_instances =
         Kokkos::Experimental::partition_space(execution_space(), std::vector<int>(8, 1));
@@ -482,7 +482,7 @@ struct AsyncableImport {
   // Async version using execution space instances
   // ======================================================================
 
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_NEXTSILICON)
   template <typename PackTag>
   static void copy(const local_ordinal_type_1d_view &lids_,
                    const impl_scalar_type_1d_view &buffer_,
@@ -655,7 +655,7 @@ struct AsyncableImport {
 #endif  // HAVE_IFPACK2_MPI
     IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
   }
-#endif  // defined(KOKKOS_ENABLE_CUDA|HIP|SYCL)
+#endif  // defined(KOKKOS_ENABLE_CUDA|HIP|SYCL|NEXTSILICON)
 
   // ======================================================================
   // Generic version without using execution space instances
@@ -823,7 +823,7 @@ struct AsyncableImport {
   /// front interface
   ///
   void asyncSendRecv(const impl_scalar_type_2d_view_tpetra &mv) {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_NEXTSILICON)
 #if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_EXEC_SPACE_INSTANCES)
     asyncSendRecvVar1(mv);
 #else
@@ -834,7 +834,7 @@ struct AsyncableImport {
 #endif
   }
   void syncRecv() {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL) || defined(KOKKOS_ENABLE_NEXTSILICON)
 #if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_EXEC_SPACE_INSTANCES)
     syncRecvVar1();
 #else
@@ -1897,6 +1897,11 @@ void setTridiagsToIdentity(const BlockTridiags<MatrixType> &btdm,
       total_team_size = 160;
     const local_ordinal_type team_size = total_team_size / vector_loop_size;
     const team_policy_type policy(packptr.extent(0) - 1, team_size, vector_loop_size);
+#elif defined(KOKKOS_ENABLE_NEXTSILICON)
+    // NEXTSILICON: FIXME
+    local_ordinal_type total_team_size{1};
+    const local_ordinal_type team_size = total_team_size / vector_loop_size;
+    const team_policy_type policy(packptr.extent(0) - 1, team_size, vector_loop_size);
 #else
     // Host architecture: team size is always one
     const team_policy_type policy(packptr.extent(0) - 1, 1, 1);
@@ -2429,6 +2434,34 @@ struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::SYCLSharedUSMSpace>
                                    const int vector_length,
                                    const int internal_vector_length) {
     return ExtractAndFactorizeRecommendedSYCLTeamSize(blksize, vector_length, internal_vector_length);
+  }
+};
+#endif
+
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+static inline int ExtractAndFactorizeRecommendedNextSiliconTeamSize(const int /*blksize*/,
+                                                                    const int /*vector_length*/,
+                                                                    const int /*internal_vector_length*/) {
+  return 1;
+}
+template <>
+struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::NextSiliconSharedSpace> {
+  typedef KB::Mode::Team mode_type;
+  typedef KB::Algo::Level3::Unblocked algo_type;
+  static int recommended_team_size(const int blksize,
+                                   const int vector_length,
+                                   const int internal_vector_length) {
+    return ExtractAndFactorizeRecommendedNextSiliconTeamSize(blksize, vector_length, internal_vector_length);
+  }
+};
+template <>
+struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::NextSiliconSpace> {
+  typedef KB::Mode::Team mode_type;
+  typedef KB::Algo::Level3::Unblocked algo_type;
+  static int recommended_team_size(const int blksize,
+                                   const int vector_length,
+                                   const int internal_vector_length) {
+    return ExtractAndFactorizeRecommendedNextSiliconTeamSize(blksize, vector_length, internal_vector_length);
   }
 };
 #endif
@@ -4053,6 +4086,37 @@ struct SolveTridiagsDefaultModeAndAlgo<Kokkos::SYCLDeviceUSMSpace> {
 };
 #endif
 
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+static inline int SolveTridiagsRecommendedNextSiliconTeamSize(const int /*blksize*/,
+                                                              const int /*vector_length*/,
+                                                              const int /*internal_vector_length*/) {
+  return 1;
+}
+
+template <>
+struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::NextSiliconSharedSpace> {
+  typedef KB::Mode::Team mode_type;
+  typedef KB::Algo::Level2::Unblocked single_vector_algo_type;
+  typedef KB::Algo::Level3::Unblocked multi_vector_algo_type;
+  static int recommended_team_size(const int blksize,
+                                   const int vector_length,
+                                   const int internal_vector_length) {
+    return SolveTridiagsRecommendedNextSiliconTeamSize(blksize, vector_length, internal_vector_length);
+  }
+};
+template <>
+struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::NextSiliconSpace> {
+  typedef KB::Mode::Team mode_type;
+  typedef KB::Algo::Level2::Unblocked single_vector_algo_type;
+  typedef KB::Algo::Level3::Unblocked multi_vector_algo_type;
+  static int recommended_team_size(const int blksize,
+                                   const int vector_length,
+                                   const int internal_vector_length) {
+    return SolveTridiagsRecommendedNextSiliconTeamSize(blksize, vector_length, internal_vector_length);
+  }
+};
+#endif
+
 template <typename MatrixType>
 struct SolveTridiags {
  public:
@@ -4122,6 +4186,8 @@ struct SolveTridiags {
 
   // copy to multivectors : damping factor and Y_scalar_multivector
   Unmanaged<impl_scalar_type_2d_view_tpetra> Y_scalar_multivector;
+
+  // NEXTSILICON: FIXME: throughput Ifpack2 we treat NextSilicon as a device, but there's no corresponding capability here
 #if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__)
   AtomicUnmanaged<impl_scalar_type_1d_view> Z_scalar_vector;
 #else

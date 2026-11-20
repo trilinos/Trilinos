@@ -38,6 +38,8 @@ class DefaultNode {
  public:
 #if defined(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
   typedef Tpetra::KokkosCompat::KokkosSYCLWrapperNode DefaultNodeType;
+#elif defined(HAVE_TPETRA_DEFAULTNODE_NEXTSILICONWRAPPERNODE)
+  typedef Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode DefaultNodeType;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode DefaultNodeType;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)

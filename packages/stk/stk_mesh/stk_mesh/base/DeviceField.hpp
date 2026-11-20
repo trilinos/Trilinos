@@ -50,12 +50,36 @@ namespace stk::mesh {
 constexpr unsigned INVALID_ORDINAL = 9999999;
 
 namespace impl {
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+// NextSilicon compiles host and device code into a single translation unit, so
+// KOKKOS_IF_ON_HOST/KOKKOS_IF_ON_DEVICE expand to *runtime* tests on a thread-space
+// flag rather than the preprocessor branches the split-compilation backends
+// (CUDA/HIP/SYCL) use. The thread space is therefore not a compile-time property
+// and this predicate cannot be constexpr; the trailing return also gives the
+// runtime form a value on every control path.
+KOKKOS_FORCEINLINE_FUNCTION
+bool is_on_host() {
+  KOKKOS_IF_ON_HOST(return true;);
+  KOKKOS_IF_ON_DEVICE(return false;);
+  return true;
+}
+#else
 KOKKOS_FORCEINLINE_FUNCTION
 constexpr bool is_on_host() {
   KOKKOS_IF_ON_HOST(return true;);
   KOKKOS_IF_ON_DEVICE(return false;);
 }
+#endif
 }
+
+// impl::is_on_host() is only a constant expression where KOKKOS_IF_ON_HOST is a
+// preprocessor branch, so the host/device dispatches below must degrade to a
+// plain runtime branch on NextSilicon. Both arms compile in either mode.
+#if defined(KOKKOS_ENABLE_NEXTSILICON)
+#define STK_IF_ON_HOST if
+#else
+#define STK_IF_ON_HOST if constexpr
+#endif
 
 template <typename T, typename NgpMemSpace>
 class DeviceField : public NgpFieldBase
@@ -198,7 +222,7 @@ public:
   KOKKOS_FUNCTION
   unsigned get_component_stride(const FastMeshIndex& entityIndex) const
   {
-    if constexpr (impl::is_on_host()) {
+    STK_IF_ON_HOST (impl::is_on_host()) {
       return m_deviceFieldData.mesh().buckets(m_deviceFieldData.entity_rank())[entityIndex.bucket_id]->capacity();
     }
     else {
@@ -210,7 +234,7 @@ public:
   KOKKOS_FUNCTION
   unsigned get_component_stride(unsigned bucketId) const
   {
-    if constexpr (impl::is_on_host()) {
+    STK_IF_ON_HOST (impl::is_on_host()) {
       return m_deviceFieldData.mesh().buckets(m_deviceFieldData.entity_rank())[bucketId]->capacity();
     }
     else {
@@ -352,6 +376,8 @@ private:
 };
 
 }
+
+#undef STK_IF_ON_HOST
 
 #endif
 

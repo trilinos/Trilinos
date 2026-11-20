@@ -52,7 +52,8 @@ ENDIF()
 #                      defines it AS Kokkos::HostSpace, which is the host
 #                      execution space's own.
 IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE AND
-    (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL))
+    (Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP OR Kokkos_ENABLE_SYCL OR
+     Kokkos_ENABLE_NEXTSILICON))
   SET(PHX_MEMORY_SPACE_IS_NOT_EXECUTION_SPACE_MEMORY_SPACE ON)
 ELSE()
   SET(PHX_MEMORY_SPACE_IS_NOT_EXECUTION_SPACE_MEMORY_SPACE OFF)
@@ -158,7 +159,8 @@ IF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
   # Kokkos picks Threads as the default execution space only when no GPU
   # backend and no OpenMP is enabled, so mirror that order here.
   IF(Kokkos_ENABLE_THREADS AND NOT Kokkos_ENABLE_OPENMP AND
-     NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_HIP AND NOT Kokkos_ENABLE_SYCL)
+     NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_HIP AND NOT Kokkos_ENABLE_SYCL AND
+     NOT Kokkos_ENABLE_NEXTSILICON)
     MESSAGE(FATAL_ERROR "Phalanx configure ERROR: Kokkos AMT support is enabled but is not implemented for Pthreads execution space. Please change your execution space or disable AMT support in Phalanx.")
   ENDIF()
 ENDIF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)

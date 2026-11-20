@@ -60,6 +60,9 @@ using global_ordinal_type = unsigned;
 #if defined(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
 using execution_space = ::Kokkos::SYCL;
 using node_type       = Tpetra::KokkosCompat::KokkosSYCLWrapperNode;
+#elif defined(HAVE_TPETRA_DEFAULTNODE_NEXTSILICONWRAPPERNODE)
+using execution_space = ::Kokkos::Experimental::NextSilicon;
+using node_type       = Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
 using execution_space     = ::Kokkos::HIP;
 using node_type           = Tpetra::KokkosCompat::KokkosHIPWrapperNode;
@@ -70,8 +73,8 @@ using node_type           = Tpetra::KokkosCompat::KokkosCudaWrapperNode;
 using execution_space     = ::Kokkos::OpenMP;
 using node_type           = Tpetra::KokkosCompat::KokkosOpenMPWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
-using execution_space     = ::Kokkos::Threads;
-using node_type           = Tpetra::KokkosCompat::KokkosThreadsWrapperNode;
+using execution_space = ::Kokkos::Threads;
+using node_type       = Tpetra::KokkosCompat::KokkosThreadsWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
 using execution_space = ::Kokkos::Serial;
 using node_type       = Tpetra::KokkosCompat::KokkosSerialWrapperNode;
@@ -106,6 +109,16 @@ struct CommBufferMemorySpace<Kokkos::HIP> {
 template <>
 struct CommBufferMemorySpace<Kokkos::SYCL> {
   using type = Kokkos::SYCLDeviceUSMSpace;
+};
+#endif
+
+// NextSilicon::memory_space is NextSiliconSharedSpace only if Kokkos was built
+// with Kokkos_ENABLE_IMPL_NEXTSILICON_UNIFIED_MEMORY, otherwise it is the
+// device-only NextSiliconSpace.
+#ifdef KOKKOS_ENABLE_NEXTSILICON
+template <>
+struct CommBufferMemorySpace<Kokkos::Experimental::NextSilicon> {
+  using type = typename Kokkos::Experimental::NextSilicon::memory_space;
 };
 #endif
 

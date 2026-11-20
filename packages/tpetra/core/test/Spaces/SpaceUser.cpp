@@ -97,6 +97,11 @@ int main(int argc, char **argv) {
   test_reuse<Kokkos::SYCL>(success, *out);
 #endif
 
+#if defined(KOKKOS_ENABLE_NEXSILICON)
+  test_priority<Kokkos::Experimental::NextSilicon>(success, *out);
+  test_reuse<Kokkos::Experimental::NextSilicon>(success, *out);
+#endif
+
   if (success) {
     std::cout << std::endl
               << "End Result: TEST PASSED" << std::endl;

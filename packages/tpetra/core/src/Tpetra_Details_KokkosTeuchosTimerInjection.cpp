@@ -45,6 +45,8 @@ std::string deviceIdToString(const uint32_t deviceId) {
     device_label += "Threads";
   else if (eid.type == DeviceType::SYCL)
     device_label += "SYCL";
+  else if (eid.type == DeviceType::NextSilicon)
+    device_label += "NextSilicon";
   else if (eid.type == DeviceType::OpenACC)
     device_label += "OpenACC";
   else if (eid.type == DeviceType::Unknown)
