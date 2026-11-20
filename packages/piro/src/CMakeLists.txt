@@ -73,15 +73,17 @@ ENDIF()
 IF (Piro_ENABLE_Tempus)
   APPEND_SET(HEADERS
     Piro_TempusSolver.hpp
-    Piro_TempusSolver_Def.hpp 
+    Piro_TempusSolver_Def.hpp
+    Piro_TempusSolverForwardOnly.hpp
+    Piro_TempusSolverForwardOnly_Def.hpp
     Piro_TempusIntegrator.hpp
-    Piro_TempusIntegrator_Def.hpp 
+    Piro_TempusIntegrator_Def.hpp
     Piro_TransientSolver.hpp
-    Piro_TransientSolver_Def.hpp 
+    Piro_TransientSolver_Def.hpp
     Piro_TempusStepperFactory.hpp
     Piro_TempusStepControlFactory.hpp
-    Piro_ObserverToTempusIntegrationObserverAdapter.hpp 
-    Piro_ObserverToTempusIntegrationObserverAdapter_Def.hpp) 
+    Piro_ObserverToTempusIntegrationObserverAdapter.hpp
+    Piro_ObserverToTempusIntegrationObserverAdapter_Def.hpp)
 ENDIF()
 
 IF (Piro_ENABLE_ROL)

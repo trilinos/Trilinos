@@ -1129,6 +1129,14 @@ IF (Stokhos_ENABLE_Sacado)
       SET(IFPACK2_HEADERS "")
       SET(IFPACK2_CPP_SOURCES Stokhos_Dummy.cpp)
       SET(STOKHOS_IFPACK2_DEPLIBS "")
+
+      # Load list of Ifpack2 ETI classes.  In a monolithic build this was
+      # already set by Ifpack2's src/CMakeLists.txt, but when Ifpack2 is an
+      # external (pre-installed) package that file is never processed.
+      IF (Ifpack2_ENABLE_EXPLICIT_INSTANTIATION AND NOT IFPACK2_ETI_CLASSES)
+        INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/../../ifpack2/src/Ifpack2_ETI_classes.cmake)
+      ENDIF()
+
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
         TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2)
         APPEND_GLOB(IFPACK2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.hpp)
