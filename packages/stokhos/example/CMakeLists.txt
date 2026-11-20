@@ -152,7 +152,3 @@ IF(Stokhos_ENABLE_Cusp)
     COMM serial mpi
     )
 ENDIF()
-
-IF(Stokhos_ENABLE_Experimental)
-  ADD_SUBDIRECTORY(experimental)
-ENDIF()
