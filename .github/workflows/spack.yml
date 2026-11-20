@@ -15,7 +15,32 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      only_non_code_dirs: ${{ steps.check.outputs.only_skipped_dir }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+         fetch-depth: 0
+
+      - id: check
+        shell: bash
+        run: |
+          changed_files=$(git diff --name-only \
+            ${{ github.event.pull_request.base.sha }} \
+            ${{ github.event.pull_request.head.sha }})
+
+          if [ -n "$changed_files" ] && \
+             printf '%s\n' "$changed_files" | grep -qv '^.agents/'; then
+            echo "only_skipped_dir=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "only_skipped_dir=true" >> "$GITHUB_OUTPUT"
+          fi
+
   develop-gcc-openmpi:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     permissions:
       contents: read  # for actions/checkout to fetch code
     runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20260903]
