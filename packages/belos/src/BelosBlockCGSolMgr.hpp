@@ -34,14 +34,8 @@
 #endif
 #include <algorithm>
 
-/** \example epetra/example/BlockCG/BlockCGEpetraExFile.cpp
-    This is an example of how to use the Belos::BlockCGSolMgr solver manager in Epetra.
-*/
 /** \example tpetra/example/BlockCG/BlockCGTpetraExFile.cpp
     This is an example of how to use the Belos::BlockCGSolMgr solver manager in Tpetra.
-*/
-/** \example epetra/example/BlockCG/BlockPrecCGEpetraExFile.cpp
-    This is an example of how to use the Belos::BlockCGSolMgr solver manager with an Ifpack preconditioner.
 */
 
 /*! \class Belos::BlockCGSolMgr

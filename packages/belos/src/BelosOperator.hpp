@@ -33,7 +33,7 @@ namespace Belos {
   /// includes the matrix A in the linear system \f$AX = B\f$, any
   /// left or right preconditioners. If you have enabled the corresponding 
   /// Trilinos packages, you can use Belos' solvers directly with OP =
-  /// Epetra_Operator, Tpetra::Operator, or Thyra::LinearOpBase.
+  /// Tpetra::Operator or Thyra::LinearOpBase.
   /// Alternately, you may wish to use some other object as an
   /// operator.  If so, you can make that object inherit from
   /// Belos::Operator<Scalar>, and make its corresponding multivector

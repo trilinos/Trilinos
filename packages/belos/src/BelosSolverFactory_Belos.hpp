@@ -22,9 +22,6 @@
 
 namespace Belos {
 
-/** \example epetra/example/SolverFactory/SolverFactoryEpetraGaleriEx.cpp 
-    This is an example of how to use the Belos::SolverFactory with Epetra.
-*/
 /** \example tpetra/example/SolverFactory/SolverFactoryTpetraGaleriEx.cpp 
     This is an example of how to use the Belos::SolverFactory with Tpetra.
 */

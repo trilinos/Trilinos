@@ -12,7 +12,7 @@
 #include "Teuchos_ConfigDefs.hpp" // for __attribute__((weak)) check
 
 // FIXME (mfh 23 Aug 2015) Belos' main library is upstream from
-// libraries where Belos' Epetra and Tpetra specializations live.
+// libraries where Belos' Tpetra specialization lives.
 // That's why we need to use weak symbols here.  Otherwise, link
 // errors result.  Fixing this requires the same run-time registration
 // solution that Bug 6392 is all about.
@@ -47,5 +47,4 @@ registerLinearSolverFactory ()
 
 } // namespace Details
 } // namespace Belos
-
 
