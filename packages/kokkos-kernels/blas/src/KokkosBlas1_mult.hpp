@@ -80,19 +80,16 @@ void mult(const execution_space& space, typename YMV::const_value_type& gamma, c
   using XUnifiedLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XMV, YUnifiedLayout>::array_layout;
 
   // Create unmanaged versions of the input Views.
-  typedef Kokkos::View<typename YMV::non_const_data_type, YUnifiedLayout, typename YMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      YMV_Internal;
-  typedef Kokkos::View<typename AV::const_value_type*, AUnifiedLayout, typename AV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      AV_Internal;
-  typedef Kokkos::View<typename XMV::const_data_type, XUnifiedLayout, typename XMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XMV_Internal;
+  using YMV_Internal = Kokkos::View<typename YMV::non_const_data_type, YUnifiedLayout, execution_space,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using AV_Internal  = Kokkos::View<typename AV::const_value_type*, AUnifiedLayout, execution_space,
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, XUnifiedLayout, execution_space,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  YMV_Internal Y_internal = Y;
-  AV_Internal A_internal  = A;
-  XMV_Internal X_internal = X;
+  YMV_Internal Y_internal = KokkosKernels::Impl::unificationCast<YMV_Internal>(Y);
+  AV_Internal A_internal  = KokkosKernels::Impl::unificationCast<AV_Internal>(A);
+  XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);
 
   Impl::Mult<execution_space, YMV_Internal, AV_Internal, XMV_Internal>::mult(space, gamma, Y_internal, alpha,
                                                                              A_internal, X_internal);

@@ -60,7 +60,7 @@ struct Functor_BatchedTeamGemm {
   inline void run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamSolveLU");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = _c.extent(0);
@@ -92,7 +92,7 @@ struct Functor_BatchedTeamLU {
   inline void run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamSolveLU");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = _a.extent(0);
@@ -122,7 +122,7 @@ struct Functor_TestBatchedTeamSolveLU {
   inline void run() {
     typedef typename ViewType::value_type value_type;
     std::string name_region("KokkosBatched::Test::TeamSolveLU");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
 
