@@ -3,35 +3,17 @@
 /* Define if explicit (template) instantiation is enabled. */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_EXPLICIT_INSTANTIATION
 
-/* Define if want to build amesos */
-#cmakedefine HAVE_AMESOS
-
-/* Define if want to build epetraext */
-#cmakedefine HAVE_EPETRAEXT
-
 /* Define if you want to build export makefiles. */
 #cmakedefine HAVE_EXPORT_MAKEFILES
 
 /* Define if you are using gnumake - this will shorten your link lines. */
 #cmakedefine HAVE_GNUMAKE
 
-/* Define if want to build ifpack */
-#cmakedefine HAVE_IFPACK
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
 
-/* Define if want to build isorropia */
-#cmakedefine HAVE_ISORROPIA
-
 /* Define if want to build libcheck */
 #cmakedefine HAVE_LIBCHECK
-
-/* Define if want to build ml */
-#cmakedefine HAVE_ML
-
-/* Define if have ML and Nox */
-#cmakedefine HAVE_ML_NOX
 
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
@@ -39,26 +21,17 @@
 /* Define if want to build with newp_swahili enabled */
 #cmakedefine HAVE_NEWP_SWAHILI
 
-/* Define if want to build nox */
-#cmakedefine HAVE_NOX
-
 /* Define if want to build tests */
 #cmakedefine HAVE_TESTS
 
 /* Define if want to build trilinoscouplings-tests */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_TESTS
 
-/* Define if want trilinoscouplings examples use Isorropia+Zoltan */
-#cmakedefine TrilinosCouplings_ENABLE_Isorropia
-
 /* Define if want trilinoscouplings examples use Tpetra+Zoltan2 */
 #cmakedefine TrilinosCouplings_ENABLE_Zoltan2Core
 
 /* mfh 09 Apr 2014: Define if MueLu is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_MUELU
-
-/* mfh 10 Apr 2014: Define if ML is enabled in TrilinosCouplings */
-#cmakedefine HAVE_TRILINOSCOUPLINGS_ML
 
 /* Define if Stokhos is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_STOKHOS
@@ -71,9 +44,6 @@
 
 /* Define if want to build Ifpack2 */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_IFPACK2
-
-/* Define if want to build intrepid */
-#cmakedefine HAVE_TRILINOSCOUPLINGS_INTREPID
 
 /* Define if want to build intrepid2 */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_INTREPID2

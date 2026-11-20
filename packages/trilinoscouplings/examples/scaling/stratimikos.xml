@@ -19,43 +19,8 @@
   </ParameterList>
 
   <Parameter name="Preconditioner Type" type="string" value="MueLuRefMaxwell"/>
-  <!-- <Parameter name="Preconditioner Type" type="string" value="ML"/> -->
 
   <ParameterList name="Preconditioner Types">
-    <ParameterList name="ML">
-      <ParameterList name="ML Settings">
-        <Parameter name="refmaxwell: mode" type="string" value="additive"/>
-        <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
-        <Parameter name="aggregation: type" type="string" value="Uncoupled-MIS"/>
-        <Parameter name="ML output" type="int" value="10"/>
-        <Parameter name="smoother: type" type="string" value="Chebyshev"/>
-
-        <ParameterList name="refmaxwell: 11list">
-          <Parameter name="ML output" type="int" value="10"/>
-          <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-        </ParameterList>
-
-        <ParameterList name="edge matrix free: coarse">
-          <Parameter name="ML output" type="int" value="10"/>
-          <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-          <Parameter name="PDE equations" type="int" value="3"/>
-
-          <Parameter name="x-coordinates" type="string" value="substitute x-coordinates"/>
-          <Parameter name="y-coordinates" type="string" value="substitute y-coordinates"/>
-          <Parameter name="z-coordinates" type="string" value="substitute z-coordinates"/>
-        </ParameterList>
-
-        <ParameterList name="refmaxwell: 22list">
-          <Parameter name="ML output" type="int" value="10"/>
-          <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-
-          <Parameter name="x-coordinates" type="string" value="substitute x-coordinates"/>
-          <Parameter name="y-coordinates" type="string" value="substitute y-coordinates"/>
-          <Parameter name="z-coordinates" type="string" value="substitute z-coordinates"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-
     <ParameterList name="MueLuRefMaxwell">
       <Parameter name="refmaxwell: mode" type="string" value="additive"/>
       <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>

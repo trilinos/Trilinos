@@ -65,11 +65,6 @@ The drivers use the following Trilinos packages
 
 <ul>
 
- <li> <a href="http://trilinos.sandia.gov/packages/epetra/index.html"> Epetra </a> 
- <li> <a href="http://trilinos.sandia.gov/packages/epetraext/index.html"> EpetraExt </a> 
- <li> <a href="http://trilinos.sandia.gov/packages/intrepid/index.html">Intrepid </a> 
- <li> <a href="http://trilinos.sandia.gov/packages/isorropia/index.html">Isorropia </a> 
- <li> <a href="http://trilinos.sandia.gov/packages/ml/index.html">ML </a>
  <li> <a href="http://trilinos.sandia.gov/packages/pamgen/index.html">Pamgen </a>
  <li> <a href="http://trilinos.sandia.gov/packages/shards/index.html">Shards </a> 
  <li> <a href="http://trilinos.sandia.gov/packages/stk/index.html">STK </a>
