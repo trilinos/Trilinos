@@ -120,19 +120,19 @@ TEST_F(RightTetJournalFixture, tetCutBySphere_journalHasParentLeavesOfBothPhases
   const Sphere sphere(stk::math::Vector3d(0., 0., 0.), 0.5);
   const AnalyticSurfaceInterfaceGeometry geometry = build_geometry(sphere);
   CDMesh::decompose_mesh(mMesh, geometry);
-  const CDMesh & cdmesh = CDMesh::get_decomposed_mesh(mMesh);
+  const CDMesh & decomposedMesh = CDMesh::get_decomposed_mesh(mMesh);
 
   stk::mesh::EntityVector elements;
   stk::mesh::get_entities(mMesh, stk::topology::ELEMENT_RANK, elements);
   stk::mesh::EntityId parentId = 0;
   for (auto element : elements)
-    if (nullptr != cdmesh.find_mesh_element(mMesh.identifier(element)))
+    if (nullptr != decomposedMesh.find_mesh_element(mMesh.identifier(element)))
       parentId = mMesh.identifier(element);
   ASSERT_NE(0u, parentId);
   const std::string prefix = "element_" + std::to_string(parentId) + "_";
 
   const std::string fileBaseName = "tetCutBySphereJournal";
-  cdmesh.write_elements_journal(fileBaseName, {parentId}, geometry);
+  decomposedMesh.write_elements_journal(fileBaseName, {parentId}, geometry);
   const std::string fileName = fileBaseName + ".0.jou";
   std::ostringstream contents;
   contents << std::ifstream(fileName).rdbuf();

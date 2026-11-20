@@ -2104,13 +2104,13 @@ void CDMesh::share_and_insert_intersection_points(
           {
             size_t numNodes = 0;
             buffer.unpack(numNodes);
-            std::vector<stk::mesh::Entity> nodes(numNodes);
+            std::vector<stk::mesh::Entity> pointNodes(numNodes);
             std::vector<double> weights(numNodes);
             for (size_t i = 0; i < numNodes; ++i)
             {
               stk::mesh::EntityId nodeId = 0;
               buffer.unpack(nodeId);
-              nodes[i] = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
+              pointNodes[i] = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
               buffer.unpack(weights[i]);
             }
             size_t numDomains = 0;
@@ -2118,7 +2118,7 @@ void CDMesh::share_and_insert_intersection_points(
             std::vector<int> domains(numDomains);
             for (auto & domain : domains)
               buffer.unpack(domain);
-            give_to_elements_with_its_nodes(IntersectionPoint(false, nodes, weights, domains));
+            give_to_elements_with_its_nodes(IntersectionPoint(false, pointNodes, weights, domains));
           }
         });
   }

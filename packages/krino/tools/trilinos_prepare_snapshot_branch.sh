@@ -1,45 +1,31 @@
 #!/usr/bin/env bash
 
-# This is intended to work with a fork of trilinos, ie. https://github.com/drnobleabq/Trilinos
+# Starts a krino snapshot: makes the krino-snapshot branch of the Trilinos fork upstream develop.
+# See README_trilinos_snapshot.txt.
 
-exe() {
-  stdbuf -o0 -e0 echo "% $@" ;
-  eval "$@" ;
-  if [ $? -ne 0 ] ; then
-    echo "'$@' failed.";
-    exit 1;
-  fi
-}
+source "$(dirname "${BASH_SOURCE[0]}")/trilinos_snapshot_common.sh"
 
-verify_clean_repo() {
-  if [[ -n $(git status -s) ]] ; then
-    echo "Cannot proceed: repository at $1 is not clean"
-    exit 2;
-  fi
-}
+print_settings
+load_sierra_devel_if_available
 
-export TRILINOS=${TRILINOS:-/fgs/$USER/projects/Trilinos}
-export TRILINOS_BRANCH=develop
+cd "$TRILINOS"
+verify_clean_repo "$TRILINOS"
+verify_upstream_remote
 
-export SNAPSHOT_BRANCH=krino-snapshot
+[[ $NO_FETCH == 1 ]] || run git fetch --all --prune
 
-echo "SIERRA: $SIERRA"
-echo "TRILINOS: $TRILINOS"
+# The previous snapshot was squash-merged, so its commits are not ancestors of develop: start the branch
+# over from develop (not tracking it, so that a bare git push cannot go upstream) ...
+run git checkout --no-track -B "$SNAPSHOT_BRANCH" "upstream/$TRILINOS_BRANCH"
+git branch --unset-upstream 2>/dev/null || true # -B keeps tracking set up when the branch was made
 
-exe module load sierra-devel
+# ... and replace the fork's branch, whether or not GitHub deleted it after the last merge, so that
+# trilinos_create_snapshot_commit.sh can push normally.
+if [[ $NO_PUSH == 1 ]]; then
+  echo "NO_PUSH=1: not pushing $SNAPSHOT_BRANCH to origin"
+else
+  run git push --force-with-lease origin "$SNAPSHOT_BRANCH"
+fi
 
-exe cd $TRILINOS
-verify_clean_repo $TRILINOS
-
-#Pull request workflow
-exe git fetch --all --prune
-exe git checkout master
-exe git merge upstream/master
-exe git push origin master
-
-exe git branch -f $SNAPSHOT_BRANCH
-exe git checkout $SNAPSHOT_BRANCH
-exe git reset --hard upstream/$TRILINOS_BRANCH
-# The previous snapshot was squash-merged, so its commits on the fork's branch are not ancestors of
-# the new one: replace the fork's branch so trilinos_create_snapshot_commit.sh can push normally.
-exe git push --force-with-lease origin $SNAPSHOT_BRANCH
+echo "$SNAPSHOT_BRANCH is upstream/$TRILINOS_BRANCH ($(git log -1 --format='%h %ad' --date=short))."
+echo "Next: $(dirname "${BASH_SOURCE[0]}")/trilinos_create_snapshot_commit.sh"

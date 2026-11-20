@@ -1511,7 +1511,6 @@ TEST_F(RightTetSharpFeatureEdges, slabCrossingChordOfItsSurface_notCut)
     const double thickness = 2. * cdfem_support().get_snapper().get_edge_tolerance();
     const Cuboid slab = slab_normal_to_x(0.4, 0.4 + thickness);
     prepare_to_cut(slab);
-    const std::vector<int> surfaceDomains{0};
     node(0)->set_node_domains(surfaceDomains);
     node(1)->set_node_domains(surfaceDomains);
     cut_multiple_edge_crossings();
