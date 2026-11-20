@@ -824,9 +824,12 @@ IF (Stokhos_ENABLE_Sacado)
         CrsMatrix
         FECrsMatrix
         FEMultiVector
+        MapExtractor
         BlockVector
         BlockMultiVector
         BlockCrsMatrix
+        BlockedMultiVector
+        BlockedCrsMatrix
         Details::getDiagCopyWithoutOffsets
         Details::packCrsMatrix
         Details::unpackCrsMatrixAndCombine
