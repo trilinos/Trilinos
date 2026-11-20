@@ -13,6 +13,9 @@
 #include "Compadre_Typedefs.hpp"
 #include "Compadre_Utilities.hpp"
 
+#include <stdexcept>
+#include <string>
+
 namespace Compadre {
 
 // ENUM for quadrature types
@@ -43,6 +46,16 @@ protected:
 
         std::vector<int> oneDNumPointsFromOrder = {1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
         std::vector<int> twoDNumPointsFromOrder = {1, 1, 3, 4, 6, 7, 12, 13, 16, 19, 24, 27, 32, 36, 42, 55, 61, 66, 73, 78};
+
+        // checked in every build type: an order past the end of these tables would read out of bounds
+        if (dimension == 1 && (order < 0 || order >= static_cast<int>(oneDNumPointsFromOrder.size()))) {
+            throw std::logic_error("1D quadrature supports orders 0 to " + std::to_string(oneDNumPointsFromOrder.size()-1)
+                    + ", but order " + std::to_string(order) + " was requested.");
+        }
+        if (dimension == 2 && (order < 0 || order >= static_cast<int>(twoDNumPointsFromOrder.size()))) {
+            throw std::logic_error("2D quadrature supports orders 0 to " + std::to_string(twoDNumPointsFromOrder.size()-1)
+                    + ", but order " + std::to_string(order) + " was requested.");
+        }
 
         if (dimension == 0) {
             _number_of_quadrature_points = 0;

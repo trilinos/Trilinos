@@ -378,14 +378,14 @@ bool all_passed = true;
         }
 
         // check divergence - scalar basis
-        if(std::abs(actual_Divergence - GMLS_Divergence_Scalar) > failure_tolerance) {
+        if(!(std::abs(actual_Divergence - GMLS_Divergence_Scalar) <= failure_tolerance)) {
             all_passed = false;
             std::cout << i << " Failed Divergence on SCALAR basis by: " << std::abs(actual_Divergence - GMLS_Divergence_Scalar) << std::endl;
             std::cout << i << " GMLS " << GMLS_Divergence_Scalar << " adjusted " << GMLS_Divergence_Scalar << " actual " << actual_Divergence << std::endl;
         }
 
         // check divergence - vector basis
-        if(std::abs(actual_Divergence - GMLS_Divergence_Vector) > failure_tolerance) {
+        if(!(std::abs(actual_Divergence - GMLS_Divergence_Vector) <= failure_tolerance)) {
             all_passed = false;
             std::cout << i << " Failed Divergence on VECTOR basis by: " << std::abs(actual_Divergence - GMLS_Divergence_Vector) << std::endl;
             std::cout << i << " GMLS " << GMLS_Divergence_Vector << " adjusted " << GMLS_Divergence_Vector << " actual " << actual_Divergence << std::endl;
@@ -418,17 +418,17 @@ bool all_passed = true;
         }
 
         // check gradient - scalar gmls
-        if(std::abs(actual_Gradient[0] - Scalar_GMLS_GradX) > failure_tolerance) {
+        if(!(std::abs(actual_Gradient[0] - Scalar_GMLS_GradX) <= failure_tolerance)) {
             all_passed = false;
             std::cout << i << " Failed Scalar GradX by: " << std::abs(actual_Gradient[0] - Scalar_GMLS_GradX) << std::endl;
             if (dimension>1) {
-                if(std::abs(actual_Gradient[1] - Scalar_GMLS_GradY) > failure_tolerance) {
+                if(!(std::abs(actual_Gradient[1] - Scalar_GMLS_GradY) <= failure_tolerance)) {
                     all_passed = false;
                     std::cout << i << " Failed Scalar GradY by: " << std::abs(actual_Gradient[1] - Scalar_GMLS_GradY) << std::endl;
                 }
             }
             if (dimension>2) {
-                if(std::abs(actual_Gradient[2] - Scalar_GMLS_GradZ) > failure_tolerance) {
+                if(!(std::abs(actual_Gradient[2] - Scalar_GMLS_GradZ) <= failure_tolerance)) {
                     all_passed = false;
                     std::cout << i << " Failed Scalar GradZ by: " << std::abs(actual_Gradient[2] - Scalar_GMLS_GradZ) << std::endl;
                 }
@@ -436,17 +436,17 @@ bool all_passed = true;
         }
 
         // check gradient - vector gmls
-        if(std::abs(actual_Gradient[0] - Vector_GMLS_GradX) > failure_tolerance) {
+        if(!(std::abs(actual_Gradient[0] - Vector_GMLS_GradX) <= failure_tolerance)) {
             all_passed = false;
             std::cout << i << " Failed Vector GradX by: " << std::abs(actual_Gradient[0] - Vector_GMLS_GradX) << std::endl;
             if (dimension>1) {
-                if(std::abs(actual_Gradient[1] - Vector_GMLS_GradY) > failure_tolerance) {
+                if(!(std::abs(actual_Gradient[1] - Vector_GMLS_GradY) <= failure_tolerance)) {
                     all_passed = false;
                     std::cout << i << " Failed Vector GradY by: " << std::abs(actual_Gradient[1] - Vector_GMLS_GradY) << std::endl;
                 }
             }
             if (dimension>2) {
-                if(std::abs(actual_Gradient[2] - Vector_GMLS_GradZ) > failure_tolerance) {
+                if(!(std::abs(actual_Gradient[2] - Vector_GMLS_GradZ) <= failure_tolerance)) {
                     all_passed = false;
                     std::cout << i << " Failed Vector GradZ by: " << std::abs(actual_Gradient[2] - Vector_GMLS_GradZ) << std::endl;
                 }

@@ -47,12 +47,10 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
             P_target_row(j,k) = 0;
         });
     });
-    for (int j = 0; j < delta.extent_int(0); ++j) {
-        delta(j) = 0;
-    }
-    for (int j = 0; j < thread_workspace.extent_int(0); ++j) {
-        thread_workspace(j) = 0;
-    }
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, delta.extent_int(0)),
+        [&](int j){ delta(j) = 0.0; });
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, thread_workspace.extent_int(0)),
+      [&](int j){ thread_workspace(j) = 0.0; });
     teamMember.team_barrier();
 
     // not const b.c. of gcc 7.2 issue
@@ -80,11 +78,9 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
 
             if (data._operations(i) == TargetOperation::ScalarPointEvaluation || (data._operations(i) == TargetOperation::VectorPointEvaluation && data._dimensions == 1) /* vector is a scalar in 1D */) {
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, num_evaluation_sites), [&] (const int j) {
-                    calcPij<TargetData>(data, teamMember, delta.data(), thread_workspace.data(), target_index, -1 /* target is neighbor */, 1 /*alpha*/, data._dimensions, data._poly_order, false /*bool on only specific order*/, NULL /*&V*/, ReconstructionSpace::ScalarTaylorPolynomial, PointSample, j);
                     int offset = data._d_ss.getTargetOffsetIndex(i, 0, 0, j);
-                    for (int k=0; k<target_NP; ++k) {
-                        P_target_row(offset, k) = delta(k);
-                    }
+                    auto row = Kokkos::subview(P_target_row, offset, Kokkos::ALL());
+                    calcPij<TargetData>(data, teamMember, row.data(), thread_workspace.data(), target_index, -1 /* target is neighbor */, 1 /*alpha*/, data._dimensions, data._poly_order, false /*bool on only specific order*/, NULL /*&V*/, ReconstructionSpace::ScalarTaylorPolynomial, PointSample, j);
                 });
                 additional_evaluation_sites_handled = true; // additional non-target site evaluations handled
             } else if (data._operations(i) == TargetOperation::LaplacianOfScalarPointEvaluation) {
@@ -92,16 +88,16 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                     int offset = data._d_ss.getTargetOffsetIndex(i, 0, 0, 0);
                     switch (data._dimensions) {
                     case 3:
-                        P_target_row(offset, 4) = std::pow(data._epsilons(target_index), -2);
-                        P_target_row(offset, 6) = std::pow(data._epsilons(target_index), -2);
-                        P_target_row(offset, 9) = std::pow(data._epsilons(target_index), -2);
+                        P_target_row(offset, 4) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
+                        P_target_row(offset, 6) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
+                        P_target_row(offset, 9) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
                         break;
                     case 2:
-                        P_target_row(offset, 3) = std::pow(data._epsilons(target_index), -2);
-                        P_target_row(offset, 5) = std::pow(data._epsilons(target_index), -2);
+                        P_target_row(offset, 3) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
+                        P_target_row(offset, 5) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
                         break;
                     default:
-                        P_target_row(offset, 2) = std::pow(data._epsilons(target_index), -2);
+                        P_target_row(offset, 2) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
                     }
                 });
             } else if (data._operations(i) == TargetOperation::GradientOfScalarPointEvaluation) {
@@ -145,16 +141,16 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                   int offset = data._d_ss.getTargetOffsetIndex(i, 0, 0, 0);
                   switch (data._dimensions) {
                   case 3:
-                      P_target_row(offset, 4) = std::pow(data._epsilons(target_index), -2);
-                      P_target_row(offset, 6) = std::pow(data._epsilons(target_index), -2);
-                      P_target_row(offset, 9) = std::pow(data._epsilons(target_index), -2);
+                      P_target_row(offset, 4) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
+                      P_target_row(offset, 6) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
+                      P_target_row(offset, 9) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
                       break;
                   case 2:
-                      P_target_row(offset, 3) = std::pow(data._epsilons(target_index), -2);
-                      P_target_row(offset, 5) = std::pow(data._epsilons(target_index), -2);
+                      P_target_row(offset, 3) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
+                      P_target_row(offset, 5) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
                       break;
                   default:
-                      P_target_row(offset, 2) = std::pow(data._epsilons(target_index), -2);
+                      P_target_row(offset, 2) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
                   }
               });
             } else if (data._operations(i) == TargetOperation::CellAverageEvaluation ||
@@ -340,16 +336,16 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                         int offset = data._d_ss.getTargetOffsetIndex(i, 0, 0, 0);;
                         switch (data._dimensions) {
                         case 3:
-                            P_target_row(offset, 1) = std::pow(data._epsilons(target_index), -1);
-                            P_target_row(offset, target_NP + 2) = std::pow(data._epsilons(target_index), -1);
-                            P_target_row(offset, 2*target_NP + 3) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 1) = 1.0 / data._epsilons(target_index);
+                            P_target_row(offset, target_NP + 2) = 1.0 / data._epsilons(target_index);
+                            P_target_row(offset, 2*target_NP + 3) = 1.0 / data._epsilons(target_index);
                             break;
                         case 2:
-                            P_target_row(offset, 1) = std::pow(data._epsilons(target_index), -1);
-                            P_target_row(offset, target_NP + 2) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 1) = 1.0 / data._epsilons(target_index);
+                            P_target_row(offset, target_NP + 2) = 1.0 / data._epsilons(target_index);
                             break;
                         default:
-                            P_target_row(offset, 1) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 1) = 1.0 / data._epsilons(target_index);
                         }
                     });
                 } else {
@@ -377,12 +373,12 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             offset = data._d_ss.getTargetOffsetIndex(i, 1 /*in*/, 0 /*out*/, 0/*additional*/);
                             // role of input 1 on component 0 of curl
                             // -u_{1,z}
-                            P_target_row(offset, target_NP + 3) = -std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, target_NP + 3) = -1.0 / data._epsilons(target_index);
 
                             offset = data._d_ss.getTargetOffsetIndex(i, 2 /*in*/, 0 /*out*/, 0/*additional*/);
                             // role of input 2 on component 0 of curl
                             // u_{2,y}
-                            P_target_row(offset, 2*target_NP + 2) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 2*target_NP + 2) = 1.0 / data._epsilons(target_index);
                         }
 
                         // output component 1
@@ -391,7 +387,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             int offset = data._d_ss.getTargetOffsetIndex(i, 0 /*in*/, 1 /*out*/, 0/*additional*/);
                             // role of input 0 on component 1 of curl
                             // u_{0,z}
-                            P_target_row(offset, 3) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 3) = 1.0 / data._epsilons(target_index);
 
                             // offset = data._d_ss.getTargetOffsetIndex(i, 1 /*in*/, 1 /*out*/, 0/*additional*/);
                             // role of input 1 on component 1 of curl
@@ -400,7 +396,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             offset = data._d_ss.getTargetOffsetIndex(i, 2 /*in*/, 1 /*out*/, 0/*additional*/);
                             // role of input 2 on component 1 of curl
                             // -u_{2,x}
-                            P_target_row(offset, 2*target_NP + 1) = -std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 2*target_NP + 1) = -1.0 / data._epsilons(target_index);
                         }
 
                         // output component 2
@@ -409,12 +405,12 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             int offset = data._d_ss.getTargetOffsetIndex(i, 0 /*in*/, 2 /*out*/, 0/*additional*/);
                             // role of input 0 on component 1 of curl
                             // -u_{0,y}
-                            P_target_row(offset, 2) = -std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 2) = -1.0 / data._epsilons(target_index);
 
                             offset = data._d_ss.getTargetOffsetIndex(i, 1 /*in*/, 2 /*out*/, 0/*additional*/);
                             // role of input 1 on component 1 of curl
                             // u_{1,x}
-                            P_target_row(offset, target_NP + 1) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, target_NP + 1) = 1.0 / data._epsilons(target_index);
 
                             // offset = data._d_ss.getTargetOffsetIndex(i, 2 /*in*/, 2 /*out*/, 0/*additional*/);
                             // role of input 2 on component 1 of curl
@@ -433,7 +429,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             offset = data._d_ss.getTargetOffsetIndex(i, 1 /*in*/, 0 /*out*/, 0/*additional*/);
                             // role of input 1 on component 0 of curl
                             // -u_{1,z}
-                            P_target_row(offset, target_NP + 2) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, target_NP + 2) = 1.0 / data._epsilons(target_index);
                         }
 
                         // output component 1
@@ -442,7 +438,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             int offset = data._d_ss.getTargetOffsetIndex(i, 0 /*in*/, 1 /*out*/, 0/*additional*/);
                             // role of input 0 on component 1 of curl
                             // u_{0,z}
-                            P_target_row(offset, 1) = -std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 1) = -1.0 / data._epsilons(target_index);
 
                             //offset = data._d_ss.getTargetOffsetIndex(i, 1 /*in*/, 1 /*out*/, 0/*additional*/);
                             // role of input 1 on component 1 of curl
@@ -467,11 +463,9 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
             if (data._operations(i) == TargetOperation::ScalarPointEvaluation || (data._operations(i) == TargetOperation::VectorPointEvaluation && data._dimensions == 1) /* vector is a scalar in 1D */) {
                 // copied from ScalarTaylorPolynomial
                 Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, num_evaluation_sites), [&] (const int j) {
-                    calcPij<TargetData>(data, teamMember, delta.data(), thread_workspace.data(), target_index, -1 /* target is neighbor */, 1 /*alpha*/, data._dimensions, data._poly_order, false /*bool on only specific order*/, NULL /*&V*/, ReconstructionSpace::ScalarTaylorPolynomial, PointSample, j);
                     int offset = data._d_ss.getTargetOffsetIndex(i, 0, 0, j);
-                    for (int k=0; k<target_NP; ++k) {
-                        P_target_row(offset, k) = delta(k);
-                    }
+                    auto row = Kokkos::subview(P_target_row, offset, Kokkos::ALL());
+                    calcPij<TargetData>(data, teamMember, row.data(), thread_workspace.data(), target_index, -1 /* target is neighbor */, 1 /*alpha*/, data._dimensions, data._poly_order, false /*bool on only specific order*/, NULL /*&V*/, ReconstructionSpace::ScalarTaylorPolynomial, PointSample, j);
                 });
                 additional_evaluation_sites_handled = true; // additional non-target site evaluations handled
             } else if (data._operations(i) == TargetOperation::VectorPointEvaluation) {
@@ -493,16 +487,16 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                     int offset = data._d_ss.getTargetOffsetIndex(i, 0, 0, 0);
                     switch (data._dimensions) {
                     case 3:
-                        P_target_row(offset, 4) = std::pow(data._epsilons(target_index), -2);
-                        P_target_row(offset, 6) = std::pow(data._epsilons(target_index), -2);
-                        P_target_row(offset, 9) = std::pow(data._epsilons(target_index), -2);
+                        P_target_row(offset, 4) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
+                        P_target_row(offset, 6) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
+                        P_target_row(offset, 9) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
                         break;
                     case 2:
-                        P_target_row(offset, 3) = std::pow(data._epsilons(target_index), -2);
-                        P_target_row(offset, 5) = std::pow(data._epsilons(target_index), -2);
+                        P_target_row(offset, 3) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
+                        P_target_row(offset, 5) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
                         break;
                     default:
-                        P_target_row(offset, 2) = std::pow(data._epsilons(target_index), -2);
+                        P_target_row(offset, 2) = 1.0 / (data._epsilons(target_index)*data._epsilons(target_index));
                     }
                 });
             } else if (data._operations(i) == TargetOperation::GradientOfScalarPointEvaluation) {
@@ -563,14 +557,14 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                         P_target_row(offset, j) = 0;
                     }
 
-                    P_target_row(offset, 1) = std::pow(data._epsilons(target_index), -1);
+                    P_target_row(offset, 1) = 1.0 / data._epsilons(target_index);
 
                     if (data._dimensions>1) {
                         offset = data._d_ss.getTargetOffsetIndex(i, 1, 0, 0);
                         for (int j=0; j<target_NP; ++j) {
                             P_target_row(offset, j) = 0;
                         }
-                        P_target_row(offset, 2) = std::pow(data._epsilons(target_index), -1);
+                        P_target_row(offset, 2) = 1.0 / data._epsilons(target_index);
                     }
 
                     if (data._dimensions>2) {
@@ -578,7 +572,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                         for (int j=0; j<target_NP; ++j) {
                             P_target_row(offset, j) = 0;
                         }
-                        P_target_row(offset, 3) = std::pow(data._epsilons(target_index), -1);
+                        P_target_row(offset, 3) = 1.0 / data._epsilons(target_index);
                     }
                 });
             } else if (data._operations(i) == TargetOperation::CurlOfVectorPointEvaluation) {
@@ -603,7 +597,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             }
                             // role of input 1 on component 0 of curl
                             // -u_{1,z}
-                            P_target_row(offset, 3) = -std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 3) = -1.0 / data._epsilons(target_index);
 
                             offset = data._d_ss.getTargetOffsetIndex(i, 2, 0, 0);
                             for (int j=0; j<target_NP; ++j) {
@@ -611,7 +605,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             }
                             // role of input 2 on component 0 of curl
                             // u_{2,y}
-                            P_target_row(offset, 2) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 2) = 1.0 / data._epsilons(target_index);
                         }
 
                         // output component 1
@@ -623,7 +617,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             }
                             // role of input 0 on component 1 of curl
                             // u_{0,z}
-                            P_target_row(offset, 3) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 3) = 1.0 / data._epsilons(target_index);
 
                             offset = data._d_ss.getTargetOffsetIndex(i, 1, 1, 0);
                             for (int j=0; j<target_NP; ++j) {
@@ -638,7 +632,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             }
                             // role of input 2 on component 1 of curl
                             // -u_{2,x}
-                            P_target_row(offset, 1) = -std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 1) = -1.0 / data._epsilons(target_index);
                         }
 
                         // output component 2
@@ -650,7 +644,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             }
                             // role of input 0 on component 1 of curl
                             // -u_{0,y}
-                            P_target_row(offset, 2) = -std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 2) = -1.0 / data._epsilons(target_index);
 
                             offset = data._d_ss.getTargetOffsetIndex(i, 1, 2, 0);
                             for (int j=0; j<target_NP; ++j) {
@@ -658,7 +652,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             }
                             // role of input 1 on component 1 of curl
                             // u_{1,x}
-                            P_target_row(offset, 1) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 1) = 1.0 / data._epsilons(target_index);
 
                             offset = data._d_ss.getTargetOffsetIndex(i, 2, 2, 0);
                             for (int j=0; j<target_NP; ++j) {
@@ -686,7 +680,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             }
                             // role of input 1 on component 0 of curl
                             // -u_{1,z}
-                            P_target_row(offset, 2) = std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 2) = 1.0 / data._epsilons(target_index);
                         }
 
                         // output component 1
@@ -698,7 +692,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             }
                             // role of input 0 on component 1 of curl
                             // u_{0,z}
-                            P_target_row(offset, 1) = -std::pow(data._epsilons(target_index), -1);
+                            P_target_row(offset, 1) = -1.0 / data._epsilons(target_index);
 
                             offset = data._d_ss.getTargetOffsetIndex(i, 1, 1, 0);
                             for (int j=0; j<target_NP; ++j) {
@@ -792,8 +786,8 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                             } else {
                                 if (m1==0) {
                                     // curl results in 1D output
-                                    P_target_row(offset, 2) = -std::pow(data._epsilons(target_index), -1);
-                                    P_target_row(offset, 3) = std::pow(data._epsilons(target_index), -1);
+                                    P_target_row(offset, 2) = -1.0 / data._epsilons(target_index);
+                                    P_target_row(offset, 3) = 1.0 / data._epsilons(target_index);
 
                                     calcGradientPij<TargetData>(data, teamMember, delta.data(), thread_workspace.data(), target_index, -(1+1) /* -(component+1) */, 1 /*alpha*/, 0 /*partial_direction*/, data._dimensions, data._poly_order, false /*specific order only*/, NULL /*&V*/, ReconstructionSpace::DivergenceFreeVectorTaylorPolynomial, VectorPointSample, e);
                                     // u1x

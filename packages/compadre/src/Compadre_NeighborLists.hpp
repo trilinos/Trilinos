@@ -74,8 +74,8 @@ struct NeighborLists {
             computeMaxNumNeighbors();
         } else {
             _max_neighbor_list_row_storage_size = -1;
+            _min_neighbor_list_row_storage_size = -1;
         }
-        _min_neighbor_list_row_storage_size = -1;
 
         //check neighbor_lists is large enough
         compadre_assert_release(((size_t)(this->getTotalNeighborsOverAllListsHost())<=cr_neighbor_lists.extent(0)) 
@@ -159,19 +159,26 @@ struct NeighborLists {
 
     //! Calculate the maximum number of neighbors of all targets' neighborhoods (host)
     void computeMaxNumNeighbors() {
+        // computes the minimum along with the maximum, in the same reduction, so both are available
+        // whenever neighbor lists are set without another pass over the targets
         if (_number_of_neighbors_list.extent(0)==0) {
             _max_neighbor_list_row_storage_size = 0;
+            _min_neighbor_list_row_storage_size = 0;
         } else {
             auto number_of_neighbors_list = _number_of_neighbors_list;
-            Kokkos::parallel_reduce("max number of neighbors", 
+            Kokkos::MinMaxScalar<int> min_max;
+            Kokkos::parallel_reduce("min and max number of neighbors",
                     Kokkos::RangePolicy<typename view_type::execution_space>(0, _number_of_neighbors_list.extent(0)), 
-                    KOKKOS_LAMBDA(const int i, int& t_max_num_neighbors) {
-                t_max_num_neighbors = ((int)number_of_neighbors_list(i) > t_max_num_neighbors) ? (int)number_of_neighbors_list(i) : t_max_num_neighbors;
-            }, Kokkos::Max<int>(_max_neighbor_list_row_storage_size));
+                    KOKKOS_LAMBDA(const int i, Kokkos::MinMaxScalar<int>& t_min_max) {
+                const int num_neighbors = (int)number_of_neighbors_list(i);
+                if (num_neighbors < t_min_max.min_val) t_min_max.min_val = num_neighbors;
+                if (num_neighbors > t_min_max.max_val) t_min_max.max_val = num_neighbors;
+            }, Kokkos::MinMax<int>(min_max));
             Kokkos::fence();
+            _max_neighbor_list_row_storage_size = min_max.max_val;
+            _min_neighbor_list_row_storage_size = min_max.min_val;
         }
     }
-
     //! Calculate the minimum number of neighbors of all targets' neighborhoods (host)
     void computeMinNumNeighbors() {
         if (_number_of_neighbors_list.extent(0)==0) {
