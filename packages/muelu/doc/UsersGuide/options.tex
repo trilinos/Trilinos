@@ -3,8 +3,8 @@
 In this section, we report the complete list of \muelu{} input parameters.  It
 is important to notice, however, that \muelu{} relies on other \trilinos{}
 packages to provide support for some of its algorithms. For instance,
-\ifpack{}/\ifpacktwo{} provide standard smoothers like Jacobi, Gauss-Seidel or
-Chebyshev, while \amesos{}/\amesostwo{} provide access to direct solvers. The
+\ifpacktwo{} provides standard smoothers like Jacobi, Gauss-Seidel or
+Chebyshev, while \amesostwo{} provides access to direct solvers. The
 parameters affecting the behavior of the algorithms in those packages are
 simply passed by \muelu{} to a routine from the corresponding library. Please
 consult corresponding packages' documentation for a full list of supported
@@ -94,8 +94,8 @@ parameters.
 \label{sec:options_smoothing}
 
 \muelu{} relies on other \trilinos{} packages to provide level smoothers and
-coarse solvers. \ifpack{} and \ifpacktwo{} provide standard smoothers (see
-Table~\ref{tab:smoothers}), and \amesos{} and \amesostwo{} provide direct
+coarse solvers. \ifpacktwo{} provides standard smoothers (see
+Table~\ref{tab:smoothers}), and \amesostwo{} provides direct
 solvers (see Table~\ref{tab:coarse_solvers}). Note that it is completely possible to use
 any level smoother as a direct solver.
 
@@ -105,10 +105,8 @@ determine:
   \item what package to use (i.e., is it a smoother or a direct solver);
   \item (possibly) transform a smoother type
 
-    \ding{42} \ifpack{} and \ifpacktwo{} use different smoother type names,
-    e.g., ``point relaxation stand-alone'' vs ``RELAXATION''.  \muelu{} tries to follow
-    \ifpacktwo{} notation for smoother types. Please consult \ifpacktwo{}
-    documentation~\cite{Ifpack2} for more information.
+    \ding{42} \muelu{} follows \ifpacktwo{} notation for smoother types.
+    Please consult \ifpacktwo{} documentation~\cite{Ifpack2} for more information.
 \end{itemize}
 The parameter lists \verb|smoother: * params| and \verb|coarse: params| are
 passed directly to the corresponding package without any examination of their
@@ -133,7 +131,7 @@ post-smoothing, and SuperLU for coarse system solver.
       \verb|ILUT|, \verb|RILUK|         & Local (processor-based) incomplete factorization methods. \\
       \bottomrule
     \end{tabular}
-    \caption{Commonly used smoothers provided by \ifpack{}/\ifpacktwo{}. Note
+    \caption{Commonly used smoothers provided by \ifpacktwo{}. Note
     that these smoothers can also be used as coarse grid solvers.}
 \label{tab:smoothers}
   \end{center}
@@ -141,19 +139,16 @@ post-smoothing, and SuperLU for coarse system solver.
 
 \begin{table}[tbh]
   \begin{center}
-    \begin{tabular}{p{4.0cm} c c p{7cm}}
+    \begin{tabular}{p{4.0cm} p{9cm}}
       \toprule
-      \texttt{coarse: type}             & \amesos{} & \amesostwo{} &  \\
+      \texttt{coarse: type}             &  \\
       \midrule
-      \verb|KLU|                        & x & & Default \amesos{} solver~\cite{klu}. \\
-      \verb|KLU2|                       & & x & Default \amesostwo{} solver~\cite{amesos2_belos}. \\
-      \verb|SuperLU|                    & x & x & Third-party serial sparse direct solver~\cite{Li2011}. \\
-      \verb|SuperLU_dist|               & x & x & Third-party parallel sparse direct solver~\cite{Li2011}. \\
-      \verb|Umfpack|                    & x & & Third-party solver~\cite{umfpack}. \\
-      \verb|Mumps|                      & x & & Third-party solver~\cite{mumps}. \\
+      \verb|KLU2|                       & Default \amesostwo{} solver~\cite{amesos2_belos}. \\
+      \verb|SuperLU|                    & Third-party serial sparse direct solver~\cite{Li2011}. \\
+      \verb|SuperLU_dist|               & Third-party parallel sparse direct solver~\cite{Li2011}. \\
       \bottomrule
     \end{tabular}
-    \caption{Commonly used direct solvers provided by \amesos{}/\amesostwo{}}
+    \caption{Commonly used direct solvers provided by \amesostwo{}}
 \label{tab:coarse_solvers}
   \end{center}
 \end{table}
@@ -165,7 +160,7 @@ In certain cases, the user may want to do no smoothing on a particular level, or
 \end{itemize}
 
 When a problem can be solved using structured aggregation algorithms it is also possible to use the structured line detection factory,
- this will allow \muelu{} to pass additional information to \ifpack2{} enabling it to perform line smoothing.
+ this will allow \muelu{} to pass additional information to \ifpacktwo{} enabling it to perform line smoothing.
 An example of line smoothing is provided in \texttt{packages/trilinoscouplings/examples/scaling/muelu\_Ifpack2\_line\_detection.xml}.
 
 \input{options_smoothing_and_coarse}
@@ -208,7 +203,7 @@ An example of line smoothing is provided in \texttt{packages/trilinoscouplings/e
     \begin{tabular}{p{4.0cm} p{8.5cm} p{1.5cm} p{2.0cm}}
       Algorithm & Description & Parallel? & Deterministic? \\
       \toprule
-      \verb!mis2 aggregation! &     Uses distance-2 MIS to perform aggregation similar to non-Kokkos refactor.
+      \verb!mis2 aggregation! &     Uses distance-2 MIS to perform aggregation.
                                     Faster than coloring-based aggregation.
                                     Cannot control min/max aggregate size. & Yes & Yes \\
       \verb!mis2 coarsening! &      Uses distance-2 MIS to perform simple coarsening where only independent vertices become aggregate roots.
@@ -223,12 +218,12 @@ An example of line smoothing is provided in \texttt{packages/trilinoscouplings/e
                                     Then does 4-phase aggregation on device. & Yes & No \\
       \bottomrule
     \end{tabular}
-    \caption{Available choices for \texttt{aggregation: coloring algorithm}. This controls Kokkos-refactored uncoupled aggregation. }
+    \caption{Available choices for \texttt{aggregation: coloring algorithm}. This controls uncoupled aggregation. }
 \label{t:coloring_algs}
   \end{center}
 \end{table}
 
-Table \ref{t:coloring_algs} lists the available values for \verb!aggregation: coloring algorithm!, which (in Kokkos-refactored uncoupled aggregation) controls how aggregate roots are selected and aggregates are constructed. Under ``Deterministic?'', Yes means the same aggregates are produced for a given graph every run, on any machine. Optional means deterministic only if \verb!aggregation: deterministic! is true, and in this case determinism comes with a speed penalty.
+Table \ref{t:coloring_algs} lists the available values for \verb!aggregation: coloring algorithm!, which controls how aggregate roots are selected and aggregates are constructed in uncoupled aggregation. Under ``Deterministic?'', Yes means the same aggregates are produced for a given graph every run, on any machine. Optional means deterministic only if \verb!aggregation: deterministic! is true, and in this case determinism comes with a speed penalty.
 
 \input{options_aggregation}
 
@@ -363,9 +358,7 @@ the no reuse to the full reuse ("full").
       \verb!emin!   & Reuse old prolongator as an initial guess to energy
                       minimization, and reuse the prolongator pattern \\
       \verb!RP!     & Reuse smoothed prolongator and restrictor. Smoothers are
-                      recomputed.  \ding{42} \verb!RP! should reuse matrix graphs for
-                      matrix-matrix product, but currently that is disabled as only \epetra{}
-                      supports it. \\
+                      recomputed. \\
       \verb!RAP!    & Recompute only the finest level smoothers, reuse all other operators \\
       \verb!full!   & Reuse everything \\
       \bottomrule

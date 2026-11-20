@@ -7,7 +7,7 @@
 \noindent There are basically two distinct ways to use \ml input parameters with \muelu:
 \begin{description}
 \item[MLParameterListInterpreter:] This class is the pendant of the \texttt{ParameterListInterpreter} class for the \muelu parameters. It accepts parameter lists or XML files with \ml parameters and generates a \muelu multigrid hierarchy. It supports only a well-defined subset of \ml parameters which have a equivalent parameter in \muelu.
-\item[ML2MueLuParameterTranslator:] This class is a simple wrapper class which translates \ml parameters to the corresponding \muelu parameters. It has to be used in combination with the \muelu \texttt{ParameterListInterpreter} class to generate a \muelu multigrid hierarchy. It is also meant to be used in combination with the \texttt{CreateEpetraPreconditioner} and \texttt{CreateTpetraPreconditioner} routines (see \S\ref{sec:examples in code}). It supports only a small subset of the \ml parameters.
+\item[ML2MueLuParameterTranslator:] This class is a simple wrapper class which translates \ml parameters to the corresponding \muelu parameters. It has to be used in combination with the \muelu \texttt{ParameterListInterpreter} class to generate a \muelu multigrid hierarchy. It is also meant to be used in combination with the \texttt{CreateTpetraPreconditioner} routine (see \S\ref{sec:examples in code}). It supports only a small subset of the \ml parameters.
 \end{description}
 
 \section{Usage of \ml parameter lists with \muelu}
@@ -39,7 +39,7 @@ Note that the \texttt{MLParameterListInterpreter} only supports a basic set of \
 
 \subsection{ML2MueLuParameterTranslator}
 
-The \texttt{Ml2MueLuParameterTranslator} class is a simple wrapper translating \ml parameters to the corresponding \muelu parameters. This allows the usage of the simple \texttt{CreateEpetraPreconditioner} and \texttt{CreateTpetraPreconditioner} interface with \ml parameters:
+The \texttt{Ml2MueLuParameterTranslator} class is a simple wrapper translating \ml parameters to the corresponding \muelu parameters. This allows the usage of the simple \texttt{CreateTpetraPreconditioner} interface with \ml parameters:
 
 \begin{lstlisting}[language=C++]
     Teuchos::RCP<Tpetra::CrsMatrix<> > A;

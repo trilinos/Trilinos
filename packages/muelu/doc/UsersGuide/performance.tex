@@ -72,7 +72,7 @@ Some general advice:
     your coarse level solution becomes too expensive (see~\S\ref{sec:options_smoothing}).
 
   \item
-    If on-node parallelism is required, make sure to enable the \kokkos code path (\texttt{use kokkos refactor}).
+    \muelu{} uses \kokkos{} automatically for on-node parallelism.
     If Gauss-Seidel smoothing is used, switch to multi-threaded Gauss-Seidel (see~\S\ref{sec:options_smoothing}).
 
 \end{itemize}

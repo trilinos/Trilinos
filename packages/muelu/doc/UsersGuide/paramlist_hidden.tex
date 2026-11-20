@@ -139,9 +139,9 @@
         
 \cbb{aggregation: greedy Dirichlet}{bool}{false}{Force the aggregate to be Dirichlet if any DOFs in the aggregate are Dirichlet (default is aggregates are Dirichlet only if all DOFs in the aggregate are Dirichlet).}
         
-\cbb{aggregation: deterministic}{bool}{false}{Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).}
+\cbb{aggregation: deterministic}{bool}{false}{Boolean indicating whether or not aggregation will be run deterministically (only used in uncoupled aggregation).}
         
-\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 independent set or coloring algorithm used by Uncoupled Aggregation, when using kokkos refactored aggregation. See Table \ref{t:coloring_algs} for more information.}
+\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 independent set or coloring algorithm used by Uncoupled Aggregation. See Table \ref{t:coloring_algs} for more information.}
         
 \cbb{aggregation: coloring: use color graph}{bool}{false}{Have CoalesceDropFactory generate a seperate graph for SOC and for coloring}
         
@@ -277,7 +277,7 @@
         
 \cbb{restriction: scale nullspace}{bool}{false}{Block-diagonally scale (based on number of PDEs) the nullspace for the restriction only.}
         
-\cbb{use kokkos refactor}{bool}{false}{Switch on the new \kokkos based version for on-node parallelism.}
+\cbb{use kokkos refactor}{bool}{false}{Deprecated. The \kokkos code path is now used by default.}
         
 \cbb{synchronize factory timers}{bool}{false}{Add barriers before and after Factory Build() calls.}
         
