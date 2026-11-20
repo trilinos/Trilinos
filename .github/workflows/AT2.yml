@@ -16,7 +16,32 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      only_non_code_dirs: ${{ steps.check.outputs.only_skipped_dir }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+         fetch-depth: 0
+
+      - id: check
+        shell: bash
+        run: |
+          changed_files=$(git diff --name-only \
+            ${{ github.event.pull_request.base.sha }} \
+            ${{ github.event.pull_request.head.sha }})
+
+          if [ -n "$changed_files" ] && \
+             printf '%s\n' "$changed_files" | grep -qv '^.agents/'; then
+            echo "only_skipped_dir=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "only_skipped_dir=true" >> "$GITHUB_OUTPUT"
+          fi
+
   gcc12-openmpi4:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260903']"
@@ -29,6 +54,8 @@ jobs:
       target-branch: ${{ github.base_ref }}
 
   clang19-openmpi4:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260903']"
@@ -41,6 +68,8 @@ jobs:
       target-branch: ${{ github.base_ref }}
 
   clang19-openmpi4-experimental:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260903']"
@@ -56,6 +85,8 @@ jobs:
       extra-pr-driver-args: --extra-configure-args=-DTpetra_ENABLE_Experimental=ON;-DAmesos2_ENABLE_Experimental=ON;-DBelos_ENABLE_Experimental=ON;-DIfpack2_ENABLE_Experimental=ON;-DXpetra_ENABLE_Experimental=ON;-DMueLu_ENABLE_Experimental=ON;-DStokhos_ENABLE_Experimental=ON;-DZoltan2Core_ENABLE_Experimental=ON
 
   clang19-openmpi4-performance-tests:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260903']"
@@ -69,6 +100,8 @@ jobs:
       extra-pr-driver-args: --extra-configure-args=-DTrilinos_TEST_CATEGORIES=PERFORMANCE
 
   cuda12:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260903', 'gpu:A100']"
@@ -82,6 +115,8 @@ jobs:
       target-branch: ${{ github.base_ref }}
 
   gcc14:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-14', '20260903']"
@@ -94,6 +129,8 @@ jobs:
       target-branch: ${{ github.base_ref }}
 
   cuda12-uvm:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260903']"
@@ -106,6 +143,8 @@ jobs:
       target-branch: ${{ github.base_ref }}
 
   rocm6-clang19-openmpi4:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'rocm-6.4.3-clang-19.0.0-openmpi-4.1.6-x86_64-gfx942', '20261105']"
@@ -118,6 +157,8 @@ jobs:
       skip-run-tests: true
 
   oneapi2024:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'oneapi-2024.2', '20260903']"
@@ -130,6 +171,8 @@ jobs:
       target-branch: ${{ github.base_ref }}
 
   openmp:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260903']"
@@ -142,6 +185,8 @@ jobs:
       target-branch: ${{ github.base_ref }}
 
   framework-tests:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'python-3.9', '20260903']"
@@ -153,6 +198,8 @@ jobs:
       target-branch: ${{ github.base_ref }}
 
   ramses-openmp:
+    needs: changes
+    if: needs.changes.outputs.only_skipped_dir != 'true'
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260903']"
