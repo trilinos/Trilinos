@@ -41,7 +41,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void copy(const volatile T* src, volatile T*  dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = *(src++);
+        dest[i] = src[i];
     }
 
     //! Copy array from \c src to \c dest of length \c sz
@@ -49,7 +49,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void copy(const volatile T* src, T*  dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = *(src++);
+        dest[i] = src[i];
     }
 
     //! Copy array from \c src to \c dest of length \c sz
@@ -57,7 +57,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void copy(const T* src, volatile T*  dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = *(src++);
+        dest[i] = src[i];
     }
 
     //! Copy array from \c src to \c dest of length \c sz
@@ -65,7 +65,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void copy(const T* src, T*  dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = *(src++);
+        dest[i] = src[i];
     }
 
     //! Zero out array \c dest of length \c sz
@@ -73,7 +73,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void zero(T* dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = T(0.);
+        dest[i] = T(0.);
     }
 
     //! Zero out array \c dest of length \c sz
@@ -81,7 +81,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void zero(volatile T* dest, std::size_t sz) {
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = T(0.);
+        dest[i] = T(0.);
     }
 
     //! Fill array \c dest of length \c sz with value \c v
@@ -89,7 +89,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void fill(T* dest, std::size_t sz, const T& v) {
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = v;
+        dest[i] = v;
     }
 
     //! Fill array \c dest of length \c sz with value \c v
@@ -97,7 +97,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void fill(volatile T* dest, std::size_t sz, const T& v) {
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = v;
+        dest[i] = v;
     }
 
   };
@@ -128,7 +128,7 @@ namespace Stokhos {
 #pragma unroll
 #endif
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = *(src++);
+        dest[i] = src[i];
     }
 
     //! Copy array from \c src to \c dest of length \c sz
@@ -147,7 +147,7 @@ namespace Stokhos {
 #pragma unroll
 #endif
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = *(src++);
+        dest[i] = src[i];
     }
 
     //! Copy array from \c src to \c dest of length \c sz
@@ -166,7 +166,7 @@ namespace Stokhos {
 #pragma unroll
 #endif
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = *(src++);
+        dest[i] = src[i];
     }
 
     //! Copy array from \c src to \c dest of length \c sz
@@ -184,7 +184,7 @@ namespace Stokhos {
 #pragma unroll
 #endif
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = *(src++);
+        dest[i] = src[i];
     }
 
     //! Zero out array \c dest of length \c sz
@@ -202,7 +202,7 @@ namespace Stokhos {
 #pragma unroll
 #endif
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = T(0.);
+        dest[i] = T(0.);
     }
 
     //! Zero out array \c dest of length \c sz
@@ -220,7 +220,7 @@ namespace Stokhos {
 #pragma unroll
 #endif
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = T(0.);
+        dest[i] = T(0.);
     }
 
     //! Fill array \c dest of length \c sz with value \c v
@@ -238,7 +238,7 @@ namespace Stokhos {
 #pragma unroll
 #endif
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = v;
+        dest[i] = v;
     }
 
     //! Fill array \c dest of length \c sz with value \c v
@@ -256,7 +256,7 @@ namespace Stokhos {
 #pragma unroll
 #endif
       for (std::size_t i=0; i<sz; ++i)
-        *(dest++) = v;
+        dest[i] = v;
     }
 
   };
