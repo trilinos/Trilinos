@@ -185,7 +185,7 @@ namespace BaskerNS
         if(kid%((Int)pow(2, l)) == 0)
         {
           //my_leader = find_leader(kid,l);
-          //num_threads_in_team    = pow(2,l+1);
+          //num_threads_in_team = pow(2,l+1);
           #ifdef BASKER_DEBUG_NFACTOR_SEP2
           printf("\n SEP UPPER, kid: %d \n",
                  kid);
@@ -217,7 +217,7 @@ namespace BaskerNS
 
     // Barrier
     my_leader = find_leader(kid, lvl-1);
-    num_threads_in_team    = pow(2, lvl);
+    num_threads_in_team = pow(2, lvl);
     info = basker_barrier_sep(thread, kid, my_leader, num_threads,
                               num_threads_in_team, 3, LU(U_col)(U_row).scol, 0,
                               (Options.partial_facto == 0 ? -1 : num_threads/2),
@@ -314,7 +314,7 @@ namespace BaskerNS
 
           // Barrier since multiple thread uppdate
           my_leader = find_leader(kid, lvl-1);
-          num_threads_in_team    = pow(2, lvl);
+          num_threads_in_team = pow(2, lvl);
           info = basker_barrier_sep(thread, kid, my_leader, num_threads,
                                     num_threads_in_team, 4, k, lvl-1,
                                     (Options.partial_facto == 0 ? -1 : num_threads/2),
@@ -346,7 +346,7 @@ namespace BaskerNS
 
           // Barrier
           my_leader = find_leader(kid, lvl-1);
-          num_threads_in_team    = pow(2, lvl);
+          num_threads_in_team = pow(2, lvl);
           info = basker_barrier_sep(thread, kid, my_leader, num_threads,
                                     num_threads_in_team, 5, k, lvl-1,
                                     (Options.partial_facto == 0 ? -1 : num_threads/2),
@@ -396,11 +396,6 @@ namespace BaskerNS
    const BASKER_BOOL lower
    )
   {
-    Int my_leader = find_leader(kid,l);
-    #ifndef USE_TEAM_BARRIER_NFACTOR_SEP2
-    Int num_threads_in_team    = pow(2, l+1);
-    #endif
-
     //loop over sublevels to perform 
     //off-dig multiple, reduce, etc
     for(Int sl = 0; sl <= l; ++sl)
@@ -423,8 +418,8 @@ namespace BaskerNS
         t_upper_col_factor_offdiag2(kid, lvl, sl,l, k, lower);
       }
       //Barrier
-      my_leader = find_leader(kid,sl);
-      num_threads_in_team    = pow(2,sl+1);
+      Int my_leader = find_leader(kid,sl);
+      Int num_threads_in_team = pow(2,sl+1);
       basker_barrier_sep(thread, kid, my_leader, num_threads,
                          num_threads_in_team, 1, k+k_offset, sl,
                          (Options.partial_facto == 0 ? -1 : num_threads/2),
@@ -446,6 +441,7 @@ namespace BaskerNS
     }//over all sublevels
 
     if(thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
+      Int my_leader = find_leader(kid,l);
       t_dense_copy_update_matrix2(kid, my_leader, lvl, l, k);
     }
   }//end t_add_add
@@ -731,7 +727,6 @@ namespace BaskerNS
     {
       //For recounting patterns in dense blk
       //Need better sparse update
-      Int bl = l+1;
       ENTRY_1DARRAY   X   = LL(leader_idx)(bl).ews;
       INT_1DARRAY    ws   = LL(leader_idx)(bl).iws;
       const Int      nrow = LL(leader_idx)(bl).nrow;
@@ -820,15 +815,6 @@ namespace BaskerNS
    
     BASKER_MATRIX        &U = LU(U_col)(U_row);
     pivot = U.tpivot;
-    
-    //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused L
-    //const Int  ws_size = LL(X_col)(X_row).iws_size;
-    //INT_1DARRAY     ws = LL(X_col)(X_row).iws;
-    //ENTRY_1DARRAY    X = LL(X_col)(X_row).ews;
-
-    //const Int brow     = U.srow;
-    //const Int bcol     = U.scol;
-    
     //printf("OFF_DIAG_LOWER, kid: %d leaderid: %d t_size: %d \n",
     //       kid, leader_id, lteam_size);
     
@@ -843,19 +829,6 @@ namespace BaskerNS
       printf("OFF_DIAG_LOWER. kid: %d k: %d  U(%d, %d).nnz = %d  L(%d, %d) X(%d, %d) pivot: %f \n", 
              kid, k, U_col, U_row, LU(U_col)(U_row).nnz, L_col, L_row, X_col, X_row, pivot);
       #endif
-      /*old
-       t_back_solve_offdiag(leader_id,
-                            L_col, L_row,
-                            X_col, X_row,
-                            k, col_idx_offset,
-                            U.val, U.row_idx,
-                            //U.col_ptr[k-bcol+1]-U.col_ptr[k-bcol],
-                            U.col_ptr(k+1)-U.col_ptr(k),
-                            //U.col_ptr[k-bcol],
-                            U.col_ptr(k),
-                            BASKER_TRUE);
-      */
-
       //We might still have to do sparse here
       //if (k==0) printf( " > %d: L(%d,%d) with X(%d,%d)\n",kid, L_row,L_col, X_row,X_col );
       t_dense_back_solve_offdiag(leader_id,

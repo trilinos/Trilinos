@@ -197,7 +197,7 @@ namespace BaskerNS
                    (long)lnteams, (long)lthreads, (int)l); fflush(stdout);
           }
           if(Options.partial_facto != 0) {
-            if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",lnteams,lnteams/2 );
+            if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",int(lnteams),int(lnteams)/2 );
             lnteams /= 2;
           }
 
