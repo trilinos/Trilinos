@@ -57,6 +57,11 @@ on:
         description: 'Extra arguments to be used when calling PullRequestLinuxDriverTest.py'
         required: false
         type: string
+      setup-commands:
+        description: 'Shell commands run before CI driver script.'
+        required: false
+        type: string
+        default: ""
 
 jobs:
   build-test:
@@ -101,6 +106,13 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
+          if [ "${{ inputs.setup-commands }}" != '' ]; then
+            setup_commands='${{ inputs.setup-commands }}'
+            echo "Setup commands:"
+            echo "${setup_commands}"
+            eval "${setup_commands}" || exit 1
+          fi
+
           # python is python3 hackery
           pwd
           mkdir bin
