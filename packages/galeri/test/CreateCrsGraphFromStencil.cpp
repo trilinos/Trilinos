@@ -13,6 +13,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CreateCrsGraphFromStencil_decl.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #ifndef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 #include "Tpetra_CreateCrsGraphFromStencil_def.hpp"
 #endif
@@ -140,16 +141,33 @@ void runTest(const TestCase& test,
   auto problem = Galeri::Xpetra::BuildProblem<
       scalar_type, LO, GO, map_type, matrix_type, vector_type>(
       test.problem, rowMap, parameters);
-  auto reference = problem->BuildMatrix()->getCrsGraph();
+  Teuchos::RCP<matrix_type> referenceMatrix;
+  comm->barrier();
+  Kokkos::fence();
+  {
+    Teuchos::TimeMonitor timer(*Teuchos::TimeMonitor::getNewTimer(
+        "Galeri: full matrix construction"));
+    referenceMatrix = problem->BuildMatrix();
+    Kokkos::fence();
+  }
+  auto reference = referenceMatrix->getCrsGraph();
 
   Teuchos::Array<LO> localDimensions(dimensions);
   localDimensions[0] = parameters.get<LO>("lnx");
   if (dimensions > 1) localDimensions[1] = parameters.get<LO>("lny");
   if (dimensions > 2) localDimensions[2] = parameters.get<LO>("lnz");
   const Teuchos::Array<LO>& constLocalDimensions = localDimensions;
-  auto actual                                    = Tpetra::Experimental::createCrsGraphFromStencil(
-                                         rowMap, constLocalDimensions(), test.offsets(), test.dofsPerNode,
-                                         Tpetra::Experimental::StencilNumbering::globalLexicographic, true);
+  Teuchos::RCP<const graph_type> actual;
+  comm->barrier();
+  Kokkos::fence();
+  {
+    Teuchos::TimeMonitor timer(*Teuchos::TimeMonitor::getNewTimer(
+        "Tpetra: stencil graph construction"));
+    actual = Tpetra::Experimental::createCrsGraphFromStencil(
+        rowMap, constLocalDimensions(), test.offsets(), test.dofsPerNode,
+        Tpetra::Experimental::StencilNumbering::globalLexicographic, true);
+    Kokkos::fence();
+  }
   compareGraphs(*actual, *reference);
 }
 
@@ -168,6 +186,7 @@ int main(int argc, char* argv[]) {
   int globalSuccess = 0;
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, success,
                      Teuchos::outArg(globalSuccess));
+  Teuchos::TimeMonitor::summarize();
   if (comm->getRank() == 0)
     std::cout << "End Result: TEST "
               << (globalSuccess ? "PASSED" : "FAILED") << '\n';

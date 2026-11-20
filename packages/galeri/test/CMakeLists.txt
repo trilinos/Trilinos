@@ -1,6 +1,6 @@
 ADD_SUBDIRECTORY(VerySimple)
 
-IF(${PACKAGE_NAME}_ENABLE_Xpetra AND Tpetra_INST_INT_LONG_LONG)
+IF(${PACKAGE_NAME}_ENABLE_Xpetra)
   TRIBITS_ADD_EXECUTABLE(
     CreateCrsGraphFromStencil
     SOURCES CreateCrsGraphFromStencil.cpp
@@ -35,6 +35,24 @@ IF(${PACKAGE_NAME}_ENABLE_Xpetra AND Tpetra_INST_INT_LONG_LONG)
       STANDARD_PASS_OUTPUT
     )
   ENDFOREACH()
+
+  TRIBITS_ADD_EXECUTABLE(
+    CreateCrsGraphFromStencilPerformance
+    SOURCES CreateCrsGraphFromStencilPerformance.cpp
+    COMM mpi
+    CATEGORIES BASIC PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    CreateCrsGraphFromStencilPerformance
+    NAME Scalar7Point_Performance
+    ARGS "--nx=120 --ny=120 --nz=120"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
 ENDIF()
 
 
