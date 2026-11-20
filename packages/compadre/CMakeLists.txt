@@ -382,6 +382,16 @@ else() # Raw CMake Project
   set(KOKKOS_THREADS_ARG "--kokkos-num-threads")
 
   MESSAGE(STATUS "Compadre_USE_CUDA: ${Compadre_USE_CUDA}")
+  if(Compadre_USE_CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    if(CUDAToolkit_LIBRARY_DIR)
+      list(APPEND CMAKE_BUILD_RPATH "${CUDAToolkit_LIBRARY_DIR}")
+      list(APPEND CMAKE_INSTALL_RPATH "${CUDAToolkit_LIBRARY_DIR}")
+    elseif(DEFINED ENV{CUDA_HOME})
+      list(APPEND CMAKE_BUILD_RPATH "$ENV{CUDA_HOME}/lib64")
+      list(APPEND CMAKE_INSTALL_RPATH "$ENV{CUDA_HOME}/lib64")
+    endif()
+  endif()
   MESSAGE(STATUS "Compadre_USE_HIP: ${Compadre_USE_HIP}")
 
   if (KOKKOSKERNELS_IN_TRILINOS)
@@ -570,19 +580,42 @@ else() # Raw CMake Project
   add_subdirectory(src)
 
   if (Compadre_EXAMPLES AND Compadre_TESTS)
-    # gtest from kokkos
-    # based on kokkos-kernels/CMakeLists.txt
+    # gtest from the vendored kokkos source tree. This is used whether Kokkos itself is built here,
+    # found with Kokkos_ROOT, or found in Trilinos_ROOT, so the layout is detected from the files in
+    # ${PROJECT_SOURCE_DIR}/kokkos rather than from Kokkos_VERSION (which, for Kokkos_ROOT or
+    # Trilinos_ROOT, is the version of a different Kokkos than the vendored one).
+    #   Kokkos < 5.3:  single-file gtest in kokkos/tpls/gtest/gtest/gtest-all.cc
+    #   Kokkos >= 5.3: GoogleTest 1.14.0 source tree in kokkos/tpls/googletest-<version>/googletest
+    #                  (kokkos/kokkos#8593)
     SET(GTEST_SOURCE_DIR ${PROJECT_SOURCE_DIR}/kokkos/tpls/gtest)
+    file(GLOB GTEST_SOURCE_DIRS_GOOGLETEST LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/kokkos/tpls/googletest-*/googletest)
+    # the newer layout is checked first, in case a newer kokkos was copied over an older one
+    if (GTEST_SOURCE_DIRS_GOOGLETEST)
+      # if more than one version is present, use the newest
+      list(SORT GTEST_SOURCE_DIRS_GOOGLETEST COMPARE NATURAL ORDER DESCENDING)
+      list(GET GTEST_SOURCE_DIRS_GOOGLETEST 0 GTEST_SOURCE_DIR)
+      SET(GTEST_SOURCES ${GTEST_SOURCE_DIR}/src/gtest-all.cc)
+      SET(GTEST_PUBLIC_INCLUDE_DIRS ${GTEST_SOURCE_DIR}/include)
+      # gtest-all.cc includes "src/*.cc" relative to the googletest directory
+      SET(GTEST_PRIVATE_INCLUDE_DIRS ${GTEST_SOURCE_DIR})
+    elseif (EXISTS ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc)
+      SET(GTEST_SOURCES ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc)
+      SET(GTEST_PUBLIC_INCLUDE_DIRS ${GTEST_SOURCE_DIR} ${GTEST_SOURCE_DIR}/gtest)
+      SET(GTEST_PRIVATE_INCLUDE_DIRS "")
+    else()
+      message(FATAL_ERROR "Compadre_TESTS is ON, but gtest sources were not found in ${PROJECT_SOURCE_DIR}/kokkos/tpls "
+                          "(looked for gtest/gtest/gtest-all.cc and googletest-*/googletest/src/gtest-all.cc)")
+    endif()
     message(STATUS "GTEST:: ${GTEST_SOURCE_DIR}")
-    add_library(compadre_gtest
-        ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc
-    )
-    target_include_directories(compadre_gtest PUBLIC ${GTEST_SOURCE_DIR}/gtest)
+    add_library(compadre_gtest ${GTEST_SOURCES})
+    if (GTEST_PRIVATE_INCLUDE_DIRS)
+      target_include_directories(compadre_gtest PRIVATE ${GTEST_PRIVATE_INCLUDE_DIRS})
+    endif()
+    TARGET_INCLUDE_DIRECTORIES(compadre_gtest PUBLIC "$<BUILD_INTERFACE:${GTEST_PUBLIC_INCLUDE_DIRS}>")
     # Disables pthreads, this is a problem for serial builds in Trilinos & Sierra if it's enabled.
     TARGET_COMPILE_DEFINITIONS(compadre_gtest PUBLIC "-DGTEST_HAS_PTHREAD=0")
-    TARGET_INCLUDE_DIRECTORIES(compadre_gtest PUBLIC $<BUILD_INTERFACE:${GTEST_SOURCE_DIR}>)
-    #Gtest minimally requires C++11
-    TARGET_COMPILE_FEATURES(compadre_gtest PUBLIC cxx_std_11)
+    # GoogleTest 1.14 requires C++14 (the gtest bundled with earlier Kokkos requires C++11)
+    TARGET_COMPILE_FEATURES(compadre_gtest PUBLIC cxx_std_14)
   endif()
 
   if(Compadre_EXAMPLES)
@@ -596,7 +629,15 @@ else() # Raw CMake Project
         OUTPUT_VARIABLE nanobind_DIR
     )
     find_package(nanobind CONFIG REQUIRED)
-    nanobind_add_module(_pycompadre NB_DOMAIN "pycompadre_domain" pycompadre/pycompadre.cpp)
+    set(PYCOMPADRE_NANOBIND_OPTIONS)
+    if(Compadre_USE_CUDA OR Compadre_USE_HIP)
+      list(APPEND PYCOMPADRE_NANOBIND_OPTIONS NOMINSIZE)
+    endif()
+    nanobind_add_module(_pycompadre
+      NB_DOMAIN "pycompadre_domain"
+      ${PYCOMPADRE_NANOBIND_OPTIONS}
+      pycompadre/pycompadre.cpp
+    )
     target_link_libraries(_pycompadre PRIVATE compadre)
     if (PYTHON_CALLING_BUILD)
       configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pycompadre/__init__.py" "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" COPYONLY)

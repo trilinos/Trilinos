@@ -48,12 +48,14 @@ namespace ScalarTaylorPolynomialBasis {
     */
     KOKKOS_INLINE_FUNCTION
     void evaluate(const member_type& teamMember, double* delta, double* workspace, const int dimension, const int max_degree, const double h, const double x, const double y, const double z, const int starting_order = 0, const double weight_of_original_value = 0.0, const double weight_of_new_value = 1.0) {
+        // one vector lane computes the basis, since every lane would otherwise write the same delta
         Kokkos::single(Kokkos::PerThread(teamMember), [&] () {
-            const double factorial[] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800, 87178291200};
+            // sized for max_degree <= 10 (enforced when orders are set, see GMLS::checkSupportedOrders)
+            static constexpr double factorial[11] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800};
+            double x_over_h_to_i[11];
+            double y_over_h_to_i[11];
+            double z_over_h_to_i[11];
             if (dimension==3) {
-                scratch_vector_type x_over_h_to_i(workspace, max_degree+1);
-                scratch_vector_type y_over_h_to_i(workspace+1*(max_degree+1), max_degree+1);
-                scratch_vector_type z_over_h_to_i(workspace+2*(max_degree+1), max_degree+1);
                 x_over_h_to_i[0] = 1;
                 y_over_h_to_i[0] = 1;
                 z_over_h_to_i[0] = 1;
@@ -78,8 +80,6 @@ namespace ScalarTaylorPolynomialBasis {
                     }
                 }
             } else if (dimension==2) {
-                scratch_vector_type x_over_h_to_i(workspace, max_degree+1);
-                scratch_vector_type y_over_h_to_i(workspace+1*(max_degree+1), max_degree+1);
                 x_over_h_to_i[0] = 1;
                 y_over_h_to_i[0] = 1;
                 for (int i=1; i<=max_degree; ++i) {
@@ -99,7 +99,6 @@ namespace ScalarTaylorPolynomialBasis {
                     }
                 }
             } else {
-                scratch_vector_type x_over_h_to_i(workspace, max_degree+1);
                 x_over_h_to_i[0] = 1;
                 for (int i=1; i<=max_degree; ++i) {
                     x_over_h_to_i[i] = x_over_h_to_i[i-1]*(x/h);

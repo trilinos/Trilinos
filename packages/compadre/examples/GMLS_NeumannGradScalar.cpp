@@ -336,7 +336,7 @@ bool all_passed = true;
         double adjusted_value = GMLS_value + b_i*g;
 
         // check actual function value
-        if(GMLS_value!=GMLS_value || std::abs(actual_Laplacian - adjusted_value) > failure_tolerance) {
+        if(GMLS_value!=GMLS_value || !(std::abs(actual_Laplacian - adjusted_value) <= failure_tolerance)) {
             all_passed = false;
             std::cout << i << " Failed Actual by: " << std::abs(actual_Laplacian - adjusted_value) << std::endl;
         }

@@ -188,7 +188,7 @@ int getAdditionalCoeffSizeFromConstraintAndSpace(DenseSolverType dense_solver_ty
 
 KOKKOS_INLINE_FUNCTION
 void getRHSDims(DenseSolverType dense_solver_type, ConstraintType constraint_type, ReconstructionSpace reconstruction_space, const int dimension, const int M, const int N, int &RHS_row, int &RHS_col) {
-    // Return the appropriate size for _RHS. Since in LU, the system solves P^T*P against P^T*W.
+    // Return the appropriate size for _RHS. Since in CHOL, the system solves P^T*P against P^T*W.
     // We store P^T*P in the RHS space, which means RHS can be much smaller compared to the
     // case for QR/SVD where the system solves PsqrtW against sqrtW*Identity
 
@@ -197,7 +197,7 @@ void getRHSDims(DenseSolverType dense_solver_type, ConstraintType constraint_typ
     if (constraint_type == NEUMANN_GRAD_SCALAR) {
         RHS_row = RHS_col = N + added_coeff_size;
     } else {
-        if (dense_solver_type != LU) {
+        if (dense_solver_type != CHOL) {
             RHS_row = N;
             RHS_col = M;
         } else {
@@ -209,7 +209,7 @@ void getRHSDims(DenseSolverType dense_solver_type, ConstraintType constraint_typ
 KOKKOS_INLINE_FUNCTION
 void getPDims(DenseSolverType dense_solver_type, ConstraintType constraint_type, ReconstructionSpace reconstruction_space, const int dimension, const int M, const int N, int &out_row, int &out_col) {
     // Return the appropriate size for _P.
-    // In the case of solving with LU and additional constraint is used, _P needs
+    // In the case of solving with CHOL and additional constraint is used, _P needs
     // to be resized to include additional row(s) based on the type of constraint.
 
     int added_coeff_size = getAdditionalCoeffSizeFromConstraintAndSpace(dense_solver_type, constraint_type, reconstruction_space, dimension);
@@ -219,7 +219,7 @@ void getPDims(DenseSolverType dense_solver_type, ConstraintType constraint_type,
         out_row = M + added_alpha_size;
         out_col = N + added_coeff_size;
     } else {
-        if (dense_solver_type == LU) {
+        if (dense_solver_type == CHOL) {
             out_row = M + added_alpha_size;
             out_col = N + added_coeff_size;
         } else {
