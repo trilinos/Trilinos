@@ -84,6 +84,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     blkSmooEquivOlapSchwarz.xml
     block_diagonal_drop.xml
     blocknumber.mm
+    circ_nsp_dependency.xml
     comboP.xml
     comp_rotations.xml
     conchas_milestone_zoltan.xml
@@ -585,6 +586,15 @@ IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
     NAME "DriverRebalanceInitialSystem"
     ARGS "--linAlgebra=Tpetra --belosType=\"Pseudoblock GMRES\" --tol=1e-8 --xml=scaling.xml --matrix=aux2.mat --coords=coords2.mat --repartXML=repart.xml --its=9"
     NUM_MPI_PROCS 3
+    COMM mpi # HAVE_MPI required
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "DriverNspDependency"
+    ARGS "--linAlgebra=Tpetra --xml=circ_nsp_dependency.xml"
+    NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
     PASS_REGULAR_EXPRESSION "Belos converged"
   )
