@@ -107,8 +107,7 @@ int run(int argc, char* argv[],
       parameters.get<LO>("lnz")};
   const Teuchos::Array<LO>& constLocalDimensions = localDimensions;
   const Teuchos::Array<offset_type> offsets{
-      {0, 0, 0}, {-1, 0, 0}, {1, 0, 0}, {0, -1, 0},
-      {0, 1, 0}, {0, 0, -1}, {0, 0, 1}};
+      {0, 0, 0}, {-1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}};
 
   const std::string rootTimerName =
       "Galeri CreateCrsGraphFromStencil performance";
@@ -143,7 +142,7 @@ int run(int argc, char* argv[],
   compareGraphs(*stencilGraph, *referenceMatrix->getCrsGraph());
 
   Teuchos::StackedTimer::OutputOptions options;
-  options.output_fraction = options.output_histogram =
+  options.output_fraction   = options.output_histogram =
       options.output_minmax = true;
   stackedTimer->report(std::cout, comm, options);
   auto xmlOut = stackedTimer->reportWatchrXML(watchrProblemName, comm);
