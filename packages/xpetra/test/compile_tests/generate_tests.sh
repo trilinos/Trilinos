@@ -8,7 +8,6 @@ Xpetra_UseShortNamesOrdinal.hpp
 
 Xpetra_BlockMap.hpp
 Xpetra_TpetraBlockMap.hpp
-Xpetra_EpetraBlockMap.hpp
 
 Xpetra_VbrMatrix.hpp
 Xpetra_TpetraVbrMatrix.hpp
@@ -19,10 +18,7 @@ Xpetra_UnitTestHelpers.hpp
 Xpetra_RowGraph.hpp
 "
 
-not_a_templated_class=$(find ../.. -name "*Epetra*.hpp" -exec basename {} \;)
 not_a_templated_class="
-$not_a_templated_class
-
 TpetraCore_config.h
 KokkosCompat_DefaultNode.hpp
 Xpetra_ConfigDefs.hpp

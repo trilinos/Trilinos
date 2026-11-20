@@ -1,4 +1,4 @@
-# Helper functions for tests using Xpetra::Parameters (--linAlgebra=Epetra/Tpetra)
+# Helper functions for tests using Xpetra::Parameters (--linAlgebra=Tpetra)
 
 #
 # Run test only if Tpetra available
@@ -20,7 +20,7 @@ FUNCTION(XPETRA_ADD_TEST_TPETRA TEST_NAME NUM_MPI_PROCS)
 ENDFUNCTION()
 
 #
-# Run test for both Epetra and Tpetra (if available)
+# Run test for Tpetra if available
 #
 
 FUNCTION(XPETRA_ADD_TEST NUM_MPI_PROCS)
