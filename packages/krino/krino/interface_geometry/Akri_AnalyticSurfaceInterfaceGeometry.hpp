@@ -24,6 +24,17 @@ class CDFEM_Support;
 class Phase_Support;
 class FieldRef;
 
+// Every crossing of the surface along the segment (see Surface::fill_segment_crossings), if it
+// crosses more often than the signs of the distances at its ends show (once if they are opposite,
+// otherwise not at all); none otherwise.  An end within edgeCrossingTol times the length of the
+// segment of the surface is on it.  Depends only on the geometry, so it is the same for every
+// element with the edge.
+void fill_multiple_segment_crossings(const Surface & surface,
+    const stk::math::Vector3d & x0,
+    const stk::math::Vector3d & x1,
+    const double edgeCrossingTol,
+    std::vector<double> & crossingPositions);
+
 class SurfaceElementCutter : public ElementCutter
 {
 public:
@@ -50,6 +61,10 @@ public:
   virtual std::string visualize(const stk::mesh::BulkData & /*mesh*/) const override { std::string empty; return empty; }
   virtual int interface_sign_for_uncrossed_element(const InterfaceID interface, const std::vector<stk::math::Vector3d> & elemNodesCoords) const override;
   virtual std::pair<int, double> interface_edge_crossing_sign_and_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override;
+  virtual void fill_multiple_edge_crossing_positions(const InterfaceID interface,
+      const std::array<stk::math::Vector3d, 2> & edgeNodeGlobalCoords,
+      std::vector<double> & positions) const override;
+  virtual bool interface_has_sharp_features(const InterfaceID interface) const override;
   virtual int get_starting_phase_for_cutting_surfaces() const override { return 0; }
 
   const std::vector<int8_t> & get_element_signs() const { return myElementSigns; }
@@ -83,6 +98,8 @@ public:
   virtual ~AnalyticSurfaceInterfaceGeometry() {}
 
   void add_surface(const Surface_Identifier surfaceIdentifier, const Surface & surface, const stk::mesh::Selector & surfaceElementSelector);
+  // The time the surfaces are prepared at, for those that change with time; 0 unless set.
+  void set_time(const double time) { myTime = time; }
 
   virtual bool might_have_interior_or_face_intersections() const override { return true; }
 
@@ -102,6 +119,15 @@ public:
 
   virtual std::vector<IntersectionPoint> get_edge_intersection_points(const stk::mesh::BulkData & mesh,
       const NodeToCapturedDomainsMap & nodesToSnappedDomains) const override;
+  virtual std::vector<IntersectionPoint>
+  get_all_edge_intersection_points(const stk::mesh::BulkData & mesh) const override;
+  virtual void add_surfaces_to_journal(CubitJournal & journal,
+      const BoundingBox & region,
+      const std::function<std::string(const Surface_Identifier)> & surfaceGroupName) const override;
+  virtual bool node_is_on_sharp_featured_interface(const stk::mesh::BulkData & mesh,
+      const stk::mesh::Entity node,
+      const InterfaceID interface,
+      const double tol) const override;
   virtual void append_element_intersection_points(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToSnappedDomains,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
@@ -152,6 +178,7 @@ private:
   const Phase_Support & myPhaseSupport;
   std::vector<Surface_Identifier> mySurfaceIdentifiers;
   double myEdgeCrossingTol;
+  double myTime{0.};
   mutable NodeToSignsMap myNodesToSigns;
   mutable ElementToDomainMap myUncutElementPhases;
   mutable std::vector<stk::mesh::Entity> myElementsToIntersect;

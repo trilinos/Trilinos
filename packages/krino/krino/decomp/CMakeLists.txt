@@ -12,7 +12,7 @@ TRIBITS_ADD_LIBRARY(
   krino_decomp_lib
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS krino_interface_geometry_lib krino_parametric_element_lib krino_eikonal_lib krino_foundation_lib krino_field_calcs_lib krino_support_lib krino_levelset_lib krino_contour_lib krino_mesh_interface_lib krino_phase_lib)
+  DEPLIBS krino_interface_geometry_lib krino_element_improvement_lib krino_parametric_element_lib krino_eikonal_lib krino_foundation_lib krino_field_calcs_lib krino_support_lib krino_levelset_lib krino_contour_lib krino_mesh_interface_lib krino_phase_lib)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_decomp_lib)

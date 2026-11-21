@@ -6,7 +6,6 @@
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_CDMesh_Refinement.hpp>
-#include <Akri_Faceted_Surface.hpp>
 #include <Akri_LevelSetSurfaceInterfaceGeometry.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_RefinementManager.hpp>

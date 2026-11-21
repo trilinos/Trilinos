@@ -13,8 +13,11 @@
 #include <stk_math/StkVector.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <string>
+#include <vector>
 
 namespace krino {
+
+class CubitJournal;
 
 class Cutting_Surface
 {
@@ -25,7 +28,8 @@ public:
   virtual int sign_at_position(const stk::math::Vector3d & p_coords) const = 0;
   virtual double interface_crossing_position(const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const = 0;
   virtual std::string print() const = 0;
-  virtual std::string print_visualization(std::array<int,4> & geomIds, const std::string & description) const = 0;
+  // Adds the part of the surface inside the element (a tet, or a tri in 2D) to the journal.
+  virtual void add_to_journal(CubitJournal & journal, const std::vector<stk::math::Vector3d> & elementCoords) const = 0;
   virtual const stk::math::Plane3d & get_plane() const = 0;
 };
 
@@ -41,7 +45,7 @@ public:
   int sign_at_position(const stk::math::Vector3d & p_coords) const override;
   double interface_crossing_position(const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override;
   std::string print() const override;
-  virtual std::string print_visualization(std::array<int,4> & geomIds, const std::string & description) const override;
+  virtual void add_to_journal(CubitJournal & journal, const std::vector<stk::math::Vector3d> & elementCoords) const override;
   virtual const stk::math::Plane3d & get_plane() const override { return my_plane; }
 private:
   stk::math::Plane3d my_plane;
@@ -66,7 +70,7 @@ public:
   int sign_at_position(const stk::math::Vector3d & p_coords) const override;
   double interface_crossing_position(const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override;
   std::string print() const override;
-  virtual std::string print_visualization(std::array<int,4> & geomIds, const std::string & description) const override;
+  virtual void add_to_journal(CubitJournal & journal, const std::vector<stk::math::Vector3d> & elementCoords) const override;
   virtual const stk::math::Plane3d & get_plane() const override { /* THIS IS A BAD IDEA. SHOULD WE TEST PLANARITY? */ return myTriangleForPlane0IsLarger ? my_plane0 : my_plane1; }
 private:
   bool myTriangleForPlane0IsLarger;

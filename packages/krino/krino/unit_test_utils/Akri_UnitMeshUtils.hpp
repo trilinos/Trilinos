@@ -13,8 +13,14 @@ class BoundingBoxMesh;
 stk::mesh::Entity find_local_node_closest_to_location(const stk::mesh::BulkData& mesh, const stk::mesh::Selector& nodeSelector, const FieldRef coordsField, const stk::math::Vector3d& location);
 
 void populate_bounding_box_mesh_and_activate(BoundingBoxMesh & bboxMesh, const stk::math::Vector3d & minCorner, const stk::math::Vector3d & maxCorner, const double meshSize);
-void generate_and_write_bounding_box_mesh(const stk::topology elemTopology, const stk::math::Vector3d & minCorner, const stk::math::Vector3d & maxCorner, const double meshSize, const std::string & filename);
-
+// With flatWalledDomainSides, the mesh has flat walls and its sides are in the sidesets Xminus,
+// Xplus, ..., which are mapped to block_1.
+void generate_and_write_bounding_box_mesh(const stk::topology elemTopology,
+    const stk::math::Vector3d & minCorner,
+    const stk::math::Vector3d & maxCorner,
+    const double meshSize,
+    const std::string & filename,
+    const bool flatWalledDomainSides = false);
 }
 
 #endif /* KRINO_KRINO_UNIT_TESTS_AKRI_UNITMESHUTILS_HPP_ */

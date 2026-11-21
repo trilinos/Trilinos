@@ -115,6 +115,20 @@ public:
   bool is_nonconformal(const stk::mesh::Part & io_part) const;
   bool is_conformal(const stk::mesh::Part & io_part) const;
   bool is_interface(const stk::mesh::Part & io_part) const;
+  // Whether the part is the interface between two phases (not a superset of such interfaces), and the
+  // phases on its two sides.
+  bool is_interface_between_two_phases(const stk::mesh::Part & part) const;
+  const PhaseTag & get_interface_touching_phase(const stk::mesh::Part & interfacePart) const;
+  const PhaseTag & get_interface_opposite_phase(const stk::mesh::Part & interfacePart) const;
+  // Whether the phase is inside the domain of the surface (on its negative side).
+  static bool is_phase_inside_domain(const PhaseTag & phase, const Surface_Identifier domainSurfaceID);
+  // Whether the interface part spans the boundary of the domain: between a phase inside it and a phase
+  // that is not.  The phase of a bounding surface's domain (or of a level set, with one level set per
+  // phase) has a sign only for its own surface, so where the phases of two domains meet, the interface
+  // spans the boundaries of both, though neither phase's tag puts it outside the other's domain.
+  bool does_interface_span_domain_boundary(const stk::mesh::Part & interfacePart, const Surface_Identifier domainSurfaceID) const;
+  // As does_interface_span_domain_boundary, with the touching phase inside the domain.
+  bool is_interface_on_domain_boundary_touching_inside(const stk::mesh::Part & interfacePart, const Surface_Identifier domainSurfaceID) const;
   stk::mesh::Part * find_conforming_part_if_decomposed_by_phase(const stk::mesh::Part & part, const PhaseTag & phase) const;
   stk::mesh::Part & get_conforming_part(const stk::mesh::Part & part, const PhaseTag & phase) const;
   stk::mesh::Part & get_nonconforming_part(const stk::mesh::Part & part) const;
@@ -124,6 +138,9 @@ public:
 
   void set_all_decomposed_blocks_selector();
   const stk::mesh::Selector & get_all_decomposed_blocks_selector() const { return all_decomposed_blocks_selector; }
+  // Whether any of the decomposed blocks is quadratic, from the parts of their selector (the same
+  // on every processor), so that this needs no communication.
+  bool has_quadratic_decomposed_blocks() const;
   bool is_decomposed(const stk::mesh::Part & part) const;
 
   void register_blocks_for_level_set(const Surface_Identifier levelSetIdentifier,

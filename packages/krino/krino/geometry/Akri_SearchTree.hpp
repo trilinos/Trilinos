@@ -356,11 +356,6 @@ SearchTree<ENTITY>::build( typename std::vector<EntityCentroid>::iterator entity
 {
   const size_t entity_size = std::distance(entity_begin, entity_end);
 
-  // determine bounding box
-  BoundingBox & node_bbox = my_nodes[index].bounding_box();
-  for ( auto entityIt = entity_begin; entityIt != entity_end; ++entityIt )
-    insert_into_bbox(entityIt->first, node_bbox);
-
   if ( entity_size > 1 )
   {
     BoundingBox centroidBbox;
@@ -384,11 +379,18 @@ SearchTree<ENTITY>::build( typename std::vector<EntityCentroid>::iterator entity
     const size_t Rindex = build( entity_begin, entity_begin + mid_pt, insert_into_bbox, Lindex );
     my_nodes[index].set_right_index(Rindex);
     const size_t next_index = build( entity_begin + mid_pt, entity_end, insert_into_bbox, Rindex );
+
+    // The node's box is the union of its children's, so each entity's box is computed only once, at
+    // its leaf.
+    BoundingBox & node_bbox = my_nodes[index].bounding_box();
+    node_bbox.accommodate(my_nodes[Lindex].bounding_box());
+    node_bbox.accommodate(my_nodes[Rindex].bounding_box());
     return next_index;
   }
   else
   {
     STK_ThrowAssert(1 == entity_size);
+    insert_into_bbox(entity_begin->first, my_nodes[index].bounding_box());
     my_nodes[index].set_leaf_entity(entity_begin->first);
     return index + 1;
   }

@@ -19,13 +19,14 @@ namespace krino
 
 typedef independent_set::IndependentSetFinder<SnapInfo> SnapInfoIndependentSetFinder;
 
-inline
-std::vector<SnapInfo> find_snap_info_independent_sets(const std::vector<SnapInfo> &allSnapInfos,
+inline std::vector<SnapInfo>
+find_snap_info_independent_sets(const std::vector<SnapInfo> & allSnapInfos,
     const QualityMetric & qualityMetric,
+    const bool isPredictable,
     stk::ParallelMachine comm)
 {
-    SnapInfo::Comparator comparator {qualityMetric};
-    return SnapInfoIndependentSetFinder::find_independent_set(allSnapInfos, comparator, comm);
+  SnapInfo::Comparator comparator{qualityMetric, isPredictable};
+  return SnapInfoIndependentSetFinder::find_independent_set(allSnapInfos, comparator, comm);
 }
 
 }

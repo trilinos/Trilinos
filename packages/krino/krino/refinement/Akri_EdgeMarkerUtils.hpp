@@ -35,11 +35,15 @@ bool is_any_child_invalid_or_a_parent(const stk::mesh::BulkData & mesh,
     const Refinement & refinement,
     const std::vector<stk::mesh::Entity> & childElements);
 
-std::vector<stk::mesh::Entity> get_child_nodes_that_are_not_parent_nodes(const stk::mesh::BulkData & mesh,
+StkMeshEntities get_vertex_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity elem);
+
+std::vector<stk::mesh::Entity>
+get_child_vertex_nodes_that_are_not_parent_vertex_nodes(const stk::mesh::BulkData & mesh,
     const stk::mesh::Entity parentElem,
     const std::vector<stk::mesh::Entity> & childElems);
 
-std::vector<stk::mesh::Entity> get_child_nodes_that_are_not_parent_nodes(const stk::mesh::BulkData & mesh,
+std::vector<stk::mesh::Entity>
+get_child_vertex_nodes_that_are_not_parent_vertex_nodes(const stk::mesh::BulkData & mesh,
     const Refinement & refinement,
     const stk::mesh::Entity parentElem);
 

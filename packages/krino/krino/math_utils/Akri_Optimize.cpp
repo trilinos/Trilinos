@@ -65,6 +65,11 @@ void project_solution(const Objective & objFn, VEC &x)
   objFn.project_solution(x);
 }
 
+template <typename Objective> bool is_update_rejected(const Objective & objFn)
+{
+  return objFn.is_update_rejected();
+}
+
 //----------------------------------------
 // Cubic minimizer in [xLo, xHi]
 //   matches phi & dphi at both ends.
@@ -321,11 +326,27 @@ void reset_LBFGS_Memory(std::deque<VEC>& sList, std::deque<VEC>& yList, std::deq
 // Two-loop recursion to compute H_k * grad (search direction)
 // -----------------------------------------------------------------------------
 template<typename VEC>
+double compute_LBFGS_initial_inverse_Hessian_scaling(
+    const std::deque<VEC>& sList,
+    const std::deque<VEC>& yList,
+    const double scalingWhenNoLevels)
+{
+    if (sList.empty())
+        return scalingWhenNoLevels;
+    const double sy = Dot(sList.back(), yList.back());
+    const double yy = Dot(yList.back(), yList.back());
+    if (yy > 1e-20)
+        return sy / yy;
+    return 1.0;
+}
+
+template<typename VEC>
 VEC compute_LBFGS_Hgrad(
     const VEC& grad,
     const std::deque<VEC>& sList,
     const std::deque<VEC>& yList,
-    const std::deque<double>& rhoList)
+    const std::deque<double>& rhoList,
+    const double scalingWhenNoLevels)
 {
     const unsigned numLevels = sList.size();
     VEC q = grad;
@@ -340,16 +361,7 @@ VEC compute_LBFGS_Hgrad(
     }
 
     // initial Hessian-scaling: gamma * I
-    double gamma = 1.0;
-    if (numLevels > 0)
-    {
-        const auto& sLast = sList.back();
-        const auto& yLast = yList.back();
-        const double sy = Dot(sLast, yLast);
-        const double yy = Dot(yLast, yLast);
-        if (yy > 1e-20)
-            gamma = sy / yy;
-    }
+    const double gamma = compute_LBFGS_initial_inverse_Hessian_scaling(sList, yList, scalingWhenNoLevels);
     VEC r = scalar_times_vector(gamma, q);
 
     // forward loop
@@ -385,6 +397,7 @@ void lbfgs(const Objective & objFn,
 
     double gradMag = std::sqrt(Dot(grad, grad));
     double dxMag = 0.;
+    double inverseHessianScalingWhenNoLevels = 1.0;
 
     for (unsigned iter = 0; iter < maxIter; ++iter)
     {
@@ -396,7 +409,7 @@ void lbfgs(const Objective & objFn,
         }
 
         // compute search direction p = - H_k * grad
-        const VEC Hgrad = compute_LBFGS_Hgrad(grad, sList, yList, rhoList);
+        const VEC Hgrad = compute_LBFGS_Hgrad(grad, sList, yList, rhoList, inverseHessianScalingWhenNoLevels);
         const VEC p = scalar_times_vector(-1., Hgrad);
 
         const double minAlpha = std::max(1.0e-14, std::min(1., xTol / std::sqrt(Dot(p, p))));
@@ -407,6 +420,21 @@ void lbfgs(const Objective & objFn,
         const double fOld = f;
         line_search_wolfe_cubic(objFn, scale, xOld, fOld, gradOld, p, x, f, grad, minAlpha);
         project_solution(objFn, x);
+
+        if (is_update_rejected(objFn))
+        {
+          if (doOutput)
+            krinolog << "L-BFGS iteration " << iter
+                     << ": solution update rejected, restoring previous solution"
+                     << stk::diag::dendl;
+          x = xOld;
+          f = compute_scaled_value(objFn, scale, x);
+          fill_scaled_gradient(objFn, scale, x, grad);
+          gradMag = std::sqrt(Dot(grad, grad));
+          inverseHessianScalingWhenNoLevels = compute_LBFGS_initial_inverse_Hessian_scaling(sList, yList, inverseHessianScalingWhenNoLevels);
+          reset_LBFGS_Memory(sList, yList, rhoList);
+          continue;
+        }
 
         const VEC s = vectorSubtract(x, xOld);
         dxMag = std::sqrt(Dot(s,s));
@@ -427,6 +455,7 @@ void lbfgs(const Objective & objFn,
           if (doOutput)
             krinolog << "Restarting/rescaling due to large drop in gradient magnitude " << gradMag/gradMagOld << "\n";
           rescale(scale, f, grad, gradMag);
+          inverseHessianScalingWhenNoLevels = 1.0;
           reset_LBFGS_Memory(sList, yList, rhoList);
         }
         else
@@ -478,6 +507,17 @@ void steepest_descent(const Objective & objFn,
     const double fOld = f;
     line_search_armijo(objFn, scale, xOld, fOld, gradOld, p, x, f);
     project_solution(objFn, x);
+
+    if (is_update_rejected(objFn))
+    {
+      if (doOutput)
+        krinolog << "Steepest descent iteration " << iter
+                 << ": solution update rejected, restoring previous solution" << stk::diag::dendl;
+      x = xOld;
+      f = compute_scaled_value(objFn, scale, x);
+      fill_scaled_gradient(objFn, scale, x, grad);
+      continue;
+    }
 
     const VEC s = vectorSubtract(x, xOld);
     dxSqr = Dot(s,s);

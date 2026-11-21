@@ -121,12 +121,16 @@ MeshInput_Parser::parse_generated_mesh(const Parser::Node & fem_node, MeshInputO
     static std::map<std::string, stk::topology> valid_entries =
       { {"TRIANGLE", stk::topology::TRIANGLE_3_2D},
         {"TRI", stk::topology::TRIANGLE_3_2D},
+        {"TRIANGLE6", stk::topology::TRIANGLE_6_2D},
+        {"TRI6", stk::topology::TRIANGLE_6_2D},
         {"QUADRILATERAL", stk::topology::QUADRILATERAL_4_2D},
         {"QUAD", stk::topology::QUADRILATERAL_4_2D},
         {"HEXAHEDRON", stk::topology::HEXAHEDRON_8},
         {"HEX", stk::topology::HEXAHEDRON_8},
         {"TETRAHEDRON", stk::topology::TETRAHEDRON_4},
-        {"TET", stk::topology::TETRAHEDRON_4} };
+        {"TET", stk::topology::TETRAHEDRON_4},
+        {"TETRAHEDRON10", stk::topology::TETRAHEDRON_10},
+        {"TET10", stk::topology::TETRAHEDRON_10} };
     auto it = valid_entries.find(generated_mesh_element_type_string);
     if (it == valid_entries.end())
     {

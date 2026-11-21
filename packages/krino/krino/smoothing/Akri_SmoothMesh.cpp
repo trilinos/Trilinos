@@ -129,8 +129,13 @@ void smooth_mesh_by_optimization(const stk::mesh::BulkData &mesh,
     compute_and_print_smoothing_metrics(mesh, coordsField, ownedElems, nodeCoords, smoothingObj);
   }
 
+  const auto & localElems = smoothingObj.get_local_elements();
+  const NodeLocations vertexNodeLocationsBeforeSmoothing =
+      get_vertex_node_locations_of_quadratic_elements(mesh, coordsField, localElems);
   optimizer(smoothingObj, nodeCoords);
   set_node_coordinates(mesh, coordsField, nodes, nodeCoords);
+  set_mid_edge_nodes_of_moved_edges_to_edge_midpoints(
+      mesh, coordsField, localElems, vertexNodeLocationsBeforeSmoothing);
 
   if (doPrintDiagnostics)
   {

@@ -6,26 +6,31 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <algorithm>
+#include <map>
+
 #include <Akri_AnalyticSurfaceInterfaceGeometry.hpp>
+#include <Akri_MultipleEdgeCrossings.hpp>
+#include <Akri_CubitJournal.hpp>
+#include <Akri_SharpFeatureIntersectionPoints.hpp>
+#include <Akri_AuxMetaData.hpp>
 #include <Akri_CDFEM_Parent_Edges.hpp>
 #include <Akri_CDFEM_Support.hpp>
+#include <Akri_DiagWriter.hpp>
 #include <Akri_Edge.hpp>
-#include <Akri_Element_Intersections.hpp>
 #include <Akri_ElementCutterUtils.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_Element_Intersections.hpp>
 #include <Akri_MathUtil.hpp>
 #include <Akri_MeshHelpers.hpp>
-#include <Akri_Surface.hpp>
-#include <Akri_ParametricElementLibrary.hpp>
-#include <Akri_AuxMetaData.hpp>
 #include <Akri_NodalBoundingBox.hpp>
-#include <Akri_DiagWriter.hpp>
-#include <Akri_Phase_Support.hpp>
+#include <Akri_ParametricElementLibrary.hpp>
 #include <Akri_PhaseTag.hpp>
-#include <Akri_SnapInfo.hpp>
+#include <Akri_Phase_Support.hpp>
 #include <Akri_Sign.hpp>
 #include <Akri_SimplexCurvature.hpp>
 #include <Akri_SimplexGradient.hpp>
+#include <Akri_SnapInfo.hpp>
+#include <Akri_Surface.hpp>
 
 namespace krino {
 
@@ -33,17 +38,6 @@ static int surface_sign_at_position(const Surface & surface, const stk::math::Ve
 {
   const double phi = surface.point_signed_distance(pt);
   return sign(phi);
-}
-
-static stk::math::Vector3d get_centroid(const std::vector<stk::math::Vector3d> & elemNodesCoords)
-{
-  stk::math::Vector3d centroid = stk::math::Vector3d::ZERO;
-  for(auto && nodeCoords : elemNodesCoords)
-  {
-    centroid += nodeCoords;
-  }
-  centroid *= 1./elemNodesCoords.size();
-  return centroid;
 }
 
 static int compute_uncrossed_element_sign(const Surface & surface, const std::vector<stk::math::Vector3d> & elemNodesCoords)
@@ -56,10 +50,18 @@ static int compute_uncrossed_element_sign(const Surface & surface, const std::ve
     if (std::abs(nodeSignedDist) > std::abs(signedDistWithMaxMag))
       signedDistWithMaxMag = nodeSignedDist;
   }
-  const double centroidSignedDist = surface.point_signed_distance(get_centroid(elemNodesCoords));
+  const double centroidSignedDist = surface.point_signed_distance(compute_element_centroid(elemNodesCoords));
   if (std::abs(centroidSignedDist) > std::abs(signedDistWithMaxMag))
     signedDistWithMaxMag = centroidSignedDist;
   return signedDistWithMaxMag < 0. ? -1 : 1;
+}
+
+// The vertices of the element: all its nodes if it is linear.  A quadratic element is cut as the
+// linear element of its vertices.
+static StkMeshEntities element_vertex_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity element)
+{
+  const stk::mesh::Entity * elemNodes = mesh.begin_nodes(element);
+  return StkMeshEntities{elemNodes, elemNodes + mesh.bucket(element).topology().base().num_nodes()};
 }
 
 static bool does_any_surface_have_sharp_features(const std::vector<const Surface *> & surfaces)
@@ -122,46 +124,150 @@ int SurfaceElementCutter::interface_sign_for_uncrossed_element(const InterfaceID
   return compute_uncrossed_element_sign(get_surface(interface), elemNodesCoords);
 }
 
-static void append_intersections(const int intPtRank, const int iSurf, const std::vector<stk::math::Vector3d> & intParamCoords, std::vector<ElementIntersection> & intersections)
+// The domains of the points of rank intPtRank (2 on a face, 3 inside a tet) of surface iSurf: the
+// surface's index, once for each of its sharp features that meet at the point.
+static std::vector<int> intersection_domains(const int intPtRank, const int iSurf)
 {
-  const std::vector<int> sortedDomains(intPtRank, iSurf);
+  return std::vector<int>(intPtRank, iSurf);
+}
+
+static void append_intersections(const std::vector<int> & sortedDomains,
+    const std::vector<stk::math::Vector3d> & intParamCoords,
+    std::vector<ElementIntersection> & intersections)
+{
   for (auto & intPt : intParamCoords)
     intersections.emplace_back(intPt, sortedDomains);
 }
 
-static void fill_tetrahedron_intersections(const std::vector<stk::math::Vector3d> & elementNodeCoords, const std::vector<const Surface*> & surfaces, std::vector<ElementIntersection> & intersections)
+// The domains of a point of one surface (that surface once per codimension), with each other surface
+// that the point at location is on, within distanceTol, added once: so its codimension
+// (sharp_feature_codimension) stays the same for two surfaces.  The distances are truncated at
+// distanceTol, so a faceted surface only searches its facets that near.
+static std::vector<int> domains_with_every_surface_point_is_on(const std::vector<int> & sortedDomains,
+    const stk::math::Vector3d & location,
+    const double distanceTol,
+    const std::vector<const Surface *> & surfaces)
+{
+  std::vector<int> domains = sortedDomains;
+  const double farFieldDistance = 2. * distanceTol;
+  for (int iSurf = 0; iSurf < int(surfaces.size()); ++iSurf)
+    if (iSurf != sortedDomains.front() &&
+        std::abs(surfaces[iSurf]->possibly_truncated_point_signed_distance(location, distanceTol, farFieldDistance)) <= distanceTol)
+      domains.push_back(iSurf);
+  std::sort(domains.begin(), domains.end());
+  return domains;
+}
+
+// Whether the points with these domains are on the same surfaces, with the same codimension.
+static bool have_same_surfaces_and_codimension(const std::vector<int> & sortedDomains0, const std::vector<int> & sortedDomains1)
+{
+  if (sharp_feature_codimension(sortedDomains0) != sharp_feature_codimension(sortedDomains1)) return false;
+  std::vector<int> surfaces0 = sortedDomains0;
+  std::vector<int> surfaces1 = sortedDomains1;
+  surfaces0.erase(std::unique(surfaces0.begin(), surfaces0.end()), surfaces0.end());
+  surfaces1.erase(std::unique(surfaces1.begin(), surfaces1.end()), surfaces1.end());
+  return surfaces0 == surfaces1;
+}
+
+// As put_intersection_points_on_every_surface_they_are_on does for the points of the mesh, for the
+// points of one surface each in the simplex with these vertices (from firstIntersection on, with
+// parametric coordinates in the simplex): each also gets every other surface it is on within
+// onSurfaceTol times the size of the simplex, and of those that are then the same, only the first
+// is kept.
+template <size_t NVERTICES>
+static void put_simplex_intersections_on_every_surface_they_are_on(const std::array<stk::math::Vector3d, NVERTICES> & simplexCoords,
+    const std::vector<const Surface *> & surfaces,
+    const double onSurfaceTol,
+    const size_t firstIntersection,
+    std::vector<ElementIntersection> & intersections)
+{
+  if (surfaces.size() < 2 || intersections.size() <= firstIntersection) return;
+  double simplexSize = 0.;
+  for (auto & x0 : simplexCoords)
+    for (auto & x1 : simplexCoords)
+      simplexSize = std::max(simplexSize, (x1 - x0).length());
+
+  for (size_t i = firstIntersection; i < intersections.size(); ++i)
+  {
+    std::vector<int> & domains = intersections[i].sortedDomains;
+    if (domains.front() != domains.back()) continue;
+    const stk::math::Vector3d & pCoords = intersections[i].parametricCoords;
+    stk::math::Vector3d location = simplexCoords[0];
+    for (size_t n = 1; n < NVERTICES; ++n)
+      location += pCoords[n - 1] * (simplexCoords[n] - simplexCoords[0]);
+    domains = domains_with_every_surface_point_is_on(domains, location, onSurfaceTol * simplexSize, surfaces);
+  }
+
+  size_t numKept = firstIntersection;
+  for (size_t i = firstIntersection; i < intersections.size(); ++i)
+  {
+    bool isRepeat = false;
+    for (size_t k = firstIntersection; !isRepeat && k < numKept; ++k)
+    {
+      isRepeat = have_same_surfaces_and_codimension(intersections[i].sortedDomains, intersections[k].sortedDomains);
+      for (size_t n = 0; isRepeat && n + 1 < NVERTICES; ++n)
+        isRepeat = std::abs(intersections[i].parametricCoords[n] - intersections[k].parametricCoords[n]) <= onSurfaceTol;
+    }
+    if (!isRepeat)
+      intersections[numKept++] = intersections[i];
+  }
+  intersections.erase(intersections.begin() + numKept, intersections.end());
+}
+
+static void
+fill_tetrahedron_intersections(const std::vector<stk::math::Vector3d> & elementNodeCoords,
+    const std::vector<const Surface *> & surfaces,
+    const ElementIntersectionPointFilter & intersectionPointFilter,
+    const double onSurfaceTol,
+    std::vector<ElementIntersection> & intersections)
 {
   STK_ThrowAssert(elementNodeCoords.size() >= 4);
   const std::array<stk::math::Vector3d,4> tetNodeCoordinates = {{elementNodeCoords[0], elementNodeCoords[1], elementNodeCoords[2], elementNodeCoords[3]}};
   std::vector<stk::math::Vector3d> intParamCoords;
+  const size_t firstIntersection = intersections.size();
   for (size_t i=0; i<surfaces.size(); ++i)
   {
+    const std::vector<int> sortedDomains = intersection_domains(3, i);
+    if (!intersectionPointFilter(sortedDomains)) continue;
     surfaces[i]->fill_tetrahedon_intersection_parametric_coordinates(tetNodeCoordinates, intParamCoords);
-    append_intersections(3, i, intParamCoords, intersections);
+    append_intersections(sortedDomains, intParamCoords, intersections);
   }
+  put_simplex_intersections_on_every_surface_they_are_on(tetNodeCoordinates, surfaces, onSurfaceTol, firstIntersection, intersections);
 }
 
-static void fill_triangle_intersections(const std::vector<stk::math::Vector3d> & elementNodeCoords, const std::vector<const Surface*> & surfaces, std::vector<ElementIntersection> & intersections)
+static void fill_triangle_intersections(const std::vector<stk::math::Vector3d> & elementNodeCoords,
+    const std::vector<const Surface *> & surfaces,
+    const ElementIntersectionPointFilter & intersectionPointFilter,
+    const double onSurfaceTol,
+    std::vector<ElementIntersection> & intersections)
 {
   STK_ThrowAssert(elementNodeCoords.size() >= 3);
   const std::array<stk::math::Vector3d,3> triNodeCoordinates = {{elementNodeCoords[0], elementNodeCoords[1], elementNodeCoords[2]}};
   std::vector<stk::math::Vector3d> intParamCoords;
+  const size_t firstIntersection = intersections.size();
   for (size_t i=0; i<surfaces.size(); ++i)
   {
+    const std::vector<int> sortedDomains = intersection_domains(2, i);
+    if (!intersectionPointFilter(sortedDomains)) continue;
     surfaces[i]->fill_triangle_intersection_parametric_coordinates(triNodeCoordinates, intParamCoords);
-    append_intersections(2, i, intParamCoords, intersections);
+    append_intersections(sortedDomains, intParamCoords, intersections);
   }
+  put_simplex_intersections_on_every_surface_they_are_on(triNodeCoordinates, surfaces, onSurfaceTol, firstIntersection, intersections);
 }
 
-void SurfaceElementCutter::fill_interior_intersections(const ElementIntersectionPointFilter & /*intersectionPointFilter*/, std::vector<ElementIntersection> & intersections) const
+void SurfaceElementCutter::fill_interior_intersections(
+    const ElementIntersectionPointFilter & intersectionPointFilter,
+    std::vector<ElementIntersection> & intersections) const
 {
   if (myMightHaveInteriorOrFaceCrossings)
   {
     const stk::topology baseTopology = myParametricElem.get_topology().base();
     if (baseTopology == stk::topology::TETRAHEDRON_4)
-      fill_tetrahedron_intersections(myElementNodeCoords, mySurfaces, intersections);
+      fill_tetrahedron_intersections(
+          myElementNodeCoords, mySurfaces, intersectionPointFilter, myEdgeCrossingTol, intersections);
     else if (baseTopology == stk::topology::TRIANGLE_3_2D || baseTopology == stk::topology::TRIANGLE_3)
-      fill_triangle_intersections(myElementNodeCoords, mySurfaces, intersections);
+      fill_triangle_intersections(
+          myElementNodeCoords, mySurfaces, intersectionPointFilter, myEdgeCrossingTol, intersections);
     else
       STK_ThrowErrorMsg("Unexepected topology " << baseTopology.name());
   }
@@ -176,16 +282,21 @@ std::vector<stk::math::Vector3d> SurfaceElementCutter::parametric_to_global_coor
   return nodesCoords;
 }
 
-void SurfaceElementCutter::append_triangle_intersections(const std::array<stk::math::Vector3d,3> & triCoords,
-    const ElementIntersectionPointFilter & /*intersectionPointFilter*/,
+void SurfaceElementCutter::append_triangle_intersections(
+    const std::array<stk::math::Vector3d, 3> & triCoords,
+    const ElementIntersectionPointFilter & intersectionPointFilter,
     std::vector<ElementIntersection> & intersections) const
 {
   std::vector<stk::math::Vector3d> intParamCoords;
+  const size_t firstIntersection = intersections.size();
   for (size_t i=0; i<mySurfaces.size(); ++i)
   {
+    const std::vector<int> sortedDomains = intersection_domains(2, i);
+    if (!intersectionPointFilter(sortedDomains)) continue;
     mySurfaces[i]->fill_triangle_intersection_parametric_coordinates(triCoords, intParamCoords);
-    append_intersections(2, i, intParamCoords, intersections);
+    append_intersections(sortedDomains, intParamCoords, intersections);
   }
+  put_simplex_intersections_on_every_surface_they_are_on(triCoords, mySurfaces, myEdgeCrossingTol, firstIntersection, intersections);
 }
 
 void SurfaceElementCutter::fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodeParamCoords,
@@ -214,6 +325,24 @@ std::pair<int, double> SurfaceElementCutter::interface_edge_crossing_sign_and_po
 {
   const Surface & surface = get_surface(interface);
   return surface.compute_intersection_with_segment(parametric_to_global_coordinates(edgeNodeCoords[0]), parametric_to_global_coordinates(edgeNodeCoords[1]), myEdgeCrossingTol);
+}
+
+bool SurfaceElementCutter::interface_has_sharp_features(const InterfaceID interface) const
+{
+  return get_surface(interface).has_sharp_features();
+}
+
+void SurfaceElementCutter::fill_multiple_edge_crossing_positions(const InterfaceID interface,
+    const std::array<stk::math::Vector3d, 2> & edgeNodeGlobalCoords,
+    std::vector<double> & positions) const
+{
+  positions.clear();
+
+  fill_multiple_segment_crossings(get_surface(interface),
+      edgeNodeGlobalCoords[0],
+      edgeNodeGlobalCoords[1],
+      myEdgeCrossingTol,
+      positions);
 }
 
 stk::math::Vector3d SurfaceElementCutter::parametric_to_global_coordinates(const stk::math::Vector3d & pCoords) const
@@ -252,6 +381,135 @@ static void append_surface_edge_intersection_points(const stk::mesh::BulkData & 
   }
 }
 
+// Where surfaces mate, a mesh edge crosses them at the same place, and their sharp features on the
+// boundary of the patch they share are at the same places in the faces and elements.  Each point of
+// one surface (from firstPoint on) also gets every other surface that it is within onSurfaceTol times
+// the size of its stencil of (domains_with_every_surface_point_is_on), so a node snapped there is on
+// each of them.  Of the points that are then the same (the same stencil nodes, surfaces and
+// codimension, with weights within onSurfaceTol), only the first is kept.  This depends only on where
+// the surfaces are, not on whether their facets match.
+static void put_intersection_points_on_every_surface_they_are_on(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    const std::vector<const Surface *> & surfaces,
+    const size_t firstPoint,
+    const double onSurfaceTol,
+    std::vector<IntersectionPoint> & intersectionPoints)
+{
+  if (surfaces.size() < 2) return;
+  const int dim = mesh.mesh_meta_data().spatial_dimension();
+
+  for (size_t i = firstPoint; i < intersectionPoints.size(); ++i)
+  {
+    const IntersectionPoint & point = intersectionPoints[i];
+    const std::vector<int> & domains = point.get_sorted_domains();
+    if (domains.front() != domains.back()) continue;
+
+    stk::math::Vector3d location = stk::math::Vector3d::ZERO;
+    for (size_t n = 0; n < point.get_nodes().size(); ++n)
+      location += point.get_weights()[n] * get_vector_field(mesh, coordsField, point.get_nodes()[n], dim);
+    double stencilSize = 0.;
+    for (auto node0 : point.get_nodes())
+      for (auto node1 : point.get_nodes())
+        stencilSize = std::max(stencilSize,
+            (get_vector_field(mesh, coordsField, node0, dim) - get_vector_field(mesh, coordsField, node1, dim)).length());
+
+    const std::vector<int> newDomains = domains_with_every_surface_point_is_on(domains, location, onSurfaceTol * stencilSize, surfaces);
+    if (newDomains.size() > domains.size())
+      intersectionPoints[i] = IntersectionPoint(point.is_owned(), point.get_nodes(), point.get_weights(), newDomains);
+  }
+
+  // The stencil nodes, sorted, with their weights.
+  auto sorted_stencil = [](const IntersectionPoint & point)
+  {
+    std::vector<std::pair<stk::mesh::Entity, double>> nodesAndWeights;
+    for (size_t n = 0; n < point.get_nodes().size(); ++n)
+      nodesAndWeights.emplace_back(point.get_nodes()[n], point.get_weights()[n]);
+    std::sort(nodesAndWeights.begin(), nodesAndWeights.end(),
+        [](const auto & a, const auto & b) { return a.first < b.first; });
+    return nodesAndWeights;
+  };
+
+  std::map<std::vector<stk::mesh::Entity>, std::vector<size_t>> pointsByStencilNodes;
+  for (size_t i = firstPoint; i < intersectionPoints.size(); ++i)
+  {
+    std::vector<stk::mesh::Entity> nodes = intersectionPoints[i].get_nodes();
+    std::sort(nodes.begin(), nodes.end());
+    pointsByStencilNodes[nodes].push_back(i);
+  }
+
+  std::vector<bool> isRepeat(intersectionPoints.size(), false);
+  bool anyRepeat = false;
+  for (auto & [stencilNodes, points] : pointsByStencilNodes)
+  {
+    for (size_t a = 0; a < points.size(); ++a)
+    {
+      if (isRepeat[points[a]]) continue;
+      const auto stencilA = sorted_stencil(intersectionPoints[points[a]]);
+      const std::vector<int> & domainsA = intersectionPoints[points[a]].get_sorted_domains();
+      for (size_t b = a + 1; b < points.size(); ++b)
+      {
+        if (isRepeat[points[b]] ||
+            !have_same_surfaces_and_codimension(intersectionPoints[points[b]].get_sorted_domains(), domainsA))
+          continue;
+        const auto stencilB = sorted_stencil(intersectionPoints[points[b]]);
+        bool isSamePlace = true;
+        for (size_t n = 0; isSamePlace && n < stencilA.size(); ++n)
+          isSamePlace = std::abs(stencilA[n].second - stencilB[n].second) <= onSurfaceTol;
+        if (isSamePlace)
+          isRepeat[points[b]] = anyRepeat = true;
+      }
+    }
+  }
+
+  if (anyRepeat)
+  {
+    size_t numKept = firstPoint;
+    for (size_t i = firstPoint; i < intersectionPoints.size(); ++i)
+      if (!isRepeat[i])
+        intersectionPoints[numKept++] = intersectionPoints[i];
+    intersectionPoints.erase(intersectionPoints.begin() + numKept, intersectionPoints.end());
+  }
+}
+
+// The multiple crossings of the surface with the mesh edges, as cutting leaves them
+// (multiple_crossing_positions_to_cut, with the edge as its own extent): without the close crossings,
+// and with those near an end at that end, with the end tolerance of a surface with sharp features
+// only if they are cut.
+static void append_surface_multiple_edge_intersection_points(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    const std::vector<Edge> & edgesToIntersect,
+    const InterfaceID interface,
+    const Surface & surface,
+    const double edgeCrossingTol,
+    const double edgeTol,
+    const bool sharpFeaturesAreCut,
+    std::vector<IntersectionPoint> & intersectionPoints)
+{
+  const double endTol =
+      multiple_crossing_end_tolerance(sharpFeaturesAreCut && surface.has_sharp_features(), edgeTol);
+  const bool intersectionPointIsOwned = true;
+  std::vector<int> intersectionPointSortedDomains;
+  interface.fill_sorted_domains(intersectionPointSortedDomains);
+  const int dim = mesh.mesh_meta_data().spatial_dimension();
+  std::vector<stk::mesh::Entity> intersectionPointNodes;
+  std::vector<double> crossingPositions;
+  for (auto & edge : edgesToIntersect)
+  {
+    fill_edge_nodes(edge, intersectionPointNodes);
+    const stk::math::Vector3d x0 = get_vector_field(mesh, coordsField, intersectionPointNodes[0], dim);
+    const stk::math::Vector3d x1 = get_vector_field(mesh, coordsField, intersectionPointNodes[1], dim);
+    fill_multiple_segment_crossings(surface, x0, x1, edgeCrossingTol, crossingPositions);
+    if (crossingPositions.empty()) continue;
+    const double length = (x1 - x0).length();
+    for (const double position :
+        multiple_crossing_positions_to_cut(crossingPositions, x0, x1, edgeTol * length, endTol * length))
+      intersectionPoints.emplace_back(intersectionPointIsOwned,
+          intersectionPointNodes,
+          std::vector<double>{1. - position, position},
+          intersectionPointSortedDomains);
+  }
+}
+
 FieldRef AnalyticSurfaceInterfaceGeometry::get_coordinates_field(const stk::mesh::BulkData & mesh) const
 {
   FieldRef coordsField = myCdfemSupport.get_coords_field();
@@ -285,7 +543,7 @@ void AnalyticSurfaceInterfaceGeometry::set_elements_to_intersect_and_prepare_to_
   for (auto && surface : mySurfaces)
   {
     Surface * nonConstSurface = const_cast<Surface*>(surface);
-    nonConstSurface->prepare_to_compute(0.0, nodeBbox, 0.); // Setup including communication of facets that are within this processors narrow band
+    nonConstSurface->prepare_to_compute(myTime, nodeBbox, 0.); // Setup including communication of facets that are within this processors narrow band
   }
 }
 
@@ -444,7 +702,7 @@ static bool all_nodes_of_element_will_be_snapped(const stk::mesh::BulkData & mes
     stk::mesh::Entity snapNode,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains)
 {
-  for (auto node : StkMeshEntities{mesh.begin_nodes(element), mesh.end_nodes(element)})
+  for (auto node : element_vertex_nodes(mesh, element))
     if (node != snapNode && nodesToCapturedDomains.find(node) == nodesToCapturedDomains.end())
       return false;
   return true;
@@ -464,8 +722,9 @@ static void set_domains_for_element_if_it_will_be_uncut_after_snapping(const stk
     if (all_nodes_of_element_will_be_snapped(mesh, element, snapNode, nodesToCapturedDomains))
     {
       std::vector<stk::math::Vector3d> elemNodesCoords;
-      fill_element_node_coordinates(mesh, element, coordsField, elemNodesCoords);
-      const int elementSign = surface_sign_at_position(surface, get_centroid(elemNodesCoords));
+      for (auto node : element_vertex_nodes(mesh, element))
+        elemNodesCoords.push_back(get_vector_field(mesh, coordsField, node, mesh.mesh_meta_data().spatial_dimension()));
+      const int elementSign = surface_sign_at_position(surface, compute_element_centroid(elemNodesCoords));
 
       elementsToDomain.emplace_hint(iter, element, elementSign);
     }
@@ -547,6 +806,47 @@ std::vector<IntersectionPoint> AnalyticSurfaceInterfaceGeometry::get_edge_inters
   return intersectionPoints;
 }
 
+std::vector<IntersectionPoint> AnalyticSurfaceInterfaceGeometry::get_all_edge_intersection_points(
+    const stk::mesh::BulkData & mesh) const
+{
+  std::vector<IntersectionPoint> intersectionPoints =
+      get_edge_intersection_points(mesh, NodeToCapturedDomainsMap{});
+
+  const FieldRef coordsField = get_coordinates_field(mesh);
+  std::vector<Edge> edgesToIntersect;
+  for (size_t i = 0; i < mySurfaces.size(); ++i)
+  {
+    InterfaceID interface(i, i);
+    if (i == 0 || mySurfaceElementSelectors[i] != mySurfaceElementSelectors[i - 1])
+      edgesToIntersect =
+          get_edges_of_selected_elements(mesh, mySurfaceElementSelectors[i], myElementsToIntersect);
+    append_surface_multiple_edge_intersection_points(mesh,
+        coordsField,
+        edgesToIntersect,
+        interface,
+        *mySurfaces[i],
+        myEdgeCrossingTol,
+        myCdfemSupport.get_snapper().get_edge_tolerance(),
+        myCdfemSupport.cuts_sharp_features(),
+        intersectionPoints);
+  }
+  return intersectionPoints;
+}
+
+bool AnalyticSurfaceInterfaceGeometry::node_is_on_sharp_featured_interface(
+    const stk::mesh::BulkData & mesh,
+    const stk::mesh::Entity node,
+    const InterfaceID interface,
+    const double tol) const
+{
+  if (!myMightHaveInteriorOrFaceCrossings || interface.first_ls() != interface.second_ls())
+    return false;
+  const Surface & surface = *mySurfaces[interface.first_ls()];
+  const stk::math::Vector3d x = get_vector_field(
+      mesh, get_coordinates_field(mesh), node, mesh.mesh_meta_data().spatial_dimension());
+  return std::abs(surface.point_signed_distance(x)) <= tol;
+}
+
 static void append_intersection_points_from_within_elements_and_owned_faces(ParametricElementLibrary & parametricElemLibrary,
     const stk::mesh::BulkData & mesh,
     const FieldRef coordsField,
@@ -588,6 +888,7 @@ void AnalyticSurfaceInterfaceGeometry::append_element_intersection_points(const 
   const FieldRef coordsField = get_coordinates_field(mesh);
   ParametricElementLibrary & parametricElemLibrary = AuxMetaData::get(mesh.mesh_meta_data()).parametric_element_library();
   std::vector<Edge> edgesToIntersect;
+  const size_t firstPoint = intersectionPoints.size();
   for (size_t i=0; i<mySurfaces.size(); ++i)
   {
     InterfaceID interface(i,i);
@@ -606,6 +907,7 @@ void AnalyticSurfaceInterfaceGeometry::append_element_intersection_points(const 
       myEdgeCrossingTol,
       intersectionPointFilter,
       intersectionPoints);
+  put_intersection_points_on_every_surface_they_are_on(mesh, coordsField, mySurfaces, firstPoint, myEdgeCrossingTol, intersectionPoints);
 }
 
 static int determine_element_sign_from_node_signs(const StkMeshEntities & elemNodes,
@@ -636,7 +938,7 @@ std::vector<int8_t> compute_element_signs_from_node_signs(const stk::mesh::BulkD
     const std::vector<stk::mesh::Selector> & surfaceElementSelectors,
     const NodeToSignsMap & nodesToSigns)
 {
-  const StkMeshEntities elemNodes{mesh.begin_nodes(element), mesh.end_nodes(element)};
+  const StkMeshEntities elemNodes = element_vertex_nodes(mesh, element);
   std::vector<int8_t> elementSigns(surfaceElementSelectors.size(), -2);
   for (size_t i=0; i<surfaceElementSelectors.size(); ++i)
     if (is_entity_selected(mesh, surfaceElementSelectors[i], element))
@@ -645,13 +947,151 @@ std::vector<int8_t> compute_element_signs_from_node_signs(const stk::mesh::BulkD
   return elementSigns;
 }
 
+void fill_multiple_segment_crossings(const Surface & surface,
+    const stk::math::Vector3d & x0,
+    const stk::math::Vector3d & x1,
+    const double edgeCrossingTol,
+    std::vector<double> & crossingPositions)
+{
+  // Every element sharing the edge must get the same crossings, whatever the order of its ends.
+  const bool reversed =
+      std::lexicographical_compare(x1.data(), x1.data() + 3, x0.data(), x0.data() + 3);
+  const stk::math::Vector3d & xBegin = reversed ? x1 : x0;
+  const stk::math::Vector3d & xEnd = reversed ? x0 : x1;
+
+  std::vector<double> candidatePositions;
+  surface.fill_segment_crossings(xBegin, xEnd, edgeCrossingTol, candidatePositions);
+  crossingPositions.clear();
+  if (candidatePositions.empty()) return;
+
+  // A point within the tolerance of the surface is on it.
+  const double onSurfaceTol = edgeCrossingTol * (xEnd - xBegin).length();
+  auto sign_at = [&](const double position)
+  {
+    const double dist = surface.point_signed_distance((1. - position) * xBegin + position * xEnd);
+    return (std::abs(dist) <= onSurfaceTol) ? 0 : sign(dist);
+  };
+
+  // Keep only the crossings where the edge goes from one side to the other, not those of an edge
+  // that runs along the surface, such as one in the plane of a face.
+  candidatePositions.insert(candidatePositions.begin(), 0.);
+  candidatePositions.push_back(1.);
+  std::vector<int> intervalSigns;
+  for (size_t i = 0; i + 1 < candidatePositions.size(); ++i)
+    intervalSigns.push_back(sign_at(0.5 * (candidatePositions[i] + candidatePositions[i + 1])));
+  for (size_t i = 1; i + 1 < candidatePositions.size(); ++i)
+    if (intervalSigns[i - 1] * intervalSigns[i] < 0)
+      crossingPositions.push_back(candidatePositions[i]);
+
+  const size_t numCrossingsShownBySigns = (sign_at(0.) * sign_at(1.) < 0) ? 1 : 0;
+  if (crossingPositions.size() <= numCrossingsShownBySigns)
+  {
+    crossingPositions.clear();
+    return;
+  }
+
+  if (reversed)
+  {
+    std::reverse(crossingPositions.begin(), crossingPositions.end());
+    for (auto & position : crossingPositions)
+      position = 1. - position;
+  }
+}
+
+static bool element_has_multiple_edge_crossings(const stk::topology topology,
+    const std::vector<stk::math::Vector3d> & elemNodeCoords,
+    const Surface & surface,
+    const double edgeCrossingTol)
+{
+  std::array<unsigned, 2> edgeNodeOrdinals;
+  std::vector<double> crossingPositions;
+  for (unsigned iEdge = 0; iEdge < topology.num_edges(); ++iEdge)
+  {
+    topology.edge_node_ordinals(iEdge, edgeNodeOrdinals.data());
+    fill_multiple_segment_crossings(surface,
+        elemNodeCoords[edgeNodeOrdinals[0]],
+        elemNodeCoords[edgeNodeOrdinals[1]],
+        edgeCrossingTol,
+        crossingPositions);
+    if (!crossingPositions.empty()) return true;
+  }
+  return false;
+}
+
+static bool any_point_is_away_from_the_vertices(
+    const std::vector<stk::math::Vector3d> & paramCoords, const int dim, const double tol)
+{
+  for (auto & pt : paramCoords)
+  {
+    double maxWeight = 1. - pt[0] - pt[1] - ((dim == 3) ? pt[2] : 0.);
+    for (int d = 0; d < dim; ++d)
+      maxWeight = std::max(maxWeight, pt[d]);
+    if (maxWeight < 1. - tol) return true;
+  }
+  return false;
+}
+
+static bool element_has_sharp_feature_points(const stk::topology topology,
+    const std::vector<stk::math::Vector3d> & elemNodeCoords,
+    const Surface & surface,
+    const double tol)
+{
+  std::vector<stk::math::Vector3d> paramCoords;
+  if (topology.base() == stk::topology::TETRAHEDRON_4)
+  {
+    surface.fill_tetrahedon_intersection_parametric_coordinates(
+        {{elemNodeCoords[0], elemNodeCoords[1], elemNodeCoords[2], elemNodeCoords[3]}},
+        paramCoords);
+    if (any_point_is_away_from_the_vertices(paramCoords, 3, tol)) return true;
+    std::array<unsigned, 3> faceNodeOrdinals;
+    for (unsigned iFace = 0; iFace < topology.num_faces(); ++iFace)
+    {
+      topology.face_node_ordinals(iFace, faceNodeOrdinals.data());
+      surface.fill_triangle_intersection_parametric_coordinates(
+          {{elemNodeCoords[faceNodeOrdinals[0]],
+              elemNodeCoords[faceNodeOrdinals[1]],
+              elemNodeCoords[faceNodeOrdinals[2]]}},
+          paramCoords);
+      if (any_point_is_away_from_the_vertices(paramCoords, 2, tol)) return true;
+    }
+    return false;
+  }
+  surface.fill_triangle_intersection_parametric_coordinates(
+      {{elemNodeCoords[0], elemNodeCoords[1], elemNodeCoords[2]}}, paramCoords);
+  return any_point_is_away_from_the_vertices(paramCoords, 2, tol);
+}
+
+// A surface can cross an element where the signs of its nodes do not show it, wherever an edge
+// crosses it more than the signs at its ends show, with or without sharp features, or, with sharp
+// features, where a sharp edge or corner passes through a face.
+static bool element_has_crossings_not_shown_by_node_signs(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    stk::mesh::Entity element,
+    const Surface & surface,
+    const double edgeCrossingTol)
+{
+  const int dim = mesh.mesh_meta_data().spatial_dimension();
+  const stk::topology topology = mesh.bucket(element).topology().base();
+  std::vector<stk::math::Vector3d> elemNodeCoords;
+  for (auto node : element_vertex_nodes(mesh, element))
+    elemNodeCoords.push_back(get_vector_field(mesh, coordsField, node, dim));
+  return element_has_multiple_edge_crossings(topology, elemNodeCoords, surface, edgeCrossingTol) ||
+      element_has_sharp_feature_points(topology, elemNodeCoords, surface, edgeCrossingTol);
+}
+
 std::unique_ptr<ElementCutter> AnalyticSurfaceInterfaceGeometry::build_element_cutter(const stk::mesh::BulkData & mesh,
   stk::mesh::Entity element,
   const std::function<bool(const std::array<unsigned,4> &)> & /*intersectingPlanesDiagonalPicker*/) const
 {
   std::unique_ptr<ElementCutter> cutter;
   const FieldRef coordsField = get_coordinates_field(mesh);
-  const std::vector<int8_t> & elementSigns = compute_element_signs_from_node_signs(mesh, element, mySurfaceElementSelectors, myNodesToSigns);
+  std::vector<int8_t> elementSigns = compute_element_signs_from_node_signs(
+      mesh, element, mySurfaceElementSelectors, myNodesToSigns);
+  for (size_t i = 0; i < elementSigns.size(); ++i)
+    if ((elementSigns[i] == -1 || elementSigns[i] == 1) &&
+        element_has_crossings_not_shown_by_node_signs(
+            mesh, coordsField, element, *mySurfaces[i], myEdgeCrossingTol))
+      elementSigns[i] = 0;
   cutter.reset( new SurfaceElementCutter(mesh, coordsField, element, mySurfaces, elementSigns, myMightHaveInteriorOrFaceCrossings, myEdgeCrossingTol) );
   return cutter;
 }
@@ -732,7 +1172,7 @@ static double calculate_surface_curvature_magnitude(const unsigned dim, const Su
       return tet_closest_point_normal_mean_curvature_magnitude(elemNodesCoords, elemNodesClosestPtNormals);
     return tri_closest_point_normal_curvature_magnitude(elemNodesCoords, elemNodesClosestPtNormals);
   }
-  const stk::math::Vector3d centroid = get_centroid(elemNodesCoords);
+  const stk::math::Vector3d centroid = compute_element_centroid(elemNodesCoords);
   if (3 == dim)
     return finite_difference_mean_curvature_magnitude_3d(surface, centroid, 0.5*elemSize);
   return finite_difference_curvature_magnitude_2d(surface, centroid, 0.5*elemSize);
@@ -756,7 +1196,7 @@ static stk::math::Vector3d calculate_surface_normal(const unsigned dim, const Su
 {
   if (surface.can_approximate_closest_point_normal())
   {
-    const stk::math::Vector3d centroid = get_centroid(elemNodesCoords);
+    const stk::math::Vector3d centroid = compute_element_centroid(elemNodesCoords);
     return surface.closest_point_normal(centroid);
   }
   std::vector<double> elemNodesDist;
@@ -772,6 +1212,19 @@ stk::math::Vector3d AnalyticSurfaceInterfaceGeometry::compute_interface_normal(c
   fill_element_node_coordinates(mesh, element, get_coordinates_field(mesh), elemNodesCoords);
   const unsigned surfIndex = get_index_of_surface_with_identifer(surfaceIdentifier);
   return calculate_surface_normal(mesh.mesh_meta_data().spatial_dimension(), *mySurfaces[surfIndex], elemNodesCoords);
+}
+
+void AnalyticSurfaceInterfaceGeometry::add_surfaces_to_journal(CubitJournal & journal,
+    const BoundingBox & region,
+    const std::function<std::string(const Surface_Identifier)> & surfaceGroupName) const
+{
+  static const std::array<std::string,6> colors{{"white", "yellow", "cyan", "pink", "khaki", "lightblue"}};
+  // Each surface draws only what is in the region (not every surface implements does_intersect).
+  for (size_t i=0; i<mySurfaces.size(); ++i)
+  {
+    journal.set_group(surfaceGroupName(mySurfaceIdentifiers[i]), colors[i % colors.size()]);
+    mySurfaces[i]->add_to_journal(journal, region);
+  }
 }
 
 } // namespace krino

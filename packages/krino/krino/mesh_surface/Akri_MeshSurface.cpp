@@ -8,901 +8,41 @@
 
 #include <Akri_MeshSurface.hpp>
 #include <Akri_DiagWriter.hpp>
-#include <Akri_Facet.hpp>
-#include <Akri_Transformation.hpp>
 
 #include <stk_util/environment/EnvData.hpp>
 #include <stk_util/util/ReportHandler.hpp>
-#include <stk_util/parallel/ParallelReduceBool.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <Ioss_SubSystem.h>
 
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-#include <iterator>
-#include <cstring>
-#include <cmath>
+#include <array>
+#include <utility>
 
 namespace krino{
 
-Parallel_Facet_File_Reader::Parallel_Facet_File_Reader(const std::string & in_filename) : my_filename(in_filename)
-{
-  STK_ThrowRequireMsg(stk::EnvData::parallel_size() > 0, "MPI environment not initialized.");
-}
-
-void Parallel_Facet_File_Reader::read(const std::string & read_description, const std::function<void(void)> & read_function)
-{
-  bool ok_locally = true;
-
-  if (0 == stk::EnvData::parallel_rank() )
-  {
-    my_input.exceptions(std::ifstream::badbit);
-    try
-    {
-      read_function();
-    }
-    catch (std::ifstream::failure & e)
-    {
-      ok_locally = false;
-    }
-  }
-  const bool ok_globally = stk::is_true_on_all_procs(stk::EnvData::parallel_comm(), ok_locally);
-  if (!ok_globally)
-  {
-    STK_ThrowErrorMsg("Error " << read_description << " for file " << my_filename);
-  }
-}
-
-void Parallel_Facet_File_Reader::open_file()
-{
-  read("opening file", [this](){my_input.open(my_filename.c_str());});
-}
-
-void Parallel_Facet_File_Reader::get_batch_size(const int local_num_facets, int & batch_size, int & num_batches)
-{
-  int num_facets = 0;
-  stk::all_reduce_sum( stk::EnvData::parallel_comm(), &local_num_facets, &num_facets, 1 );
-
-  const int min_batch_size = std::min(2048, num_facets);
-  batch_size = std::max(min_batch_size, 1+num_facets/stk::EnvData::parallel_size());
-  num_batches = 1+num_facets/batch_size;
-
-  if(krinolog.shouldPrint(LOG_DEBUG))
-    krinolog << "Reading " << num_facets << " facets, using " << num_batches << " batches of " << batch_size << "." << stk::diag::dendl;
-}
-
-Faceted_Surface_From_File::Faceted_Surface_From_File(const stk::diag::Timer &parent_timer)
-: Faceted_Surface<Facet3d>(),
-  my_timer("Facet File Reader", parent_timer),
-  my_built_local_facets(false)
-{
-}
-
-void Faceted_Surface_From_File::build_local_facets(const BoundingBox & proc_bbox)
-{
-  stk::diag::TimeBlock timer_(my_timer);
-
-  if(my_built_local_facets) return;
-
-  std::vector<BoundingBox> proc_bboxes;
-  BoundingBox::gather_bboxes( proc_bbox, proc_bboxes );
-
-  read_file(proc_bboxes);
-  my_built_local_facets = true;
-}
-
-void Faceted_Surface_From_File::insert_into(BoundingBox & bbox) const
-{
-  // One could reasonably expect that inserting the surface into the bbox is a const method for the surface,
-  // but the reading methods used to get the bounding box are non-const.  Ugh.
-  const BoundingBox facetBbox = const_cast<Faceted_Surface_From_File *>(this)->get_bounding_box();
-  bbox.accommodate(facetBbox);
-}
-
-void Parallel_Facet_File_Reader::close_file()
-{
-  read("closing file", [this](){my_input.close();});
-}
-
-FACSurface::FACSurface(const stk::diag::Timer &parent_timer,
-    const std::string & filename,
-    const int sign,
-    const stk::math::Vector3d & scale)
- : Faceted_Surface_From_File(parent_timer),
-   my_reader(filename),
-   my_dist_sign(sign),
-   my_scale(scale)
-{
-  // Make sure the file is openable, but close it for now to avoid ulimit restrictions.
-  my_reader.open_file();
-  my_reader.close_file();
-}
-
-BoundingBox
-FACSurface::get_bounding_box()
-{
-  BoundingBox bbox;
-
-  my_reader.open_file();
-
-  std::vector<stk::math::Vector3d> points;
-  my_reader.read("reading points", [this, &points](){read_points(points);});
-
-  for (auto && point : points)
-  {
-    bbox.accommodate(point);
-  }
-
-  my_reader.close_file();
-
-  bbox.global_reduce();
-  return bbox;
-}
-
-void FACSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
-{
-  my_reader.open_file();
-
-  std::ifstream & input = my_reader.input();
-  std::vector<stk::math::Vector3d> points;
-  my_reader.read("reading points", [this, &points](){read_points(points);});
-
-  int num_facets = 0;
-  my_reader.read("reading number of facets", [&input, &num_facets](){ STK_ThrowRequire((input >> num_facets) && num_facets > 0); });
-
-  int batch_size = 0;
-  int num_batches = 0;
-  my_reader.get_batch_size(num_facets, batch_size, num_batches);
-
-  for (int batch = 0; batch < num_batches; ++batch)
-  {
-    const int current_batch_size = std::min(batch_size, num_facets-batch*batch_size);
-    my_reader.read("reading facets", [this, &points, current_batch_size, num_facets](){read_facets(current_batch_size, num_facets, points);});
-    parallel_distribute_facets(current_batch_size, proc_bboxes);
-  }
-
-  my_reader.close_file();
-}
-
-void FACSurface::read_points(std::vector<stk::math::Vector3d> & points)
-{
-  std::ifstream & input = my_reader.input();
-  int num_points;
-  input >> num_points;
-  STK_ThrowRequire(num_points > 0);
-  points.reserve(num_points);
-  for ( int i = 0; i < num_points; i++ )
-  {
-    int id;
-    double X, Y, Z;
-    STK_ThrowRequire((input >> id) && id >= 0 && id < num_points);
-    STK_ThrowRequire(input >> X >> Y >> Z);
-    points.emplace_back(X*my_scale[0], Y*my_scale[1], Z*my_scale[2]);
-  }
-}
-
-void FACSurface::read_facets(const int batch_size, const int num_facets, const std::vector<stk::math::Vector3d> & points)
-{
-  std::ifstream & input = my_reader.input();
-  const int num_points = points.size();
-  for ( int i = 0; i < batch_size; ++i )
-  {
-    int id;
-    int p1, p2, p3;
-    STK_ThrowRequire((input >> id) && id >= 0 && id < num_facets);
-    STK_ThrowRequire(input >> p1 >> p2 >> p3);
-
-    STK_ThrowRequire(p1 >= 0 && p1 < num_points);
-    STK_ThrowRequire(p2 >= 0 && p2 < num_points);
-    STK_ThrowRequire(p3 >= 0 && p3 < num_points);
-
-    if (my_dist_sign == -1)
-    {
-      // permute to flip normal direction
-      int tmp = p1;
-      p1 = p2;
-      p2 = tmp;
-    }
-    emplace_back_3d( points[p1], points[p2], points[p3] );
-  }
-}
-
-PLYSurface::PLYSurface(const stk::diag::Timer &parent_timer,
-    const std::string & filename,
-    const int sign,
-    const stk::math::Vector3d & scale)
- : Faceted_Surface_From_File(parent_timer),
-   my_reader(filename),
-   my_dist_sign(sign),
-   my_scale(scale)
-{
-  // Make sure the file is openable, but close it for now to avoid ulimit restrictions.
-  my_reader.open_file();
-  my_reader.close_file();
-}
-
-BoundingBox PLYSurface::get_bounding_box()
-{
-  BoundingBox bbox;
-
-  my_reader.open_file();
-
-  int num_points = 0;
-  int num_facets = 0;
-
-  my_reader.read("reading file header", [this, &num_points, &num_facets](){read_header(num_points, num_facets);});
-
-  std::vector<stk::math::Vector3d> points;
-  my_reader.read("reading points", [this, num_points, &points](){read_points(num_points, points);});
-
-  for (auto && point : points)
-  {
-    bbox.accommodate(point);
-  }
-
-  my_reader.close_file();
-
-  bbox.global_reduce();
-
-  return bbox;
-}
-
-void PLYSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
-{
-  my_reader.open_file();
-
-  int num_points = 0;
-  int num_facets = 0;
-
-  my_reader.read("reading file header", [this, &num_points, &num_facets](){read_header(num_points, num_facets);});
-
-  std::vector<stk::math::Vector3d> points;
-  my_reader.read("reading points", [this, num_points, &points](){read_points(num_points, points);});
-
-  int batch_size = 0;
-  int num_batches = 0;
-  my_reader.get_batch_size(num_facets, batch_size, num_batches);
-
-  for (int batch = 0; batch < num_batches; ++batch)
-  {
-    const int current_batch_size = std::min(batch_size, num_facets-batch*batch_size);
-    my_reader.read("reading facets",
-        [this, &points, current_batch_size]() { read_facets(current_batch_size, points); });
-    parallel_distribute_facets(current_batch_size, proc_bboxes);
-  }
-
-  my_reader.close_file();
-}
-
-void PLYSurface::read_header(int & num_points, int & num_facets)
-{
-  std::ifstream & input = my_reader.input();
-  num_points = 0;
-  num_facets = 0;
-
-  // Read in the file identifier
-  std::string symbol;
-  STK_ThrowRequire((input >> symbol) && symbol.compare("ply") == 0);
-
-  while (symbol.compare("end_header") != 0)
-  {
-    STK_ThrowErrorMsgIf(input.eof(), "Problem reading PLY file, reached end of file.");
-    STK_ThrowRequire(input >> symbol);
-    if (symbol.compare("element") == 0)
-    {
-      STK_ThrowRequire(input >> symbol);
-      if (symbol.compare("vertex") == 0)
-      {
-        input >> num_points;
-      }
-      else if (symbol.compare("face") == 0)
-      {
-        STK_ThrowRequire(input >> num_facets);
-      }
-    }
-  }
-}
-
-void PLYSurface::read_points(const int num_points, std::vector<stk::math::Vector3d> & points)
-{
-  std::ifstream & input = my_reader.input();
-  points.clear();
-  points.reserve(num_points);
-  for ( int i = 0; i < num_points; i++ )
-  {
-    double X, Y, Z;
-    STK_ThrowRequire(input >> X >> Y >> Z);
-    points.emplace_back(X*my_scale[0], Y*my_scale[1], Z*my_scale[2]);
-  }
-  // Move to start of next line to prepare for reading facets
-  std::string line;
-  std::getline(input,line);
-}
-
-void PLYSurface::read_facets(const int batch_size, const std::vector<stk::math::Vector3d> & points)
-{
-  std::ifstream & input = my_reader.input();
-  const unsigned num_points = points.size();
-  std::string line;
-  for ( int i = 0; i < batch_size; ++i )
-  {
-    unsigned num_facet_nodes;
-    unsigned p1, p2, p3;
-    std::getline(input,line);
-    std::stringstream linestream(line);
-    linestream >> num_facet_nodes;
-    STK_ThrowRequireMsg(num_facet_nodes == 3, "Failed to read face connectivity correctly.");
-    STK_ThrowRequire(linestream >> p1 >> p2 >> p3);
-    STK_ThrowRequire(p1 < num_points);
-    STK_ThrowRequire(p2 < num_points);
-    STK_ThrowRequire(p3 < num_points);
-
-    if (my_dist_sign == -1)
-    {
-      // permute to flip normal direction
-      int tmp = p1;
-      p1 = p2;
-      p2 = tmp;
-    }
-    emplace_back_3d( points[p1], points[p2], points[p3] );
-  }
-}
-
-STLSurface::STLSurface(const stk::diag::Timer &parent_timer,
-    const std::string & filename,
-    const int sign,
-    const stk::math::Vector3d & scale)
- : Faceted_Surface_From_File(parent_timer),
-   my_is_ascii(true),
-   my_reader(filename),
-   my_dist_sign(sign),
-   my_scale(scale)
-{
-  // Make sure the file is openable, but close it for now to avoid ulimit restrictions.
-  my_reader.open_file();
-  my_reader.close_file();
-}
-
-static void flip_facet_with_negative_sign(std::array<stk::math::Vector3d,3> & pts, const int sign)
-{
-  if (sign == -1)
-  {
-    std::swap(pts[1][0], pts[2][0]);
-    std::swap(pts[1][1], pts[2][1]);
-    std::swap(pts[1][2], pts[2][2]);
-  }
-}
-
-static bool is_finite_normal(const stk::math::Vector3d normal)
-{
-  bool finiteFlag = true;
-  if (!std::isfinite(normal[0]) ||
-      !std::isfinite(normal[1]) ||
-      !std::isfinite(normal[2]) )
-  {
-    finiteFlag = false;
-    krinolog << "Krino::STLSurface found an invalid facet and is skipping." << std::endl;
-    krinolog << "  facet normal " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
-  }
-  return finiteFlag;
-}
-
-static std::string trim_whitespace(const std::string& s)
-{
-  size_t start = 0;
-  while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start]))) {
-      ++start;
-  }
-
-  size_t end = s.size();
-  while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1]))) {
-      --end;
-  }
-
-  return s.substr(start, end - start);
-}
-
-static bool starts_with(const std::string& s, const std::string& prefix)
-{
-  return s.size() >= prefix.size() && s.compare(0, prefix.size(), prefix) == 0;
-}
-
-static void parse_ascii_vector3d(const std::string& s, stk::math::Vector3d & v)
-{
-  std::istringstream iss(s);
-  if (!(iss >> v[0] >> v[1] >> v[2]))
-    throw std::runtime_error("Failed to parse 3D vector");
-}
-
-static void parse_ascii_prefix_and_vector3d(const std::string& line, const std::string & prefix, stk::math::Vector3d & v)
-{
-  if (!starts_with(line, prefix))
-    throw std::runtime_error("Expected '" + prefix + " x y z'");
-
-  parse_ascii_vector3d(line.substr(prefix.length()), v);
-}
-
-static void parse_ascii_prefix_and_vector3d(std::istream& in, const std::string & prefix, stk::math::Vector3d & v)
-{
-  std::string line;
-  if (!std::getline(in, line))
-    throw std::runtime_error("Unexpected EOF before '" + prefix + " x y z'");
-  line = trim_whitespace(line);
-  parse_ascii_prefix_and_vector3d(line, prefix, v);
-}
-
-static void parse_and_expect_token(std::istream& in, const std::string& expectedToken)
-{
-  std::string line;
-  if (!std::getline(in, line))
-    throw std::runtime_error("Unexpected EOF before " + expectedToken + "'");
-  line = trim_whitespace(line);
-  if (line != expectedToken)
-    throw std::runtime_error("Expected '" + expectedToken + "'");
-}
-
-static void parse_ascii_facet(std::istream& in, const std::string& firstLine, stk::math::Vector3d & facetNormal, std::array<stk::math::Vector3d,3> & facetPts)
-{
-  parse_ascii_prefix_and_vector3d(firstLine, "facet normal", facetNormal);
-
-  parse_and_expect_token(in, "outer loop");
-
-  for (int i = 0; i < 3; ++i)
-    parse_ascii_prefix_and_vector3d(in, "vertex", facetPts[i]);
-
-  parse_and_expect_token(in, "endloop");
-  parse_and_expect_token(in, "endfacet");
-}
-
-static void read_ascii_facet(std::istream& in, const std::string& firstLine, const stk::math::Vector3d & scale, const int sign, std::array<stk::math::Vector3d,3> & facetPts, bool & isFacetValid)
-{
-  stk::math::Vector3d facetNormal;
-  parse_ascii_facet(in, firstLine, facetNormal, facetPts);
-
-  for (int i = 0; i < 3; ++i)
-    for (int j = 0; j < 3; ++j)
-      facetPts[i][j] *= scale[j];
-  isFacetValid = is_finite_normal(facetNormal) && !Facet3d::is_degenerate(facetPts);
-  flip_facet_with_negative_sign(facetPts, sign);
-}
-
-static float read_binary_float(std::ifstream& input)
-{
-  float val = 0;
-  input.read((char *) &val, sizeof(val));
-  return val;
-}
-
-static stk::math::Vector3d read_binary_vector(std::ifstream& input)
-{
-  float x = read_binary_float(input);
-  float y = read_binary_float(input);
-  float z = read_binary_float(input);
-  return stk::math::Vector3d(x, y, z);
-}
-
-static void read_binary_facet(std::ifstream & input, const stk::math::Vector3d & scale, const int sign, std::array<stk::math::Vector3d,3> & facetPts, bool & isFacetValid)
-{
-  const stk::math::Vector3d normal = read_binary_vector(input);
-
-  for (auto && pt : facetPts)
-  {
-    const stk::math::Vector3d vec = read_binary_vector(input);
-    pt = stk::math::Vector3d(vec[0]*scale[0], vec[1]*scale[1], vec[2]*scale[2]);
-  }
-
-  char dummy[2];
-  input.read(dummy, 2);
-
-  isFacetValid = is_finite_normal(normal) && !Facet3d::is_degenerate(facetPts);
-  flip_facet_with_negative_sign(facetPts, sign);
-}
-
-BoundingBox
-STLSurface::get_bounding_box()
-{
-  BoundingBox bbox;
-
-  my_reader.open_file();
-
-  my_reader.read("reading file header", [this](){read_header();});
-  my_is_ascii = stk::is_true_on_all_procs(stk::EnvData::parallel_comm(), my_is_ascii);
-
-  if (my_is_ascii)
-  {
-    my_reader.read("reading facets", [this, &bbox](){bbox = get_ascii_facet_bounding_box();});
-  }
-  else
-  {
-    unsigned numFacets = 0;
-    my_reader.read("reading num facets", [this, &numFacets](){numFacets = read_num_binary_facets();});
-    my_reader.read("reading facets", [this, &bbox, numFacets](){bbox = get_binary_facet_bounding_box(numFacets);});
-  }
-
-  my_reader.close_file();
-
-  bbox.global_reduce();
-  return bbox;
-}
-
-void
-STLSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
-{
-  my_reader.open_file();
-
-  my_reader.read("reading file header", [this](){read_header();});
-  my_is_ascii = stk::is_true_on_all_procs(stk::EnvData::parallel_comm(), my_is_ascii);
-
-  unsigned numBinaryFacets = 0;
-  if (!my_is_ascii)
-    my_reader.read("reading num facets", [this, &numBinaryFacets](){numBinaryFacets = read_num_binary_facets();});
-
-  const unsigned maxBatchSize = 8192;
-
-  unsigned numValidFacetsRead = 0;
-  bool done = false;
-  while (!done)
-  {
-    unsigned batchSize = 0;
-
-    if (my_is_ascii)
-    {
-      my_reader.read("reading facets", [this, &batchSize](){batchSize = read_ascii_facets(maxBatchSize);});
-    }
-    else
-    {
-      my_reader.read("reading facets", [this, &batchSize, &numBinaryFacets](){batchSize = read_binary_facets(maxBatchSize, numBinaryFacets);});
-    }
-
-    const unsigned localBatchSize = batchSize;
-    stk::all_reduce_max( stk::EnvData::parallel_comm(), &localBatchSize, &batchSize, 1 );
-    numValidFacetsRead += batchSize;
-
-    parallel_distribute_facets(batchSize, proc_bboxes);
-
-    done = batchSize < maxBatchSize;
-  }
-
-  my_reader.close_file();
-
-  krinolog << "Read " << (my_is_ascii ? "ASCII" : "binary") << " STL file " << my_reader.filename() << " with " << numValidFacetsRead << " valid facets." << stk::diag::dendl;
-}
-
-void
-STLSurface::read_header()
-{
-  std::ifstream & input = my_reader.input();
-
-  std::string line;
-  std::getline(input, line);
-  my_is_ascii = starts_with(line, "solid");
-
-  if (!my_is_ascii)
-  {
-    char header_info[80] = "";
-    input.clear();
-    input.seekg(0);
-    input.read(header_info, 80);
-    STK_ThrowErrorMsgIf(!input.good(), "Problem reading STL file, cannot read binary file header.");
-  }
-}
-
-unsigned STLSurface::read_num_binary_facets()
-{
-  STK_ThrowAssert(!my_is_ascii);
-  std::ifstream & input = my_reader.input();
-  unsigned numFacets = 0;
-  input.read((char *) &numFacets, sizeof(numFacets));
-  STK_ThrowErrorMsgIf(!input.good(), "Problem reading STL file, cannot read number of facets.");
-  krinolog << "Reading binary STL file with " << numFacets << " facets." << stk::diag::dendl;
-  return numFacets;
-}
-
-unsigned STLSurface::read_ascii_facets(const unsigned max_batch_size)
-{
-  std::ifstream & input = my_reader.input();
-
-  bool isFacetValid = false;
-  std::array<stk::math::Vector3d,3> facetPts;
-  std::string line;
-
-  unsigned count = 0;
-  while (count < max_batch_size && std::getline(input, line))
-  {
-    line = trim_whitespace(line);
-    if (starts_with(line, "facet"))
-    {
-      read_ascii_facet(input, line, my_scale, my_dist_sign, facetPts, isFacetValid);
-      if (isFacetValid)
-      {
-        emplace_back_3d(facetPts[0], facetPts[1], facetPts[2]);
-        ++count;
-      }
-    }
-    else
-    {
-      if (starts_with(line, "solid"))
-        krinolog << "STL file contains multiple solids which are being read together. This will not behave well if the surfaces intersect." << stk::diag::dendl;
-      else if (!line.empty() && !starts_with(line, "endsolid"))
-        throw std::runtime_error("Unexpected line '" + line + "'");
-    }
-  }
-  return count;
-}
-
-unsigned STLSurface::read_binary_facets(const unsigned maxBatchSize, unsigned & numRemainingInFile)
-{
-  std::ifstream & input = my_reader.input();
-
-  bool isFacetValid = false;
-  std::array<stk::math::Vector3d,3> facetPts;
-
-  unsigned count = 0;
-  bool done = numRemainingInFile == 0;
-  while (!done)
-  {
-    read_binary_facet(input, my_scale, my_dist_sign, facetPts, isFacetValid);
-    if (isFacetValid)
-    {
-      emplace_back_3d(facetPts[0], facetPts[1], facetPts[2]);
-      ++count;
-    }
-    done = (--numRemainingInFile == 0 || count >= maxBatchSize);
-  }
-
-  return count;
-}
-
-BoundingBox STLSurface::get_ascii_facet_bounding_box()
-{
-  std::ifstream & input = my_reader.input();
-
-  bool isFacetValid = false;
-  std::array<stk::math::Vector3d,3> facetPts;
-
-  BoundingBox bbox;
-
-  std::string line;
-  while (std::getline(input, line))
-  {
-    line = trim_whitespace(line);
-    if (starts_with(line, "facet"))
-    {
-      read_ascii_facet(input, line, my_scale, my_dist_sign, facetPts, isFacetValid);
-      if (isFacetValid)
-      {
-        const Facet3d facet(facetPts[0], facetPts[1], facetPts[2]);
-        facet.insert_into(bbox);
-      }
-    }
-  }
-  return bbox;
-}
-
-
-
-BoundingBox STLSurface::get_binary_facet_bounding_box(const unsigned numFacets)
-{
-  std::ifstream & input = my_reader.input();
-
-  bool isFacetValid = false;
-  std::array<stk::math::Vector3d,3> facetPts;
-
-  BoundingBox bbox;
-
-  for (unsigned count=0; count<numFacets; ++count)
-  {
-    read_binary_facet(input, my_scale, my_dist_sign, facetPts, isFacetValid);
-    if (isFacetValid)
-    {
-      const Facet3d facet(facetPts[0], facetPts[1], facetPts[2]);
-      facet.insert_into(bbox);
-    }
-  }
-  return bbox;
-}
-
-static void
-check_exodus_surface_counts(const std::string & filename, const int numDim, const int numNodes)
-{
-  STK_ThrowRequireMsg(3 == numDim,
-      "Exodus surface " << filename << " must be 3D, but has dimension " << numDim << ".");
-  STK_ThrowRequireMsg(numNodes >= 0,
-      "Exodus surface " << filename << " has an invalid node count " << numNodes << ".");
-}
-
-EXOSurface::EXOSurface(const stk::diag::Timer &parent_timer,
-    const std::string & filename,
-    const int sign,
-    const stk::math::Vector3d & scale)
- : Faceted_Surface_From_File(parent_timer),
-   my_filename(filename),
-   my_dist_sign(sign),
-   my_scale(scale)
-{
-}
-
-BoundingBox
-EXOSurface::get_bounding_box()
-{
-  BoundingBox bbox;
-
-  std::vector<double> xyz;
-  std::unique_ptr<Ioss::Region> io;
-  if ( 0 == stk::EnvData::parallel_rank() )
-  {
-    /* open file */
-    Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", my_filename.c_str(), Ioss::READ_MODEL, MPI_COMM_SELF);
-    if ( !db ) {
-      STK_ThrowErrorMsg("error reading file " << my_filename);
-    }
-    io = std::make_unique<Ioss::Region>(db, "EXOSurface IC Region");
-
-    /* exodus description */
-    int num_dim   = io->get_property("spatial_dimension").get_int();
-    int num_nodes = io->get_property("node_count").get_int();
-
-    check_exodus_surface_counts(my_filename, num_dim, num_nodes);
-
-    /* generate coordinates */
-    xyz.resize(size_t(num_nodes) * num_dim);
-
-    Ioss::NodeBlock *nb = io->get_node_blocks()[0];
-    nb->get_field_data("mesh_model_coordinates", xyz);
-
-    for (int n = 0; n<num_nodes; ++n)
-    {
-      const stk::math::Vector3d point(&xyz[3*n]);
-      bbox.accommodate(point);
-    }
-  }
-
-  bbox.global_reduce();
-  return bbox;
-}
-
-void
-EXOSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
-{
-  const int nodes_per_elem = 3;
-  int num_elem_blk = 0;
-  std::vector<double> xyz;
-  std::vector<int> nmap;
-  std::unique_ptr<Ioss::Region> io;
-  if ( 0 == stk::EnvData::parallel_rank() )
-  {
-    /* open file */
-    Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", my_filename.c_str(), Ioss::READ_MODEL, MPI_COMM_SELF);
-    if ( !db ) {
-      STK_ThrowErrorMsg("error reading file " << my_filename);
-    }
-    io = std::make_unique<Ioss::Region>(db, "EXOSurface IC Region");
-
-    krinolog << "opened file " << my_filename << " for reading..." << std::endl;
-
-    /* exodus description */
-    int num_dim   = io->get_property("spatial_dimension").get_int();
-    int num_nodes = io->get_property("node_count").get_int();
-    int num_elem  = io->get_property("element_count").get_int();
-    num_elem_blk = io->get_property("element_block_count").get_int();
-
-    krinolog
-        << "num dim = " << num_dim
-        << ", num nodes = " << num_nodes
-        << ", num elems = " << num_elem
-        << ", num elem blks = " << num_elem_blk << std::endl;
-
-    check_exodus_surface_counts(my_filename, num_dim, num_nodes);
-
-    /* generate coordinates */
-    xyz.resize(size_t(num_nodes) * num_dim);
-    nmap.resize(num_nodes);
-
-    Ioss::NodeBlock *nb = io->get_node_blocks()[0];
-    nb->get_field_data("mesh_model_coordinates", xyz);
-    nb->get_field_data("ids", nmap);
-  }
-
-  const int local_num_elem_blk = num_elem_blk;
-  stk::all_reduce_max( stk::EnvData::parallel_comm(), &local_num_elem_blk, &num_elem_blk, 1 );
-
-
-  for (int blk = 0; blk < num_elem_blk; blk++ )
-  {
-    int num_elem_in_blk = 0;
-    std::vector<int> conn;
-
-    if ( 0 == stk::EnvData::parallel_rank() )
-    {
-      Ioss::ElementBlockContainer ebs = io->get_element_blocks();
-      Ioss::ElementBlock *eb = ebs[blk];
-      num_elem_in_blk = eb->get_property("entity_count").get_int();
-
-      std::string eb_name = eb->name();
-      krinolog
-        << "Reading elem blk #" << blk+1
-        << " with name " << eb_name << "..." << std::endl;
-
-      int nodes_per_elem_in_blk = eb->get_property("topology_node_count").get_int();
-      STK_ThrowRequireMsg(nodes_per_elem_in_blk == nodes_per_elem,
-          "Exodus surface " << my_filename << " block " << eb_name << " has "
-                            << nodes_per_elem_in_blk << " nodes per element; expected "
-                            << nodes_per_elem << ".");
-      STK_ThrowRequireMsg(num_elem_in_blk >= 0,
-          "Exodus surface " << my_filename << " block " << eb_name
-                            << " has an invalid element count " << num_elem_in_blk << ".");
-
-      conn.resize(size_t(num_elem_in_blk) * nodes_per_elem_in_blk);
-
-      krinolog
-        << "  num elem in blk = " << num_elem_in_blk
-        << ", nodes per elem in blk = " << nodes_per_elem_in_blk << std::endl;
-
-      eb->get_field_data("connectivity", conn);
-    }
-
-    int batch_size = 0;
-    int num_batches = 0;
-    Parallel_Facet_File_Reader::get_batch_size(num_elem_in_blk, batch_size, num_batches);
-
-    for (int batch = 0; batch < num_batches; ++batch)
-    {
-      const int current_batch_size = std::min(batch_size, num_elem_in_blk-batch*batch_size);
-      if ( 0 == stk::EnvData::parallel_rank() )
-      {
-        stk::math::Vector3d pt[3];
-        for ( int e = 0; e < current_batch_size; e++ )
-        {
-          for ( int j = 0; j < nodes_per_elem; j++ )
-          {
-            const int nodeid = conn[e*nodes_per_elem + j];
-            const int n = std::distance(nmap.begin(), std::find(nmap.begin(), nmap.end(), nodeid));
-            double nodeX = xyz[3*n+0];
-            double nodeY = xyz[3*n+1];
-            double nodeZ = xyz[3*n+2];
-            pt[j] = stk::math::Vector3d( nodeX*my_scale[0], nodeY*my_scale[1], nodeZ*my_scale[2] );
-          }
-
-          unsigned p0 = 0;
-          unsigned p1 = 1;
-          unsigned p2 = 2;
-          if (my_dist_sign == -1)
-          {
-            // permute to flip normal direction
-            p1 = 2;
-            p2 = 1;
-          }
-
-          emplace_back_3d( pt[p0], pt[p1], pt[p2] );
-        }
-      }
-      parallel_distribute_facets(current_batch_size, proc_bboxes);
-    }
-  }
-}
-
-std::unique_ptr<FacetedSurfaceBase> build_mesh_surface(const stk::mesh::MetaData & meta,
-    const stk::mesh::Field<double>& coordsField,
+std::unique_ptr<MeshSurface> build_mesh_surface(const stk::mesh::MetaData & meta,
+    const stk::mesh::Field<double> & coordsField,
     const stk::mesh::Selector & surfaceSelector,
     const int sign)
 {
-  if (meta.spatial_dimension() == 2)
-    return std::make_unique<MeshSurface<Facet2d>>(meta, coordsField, surfaceSelector, sign);
-  return std::make_unique<MeshSurface<Facet3d>>(meta, coordsField, surfaceSelector, sign);
+  return std::make_unique<MeshSurface>(meta, coordsField, surfaceSelector, sign);
 }
 
-template <class FACET>
-MeshSurface<FACET>::MeshSurface(const stk::mesh::MetaData & meta,
-              const stk::mesh::Field<double>& coord_ref,
-              const stk::mesh::Selector & surface_selector,
-              const int sign)
-  : Faceted_Surface<FACET>(),
-    my_sign(sign),
-    my_mesh_meta(meta),
-    my_coord_ref(coord_ref),
-    my_surface_selector(surface_selector)
+static stk::ParallelMachine get_parallel_comm(const stk::mesh::MetaData & meta)
+{
+  return meta.has_mesh() ? meta.mesh_bulk_data().parallel() : stk::EnvData::parallel_comm();
+}
+
+MeshSurface::MeshSurface(const stk::mesh::MetaData & meta,
+    const stk::mesh::Field<double> & coordsField,
+    const stk::mesh::Selector & surfaceSelector,
+    const int sign)
+    : MeshFacetedSurface(
+          get_parallel_comm(meta), meta.spatial_dimension(), true, FacetMeshOptions{}, true),
+      myMeta(meta),
+      myCoordsField(coordsField),
+      mySurfaceSelector(surfaceSelector),
+      mySign(sign)
 {
 }
 
@@ -926,213 +66,225 @@ static bool determine_polarity_for_side(const stk::mesh::BulkData & mesh, const 
   return false;
 }
 
-static bool should_side_be_flipped(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & volumeSelector, const stk::mesh::Entity side, const int sign)
+bool should_side_be_flipped(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & volumeSelector,
+    const stk::mesh::Entity side,
+    const int sign)
 {
   if (volumeSelector.is_null() || determine_polarity_for_side(mesh, volumeSelector, side))
     return sign < 0;
   return sign >= 0;
 }
 
-template <class FACET>
-void MeshSurface<FACET>::add_side_facet(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & volumeSelector, const stk::topology sideTopology, const stk::mesh::Entity side)
+namespace
 {
-  const bool doFlip = should_side_be_flipped(mesh, volumeSelector, side, my_sign);
-  if (stk::topology::TRI_3 == sideTopology)
-  {
-    add_facet3d(mesh, side, doFlip, 0,1,2);
-  }
-  else if (stk::topology::QUAD_4 == sideTopology)
-  {
-    add_quad3d(mesh, side, doFlip, 0,1,2,3);
-  }
-  else if (stk::topology::TRI_6 == sideTopology)
-  {
-    add_facet3d(mesh, side, doFlip, 0,3,5);
-    add_facet3d(mesh, side, doFlip, 1,4,3);
-    add_facet3d(mesh, side, doFlip, 2,5,4);
-    add_facet3d(mesh, side, doFlip, 3,4,5);
-  }
-  else if (stk::topology::LINE_2 == sideTopology)
-  {
-    add_facet2d(mesh, side, doFlip, 0,1);
-  }
-  else if (stk::topology::LINE_3 == sideTopology)
-  {
-    add_facet2d(mesh, side, doFlip, 0,2);
-    add_facet2d(mesh, side, doFlip, 2,1);
-  }
-  else
-  {
-    STK_ThrowErrorMsg("Elements with side topology " << sideTopology.name() << " not supported for mesh surface initialization.");
-  }
-}
 
-template <class FACET>
-void MeshSurface<FACET>::add_selected_side_facets(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & volumeSelector, const stk::mesh::Selector & sideSelector)
+// Appends the facets of sides, as node ids (and, for the centroid of a non-planar quadrilateral, an
+// id of its own), collecting the nodes they use.
+template <class COORDS_DATA> class SideFacetAppender
 {
-  for (auto * bucket : mesh.get_buckets(my_mesh_meta.side_rank(), sideSelector))
+public:
+  SideFacetAppender(const stk::mesh::BulkData & mesh,
+      const COORDS_DATA & coordsData,
+      const int sign,
+      FacetMesh::VertexIdsAndCoords & centroidIdsAndCoords,
+      FacetMesh::FacetVertexIds & facetVertexIds)
+      : myMesh(mesh),
+        myCoordsData(coordsData),
+        mySign(sign),
+        myDim(mesh.mesh_meta_data().spatial_dimension()),
+        myCentroidIdsAndCoords(centroidIdsAndCoords),
+        myFacetVertexIds(facetVertexIds)
   {
-    const stk::topology sideTopology = bucket->topology();
-    for (auto side : *bucket)
-      add_side_facet(mesh, volumeSelector, sideTopology, side);
   }
-}
 
-template <class FACET>
-void MeshSurface<FACET>::build_local_facets(const BoundingBox &)
+  void add_selected_side_facets(
+      const stk::mesh::Selector & volumeSelector, const stk::mesh::Selector & sideSelector)
+  {
+    for (auto * bucket : myMesh.get_buckets(myMesh.mesh_meta_data().side_rank(), sideSelector))
+    {
+      const stk::topology sideTopology = bucket->topology();
+      for (auto side : *bucket)
+        add_side_facet(volumeSelector, sideTopology, side);
+    }
+  }
+
+  const std::vector<stk::mesh::Entity> & used_nodes()
+  {
+    stk::util::sort_and_unique(myUsedNodes);
+    return myUsedNodes;
+  }
+
+  stk::math::Vector3d node_coordinates(const stk::mesh::Entity node) const
+  {
+    return stk::math::Vector3d(myCoordsData.entity_values(node), myDim);
+  }
+
+private:
+  void add_side_facet(const stk::mesh::Selector & volumeSelector,
+      const stk::topology sideTopology,
+      const stk::mesh::Entity side)
+  {
+    const bool doFlip = should_side_be_flipped(myMesh, volumeSelector, side, mySign);
+    const stk::mesh::Entity * sideNodes = myMesh.begin_nodes(side);
+    if (stk::topology::TRI_3 == sideTopology)
+    {
+      add_facet3d(sideNodes, doFlip, 0, 1, 2);
+    }
+    else if (stk::topology::QUAD_4 == sideTopology)
+    {
+      add_quad3d(side, sideNodes, doFlip, 0, 1, 2, 3);
+    }
+    else if (stk::topology::TRI_6 == sideTopology)
+    {
+      add_facet3d(sideNodes, doFlip, 0, 3, 5);
+      add_facet3d(sideNodes, doFlip, 1, 4, 3);
+      add_facet3d(sideNodes, doFlip, 2, 5, 4);
+      add_facet3d(sideNodes, doFlip, 3, 4, 5);
+    }
+    else if (stk::topology::LINE_2 == sideTopology)
+    {
+      add_facet2d(sideNodes, doFlip, 0, 1);
+    }
+    else if (stk::topology::LINE_3 == sideTopology)
+    {
+      add_facet2d(sideNodes, doFlip, 0, 2);
+      add_facet2d(sideNodes, doFlip, 2, 1);
+    }
+    else
+    {
+      STK_ThrowErrorMsg("Elements with side topology "
+          << sideTopology.name() << " not supported for mesh surface initialization.");
+    }
+  }
+
+  FacetVertexId node_vertex_id(const stk::mesh::Entity node)
+  {
+    myUsedNodes.push_back(node);
+    return myMesh.identifier(node);
+  }
+
+  void add_facet2d(const stk::mesh::Entity * sideNodes, const bool doFlip, unsigned p0, unsigned p1)
+  {
+    STK_ThrowAssert(2 == myDim);
+    if (doFlip) std::swap(p0, p1); // permute to flip normal direction
+    myFacetVertexIds.push_back({{node_vertex_id(sideNodes[p0]), node_vertex_id(sideNodes[p1]), 0}});
+  }
+
+  void add_facet3d(
+      const stk::mesh::Entity * sideNodes, const bool doFlip, unsigned p0, unsigned p1, unsigned p2)
+  {
+    STK_ThrowAssert(3 == myDim);
+    if (doFlip) std::swap(p1, p2); // permute to flip normal direction
+    myFacetVertexIds.push_back({{node_vertex_id(sideNodes[p0]),
+        node_vertex_id(sideNodes[p1]),
+        node_vertex_id(sideNodes[p2])}});
+  }
+
+  void add_quad3d(const stk::mesh::Entity side,
+      const stk::mesh::Entity * sideNodes,
+      const bool doFlip,
+      unsigned p0,
+      unsigned p1,
+      unsigned p2,
+      unsigned p3)
+  {
+    STK_ThrowAssert(3 == myDim);
+    if (doFlip) std::swap(p1, p3); // permute to flip normal direction
+
+    const std::array<stk::mesh::Entity, 4> nodes{
+        {sideNodes[p0], sideNodes[p1], sideNodes[p2], sideNodes[p3]}};
+    std::array<stk::math::Vector3d, 4> pt;
+    std::array<FacetVertexId, 4> id;
+    for (unsigned n = 0; n < 4; ++n)
+    {
+      pt[n] = node_coordinates(nodes[n]);
+      id[n] = node_vertex_id(nodes[n]);
+    }
+
+    // scale is the RMS of the diagonal lengths, sqr_scale is scale*scale, or the average of the
+    // lengths squared
+    const double sqr_scale =
+        0.5 * ((pt[0] - pt[2]).length_squared() + (pt[1] - pt[3]).length_squared());
+    // tol is 1e-4, sqr_tol is 1e-8
+    const double sqr_tol = 1.e-8;
+    // Test is that the distance between the midpoints of the 2 diagonals is less than tol*scale
+    const bool is_planar =
+        (0.5 * (pt[0] + pt[2]) - 0.5 * (pt[1] + pt[3])).length_squared() < sqr_tol * sqr_scale;
+
+    if (is_planar)
+    {
+      myFacetVertexIds.push_back({{id[0], id[1], id[2]}});
+      myFacetVertexIds.push_back({{id[0], id[2], id[3]}});
+    }
+    else
+    {
+      // The centroid is not a node: its id is the side's id with the top bit set, so it is unique
+      // and cannot be a node id.
+      constexpr FacetVertexId centroidBit = FacetVertexId(1) << 63;
+      const FacetVertexId sideId = myMesh.identifier(side);
+      STK_ThrowRequireMsg(sideId < centroidBit,
+          "Side id " << sideId << " is too large for a mesh surface quadrilateral centroid id.");
+      const FacetVertexId centroidId = centroidBit | sideId;
+      myCentroidIdsAndCoords.emplace_back(centroidId, 0.25 * (pt[0] + pt[1] + pt[2] + pt[3]));
+      myFacetVertexIds.push_back({{id[0], id[1], centroidId}});
+      myFacetVertexIds.push_back({{id[1], id[2], centroidId}});
+      myFacetVertexIds.push_back({{id[2], id[3], centroidId}});
+      myFacetVertexIds.push_back({{id[3], id[0], centroidId}});
+    }
+  }
+
+  const stk::mesh::BulkData & myMesh;
+  const COORDS_DATA & myCoordsData;
+  int mySign;
+  unsigned myDim;
+  FacetMesh::VertexIdsAndCoords & myCentroidIdsAndCoords;
+  FacetMesh::FacetVertexIds & myFacetVertexIds;
+  std::vector<stk::mesh::Entity> myUsedNodes;
+};
+
+} // namespace
+
+void MeshSurface::build_local_facets(const std::vector<BoundingBox> & /*procQueryBboxes*/,
+    VertexIdsAndCoords & vertexIdsAndCoords,
+    FacetVertexIds & facetVertexIds)
 {
-  const stk::mesh::BulkData & mesh = my_mesh_meta.mesh_bulk_data();
+  const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
   stk::mesh::Selector active_locally_owned_selector =
-      (NULL != my_mesh_meta.get_part("ACTIVE_CONTEXT_BIT")) ?
-      (*my_mesh_meta.get_part("ACTIVE_CONTEXT_BIT") & my_mesh_meta.locally_owned_part()) :
-      stk::mesh::Selector(my_mesh_meta.locally_owned_part());
+      (NULL != myMeta.get_part("ACTIVE_CONTEXT_BIT")) ?
+      (*myMeta.get_part("ACTIVE_CONTEXT_BIT") & myMeta.locally_owned_part()) :
+      stk::mesh::Selector(myMeta.locally_owned_part());
 
-  Faceted_Surface<FACET>::clear();
+  const auto coordsData = myCoordsField.data();
+  SideFacetAppender appender(mesh, coordsData, mySign, vertexIdsAndCoords, facetVertexIds);
 
-  if (my_surface_selector.is_all_unions())
+  if (mySurfaceSelector.is_all_unions())
   {
     stk::mesh::PartVector surfaceParts;
-    my_surface_selector.get_parts(surfaceParts);
+    mySurfaceSelector.get_parts(surfaceParts);
     for (auto * surfacePart : surfaceParts)
     {
       const stk::mesh::Selector activeOwnedSurfSelector = active_locally_owned_selector & *surfacePart;
-      const auto touchingVols = my_mesh_meta.get_blocks_touching_surface(surfacePart);
+      const auto touchingVols = myMeta.get_blocks_touching_surface(surfacePart);
       const stk::mesh::Selector volSelector = stk::mesh::selectUnion(touchingVols);
       krinolog << "Building facets for " << surfacePart->name() << " oriented with respect to " << volSelector << stk::diag::dendl;
-      add_selected_side_facets(mesh, volSelector, activeOwnedSurfSelector);
+      appender.add_selected_side_facets(volSelector, activeOwnedSurfSelector);
     }
   }
   else
   {
-    krinolog << "Not considering side part connectivity or polarity for mesh surface with non-union surface selector " << my_surface_selector << stk::diag::dendl;
+    krinolog << "Not considering side part connectivity or polarity for mesh surface with "
+                "non-union surface selector "
+             << mySurfaceSelector << stk::diag::dendl;
     const stk::mesh::Selector emptySelector;
-    const stk::mesh::Selector activeOwnedSurfSelector = active_locally_owned_selector & my_surface_selector;
-    add_selected_side_facets(mesh, emptySelector, activeOwnedSurfSelector);
-  }
-}
-
-template <class FACET>
-void MeshSurface<FACET>::add_facet2d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1)
-{
-  STK_ThrowAssert(2 == my_mesh_meta.spatial_dimension());
-  stk::math::Vector3d pt[2];
-  
-  if (doFlip)
-  {
-    // permute to flip normal direction
-    const unsigned tmp = p0;
-    p0 = p1;
-    p1 = tmp;
-  }
-  
-  const stk::mesh::Entity* side_nodes = mesh.begin_nodes(side);
-
-  auto coordsData = my_coord_ref.data();
-  const auto pt0 = coordsData.entity_values(side_nodes[p0]);
-  const auto pt1 = coordsData.entity_values(side_nodes[p1]);
-
-  pt[0][0] = pt0(0_comp);
-  pt[0][1] = pt0(1_comp);
-  pt[0][2] = 0.0;
-  pt[1][0] = pt1(0_comp);
-  pt[1][1] = pt1(1_comp);
-  pt[1][2] = 0.0;
-  
-  add_facet2d(pt[0], pt[1]);
-}
-
-template <class FACET>
-void MeshSurface<FACET>::add_facet3d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1, unsigned p2)
-{
-  STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
-  stk::math::Vector3d pt[3];
-  
-  if (doFlip)
-  {
-    // permute to flip normal direction
-    const unsigned tmp = p1;
-    p1 = p2;
-    p2 = tmp;
-  }
-  
-  const stk::mesh::Entity* side_nodes = mesh.begin_nodes(side);
-
-  auto coordsData = my_coord_ref.data();
-  const auto c0 = coordsData.entity_values(side_nodes[p0]);
-  const auto c1 = coordsData.entity_values(side_nodes[p1]);
-  const auto c2 = coordsData.entity_values(side_nodes[p2]);
-  pt[0] = stk::math::Vector3d(c0(0_comp), c0(1_comp), c0(2_comp));
-  pt[1] = stk::math::Vector3d(c1(0_comp), c1(1_comp), c1(2_comp));
-  pt[2] = stk::math::Vector3d(c2(0_comp), c2(1_comp), c2(2_comp));
-
-  add_facet3d(pt[0], pt[1], pt[2]);
-}
-
-template <class FACET>
-void MeshSurface<FACET>::add_quad3d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1, unsigned p2, unsigned p3)
-{
-  STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
-  stk::math::Vector3d pt[5];
-
-  if (doFlip)
-  {
-    // permute to flip normal direction
-    const unsigned tmp = p1;
-    p1 = p3;
-    p3 = tmp;
+    const stk::mesh::Selector activeOwnedSurfSelector =
+        active_locally_owned_selector & mySurfaceSelector;
+    appender.add_selected_side_facets(emptySelector, activeOwnedSurfSelector);
   }
 
-  const stk::mesh::Entity* side_nodes = mesh.begin_nodes(side);
-
-  auto coordsData = my_coord_ref.data();
-  const auto c0 = coordsData.entity_values(side_nodes[p0]);
-  const auto c1 = coordsData.entity_values(side_nodes[p1]);
-  const auto c2 = coordsData.entity_values(side_nodes[p2]);
-  const auto c3 = coordsData.entity_values(side_nodes[p3]);
-  pt[0] = stk::math::Vector3d(c0(0_comp), c0(1_comp), c0(2_comp));
-  pt[1] = stk::math::Vector3d(c1(0_comp), c1(1_comp), c1(2_comp));
-  pt[2] = stk::math::Vector3d(c2(0_comp), c2(1_comp), c2(2_comp));
-  pt[3] = stk::math::Vector3d(c3(0_comp), c3(1_comp), c3(2_comp));
-
-  // scale is the RMS of the diagonal lengths, sqr_scale is scale*scale, or the average of the lengths squared
-  const double sqr_scale = 0.5*((pt[0]-pt[2]).length_squared()+(pt[1]-pt[3]).length_squared());
-  // tol is 1e-4, sqr_tol is 1e-8
-  const double sqr_tol = 1.e-8;
-  // Test is that the distance between the midpoints of the 2 diagonals is less than tol*scale
-  const bool is_planar = (0.5*(pt[0]+pt[2])-0.5*(pt[1]+pt[3])).length_squared() < sqr_tol*sqr_scale;
-  //const bool is_planar = false; // conservative approach, forces 4 facets per quad
-
-  if (is_planar)
-  {
-    add_facet3d(pt[0], pt[1], pt[2]);
-    add_facet3d(pt[0], pt[2], pt[3]);
-  }
-  else
-  {
-    pt[4] = 0.25 * (pt[0]+pt[1]+pt[2]+pt[3]);
-    add_facet3d(pt[0], pt[1], pt[4]);
-    add_facet3d(pt[1], pt[2], pt[4]);
-    add_facet3d(pt[2], pt[3], pt[4]);
-    add_facet3d(pt[3], pt[0], pt[4]);
-  }
+  // The centroids are already in vertexIdsAndCoords; add the nodes.
+  for (auto node : appender.used_nodes())
+    vertexIdsAndCoords.emplace_back(mesh.identifier(node), appender.node_coordinates(node));
 }
-
-template <class FACET>
-void MeshSurface<FACET>::add_facet2d(const stk::math::Vector3d & p0, const stk::math::Vector3d & p1)
-{
-  STK_ThrowAssert(2 == my_mesh_meta.spatial_dimension());
-  Faceted_Surface<FACET>::emplace_back_2d( p0, p1 );
-}
-
-template <class FACET>
-void MeshSurface<FACET>::add_facet3d(const stk::math::Vector3d & p0, const stk::math::Vector3d & p1, const stk::math::Vector3d & p2)
-{
-  STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
-  Faceted_Surface<FACET>::emplace_back_3d( p0, p1, p2 );
-}
-
-// Explicit template instantiation
-template class MeshSurface<Facet3d>;
-template class MeshSurface<Facet2d>;
 
 } // namespace krino

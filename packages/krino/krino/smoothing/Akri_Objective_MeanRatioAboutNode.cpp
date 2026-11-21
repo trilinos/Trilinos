@@ -19,7 +19,8 @@ namespace krino {
 
 std::tuple<double, std::array<double,3>> tet_mean_ratio_quality_and_sensitivity_to_nth_node(const stk::mesh::BulkData & mesh, const CoordinatesFieldRef coordsField, const stk::mesh::Entity elem, const int sensitivityNodeOrdinal, const stk::math::Vector3d & nodeLocation)
 {
-  auto elementNodeCoords = gather_tet_coordinates(mesh, elem, coordsField);
+  auto elementNodeCoords = get_tetrahedron_vector(
+      mesh, coordsField, mesh.begin_nodes(elem)); // the vertices of a tet4 or tet10
   elementNodeCoords[sensitivityNodeOrdinal] = nodeLocation;
   return MeanRatioQualityMetricWithSensitivities::tet_quality_and_sensitivity_to_nth_vertex(elementNodeCoords, sensitivityNodeOrdinal);
 }

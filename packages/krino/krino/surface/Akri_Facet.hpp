@@ -23,7 +23,6 @@ namespace stk { class CommBuffer; }
 namespace krino {
 
 class Facet;
-class Transformation;
 
 class Facet {
 public:
@@ -53,7 +52,6 @@ public:
   virtual stk::math::Vector3d weights(const stk::math::Vector2d & parametric_coords) const = 0;
   virtual stk::math::Vector3d centroid() const = 0;
 
-  virtual void apply_transformation(const Transformation & transformation) = 0;
   virtual void insert_into(BoundingBox & bbox) const = 0;
   virtual bool does_intersect(const BoundingBox & bbox) const = 0;
   virtual double mean_squared_edge_length() const = 0;
@@ -98,7 +96,6 @@ public:
     { return stk::math::Vector3d(1.0-parametric_coords[0]-parametric_coords[1],parametric_coords[0],parametric_coords[1]); }
   virtual stk::math::Vector3d centroid() const override
     { return 1./3.*(myCoords[0]+myCoords[1]+myCoords[2]); }
-  virtual void apply_transformation(const Transformation & transformation) override;
   void insert_into(BoundingBox & bbox) const override;
   bool does_intersect(const BoundingBox & bbox) const override;
   virtual double mean_squared_edge_length() const override;
@@ -143,7 +140,6 @@ public:
     { return stk::math::Vector3d(1.0-parametric_coords[0],parametric_coords[0],0.0); }
   virtual stk::math::Vector3d centroid() const override
     { return 0.5*(myCoords[0]+myCoords[1]); }
-  virtual void apply_transformation(const Transformation & transformation) override;
   void insert_into(BoundingBox & bbox) const override;
   bool does_intersect(const BoundingBox & bbox) const override;
   virtual double mean_squared_edge_length() const override { return Calc::length_squared(myCoords); }

@@ -16,12 +16,9 @@
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_KinematicMeshUtils.hpp>
 #include <Akri_MeshHelpers.hpp>
-#include <Akri_ModifiedNeoHookeanModel.hpp>
+#include <Akri_KinematicObjectives.hpp>
 #include <Akri_Objective_KinematicMesh.hpp>
-#include <Akri_Objective_KinematicModel.hpp>
 #include <Akri_Objective_MeanRatioNorm.hpp>
-#include <Akri_SethHillModel.hpp>
-#include <Akri_SizeShapeModel.hpp>
 
 #include <string>
 #include <stdexcept>
@@ -201,18 +198,18 @@ krino::SethHillParams PySethHillParams::get() const {
 
 // SethHillElementObjective implementation
 PySethHillElementObjective::PySethHillElementObjective()
-: PyKinematicElementObjective(std::make_shared<krino::KinematicModelObjective<krino::SimplifiedSethHillModel>>())
+    : PyKinematicElementObjective(krino::make_simplified_seth_hill_objective())
 {
 }
 
 PySethHillElementObjective::PySethHillElementObjective(const PySethHillParams & params)
-: PyKinematicElementObjective(std::make_shared<krino::KinematicModelObjective<krino::SethHillModel>>(krino::SethHillModel(params.get())))
+    : PyKinematicElementObjective(krino::make_seth_hill_objective(params.get()))
 {
 }
 
 // ModifiedNeoHookeanElementObjective implementation
 PyModifiedNeoHookeanElementObjective::PyModifiedNeoHookeanElementObjective()
-: PyKinematicElementObjective(std::make_shared<krino::KinematicModelObjective<krino::ModifiedNeoHookeanModel>>())
+    : PyKinematicElementObjective(krino::make_modified_neo_hookean_objective())
 {
 }
 

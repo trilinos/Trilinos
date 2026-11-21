@@ -29,12 +29,14 @@ class CDFEM_Support;
 class Phase_Support;
 class Surface_Manager;
 
-std::unique_ptr<InterfaceGeometry> create_interface_geometry(const stk::mesh::MetaData & meta);
+// The geometry of the interfaces at time, for the surfaces that change with time.
+std::unique_ptr<InterfaceGeometry> create_interface_geometry(const stk::mesh::MetaData & meta, const double time);
 
 std::unique_ptr<InterfaceGeometry> create_bounding_surface_geometry(Surface_Manager & manager,
     const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport);
+    const Phase_Support & phaseSupport,
+    const double time);
 
 std::unique_ptr<InterfaceGeometry> create_levelset_geometry(const int dim,
     const stk::mesh::Part & activePart,

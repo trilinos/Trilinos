@@ -22,7 +22,7 @@
 
 namespace krino {
 
-std::unique_ptr<InterfaceGeometry> create_interface_geometry(const stk::mesh::MetaData & meta)
+std::unique_ptr<InterfaceGeometry> create_interface_geometry(const stk::mesh::MetaData & meta, const double time)
 {
   const stk::mesh::Part & activePart = AuxMetaData::get(meta).active_part();
   const CDFEM_Support & cdfemSupport = CDFEM_Support::get(meta);
@@ -30,7 +30,7 @@ std::unique_ptr<InterfaceGeometry> create_interface_geometry(const stk::mesh::Me
 
   Surface_Manager & manager = Surface_Manager::get(meta);
   if (manager.get_bounding_surfaces().size() > 0)
-    return create_bounding_surface_geometry(manager, activePart, cdfemSupport, phaseSupport);
+    return create_bounding_surface_geometry(manager, activePart, cdfemSupport, phaseSupport, time);
 
   return create_levelset_geometry(meta.spatial_dimension(), activePart, cdfemSupport, phaseSupport, get_levelset_fields(meta));
 }
@@ -38,9 +38,11 @@ std::unique_ptr<InterfaceGeometry> create_interface_geometry(const stk::mesh::Me
 std::unique_ptr<InterfaceGeometry> create_bounding_surface_geometry(Surface_Manager & manager,
     const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport)
+    const Phase_Support & phaseSupport,
+    const double time)
 {
   std::unique_ptr<AnalyticSurfaceInterfaceGeometry> geom = std::make_unique<AnalyticSurfaceInterfaceGeometry>(activePart, cdfemSupport, phaseSupport);
+  geom->set_time(time);
   for (auto && boundingSurface : manager.get_bounding_surfaces())
   {
     const Surface_Identifier surfId = manager.get_identifier(boundingSurface->name());

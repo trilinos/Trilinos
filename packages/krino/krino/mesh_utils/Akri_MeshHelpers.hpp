@@ -116,6 +116,9 @@ double compute_tri_volume(const stk::math::Vector3d * elementNodeCoords);
 double compute_tet_volume(const std::array<stk::math::Vector3d,4> & elementNodeCoords);
 double compute_tet_volume(const stk::math::Vector3d * elementNodeCoords);
 double compute_tri_or_tet_volume(const std::vector<stk::math::Vector3d> & elementNodeCoords);
+// Volume (area in 2D) of a TRI3, TET4, or TET10 (linearized) element; other topologies throw.
+double compute_element_volume(
+    const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField);
 stk::math::Vector3d get_side_normal(const stk::mesh::BulkData& mesh, const FieldRef coordsField, stk::mesh::Entity side);
 std::array<stk::math::Vector3d,4> gather_tet_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField);
 std::array<stk::math::Vector3d,10> gather_tet10_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField);
@@ -128,6 +131,10 @@ void compute_element_quality(const stk::mesh::BulkData & mesh, double & minEdgeL
 void compute_element_volume_range(const stk::mesh::BulkData & mesh, double & minVolume, double & maxVolume);
 double compute_global_average_edge_length_for_elements(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const std::vector<stk::mesh::Entity> & elementsToIntersect);
 double compute_global_average_edge_length_for_selected_elements(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elementSelector);
+// Whether the node at ordinal nodeElemOrd of an element of topology elemTopo is one of its vertices
+// (not a mid-edge or other higher-order node).
+bool is_vertex_node_of_element(
+    const stk::topology & elemTopo, const stk::mesh::ConnectivityOrdinal nodeElemOrd);
 void delete_all_entities_using_vertex_nodes_with_nodal_volume_below_threshold(stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold);
 std::vector<unsigned> get_side_permutation(stk::topology topology, stk::mesh::Permutation node_permutation);
 const stk::mesh::Part & find_element_part(const stk::mesh::BulkData& mesh, stk::mesh::Entity elem);
@@ -165,7 +172,11 @@ bool fix_face_and_edge_ownership(stk::mesh::BulkData & mesh);
 bool fix_face_and_edge_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector);
 bool fix_node_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector);
 bool check_face_and_edge_ownership(const stk::mesh::BulkData & mesh);
-bool check_face_and_edge_relations(const stk::mesh::BulkData & mesh);
+// Checks that each face and edge is attached, with the correct ordinal and permutation, to every
+// element that has it.  In 3D, unless doRequireThatEdgesAreFullyConnectedIn3d, an edge need only be
+// attached to at least one of them.  In 2D, edges are sides and are always fully checked.
+bool check_face_and_edge_relations(
+    const stk::mesh::BulkData & mesh, const bool doRequireThatEdgesAreFullyConnectedIn3d = true);
 bool check_shared_entity_nodes(const stk::mesh::BulkData & mesh, stk::mesh::EntityKey remote_entity_key, std::vector<stk::mesh::EntityId> & remote_entity_node_ids);
 bool check_shared_entity_nodes(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & entities);
 bool check_shared_entity_nodes(const stk::mesh::BulkData & mesh);
@@ -322,7 +333,10 @@ void batch_convert_elements_and_their_sides(stk::mesh::BulkData & mesh, const st
 void parallel_sync_fields(const stk::mesh::BulkData & mesh, const std::vector<const stk::mesh::FieldBase *> & fields);
 void parallel_sync_fields(const stk::mesh::BulkData & mesh, const stk::mesh::FieldVector & fields);
 void parallel_sync_all_fields(const stk::mesh::BulkData & mesh);
-bool mesh_has_selected_higher_order_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector);
+// Whether any element part (not counting the root parts that stk declares for every topology) is
+// quadratic.  The parts are the same on every processor, so that this needs no communication: a
+// mesh without such parts has no quadratic elements.
+bool mesh_has_quadratic_element_parts(const stk::mesh::MetaData & meta);
 
 } // namespace krino
 

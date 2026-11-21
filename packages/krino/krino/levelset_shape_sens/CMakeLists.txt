@@ -12,7 +12,7 @@ TRIBITS_ADD_LIBRARY(
   krino_levelset_shape_sens_lib
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS krino_decomp_lib krino_interface_geometry_lib)
+  DEPLIBS krino_decomp_lib krino_interface_geometry_lib krino_mesh_clone_lib)
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/krino_levelset_shape_sens_lib)

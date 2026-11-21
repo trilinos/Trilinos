@@ -256,18 +256,17 @@ AuxMetaData::define_part_alias( stk::mesh::Part & part , const std::string & ali
 void
 AuxMetaData::assign_part_id(stk::mesh::Part& part)
 {
-  static int64_t max_existing_part_id = stk::mesh::Part::INVALID_ID;
-  if (max_existing_part_id == stk::mesh::Part::INVALID_ID)
+  if (myMaxPartId == stk::mesh::Part::INVALID_ID)
   {
-    max_existing_part_id = 0;
+    myMaxPartId = 0;
     for (auto && existing_part : my_meta.get_parts())
     {
-      max_existing_part_id = std::max(max_existing_part_id, existing_part->id());
+      myMaxPartId = std::max(myMaxPartId, existing_part->id());
     }
   }
   if (part.id() == stk::mesh::Part::INVALID_ID)
   {
-    const int64_t part_id = ++max_existing_part_id;
+    const int64_t part_id = ++myMaxPartId;
     my_meta.set_part_id(part, part_id);
   }
 }

@@ -26,6 +26,12 @@ bool does_bounding_box_intersect_tetrahedron(const BoundingBox & bbox, const std
 
 void append_tetrahedron_intersection_parametric_coordinates(const std::array<stk::math::Vector3d,4> & tetNodes, const stk::math::Vector3d & candidate, std::vector<stk::math::Vector3d> & intParamCoords);
 
+// Appends the parametric coordinates of candidate in the triangle (its first two), if it is in it.
+void append_triangle_intersection_parametric_coordinates(
+    const std::array<stk::math::Vector3d, 3> & triNodes,
+    const stk::math::Vector3d & candidate,
+    std::vector<stk::math::Vector3d> & intParamCoords);
+
 void append_triangle_edge_intersection_parametric_coordinates(const std::array<stk::math::Vector3d,3> & triNodes,
     const double triArea, // passed in, rather than recomputed, for performance
     const stk::math::Vector3d & triNormal, // passed in, rather than recomputed, for performance

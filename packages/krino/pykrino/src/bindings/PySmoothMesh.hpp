@@ -17,10 +17,7 @@
 #include <Akri_SmoothMesh.hpp>
 #include <Akri_Objective_KinematicMesh.hpp>
 #include <Akri_Objective_MeanRatioNorm.hpp>
-#include <Akri_ModifiedNeoHookeanModel.hpp>
-#include <Akri_Objective_KinematicModel.hpp>
-#include <Akri_SethHillModel.hpp>
-#include <Akri_SizeShapeModel.hpp>
+#include <Akri_KinematicObjectives.hpp>
 #include <Akri_Optimize.hpp>
 #include <Akri_SethHillConfig.hpp>
 

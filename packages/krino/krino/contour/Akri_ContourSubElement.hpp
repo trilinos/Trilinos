@@ -18,7 +18,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetAppender.hpp>
 #include <Akri_Facet.hpp>
 #include <stk_math/StkVector.hpp>
 #include <Akri_ParametricElementLibrary.hpp>
@@ -64,10 +64,10 @@ public:
 		       sierra::ArrayContainer<double,NINT> & determinants,
 		       int index = 0 );
 
-  int build_facets( FacetedSurfaceBase & facets );
+  int build_facets(FacetAppender & facets);
 
   // default implementation
-  virtual int side_facets( FacetedSurfaceBase & facets, int side ) const;
+  virtual int side_facets(FacetAppender & facets, int side) const;
   virtual double side_area( int side ) const;
 
   stk::topology topology() const { return get_parametric_element().get_topology(); }
@@ -208,7 +208,7 @@ public:
                     const int subelement_sign = 0 );
   virtual ~ContourSubElement_Tri_3() {}
 
-  virtual int side_facets( FacetedSurfaceBase & facets, int side ) const override;
+  virtual int side_facets(FacetAppender & facets, int side) const override;
   double side_area( int side ) const override;
 
 private:
@@ -275,7 +275,7 @@ public:
                     const int subelement_sign = 0 );
   virtual ~ContourSubElement_Tet_4() {}
 
-  virtual int side_facets( FacetedSurfaceBase & facets, int side ) const override;
+  virtual int side_facets(FacetAppender & facets, int side) const override;
   virtual double side_area( int side ) const override;
 
 private:

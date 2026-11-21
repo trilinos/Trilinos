@@ -29,8 +29,10 @@ BoundingBoxMesh::BoundingBoxMesh(stk::topology element_topology, stk::ParallelMa
   m_element_topology(element_topology), m_nx(0), m_ny(0), m_nz(0)
 {
   STK_ThrowRequire(element_topology == stk::topology::TRIANGLE_3_2D ||
+      element_topology == stk::topology::TRIANGLE_6_2D ||
       element_topology == stk::topology::QUADRILATERAL_4_2D ||
       element_topology == stk::topology::TETRAHEDRON_4 ||
+      element_topology == stk::topology::TETRAHEDRON_10 ||
       element_topology == stk::topology::HEXAHEDRON_8);
 
   myMeshStructureType = default_structure_type_for_topology(element_topology);
@@ -53,11 +55,12 @@ BoundingBoxMesh::BoundingBoxMesh(stk::topology element_topology, stk::ParallelMa
 
 BoundingBoxMeshStructureType BoundingBoxMesh::default_structure_type_for_topology(const stk::topology elementTopology)
 {
-  if (elementTopology == stk::topology::QUADRILATERAL_4_2D || elementTopology == stk::topology::HEXAHEDRON_8)
+  const stk::topology vertexTopology = elementTopology.base();
+  if (vertexTopology == stk::topology::QUADRILATERAL_4_2D || vertexTopology == stk::topology::HEXAHEDRON_8)
     return CUBIC_BOUNDING_BOX_MESH;
-  else if (elementTopology == stk::topology::TETRAHEDRON_4)
+  else if (vertexTopology == stk::topology::TETRAHEDRON_4)
     return FLAT_WALLED_BCC_BOUNDING_BOX_MESH;
-  else if (elementTopology == stk::topology::TRIANGLE_3_2D)
+  else if (vertexTopology == stk::topology::TRIANGLE_3_2D)
     return FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH;
   STK_ThrowRequireMsg(false, "Unsupport topology " << elementTopology.name());
   return CUBIC_BOUNDING_BOX_MESH;
@@ -100,11 +103,15 @@ void BoundingBoxMesh::set_is_cell_edge_function_for_cell_based_mesh() const
   const int dim = m_meta->spatial_dimension();
   STK_ThrowRequireMsg(m_mesh, "Cannot call set_is_cell_edge_function() before BulkData is created.");
   const stk::mesh::BulkData & mesh = *m_mesh;
+  const bool reverseIds = myReverseEntityIds;
+  const stk::mesh::EntityId maxNodeId = myMaxNodeId;
 
-  auto is_cell_edge = [N,dim,&mesh](stk::mesh::Entity node0, stk::mesh::Entity node1)
+  auto is_cell_edge = [N,dim,&mesh,reverseIds,maxNodeId](stk::mesh::Entity node0, stk::mesh::Entity node1)
   {
-    const auto node0Indices = get_node_x_y_z(mesh.identifier(node0), N);
-    const auto node1Indices = get_node_x_y_z(mesh.identifier(node1), N);
+    const auto node_id = [&](stk::mesh::Entity node)
+    { return reverseIds ? maxNodeId + 1 - mesh.identifier(node) : mesh.identifier(node); };
+    const auto node0Indices = get_node_x_y_z(node_id(node0), N);
+    const auto node1Indices = get_node_x_y_z(node_id(node1), N);
     if (dim == 2)
     {
       return node0Indices[0] == node1Indices[0] || node0Indices[1] == node1Indices[1];
@@ -130,6 +137,89 @@ void BoundingBoxMesh::set_is_cell_edge_function_for_BCC_mesh() const
   aux_meta.set_is_cell_edge_function(is_cell_edge);
 }
 
+void BoundingBoxMesh::set_mid_edge_node_lattice(const std::array<size_t,3> & maxVertexLatticeIndex, const stk::mesh::EntityId maxVertexId)
+{
+  for (int i=0; i<3; ++i)
+    myMidEdgeNodeLatticeSize[i] = 2*maxVertexLatticeIndex[i] + 1;
+  myFirstMidEdgeNodeId = maxVertexId + 1;
+  myMaxNodeId = is_quadratic() ?
+      maxVertexId + myMidEdgeNodeLatticeSize[0] * myMidEdgeNodeLatticeSize[1] * myMidEdgeNodeLatticeSize[2] :
+      maxVertexId;
+
+  if (is_quadratic())
+  {
+    const stk::mesh::EntityId maxMidEdgeNodeId = myFirstMidEdgeNodeId - 1 +
+        myMidEdgeNodeLatticeSize[0] * myMidEdgeNodeLatticeSize[1] * myMidEdgeNodeLatticeSize[2];
+    const stk::mesh::EntityId max32BitId = 2147483647;
+    STK_ThrowRequireMsg(!AuxMetaData::get(*m_meta).get_assert_32bit_flag() || maxMidEdgeNodeId <= max32BitId,
+        "The generated " << m_element_topology.name() << " mesh would need node ids up to " << maxMidEdgeNodeId
+        << " for its mid-edge nodes, more than 32-bit ids allow.");
+  }
+}
+
+stk::mesh::EntityId BoundingBoxMesh::get_mid_edge_node_id(const std::array<size_t,3> & vertex0LatticeIndex, const std::array<size_t,3> & vertex1LatticeIndex) const
+{
+  const std::array<size_t,3> & N = myMidEdgeNodeLatticeSize;
+  std::array<size_t,3> sum;
+  for (int i=0; i<3; ++i)
+  {
+    sum[i] = vertex0LatticeIndex[i] + vertex1LatticeIndex[i];
+    STK_ThrowAssert(sum[i] < N[i]);
+  }
+  return myFirstMidEdgeNodeId + sum[0] + N[0]*(sum[1] + N[1]*sum[2]);
+}
+
+void BoundingBoxMesh::declare_element_with_mid_edge_nodes(const stk::mesh::EntityId elemId,
+    const std::vector<stk::mesh::EntityId> & vertexIds,
+    const std::vector<std::array<size_t,3>> & vertexLatticeIndices)
+{
+  std::vector<stk::mesh::EntityId> elemNodeIds(m_element_topology.num_nodes());
+  std::copy(vertexIds.begin(), vertexIds.end(), elemNodeIds.begin());
+  std::array<unsigned,3> edgeNodeOrdinals;
+  for (unsigned iEdge=0; iEdge<m_element_topology.num_edges() && is_quadratic(); ++iEdge)
+  {
+    m_element_topology.edge_node_ordinals(iEdge, edgeNodeOrdinals.data());
+    elemNodeIds[edgeNodeOrdinals[2]] = get_mid_edge_node_id(vertexLatticeIndices[edgeNodeOrdinals[0]], vertexLatticeIndices[edgeNodeOrdinals[1]]);
+  }
+  for (auto & nodeId : elemNodeIds)
+    nodeId = mesh_node_id(nodeId);
+  const stk::mesh::Entity elem = stk::mesh::declare_element( *m_mesh, m_elem_parts, mesh_element_id(elemId), elemNodeIds );
+  if (!is_quadratic())
+    return;
+
+  const stk::mesh::Entity * elemNodes = m_mesh->begin_nodes(elem);
+  for (unsigned n=m_element_topology.base().num_nodes(); n<m_element_topology.num_nodes(); ++n)
+    m_mesh->change_entity_parts(elemNodes[n], m_node_parts);
+}
+
+// After the vertices' coordinates are set: each mid-edge node is at the midpoint of its edge.
+void BoundingBoxMesh::set_mid_edge_node_coordinates()
+{
+  if (!is_quadratic())
+    return;
+
+  const stk::mesh::FieldBase & coordField = *m_meta->coordinate_field();
+  auto coordData = coordField.data<double, stk::mesh::ReadWrite>();
+  const unsigned dim = m_meta->spatial_dimension();
+  std::array<unsigned,3> edgeNodeOrdinals;
+  for (auto && bucket : m_mesh->buckets(stk::topology::ELEMENT_RANK))
+  {
+    for (auto && elem : *bucket)
+    {
+      const stk::mesh::Entity * elemNodes = m_mesh->begin_nodes(elem);
+      for (unsigned iEdge=0; iEdge<m_element_topology.num_edges(); ++iEdge)
+      {
+        m_element_topology.edge_node_ordinals(iEdge, edgeNodeOrdinals.data());
+        auto x0 = coordData.entity_values(elemNodes[edgeNodeOrdinals[0]]);
+        auto x1 = coordData.entity_values(elemNodes[edgeNodeOrdinals[1]]);
+        auto xMid = coordData.entity_values(elemNodes[edgeNodeOrdinals[2]]);
+        for (unsigned d=0; d<dim; ++d)
+          xMid(stk::mesh::ComponentIdx(d)) = 0.5*(x0(stk::mesh::ComponentIdx(d)) + x1(stk::mesh::ComponentIdx(d)));
+      }
+    }
+  }
+}
+
 void
 BoundingBoxMesh::populate_mesh(const stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
 {
@@ -147,14 +237,15 @@ BoundingBoxMesh::populate_mesh(const stk::mesh::BulkData::AutomaticAuraOption au
 
   stk::mesh::create_exposed_block_boundary_sides(*m_mesh, m_meta->universal_part(), {&AuxMetaData::get(*m_meta).exposed_boundary_part()});
 
-  if (has_flat_boundaries())
+  if (has_flat_boundaries() && myCreateDomainSidesets)
     create_domain_sides();
 }
 
 enum BCCNode { BCC_NODE=8, BCC_NODE_XMINUS=9, BCC_NODE_XPLUS=10, BCC_NODE_YMINUS=11, BCC_NODE_YPLUS=12, BCC_NODE_ZMINUS=13, BCC_NODE_ZPLUS=14 };
 
 void
-BoundingBoxMesh::build_face_tets( size_t cell_id, size_t /*ix*/ , size_t /*iy*/ , size_t /*iz*/, int iface, const std::vector<stk::mesh::EntityId> & cell_node_ids )
+BoundingBoxMesh::build_face_tets( size_t cell_id, size_t /*ix*/ , size_t /*iy*/ , size_t /*iz*/, int iface, const std::vector<stk::mesh::EntityId> & cell_node_ids,
+    const std::vector<std::array<size_t,3>> & cell_node_lattice_indices )
 {
   std::vector<std::vector<std::vector<int>>> faceTets = {
       {{BCC_NODE, BCC_NODE_XMINUS, 0, 4},
@@ -188,6 +279,7 @@ BoundingBoxMesh::build_face_tets( size_t cell_id, size_t /*ix*/ , size_t /*iy*/ 
   const int num_faces_per_cell = 6;
   const int num_nodes_per_elem = 4;
   std::vector<stk::mesh::EntityId> elemNodes(num_nodes_per_elem);
+  std::vector<std::array<size_t,3>> elemNodeLatticeIndices(num_nodes_per_elem);
 
   const auto & faceTet = faceTets[iface];
   for (int ielem = 0; ielem < num_elem_per_face; ++ielem)
@@ -196,9 +288,10 @@ BoundingBoxMesh::build_face_tets( size_t cell_id, size_t /*ix*/ , size_t /*iy*/ 
     for (int elem_node_index = 0; elem_node_index<num_nodes_per_elem; ++elem_node_index)
     {
       elemNodes[elem_node_index] = cell_node_ids[faceTet[ielem][elem_node_index]];
+      elemNodeLatticeIndices[elem_node_index] = cell_node_lattice_indices[faceTet[ielem][elem_node_index]];
     }
 
-    stk::mesh::declare_element( *m_mesh, m_elem_parts, elem_id, elemNodes );
+    declare_element_with_mid_edge_nodes( elem_id, elemNodes, elemNodeLatticeIndices );
   }
 }
 
@@ -207,7 +300,7 @@ BoundingBoxMesh::setup_cell_node( size_t ix , size_t iy , size_t iz )
 {
   stk::mesh::FieldBase const* coord_field = m_meta->coordinate_field();
   stk::mesh::EntityId nodeId = get_node_id(ix, iy, iz);
-  stk::mesh::Entity const node = m_mesh->get_entity( stk::topology::NODE_RANK, nodeId );
+  stk::mesh::Entity const node = m_mesh->get_entity( stk::topology::NODE_RANK, mesh_node_id(nodeId) );
   if (m_mesh->is_valid(node))
   {
     m_mesh->change_entity_parts(node, m_node_parts);
@@ -225,7 +318,7 @@ BoundingBoxMesh::setup_BCC_node( size_t ix , size_t iy , size_t iz, int dx, int 
 {
   stk::mesh::FieldBase const* coord_field = m_meta->coordinate_field();
   stk::mesh::EntityId nodeId = get_BCC_node_id(ix, iy, iz, dx, dy, dz);
-  stk::mesh::Entity const node = m_mesh->get_entity( stk::topology::NODE_RANK, nodeId );
+  stk::mesh::Entity const node = m_mesh->get_entity( stk::topology::NODE_RANK, mesh_node_id(nodeId) );
   if (m_mesh->is_valid(node))
   {
     m_mesh->change_entity_parts(node, m_node_parts);
@@ -272,13 +365,23 @@ BoundingBoxMesh::populate_2D_triangular_lattice_based_mesh()
   stk::mesh::FieldBase const* coord_field = m_meta->coordinate_field();
   my_coord_mapping = std::make_unique<CartesianCoordinateMapping>(m_nx, m_ny, m_nz, m_mesh_bbox);
 
-  STK_ThrowRequire(m_element_topology == stk::topology::TRIANGLE_3_2D);
+  STK_ThrowRequire(m_element_topology.base() == stk::topology::TRIANGLE_3_2D);
   const bool flattenBoundaries = FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH == myMeshStructureType;
+
+  // Lattice indices: node (i,j), whose x is offset by -1/2 on odd rows, is at (2i - j%2 + 1, 2j).
+  const auto lattice_index = [](const std::array<size_t,2> & ij) { return std::array<size_t,3>{{2*ij[0] + 1 - ij[1]%2, 2*ij[1], 0}}; };
+  const std::array<size_t,3> maxTriangleLatticeIndex{{2*m_nx+3, 2*m_ny, 0}};
+  const stk::mesh::EntityId maxTriangleLatticeNodeId = (m_nx+2)*(m_ny+2);
+  set_mid_edge_node_lattice(maxTriangleLatticeIndex, maxTriangleLatticeNodeId);
+  std::vector<std::array<size_t,3>> triNodeLatticeIndices(3);
 
   const size_t NelemPerSlabInY = (2*m_nx+1);
   const size_t Nelem = m_ny*NelemPerSlabInY;
-  const size_t beg_elem = ( Nelem * p_rank ) / p_size ;
-  const size_t end_elem = ( Nelem * ( p_rank + 1 ) ) / p_size ;
+  myMaxElementId = Nelem;
+  // Rows of elements in y; with the alternate decomposition, in reverse processor order.
+  const size_t part = myAlternateProcessorDecomposition ? p_size - 1 - p_rank : p_rank;
+  const size_t beg_elem = ( Nelem * part ) / p_size ;
+  const size_t end_elem = ( Nelem * ( part + 1 ) ) / p_size ;
 
   const size_t num_local_cells = end_elem-beg_elem;
   krinolog << "BoundingBoxMesh creating " << num_local_cells << " local cells." << stk::diag::dendl;
@@ -300,11 +403,13 @@ BoundingBoxMesh::populate_2D_triangular_lattice_based_mesh()
           get_triangle_lattice_node_id(triNodeIndices[1][0], triNodeIndices[1][1], m_nx, m_ny),
           get_triangle_lattice_node_id(triNodeIndices[2][0], triNodeIndices[2][1], m_nx, m_ny)};
 
-      stk::mesh::declare_element( *m_mesh, m_elem_parts, elemIndex+1, triNodes );
+      for (int n=0; n<3; ++n)
+        triNodeLatticeIndices[n] = lattice_index(triNodeIndices[n]);
+      declare_element_with_mid_edge_nodes( elemIndex+1, triNodes, triNodeLatticeIndices );
 
       for (int n=0; n<3; ++n)
       {
-        stk::mesh::Entity const node = m_mesh->get_entity( stk::topology::NODE_RANK , triNodes[n] );
+        stk::mesh::Entity const node = m_mesh->get_entity( stk::topology::NODE_RANK , mesh_node_id(triNodes[n]) );
         m_mesh->change_entity_parts(node, m_node_parts);
 
         const unsigned dim = m_meta->spatial_dimension();
@@ -314,6 +419,7 @@ BoundingBoxMesh::populate_2D_triangular_lattice_based_mesh()
           coord_data(stk::mesh::ComponentIdx(d)) = coord_buffer[d];
       }
     }
+    set_mid_edge_node_coordinates();
     stk::tools::fix_node_sharing_via_search(*m_mesh);
   }
   m_mesh->modification_end();
@@ -347,6 +453,15 @@ BoundingBoxMesh::populate_BCC_mesh()
   const int num_nodes_per_cell = 8;
   const int num_nodes_per_cell_plus_BCC_nodes = 15;
   std::vector<stk::mesh::EntityId> cell_node_ids(num_nodes_per_cell_plus_BCC_nodes);
+  std::vector<std::array<size_t,3>> cell_node_lattice_indices(num_nodes_per_cell_plus_BCC_nodes);
+
+  // Lattice indices: a cell corner (ix,iy,iz) is at 2*(ix,iy,iz)+2, the centre of cell (ix,iy,iz)
+  // at 2*(ix,iy,iz)+3, including the centres of the cells just outside the domain (ix = -1 or N).
+  const std::array<size_t,3> maxBCCLatticeIndex{{2*m_nx+3, 2*m_ny+3, 2*m_nz+3}};
+  const stk::mesh::EntityId maxBCCNodeId = (m_nx+1)*(m_ny+1)*(m_nz+1) + (m_nx+2)*(m_ny+2)*(m_nz+2);
+  set_mid_edge_node_lattice(maxBCCLatticeIndex, maxBCCNodeId);
+  // build_face_tets: 4 tets on each of the 6 faces of each cell.
+  myMaxElementId = 24*m_nx*m_ny*m_nz;
 
   m_mesh->modification_begin();
 
@@ -371,18 +486,22 @@ BoundingBoxMesh::populate_BCC_mesh()
         const size_t az =  iz+hex_cell_node_locations[cell_node_index][2];
 
         cell_node_ids[cell_node_index] = get_node_id(ax, ay, az);
+        cell_node_lattice_indices[cell_node_index] = {{2*ax+2, 2*ay+2, 2*az+2}};
       }
       for (auto && BCC_cell_neighbor : BCC_cell_neighbors)
       {
-        cell_node_ids[BCC_cell_neighbor.first] = get_BCC_node_id(ix, iy, iz, BCC_cell_neighbor.second[0], BCC_cell_neighbor.second[1], BCC_cell_neighbor.second[2]);
+        const std::array<int,3> & d = BCC_cell_neighbor.second;
+        cell_node_ids[BCC_cell_neighbor.first] = get_BCC_node_id(ix, iy, iz, d[0], d[1], d[2]);
+        const auto centre_lattice_index = [](const size_t i, const int di) { return static_cast<size_t>(2*static_cast<long long>(i) + 3 + 2*di); };
+        cell_node_lattice_indices[BCC_cell_neighbor.first] = {{centre_lattice_index(ix, d[0]), centre_lattice_index(iy, d[1]), centre_lattice_index(iz, d[2])}};
       }
 
-      if (ix == 0) build_face_tets(cell_id, ix, iy, iz, 0, cell_node_ids);
-      if (iy == 0) build_face_tets(cell_id, ix, iy, iz, 2, cell_node_ids);
-      if (iz == 0) build_face_tets(cell_id, ix, iy, iz, 4, cell_node_ids);
-      build_face_tets(cell_id, ix, iy, iz, 1, cell_node_ids);
-      build_face_tets(cell_id, ix, iy, iz, 3, cell_node_ids);
-      build_face_tets(cell_id, ix, iy, iz, 5, cell_node_ids);
+      if (ix == 0) build_face_tets(cell_id, ix, iy, iz, 0, cell_node_ids, cell_node_lattice_indices);
+      if (iy == 0) build_face_tets(cell_id, ix, iy, iz, 2, cell_node_ids, cell_node_lattice_indices);
+      if (iz == 0) build_face_tets(cell_id, ix, iy, iz, 4, cell_node_ids, cell_node_lattice_indices);
+      build_face_tets(cell_id, ix, iy, iz, 1, cell_node_ids, cell_node_lattice_indices);
+      build_face_tets(cell_id, ix, iy, iz, 3, cell_node_ids, cell_node_lattice_indices);
+      build_face_tets(cell_id, ix, iy, iz, 5, cell_node_ids, cell_node_lattice_indices);
 
       for (int cell_node_index=0; cell_node_index<num_nodes_per_cell; ++cell_node_index)
       {
@@ -397,6 +516,7 @@ BoundingBoxMesh::populate_BCC_mesh()
         setup_BCC_node(ix, iy, iz, BCC_cell_neighbor.second[0], BCC_cell_neighbor.second[1], BCC_cell_neighbor.second[2]);
       }
     }
+    set_mid_edge_node_coordinates();
     stk::tools::fix_node_sharing_via_search(*m_mesh);
   }
   m_mesh->modification_end();
@@ -410,7 +530,6 @@ void
 BoundingBoxMesh::populate_cell_based_mesh()
 { /* %TRACE[ON]% */ Trace trace__("krino::BoundingBoxMesh::populate_cell_based_mesh()"); /* %TRACE% */
   STK_ThrowRequire(m_mesh);
-  set_is_cell_edge_function_for_cell_based_mesh();
 
   const int p_size = m_mesh->parallel_size();
   const int p_rank = m_mesh->parallel_rank();
@@ -437,26 +556,38 @@ BoundingBoxMesh::populate_cell_based_mesh()
   std::vector<std::vector<int>> tri_even_cell_elem_nodes = {{0, 1, 2}, {0, 2, 3}};
   std::vector<std::vector<int>> tri_odd_cell_elem_nodes = {{0, 1, 3}, {1, 2, 3}};
 
+  const stk::topology vertexTopology = m_element_topology.base();
   const std::vector<std::array<int,3>> & cell_node_locations = (dim == 2) ? quad_cell_node_locations : hex_cell_node_locations;
   const std::vector<std::vector<int>> & even_cell_elem_nodes =
-      (m_element_topology == stk::topology::TRIANGLE_3_2D) ? tri_even_cell_elem_nodes :
-      ((m_element_topology == stk::topology::QUADRILATERAL_4_2D) ? quad_cell_elem_nodes :
-      ((m_element_topology == stk::topology::TETRAHEDRON_4) ? tet_even_cell_elem_nodes :
+      (vertexTopology == stk::topology::TRIANGLE_3_2D) ? tri_even_cell_elem_nodes :
+      ((vertexTopology == stk::topology::QUADRILATERAL_4_2D) ? quad_cell_elem_nodes :
+      ((vertexTopology == stk::topology::TETRAHEDRON_4) ? tet_even_cell_elem_nodes :
       hex_cell_elem_nodes));
   const std::vector<std::vector<int>> & odd_cell_elem_nodes =
-      (m_element_topology == stk::topology::TRIANGLE_3_2D) ? tri_odd_cell_elem_nodes :
-      ((m_element_topology == stk::topology::QUADRILATERAL_4_2D) ? quad_cell_elem_nodes :
-      ((m_element_topology == stk::topology::TETRAHEDRON_4) ? tet_odd_cell_elem_nodes :
+      (vertexTopology == stk::topology::TRIANGLE_3_2D) ? tri_odd_cell_elem_nodes :
+      ((vertexTopology == stk::topology::QUADRILATERAL_4_2D) ? quad_cell_elem_nodes :
+      ((vertexTopology == stk::topology::TETRAHEDRON_4) ? tet_odd_cell_elem_nodes :
       hex_cell_elem_nodes));
 
+  // The mid-edge nodes of a quadratic mesh are shared by search, with the vertices.
   std::unordered_map<stk::mesh::EntityId, std::vector<int>> nodes_to_procs;
-  generate_node_to_processor_map(p_size, p_rank, cell_node_locations, nodes_to_procs);
+  if (!is_quadratic())
+    generate_node_to_processor_map(p_size, p_rank, cell_node_locations, nodes_to_procs);
   const int num_elem_per_cell = even_cell_elem_nodes.size();
   const int num_nodes_per_cell = cell_node_locations.size();
   const int num_nodes_per_elem = even_cell_elem_nodes[0].size();
   const stk::mesh::EntityId elem_id_start = 1;
   std::vector<stk::mesh::EntityId> cell_node_ids(num_nodes_per_cell);
   std::vector<stk::mesh::EntityId> elem_nodes(num_nodes_per_elem);
+  std::vector<std::array<size_t,3>> cell_node_lattice_indices(num_nodes_per_cell);
+  std::vector<std::array<size_t,3>> elem_node_lattice_indices(num_nodes_per_elem);
+
+  // Lattice indices: a cell corner (ix,iy,iz) is at 2*(ix,iy,iz).
+  const std::array<size_t,3> maxCellLatticeIndex{{2*m_nx, 2*m_ny, (dim == 3) ? 2*m_nz : 0}};
+  const stk::mesh::EntityId maxCellNodeId = (m_nx+1)*(m_ny+1)*(m_nz+1);
+  set_mid_edge_node_lattice(maxCellLatticeIndex, maxCellNodeId);
+  myMaxElementId = num_elem_per_cell*m_nx*m_ny*m_nz;
+  set_is_cell_edge_function_for_cell_based_mesh();
 
   my_coord_mapping = std::make_unique<CartesianCoordinateMapping>(m_nx, m_ny, m_nz, m_mesh_bbox);
 
@@ -489,6 +620,7 @@ BoundingBoxMesh::populate_cell_based_mesh()
         const size_t az =  (dim == 3) ?  iz + cell_node_locations[cell_node_index][2] : iz;
 
         cell_node_ids[cell_node_index] = get_node_id(ax, ay, az);
+        cell_node_lattice_indices[cell_node_index] = {{2*ax, 2*ay, 2*az}};
       }
 
       for (int cell_elem_index=0; cell_elem_index<num_elem_per_cell; ++cell_elem_index)
@@ -497,12 +629,13 @@ BoundingBoxMesh::populate_cell_based_mesh()
         for (int elem_node_index = 0; elem_node_index<num_nodes_per_elem; ++elem_node_index)
         {
           elem_nodes[elem_node_index] = cell_node_ids[cell_elem_nodes[cell_elem_index][elem_node_index]];
+          elem_node_lattice_indices[elem_node_index] = cell_node_lattice_indices[cell_elem_nodes[cell_elem_index][elem_node_index]];
         }
-        stk::mesh::declare_element( *m_mesh, m_elem_parts, elem_id, elem_nodes );
+        declare_element_with_mid_edge_nodes( elem_id, elem_nodes, elem_node_lattice_indices );
 
         for (auto && node_id : elem_nodes)
         {
-          stk::mesh::Entity const node = m_mesh->get_entity( stk::topology::NODE_RANK, node_id );
+          stk::mesh::Entity const node = m_mesh->get_entity( stk::topology::NODE_RANK, mesh_node_id(node_id) );
           m_mesh->change_entity_parts(node, m_node_parts);
 
           auto map_it = nodes_to_procs.find(node_id);
@@ -524,6 +657,11 @@ BoundingBoxMesh::populate_cell_based_mesh()
             coord_data(stk::mesh::ComponentIdx(d)) = coord_buffer[d];
         }
       }
+    }
+    if (is_quadratic())
+    {
+      set_mid_edge_node_coordinates();
+      stk::tools::fix_node_sharing_via_search(*m_mesh);
     }
   }
   m_mesh->modification_end();
@@ -642,7 +780,7 @@ BoundingBoxMesh::get_node_x_y_z( stk::mesh::EntityId entity_id, const std::array
   entity_id /= (N[0]+1);
 
   indices[1] = entity_id % (N[1]+1);
-  entity_id /= (N[2]+1);
+  entity_id /= (N[1]+1);
 
   indices[2] = entity_id;
   return indices;
@@ -701,6 +839,15 @@ BoundingBoxMesh::determine_processor_cell_range(const int p_size, const int p_ra
 {
   const std::array<size_t,3> lo = {0, 0, 0};
   const std::array<size_t,3> hi = {m_nx, m_ny, m_nz};
+  if (myAlternateProcessorDecomposition)
+  {
+    // Slabs along x, in reverse processor order.  A processor may get none.
+    const size_t slab = p_size - 1 - p_rank;
+    CartesianCellRange range{lo, hi};
+    range.lo[0] = (m_nx * slab) / p_size;
+    range.hi[0] = (m_nx * (slab + 1)) / p_size;
+    return range;
+  }
   return recursive_coordinate_bisection(lo, hi, 0, p_size, p_rank);
 }
 

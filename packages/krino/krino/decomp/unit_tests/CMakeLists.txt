@@ -21,7 +21,7 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(krino_decomp_utest
     NAME Krino_Basic
-    ARGS "--gtest_filter=-*Random*"
+    ARGS "--gtest_filter=-*Random*:*Study*"
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     NOEXEPREFIX NOEXESUFFIX)

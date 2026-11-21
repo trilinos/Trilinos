@@ -32,7 +32,7 @@
 
 namespace krino {
 
-static std::unique_ptr<ParametricElementIntrepid::IntrepidBasis> get_basis_for_topology(stk::topology t)
+static std::unique_ptr<ParametricElementIntrepid::IntrepidBasis> get_intrepid_basis_for_topology(stk::topology t)
 {
   using PointType = double;
   using OutputType = double;
@@ -65,7 +65,7 @@ static std::unique_ptr<ParametricElementIntrepid::IntrepidBasis> get_basis_for_t
   case stk::topology::HEX_27:
       return std::make_unique<Intrepid2::Basis_HGRAD_HEX_C2_FEM<ExecutionSpace, OutputType, PointType>>();
   default:
-      throw std::runtime_error("Element topology not found in get_basis_for_topology(): " + t.name());
+      throw std::runtime_error("Element topology not found in get_intrepid_basis_for_topology(): " + t.name());
   }
 }
 
@@ -101,7 +101,7 @@ static double parametric_volume_for_topology(stk::topology topology)
 ParametricElementIntrepid::ParametricElementIntrepid(stk::topology topology)
 : m_topology(topology)
 {
-  m_intrepidBasis = get_basis_for_topology(topology);
+  m_intrepidBasis = get_intrepid_basis_for_topology(topology);
   using WeightType = double;
   shards::CellTopology cellType = stk::mesh::get_cell_topology(topology);
   auto intrepidCubature = Intrepid2::DefaultCubatureFactory().create<ExecutionSpace, PointType, WeightType>(cellType, 2*m_intrepidBasis->getDegree());

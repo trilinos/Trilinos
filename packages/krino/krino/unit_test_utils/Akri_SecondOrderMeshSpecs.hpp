@@ -66,7 +66,11 @@ struct HigherOrderSimplexMeshSpec
 
 using RegularTri6 = HigherOrderSimplexMeshSpec<RegularTri, stk::topology::TRIANGLE_6_2D>;
 using RightTri6SurroundedByEdgeTris = HigherOrderSimplexMeshSpec<RightTriSurroundedByEdgeTris, stk::topology::TRIANGLE_6_2D>;
+using UMRRegularTri6 = HigherOrderSimplexMeshSpec<UMRRegularTri, stk::topology::TRIANGLE_6_2D>;
 using RegularTet10 = HigherOrderSimplexMeshSpec<RegularTet, stk::topology::TETRAHEDRON_10>;
+using RightTet10 = HigherOrderSimplexMeshSpec<RightTet, stk::topology::TETRAHEDRON_10>;
+using RightTet10SurroundedByEdgeTets =
+    HigherOrderSimplexMeshSpec<RightTetSurroundedByEdgeTets, stk::topology::TETRAHEDRON_10>;
 using UMRRegularTet10 = HigherOrderSimplexMeshSpec<UMRRegularTet, stk::topology::TETRAHEDRON_10>;
 
 }

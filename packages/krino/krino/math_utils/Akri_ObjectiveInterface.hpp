@@ -25,6 +25,12 @@ public:
   virtual double compute_value(const DistributedVector & x) const = 0;
   virtual void fill_gradient(const DistributedVector & x, DistributedVector & g) const = 0;
   virtual void project_solution(DistributedVector & x) const {} // empty for unconstrained problems
+  // Called after each solution update (after project_solution).  Returning true rejects the update:
+  // the optimizer restores the previous solution, re-evaluates compute_value and fill_gradient there,
+  // clears any search history, and starts the next iteration from it.  This lets the objective
+  // reformulate the problem (e.g. filter out the gradient of nodes it has frozen) before the next
+  // update; if compute_value and fill_gradient are unchanged, the same update is rejected again.
+  virtual bool is_update_rejected() const { return false; } // never rejected by default
 };
 
 class Objective3DInterface
@@ -35,6 +41,12 @@ public:
   virtual double compute_value(const stk::math::Vector3d & x) const = 0;
   virtual void fill_gradient(const stk::math::Vector3d & x, stk::math::Vector3d & g) const = 0;
   virtual void project_solution(stk::math::Vector3d & x) const {} // empty for unconstrained problems
+  // Called after each solution update (after project_solution).  Returning true rejects the update:
+  // the optimizer restores the previous solution, re-evaluates compute_value and fill_gradient there,
+  // clears any search history, and starts the next iteration from it.  This lets the objective
+  // reformulate the problem (e.g. filter out the gradient of nodes it has frozen) before the next
+  // update; if compute_value and fill_gradient are unchanged, the same update is rejected again.
+  virtual bool is_update_rejected() const { return false; } // never rejected by default
 };
 
 }

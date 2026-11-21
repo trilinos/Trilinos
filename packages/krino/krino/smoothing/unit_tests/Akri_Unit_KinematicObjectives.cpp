@@ -11,10 +11,10 @@
 #include <MiniTensor_Tensor.h>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_KinematicElement.hpp>
+#include <Akri_KinematicObjectives.hpp>
 #include <Akri_KinematicUtils.hpp>
 #include <Akri_MetricTensorUtils.hpp>
 #include <Akri_ModifiedNeoHookeanModel.hpp>
-#include <Akri_Objective_KinematicModel.hpp>
 #include <Akri_SethHillConfig.hpp>
 #include <Akri_SethHillModel.hpp>
 #include <Akri_SizeShapeModel.hpp>
@@ -552,8 +552,9 @@ TEST(KinematicObjective, testAnisotropicEnergyAndForcesMatchIsotropicForSizeMetr
 
 TEST(KinematicObjective, testAnisotropicElementObjectiveInterface)
 {
-  const KinematicModelObjective<ModifiedNeoHookeanModel> objective;
-  const KinematicElementObjective & elemObjective = objective;
+  const std::shared_ptr<KinematicElementObjective> objective =
+      make_modified_neo_hookean_objective();
+  const KinematicElementObjective & elemObjective = *objective;
   const Tensor metricMapping = metric::compute_metric_mapping(tensor_from_array<3>(KinematicObjectiveAnisotropicGoldData::M));
   const auto metricMappingArray = metric::to_array(metricMapping);
 
@@ -708,8 +709,9 @@ TEST(KinematicObjective, testAnisotropicEnergyAndForces2DMatchIsotropicForSizeMe
 
 TEST(KinematicObjective, testAnisotropic2DElementObjectiveInterface)
 {
-  const KinematicModelObjective<ModifiedNeoHookeanModel> objective;
-  const KinematicElementObjective & elemObjective = objective;
+  const std::shared_ptr<KinematicElementObjective> objective =
+      make_modified_neo_hookean_objective();
+  const KinematicElementObjective & elemObjective = *objective;
   const Tensor2d metricMapping = metric::compute_metric_mapping_2d(tensor_from_array<2>(KinematicObjectiveAnisotropicGoldData2d::M));
   const auto metricMappingArray = metric::to_array(metricMapping);
 

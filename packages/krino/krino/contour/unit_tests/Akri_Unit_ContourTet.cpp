@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 #include <Akri_ContourTet.hpp>
 #include <Akri_MeshSpecs.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetCoordinates.hpp>
 #include <Akri_UnitTestUtils.hpp>
 
 namespace krino {
@@ -19,11 +19,11 @@ class ContourTetFixture : public ::testing::Test
 {
 public:
   std::array<stk::math::Vector3d,4> get_coords() const { return {{ meshSpec.nodeLocs[0], meshSpec.nodeLocs[1], meshSpec.nodeLocs[2], meshSpec.nodeLocs[3] }}; }
-  const Facet3d & get_facet(unsigned i) const { return facets.get_facets()[i]; }
+  Facet3d get_facet(unsigned i) const { return facets.make_facets<Facet3d>()[i]; }
 
 protected:
   RightTet meshSpec;
-  Faceted_Surface<Facet3d> facets;
+  FacetCoordinates facets{3};
 };
 
 
@@ -31,14 +31,14 @@ TEST_F(ContourTetFixture, AppendFacetsTet4_AllNegative_AppendsNothing)
 {
   const std::array<double,4> dist = {{-1.0, -2.0, -3.0, -4.0}};
   ContourTet::append_facets_for_tet4(get_coords(), dist, facets);
-  EXPECT_TRUE(facets.get_facets().empty());
+  EXPECT_TRUE(facets.coordinates().empty());
 }
 
 TEST_F(ContourTetFixture, AppendFacetsTet4_AllPositive_AppendsNothing)
 {
   const std::array<double,4> dist = {{1.0, 2.0, 3.0, 4.0}};
   ContourTet::append_facets_for_tet4(get_coords(), dist, facets);
-  EXPECT_TRUE(facets.get_facets().empty());
+  EXPECT_TRUE(facets.coordinates().empty());
 }
 
 TEST_F(ContourTetFixture, AppendFacetsTet4_Case2_AppendsOneTriangleWithExpectedVertices)
@@ -46,7 +46,7 @@ TEST_F(ContourTetFixture, AppendFacetsTet4_Case2_AppendsOneTriangleWithExpectedV
   const std::array<double,4> dist = {{1.0, -1.0, -1.0, -1.0}};
   ContourTet::append_facets_for_tet4(get_coords(), dist, facets);
 
-  ASSERT_EQ(facets.size(), 1u);
+  ASSERT_EQ(facets.num_facets(), 1u);
 
   const stk::math::Vector3d x4{0.5, 0.0, 0.0};
   const stk::math::Vector3d x6{0.0, 0.5, 0.0};
@@ -62,7 +62,7 @@ TEST_F(ContourTetFixture, AppendFacetsTet4_Case78_AppendsOneTriangleWithOpposite
   const std::array<double,4> dist = {{-1.0, 1.0, 1.0, 1.0}};
   ContourTet::append_facets_for_tet4(get_coords(), dist, facets);
 
-  ASSERT_EQ(facets.size(), 1u);
+  ASSERT_EQ(facets.num_facets(), 1u);
 
   const stk::math::Vector3d x4{0.5, 0.0, 0.0};
   const stk::math::Vector3d x6{0.0, 0.5, 0.0};
@@ -78,7 +78,7 @@ TEST_F(ContourTetFixture, AppendFacetsTet4_Case5_AppendsTriangleUsingZeroNode)
   const std::array<double,4> dist = {{1.0, 0.0, -1.0, -1.0}};
   ContourTet::append_facets_for_tet4(get_coords(), dist, facets);
 
-  ASSERT_EQ(facets.size(), 1u);
+  ASSERT_EQ(facets.num_facets(), 1u);
 
   const stk::math::Vector3d x6{0.0, 0.5, 0.0};
   const stk::math::Vector3d x7{0.0, 0.0, 0.5};
@@ -93,7 +93,7 @@ TEST_F(ContourTetFixture, AppendFacetsTet4_Case75_AppendsTriangleUsingZeroNodeOp
   const std::array<double,4> dist = {{-1.0, 0.0, 1.0, 1.0}};
   ContourTet::append_facets_for_tet4(get_coords(), dist, facets);
 
-  ASSERT_EQ(facets.size(), 1u);
+  ASSERT_EQ(facets.num_facets(), 1u);
 
   const stk::math::Vector3d x6{0.0, 0.5, 0.0};
   const stk::math::Vector3d x7{0.0, 0.0, 0.5};
@@ -108,7 +108,7 @@ TEST_F(ContourTetFixture, AppendFacetsTet4_Case14_AppendsTriangleUsingTwoZeroNod
   const std::array<double,4> dist = {{1.0, 0.0, 0.0, -1.0}};
   ContourTet::append_facets_for_tet4(get_coords(), dist, facets);
 
-  ASSERT_EQ(facets.size(), 1u);
+  ASSERT_EQ(facets.num_facets(), 1u);
 
   const stk::math::Vector3d x7{0.0, 0.0, 0.5};
 
@@ -126,7 +126,7 @@ TEST_F(ContourTetFixture, AppendFacetsTet4_Case13_ZeroFaceNegativeOffNode_EmitsF
   const std::array<double,4> dist = {{0.0, 0.0, 0.0, -1.0}};
   ContourTet::append_facets_for_tet4(get_coords(), dist, facets);
 
-  ASSERT_EQ(facets.size(), 1u);
+  ASSERT_EQ(facets.num_facets(), 1u);
 
   // The zero face is nodes 0,1,2; node 3 (at (0,0,1)) is negative, so the normal
   // must point away from it, i.e. have a negative z-component.
@@ -143,7 +143,7 @@ TEST_F(ContourTetFixture, AppendFacetsTet4_Case67_ZeroFacePositiveOffNode_EmitsN
 {
   const std::array<double,4> dist = {{0.0, 0.0, 0.0, 1.0}};
   ContourTet::append_facets_for_tet4(get_coords(), dist, facets);
-  EXPECT_TRUE(facets.get_facets().empty());
+  EXPECT_TRUE(facets.coordinates().empty());
 }
 
 TEST_F(ContourTetFixture, AppendFacetsTet4_Case8_Face4False_AppendsExpectedTwoTriangles)
@@ -153,7 +153,7 @@ TEST_F(ContourTetFixture, AppendFacetsTet4_Case8_Face4False_AppendsExpectedTwoTr
 
   // will_cutting_quad_from_0to2_cut_largest_angle(...) returns false.
 
-  ASSERT_EQ(facets.size(), 2u);
+  ASSERT_EQ(facets.num_facets(), 2u);
 
   const stk::math::Vector3d x5{0.5, 0.5, 0.0}; // edge 1-2
   const stk::math::Vector3d x6{0.0, 0.5, 0.0}; // edge 0-2
@@ -176,7 +176,7 @@ TEST_F(ContourTetFixture, AppendFacetsTet4_Case8_Face4True_AppendsExpectedTwoTri
 
   // will_cutting_quad_from_0to2_cut_largest_angle(...) returns true.
 
-  ASSERT_EQ(facets.size(), 2u);
+  ASSERT_EQ(facets.num_facets(), 2u);
 
   const stk::math::Vector3d x5{0.75, 0.25, 0.0}; // edge 1-2
   const stk::math::Vector3d x6{0.0,  0.25, 0.0}; // edge 0-2

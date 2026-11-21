@@ -6,27 +6,32 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <iterator>
+#include <memory>
+#include <numeric>
+
 #include <Akri_ContourTet.hpp>
 #include <Akri_ContourTri.hpp>
 #include <Akri_ContourUtils.hpp>
-#include <Akri_SubElement.hpp>
-#include <Akri_SubElementNodeAncestry.hpp>
 #include <Akri_DiagWriter.hpp>
-#include <stk_util/util/ReportHandler.hpp>
 #include <Akri_Element_Intersections.hpp>
 #include <Akri_FieldRef.hpp>
+#include <Akri_InterfaceGeometry.hpp>
 #include <Akri_Intersection_Points.hpp>
 #include <Akri_MathUtil.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_ProlongationData.hpp>
+#include <Akri_SubElement.hpp>
+#include <Akri_SubElementNodeAncestry.hpp>
+#include <Akri_SubElementNodeOrder.hpp>
 #include <Akri_Utility.hpp>
 #include <stk_math/StkVector.hpp>
-
 #include <stk_util/parallel/ParallelComm.hpp>
-
-#include <cmath>
-#include <memory>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace krino{
 
@@ -713,30 +718,8 @@ bool SubElementNode::higher_priority_by_score_then_ancestry(const SubElementNode
   if (float_less(b.get_node_score(), a.get_node_score())) return true;
   if (float_less(a.get_node_score(), b.get_node_score())) return false;
 
-  if (globalIDsAreParallelConsistent)
-    return SubElementNodeAncestry::compare(a.get_ancestry(), b.get_ancestry(), SubElementNode::less_by_entity_id);
-  return SubElementNodeAncestry::compare(a.get_ancestry(), b.get_ancestry(), SubElementNode::less_by_coordinates_then_by_entity_id);
-}
-
-bool SubElementNode::less_by_entity_id(const SubElementNode & a, const SubElementNode & b)
-{
-  // lower id wins (this can be an issue because it is sensitive to the global ids provided by percept, which are dependent on the number of procs)
-  return a.entityId() < b.entityId();
-}
-
-bool SubElementNode::less_by_coordinates_then_by_entity_id(const SubElementNode & a, const SubElementNode & b)
-{
-  const stk::math::Vector3d & aCoord = a.coordinates();
-  const stk::math::Vector3d & bCoord = b.coordinates();
-  if (float_less(aCoord[0], bCoord[0])) return true;
-  if (float_less(bCoord[0], aCoord[0])) return false;
-  if (float_less(aCoord[1], bCoord[1])) return true;
-  if (float_less(bCoord[1], aCoord[1])) return false;
-  if (float_less(aCoord[2], bCoord[2])) return true;
-  if (float_less(bCoord[2], aCoord[2])) return false;
-
-  // as a last resort, lower id wins (this can be an issue because it is sensitive to the global ids provided by percept, which are dependent on the number of procs)
-  return a.entityId() < b.entityId();
+  return less_conditionally_by_coordinates_because_it_impacts_structure(
+      globalIDsAreParallelConsistent, a.get_ancestry(), b.get_ancestry());
 }
 
 bool SubElementNode::captures_intersection_point_domains(const std::vector<int> & intersectionPointDomains) const
@@ -755,6 +738,18 @@ void SubElementNode::insert_node_domains(const std::vector<int> & domainsToAdd) 
 {
   my_sorted_node_domains.insert(my_sorted_node_domains.end(), domainsToAdd.begin(), domainsToAdd.end());
   stk::util::sort_and_unique(my_sorted_node_domains);
+}
+
+void SubElementNode::add_node_domains_counting_repeats(
+    const std::vector<int> & sortedDomainsToAdd) const
+{
+  std::vector<int> unionDomains;
+  std::set_union(my_sorted_node_domains.begin(),
+      my_sorted_node_domains.end(),
+      sortedDomainsToAdd.begin(),
+      sortedDomainsToAdd.end(),
+      std::back_inserter(unionDomains));
+  my_sorted_node_domains.swap(unionDomains);
 }
 
 void
@@ -858,6 +853,31 @@ SubElement::SubElement( const stk::topology topo,
   set_permutation();
 }
 
+// The ranks of the first numRanked nodes in id order (less_by_global_id_because_it_doesnt_impact_structure
+// on their ancestries), the same for nodes with the same ancestry; whether two have the same rank.
+static bool fill_ranks_of_nodes_by_id(const NodeVec & nodes, const size_t numRanked, std::vector<int> & ranks)
+{
+  const auto lessById = [&nodes](const size_t a, const size_t b)
+  { return less_by_global_id_because_it_doesnt_impact_structure(nodes[a]->get_ancestry(), nodes[b]->get_ancestry()); };
+  std::vector<size_t> nodesInOrder(numRanked);
+  std::iota(nodesInOrder.begin(), nodesInOrder.end(), 0);
+  std::sort(nodesInOrder.begin(), nodesInOrder.end(), lessById);
+  int rank = 0;
+  bool haveSameRank = false;
+  for (size_t i = 0; i < numRanked; ++i)
+  {
+    if (i > 0)
+    {
+      if (lessById(nodesInOrder[i - 1], nodesInOrder[i]))
+        ++rank;
+      else
+        haveSameRank = true;
+    }
+    ranks[nodesInOrder[i]] = rank;
+  }
+  return haveSameRank;
+}
+
 void
 SubElement::set_permutation()
 {
@@ -876,13 +896,15 @@ SubElement::set_permutation()
   }
   if (coincident_with_owner) return;
 
-  std::vector<SubElementNodeAncestry> node_ancestries;
-  node_ancestries.reserve(my_nodes.size());
-  for (auto&& node : my_nodes)
-  {
-    node_ancestries.emplace_back(node);
-  }
-  const unsigned permutation_index = topology().lexicographical_smallest_permutation(node_ancestries.data(), true); // only consider positive permutations (true means this)
+  // The permutation changes only the order of a subelement's nodes, so it is by id.  stk compares the
+  // nodes of every permutation, so they are compared as their ranks in that order: the same
+  // permutation, for far fewer comparisons of ancestries.  Every positive permutation orders the
+  // vertices differently, so unless two vertices have the same rank, the vertices decide, and only
+  // they are ranked.
+  std::vector<int> node_ranks(my_nodes.size(), 0);
+  const bool verticesHaveSameRank = fill_ranks_of_nodes_by_id(my_nodes, topology().base().num_nodes(), node_ranks);
+  if (verticesHaveSameRank) fill_ranks_of_nodes_by_id(my_nodes, my_nodes.size(), node_ranks);
+  const unsigned permutation_index = topology().lexicographical_smallest_permutation(node_ranks.data(), true); // only consider positive permutations (true means this)
 
   if (permutation_index == stk::mesh::DEFAULT_PERMUTATION) return;
 
@@ -1337,6 +1359,17 @@ SubElement_Tri_3::build_quadratic_subelements(CDMesh & mesh)
   add_subelement( std::move(sub) );
 }
 
+void SubElement_Tri_3::split_interior_at_node(const SubElementNode * node)
+{
+  STK_ThrowRequire(!have_subelements());
+  NodeVec lnodes = my_nodes;
+  lnodes.push_back(node);
+
+  handle_tri(lnodes, get_interface_signs(), 0, 1, 3, 0, -1, -1, false, false, false);
+  handle_tri(lnodes, get_interface_signs(), 1, 2, 3, 1, -1, -1, false, false, false);
+  handle_tri(lnodes, get_interface_signs(), 2, 0, 3, 2, -1, -1, false, false, false);
+}
+
 void SubElement_Tri_3::cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains)
 {
   const std::vector<double> weights{1.-pCoords[0]-pCoords[1], pCoords[0], pCoords[1]};
@@ -1551,10 +1584,7 @@ SubElement_Tri_3::determine_diagonal_for_cut_triangle(const Simplex_Generation_M
 
   if (simplexMethod == CUT_QUADS_BY_GLOBAL_IDENTIFIER)
   {
-    SubElementNodeAncestry ancestry1 = lnodes[i1]->get_ancestry();
-    SubElementNodeAncestry ancestry2 = lnodes[i2]->get_ancestry();
-
-    return ancestry2 < ancestry1;
+    return less_by_global_id_because_it_is_requested(lnodes[i2]->get_ancestry(), lnodes[i1]->get_ancestry());
   }
   else
   {
@@ -1662,7 +1692,17 @@ SubElement_Tet_4::SubElement_Tet_4(
 {
 }
 
-void SubElement_Tet_4::cut_face_intersection_point_with_permutation(CDMesh & mesh, const std::array<int,4> & permuteNodes, const std::array<int,4> & permuteSides, const std::vector<double> & faceNodeWeights, const std::vector<int> & sortedDomains)
+// For each face of a tet, its nodes in the order of the face then the node opposite it, and the
+// sides of the subelements joining the face's edges to the opposite node.
+static constexpr std::array<std::array<int, 4>, 4> tetFacePermuteNodes{
+    {{{0, 3, 1, 2}}, {{1, 3, 2, 0}}, {{0, 2, 3, 1}}, {{0, 1, 2, 3}}}};
+static constexpr std::array<std::array<int, 4>, 4> tetFacePermuteSides{
+    {{{2, 1, 3, 0}}, {{0, 2, 3, 1}}, {{3, 1, 0, 2}}, {{0, 1, 2, 3}}}};
+
+void SubElement_Tet_4::cut_face_intersection_point_with_permutation(CDMesh & mesh,
+    const std::array<int, 4> & permuteNodes,
+    const std::vector<double> & faceNodeWeights,
+    const std::vector<int> & sortedDomains)
 {
   const SubElementNode * cutNode = mesh.create_child_internal_or_face_node(my_owner,
       {my_nodes[permuteNodes[0]], my_nodes[permuteNodes[1]], my_nodes[permuteNodes[2]]},
@@ -1671,15 +1711,42 @@ void SubElement_Tet_4::cut_face_intersection_point_with_permutation(CDMesh & mes
   STK_ThrowRequire(previousDomains.empty() || sortedDomains == previousDomains);
   cutNode->set_node_domains(sortedDomains);
 
-  NodeVec lnodes;
-  lnodes.reserve(5);
-  for (int i=0; i<4; ++i)
-    lnodes.push_back(my_nodes[permuteNodes[i]]);
-  lnodes.push_back(cutNode);
+  split_face_at_node(permuteNodes[3], cutNode);
+}
 
-  handle_tet(lnodes, get_interface_signs(), 0,1,4,3, permuteSides[0],-1,-1,permuteSides[3]);
-  handle_tet(lnodes, get_interface_signs(), 1,2,4,3, permuteSides[1],-1,-1,permuteSides[3]);
-  handle_tet(lnodes, get_interface_signs(), 2,0,4,3, permuteSides[2],-1,-1,permuteSides[3]);
+void SubElement_Tet_4::split_face_at_node(const int oppositeNode, const SubElementNode * node)
+{
+  STK_ThrowRequire(!have_subelements());
+  for (size_t iFace = 0; iFace < tetFacePermuteNodes.size(); ++iFace)
+  {
+    const std::array<int, 4> & permuteNodes = tetFacePermuteNodes[iFace];
+    const std::array<int, 4> & permuteSides = tetFacePermuteSides[iFace];
+    if (permuteNodes[3] != oppositeNode) continue;
+
+    NodeVec lnodes;
+    lnodes.reserve(5);
+    for (int i = 0; i < 4; ++i)
+      lnodes.push_back(my_nodes[permuteNodes[i]]);
+    lnodes.push_back(node);
+
+    handle_tet(lnodes, get_interface_signs(), 0, 1, 4, 3, permuteSides[0], -1, -1, permuteSides[3]);
+    handle_tet(lnodes, get_interface_signs(), 1, 2, 4, 3, permuteSides[1], -1, -1, permuteSides[3]);
+    handle_tet(lnodes, get_interface_signs(), 2, 0, 4, 3, permuteSides[2], -1, -1, permuteSides[3]);
+    return;
+  }
+  STK_ThrowRequireMsg(false, "Invalid node opposite a face: " << oppositeNode);
+}
+
+void SubElement_Tet_4::split_interior_at_node(const SubElementNode * node)
+{
+  STK_ThrowRequire(!have_subelements());
+  NodeVec lnodes = my_nodes;
+  lnodes.push_back(node);
+
+  handle_tet(lnodes, get_interface_signs(), 0, 3, 1, 4, -1, -1, -1, 0);
+  handle_tet(lnodes, get_interface_signs(), 1, 3, 2, 4, -1, -1, -1, 1);
+  handle_tet(lnodes, get_interface_signs(), 0, 2, 3, 4, -1, -1, -1, 2);
+  handle_tet(lnodes, get_interface_signs(), 0, 1, 2, 4, -1, -1, -1, 3);
 }
 
 void SubElement_Tet_4::cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains)
@@ -1703,13 +1770,7 @@ void SubElement_Tet_4::cut_interior_intersection_point(CDMesh & mesh, const stk:
     const SubElementNode * cutNode = mesh.create_child_internal_or_face_node( my_owner, my_nodes, weights );
     cutNode->set_node_domains(sortedDomains);
 
-    NodeVec lnodes = my_nodes;
-    lnodes.push_back(cutNode);
-
-    handle_tet(lnodes, get_interface_signs(), 0,3,1,4, -1,-1,-1,0);
-    handle_tet(lnodes, get_interface_signs(), 1,3,2,4, -1,-1,-1,1);
-    handle_tet(lnodes, get_interface_signs(), 0,2,3,4, -1,-1,-1,2);
-    handle_tet(lnodes, get_interface_signs(), 0,1,2,4, -1,-1,-1,3);
+    split_interior_at_node(cutNode);
   }
 }
 
@@ -1768,15 +1829,12 @@ SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, int level
     return;
   }
 
-  static constexpr std::array<std::array<int,4>,4> permuteNodes{{ {{0,3,1,2}}, {{1,3,2,0}}, {{0,2,3,1}}, {{0,1,2,3}} }};
-  static constexpr std::array<std::array<int,4>,4> permuteSides{{ {{2,1,3,0}}, {{0,2,3,1}}, {{3,1,0,2}}, {{0,1,2,3}} }};
-
   std::vector<const SubElementNode*> faceNodes(3);
   // Note: this recursively cuts the first identified face interior intersection point
   for (unsigned iFace=0; iFace<topology().num_faces(); ++iFace)
   {
     for (int i=0; i<3; ++i)
-      faceNodes[i] = my_nodes[permuteNodes[iFace][i]];
+      faceNodes[i] = my_nodes[tetFacePermuteNodes[iFace][i]];
 
     std::vector<ElementIntersection> faceIntersections;
     my_owner->fill_face_interior_intersections(faceNodes, faceIntersections);
@@ -1799,7 +1857,8 @@ SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, int level
       if (!badCut)
       {
         STK_ThrowRequireMsg(level < 8, "Face cut recursion level exceeded.");
-        cut_face_intersection_point_with_permutation(mesh, permuteNodes[iFace], permuteSides[iFace], faceNodeWeights, faceIntersection.sortedDomains);
+        cut_face_intersection_point_with_permutation(
+            mesh, tetFacePermuteNodes[iFace], faceNodeWeights, faceIntersection.sortedDomains);
         cut_face_interior_intersection_points(mesh, ++level);
         return;
       }
@@ -2251,7 +2310,7 @@ bool SubElement_Tet_4::determine_diagonal_for_cut_triangular_face(const Simplex_
 
   if (simplexMethod == CUT_QUADS_BY_GLOBAL_IDENTIFIER)
   {
-    return lnodes[i2]->get_ancestry() < lnodes[i1]->get_ancestry();
+    return less_by_global_id_because_it_is_requested(lnodes[i2]->get_ancestry(), lnodes[i1]->get_ancestry());
   }
   else
   {
@@ -2655,6 +2714,14 @@ SubElement::process_edge( CDMesh & mesh, const InterfaceID interface, const int 
   {
     const auto [crossingSign, position] = my_owner->interface_edge_crossing_sign_and_position(interface, parent1, parent2);
     STK_ThrowRequireMsg(crossingSign!=0 && position > 0. && position < 1., "Error process_edge " << crossingSign << " " << position << " " << parent1->get_node_sign() << " " << parent2->get_node_sign() << " " << parent1->get_ancestry() << " " << parent2->get_ancestry());
+    if (my_owner->get_cutter())
+    {
+      const stk::math::Vector3d crossingOwnerCoords =
+          (1. - position) * parent1->owner_coords(my_owner) +
+          position * parent2->owner_coords(my_owner);
+      if (!my_owner->get_cutter()->interface_crossing_is_real(interface, crossingOwnerCoords))
+        mesh.count_fake_crossing_cut();
+    }
 
     std::unique_ptr<SubElementNode> newNode = std::make_unique<SubElementEdgeNode>(my_owner, position, parent1, parent2);
     subnode = mesh.add_managed_node(std::move(newNode));
@@ -2779,6 +2846,125 @@ SubElement::cut_face_interior_intersection_points(CDMesh & /*mesh*/, int /*level
     return;
 
   STK_ThrowRequireMsg(false, "This subelement type does not support cut_face_interior_intersection_points: " << topology());
+}
+
+// Used for the topologies that are not cut by rank, such as shells. Unlike the cutting by rank,
+// this cuts every multiple crossing: it does not remove close crossings or treat a crossing near an
+// end as that end (multiple_crossing_positions_to_cut). Only analytic and faceted surfaces report
+// multiple crossings, and no test cuts these topologies with them.
+bool SubElement::cut_first_multiple_edge_crossing(CDMesh & mesh)
+{
+  if (have_subelements()) return false;
+
+  const stk::topology topo = topology();
+  std::array<unsigned, 2> edgeNodeOrdinals;
+  std::vector<double> positions;
+  std::vector<int> sortedDomains;
+  for (auto && interface : my_owner->get_sorted_cutting_interfaces())
+  {
+    for (unsigned iEdge = 0; iEdge < topo.num_edges(); ++iEdge)
+    {
+      topo.edge_node_ordinals(iEdge, edgeNodeOrdinals.data());
+      const SubElementNode * node0 = my_nodes[edgeNodeOrdinals[0]];
+      const SubElementNode * node1 = my_nodes[edgeNodeOrdinals[1]];
+      my_owner->fill_multiple_edge_crossing_positions(interface, node0, node1, positions);
+      if (positions.empty()) continue;
+
+      // A neighbor sharing the edge finds the same crossing, and so the same node.
+      const SubElementNode * edgeNode =
+          mesh.create_edge_node(my_owner, node0, node1, positions.front());
+      interface.fill_sorted_domains(sortedDomains);
+      edgeNode->set_node_domains(sortedDomains);
+      bisect_edge(edgeNodeOrdinals[0], edgeNodeOrdinals[1], edgeNode);
+      return true;
+    }
+  }
+  return false;
+}
+
+void SubElement::bisect_edge(
+    const int /*i0*/, const int /*i1*/, const SubElementNode * /*edgeNode*/)
+{
+  STK_ThrowRequireMsg(false, "This subelement type does not support bisect_edge: " << topology());
+}
+
+void SubElement::split_interior_at_node(const SubElementNode * /*node*/)
+{
+  STK_ThrowRequireMsg(
+      false, "This subelement type does not support split_interior_at_node: " << topology());
+}
+
+void SubElement::split_face_at_node(const int /*oppositeNode*/, const SubElementNode * /*node*/)
+{
+  STK_ThrowRequireMsg(
+      false, "This subelement type does not support split_face_at_node: " << topology());
+}
+
+// The parent sides of the sides of the half of a simplex where its node replace is replaced by a
+// node on its edge to keep: the side opposite keep is new (inside the simplex), the others keep
+// the simplex's sides.
+static std::vector<int>
+sides_of_simplex_half(const stk::topology topo, const int keep, const int replace)
+{
+  std::vector<int> sides(topo.num_sides());
+  std::vector<unsigned> sideNodeOrdinals(topo.side_topology(0).num_nodes());
+  for (unsigned iSide = 0; iSide < topo.num_sides(); ++iSide)
+  {
+    topo.side_node_ordinals(iSide, sideNodeOrdinals.data());
+    const bool hasKeep =
+        std::find(sideNodeOrdinals.begin(), sideNodeOrdinals.end(), unsigned(keep)) !=
+        sideNodeOrdinals.end();
+    const bool hasReplace =
+        std::find(sideNodeOrdinals.begin(), sideNodeOrdinals.end(), unsigned(replace)) !=
+        sideNodeOrdinals.end();
+    sides[iSide] = (hasReplace && !hasKeep) ? -1 : int(iSide);
+  }
+  return sides;
+}
+
+void SubElement_Tet_4::bisect_edge(const int i0, const int i1, const SubElementNode * edgeNode)
+{
+  NodeVec lnodes = my_nodes;
+  lnodes.push_back(edgeNode);
+  for (const auto & [keep, replace] : {std::array<int, 2>{i0, i1}, std::array<int, 2>{i1, i0}})
+  {
+    std::array<int, 4> nodes{{0, 1, 2, 3}};
+    nodes[replace] = 4;
+    const std::vector<int> sides = sides_of_simplex_half(topology(), keep, replace);
+    handle_tet(lnodes,
+        get_interface_signs(),
+        nodes[0],
+        nodes[1],
+        nodes[2],
+        nodes[3],
+        sides[0],
+        sides[1],
+        sides[2],
+        sides[3]);
+  }
+}
+
+void SubElement_Tri_3::bisect_edge(const int i0, const int i1, const SubElementNode * edgeNode)
+{
+  NodeVec lnodes = my_nodes;
+  lnodes.push_back(edgeNode);
+  for (const auto & [keep, replace] : {std::array<int, 2>{i0, i1}, std::array<int, 2>{i1, i0}})
+  {
+    std::array<int, 3> nodes{{0, 1, 2}};
+    nodes[replace] = 3;
+    const std::vector<int> sides = sides_of_simplex_half(topology(), keep, replace);
+    handle_tri(lnodes,
+        get_interface_signs(),
+        nodes[0],
+        nodes[1],
+        nodes[2],
+        sides[0],
+        sides[1],
+        sides[2],
+        false,
+        false,
+        false);
+  }
 }
 
 bool

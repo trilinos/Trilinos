@@ -220,6 +220,98 @@ cdfem_options:
   EXPECT_EQ(stk::get_doomed_count(), oldDoomedCount);
 }
 
+// Unless set, the sharp features are cut before the surfaces, whether snapping or only cutting.
+TEST_F(CDFEMOptionsParserTest, CutSharpFeaturesBeforeSurfacesNotSet_cutFirst)
+{
+  const unsigned oldDoomedCount = stk::get_doomed_count();
+
+  CDFEM_Options_Parser::parse(load_node(R"yaml(
+cdfem_options:
+  cdfem_edge_degeneracy_handling: snap_to_node
+)yaml"),
+      meta);
+  EXPECT_TRUE(CDFEM_Support::get(meta).cut_sharp_features_before_surfaces());
+
+  CDFEM_Options_Parser::parse(load_node(R"yaml(
+cdfem_options:
+  cdfem_edge_degeneracy_handling: snap_to_interface_when_quality_allows
+)yaml"),
+      meta);
+  EXPECT_TRUE(CDFEM_Support::get(meta).cut_sharp_features_before_surfaces());
+  EXPECT_EQ(stk::get_doomed_count(), oldDoomedCount);
+}
+
+TEST_F(CDFEMOptionsParserTest, ParsesCutSharpFeaturesBeforeSurfacesWhenOnlyCutting)
+{
+  const unsigned oldDoomedCount = stk::get_doomed_count();
+
+  Parser::Node region_node = load_node(R"yaml(
+cdfem_options:
+  cdfem_edge_degeneracy_handling: snap_to_node
+  cut_sharp_features_before_surfaces: true
+)yaml");
+
+  CDFEM_Options_Parser::parse(region_node, meta);
+  EXPECT_TRUE(CDFEM_Support::get(meta).cut_sharp_features_before_surfaces());
+  EXPECT_EQ(stk::get_doomed_count(), oldDoomedCount);
+}
+
+TEST_F(CDFEMOptionsParserTest, ParsesCutSharpFeaturesBeforeSurfacesOffWhenSnapping)
+{
+  const unsigned oldDoomedCount = stk::get_doomed_count();
+
+  Parser::Node region_node = load_node(R"yaml(
+cdfem_options:
+  cdfem_edge_degeneracy_handling: snap_to_interface_when_quality_allows
+  cut_sharp_features_before_surfaces: false
+)yaml");
+
+  CDFEM_Options_Parser::parse(region_node, meta);
+  EXPECT_FALSE(CDFEM_Support::get(meta).cut_sharp_features_before_surfaces());
+  EXPECT_EQ(stk::get_doomed_count(), oldDoomedCount);
+}
+
+TEST_F(CDFEMOptionsParserTest, CaptureSharpFeaturesOnlyDuringSnappingIsOffByDefault)
+{
+  const unsigned oldDoomedCount = stk::get_doomed_count();
+  CDFEM_Options_Parser::parse(load_node(R"yaml(
+cdfem_options:
+  cdfem_edge_degeneracy_handling: snap_to_interface_when_quality_allows
+)yaml"),
+      meta);
+  EXPECT_FALSE(CDFEM_Support::get(meta).capture_sharp_features_only_during_snapping());
+  EXPECT_TRUE(CDFEM_Support::get(meta).cuts_sharp_features());
+  EXPECT_EQ(stk::get_doomed_count(), oldDoomedCount);
+}
+
+TEST_F(CDFEMOptionsParserTest, ParsesCaptureSharpFeaturesOnlyDuringSnapping)
+{
+  const unsigned oldDoomedCount = stk::get_doomed_count();
+  CDFEM_Options_Parser::parse(load_node(R"yaml(
+cdfem_options:
+  cdfem_edge_degeneracy_handling: snap_to_interface_when_quality_allows
+  capture_sharp_features_only_during_snapping: true
+)yaml"),
+      meta);
+  EXPECT_TRUE(CDFEM_Support::get(meta).capture_sharp_features_only_during_snapping());
+  EXPECT_TRUE(CDFEM_Support::get(meta).cut_sharp_features_before_surfaces());
+  EXPECT_FALSE(CDFEM_Support::get(meta).cuts_sharp_features());
+  EXPECT_EQ(stk::get_doomed_count(), oldDoomedCount);
+}
+
+TEST_F(CDFEMOptionsParserTest, CaptureSharpFeaturesOnlyDuringSnappingWithoutCuttingThemFirstIsAnError)
+{
+  const unsigned oldDoomedCount = stk::get_doomed_count();
+  CDFEM_Options_Parser::parse(load_node(R"yaml(
+cdfem_options:
+  cdfem_edge_degeneracy_handling: snap_to_interface_when_quality_allows
+  cut_sharp_features_before_surfaces: false
+  capture_sharp_features_only_during_snapping: true
+)yaml"),
+      meta);
+  EXPECT_GT(stk::get_doomed_count(), oldDoomedCount);
+}
+
 TEST_F(CDFEMOptionsParserTest, ParsesNumberOfInitialDecompositionCycles)
 {
   const unsigned oldDoomedCount = stk::get_doomed_count();

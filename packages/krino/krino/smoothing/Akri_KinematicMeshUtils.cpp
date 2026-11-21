@@ -27,14 +27,16 @@ std::vector<double> compute_element_ref_sizes_from_reference(
     const SmoothReference & reference)
 {
   STK_ThrowRequireMsg(mesh.mesh_meta_data().spatial_dimension() == 3,
-      "Element reference sizes from a reference configuration are only supported for tet4 elements in 3D.");
+      "Element reference sizes from a reference configuration are only supported for tet4 and "
+      "tet10 elements in 3D.");
 
   std::vector<double> elemRefSizes;
   elemRefSizes.reserve(elems.size());
   for (auto elem : elems)
   {
-    STK_ThrowRequireMsg(mesh.num_nodes(elem) == 4,
-        "Element reference sizes from a reference configuration are only supported for tet4 elements in 3D.");
+    STK_ThrowRequireMsg(mesh.bucket(elem).topology().base() == stk::topology::TETRAHEDRON_4,
+        "Element reference sizes from a reference configuration are only supported for tet4 and "
+        "tet10 elements in 3D.");
     const std::array<stk::math::Vector3d, 4> elemNodeCoords = get_tetrahedron_vector(mesh, referenceCoordsField, mesh.begin_nodes(elem));
     elemRefSizes.push_back(kinematicUtils::compute_ideal_tet4_h(elemNodeCoords, reference));
   }
@@ -51,8 +53,10 @@ static void check_nodal_metric(const stk::mesh::BulkData & mesh, const stk::mesh
 
 static void check_supported_element(const unsigned spatialDim, const size_t numElemNodes)
 {
-  STK_ThrowRequireMsg((spatialDim == 2 && numElemNodes == 3) || (spatialDim == 3 && numElemNodes == 4),
-      "Element metric mappings are only supported for tri3 elements in 2D and tet4 elements in 3D.");
+  STK_ThrowRequireMsg(
+      (spatialDim == 2 && numElemNodes == 3) || (spatialDim == 3 && numElemNodes == 4),
+      "Element metric mappings are only supported for tri3 and tri6 elements in 2D and tet4 and "
+      "tet10 elements in 3D.");
 }
 
 // Metric mapping of each of numElems elements from the metrics of its nodes, which
@@ -92,9 +96,10 @@ std::vector<double> compute_element_metric_mappings_from_nodal_metric_field(
       [&](const size_t e, std::vector<const double *> & elemNodalMetrics)
       {
         const stk::mesh::Entity elem = elems[e];
-        check_supported_element(spatialDim, mesh.num_nodes(elem));
+        const StkMeshEntities elemVertexNodes = element_vertex_nodes(mesh, elem);
+        check_supported_element(spatialDim, elemVertexNodes.size());
         elemNodalMetricValues.clear();
-        for (auto node : StkMeshEntities{mesh.begin_nodes(elem), mesh.end_nodes(elem)})
+        for (auto node : elemVertexNodes)
         {
           STK_ThrowRequireMsg(nodalMetricField.length(node) == metricSize,
               "The metric field " << nodalMetricField.name() << " must have " << metricSize << " components at every node of the elements.");

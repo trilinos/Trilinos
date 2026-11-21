@@ -29,6 +29,17 @@ void append_intersection_points_from_element_interior(const ParametricElement & 
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints);
 
+// The points of a face of a linear tet, in the stencil of that face's nodes.
+void append_intersection_points_from_element_face(ParametricElementLibrary & parametricElemLibrary,
+    const ParametricElement & elementParametricElement,
+    const std::vector<stk::mesh::Entity> & elementNodes,
+    const int iFace,
+    const ElementCutter & elementCutter,
+    const IntersectionPointFilter & intersectionPointFilter,
+    std::vector<IntersectionPoint> & intersectionPoints);
+
+// The points within the element and on the faces it owns, in the stencils of its vertices, also for
+// a quadratic element.
 void append_intersection_points_from_within_element_and_owned_faces(ParametricElementLibrary & parametricElemLibrary,
     const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & parentElementSelector,
@@ -36,6 +47,8 @@ void append_intersection_points_from_within_element_and_owned_faces(ParametricEl
     const ElementCutter & elementCutter,
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints);
+
+stk::math::Vector3d compute_element_centroid(const std::vector<stk::math::Vector3d> & elemNodesCoords);
 
 void append_closest_point_intersections(std::vector<IntersectionPoint> & intersectionPoints,
     const stk::mesh::BulkData & mesh,

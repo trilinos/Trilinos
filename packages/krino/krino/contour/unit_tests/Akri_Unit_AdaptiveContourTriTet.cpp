@@ -10,7 +10,7 @@
 #include <Akri_AdaptiveContourTri.hpp>
 #include <Akri_AdaptiveContourTet.hpp>
 #include <Akri_MeshSpecs.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetCoordinates.hpp>
 
 #include <array>
 #include <functional>
@@ -76,14 +76,14 @@ TEST(AdaptiveContourTri, planarField_allFacetVerticesLieOnInterface)
   const std::array<stk::math::Vector3d,3> coords = tri_coords();
   const std::array<double,3> dist = {{ planar_distance(coords[0]), planar_distance(coords[1]), planar_distance(coords[2]) }};
 
-  Faceted_Surface<Facet2d> facets;
+  FacetCoordinates facets{2};
   const double lengthScale = 1.0;
   adaptively_append_facets_for_tri_using_semilagrangian_distance(
       coords, coords, dist, planar_distance, lengthScale, facets,
       /*currentDepth*/ 0, /*minDepth*/ 1, /*maxDepth*/ 4);
 
-  ASSERT_FALSE(facets.get_facets().empty());
-  for (const Facet2d & facet : facets.get_facets())
+  ASSERT_FALSE(facets.coordinates().empty());
+  for (const Facet2d & facet : facets.make_facets<Facet2d>())
     for (int v = 0; v < 2; ++v)
       EXPECT_NEAR(0.0, planar_distance(facet.facet_vertex(v)), 1.e-9)
           << "facet vertex must lie on the linear isosurface";
@@ -97,11 +97,11 @@ TEST(AdaptiveContourTri, strictlyPositiveField_producesNoFacets)
   const auto positive = [](const stk::math::Vector3d & p) { return p[0] + 5.0; };
   const std::array<double,3> dist = {{ positive(coords[0]), positive(coords[1]), positive(coords[2]) }};
 
-  Faceted_Surface<Facet2d> facets;
+  FacetCoordinates facets{2};
   adaptively_append_facets_for_tri_using_semilagrangian_distance(
       coords, coords, dist, positive, 1.0, facets, 0, 0, 4);
 
-  EXPECT_TRUE(facets.get_facets().empty());
+  EXPECT_TRUE(facets.coordinates().empty());
 }
 
 // Robustness: a non-unit-gradient linear field that genuinely cuts the triangle
@@ -114,12 +114,12 @@ TEST(AdaptiveContourTri, nonUnitGradientField_stillProducesFacetsOnInterface)
   const std::array<double,3> dist = {{ scaled_nonunit_distance(coords[0]), scaled_nonunit_distance(coords[1]),
                                        scaled_nonunit_distance(coords[2]) }};
 
-  Faceted_Surface<Facet2d> facets;
+  FacetCoordinates facets{2};
   adaptively_append_facets_for_tri_using_semilagrangian_distance(
       coords, coords, dist, scaled_nonunit_distance, 1.0, facets, 0, 0, 2);
 
-  ASSERT_FALSE(facets.get_facets().empty());
-  for (const Facet2d & facet : facets.get_facets())
+  ASSERT_FALSE(facets.coordinates().empty());
+  for (const Facet2d & facet : facets.make_facets<Facet2d>())
     for (int v = 0; v < 2; ++v)
       EXPECT_NEAR(0.0, scaled_nonunit_distance(facet.facet_vertex(v)), 1.e-9);
 }
@@ -134,14 +134,14 @@ TEST(AdaptiveContourTet, planarField_allFacetVerticesLieOnInterface)
   const std::array<double,4> dist = {{ planar_distance(coords[0]), planar_distance(coords[1]),
                                        planar_distance(coords[2]), planar_distance(coords[3]) }};
 
-  Faceted_Surface<Facet3d> facets;
+  FacetCoordinates facets{3};
   const double lengthScale = 1.0;
   adaptively_append_facets_for_tet_using_semilagrangian_distance(
       coords, coords, dist, planar_distance, lengthScale, facets,
       /*currentDepth*/ 0, /*minDepth*/ 1, /*maxDepth*/ 4);
 
-  ASSERT_FALSE(facets.get_facets().empty());
-  for (const Facet3d & facet : facets.get_facets())
+  ASSERT_FALSE(facets.coordinates().empty());
+  for (const Facet3d & facet : facets.make_facets<Facet3d>())
     for (int v = 0; v < 3; ++v)
       EXPECT_NEAR(0.0, planar_distance(facet.facet_vertex(v)), 1.e-9)
           << "facet vertex must lie on the linear isosurface";
@@ -158,12 +158,12 @@ TEST(AdaptiveContourTet, nonUnitGradientField_stillProducesFacetsOnInterface)
   const std::array<double,4> dist = {{ scaled_nonunit_distance(coords[0]), scaled_nonunit_distance(coords[1]),
                                        scaled_nonunit_distance(coords[2]), scaled_nonunit_distance(coords[3]) }};
 
-  Faceted_Surface<Facet3d> facets;
+  FacetCoordinates facets{3};
   adaptively_append_facets_for_tet_using_semilagrangian_distance(
       coords, coords, dist, scaled_nonunit_distance, 1.0, facets, 0, 0, 0);
 
-  ASSERT_FALSE(facets.get_facets().empty());
-  for (const Facet3d & facet : facets.get_facets())
+  ASSERT_FALSE(facets.coordinates().empty());
+  for (const Facet3d & facet : facets.make_facets<Facet3d>())
     for (int v = 0; v < 3; ++v)
       EXPECT_NEAR(0.0, scaled_nonunit_distance(facet.facet_vertex(v)), 1.e-9);
 }
@@ -182,12 +182,12 @@ TEST(AdaptiveContourTet, interfaceThroughMidsideNodes_producesFacetsOnInterface)
   const std::array<double,4> dist = {{ corner_distance(coords[0]), corner_distance(coords[1]),
                                        corner_distance(coords[2]), corner_distance(coords[3]) }};
 
-  Faceted_Surface<Facet3d> facets;
+  FacetCoordinates facets{3};
   adaptively_append_facets_for_tet_using_semilagrangian_distance(
       coords, coords, dist, corner_distance, 1.0, facets, 0, 0, 0);
 
-  ASSERT_FALSE(facets.get_facets().empty());
-  for (const Facet3d & facet : facets.get_facets())
+  ASSERT_FALSE(facets.coordinates().empty());
+  for (const Facet3d & facet : facets.make_facets<Facet3d>())
     for (int v = 0; v < 3; ++v)
       EXPECT_NEAR(0.0, corner_distance(facet.facet_vertex(v)), 1.e-9);
 }
@@ -199,11 +199,11 @@ TEST(AdaptiveContourTet, strictlyNegativeField_producesNoFacets)
   const std::array<double,4> dist = {{ negative(coords[0]), negative(coords[1]),
                                        negative(coords[2]), negative(coords[3]) }};
 
-  Faceted_Surface<Facet3d> facets;
+  FacetCoordinates facets{3};
   adaptively_append_facets_for_tet_using_semilagrangian_distance(
       coords, coords, dist, negative, 1.0, facets, 0, 0, 4);
 
-  EXPECT_TRUE(facets.get_facets().empty());
+  EXPECT_TRUE(facets.coordinates().empty());
 }
 
 }

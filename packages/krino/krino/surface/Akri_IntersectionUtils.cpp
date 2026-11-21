@@ -4,12 +4,15 @@
  *  Created on: Dec 10, 2024
  *      Author: drnoble
  */
-#include <stk_math/StkVector.hpp>
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+
 #include <Akri_BoundingBox.hpp>
 #include <Akri_MathUtil.hpp>
 #include <Akri_Sign.hpp>
 #include <Akri_Triangle.hpp>
-#include <iostream>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 
@@ -122,10 +125,28 @@ std::pair<bool,stk::math::Vector3d> does_edge_intersect_triangle_and_parametric_
   if (!sign_change(scaledDist0, scaledDist1))
     return std::make_pair(false, stk::math::Vector3d::ZERO);
 
+  // An edge in the plane of the triangle (to roundoff) does not cross it: the signs of its
+  // distances are roundoff, so the location computed from them would be anywhere along the edge.
+  // Where such an edge enters or leaves the triangle is on the triangle's boundary.
+  constexpr double inPlaneTol = 1.e-10;
+  if (std::max(std::abs(scaledDist0), std::abs(scaledDist1)) <=
+      inPlaneTol * (edgePt1 - edgePt0).length())
+    return std::make_pair(false, stk::math::Vector3d::ZERO);
+
   const double loc = scaledDist0 / (scaledDist0-scaledDist1);
   const stk::math::Vector3d planeIntLoc = (1.-loc)*edgePt0 + loc*edgePt1;
 
   return is_point_in_triangle_3d_and_parametric_coordinates(triNodes, triArea, triNormal, planeIntLoc);
+}
+
+void append_triangle_intersection_parametric_coordinates(
+    const std::array<stk::math::Vector3d, 3> & triNodes,
+    const stk::math::Vector3d & candidate,
+    std::vector<stk::math::Vector3d> & intParamCoords)
+{
+  const auto & [isInTriangle, paramCoords] =
+      is_point_in_triangle_3d_and_parametric_coordinates(triNodes, candidate);
+  if (isInTriangle) intParamCoords.push_back(paramCoords);
 }
 
 void append_triangle_edge_intersection_parametric_coordinates(const std::array<stk::math::Vector3d,3> & triNodes,

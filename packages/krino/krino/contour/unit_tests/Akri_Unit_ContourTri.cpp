@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 #include <Akri_ContourTri.hpp>
 #include <Akri_MeshSpecs.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetCoordinates.hpp>
 #include <Akri_UnitTestUtils.hpp>
 
 namespace krino {
@@ -27,25 +27,25 @@ public:
               stk::math::Vector3d(meshSpec.nodeLocs[1][0], meshSpec.nodeLocs[1][1], 0.0),
               stk::math::Vector3d(meshSpec.nodeLocs[2][0], meshSpec.nodeLocs[2][1], 0.0) }};
   }
-  const Facet2d & get_facet(unsigned i) const { return facets.get_facets()[i]; }
+  Facet2d get_facet(unsigned i) const { return facets.make_facets<Facet2d>()[i]; }
 
 protected:
   RightTri meshSpec;
-  Faceted_Surface<Facet2d> facets;
+  FacetCoordinates facets{2};
 };
 
 TEST_F(ContourTriFixture, AppendFacetsTri3_AllNegative_AppendsNothing)
 {
   const std::array<double,3> dist = {{-1.0, -2.0, -3.0}};
   ContourTri::append_facets_for_tri3(get_coords(), dist, facets);
-  EXPECT_TRUE(facets.get_facets().empty());
+  EXPECT_TRUE(facets.coordinates().empty());
 }
 
 TEST_F(ContourTriFixture, AppendFacetsTri3_AllPositive_AppendsNothing)
 {
   const std::array<double,3> dist = {{1.0, 2.0, 3.0}};
   ContourTri::append_facets_for_tri3(get_coords(), dist, facets);
-  EXPECT_TRUE(facets.get_facets().empty());
+  EXPECT_TRUE(facets.coordinates().empty());
 }
 
 // One node positive, two negative (caseId 2): the interface crosses edges 0-1
@@ -56,7 +56,7 @@ TEST_F(ContourTriFixture, AppendFacetsTri3_Case2_AppendsOneSegmentWithExpectedVe
   const std::array<double,3> dist = {{1.0, -1.0, -1.0}};
   ContourTri::append_facets_for_tri3(get_coords(), dist, facets);
 
-  ASSERT_EQ(facets.size(), 1u);
+  ASSERT_EQ(facets.num_facets(), 1u);
 
   const stk::math::Vector3d x3{0.5, 0.0, 0.0}; // crossing on edge 0-1
   const stk::math::Vector3d x5{0.0, 0.5, 0.0}; // crossing on edge 2-0
@@ -72,7 +72,7 @@ TEST_F(ContourTriFixture, AppendFacetsTri3_Case24_AppendsOneSegmentWithOppositeW
   const std::array<double,3> dist = {{-1.0, 1.0, 1.0}};
   ContourTri::append_facets_for_tri3(get_coords(), dist, facets);
 
-  ASSERT_EQ(facets.size(), 1u);
+  ASSERT_EQ(facets.num_facets(), 1u);
 
   const stk::math::Vector3d x3{0.5, 0.0, 0.0}; // crossing on edge 0-1
   const stk::math::Vector3d x5{0.0, 0.5, 0.0}; // crossing on edge 2-0
@@ -88,7 +88,7 @@ TEST_F(ContourTriFixture, AppendFacetsTri3_Case4_AppendsSegmentAlongZeroEdge)
   const std::array<double,3> dist = {{0.0, 0.0, -1.0}};
   ContourTri::append_facets_for_tri3(get_coords(), dist, facets);
 
-  ASSERT_EQ(facets.size(), 1u);
+  ASSERT_EQ(facets.num_facets(), 1u);
 
   expect_eq(get_facet(0).facet_vertex(0), get_coords()[0]);
   expect_eq(get_facet(0).facet_vertex(1), get_coords()[1]);
@@ -101,7 +101,7 @@ TEST_F(ContourTriFixture, AppendFacetsTri3_Case5_AppendsSegmentUsingZeroNode)
   const std::array<double,3> dist = {{1.0, 0.0, -1.0}};
   ContourTri::append_facets_for_tri3(get_coords(), dist, facets);
 
-  ASSERT_EQ(facets.size(), 1u);
+  ASSERT_EQ(facets.num_facets(), 1u);
 
   const stk::math::Vector3d x5{0.0, 0.5, 0.0}; // crossing on edge 2-0
 

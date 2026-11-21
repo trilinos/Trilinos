@@ -9,6 +9,7 @@
 #define KRINO_KRINO_SMOOTHING_AKRI_OBJECTIVE_MESH_HPP_
 
 #include <stk_math/StkVector.hpp>
+#include <stk_mesh/base/Selector.hpp>
 #include <Akri_ObjectiveInterface.hpp>
 #include <Akri_Smoothing_Utils.hpp>
 
@@ -51,7 +52,7 @@ private:
   const NodeCoordinateObjectiveInterface & myNodeCoordObj;
   const stk::mesh::BulkData & myMesh;
   const CoordinatesFieldRef myCoordsField;
-  const stk::mesh::Selector & myElemSelector;
+  const stk::mesh::Selector myElemSelector;
   GradientFilter myGradientFilter;
   stk::mesh::Entity myNode;
 };
@@ -83,6 +84,8 @@ public:
   virtual double compute_value(const DistributedVector & x) const override;
   virtual void fill_gradient(const DistributedVector & x, DistributedVector & g) const override;
 
+  virtual bool is_update_rejected() const override;
+
   virtual double compute_element_objective(
       const unsigned spatialDim,
       const unsigned npe,
@@ -99,10 +102,19 @@ public:
     { myGradientFilter = gradientFilter; }
   void set_solution_projector(const SolutionProjector & solutionProjector)
       { mySolutionProjector = solutionProjector; }
+  void set_is_solution_update_rejected(const SolutionRejector & solutionRejector)
+      { mySolutionRejector = solutionRejector; }
 
   unsigned get_spatial_dim() const { return mySpatialDim; }
   const DistributedEntityVector & get_nodes() const { return myNodes; }
+  // The coordinates of node in the optimizer vector x (spatial dimension values per node, in the
+  // order of get_nodes()).  The node must be one of get_nodes(): an owned or shared node of the
+  // selected elements.
+  stk::math::Vector3d
+  get_node_coordinates(const DistributedVector & x, const stk::mesh::Entity node) const;
   const std::vector<stk::mesh::Entity> & get_owned_elements() const { return myOwnedElems; }
+  // The selected elements on this proc, owned or not.
+  const std::vector<stk::mesh::Entity> & get_local_elements() const { return myLocalElems; }
 
 protected:
   const stk::mesh::BulkData & get_mesh() const { return myMesh; }
@@ -113,13 +125,15 @@ private:
 
   const stk::mesh::BulkData & myMesh;
   CoordinatesFieldRef myCoordsField;
-  const stk::mesh::Selector & myElemSelector;
+  const stk::mesh::Selector myElemSelector;
   unsigned mySpatialDim;
   MeshElemNodeIndices myMeshElemNodeIndices;
   DistributedEntityVector myNodes;
   std::vector<stk::mesh::Entity> myOwnedElems;
+  std::vector<stk::mesh::Entity> myLocalElems;
   GradientFilter myGradientFilter;
   SolutionProjector mySolutionProjector;
+  SolutionRejector mySolutionRejector;
 };
 
 class MeshObjective : public MeshObjectiveBase

@@ -31,37 +31,40 @@ void output_full_mesh(stk::mesh::BulkData & mesh, const std::string & fileName, 
   krino::fix_ownership_and_output_composed_mesh_with_fields(mesh, krino::AuxMetaData::get(mesh.mesh_meta_data()).active_part(), fileName, step, time);
 }
 
-std::unique_ptr<krino::BoundingBoxMesh> build_circle_or_sphere_conforming_bounding_box_mesh(
-    const int dim,
+DecomposedBoundingBoxMesh build_circle_or_sphere_conforming_bounding_box_mesh(const int dim,
     const stk::math::Vector3d & minCorner,
     const stk::math::Vector3d & maxCorner,
     const double meshSize,
     const stk::math::Vector3d & sphereCenter,
     const double sphereRadius,
-    const bool doComputeClosestPointSensitivities,
     const bool doSnapping,
-    const bool doWriteMesh,
-    std::vector<krino::LS_Field> & lsFields)
+    const bool doWriteMesh)
 {
   const stk::topology elemTopo = (dim == 2) ? stk::topology::TRIANGLE_3_2D : stk::topology::TETRAHEDRON_4;
-  std::unique_ptr<krino::BoundingBoxMesh> bboxMesh = std::make_unique<krino::BoundingBoxMesh>(elemTopo, MPI_COMM_WORLD);
+  DecomposedBoundingBoxMesh result;
+  result.mesh = std::make_unique<krino::BoundingBoxMesh>(elemTopo, MPI_COMM_WORLD);
+  krino::BoundingBoxMesh & bboxMesh = *result.mesh;
 
-  lsFields = krino::LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(bboxMesh->meta_data(), 1);
-  setup_fields_for_conforming_decomposition(bboxMesh->meta_data(), lsFields, doSnapping, doComputeClosestPointSensitivities);
+  const std::vector<krino::LS_Field> lsFields = krino::LSPerInterfacePolicy::
+      setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(
+          bboxMesh.meta_data(), 1);
+  result.decomposition = std::make_unique<krino::ConformingDecompositionWithSensitivities>(
+      bboxMesh.meta_data(), lsFields, doSnapping);
 
-  krino::populate_bounding_box_mesh_and_activate(*bboxMesh, minCorner, maxCorner, meshSize);
+  krino::populate_bounding_box_mesh_and_activate(bboxMesh, minCorner, maxCorner, meshSize);
 
   const std::vector<std::pair<stk::math::Vector3d,double>> spheres{ { sphereCenter, sphereRadius } };
 
-  compute_nodal_distance_from_spheres(bboxMesh->bulk_data(), bboxMesh->meta_data().coordinate_field(), lsFields[0].isovar, spheres);
+  compute_nodal_distance_from_spheres(
+      bboxMesh.bulk_data(), bboxMesh.meta_data().coordinate_field(), lsFields[0].isovar, spheres);
 
-  decompose_mesh_to_conform_to_levelsets(bboxMesh->bulk_data(), lsFields, doSnapping, doComputeClosestPointSensitivities);
+  result.decomposition->decompose();
 
   if (doWriteMesh)
   {
     const std::string filename = std::string(dim == 2 ? "circle" : "sphere") + std::string(doSnapping ? "_snapped.e" : "_cut.e");
-    output_full_mesh(bboxMesh->bulk_data(), filename, 1, 0.0);
+    output_full_mesh(bboxMesh.bulk_data(), filename, 1, 0.0);
   }
 
-  return bboxMesh;
+  return result;
 }

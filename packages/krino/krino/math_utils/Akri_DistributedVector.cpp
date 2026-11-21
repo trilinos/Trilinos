@@ -5,6 +5,7 @@
  *      Author: drnoble
  */
 #include <Akri_DistributedVector.hpp>
+#include <Akri_MathUtil.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_util/util/ReportHandler.hpp>
@@ -33,12 +34,12 @@ double Dot(const DistributedVector & x, const DistributedVector & y)
   STK_ThrowAssert(x.size() == y.size() && x.local_size() == y.local_size());
   double dot = 0.;
   for (size_t i=0; i<x.local_size(); ++i)
-    dot += float(x[i]*y[i]); // reduced order addend to produce parallel consistency
+    dot += x[i]*y[i];
 
   const double localDot = dot;
   if (x.comm() != stk::parallel_machine_null())
     stk::all_reduce_sum( x.comm(), &localDot, &dot, 1 );
-  return dot;
+  return round_sum_for_distribution_independence(dot);
 }
 
 DistributedVector vectorSubtract(const DistributedVector& x, const DistributedVector& y)

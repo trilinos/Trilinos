@@ -1,8 +1,9 @@
 #include <Akri_AnalyticSurf.hpp>
 #include <Akri_CSG_Surface.hpp>
 #include <Akri_CSG_Tree.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetCoordinates.hpp>
 #include <Akri_FieldRef.hpp>
+#include <Akri_MeshFacetedSurface.hpp>
 #include <Akri_MeshSpecs.hpp>
 #include <Akri_NodalBoundingBox.hpp>
 #include <Akri_NodalSurfaceDistance.hpp>
@@ -35,19 +36,12 @@ public:
     return false;
   }
 
-  bool facet_points_all_have_matching_Y_value(const Facet2d & facet, const std::vector<double> & goldFacetYValues)
+  void test_facets(const FacetCoordinates & facets, const std::vector<double> & goldFacetYValues)
   {
-    for (int pt=0; pt<2; ++pt)
-      if(!point_has_matching_Y_value(facet.facet_vertex(pt), goldFacetYValues))
-        return false;
-    return true;
-  }
-
-  void test_facets(const FacetedSurfaceBase & facets, const std::vector<double> & goldFacetYValues)
-  {
-    ASSERT_FALSE(facets.get_facets_2d().empty());
-    for (auto facet : facets.get_facets_2d())
-      EXPECT_TRUE(facet_points_all_have_matching_Y_value(facet, goldFacetYValues)) << "Non matching facet " << facet;
+    ASSERT_FALSE(facets.coordinates().empty());
+    for (auto & pt : facets.coordinates())
+      EXPECT_TRUE(point_has_matching_Y_value(pt, goldFacetYValues))
+          << "Non matching facet vertex " << pt;
   }
 
   void initialize_planar_surfaces(CSG_Surface & initSurfaces)
@@ -83,32 +77,81 @@ TEST_F(SemiLagrangianTriElements, initialTwoParallelPlanesIntersectingElementsMu
 
   // initialize
   const double time0 = 0.;
-  std::unique_ptr<FacetedSurfaceBase> facetsOrig = FacetedSurfaceBase::build(2);
+  FacetCoordinates facetsOrigCoords(2);
   compute_nodal_surface_distance(mMesh, get_coordinates_field(), myDistanceField, initSurfaces, time0);
-  build_initial_adaptive_facets_after_nodal_distance_is_initialized_from_initial_surfaces(mMesh, activeFieldSelector, time0, get_coordinates_field(), myDistanceField, avgEdgeLength, initSurfaces, *facetsOrig);
-  test_facets(*facetsOrig, {-0.2, 0.2});
+  build_initial_adaptive_facets_after_nodal_distance_is_initialized_from_initial_surfaces(mMesh,
+      activeFieldSelector,
+      time0,
+      get_coordinates_field(),
+      myDistanceField,
+      avgEdgeLength,
+      initSurfaces,
+      facetsOrigCoords);
+  test_facets(facetsOrigCoords, {-0.2, 0.2});
+  MeshFacetedSurface facetsOrig(mMesh.parallel(), 2, facetsOrigCoords.coordinates());
 
   set_interface_velocity({"0.", "1."});
 
   const ExtensionVelocityFunction velAtClosestPt = build_extension_velocity_at_closest_point_using_string_expressions(myInterfaceVelocity);
 
-  const BoundingBox paddedNodeBBox = compute_padded_node_bounding_box_for_semilagrangian_using_string_velocity_expressions(mMesh, activeFieldSelector, 0., 0.5, get_coordinates_field(), myInterfaceVelocity, *facetsOrig);
-  facetsOrig->prepare_to_compute(paddedNodeBBox, 0.);
+  const BoundingBox paddedNodeBBox =
+      compute_padded_node_bounding_box_for_semilagrangian_using_string_velocity_expressions(mMesh,
+          activeFieldSelector,
+          0.,
+          0.5,
+          get_coordinates_field(),
+          myInterfaceVelocity,
+          facetsOrig);
+  facetsOrig.prepare_to_compute(0., paddedNodeBBox, 0.);
 
   // single step advection (still surprised that this is unstable in the circle advection, molenkamp, test (not here))
-  auto oldExtV = build_extension_velocity_using_velocity_at_closest_point(*facetsOrig, velAtClosestPt);
-  std::unique_ptr<FacetedSurfaceBase> facetsEnd = FacetedSurfaceBase::build(2);
-  calc_single_step_semilagrangian_nodal_distance_and_build_facets(mMesh, activeFieldSelector, 0.0, 0.5, get_coordinates_field(), myDistanceField, oldExtV, zeroNarrowBandSize, avgEdgeLength, *facetsOrig, *facetsEnd);
-  test_facets(*facetsEnd, {0.3});
+  auto oldExtV =
+      build_extension_velocity_using_velocity_at_closest_point(facetsOrig, velAtClosestPt);
+  FacetCoordinates facetsEnd(2);
+  calc_single_step_semilagrangian_nodal_distance_and_build_facets(mMesh,
+      activeFieldSelector,
+      0.0,
+      0.5,
+      get_coordinates_field(),
+      myDistanceField,
+      oldExtV,
+      zeroNarrowBandSize,
+      avgEdgeLength,
+      facetsOrig,
+      facetsEnd);
+  test_facets(facetsEnd, {0.3});
 
   // predistor-corrector (seems super stable and accurate, but expensive)
-  std::unique_ptr<FacetedSurfaceBase> facetsPred = FacetedSurfaceBase::build(2);
-  predict_semilagrangian_nodal_distance_and_build_facets(mMesh, activeFieldSelector, 0.0, 0.5, get_coordinates_field(), myDistanceField, oldExtV, zeroNarrowBandSize, avgEdgeLength, *facetsOrig, *facetsPred);
+  FacetCoordinates facetsPredCoords(2);
+  predict_semilagrangian_nodal_distance_and_build_facets(mMesh,
+      activeFieldSelector,
+      0.0,
+      0.5,
+      get_coordinates_field(),
+      myDistanceField,
+      oldExtV,
+      zeroNarrowBandSize,
+      avgEdgeLength,
+      facetsOrig,
+      facetsPredCoords);
 
-  facetsPred->prepare_to_compute(paddedNodeBBox, 0.);
-  auto predicetExtV = build_extension_velocity_using_velocity_at_closest_point(*facetsPred, velAtClosestPt);
-  correct_semilagrangian_nodal_distance_and_build_facets(mMesh, activeFieldSelector, 0.0, 0.5, get_coordinates_field(), myDistanceField, oldExtV, predicetExtV, zeroNarrowBandSize, avgEdgeLength, *facetsOrig, *facetsEnd);
-  test_facets(*facetsEnd, {0.3});
+  MeshFacetedSurface facetsPred(mMesh.parallel(), 2, facetsPredCoords.coordinates());
+  facetsPred.prepare_to_compute(0., paddedNodeBBox, 0.);
+  auto predicetExtV =
+      build_extension_velocity_using_velocity_at_closest_point(facetsPred, velAtClosestPt);
+  correct_semilagrangian_nodal_distance_and_build_facets(mMesh,
+      activeFieldSelector,
+      0.0,
+      0.5,
+      get_coordinates_field(),
+      myDistanceField,
+      oldExtV,
+      predicetExtV,
+      zeroNarrowBandSize,
+      avgEdgeLength,
+      facetsOrig,
+      facetsEnd);
+  test_facets(facetsEnd, {0.3});
 }
 }
 

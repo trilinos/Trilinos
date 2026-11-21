@@ -13,6 +13,17 @@
 
 namespace krino {
 
+// A sum over processors rounded to float, so that it is the same for every distribution of its addends
+// across processors (but for sums at a float rounding boundary): the last bits of a sum of doubles depend
+// on the order of its addends once they span more than the double mantissa.  This suits sums of many
+// addends of widely varying size whose result needs only about float precision, as the dot products of
+// an optimizer.  It does not suit sums that cancel to the roundoff of their addends, whose roundoff
+// depends on the order, nor results that need more than float precision, as an objective compared in a
+// line search: rounding each addend to float instead keeps such a sum exact, and so independent of the
+// order, while its addends span less than about 2^29 in magnitude, and otherwise order dependent only at
+// the level of its smallest addends (as MeshObjectiveBase does).
+inline double round_sum_for_distribution_independence(const double sum) { return float(sum); }
+
 double compute_parametric_square_distance(const stk::math::Vector3d childPCoords);
 
 template<typename NODECOORDCONTAINER>

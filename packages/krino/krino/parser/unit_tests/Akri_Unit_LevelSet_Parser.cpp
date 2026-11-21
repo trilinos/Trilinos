@@ -9,6 +9,13 @@
 
 #include <Akri_LevelSet_Parser.hpp>
 #include <Akri_Parser.hpp>
+#include <Akri_AuxMetaData.hpp>
+#include <Akri_LevelSet.hpp>
+#include <Akri_Surface_Manager.hpp>
+
+#include <stk_mesh/base/FieldBase.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_util/diag/Timer.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
 
@@ -82,6 +89,99 @@ TEST_F(SurfaceNameParserTest, InvalidComposedNameIsEmptyAndDooms)
     EXPECT_EQ("", parse_name(yamlText)) << yamlText;
     EXPECT_GT(stk::get_doomed_count(), oldDoomedCount) << yamlText;
   }
+}
+
+// A level set whose initial surface has a motion is initialized from it again at each step.
+class LevelSetMotionParserTest : public ::testing::Test
+{
+protected:
+  LevelSetMotionParserTest() : meta(3)
+  {
+    auto & coords = meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates", 1);
+    stk::mesh::put_field_on_mesh(coords, meta.universal_part(), 3, nullptr);
+    meta.set_coordinate_field(&coords);
+    AuxMetaData::get_or_create(meta);
+  }
+
+  LevelSet & parse_level_set(const std::string & levelSetContents)
+  {
+    const std::string yamlText = "level_set_interfaces:\n- name: LS\n" + levelSetContents;
+    LevelSet_Parser::parse(Parser::Node(YAML::Load(yamlText)), meta, timer);
+    return Surface_Manager::get(meta).get_levelset("LS");
+  }
+
+  stk::mesh::MetaData meta;
+  stk::diag::Timer timer{"LS Parser Timer", sierra::Diag::sierraTimer()};
+};
+
+TEST_F(LevelSetMotionParserTest, movingInitialSurface_reinitializedEveryStep)
+{
+  const LevelSet & ls = parse_level_set(
+      "  initial_conditions:\n"
+      "  - sphere:\n"
+      "    center: [0,0,0]\n"
+      "    radius: 0.5\n"
+      "    motion:\n"
+      "      translational_velocity: [1, 0, 0]\n");
+  EXPECT_TRUE(ls.get_reinitialize_every_step());
+}
+
+TEST_F(LevelSetMotionParserTest, movingSurfaceInCsgTree_reinitializedEveryStep)
+{
+  const LevelSet & ls = parse_level_set(
+      "  csg_initialization:\n"
+      "    union:\n"
+      "    - sphere:\n"
+      "      center: [0,0,0]\n"
+      "      radius: 0.5\n"
+      "    - sphere:\n"
+      "      center: [1,0,0]\n"
+      "      radius: 0.5\n"
+      "      motion:\n"
+      "        translational_velocity: [1, 0, 0]\n");
+  EXPECT_TRUE(ls.get_reinitialize_every_step());
+}
+
+TEST_F(LevelSetMotionParserTest, stringFunctionOfTime_reinitializedEveryStep)
+{
+  const LevelSet & ls = parse_level_set(
+      "  initial_conditions:\n"
+      "  - string_function:\n"
+      "    expression: \"x - t\"\n");
+  EXPECT_TRUE(ls.get_reinitialize_every_step());
+}
+
+TEST_F(LevelSetMotionParserTest, stringFunctionNotOfTime_notReinitialized)
+{
+  const LevelSet & ls = parse_level_set(
+      "  initial_conditions:\n"
+      "  - string_function:\n"
+      "    expression: \"x - 0.5\"\n");
+  EXPECT_FALSE(ls.get_reinitialize_every_step());
+}
+
+TEST_F(LevelSetMotionParserTest, staticInitialSurface_notReinitialized)
+{
+  const LevelSet & ls = parse_level_set(
+      "  initial_conditions:\n"
+      "  - sphere:\n"
+      "    center: [0,0,0]\n"
+      "    radius: 0.5\n");
+  EXPECT_FALSE(ls.get_reinitialize_every_step());
+}
+
+TEST_F(LevelSetMotionParserTest, motionAndInterfaceVelocity_dooms)
+{
+  const unsigned oldDoomedCount = stk::get_doomed_count();
+  parse_level_set(
+      "  interface_velocity: [\"1\",\"0\",\"0\"]\n"
+      "  initial_conditions:\n"
+      "  - sphere:\n"
+      "    center: [0,0,0]\n"
+      "    radius: 0.5\n"
+      "    motion:\n"
+      "      translational_velocity: [1, 0, 0]\n");
+  EXPECT_GT(stk::get_doomed_count(), oldDoomedCount);
 }
 
 #else

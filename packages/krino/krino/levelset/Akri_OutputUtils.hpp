@@ -18,7 +18,7 @@
 
 namespace krino {
 
-class FacetedSurfaceBase;
+class FacetMesh;
 class Facet3d;
 
 bool is_parallel_io_enabled();
@@ -30,7 +30,11 @@ void fix_ownership_and_output_composed_mesh_with_fields(stk::mesh::BulkData & me
 std::string create_file_name(const std::string & fileBaseName, const int fileIndex);
 stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector);
 
-void write_facets(const stk::mesh::BulkData & mesh, const FacetedSurfaceBase & facets, const std::string & fileBaseName, const int fileIndex);
+// Collective.  Writes the owned facets of the facet mesh as an Exodus mesh of shells (trishell3, or
+// shellline2d2 in 2D) whose nodes are its vertices: with shared vertices, with the vertex ids as
+// node ids; without, each facet with its own nodes, numbered in order of the facets across the
+// processors.
+void write_facets(const FacetMesh & facets, const std::string & fileBaseName, const int fileIndex);
 void write_shells_for_surfaces(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const std::vector<stk::mesh::Part*> & surfaces, const stk::mesh::Part & activePart, const std::string & fileBaseName, const int fileIndex);
 
 std::string stl_parallel_file_name(const std::string &fileBaseName, const stk::ParallelMachine comm);

@@ -237,6 +237,44 @@ generated_mesh:
   EXPECT_EQ(stk::topology::TETRAHEDRON_4, options.get_generated_mesh_element_type());
 }
 
+TEST_F(GeneratedMeshParserTest, ParsesQuadraticTetWithBccMeshType)
+{
+  const unsigned oldDoomedCount = stk::get_doomed_count();
+  MeshInputOptions options("model");
+
+  Parser::Node fem_node = load_node(R"yaml(
+generated_mesh:
+  mesh_size: 0.5
+  domain: [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+  element_type: TET10
+  mesh_type: FLAT_WALLED_BCC
+)yaml");
+
+  EXPECT_TRUE(MeshInput_Parser::parse_generated_mesh(fem_node, options));
+  EXPECT_EQ(stk::topology::TETRAHEDRON_10, options.get_generated_mesh_element_type());
+  EXPECT_EQ(BoundingBoxMeshStructureType::FLAT_WALLED_BCC_BOUNDING_BOX_MESH, options.get_generated_mesh_structure_type());
+  EXPECT_EQ(oldDoomedCount, stk::get_doomed_count());
+}
+
+TEST_F(GeneratedMeshParserTest, ParsesQuadraticTriangleWithTriangularLatticeMeshType)
+{
+  const unsigned oldDoomedCount = stk::get_doomed_count();
+  MeshInputOptions options("model");
+
+  Parser::Node fem_node = load_node(R"yaml(
+generated_mesh:
+  mesh_size: 0.5
+  domain: [0.0, 0.0, 1.0, 1.0]
+  element_type: tri6
+  mesh_type: FLAT_WALLED_TRIANGULAR_LATTICE
+)yaml");
+
+  EXPECT_TRUE(MeshInput_Parser::parse_generated_mesh(fem_node, options));
+  EXPECT_EQ(stk::topology::TRIANGLE_6_2D, options.get_generated_mesh_element_type());
+  EXPECT_EQ(BoundingBoxMeshStructureType::FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH, options.get_generated_mesh_structure_type());
+  EXPECT_EQ(oldDoomedCount, stk::get_doomed_count());
+}
+
 TEST_F(GeneratedMeshParserTest, InvalidElementTypeDooms)
 {
   const unsigned oldDoomedCount = stk::get_doomed_count();

@@ -9,6 +9,8 @@
 #include <gtest/gtest.h>
 
 #include <Akri_Cutting_Surface.hpp>
+#include <Akri_CubitJournal.hpp>
+#include <Akri_UnitCubitJournalUtils.hpp>
 
 #include <stk_math/StkVector.hpp>
 #include <stk_util/parallel/Parallel.hpp>
@@ -17,6 +19,9 @@
 #include <cmath>
 #include <limits>
 #include <random>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace krino
 {
@@ -226,6 +231,33 @@ TEST(Intersecting_Planes_Cutting_Surface, infinitesimal_triangle_that_requires_r
   const std::array<stk::math::Vector3d,2> segment{node0,node3};
   const double position = surf.interface_crossing_position(segment);
   EXPECT_DOUBLE_EQ(position, goldPosition);
+}
+
+
+static void expect_journal_of_intersecting_planes_only_on_surface(const Intersecting_Planes_Cutting_Surface & surf)
+{
+  const std::vector<stk::math::Vector3d> tet{{-1.,-1.,-1.}, {2.,-1.,-1.}, {-1.,2.,-1.}, {-1.,-1.,2.}};
+  CubitJournal journal;
+  surf.add_to_journal(journal, tet);
+  const std::vector<stk::math::Vector3d> nodes = parse_cubit_journal(journal.str()).nodes;
+
+  EXPECT_FALSE(nodes.empty());
+  for (auto && x : nodes)
+  {
+    EXPECT_TRUE(surf.on_surface(x, 1.e-12)) << "Journal node " << x << " is not on the surface.";
+  }
+}
+
+TEST(Intersecting_Planes_Cutting_Surface, positiveDihedral_journalOnlyOnTheSurface)
+{
+  const stk::math::Vector3d offset(0.1, 0.2, 0.3);
+  expect_journal_of_intersecting_planes_only_on_surface(Intersecting_Planes_Cutting_Surface(offset+stk::math::Vector3d(0.,0.,0.), offset+stk::math::Vector3d(0.,1.,1.), offset+stk::math::Vector3d(1.,0.,0.), offset+stk::math::Vector3d(0.,1.,0.)));
+}
+
+TEST(Intersecting_Planes_Cutting_Surface, negativeDihedral_journalOnlyOnTheSurface)
+{
+  const stk::math::Vector3d offset(0.1, 0.2, 0.3);
+  expect_journal_of_intersecting_planes_only_on_surface(Intersecting_Planes_Cutting_Surface(offset+stk::math::Vector3d(0.,0.,0.), offset+stk::math::Vector3d(0.,1.,0.), offset+stk::math::Vector3d(1.,0.,0.), offset+stk::math::Vector3d(0.,1.,1.)));
 }
 
 }

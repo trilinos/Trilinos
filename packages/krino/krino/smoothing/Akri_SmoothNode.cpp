@@ -24,6 +24,8 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 
+#include <vector>
+
 namespace krino {
 
 double calculate_quality_before_smoothing(const stk::mesh::BulkData &mesh, const CoordinatesFieldRef coordsField, const stk::mesh::Selector & elemSelector, const stk::mesh::Entity node, const QualityMetric &qualityMetric)
@@ -39,7 +41,7 @@ static double compute_node_delta_squared(const stk::mesh::BulkData & mesh,
     const stk::mesh::Entity elem)
 {
   double sqrDeltaNode = 0.;
-  for (auto elemNode : StkMeshEntities{mesh.begin_nodes(elem), mesh.end_nodes(elem)})
+  for (auto elemNode : element_vertex_nodes(mesh, elem))
   {
     if (elemNode != node)
     {
@@ -52,7 +54,8 @@ static double compute_node_delta_squared(const stk::mesh::BulkData & mesh,
 
 std::tuple<double, std::array<double,3>> tet_volume_and_sensitivity_to_nth_node(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Entity elem, const int sensitivityNodeOrdinal)
 {
-  const auto elementNodeCoords = gather_tet_coordinates(mesh, elem, coordsField);
+  const auto elementNodeCoords = get_tetrahedron_vector(
+      mesh, coordsField, mesh.begin_nodes(elem)); // the vertices of a tet4 or tet10
   return tet_volume_and_sensitivity_to_nth_vertex(elementNodeCoords, sensitivityNodeOrdinal);
 }
 
@@ -67,7 +70,7 @@ stk::math::Vector3d smoothed_node_location_using_ODT(const stk::mesh::BulkData &
   for (auto elem : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
   {
     const stk::mesh::Bucket & elemBucket = mesh.bucket(elem);
-    if (elemBucket.topology() == stk::topology::TETRAHEDRON_4 && elemSelector(elemBucket))
+    if (elemBucket.topology().base() == stk::topology::TETRAHEDRON_4 && elemSelector(elemBucket))
     {
       const auto & [vol, sensitivity] = tet_volume_and_sensitivity_to_nth_node(mesh, coordsField, elem, get_entity_node_ordinal(mesh, elem, node));
       patchVol += vol;
@@ -113,7 +116,7 @@ static std::vector<stk::mesh::Entity> get_selected_node_neighbors(const stk::mes
   for (const auto &node : nodes)
     for (auto nodeElem : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
       if (elemSelector(mesh.bucket(nodeElem)))
-        for (auto elemNode : StkMeshEntities{mesh.begin_nodes(nodeElem), mesh.end_nodes(nodeElem)})
+        for (auto elemNode : element_vertex_nodes(mesh, nodeElem))
           if (elemNode != node && nodeSelector(mesh.bucket(elemNode)))
             selectedNodeNbrs.push_back(elemNode);
 
@@ -281,8 +284,16 @@ void improve_quality_by_smoothing(const stk::mesh::BulkData &mesh,
 
   const stk::mesh::Selector ownedNodeSelector = mesh.mesh_meta_data().locally_owned_part() & nodeSelector;
 
+  std::vector<stk::mesh::Entity> localElems;
+  stk::mesh::get_selected_entities(elemSelector, mesh.buckets(stk::topology::ELEMENT_RANK), localElems);
+  const NodeLocations vertexNodeLocationsBeforeSmoothing =
+      get_vertex_node_locations_of_quadratic_elements(mesh, coordsField, localElems);
+
   std::vector< stk::mesh::Entity> nodesToConsider;
   stk::mesh::get_selected_entities( ownedNodeSelector, mesh.buckets( stk::topology::NODE_RANK ), nodesToConsider );
+  // Only the vertex nodes are smoothed, so that tet10 elements are smoothed as tet4.
+  std::erase_if(nodesToConsider,
+      [&](const stk::mesh::Entity node) { return !is_vertex_node_of_its_elements(mesh, node); });
 
   for ( size_t i=0; i<maxNumSmoothIterations; i++)
   {
@@ -305,6 +316,12 @@ void improve_quality_by_smoothing(const stk::mesh::BulkData &mesh,
     if (i%10 == 0)
       krinolog << "After " << i << " iterations, smoothing quality is " << compute_mesh_quality(mesh, elemSelector, coordsField, qualityMetric) << stk::diag::dendl;
   }
+
+  // The mid-edge nodes take no part in the smoothing (the quality is that of the vertices), so those
+  // on edges with a moved vertex are moved to the midpoints of their edges once the vertices are
+  // smoothed.
+  set_mid_edge_nodes_of_moved_edges_to_edge_midpoints(
+      mesh, coordsField, localElems, vertexNodeLocationsBeforeSmoothing);
 
   krinolog << "After smoothing quality is " << compute_mesh_quality(mesh, elemSelector, coordsField, qualityMetric) << stk::diag::dendl;
 }

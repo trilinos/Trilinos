@@ -22,13 +22,14 @@
 // Akri_LS_Field.hpp live in krino_interface_geometry, so pulling it in here is
 // layering-safe.  The permanent fix is for those callers to include
 // <Akri_LS_Field.hpp> directly, then drop this include.
-#include <Akri_LS_Field.hpp>
-
-#include <stk_util/diag/Timer.hpp>
 #include <map>
+#include <optional>
+
+#include <Akri_LS_Field.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Selector.hpp>
+#include <stk_util/diag/Timer.hpp>
 
 namespace krino {
 
@@ -55,6 +56,20 @@ enum Edge_Degeneracy_Handling
   SNAP_TO_NODE=0,
   SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE,
   MAX_EDGE_DEGENERACY_HANDLING_TYPE
+};
+
+// How snapping to the interface chooses among the snaps that pass the quality filter.
+// QUALITY: by snap rank (face and volume intersection points before edges), then the quality after
+//   the snap.
+// PREDICTABLE: by snap rank, then the snap distance, then (for edge intersection points) the rate
+//   at which the snap distance grows with the level set at the node, then location.  The choice
+//   for a small increase of the level set is then the one predicted at the current design, so a
+//   snapped node on the interface, which does not move, moves along a predictable edge; used for
+//   the shape sensitivities with snapping.
+enum class Snap_Selection
+{
+  QUALITY,
+  PREDICTABLE
 };
 
 enum Resnap_Method
@@ -108,6 +123,8 @@ public:
   void set_simplex_generation_method(const Simplex_Generation_Method & method);
   bool get_global_ids_are_parallel_consistent() const { return myGlobalIDsAreParallelConsistent; }
   void set_global_ids_are_NOT_parallel_consistent() { myGlobalIDsAreParallelConsistent = false; }
+  Snap_Selection get_snap_selection() const { return mySnapSelection; }
+  void set_snap_selection(const Snap_Selection selection) { mySnapSelection = selection; }
   void set_snapping_sharp_feature_angle_in_degrees(const double snappingSharpFeatureAngleInDegrees) { mySnappingSharpFeatureAngleInDegrees = snappingSharpFeatureAngleInDegrees; }
   double get_snapping_sharp_feature_angle_in_degrees() const { return mySnappingSharpFeatureAngleInDegrees; }
   void set_is_transient(const bool isTransient) { myFlagIsTransient = isTransient; }
@@ -187,6 +204,32 @@ public:
   bool use_facets_instead_of_levelset_fields() const { return myFlagUseFacetsInsteadOfLsFields; }
 
   Edge_Degeneracy_Handling get_cdfem_edge_degeneracy_handling() const { return my_cdfem_edge_degeneracy_handling; }
+  // Whether the sharp features of the surfaces (corners, sharp edges, and the lines and points
+  // where three or more phases meet) are cut before the surfaces themselves.  Unless set, they are.
+  void set_cut_sharp_features_before_surfaces(const bool flag)
+  {
+    myCutSharpFeaturesBeforeSurfaces = flag;
+  }
+  bool cut_sharp_features_before_surfaces() const
+  {
+    return myCutSharpFeaturesBeforeSurfaces.value_or(true);
+  }
+  // Whether the sharp features are captured only by snapping to them: the cutting before the
+  // surfaces (cut_sharp_features_before_surfaces) then cuts only the multiple edge crossings, not
+  // the corners, the sharp-edge crossings, or the lines and points where three or more phases meet,
+  // which remain candidates for snapping.  Unless set, it is false.  It requires
+  // cut_sharp_features_before_surfaces (the parsers report the conflict).
+  void set_capture_sharp_features_only_during_snapping(const bool flag)
+  {
+    myCaptureSharpFeaturesOnlyDuringSnapping = flag;
+  }
+  bool capture_sharp_features_only_during_snapping() const { return myCaptureSharpFeaturesOnlyDuringSnapping; }
+  // Whether the sharp features are cut before the surfaces: cut_sharp_features_before_surfaces,
+  // unless they are captured only during snapping.
+  bool cuts_sharp_features() const
+  {
+    return cut_sharp_features_before_surfaces() && !capture_sharp_features_only_during_snapping();
+  }
   void set_cdfem_edge_degeneracy_handling( const Edge_Degeneracy_Handling type );
 
   stk::diag::Timer & get_timer_cdfem() const { return my_timer_cdfem; }
@@ -275,8 +318,11 @@ private:
   bool my_flag_constrain_CDFEM_to_XFEM_space;
   bool my_flag_use_nonconformal_element_size;
   bool myFlagUseFacetsInsteadOfLsFields{false};
+  std::optional<bool> myCutSharpFeaturesBeforeSurfaces;
+  bool myCaptureSharpFeaturesOnlyDuringSnapping = false;
   bool myFlagUseVelocityToEvaluateInterfaceCFL;
   Resnap_Method myResnapMethod{RESNAP_AFTER_USING_ALE_TO_UNSNAP};
+  Snap_Selection mySnapSelection{Snap_Selection::QUALITY};
   bool myFlagPerformVolumeCorrectionAfterLsSolve{false};
   bool myFlagIsTransient{false};
   mutable stk::diag::Timer my_timer_cdfem;

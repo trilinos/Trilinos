@@ -306,6 +306,15 @@ Node Node::get_map_if_present(const std::string& key) const { return get_type_if
 Node Node::get_sequence_if_present(const std::string& key) const { return get_type_if_present(key, YAML::NodeType::Sequence); }
 Node Node::get_scalar_if_present(const std::string& key) const { return get_type_if_present(key, YAML::NodeType::Scalar); }
 
+std::vector<std::string> Node::keys() const
+{
+  std::vector<std::string> mapKeys;
+  if (is_map())
+    for (auto && entry : mNode)
+      mapKeys.push_back(entry.first.as<std::string>());
+  return mapKeys;
+}
+
 Node Node::get_options_if_present(const std::string& key) const
 {
   const Node keywordNode = get_if_present(key);

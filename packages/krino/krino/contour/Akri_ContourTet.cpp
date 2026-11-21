@@ -9,7 +9,7 @@
 #include <Akri_ContourTet.hpp>
 
 #include <stk_math/StkVector.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetAppender.hpp>
 #include <Akri_AdaptiveContourUtils.hpp>
 #include <Akri_ContourUtils.hpp>
 #include <Akri_DiagWriter.hpp>
@@ -108,9 +108,9 @@ const std::array<unsigned, 4> & ContourTet::get_permuted_side_ordinals(const uns
   return get_permuted_side_ordinals_for_permutation(get_permutation_for_case(caseId));
 }
 
-void ContourTet::append_facets_for_tet4(const std::array<stk::math::Vector3d,4> & coords,
-  const std::array<double,4> & dist,
-  FacetedSurfaceBase & facets)
+void ContourTet::append_facets_for_tet4(const std::array<stk::math::Vector3d, 4> & coords,
+    const std::array<double, 4> & dist,
+    FacetAppender & facets)
 {
   const int caseId = compute_case_id({{compute_node_sign(dist[0]), compute_node_sign(dist[1]), compute_node_sign(dist[2]), compute_node_sign(dist[3])}});
 
@@ -210,9 +210,10 @@ void ContourTet::append_facets_for_tet4(const std::array<stk::math::Vector3d,4> 
   }
 }
 
-void ContourTet::append_facets_for_tet4_with_tet10_distance(const std::array<stk::math::Vector3d,4> & coords,
-  const std::array<double,10> & tet10Dist,
-  FacetedSurfaceBase & facets)
+void ContourTet::append_facets_for_tet4_with_tet10_distance(
+    const std::array<stk::math::Vector3d, 4> & coords,
+    const std::array<double, 10> & tet10Dist,
+    FacetAppender & facets)
 {
   const int caseId = compute_case_id({{compute_node_sign(tet10Dist[0]), compute_node_sign(tet10Dist[1]), compute_node_sign(tet10Dist[2]), compute_node_sign(tet10Dist[3])}});
 

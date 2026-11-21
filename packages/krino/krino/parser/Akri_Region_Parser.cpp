@@ -8,9 +8,12 @@
 
 #include <Akri_Region_Parser.hpp>
 
+#include <algorithm>
+#include <string>
+
 #include <Akri_CDFEM_Options_Parser.hpp>
 #include <Akri_CSG_Surface.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_MeshFacetedSurface.hpp>
 #include <Akri_IC_Alg.hpp>
 #include <Akri_IO_Helpers.hpp>
 #include <Akri_LevelSet.hpp>
@@ -99,6 +102,47 @@ static void default_watertight_bounding_boxes_from_explicit_domain(const std::st
       default_watertight_bounding_box_from_domain(ls->get_IC_alg().get_initialization_surface().get_subsurfaces(), domainBox);
 }
 
+InitialMeshSmoothing Region_Parser::parse_initial_mesh_smoothing(const Parser::Node & regionNode)
+{
+  InitialMeshSmoothing smoothing;
+  const Parser::Node smoothNode = regionNode.get_if_present("smooth_initial_mesh");
+  if (!smoothNode) return smoothing;
+
+  if (smoothNode.is_scalar() && !smoothNode.is_empty_scalar())
+  {
+    smoothing.smooth = smoothNode.as<bool>();
+    return smoothing;
+  }
+
+  smoothing.smooth = true;
+  const Parser::Node options = regionNode.get_options_if_present("smooth_initial_mesh");
+
+  std::string boundaryNodes;
+  if (options.get_if_present("boundary_nodes", boundaryNodes))
+  {
+    std::transform(boundaryNodes.begin(), boundaryNodes.end(), boundaryNodes.begin(), ::tolower);
+    if (boundaryNodes == "fixed")
+      smoothing.boundaryNodesSlide = false;
+    else if (boundaryNodes != "slide")
+      stk::RuntimeDoomedAdHoc() << "boundary_nodes for smooth_initial_mesh must be slide or fixed, not " << boundaryNodes
+                                << ". " << options.info() << "\n";
+  }
+
+  double sharpFeatureAngle = 0.;
+  if (options.get_if_present("sharp_feature_angle", sharpFeatureAngle))
+  {
+    if (!(sharpFeatureAngle > 0. && sharpFeatureAngle < 180.))
+      stk::RuntimeDoomedAdHoc() << "sharp_feature_angle for smooth_initial_mesh must be between 0 and 180 degrees, not "
+                                << sharpFeatureAngle << ". " << options.info() << "\n";
+    else if (!smoothing.boundaryNodesSlide)
+      stk::RuntimeDoomedAdHoc() << "sharp_feature_angle for smooth_initial_mesh needs boundary_nodes: slide. "
+                                << options.info() << "\n";
+    else
+      smoothing.sharpFeatureAngleInDegrees = sharpFeatureAngle;
+  }
+  return smoothing;
+}
+
 void
 Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulation)
 {
@@ -133,6 +177,8 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
       stk::RuntimeDoomedAdHoc() << "Blank or missing finite element model for region " << region_name << "\n";
     }
     region->associate_input_mesh(fem_model_name, use_32bit_ids, force_64bit_ids);
+
+    region->set_initial_mesh_smoothing(parse_initial_mesh_smoothing(region_node));
 
     stk::mesh::MetaData & meta = region->mesh_meta_data();
     RefinementSupport & refinementSupport = RefinementSupport::get(meta);
