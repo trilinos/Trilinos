@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <Akri_DiagWriter.hpp>
+#include <Akri_MathUtil.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_MeshQuality.hpp>
 #include <Akri_MeshTopologySharpFeatures.hpp>
@@ -89,7 +90,7 @@ static double average_edge_length(const stk::mesh::BulkData & mesh, const Coordi
   const std::array<double, 2> local{{sumLength, numEdges}};
   std::array<double, 2> global;
   stk::all_reduce_sum(mesh.parallel(), local.data(), global.data(), 2);
-  return (global[1] > 0.) ? global[0] / global[1] : 1.;
+  return (global[1] > 0.) ? round_sum_for_distribution_independence(global[0]) / global[1] : 1.;
 }
 
 // Smooths the selected elements by optimizing the mean-ratio norm of their node locations with the

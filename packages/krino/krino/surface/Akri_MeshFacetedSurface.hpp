@@ -224,6 +224,11 @@ private:
   // trees.
   void distribute_sharp_features(const std::vector<BoundingBox> & procBboxes);
   void given_facets_were_set();
+  // Collective.  Whether the ghosts, search trees and local sharp features of the last
+  // prepare_to_compute serve these queries too, so that they need not be built again: the owned facets
+  // are the same, and on every processor the query box is inside the one they were built for, with the
+  // same truncation length (as while snapping moves the nodes toward the surface).
+  bool is_last_preparation_valid_for(const BoundingBox & pointBbox, const double truncationLength) const;
   std::vector<unsigned>
   find_nearest_facets(const stk::math::Vector3d & x, const double maxSearchRadius) const;
 
@@ -249,6 +254,14 @@ private:
   FacetMeshSharpFeatures myLocalSharpFeatures;
   std::unique_ptr<SearchTree<unsigned>> myFeatureEdgeTree;
   std::unique_ptr<SearchTree<unsigned>> myCornerTree;
+  // The query box and truncation length of the last prepare_to_compute that built the ghosts, search
+  // trees and local sharp features, if the owned facets have not changed since.
+  struct PreparedQuery
+  {
+    BoundingBox pointBbox;
+    double truncationLength;
+  };
+  std::optional<PreparedQuery> myPreparedQuery;
 };
 
 // For each MeshFacetedSurface among the surfaces that checks watertightness but has no

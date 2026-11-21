@@ -20,6 +20,15 @@ struct LSPerPhasePolicy
   static std::vector<LS_Field> setup_levelsets_on_all_blocks(stk::mesh::MetaData & meta, const unsigned numLevelSets);
 };
 
+// One surface per phase, each phase on the negative side of its own surface, and an elsewhere phase on
+// the positive side of every surface, as the bounding surfaces of a region set up its subdomains.
+struct LSPerBoundingSurfacePolicy
+{
+  static std::vector<LS_Field> setup_levelsets_on_all_blocks(stk::mesh::MetaData & meta, const unsigned numSurfaces);
+  // The tag of the elsewhere phase, on the positive side of each of the surfaces.
+  static PhaseTag elsewhere_phase_tag(const unsigned numSurfaces);
+};
+
 struct LSPerInterfacePolicy
 {
   static std::vector<LS_Field> setup_levelsets_on_blocks(stk::mesh::MetaData & meta,

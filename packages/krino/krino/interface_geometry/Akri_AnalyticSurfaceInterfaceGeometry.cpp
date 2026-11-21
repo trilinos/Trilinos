@@ -7,10 +7,12 @@
 // license that can be found in the LICENSE file.
 
 #include <algorithm>
+#include <map>
 
 #include <Akri_AnalyticSurfaceInterfaceGeometry.hpp>
 #include <Akri_MultipleEdgeCrossings.hpp>
 #include <Akri_CubitJournal.hpp>
+#include <Akri_SharpFeatureIntersectionPoints.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_CDFEM_Parent_Edges.hpp>
 #include <Akri_CDFEM_Support.hpp>
@@ -137,15 +139,92 @@ static void append_intersections(const std::vector<int> & sortedDomains,
     intersections.emplace_back(intPt, sortedDomains);
 }
 
+// The domains of a point of one surface (that surface once per codimension), with each other surface
+// that the point at location is on, within distanceTol, added once: so its codimension
+// (sharp_feature_codimension) stays the same for two surfaces.  The distances are truncated at
+// distanceTol, so a faceted surface only searches its facets that near.
+static std::vector<int> domains_with_every_surface_point_is_on(const std::vector<int> & sortedDomains,
+    const stk::math::Vector3d & location,
+    const double distanceTol,
+    const std::vector<const Surface *> & surfaces)
+{
+  std::vector<int> domains = sortedDomains;
+  const double farFieldDistance = 2. * distanceTol;
+  for (int iSurf = 0; iSurf < int(surfaces.size()); ++iSurf)
+    if (iSurf != sortedDomains.front() &&
+        std::abs(surfaces[iSurf]->possibly_truncated_point_signed_distance(location, distanceTol, farFieldDistance)) <= distanceTol)
+      domains.push_back(iSurf);
+  std::sort(domains.begin(), domains.end());
+  return domains;
+}
+
+// Whether the points with these domains are on the same surfaces, with the same codimension.
+static bool have_same_surfaces_and_codimension(const std::vector<int> & sortedDomains0, const std::vector<int> & sortedDomains1)
+{
+  if (sharp_feature_codimension(sortedDomains0) != sharp_feature_codimension(sortedDomains1)) return false;
+  std::vector<int> surfaces0 = sortedDomains0;
+  std::vector<int> surfaces1 = sortedDomains1;
+  surfaces0.erase(std::unique(surfaces0.begin(), surfaces0.end()), surfaces0.end());
+  surfaces1.erase(std::unique(surfaces1.begin(), surfaces1.end()), surfaces1.end());
+  return surfaces0 == surfaces1;
+}
+
+// As put_intersection_points_on_every_surface_they_are_on does for the points of the mesh, for the
+// points of one surface each in the simplex with these vertices (from firstIntersection on, with
+// parametric coordinates in the simplex): each also gets every other surface it is on within
+// onSurfaceTol times the size of the simplex, and of those that are then the same, only the first
+// is kept.
+template <size_t NVERTICES>
+static void put_simplex_intersections_on_every_surface_they_are_on(const std::array<stk::math::Vector3d, NVERTICES> & simplexCoords,
+    const std::vector<const Surface *> & surfaces,
+    const double onSurfaceTol,
+    const size_t firstIntersection,
+    std::vector<ElementIntersection> & intersections)
+{
+  if (surfaces.size() < 2 || intersections.size() <= firstIntersection) return;
+  double simplexSize = 0.;
+  for (auto & x0 : simplexCoords)
+    for (auto & x1 : simplexCoords)
+      simplexSize = std::max(simplexSize, (x1 - x0).length());
+
+  for (size_t i = firstIntersection; i < intersections.size(); ++i)
+  {
+    std::vector<int> & domains = intersections[i].sortedDomains;
+    if (domains.front() != domains.back()) continue;
+    const stk::math::Vector3d & pCoords = intersections[i].parametricCoords;
+    stk::math::Vector3d location = simplexCoords[0];
+    for (size_t n = 1; n < NVERTICES; ++n)
+      location += pCoords[n - 1] * (simplexCoords[n] - simplexCoords[0]);
+    domains = domains_with_every_surface_point_is_on(domains, location, onSurfaceTol * simplexSize, surfaces);
+  }
+
+  size_t numKept = firstIntersection;
+  for (size_t i = firstIntersection; i < intersections.size(); ++i)
+  {
+    bool isRepeat = false;
+    for (size_t k = firstIntersection; !isRepeat && k < numKept; ++k)
+    {
+      isRepeat = have_same_surfaces_and_codimension(intersections[i].sortedDomains, intersections[k].sortedDomains);
+      for (size_t n = 0; isRepeat && n + 1 < NVERTICES; ++n)
+        isRepeat = std::abs(intersections[i].parametricCoords[n] - intersections[k].parametricCoords[n]) <= onSurfaceTol;
+    }
+    if (!isRepeat)
+      intersections[numKept++] = intersections[i];
+  }
+  intersections.erase(intersections.begin() + numKept, intersections.end());
+}
+
 static void
 fill_tetrahedron_intersections(const std::vector<stk::math::Vector3d> & elementNodeCoords,
     const std::vector<const Surface *> & surfaces,
     const ElementIntersectionPointFilter & intersectionPointFilter,
+    const double onSurfaceTol,
     std::vector<ElementIntersection> & intersections)
 {
   STK_ThrowAssert(elementNodeCoords.size() >= 4);
   const std::array<stk::math::Vector3d,4> tetNodeCoordinates = {{elementNodeCoords[0], elementNodeCoords[1], elementNodeCoords[2], elementNodeCoords[3]}};
   std::vector<stk::math::Vector3d> intParamCoords;
+  const size_t firstIntersection = intersections.size();
   for (size_t i=0; i<surfaces.size(); ++i)
   {
     const std::vector<int> sortedDomains = intersection_domains(3, i);
@@ -153,16 +232,19 @@ fill_tetrahedron_intersections(const std::vector<stk::math::Vector3d> & elementN
     surfaces[i]->fill_tetrahedon_intersection_parametric_coordinates(tetNodeCoordinates, intParamCoords);
     append_intersections(sortedDomains, intParamCoords, intersections);
   }
+  put_simplex_intersections_on_every_surface_they_are_on(tetNodeCoordinates, surfaces, onSurfaceTol, firstIntersection, intersections);
 }
 
 static void fill_triangle_intersections(const std::vector<stk::math::Vector3d> & elementNodeCoords,
     const std::vector<const Surface *> & surfaces,
     const ElementIntersectionPointFilter & intersectionPointFilter,
+    const double onSurfaceTol,
     std::vector<ElementIntersection> & intersections)
 {
   STK_ThrowAssert(elementNodeCoords.size() >= 3);
   const std::array<stk::math::Vector3d,3> triNodeCoordinates = {{elementNodeCoords[0], elementNodeCoords[1], elementNodeCoords[2]}};
   std::vector<stk::math::Vector3d> intParamCoords;
+  const size_t firstIntersection = intersections.size();
   for (size_t i=0; i<surfaces.size(); ++i)
   {
     const std::vector<int> sortedDomains = intersection_domains(2, i);
@@ -170,6 +252,7 @@ static void fill_triangle_intersections(const std::vector<stk::math::Vector3d> &
     surfaces[i]->fill_triangle_intersection_parametric_coordinates(triNodeCoordinates, intParamCoords);
     append_intersections(sortedDomains, intParamCoords, intersections);
   }
+  put_simplex_intersections_on_every_surface_they_are_on(triNodeCoordinates, surfaces, onSurfaceTol, firstIntersection, intersections);
 }
 
 void SurfaceElementCutter::fill_interior_intersections(
@@ -181,10 +264,10 @@ void SurfaceElementCutter::fill_interior_intersections(
     const stk::topology baseTopology = myParametricElem.get_topology().base();
     if (baseTopology == stk::topology::TETRAHEDRON_4)
       fill_tetrahedron_intersections(
-          myElementNodeCoords, mySurfaces, intersectionPointFilter, intersections);
+          myElementNodeCoords, mySurfaces, intersectionPointFilter, myEdgeCrossingTol, intersections);
     else if (baseTopology == stk::topology::TRIANGLE_3_2D || baseTopology == stk::topology::TRIANGLE_3)
       fill_triangle_intersections(
-          myElementNodeCoords, mySurfaces, intersectionPointFilter, intersections);
+          myElementNodeCoords, mySurfaces, intersectionPointFilter, myEdgeCrossingTol, intersections);
     else
       STK_ThrowErrorMsg("Unexepected topology " << baseTopology.name());
   }
@@ -205,6 +288,7 @@ void SurfaceElementCutter::append_triangle_intersections(
     std::vector<ElementIntersection> & intersections) const
 {
   std::vector<stk::math::Vector3d> intParamCoords;
+  const size_t firstIntersection = intersections.size();
   for (size_t i=0; i<mySurfaces.size(); ++i)
   {
     const std::vector<int> sortedDomains = intersection_domains(2, i);
@@ -212,6 +296,7 @@ void SurfaceElementCutter::append_triangle_intersections(
     mySurfaces[i]->fill_triangle_intersection_parametric_coordinates(triCoords, intParamCoords);
     append_intersections(sortedDomains, intParamCoords, intersections);
   }
+  put_simplex_intersections_on_every_surface_they_are_on(triCoords, mySurfaces, myEdgeCrossingTol, firstIntersection, intersections);
 }
 
 void SurfaceElementCutter::fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodeParamCoords,
@@ -293,6 +378,96 @@ static void append_surface_edge_intersection_points(const stk::mesh::BulkData & 
       if (crossingSign != 0)
         intersectionPoints.emplace_back(intersectionPointIsOwned, intersectionPointNodes, std::vector<double>{1.-interfaceLoc, interfaceLoc}, intersectionPointSortedDomains);
     }
+  }
+}
+
+// Where surfaces mate, a mesh edge crosses them at the same place, and their sharp features on the
+// boundary of the patch they share are at the same places in the faces and elements.  Each point of
+// one surface (from firstPoint on) also gets every other surface that it is within onSurfaceTol times
+// the size of its stencil of (domains_with_every_surface_point_is_on), so a node snapped there is on
+// each of them.  Of the points that are then the same (the same stencil nodes, surfaces and
+// codimension, with weights within onSurfaceTol), only the first is kept.  This depends only on where
+// the surfaces are, not on whether their facets match.
+static void put_intersection_points_on_every_surface_they_are_on(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    const std::vector<const Surface *> & surfaces,
+    const size_t firstPoint,
+    const double onSurfaceTol,
+    std::vector<IntersectionPoint> & intersectionPoints)
+{
+  if (surfaces.size() < 2) return;
+  const int dim = mesh.mesh_meta_data().spatial_dimension();
+
+  for (size_t i = firstPoint; i < intersectionPoints.size(); ++i)
+  {
+    const IntersectionPoint & point = intersectionPoints[i];
+    const std::vector<int> & domains = point.get_sorted_domains();
+    if (domains.front() != domains.back()) continue;
+
+    stk::math::Vector3d location = stk::math::Vector3d::ZERO;
+    for (size_t n = 0; n < point.get_nodes().size(); ++n)
+      location += point.get_weights()[n] * get_vector_field(mesh, coordsField, point.get_nodes()[n], dim);
+    double stencilSize = 0.;
+    for (auto node0 : point.get_nodes())
+      for (auto node1 : point.get_nodes())
+        stencilSize = std::max(stencilSize,
+            (get_vector_field(mesh, coordsField, node0, dim) - get_vector_field(mesh, coordsField, node1, dim)).length());
+
+    const std::vector<int> newDomains = domains_with_every_surface_point_is_on(domains, location, onSurfaceTol * stencilSize, surfaces);
+    if (newDomains.size() > domains.size())
+      intersectionPoints[i] = IntersectionPoint(point.is_owned(), point.get_nodes(), point.get_weights(), newDomains);
+  }
+
+  // The stencil nodes, sorted, with their weights.
+  auto sorted_stencil = [](const IntersectionPoint & point)
+  {
+    std::vector<std::pair<stk::mesh::Entity, double>> nodesAndWeights;
+    for (size_t n = 0; n < point.get_nodes().size(); ++n)
+      nodesAndWeights.emplace_back(point.get_nodes()[n], point.get_weights()[n]);
+    std::sort(nodesAndWeights.begin(), nodesAndWeights.end(),
+        [](const auto & a, const auto & b) { return a.first < b.first; });
+    return nodesAndWeights;
+  };
+
+  std::map<std::vector<stk::mesh::Entity>, std::vector<size_t>> pointsByStencilNodes;
+  for (size_t i = firstPoint; i < intersectionPoints.size(); ++i)
+  {
+    std::vector<stk::mesh::Entity> nodes = intersectionPoints[i].get_nodes();
+    std::sort(nodes.begin(), nodes.end());
+    pointsByStencilNodes[nodes].push_back(i);
+  }
+
+  std::vector<bool> isRepeat(intersectionPoints.size(), false);
+  bool anyRepeat = false;
+  for (auto & [stencilNodes, points] : pointsByStencilNodes)
+  {
+    for (size_t a = 0; a < points.size(); ++a)
+    {
+      if (isRepeat[points[a]]) continue;
+      const auto stencilA = sorted_stencil(intersectionPoints[points[a]]);
+      const std::vector<int> & domainsA = intersectionPoints[points[a]].get_sorted_domains();
+      for (size_t b = a + 1; b < points.size(); ++b)
+      {
+        if (isRepeat[points[b]] ||
+            !have_same_surfaces_and_codimension(intersectionPoints[points[b]].get_sorted_domains(), domainsA))
+          continue;
+        const auto stencilB = sorted_stencil(intersectionPoints[points[b]]);
+        bool isSamePlace = true;
+        for (size_t n = 0; isSamePlace && n < stencilA.size(); ++n)
+          isSamePlace = std::abs(stencilA[n].second - stencilB[n].second) <= onSurfaceTol;
+        if (isSamePlace)
+          isRepeat[points[b]] = anyRepeat = true;
+      }
+    }
+  }
+
+  if (anyRepeat)
+  {
+    size_t numKept = firstPoint;
+    for (size_t i = firstPoint; i < intersectionPoints.size(); ++i)
+      if (!isRepeat[i])
+        intersectionPoints[numKept++] = intersectionPoints[i];
+    intersectionPoints.erase(intersectionPoints.begin() + numKept, intersectionPoints.end());
   }
 }
 
@@ -713,6 +888,7 @@ void AnalyticSurfaceInterfaceGeometry::append_element_intersection_points(const 
   const FieldRef coordsField = get_coordinates_field(mesh);
   ParametricElementLibrary & parametricElemLibrary = AuxMetaData::get(mesh.mesh_meta_data()).parametric_element_library();
   std::vector<Edge> edgesToIntersect;
+  const size_t firstPoint = intersectionPoints.size();
   for (size_t i=0; i<mySurfaces.size(); ++i)
   {
     InterfaceID interface(i,i);
@@ -731,6 +907,7 @@ void AnalyticSurfaceInterfaceGeometry::append_element_intersection_points(const 
       myEdgeCrossingTol,
       intersectionPointFilter,
       intersectionPoints);
+  put_intersection_points_on_every_surface_they_are_on(mesh, coordsField, mySurfaces, firstPoint, myEdgeCrossingTol, intersectionPoints);
 }
 
 static int determine_element_sign_from_node_signs(const StkMeshEntities & elemNodes,

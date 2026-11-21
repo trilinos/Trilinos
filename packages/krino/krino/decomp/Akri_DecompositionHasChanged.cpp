@@ -148,7 +148,7 @@ static bool node_has_matching_interface_within_tolerance(const stk::mesh::BulkDa
   const PhaseTag nodePhase = determine_phase_for_entity(mesh, node, phaseSupport);
   const auto & nodeInterfacesWithinTolerance = mapIter->second;
   for (auto && interfaceWithinTolerance : nodeInterfacesWithinTolerance)
-    if (phase_matches_interface(phaseSupport.has_one_levelset_per_phase(), surfaceIDs, nodePhase, interfaceWithinTolerance))
+    if (is_node_with_phase_on_interface(mesh, phaseSupport, surfaceIDs, node, nodePhase, interfaceWithinTolerance))
       return true;
 
   return false;
@@ -191,8 +191,7 @@ static bool node_is_on_sharp_featured_interface_of_its_phase(const stk::mesh::Bu
   for (size_t i = 0; i < surfaceIDs.size(); ++i)
   {
     const InterfaceID interface(i, i);
-    if (phase_matches_interface(
-            phaseSupport.has_one_levelset_per_phase(), surfaceIDs, nodePhase, interface) &&
+    if (is_node_with_phase_on_interface(mesh, phaseSupport, surfaceIDs, node, nodePhase, interface) &&
         interfaceGeometry.node_is_on_sharp_featured_interface(mesh, node, interface, tol))
       return true;
   }

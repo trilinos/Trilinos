@@ -245,6 +245,52 @@ TEST(MeshFacetedSurface, sphereSplitAcrossProcessors_truncatedQueriesGhostOnlyNe
   EXPECT_EQ(numSearchedBefore, surface.num_searched_facets());
 }
 
+// prepare_to_compute again for a query box inside the last one keeps the ghosts, and for a larger box
+// ghosts the facets near it too: the distances are those of all the facets either way.
+TEST(MeshFacetedSurface, sphereSplitAcrossProcessors_preparedAgainForSmallerThenLargerBox_sameDistancesAsSoupWithAllFacets)
+{
+  const double radius = 0.75;
+  std::vector<stk::math::Vector3d> vertices;
+  std::vector<std::array<unsigned, 3>> allFacets;
+  fill_sphere_vertices_and_connectivity(radius, 0.15, vertices, allFacets);
+
+  const int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+  const int me = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const double slabWidth = 2. * radius / numProcs;
+  const double xLo = -radius + me * slabWidth;
+  const BoundingBox slab(stk::math::Vector3d(xLo, -1., -1.), stk::math::Vector3d(xLo + slabWidth, 1., 1.));
+  const BoundingBox insideSlab(stk::math::Vector3d(xLo + 0.25 * slabWidth, -0.5, -0.5),
+      stk::math::Vector3d(xLo + 0.75 * slabWidth, 0.5, 0.5));
+  const BoundingBox wholeSphere(stk::math::Vector3d(-1., -1., -1.), stk::math::Vector3d(1., 1., 1.));
+  const double narrowBand = 0.1;
+  const double farField = 2. * narrowBand;
+
+  std::unique_ptr<MeshFacetedSurface> reference = build_faceted_surface(vertices, allFacets);
+  reference->prepare_to_compute(0., wholeSphere, narrowBand);
+  auto expect_distances_of_all_facets = [&](const MeshFacetedSurface & surface, const BoundingBox & box)
+  {
+    for (auto & x : grid_points_in_box(box, 5))
+      EXPECT_DOUBLE_EQ(reference->possibly_truncated_point_signed_distance(x, narrowBand, farField),
+          surface.possibly_truncated_point_signed_distance(x, narrowBand, farField))
+          << x;
+  };
+
+  MeshFacetedSurface surface(MPI_COMM_WORLD, 3, vertices, facets_for_this_processor(allFacets));
+  surface.prepare_to_compute(0., slab, narrowBand);
+  const size_t numSearchedForSlab = surface.num_searched_facets();
+
+  surface.prepare_to_compute(0., insideSlab, narrowBand);
+  EXPECT_EQ(numSearchedForSlab, surface.num_searched_facets());
+  expect_distances_of_all_facets(surface, insideSlab);
+
+  surface.prepare_to_compute(0., wholeSphere, narrowBand);
+  if (numProcs > 1)
+  {
+    EXPECT_LT(numSearchedForSlab, surface.num_searched_facets());
+  }
+  expect_distances_of_all_facets(surface, wholeSphere);
+}
+
 namespace
 {
 

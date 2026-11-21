@@ -155,11 +155,8 @@ std::vector<unsigned> Phase_Support::get_negative_levelset_interface_ordinals(co
   std::vector<unsigned> negLevelsetInterfaceOrdinals;
   for (auto * part : meta().get_mesh_parts())
   {
-    const unsigned partOrd = part->mesh_meta_data_ordinal();
-    if (myPhasePartInfo.is_interface_part(partOrd) &&
-        myPhasePartInfo.get_interface_part_touching_phase(partOrd).contain(levelSetIdentifier, -1) &&
-        myPhasePartInfo.get_interface_part_opposite_phase(partOrd).contain(levelSetIdentifier, +1))
-      negLevelsetInterfaceOrdinals.push_back(partOrd);
+    if (is_interface_between_two_phases(*part) && is_interface_on_domain_boundary_touching_inside(*part, levelSetIdentifier))
+      negLevelsetInterfaceOrdinals.push_back(part->mesh_meta_data_ordinal());
   }
   return negLevelsetInterfaceOrdinals;
 }
@@ -1058,6 +1055,38 @@ Phase_Support::find_interface_part(const stk::mesh::Part & vol0, const stk::mesh
   }
 
   return nullptr;
+}
+
+bool Phase_Support::is_interface_between_two_phases(const stk::mesh::Part & part) const
+{
+  return myPhasePartInfo.is_interface_part(part.mesh_meta_data_ordinal());
+}
+
+const PhaseTag & Phase_Support::get_interface_touching_phase(const stk::mesh::Part & interfacePart) const
+{
+  return myPhasePartInfo.get_interface_part_touching_phase(interfacePart.mesh_meta_data_ordinal());
+}
+
+const PhaseTag & Phase_Support::get_interface_opposite_phase(const stk::mesh::Part & interfacePart) const
+{
+  return myPhasePartInfo.get_interface_part_opposite_phase(interfacePart.mesh_meta_data_ordinal());
+}
+
+bool Phase_Support::is_phase_inside_domain(const PhaseTag & phase, const Surface_Identifier domainSurfaceID)
+{
+  return phase.contain(domainSurfaceID, -1);
+}
+
+bool Phase_Support::does_interface_span_domain_boundary(const stk::mesh::Part & interfacePart, const Surface_Identifier domainSurfaceID) const
+{
+  return is_phase_inside_domain(get_interface_touching_phase(interfacePart), domainSurfaceID) !=
+      is_phase_inside_domain(get_interface_opposite_phase(interfacePart), domainSurfaceID);
+}
+
+bool Phase_Support::is_interface_on_domain_boundary_touching_inside(const stk::mesh::Part & interfacePart, const Surface_Identifier domainSurfaceID) const
+{
+  return is_phase_inside_domain(get_interface_touching_phase(interfacePart), domainSurfaceID) &&
+      !is_phase_inside_domain(get_interface_opposite_phase(interfacePart), domainSurfaceID);
 }
 
 //--------------------------------------------------------------------------------

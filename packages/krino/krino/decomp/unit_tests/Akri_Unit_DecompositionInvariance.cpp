@@ -40,6 +40,7 @@
 #include <Akri_Phase_Support.hpp>
 #include <Akri_UnitMeshUtils.hpp>
 #include <Akri_Unit_DecompositionSignature.hpp>
+#include <Akri_Unit_MatingFacetedSurfaces.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -63,8 +64,9 @@ const std::array<std::vector<MeshVariation>, 2> invarianceMeshVariationGroups{{
     {{false, false, false}, {false, true, false}, {false, false, true}, {false, true, true}}}};
 
 // Whether each level set (or surface) is an interface between its negative and positive sides, or
-// each is a phase, where it is the smallest.
-enum class InvarianceLevelSetPolicy { PER_INTERFACE, PER_PHASE };
+// each is a phase, where it is the smallest, or each surface bounds a phase on its negative side with
+// an elsewhere phase on the positive side of all of them, as the bounding surfaces of a region.
+enum class InvarianceLevelSetPolicy { PER_INTERFACE, PER_PHASE, PER_BOUNDING_SURFACE };
 
 // A generated mesh of a box (a flat-walled BCC tet mesh, or a flat-walled triangular lattice in 2D),
 // with level sets as given, set up for decomposition, and generated with the given variation of its
@@ -82,9 +84,12 @@ public:
       : myBBoxMesh(elemTopology, MPI_COMM_WORLD)
   {
     stk::mesh::MetaData & meta = myBBoxMesh.meta_data();
-    myLSFields = (levelSetPolicy == InvarianceLevelSetPolicy::PER_PHASE) ?
-        LSPerPhasePolicy::setup_levelsets_on_all_blocks(meta, numSurfaces) :
-        LSPerInterfacePolicy::setup_levelsets_on_all_blocks(meta, numSurfaces);
+    if (levelSetPolicy == InvarianceLevelSetPolicy::PER_PHASE)
+      myLSFields = LSPerPhasePolicy::setup_levelsets_on_all_blocks(meta, numSurfaces);
+    else if (levelSetPolicy == InvarianceLevelSetPolicy::PER_BOUNDING_SURFACE)
+      myLSFields = LSPerBoundingSurfacePolicy::setup_levelsets_on_all_blocks(meta, numSurfaces);
+    else
+      myLSFields = LSPerInterfacePolicy::setup_levelsets_on_all_blocks(meta, numSurfaces);
 
     CDFEM_Support & cdfemSupport = CDFEM_Support::get(meta);
     cdfemSupport.set_coords_field(meta.coordinate_field());
@@ -195,10 +200,11 @@ void expect_decomposition_independent_of_ids_and_processor_decomposition(const s
     const BoundingBoxMesh::BoundingBoxType & domain,
     const double meshSize,
     const Edge_Degeneracy_Handling edgeDegeneracyHandling,
-    const std::vector<const Surface *> & surfaces)
+    const std::vector<const Surface *> & surfaces,
+    const InvarianceLevelSetPolicy levelSetPolicy = InvarianceLevelSetPolicy::PER_INTERFACE)
 {
   expect_decomposition_of_each_variation_the_same(elemTopology, domain, meshSize, surfaces.size(),
-      InvarianceLevelSetPolicy::PER_INTERFACE, edgeDegeneracyHandling,
+      levelSetPolicy, edgeDegeneracyHandling,
       [&surfaces](VariedMeshDecomposition & decomposition)
       { return decomposition.decompose_and_gather_signature(surfaces); });
 }
@@ -372,6 +378,53 @@ TEST(DecompositionInvariance, snappingLevelSetPhasesOfTwoSpheresOnTet10_independ
 {
   expect_level_set_phases_of_two_spheres_independent_of_ids_and_processor_decomposition(
       stk::topology::TETRAHEDRON_10, SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+}
+
+namespace
+{
+// The bottom and top halves of the rotated cuboid (or rectangle in 2D) as faceted bounding surfaces
+// that mate along their middle face (or segment), with sharp features at 135 degrees.
+void expect_mating_halves_independent_of_ids_and_processor_decomposition(
+    const stk::topology elemTopology, const Edge_Degeneracy_Handling edgeDegeneracyHandling)
+{
+  const bool is2D = elemTopology == stk::topology::TRIANGLE_3_2D;
+  const Cuboid cuboid = rotated_cuboid_for_invariance_test();
+  const auto halves = is2D ?
+      mating_halves_of_rectangle(stk::math::Vector3d(0.03, -0.02, 0.), {{1.0, 0.7}}, 0.3) :
+      mating_halves_of_cuboid(cuboid);
+  for (auto & half : halves)
+    half->set_sharp_feature_angle(135.);
+  expect_decomposition_independent_of_ids_and_processor_decomposition(elemTopology,
+      is2D ? invarianceSquareDomain : invarianceCubeDomain,
+      invarianceMeshSize,
+      edgeDegeneracyHandling,
+      {halves[0].get(), halves[1].get()},
+      InvarianceLevelSetPolicy::PER_BOUNDING_SURFACE);
+}
+} // namespace
+
+// Mating faceted bounding surfaces, whose intersection points are on both surfaces where they mate,
+// snapped and cut only, in 3D and 2D.
+TEST(DecompositionInvariance, snappingMatingHalvesOfRotatedCuboid_independentOfIdsAndProcessorDecomposition)
+{
+  expect_mating_halves_independent_of_ids_and_processor_decomposition(
+      stk::topology::TETRAHEDRON_4, SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+}
+
+TEST(DecompositionInvariance, cuttingOnlyMatingHalvesOfRotatedCuboid_independentOfIdsAndProcessorDecomposition)
+{
+  expect_mating_halves_independent_of_ids_and_processor_decomposition(stk::topology::TETRAHEDRON_4, SNAP_TO_NODE);
+}
+
+TEST(DecompositionInvariance, snappingMatingHalvesOfRotatedRectangle_independentOfIdsAndProcessorDecomposition)
+{
+  expect_mating_halves_independent_of_ids_and_processor_decomposition(
+      stk::topology::TRIANGLE_3_2D, SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+}
+
+TEST(DecompositionInvariance, cuttingOnlyMatingHalvesOfRotatedRectangle_independentOfIdsAndProcessorDecomposition)
+{
+  expect_mating_halves_independent_of_ids_and_processor_decomposition(stk::topology::TRIANGLE_3_2D, SNAP_TO_NODE);
 }
 
 } // namespace krino

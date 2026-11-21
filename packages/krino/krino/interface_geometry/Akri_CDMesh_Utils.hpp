@@ -37,6 +37,16 @@ PhaseTag determine_phase_for_entity(const stk::mesh::BulkData & mesh, stk::mesh:
 bool nodes_are_on_any_interface(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const stk::mesh::Bucket & nodeBucket);
 bool node_is_on_any_interface(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const stk::mesh::Entity node);
 bool node_is_on_interface(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const std::vector<Surface_Identifier> & surfaceIDs, stk::mesh::Entity node, const InterfaceID & interface);
+// As node_is_on_interface, with the node's phase (determine_phase_for_entity) given: the phase matches
+// the interface (phase_matches_interface), or, unless the interfaces are between phases of one level set
+// each, the node is on an interface part that spans the boundary of the domain of the interface's
+// surface (as where the phases of the domains of different bounding surfaces mate).
+bool is_node_with_phase_on_interface(const stk::mesh::BulkData & mesh,
+    const Phase_Support & phaseSupport,
+    const std::vector<Surface_Identifier> & surfaceIDs,
+    const stk::mesh::Entity node,
+    const PhaseTag & nodePhase,
+    const InterfaceID & interface);
 
 }
 

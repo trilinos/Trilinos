@@ -143,6 +143,14 @@ void MeshFacetedSurface::given_facets_were_set()
   myGivenVertexVelocities.clear();
   myHaveBuiltOwnedFacets = true;
   myHaveCheckedOwnedFacets = false;
+  myPreparedQuery.reset();
+}
+
+bool MeshFacetedSurface::is_last_preparation_valid_for(const BoundingBox & pointBbox, const double truncationLength) const
+{
+  const bool isValidHere = myPreparedQuery && myPreparedQuery->truncationLength == truncationLength &&
+      (!pointBbox.valid() || (myPreparedQuery->pointBbox.valid() && myPreparedQuery->pointBbox.contains(pointBbox)));
+  return stk::is_true_on_all_procs(parallel_comm(), isValidHere);
 }
 
 FacetCoordinates MeshFacetedSurface::owned_facet_coordinates() const
@@ -248,6 +256,7 @@ void MeshFacetedSurface::prepare_to_compute(
 
   if (!myHaveCheckedOwnedFacets)
   {
+    myPreparedQuery.reset();
     // With connected facets (merged vertices) facets and edges are matched by their vertex ids,
     // otherwise by location.
     if (myRemoveCoincidentFacets)
@@ -269,11 +278,14 @@ void MeshFacetedSurface::prepare_to_compute(
     myHaveCheckedOwnedFacets = true;
   }
 
+  if (is_last_preparation_valid_for(pointBbox, truncationLength)) return;
+
   const std::vector<BoundingBox> procPaddedQueryBboxes = fill_processor_bounding_boxes(
       myMesh.owned_facets_bounding_box(), pointBbox, truncationLength);
   myMesh.update_ghost_facets(procPaddedQueryBboxes);
   build_search_tree(procPaddedQueryBboxes[stk::parallel_machine_rank(myMesh.comm())]);
   if (myCosSharpFeatureAngle) distribute_sharp_features(procPaddedQueryBboxes);
+  myPreparedQuery = PreparedQuery{pointBbox, truncationLength};
 }
 
 void MeshFacetedSurface::set_sharp_feature_angle(

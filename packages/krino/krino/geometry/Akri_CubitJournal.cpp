@@ -387,8 +387,10 @@ void add_zero_contour_in_box(CubitJournal & journal,
   const bool is2D = (boxMin[2] == boxMax[2]);
   const int n = numCellsPerSide;
   const int nz = is2D ? 0 : n;
-  auto grid_index = [&](const int i, const int j, const int k) { return static_cast<size_t>(i + (n+1)*(j + (n+1)*k)); };
-  std::vector<stk::math::Vector3d> x((n+1)*(n+1)*(nz+1));
+  const size_t numPointsPerSide = static_cast<size_t>(n) + 1;
+  auto grid_index = [&](const int i, const int j, const int k)
+  { return static_cast<size_t>(i) + numPointsPerSide*(static_cast<size_t>(j) + numPointsPerSide*static_cast<size_t>(k)); };
+  std::vector<stk::math::Vector3d> x(numPointsPerSide*numPointsPerSide*(static_cast<size_t>(nz) + 1));
   std::vector<double> f(x.size());
   for (int k=0; k<=nz; ++k)
     for (int j=0; j<=n; ++j)

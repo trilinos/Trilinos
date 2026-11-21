@@ -260,7 +260,7 @@ void write_facets(const FacetMesh & facets, const std::string & fileBaseName, co
   std::vector<int64_t> elemIds;
   std::vector<int64_t> conn;
   elemIds.reserve(numFacets);
-  conn.reserve(dim * numFacets);
+  conn.reserve(static_cast<size_t>(dim) * static_cast<size_t>(numFacets));
   for (int f = 0; f < numFacets; ++f)
   {
     elemIds.push_back(elemStart + f + 1);
