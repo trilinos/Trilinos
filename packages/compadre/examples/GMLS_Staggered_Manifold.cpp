@@ -50,6 +50,7 @@ Kokkos::initialize(argc, args);
 
     CommandLineProcessor clp(argc, args);
     auto order = clp.order;
+    auto curvature_order = clp.curvature_order;
     auto dimension = clp.dimension;
     auto number_target_coords = clp.number_target_coords;
     auto constraint_name = clp.constraint_name;
@@ -59,7 +60,10 @@ Kokkos::initialize(argc, args);
     
     // minimum neighbors for unisolvency is the same as the size of the polynomial basis 
     // dimension has one subtracted because it is a D-1 manifold represented in D dimensions
-    const int min_neighbors = Compadre::GMLS::getNP(order, dimension-1);
+    // staggered samples need one order more than the main basis (StaggeredEdgeAnalyticGradientIntegralSample
+    // uses order+1 internally, and a vector basis gets one scalar sample per edge), as in GMLS_Staggered.cpp;
+    // sized for the larger of that and the curvature basis, since both fits use these neighbors
+    const int min_neighbors = Compadre::GMLS::getNP((curvature_order > order+1) ? curvature_order : order+1, dimension-1);
     
     //! [Parse Command Line Arguments]
     Kokkos::Timer timer;
@@ -191,7 +195,7 @@ Kokkos::initialize(argc, args);
 
     // each row is a neighbor list for a target site, with the first column of each row containing
     // the number of neighbors for that rows corresponding target site
-    double epsilon_multiplier = 1.5;
+    double epsilon_multiplier = 2.2; // as in GMLS_Staggered.cpp; 1.5 gave too few neighbors for clean convergence
     int estimated_upper_bound_number_neighbors = 
         point_cloud_search.getEstimatedNumberNeighborsUpperBound(min_neighbors, dimension, epsilon_multiplier);
 
@@ -231,7 +235,7 @@ Kokkos::initialize(argc, args);
                           StaggeredEdgeIntegralSample,
                           order, dimension,
                           solver_name.c_str(), problem_name.c_str(), constraint_name.c_str(),
-                          order /*manifold order*/);
+                          curvature_order /*manifold order*/);
     
     // pass in neighbor lists, source coordinates, target coordinates, and window sizes
     //
@@ -282,7 +286,7 @@ Kokkos::initialize(argc, args);
                           StaggeredEdgeAnalyticGradientIntegralSample,
                           order, dimension,
                           solver_name.c_str(), problem_name.c_str(), constraint_name.c_str(),
-                          order /*manifold order*/);
+                          curvature_order /*manifold order*/);
 
     my_GMLS_vector_2.setProblemData(neighbor_lists_device, source_coords_device, target_coords_device, epsilon_device);
     std::vector<TargetOperation> lro_vector_2(2);
@@ -304,7 +308,7 @@ Kokkos::initialize(argc, args);
                         StaggeredEdgeAnalyticGradientIntegralSample,
                         order, dimension,
                         solver_name.c_str(), problem_name.c_str(), constraint_name.c_str(),
-                        order /*manifold order*/);
+                        curvature_order /*manifold order*/);
 
     my_GMLS_scalar.setProblemData(neighbor_lists_device, source_coords_device, target_coords_device, epsilon_device);
 

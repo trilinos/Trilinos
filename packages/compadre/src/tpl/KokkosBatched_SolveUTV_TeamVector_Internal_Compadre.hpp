@@ -99,7 +99,7 @@ namespace KokkosBatched {
             // T is matrix_rank x matrix_rank
             // V is matrix_rank x n
             // W = U^T B
-            if (!implicit_RHS) { // LU case
+            if (!implicit_RHS) { // CHOL case
             
                 // A represents U^T without copying.
                 //   A = U with strides us1, us0
@@ -227,7 +227,7 @@ namespace KokkosBatched {
                 });
             }
         } else {
-            if (!implicit_RHS) { // LU case
+            if (!implicit_RHS) { // CHOL case
                 /// W = U^T B
                 {
                 

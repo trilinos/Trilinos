@@ -80,6 +80,7 @@ Kokkos::initialize(argc, args);
 
     CommandLineProcessor clp(argc, args);
     auto order = clp.order;
+    auto curvature_order = clp.curvature_order;
     auto dimension = clp.dimension;
     auto number_target_coords = clp.number_target_coords;
     auto constraint_name = clp.constraint_name;
@@ -89,7 +90,8 @@ Kokkos::initialize(argc, args);
     
     // minimum neighbors for unisolvency is the same as the size of the polynomial basis 
     // dimension has one subtracted because it is a D-1 manifold represented in D dimensions
-    const int min_neighbors = Compadre::GMLS::getNP(order, dimension-1);
+    // (sized for the larger of the main and curvature bases, since both fits use these neighbors)
+    const int min_neighbors = Compadre::GMLS::getNP((curvature_order > order) ? curvature_order : order, dimension-1);
     
     //! [Parse Command Line Arguments]
     Kokkos::Timer timer;
@@ -285,7 +287,7 @@ Kokkos::initialize(argc, args);
     // traditional point sampling as the sampling functional
     GMLS my_GMLS_scalar(order, dimension,
                         solver_name.c_str(), problem_name.c_str(), constraint_name.c_str(),
-                        order /*manifold order*/);
+                        curvature_order /*manifold order*/);
     
     // pass in neighbor lists, source coordinates, target coordinates, and window sizes
     //
@@ -344,7 +346,7 @@ Kokkos::initialize(argc, args);
     GMLS my_GMLS_vector(ReconstructionSpace::VectorTaylorPolynomial, VaryingManifoldVectorPointSample,
                           order, dimension,
                           solver_name.c_str(), problem_name.c_str(), constraint_name.c_str(),
-                          order /*manifold order*/);
+                          curvature_order /*manifold order*/);
 
     my_GMLS_vector.setProblemData(neighbor_lists_device, source_coords_device, target_coords_device, epsilon_device);
     my_GMLS_vector.setAdditionalEvaluationSitesData(neighbor_lists_device, source_coords_device);
@@ -385,7 +387,7 @@ Kokkos::initialize(argc, args);
     GMLS my_GMLS_vector_of_scalar_clones(ReconstructionSpace::VectorOfScalarClonesTaylorPolynomial, VaryingManifoldVectorPointSample,
                                          order, dimension,
                                          solver_name.c_str(), problem_name.c_str(), constraint_name.c_str(),
-                                         order /*manifold order*/);
+                                         curvature_order /*manifold order*/);
 
     my_GMLS_vector_of_scalar_clones.setProblemData(neighbor_lists_device, source_coords_device, target_coords_device, epsilon_device);
     my_GMLS_vector_of_scalar_clones.setAdditionalEvaluationSitesData(neighbor_lists_device, source_coords_device);
