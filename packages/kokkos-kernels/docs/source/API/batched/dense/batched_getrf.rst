@@ -16,13 +16,13 @@ Defined in header: :code:`KokkosBatched_Getrf.hpp`
 Computes a LU factorization of a general m-by-n matrix :math:`A` using partial pivoting with row interchanges. The factorization has the format
 :math:`A = P \cdot L \cdot U`
 
-where 
+where
 
 - :math:`P` is a permutation matrix
 - :math:`L` is a lower triangular matrix with unit diagonal elements (lower trapezoidal if m > n)
 - :math:`U` is an upper triangular matrix (upper trapezoidal if m < n)
 
-This operation is equivalent to the LAPACK routine ``SGETRF`` (``CGETRF``) or ``DGETRF`` (``ZGETRF``) for single or double precision for real (complex) matrix. 
+This operation is equivalent to the LAPACK routine ``SGETRF`` (``CGETRF``) or ``DGETRF`` (``ZGETRF``) for single or double precision for real (complex) matrix.
 This is the recusive version of the algorithm. It divides the matrix :math:`A` into four submatrices:
 
 .. math::
@@ -45,7 +45,7 @@ This function calls itself to factorize
       A_{10}
    \end{bmatrix}
 
-do the swaps on 
+do the swaps on
 
 .. math::
 

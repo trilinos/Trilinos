@@ -7,6 +7,7 @@
 #include <KokkosKernels_TestUtils.hpp>
 
 #include <chrono>
+#include <iostream>
 
 namespace Test {
 
@@ -288,6 +289,38 @@ void impl_test_stream_gemm_psge2(const int M, const int N, const int K, const Sc
     EXPECT_TRUE((diff_C2_average < 1.05 * diff_C_expected));
   }
 }
+
+template <class ExecutionSpace, class MatrixA, class MatrixB, class MatrixC>
+void gemm_alpha_bypass(const char* TA, const char* TB, typename MatrixC::value_type beta) {
+  using KAT        = KokkosKernels::ArithTraits<typename MatrixA::value_type>;
+  const auto alpha = KAT::zero();
+  const auto two   = KAT::one() + KAT::one();
+
+  MatrixA A("A", 2, 2);
+  MatrixB B("B", 2, 2);
+  MatrixC C("C", 2, 2);
+
+  Kokkos::deep_copy(A, KAT::max());
+  Kokkos::deep_copy(B, two);
+  Kokkos::deep_copy(C, two);
+
+  KokkosBlas::gemm(TA, TB, alpha, A, B, beta, C);
+
+  auto C_h = Kokkos::create_mirror_view(C);
+  Kokkos::deep_copy(C_h, C);
+
+  bool check_flag = true;
+  for (int rowIdx = 0; rowIdx < C.extent_int(0); ++rowIdx) {
+    for (int colIdx = 0; colIdx < C.extent_int(1); ++colIdx) {
+      if (Kokkos::abs(C_h(rowIdx, colIdx) - beta * two) > 10 * Kokkos::abs(beta * two * KAT::eps())) {
+        check_flag = false;
+        std::cout << "C(" << rowIdx << ", " << colIdx << ")=" << C_h(rowIdx, colIdx) << " instead of " << beta * two
+                  << std::endl;
+      }
+    }
+  }
+  EXPECT_TRUE(check_flag == true);
+}
 }  // namespace Test
 
 template <typename Scalar, typename Layout>
@@ -315,6 +348,7 @@ void test_gemm() {
                                                                                 beta);
         Test::impl_test_gemm<view_type_a, view_type_b, view_type_c, TestDevice>(amode, bmode, 12, 3071, 517, alpha,
                                                                                 beta);
+        Test::gemm_alpha_bypass<execution_space, view_type_a, view_type_b, view_type_c>(amode, bmode, beta);
       }
     }
   }

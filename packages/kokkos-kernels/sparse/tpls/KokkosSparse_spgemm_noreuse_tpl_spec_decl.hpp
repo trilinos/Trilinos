@@ -11,6 +11,11 @@
 #include "KokkosSparse_Utils_cusparse.hpp"
 #endif
 
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
+#include "rocsparse/rocsparse.h"
+#include "KokkosSparse_Utils_rocsparse.hpp"
+#endif
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 #include "KokkosSparse_Utils_mkl.hpp"
 #include "mkl_spblas.h"
@@ -117,19 +122,19 @@ Matrix spgemm_noreuse_cusparse(KokkosSparse::SPGEMMAlgorithm algo, const MatrixC
   return Matrix("C", m, k, c_nnz, valuesC, row_mapC, entriesC);
 }
 
-#define SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, MEMSPACE, TPL_AVAIL)                                                  \
-  template <>                                                                                                      \
+#define SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, MEMSPACE)                                                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                   \
   struct SPGEMM_NOREUSE<KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int>,   \
                         KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
                         KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
-                        true, TPL_AVAIL> {                                                                         \
+                        true, ETI_SPEC_AVAIL> {                                                                    \
     using Matrix      = KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int>;   \
     using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;               \
     static KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int> spgemm_noreuse( \
-        KokkosSparse::SPGEMMAlgorithm algo, const ConstMatrix &A, bool, const ConstMatrix &B, bool) {              \
+        KokkosSparse::SPGEMMAlgorithm algo, const ConstMatrix &A, bool, const ConstMatrix &B, bool, bool, bool) {  \
       std::string label =                                                                                          \
           "KokkosSparse::spgemm_noreuse[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";         \
       Kokkos::Profiling::pushRegion(label);                                                                        \
@@ -139,25 +144,194 @@ Matrix spgemm_noreuse_cusparse(KokkosSparse::SPGEMMAlgorithm algo, const MatrixC
     }                                                                                                              \
   };
 
-#define SPGEMM_NOREUSE_DECL_CUSPARSE_S(SCALAR, TPL_AVAIL)            \
-  SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, Kokkos::CudaSpace, TPL_AVAIL) \
-  SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, Kokkos::CudaUVMSpace, TPL_AVAIL)
+#define SPGEMM_NOREUSE_DECL_CUSPARSE_S(SCALAR)            \
+  SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, Kokkos::CudaSpace) \
+  SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, Kokkos::CudaUVMSpace)
 
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(float, true)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(double, true)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<float>, true)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>, true)
+SPGEMM_NOREUSE_DECL_CUSPARSE_S(float)
+SPGEMM_NOREUSE_DECL_CUSPARSE_S(double)
+SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<float>)
+SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>)
 
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(float, false)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(double, false)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<float>, false)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>, false)
+#endif
+
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+
+//=============================================================================
+// Overload rocsparse_Xcsrgemm_buffer_size() over scalar types
+#define SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM_BUFFER_SIZE(scalar_type, TOKEN)                                       \
+  inline rocsparse_status rocsparse_Xcsrgemm_buffer_size_noreuse(                                               \
+      rocsparse_handle handle, rocsparse_operation trans_A, rocsparse_operation trans_B, rocsparse_int m,       \
+      rocsparse_int n, rocsparse_int k, const scalar_type *alpha, const rocsparse_mat_descr descr_A,            \
+      rocsparse_int nnz_A, const rocsparse_int *csr_row_ptr_A, const rocsparse_int *csr_col_ind_A,              \
+      const rocsparse_mat_descr descr_B, rocsparse_int nnz_B, const rocsparse_int *csr_row_ptr_B,               \
+      const rocsparse_int *csr_col_ind_B, const scalar_type *beta, const rocsparse_mat_descr descr_D,           \
+      rocsparse_int nnz_D, const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D,              \
+      rocsparse_mat_info info_C, size_t *buffer_size) {                                                         \
+    return rocsparse_##TOKEN##csrgemm_buffer_size(                                                              \
+        handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A, csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, \
+        csr_row_ptr_B, csr_col_ind_B, beta, descr_D, nnz_D, csr_row_ptr_D, csr_col_ind_D, info_C, buffer_size); \
+  }
+
+SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM_BUFFER_SIZE(float, s)
+SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM_BUFFER_SIZE(double, d)
+SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM_BUFFER_SIZE(rocsparse_float_complex, c)
+SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM_BUFFER_SIZE(rocsparse_double_complex, z)
+
+//=============================================================================
+// Overload rocsparse_Xcsrgemm() (full compute) over scalar types
+#define SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM(scalar_type, TOKEN)                                                        \
+  inline rocsparse_status rocsparse_Xcsrgemm_noreuse(                                                                \
+      rocsparse_handle handle, rocsparse_operation trans_A, rocsparse_operation trans_B, rocsparse_int m,            \
+      rocsparse_int n, rocsparse_int k, const scalar_type *alpha, const rocsparse_mat_descr descr_A,                 \
+      rocsparse_int nnz_A, const scalar_type *csr_val_A, const rocsparse_int *csr_row_ptr_A,                         \
+      const rocsparse_int *csr_col_ind_A, const rocsparse_mat_descr descr_B, rocsparse_int nnz_B,                    \
+      const scalar_type *csr_val_B, const rocsparse_int *csr_row_ptr_B, const rocsparse_int *csr_col_ind_B,          \
+      const scalar_type *beta, const rocsparse_mat_descr descr_D, rocsparse_int nnz_D, const scalar_type *csr_val_D, \
+      const rocsparse_int *csr_row_ptr_D, const rocsparse_int *csr_col_ind_D, const rocsparse_mat_descr descr_C,     \
+      scalar_type *csr_val_C, const rocsparse_int *csr_row_ptr_C, rocsparse_int *csr_col_ind_C,                      \
+      const rocsparse_mat_info info_C, void *buffer) {                                                               \
+    return rocsparse_##TOKEN##csrgemm(handle, trans_A, trans_B, m, n, k, alpha, descr_A, nnz_A, csr_val_A,           \
+                                      csr_row_ptr_A, csr_col_ind_A, descr_B, nnz_B, csr_val_B, csr_row_ptr_B,        \
+                                      csr_col_ind_B, beta, descr_D, nnz_D, csr_val_D, csr_row_ptr_D, csr_col_ind_D,  \
+                                      descr_C, csr_val_C, csr_row_ptr_C, csr_col_ind_C, info_C, buffer);             \
+  }
+
+SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM(float, s)
+SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM(double, d)
+SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM(rocsparse_float_complex, c)
+SPGEMM_NOREUSE_ROCSPARSE_XCSRGEMM(rocsparse_double_complex, z)
+
+// Self-contained noreuse SpGEMM implementation for rocSPARSE.
+// Performs all phases (buffer_size, nnz, compute) in a single call,
+// managing all rocSPARSE resources locally.
+template <typename Matrix, typename MatrixConst>
+Matrix spgemm_noreuse_rocsparse(const MatrixConst &A, const MatrixConst &B) {
+  using Scalar                = typename Matrix::value_type;
+  using rocsparse_scalar_type = typename kokkos_to_rocsparse_type<Scalar>::type;
+
+  // A is m*n, B is n*k, C is m*k
+  rocsparse_int m     = static_cast<rocsparse_int>(A.numRows());
+  rocsparse_int n     = static_cast<rocsparse_int>(B.numRows());
+  rocsparse_int k     = static_cast<rocsparse_int>(B.numCols());
+  rocsparse_int nnz_A = static_cast<rocsparse_int>(A.graph.entries.extent(0));
+  rocsparse_int nnz_B = static_cast<rocsparse_int>(B.graph.entries.extent(0));
+
+  const auto alpha = KokkosKernels::ArithTraits<Scalar>::one();
+  const auto beta  = KokkosKernels::ArithTraits<Scalar>::zero();
+
+  // Create matrix descriptors and info
+  rocsparse_mat_descr descr_A, descr_B, descr_C, descr_D;
+  rocsparse_mat_info info_C;
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_A));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_B));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_C));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_descr(&descr_D));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_mat_info(&info_C));
+
+  // Get singleton rocsparse handle and save/restore pointer mode
+  KokkosKernels::Experimental::Controls kkControls;
+  rocsparse_handle rocsparseHandle = kkControls.getRocsparseHandle();
+  rocsparse_pointer_mode oldPtrMode;
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_get_pointer_mode(rocsparseHandle, &oldPtrMode));
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_set_pointer_mode(rocsparseHandle, rocsparse_pointer_mode_host));
+
+  rocsparse_operation opA = rocsparse_operation_none;
+  rocsparse_operation opB = rocsparse_operation_none;
+
+  // Step 1: Query buffer size
+  // C = alpha * A * B + beta * D, with D empty (nnz_D = 0)
+  size_t bufferSize = 0;
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_Xcsrgemm_buffer_size_noreuse(
+      rocsparseHandle, opA, opB, m, k, n, reinterpret_cast<const rocsparse_scalar_type *>(&alpha), descr_A, nnz_A,
+      A.graph.row_map.data(), A.graph.entries.data(), descr_B, nnz_B, B.graph.row_map.data(), B.graph.entries.data(),
+      reinterpret_cast<const rocsparse_scalar_type *>(&beta), descr_D, 0, nullptr, nullptr, info_C, &bufferSize));
+
+  // Allocate buffer
+  void *buffer = nullptr;
+  KOKKOS_IMPL_HIP_SAFE_CALL(hipMalloc(&buffer, bufferSize));
+
+  // Step 2: Compute nnz of C and row pointers
+  typename Matrix::row_map_type::non_const_type row_mapC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C rowmap"),
+                                                         m + 1);
+  rocsparse_int nnz_C = 0;
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(
+      rocsparse_csrgemm_nnz(rocsparseHandle, opA, opB, m, k, n, descr_A, nnz_A, A.graph.row_map.data(),
+                            A.graph.entries.data(), descr_B, nnz_B, B.graph.row_map.data(), B.graph.entries.data(),
+                            descr_D, 0, nullptr, nullptr, descr_C, row_mapC.data(), &nnz_C, info_C, buffer));
+
+  // If C has zero rows, its rowptrs are not populated by rocsparse_csrgemm_nnz
+  if (m == 0) {
+    KOKKOS_IMPL_HIP_SAFE_CALL(
+        hipMemset(row_mapC.data(), 0, row_mapC.extent(0) * sizeof(typename Matrix::non_const_ordinal_type)));
+  }
+
+  // Step 3: Allocate column indices and values for C
+  typename Matrix::index_type entriesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C entries"), nnz_C);
+  typename Matrix::values_type valuesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C values"), nnz_C);
+
+  // Step 4: Compute column indices and values of C
+  // rocsparse_Xcsrgemm computes both structure and values in a single call,
+  // unlike the separate symbolic/numeric path used for reuse.
+  if (nnz_C > 0) {
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_Xcsrgemm_noreuse(
+        rocsparseHandle, opA, opB, m, k, n, reinterpret_cast<const rocsparse_scalar_type *>(&alpha), descr_A, nnz_A,
+        reinterpret_cast<const rocsparse_scalar_type *>(A.values.data()), A.graph.row_map.data(),
+        A.graph.entries.data(), descr_B, nnz_B, reinterpret_cast<const rocsparse_scalar_type *>(B.values.data()),
+        B.graph.row_map.data(), B.graph.entries.data(), reinterpret_cast<const rocsparse_scalar_type *>(&beta), descr_D,
+        0, nullptr, nullptr, nullptr, descr_C, reinterpret_cast<rocsparse_scalar_type *>(valuesC.data()),
+        row_mapC.data(), entriesC.data(), info_C, buffer));
+  }
+
+  // Restore pointer mode
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_set_pointer_mode(rocsparseHandle, oldPtrMode));
+
+  // Clean up rocSPARSE resources
+  KOKKOS_IMPL_HIP_SAFE_CALL(hipFree(buffer));
+  rocsparse_destroy_mat_info(info_C);
+  rocsparse_destroy_mat_descr(descr_A);
+  rocsparse_destroy_mat_descr(descr_B);
+  rocsparse_destroy_mat_descr(descr_C);
+  rocsparse_destroy_mat_descr(descr_D);
+
+  return Matrix("C", m, k, nnz_C, valuesC, row_mapC, entriesC);
+}
+
+#define SPGEMM_NOREUSE_DECL_ROCSPARSE(SCALAR)                                                                      \
+  template <bool ETI_SPEC_AVAIL>                                                                                   \
+  struct SPGEMM_NOREUSE<                                                                                           \
+      KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void, int>,              \
+      KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,              \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                                 \
+      KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,              \
+                              Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                                 \
+      true, ETI_SPEC_AVAIL> {                                                                                      \
+    using Matrix = KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void, int>; \
+    using ConstMatrix =                                                                                            \
+        KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,            \
+                                Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;                               \
+    static KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, void, int>          \
+    spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm, const ConstMatrix &A, bool, const ConstMatrix &B, bool, bool,    \
+                   bool) {                                                                                         \
+      std::string label =                                                                                          \
+          "KokkosSparse::spgemm_noreuse[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";        \
+      Kokkos::Profiling::pushRegion(label);                                                                        \
+      Matrix C = spgemm_noreuse_rocsparse<Matrix>(A, B);                                                           \
+      Kokkos::Profiling::popRegion();                                                                              \
+      return C;                                                                                                    \
+    }                                                                                                              \
+  };
+
+SPGEMM_NOREUSE_DECL_ROCSPARSE(float)
+SPGEMM_NOREUSE_DECL_ROCSPARSE(double)
+SPGEMM_NOREUSE_DECL_ROCSPARSE(Kokkos::complex<float>)
+SPGEMM_NOREUSE_DECL_ROCSPARSE(Kokkos::complex<double>)
 
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
 template <typename Matrix, typename MatrixConst>
-Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
+Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B, bool result_sorted) {
   using size_type   = typename Matrix::non_const_size_type;
   using index_type  = typename Matrix::non_const_ordinal_type;
   using scalar_type = typename Matrix::non_const_value_type;
@@ -176,7 +350,9 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
   generalDescr.mode = SPARSE_FILL_MODE_FULL;
   generalDescr.diag = SPARSE_DIAG_NON_UNIT;
   KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_spmm(SPARSE_OPERATION_NON_TRANSPOSE, Amkl, Bmkl, &C));
-  KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_order(C));
+  if (result_sorted) {
+    KOKKOSKERNELS_MKL_SAFE_CALL(mkl_sparse_order(C));
+  }
   MKLMatrix wrappedC(C);
   MKL_INT nrows = 0, ncols = 0;
   MKL_INT *rowmapRaw     = nullptr;
@@ -207,37 +383,34 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
   return Matrix("C", m, k, c_nnz, valuesC, row_mapC, entriesC);
 }
 
-#define SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, TPL_AVAIL)                                                              \
-  template <>                                                                                                         \
+#define SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC)                                                                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct SPGEMM_NOREUSE<                                                                                              \
       KokkosSparse::CrsMatrix<SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>,               \
       KokkosSparse::CrsMatrix<const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>,                                \
       KokkosSparse::CrsMatrix<const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>,                                \
-      true, TPL_AVAIL> {                                                                                              \
+      true, ETI_SPEC_AVAIL> {                                                                                         \
     using Matrix = KokkosSparse::CrsMatrix<SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>;  \
     using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>;              \
     static KokkosSparse::CrsMatrix<SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>           \
-    spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm, const ConstMatrix &A, bool, const ConstMatrix &B, bool) {           \
+    spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm, const ConstMatrix &A, bool, const ConstMatrix &B, bool, bool,       \
+                   bool result_sorted) {                                                                              \
       std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);                                                                           \
-      Matrix C = spgemm_noreuse_mkl<Matrix>(A, B);                                                                    \
+      Matrix C = spgemm_noreuse_mkl<Matrix>(A, B, result_sorted);                                                     \
       Kokkos::Profiling::popRegion();                                                                                 \
       return C;                                                                                                       \
     }                                                                                                                 \
   };
 
-#define SPGEMM_NOREUSE_DECL_MKL_SE(SCALAR, EXEC) \
-  SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, true)    \
-  SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, false)
-
-#define SPGEMM_NOREUSE_DECL_MKL_E(EXEC)                    \
-  SPGEMM_NOREUSE_DECL_MKL_SE(float, EXEC)                  \
-  SPGEMM_NOREUSE_DECL_MKL_SE(double, EXEC)                 \
-  SPGEMM_NOREUSE_DECL_MKL_SE(Kokkos::complex<float>, EXEC) \
-  SPGEMM_NOREUSE_DECL_MKL_SE(Kokkos::complex<double>, EXEC)
+#define SPGEMM_NOREUSE_DECL_MKL_E(EXEC)                 \
+  SPGEMM_NOREUSE_DECL_MKL(float, EXEC)                  \
+  SPGEMM_NOREUSE_DECL_MKL(double, EXEC)                 \
+  SPGEMM_NOREUSE_DECL_MKL(Kokkos::complex<float>, EXEC) \
+  SPGEMM_NOREUSE_DECL_MKL(Kokkos::complex<double>, EXEC)
 
 #ifdef KOKKOS_ENABLE_SERIAL
 SPGEMM_NOREUSE_DECL_MKL_E(Kokkos::Serial)

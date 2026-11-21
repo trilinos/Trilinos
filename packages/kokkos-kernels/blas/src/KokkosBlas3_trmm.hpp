@@ -120,13 +120,15 @@ void trmm(const execution_space& space, const char side[], const char uplo[], co
 
   // Create A matrix view type alias
   using AViewInternalType = Kokkos::View<typename AViewType::const_value_type**, typename AViewType::array_layout,
-                                         typename AViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+                                         execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
   // Crease B matrix view type alias
   using BViewInternalType = Kokkos::View<typename BViewType::non_const_value_type**, typename BViewType::array_layout,
-                                         typename BViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+                                         execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
+  AViewInternalType A_internal = KokkosKernels::Impl::unificationCast<AViewInternalType>(A);
+  BViewInternalType B_internal = KokkosKernels::Impl::unificationCast<BViewInternalType>(B);
   KokkosBlas::Impl::TRMM<execution_space, AViewInternalType, BViewInternalType>::trmm(space, side, uplo, trans, diag,
-                                                                                      alpha, A, B);
+                                                                                      alpha, A_internal, B_internal);
 }
 
 /// \brief Solve triangular linear system with multiple RHSs:

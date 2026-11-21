@@ -35,7 +35,7 @@ namespace KokkosBatched {
 template <typename ArgUplo, typename ArgAlgo>
 struct SerialPbtrs {
   static_assert(
-      std::is_same_v<ArgUplo, Uplo::Upper> || std::is_same_v<ArgUplo, Uplo::Lower>,
+      is_uplo_v<ArgUplo>,
       "KokkosBatched::pbtrs: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
   static_assert(std::is_same_v<ArgAlgo, Algo::Pbtrs::Unblocked>, "KokkosBatched::pbtrs: Use Algo::Pbtrs::Unblocked");
   template <typename ABViewType, typename BViewType>

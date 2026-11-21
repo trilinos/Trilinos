@@ -25,6 +25,8 @@ kokkoskernels_add_executable(serial_laswp SOURCES serial_laswp.cpp)
 
 kokkoskernels_add_executable(serial_lacgv SOURCES serial_lacgv.cpp)
 
+kokkoskernels_add_executable(serial_trmv SOURCES serial_trmv.cpp)
+
 kokkoskernels_add_executable(serial_trsv SOURCES serial_trsv.cpp)
 
 kokkoskernels_add_executable(serial_trsm SOURCES serial_trsm.cpp)
@@ -44,3 +46,11 @@ kokkoskernels_add_executable(serial_dot SOURCES serial_dot.cpp)
 kokkoskernels_add_executable(serial_nrm SOURCES serial_nrm.cpp)
 
 kokkoskernels_add_executable(serial_swap SOURCES serial_swap.cpp)
+
+kokkoskernels_add_executable(serial_symv SOURCES serial_symv.cpp)
+
+kokkoskernels_add_executable(serial_syrk SOURCES serial_syrk.cpp)
+
+kokkoskernels_add_executable(serial_syr2k SOURCES serial_syr2k.cpp)
+
+kokkoskernels_add_executable(serial_spr SOURCES serial_spr.cpp)

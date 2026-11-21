@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
 //@HEADER
 // ************************************************************************
 //
@@ -149,7 +152,7 @@ LoadBalanceResult<View> load_balance(const ExecSpace &space, const View &taskSiz
 
   View sum("task-sizes-prefix-sum", taskSizes.size());
   Kokkos::deep_copy(space, sum, taskSizes);
-  KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum(space, sum.size(), sum);
+  KokkosKernels::inclusive_parallel_prefix_sum(space, sum);
 
   // retrieve work items sum from view's memory space
   value_type numWorkItems;

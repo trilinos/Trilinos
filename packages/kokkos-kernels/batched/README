@@ -6,11 +6,8 @@ Compact Batched BLAS/LAPACK
    should point to the Kokkos installation directory. The other variables
    are self explanatory. For example, LIBS would be set to "-lm" in platforms
    where that is needed. Makefile.inc includes typical setup for Sandia experimental
-   testbeds. Please see "bowman" for KNL and "white" for CUDA as an example.    
+   testbeds. Please see "bowman" for KNL and "white" for CUDA as an example.
 
 2. Do "make all" in the following test directories:
    - perf-test/host
    - perf-test/cuda
-
-
-

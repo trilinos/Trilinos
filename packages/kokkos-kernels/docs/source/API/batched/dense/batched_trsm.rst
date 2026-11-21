@@ -18,7 +18,7 @@ Defined in header: :code:`KokkosBatched_Trsm_Decl.hpp`
       KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A,
                                                const BViewType &B);
     };
-    
+
     template <typename MemberType, typename ArgSide, typename ArgUplo, typename ArgTrans, typename ArgDiag,
               typename ArgAlgo>
     struct TeamVectorTrsm {
@@ -28,7 +28,7 @@ Defined in header: :code:`KokkosBatched_Trsm_Decl.hpp`
     };
 
 
-Solves a system of the linear equations :math:`op(A) \cdot X = \alpha B` or :math:`X \cdot op(A) = \alpha B` where :math:`\alpha` is a scalar, :math:`X` and :math:`B` are m-by-n matrices, :math:`A` is a unit or non-unit, upper or lower triangular matrix and 
+Solves a system of the linear equations :math:`op(A) \cdot X = \alpha B` or :math:`X \cdot op(A) = \alpha B` where :math:`\alpha` is a scalar, :math:`X` and :math:`B` are m-by-n matrices, :math:`A` is a unit or non-unit, upper or lower triangular matrix and
 :math:`op(A)` is one of :math:`A`, :math:`A^T`, or :math:`A^H`. The matrix :math:`X` is overwritten on :math:`B`.
 
 1. For a real matrix :math:`A`, :math:`op(A)` is one of :math:`A` or :math:`A^T`.

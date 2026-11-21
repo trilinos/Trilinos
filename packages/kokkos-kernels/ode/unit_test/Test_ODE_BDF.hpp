@@ -114,6 +114,148 @@ struct StiffChemistry {
   }
 };
 
+// ODE with a finite time singularity:
+// y' = y^2, y(0) = 1 has the exact solution y = 1/(1 - t)
+// which blows up at t = 1. No step size control can
+// integrate past the singularity.
+//
+// A correct solver gives up quickly with MIN_SIZE (~5e3 right hand
+// side evaluations); a solver that instead retries forever would hang
+// the test, so evaluate_function aborts once the evaluation count
+// exceeds a budget no terminating solve gets near. The abort kills the
+// test binary, but that turns an infinite hang into an immediate,
+// clearly labeled failure.
+template <class execution_space>
+struct FiniteBlowup {
+  static constexpr int neqs          = 1;
+  static constexpr int64_t max_evals = 1e6;
+
+  Kokkos::View<int64_t, execution_space> num_evals{"FiniteBlowup eval count"};
+
+  template <class vec_type1, class vec_type2>
+  KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
+                                         const vec_type2& f) const {
+    if (max_evals < ++num_evals()) {
+      Kokkos::abort("FiniteBlowup: evaluation budget exceeded, the BDF solver is likely stuck in an infinite loop");
+    }
+    f(0) = y(0) * y(0);
+  }
+
+  template <class vec_type, class mat_type>
+  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/, const double /*dt*/, const vec_type& y,
+                                         const mat_type& jac) const {
+    jac(0, 0) = 2.0 * y(0);
+  }
+};
+
+// Simple quadratic ODE
+// used to check the root of the
+// corrector equation solved by the
+// adaptive BDF (NDF) time stepper.
+//
+// Equation: y'(t) = y(t)**2
+// Jacobian: df/dy = 2*y
+struct Quadratic {
+  static constexpr int neqs = 1;
+
+  Quadratic() {}
+
+  template <class vec_type1, class vec_type2>
+  KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
+                                         const vec_type2& f) const {
+    f(0) = y(0) * y(0);
+  }
+
+  template <class vec_type, class mat_type>
+  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/, const double /*dt*/, const vec_type& y,
+                                         const mat_type& jac) const {
+    jac(0, 0) = 2.0 * y(0);
+  }
+};  // Quadratic
+
+// Non-autonomous polynomial ODE
+// Since its right hand side depends explicitly
+// on time it detects implicit stages evaluated
+// at the wrong time: BDF2 reproduces the degree
+// two polynomial solution exactly only when f
+// is evaluated at t+dt.
+//
+// Equation: y'(t) = t + 1
+// Jacobian: df/dy = 0
+// Solution: y = 0.5*t^2 + t + y0
+struct TimeDependentPoly {
+  static constexpr int neqs = 1;
+
+  TimeDependentPoly() {}
+
+  template <class vec_type1, class vec_type2>
+  KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/, const vec_type1& /*y*/,
+                                         const vec_type2& f) const {
+    f(0) = t + 1.0;
+  }
+
+  template <class vec_type, class mat_type>
+  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/, const double /*dt*/, const vec_type& /*y*/,
+                                         const mat_type& jac) const {
+    jac(0, 0) = 0.0;
+  }
+};
+
+// A sparse linear system whose BDF iteration matrix (I - dt*J) breaks
+// the static pivot selection of Gesv::StaticPivoting even though it is
+// non-singular (det(I - dt*J) = (1 + dt)^3) and well conditioned. It has
+// the sparsity structure of a chemistry network with an energy equation:
+// one dense row and otherwise nearly diagonal rows.
+//
+// Equations: y0' = -y0 - 10*y1
+//            y1' = -y1
+//            y2' = -1000*y0 - y2
+//
+// For dt >~ 0.001 the static pivoting proceeds as follows: row 2
+// is processed first (largest row max, 1000*dt) and takes column 0; row
+// 0 is processed next and takes column 1 since its diagonal entry was
+// scaled down by the column 0 maximum 1000*dt; row 1 has a single
+// nonzero entry, in the already taken column 1, so no pivot can be
+// assigned to it and the linear solve reports a failure.
+//
+// Solution: y0 = (y0(0) - 10*t*y1(0))*exp(-t)
+//           y1 = y1(0)*exp(-t)
+//           y2 = (y2(0) - 1000*t*y0(0) + 5000*t*t*y1(0))*exp(-t)
+struct SparseLinearSystem {
+  static constexpr int neqs = 3;
+
+  SparseLinearSystem() {}
+
+  template <class vec_type1, class vec_type2>
+  KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
+                                         const vec_type2& f) const {
+    f(0) = -y(0) - 10.0 * y(1);
+    f(1) = -y(1);
+    f(2) = -1000.0 * y(0) - y(2);
+  }
+
+  template <class vec_type, class mat_type>
+  KOKKOS_FUNCTION void evaluate_jacobian(const double /*t*/, const double /*dt*/, const vec_type& /*y*/,
+                                         const mat_type& jac) const {
+    jac(0, 0) = -1.0;
+    jac(0, 1) = -10.0;
+    jac(0, 2) = 0.0;
+    jac(1, 0) = 0.0;
+    jac(1, 1) = -1.0;
+    jac(1, 2) = 0.0;
+    jac(2, 0) = -1000.0;
+    jac(2, 1) = 0.0;
+    jac(2, 2) = -1.0;
+  }
+
+  template <class vec_type1, class vec_type2>
+  KOKKOS_FUNCTION void solution(const double t, const vec_type1& y0, const vec_type2& y) const {
+    y(0) = (y0(0) - 10.0 * t * y0(1)) * Kokkos::exp(-t);
+    y(1) = y0(1) * Kokkos::exp(-t);
+    y(2) = (y0(2) - 1000.0 * t * y0(0) + 5000.0 * t * t * y0(1)) * Kokkos::exp(-t);
+  }
+};  // SparseLinearSystem
+
 template <class ode_type, KokkosODE::Experimental::BDF_type bdf_type, class vec_type, class mv_type, class mat_type,
           class scalar_type>
 struct BDFSolve_wrapper {
@@ -149,16 +291,17 @@ struct BDFSolve_wrapper {
   }
 };
 
-template <class ode_type, class mat_type, class vec_type, class scalar_type>
+template <class ode_type, class mat_type, class vec_type, class scalar_type, class status_view_type>
 struct BDF_Solve_wrapper {
   const ode_type my_ode;
   const scalar_type t_start, t_end, dt, max_step;
   const vec_type y0, y_new;
   const mat_type temp, temp2;
+  const status_view_type status;
 
   BDF_Solve_wrapper(const ode_type& my_ode_, const scalar_type& t_start_, const scalar_type& t_end_,
                     const scalar_type& dt_, const scalar_type& max_step_, const vec_type& y0_, const vec_type& y_new_,
-                    const mat_type& temp_, const mat_type& temp2_)
+                    const mat_type& temp_, const mat_type& temp2_, const status_view_type& status_)
       : my_ode(my_ode_),
         t_start(t_start_),
         t_end(t_end_),
@@ -167,10 +310,48 @@ struct BDF_Solve_wrapper {
         y0(y0_),
         y_new(y_new_),
         temp(temp_),
-        temp2(temp2_) {}
+        temp2(temp2_),
+        status(status_) {}
 
   KOKKOS_FUNCTION void operator()(const int) const {
-    KokkosODE::Experimental::BDFSolve(my_ode, t_start, t_end, dt, max_step, y0, y_new, temp, temp2);
+    status() = KokkosODE::Experimental::BDFSolve(my_ode, t_start, t_end, dt, max_step, y0, y_new, temp, temp2);
+  }
+};
+
+template <class ode_type, class vec_type, class mat_type, class status_view_type, class scalar_type>
+struct BDFCorrectorSolve_wrapper {
+  ode_type my_ode;
+  scalar_type t, dt, c;
+  vec_type y, y_predict, psi, rhs, update, scale;
+  mat_type jac, tmp;
+  KokkosODE::Experimental::Newton_params params;
+  status_view_type status;
+
+  BDFCorrectorSolve_wrapper(const ode_type& my_ode_, const scalar_type t_, const scalar_type dt_, const scalar_type c_,
+                            const vec_type& y_, const vec_type& y_predict_, const vec_type& psi_, const vec_type& rhs_,
+                            const vec_type& update_, const vec_type& scale_, const mat_type& jac_, const mat_type& tmp_,
+                            const KokkosODE::Experimental::Newton_params& params_, const status_view_type& status_)
+      : my_ode(my_ode_),
+        t(t_),
+        dt(dt_),
+        c(c_),
+        y(y_),
+        y_predict(y_predict_),
+        psi(psi_),
+        rhs(rhs_),
+        update(update_),
+        scale(scale_),
+        jac(jac_),
+        tmp(tmp_),
+        params(params_),
+        status(status_) {}
+
+  KOKKOS_FUNCTION
+  void operator()(const int /*idx*/) const {
+    KokkosODE::Impl::BDF_system_wrapper2 sys(my_ode, psi, y_predict, t, dt);
+    sys.c                 = c;
+    int newton_iterations = 0;
+    status(0) = KokkosODE::Experimental::Newton::Solve(sys, params, jac, tmp, y, rhs, update, scale, newton_iterations);
   }
 };
 
@@ -181,7 +362,7 @@ void test_BDF_Logistic() {
   using mv_type         = Kokkos::View<scalar_type**, execution_space>;
   using mat_type        = Kokkos::View<scalar_type**, execution_space>;
 
-  Kokkos::RangePolicy<execution_space> myPolicy(0, 1);
+  Kokkos::RangePolicy<execution_space> my_policy(0, 1);
   Logistic mySys(1, 1);
 
   constexpr int num_tests   = 7;
@@ -210,7 +391,7 @@ void test_BDF_Logistic() {
 
     BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF1, vec_type, mv_type, mat_type, scalar_type>
         solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
-    Kokkos::parallel_for(myPolicy, solve_wrapper);
+    Kokkos::parallel_for(my_policy, solve_wrapper);
     Kokkos::fence();
 
     auto y_new_h = Kokkos::create_mirror_view(y_new);
@@ -235,7 +416,7 @@ void test_BDF_Logistic() {
 
     BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF2, vec_type, mv_type, mat_type, scalar_type>
         solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
-    Kokkos::parallel_for(myPolicy, solve_wrapper);
+    Kokkos::parallel_for(my_policy, solve_wrapper);
     Kokkos::fence();
 
     auto y_new_h = Kokkos::create_mirror_view(y_new);
@@ -260,7 +441,7 @@ void test_BDF_Logistic() {
 
     BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF3, vec_type, mv_type, mat_type, scalar_type>
         solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
-    Kokkos::parallel_for(myPolicy, solve_wrapper);
+    Kokkos::parallel_for(my_policy, solve_wrapper);
     Kokkos::fence();
 
     auto y_new_h = Kokkos::create_mirror_view(y_new);
@@ -285,7 +466,7 @@ void test_BDF_Logistic() {
 
     BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF4, vec_type, mv_type, mat_type, scalar_type>
         solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
-    Kokkos::parallel_for(myPolicy, solve_wrapper);
+    Kokkos::parallel_for(my_policy, solve_wrapper);
     Kokkos::fence();
 
     auto y_new_h = Kokkos::create_mirror_view(y_new);
@@ -309,7 +490,7 @@ void test_BDF_Logistic() {
 
     BDFSolve_wrapper<Logistic, KokkosODE::Experimental::BDF_type::BDF5, vec_type, mv_type, mat_type, scalar_type>
         solve_wrapper(mySys, t_start, t_end, num_steps[idx], y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
-    Kokkos::parallel_for(myPolicy, solve_wrapper);
+    Kokkos::parallel_for(my_policy, solve_wrapper);
     Kokkos::fence();
 
     auto y_new_h = Kokkos::create_mirror_view(y_new);
@@ -349,10 +530,10 @@ void test_BDF_LotkaVolterra() {
   Kokkos::deep_copy(y0, 10.0);
   Kokkos::deep_copy(y_vecs, 10.0);
 
-  Kokkos::RangePolicy<execution_space> myPolicy(0, 1);
+  Kokkos::RangePolicy<execution_space> my_policy(0, 1);
   BDFSolve_wrapper<LotkaVolterra, KokkosODE::Experimental::BDF_type::BDF5, vec_type, mv_type, mat_type, scalar_type>
       solve_wrapper(mySys, t_start, t_end, 1000, y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
-  Kokkos::parallel_for(myPolicy, solve_wrapper);
+  Kokkos::parallel_for(my_policy, solve_wrapper);
 }
 
 template <class device_type, class scalar_type>
@@ -383,11 +564,149 @@ void test_BDF_StiffChemistry() {
   Kokkos::deep_copy(y0, y0_h);
   Kokkos::deep_copy(y_vecs, 0.0);
 
-  Kokkos::RangePolicy<execution_space> myPolicy(0, 1);
+  Kokkos::RangePolicy<execution_space> my_policy(0, 1);
   BDFSolve_wrapper<StiffChemistry, KokkosODE::Experimental::BDF_type::BDF5, vec_type, mv_type, mat_type, scalar_type>
       solve_wrapper(mySys, t_start, t_end, 110000, y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
-  Kokkos::parallel_for(myPolicy, solve_wrapper);
+  Kokkos::parallel_for(my_policy, solve_wrapper);
 }
+
+// Integrate the SparseLinearSystem, whose iteration matrix I - dt*J is
+// well conditioned but breaks the static pivotint used in
+// Gesv::StaticPivoting (see the comment on the struct above), and
+// compare against the analytical solution. With static pivoting every
+// Newton iteration reports a spurious linear solve failure: the fixed
+// step BDF1 solve never advances past the initial condition and the
+// adaptive BDFSolve accepts unconverged iterates. With partial
+// pivoting (Getrf/Getrs) both integrate the system accurately.
+template <class device_type, class scalar_type>
+void test_BDF_SparseLinearSystem() {
+  using execution_space = typename device_type::execution_space;
+  using vec_type        = Kokkos::View<scalar_type*, execution_space>;
+  using mv_type         = Kokkos::View<scalar_type**, execution_space>;
+  using mat_type        = Kokkos::View<scalar_type**, execution_space>;
+
+  SparseLinearSystem mySys{};
+
+  const scalar_type t_start = 0.0, t_end = 1.0;
+  vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
+  auto y0_h    = Kokkos::create_mirror_view(y0);
+  auto y_new_h = Kokkos::create_mirror_view(y_new);
+
+  // Reference solution
+  Kokkos::View<scalar_type*, Kokkos::HostSpace> y_ref_h("reference solution", mySys.neqs);
+  Kokkos::deep_copy(y0_h, 1.0);
+  mySys.solution(t_end, y0_h, y_ref_h);
+
+  Kokkos::RangePolicy<execution_space> my_policy(0, 1);
+
+  // Fixed order, fixed step BDF1 with dt = 0.1, large enough
+  // for the static pivoting to fail.
+  {
+    const int num_steps = 10;
+    vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs);
+    vec_type scale("scaling factors", mySys.neqs);
+    mat_type jac("jacobian", mySys.neqs, mySys.neqs), temp("temp storage", mySys.neqs, mySys.neqs + 4);
+    mv_type kstack("Startup RK vectors", 6, mySys.neqs);
+    mv_type y_vecs("history vectors", mySys.neqs, 1);
+
+    Kokkos::deep_copy(scale, 1);
+    Kokkos::deep_copy(y0, 1.0);
+
+    BDFSolve_wrapper<SparseLinearSystem, KokkosODE::Experimental::BDF_type::BDF1, vec_type, mv_type, mat_type,
+                     scalar_type>
+        solve_wrapper(mySys, t_start, t_end, num_steps, y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
+    Kokkos::parallel_for(my_policy, solve_wrapper);
+    Kokkos::fence();
+
+    Kokkos::deep_copy(y_new_h, y_new);
+    for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
+      // BDF1 discretization error at dt=0.1 is ~5%; a failed linear
+      // solve leaves y at its initial condition, off by more than 100%.
+      EXPECT_NEAR_KK_REL(y_new_h(eqIdx), y_ref_h(eqIdx), 0.1);
+    }
+  }
+
+  // Adaptive time step BDFSolve
+  {
+    mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
+
+    Kokkos::deep_copy(y0, 1.0);
+    Kokkos::deep_copy(y_new, 0.0);
+
+    Kokkos::View<KokkosODE::Experimental::ode_solver_status, execution_space> status("solver status");
+    BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, scalar_type(0.0), (t_end - t_start) / 10, y0, y_new, temp,
+                                  temp2, status);
+    Kokkos::parallel_for(my_policy, bdf_wrapper);
+    Kokkos::fence();
+
+    auto status_h = Kokkos::create_mirror_view(status);
+    Kokkos::deep_copy(status_h, status);
+    EXPECT_EQ(status_h(), KokkosODE::Experimental::ode_solver_status::SUCCESS);
+
+    Kokkos::deep_copy(y_new_h, y_new);
+    for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
+      EXPECT_NEAR_KK_REL(y_new_h(eqIdx), y_ref_h(eqIdx), 1.0e-2);
+    }
+  }
+}  // test_BDF_SparseLinearSystem
+
+// Solve the corrector equation of the adaptive BDF (NDF) time stepper,
+//   0 = psi + (y - y_predict) - c * f(t+dt, y),
+// through BDF_system_wrapper2 the same way BDFStep does: the Newton
+// iteration starts from y = y_predict with a zeroed update vector.
+// For the quadratic ODE f(y) = y**2 with psi = 7, y_predict = 3 and
+// c = dt = 1/2 the equation reads 0 = y**2 - 2*y - 8 and Newton
+// converges to its root y = 4 in a handful of iterations (c = dt makes
+// the modified Newton Jacobian I - dt*df/dy exact here).
+//
+// This guards against a regression where the correction y - y_predict
+// was read from the Newton solver's update vector: that vector only
+// holds the last Newton step, which vanishes as the iteration
+// converges, so the corrector root degenerates to the root of
+// 0 = psi - c * f(t+dt, y), i.e. y = sqrt(14) ~ 3.742, and the solve
+// either converges to that wrong root or is flagged as divergent.
+// The bug only shows from the third Newton iteration on -- after a
+// single step the update still equals the full correction -- which is
+// why y_predict is placed far enough from the root to require several
+// iterations.
+template <class device_type, class scalar_type>
+void test_BDF_corrector_equation() {
+  using execution_space      = typename device_type::execution_space;
+  using newton_solver_status = KokkosODE::Experimental::newton_solver_status;
+  using vec_type             = Kokkos::View<scalar_type*, execution_space>;
+  using mat_type             = Kokkos::View<scalar_type**, execution_space>;
+
+  Quadratic mySys{};
+
+  const scalar_type t = 0.0, dt = 0.5, c = 0.5;
+
+  vec_type y("solution", mySys.neqs), y_predict("predictor", mySys.neqs), psi("higher order terms", mySys.neqs);
+  vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs), scale("scaling factors", mySys.neqs);
+  mat_type jac("jacobian", mySys.neqs, mySys.neqs), tmp("temp mem", mySys.neqs, mySys.neqs + 4);
+  Kokkos::View<newton_solver_status*, execution_space> status("newton status", 1);
+
+  Kokkos::deep_copy(psi, 7.0);
+  Kokkos::deep_copy(y_predict, 3.0);
+  Kokkos::deep_copy(y, 3.0);
+  Kokkos::deep_copy(update, 0.0);
+  Kokkos::deep_copy(scale, 1.0);
+
+  const KokkosODE::Experimental::Newton_params params(50, 1e-12, 1e-8);
+
+  Kokkos::RangePolicy<execution_space> my_policy(0, 1);
+  BDFCorrectorSolve_wrapper solve_wrapper(mySys, t, dt, c, y, y_predict, psi, rhs, update, scale, jac, tmp, params,
+                                          status);
+  Kokkos::parallel_for(my_policy, solve_wrapper);
+  Kokkos::fence();
+
+  auto status_h = Kokkos::create_mirror_view(status);
+  auto y_h      = Kokkos::create_mirror_view(y);
+  Kokkos::deep_copy(status_h, status);
+  Kokkos::deep_copy(y_h, y);
+
+  EXPECT_TRUE(status_h(0) == newton_solver_status::NLS_SUCCESS);
+  EXPECT_NEAR_KK_REL(y_h(0), static_cast<scalar_type>(4.0), static_cast<scalar_type>(1.0e-5));
+}  // test_BDF_corrector_equation
 
 // template <class ode_type, KokkosODE::Experimental::BDF_type bdf_type,
 //           class vec_type, class mv_type, class mat_type, class scalar_type>
@@ -485,13 +804,13 @@ void test_BDF_StiffChemistry() {
 //   Kokkos::deep_copy(y0, 10.0);
 //   Kokkos::deep_copy(y_vecs, 10.0);
 
-//   Kokkos::RangePolicy<execution_space> myPolicy(0, num_solves);
+//   Kokkos::RangePolicy<execution_space> my_policy(0, num_solves);
 //   BDFSolve_parallel<LotkaVolterra, KokkosODE::Experimental::BDF_type::BDF5,
 //                     vec_type, mv_type, mat_type, scalar_type>
 //       solve_wrapper(mySys, t_start, t_end, 1000, y0, y_new, rhs, update,
 //       scale, y_vecs,
 //                     kstack, temp, jac);
-//   Kokkos::parallel_for(myPolicy, solve_wrapper);
+//   Kokkos::parallel_for(my_policy, solve_wrapper);
 
 //   Kokkos::fence();
 // }
@@ -614,8 +933,10 @@ void test_adaptive_BDF() {
   std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3) << ", " << D(0, 4)
             << ", " << D(0, 5) << ", " << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
 
-  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, 0.2, y0, y_new,
-                           rhs, update, temp, temp2);
+  KokkosODE::Experimental::ode_solver_status status =
+      KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, 0.2, y0,
+                               y_new, rhs, update, temp, temp2);
+  EXPECT_EQ(status, KokkosODE::Experimental::ode_solver_status::SUCCESS);
 
   for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
     y0(eqIdx) = y_new(eqIdx);
@@ -630,8 +951,9 @@ void test_adaptive_BDF() {
   std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3) << ", " << D(0, 4)
             << ", " << D(0, 5) << ", " << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
 
-  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, 0.2, y0, y_new,
-                           rhs, update, temp, temp2);
+  status = KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, 0.2, y0,
+                                    y_new, rhs, update, temp, temp2);
+  EXPECT_EQ(status, KokkosODE::Experimental::ode_solver_status::SUCCESS);
 
   for (int eqIdx = 0; eqIdx < mySys.neqs; ++eqIdx) {
     y0(eqIdx) = y_new(eqIdx);
@@ -646,8 +968,9 @@ void test_adaptive_BDF() {
   std::cout << "Initial D: {" << D(0, 0) << ", " << D(0, 1) << ", " << D(0, 2) << ", " << D(0, 3) << ", " << D(0, 4)
             << ", " << D(0, 5) << ", " << D(0, 6) << ", " << D(0, 7) << "}" << std::endl;
 
-  KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, 0.2, y0, y_new,
-                           rhs, update, temp, temp2);
+  status = KokkosODE::Impl::BDFStep(mySys, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, 0.2, y0,
+                                    y_new, rhs, update, temp, temp2);
+  EXPECT_EQ(status, KokkosODE::Experimental::ode_solver_status::SUCCESS);
 
   std::cout << "Final t: " << t << ", y=" << y_new(0) << std::endl;
 
@@ -679,7 +1002,9 @@ void test_adaptive_BDF_v2() {
     std::cout << "Initial Step Size: dt=" << dt << std::endl;
   }
 
-  KokkosODE::Experimental::BDFSolve(mySys, t_start, t_end, 0.0117188, (t_end - t_start) / 10, y0, y_new, temp, temp2);
+  const auto status = KokkosODE::Experimental::BDFSolve(mySys, t_start, t_end, 0.0117188, (t_end - t_start) / 10, y0,
+                                                        y_new, temp, temp2);
+  EXPECT_EQ(status, KokkosODE::Experimental::ode_solver_status::SUCCESS);
 }
 
 template <class Device, class scalar_type>
@@ -703,16 +1028,140 @@ void test_BDF_adaptive_stiff() {
   Kokkos::deep_copy(y0, y0_h);
 
   mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
+  Kokkos::View<KokkosODE::Experimental::ode_solver_status, execution_space> status("solver status");
 
   Kokkos::RangePolicy<execution_space> policy(0, 1);
-  BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt, (t_end - t_start) / 10, y0, y_new, temp, temp2);
+  BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt, (t_end - t_start) / 10, y0, y_new, temp, temp2, status);
 
   Kokkos::parallel_for(policy, bdf_wrapper);
 
+  auto status_h = Kokkos::create_mirror_view(status);
+  Kokkos::deep_copy(status_h, status);
+  EXPECT_EQ(status_h(), KokkosODE::Experimental::ode_solver_status::SUCCESS);
+
   auto y_new_h = Kokkos::create_mirror_view(y_new);
   Kokkos::deep_copy(y_new_h, y_new);
-  std::cout << "Stiff Chemistry solution at t=500: {" << y_new_h(0) << ", " << y_new_h(1) << ", " << y_new_h(2) << "}"
+  std::cout << "Stiff Chemistry solution at t=350: {" << y_new_h(0) << ", " << y_new_h(1) << ", " << y_new_h(2) << "}"
             << std::endl;
+
+  // Reference solution at t=350 computed with SciPy's Radau integrator
+  // using rtol=1e-12 and atol=1e-14. BDFSolve integrates with rtol=1e-3
+  // so we check the solution with a relative tolerance of 5e-3.
+  // Scaling the Jacobian of the corrector residual with dt instead of
+  // c=dt/alpha[order] leads to relative errors around 9e-3 which this
+  // test would catch, see issue #5.
+  const scalar_type y_ref[3] = {4.6713854e-01, 3.4400401e-06, 5.3285802e-01};
+  EXPECT_NEAR_KK_REL(y_new_h(0), y_ref[0], 5.0e-3);
+  EXPECT_NEAR_KK_REL(y_new_h(1), y_ref[1], 5.0e-3);
+  EXPECT_NEAR_KK_REL(y_new_h(2), y_ref[2], 5.0e-3);
+}
+
+// Integrate a non-autonomous ODE, y' = t + 1, with both the fixed
+// order and the adaptive BDF solvers. The implicit stage of BDF is
+// taken at the end of the step so f and its Jacobian have to be
+// evaluated at t+dt: evaluating them at t instead leaves an O(dt)
+// error in the solution which both checks below detect.
+template <class device_type, class scalar_type>
+void test_BDF_time_dependence() {
+  using execution_space = typename device_type::execution_space;
+  using vec_type        = Kokkos::View<scalar_type*, execution_space>;
+  using mv_type         = Kokkos::View<scalar_type**, execution_space>;
+  using mat_type        = Kokkos::View<scalar_type**, execution_space>;
+
+  TimeDependentPoly mySys{};
+  Kokkos::RangePolicy<execution_space> myPolicy(0, 1);
+
+  const scalar_type t_start = 0.0, t_end = 1.0;
+  const scalar_type exact_val = 0.5 * t_end * t_end + t_end + 1.0;
+
+  // Fixed order: BDF2 integrates the degree two polynomial solution
+  // exactly so any error beyond round-off comes from evaluating the
+  // implicit stage at the wrong time.
+  {
+    constexpr int num_steps = 10;
+    vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
+    vec_type rhs("rhs", mySys.neqs), update("update", mySys.neqs);
+    vec_type scale("scaling factors", mySys.neqs);
+    mat_type jac("jacobian", mySys.neqs, mySys.neqs), temp("temp storage", mySys.neqs, mySys.neqs + 4);
+    mv_type kstack("Startup RK vectors", 6, mySys.neqs);
+    mv_type y_vecs("history vectors", mySys.neqs, 2);
+
+    Kokkos::deep_copy(scale, 1);
+    Kokkos::deep_copy(y0, 1.0);
+
+    BDFSolve_wrapper<TimeDependentPoly, KokkosODE::Experimental::BDF_type::BDF2, vec_type, mv_type, mat_type,
+                     scalar_type>
+        solve_wrapper(mySys, t_start, t_end, num_steps, y0, y_new, rhs, update, scale, y_vecs, kstack, temp, jac);
+    Kokkos::parallel_for(myPolicy, solve_wrapper);
+    Kokkos::fence();
+
+    auto y_new_h = Kokkos::create_mirror_view(y_new);
+    Kokkos::deep_copy(y_new_h, y_new);
+
+    EXPECT_NEAR_KK(y_new_h(0), exact_val, 1e-10);
+  }
+
+  // Adaptive: with f evaluated at t instead of t+dt the error at
+  // t_end is ~1e-1, two orders of magnitude above the tolerance
+  // used here (the solver targets atol=1e-6, rtol=1e-3).
+  {
+    vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
+    mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
+
+    Kokkos::deep_copy(y0, 1.0);
+
+    const scalar_type dt = (t_end - t_start) / 100;
+    Kokkos::View<KokkosODE::Experimental::ode_solver_status, execution_space> status("solver status");
+    BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt, (t_end - t_start) / 10, y0, y_new, temp, temp2, status);
+    Kokkos::parallel_for(myPolicy, bdf_wrapper);
+    Kokkos::fence();
+
+    auto status_h = Kokkos::create_mirror_view(status);
+    Kokkos::deep_copy(status_h, status);
+    EXPECT_EQ(status_h(), KokkosODE::Experimental::ode_solver_status::SUCCESS);
+
+    auto y_new_h = Kokkos::create_mirror_view(y_new);
+    Kokkos::deep_copy(y_new_h, y_new);
+
+    EXPECT_NEAR_KK(y_new_h(0), exact_val, 1e-3);
+  }
+}  // test_BDF_time_dependence
+
+// Regression test: integrating FiniteBlowup past its singularity at
+// t = 1 forces dt below the smallest step size that can still advance
+// t. BDFSolve used to spin forever in that situation; it must instead
+// give up, report MIN_SIZE and leave the last accepted (finite)
+// solution in y_new.
+template <class Device, class scalar_type>
+void test_BDF_finite_blowup() {
+  using execution_space = typename Device::execution_space;
+  using vec_type        = Kokkos::View<scalar_type*, execution_space>;
+  using mat_type        = Kokkos::View<scalar_type**, execution_space>;
+  using KAT             = KokkosKernels::ArithTraits<scalar_type>;
+
+  FiniteBlowup<execution_space> mySys{};
+
+  // The singularity is at t=1 so integration cannot reach t_end.
+  const scalar_type t_start = KAT::zero(), t_end = 2 * KAT::one();
+  scalar_type dt = KAT::zero();
+  vec_type y0("initial conditions", mySys.neqs), y_new("solution", mySys.neqs);
+  Kokkos::deep_copy(y0, KAT::one());
+
+  mat_type temp("buffer1", mySys.neqs, 23 + 2 * mySys.neqs + 4), temp2("buffer2", 6, 7);
+  Kokkos::View<KokkosODE::Experimental::ode_solver_status, execution_space> status("solver status");
+
+  Kokkos::RangePolicy<execution_space> policy(0, 1);
+  BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt, (t_end - t_start) / 10, y0, y_new, temp, temp2, status);
+
+  Kokkos::parallel_for(policy, bdf_wrapper);
+
+  auto status_h = Kokkos::create_mirror_view(status);
+  Kokkos::deep_copy(status_h, status);
+  EXPECT_EQ(status_h(), KokkosODE::Experimental::ode_solver_status::MIN_SIZE);
+
+  auto y_new_h = Kokkos::create_mirror_view(y_new);
+  Kokkos::deep_copy(y_new_h, y_new);
+  EXPECT_TRUE(Kokkos::isfinite(y_new_h(0)));
 }
 
 }  // namespace Test
@@ -720,6 +1169,8 @@ void test_BDF_adaptive_stiff() {
 TEST_F(TestCategory, BDF_Logistic_serial) { ::Test::test_BDF_Logistic<TestDevice, double>(); }
 TEST_F(TestCategory, BDF_LotkaVolterra_serial) { ::Test::test_BDF_LotkaVolterra<TestDevice, double>(); }
 TEST_F(TestCategory, BDF_StiffChemistry_serial) { ::Test::test_BDF_StiffChemistry<TestDevice, double>(); }
+TEST_F(TestCategory, BDF_corrector_equation) { ::Test::test_BDF_corrector_equation<TestDevice, double>(); }
+TEST_F(TestCategory, BDF_SparseLinearSystem_serial) { ::Test::test_BDF_SparseLinearSystem<TestDevice, double>(); }
 // TEST_F(TestCategory, BDF_parallel_serial) {
 //   ::Test::test_BDF_parallel<TestDevice, double>();
 // }
@@ -729,3 +1180,5 @@ TEST_F(TestCategory, BDF_Nordsieck) { ::Test::test_Nordsieck<TestDevice, double>
 //   ::Test::test_adaptive_BDF_v2<TestDevice, double>();
 // }
 TEST_F(TestCategory, BDF_StiffChemistry_adaptive) { ::Test::test_BDF_adaptive_stiff<TestDevice, double>(); }
+TEST_F(TestCategory, BDF_FiniteBlowup_adaptive) { ::Test::test_BDF_finite_blowup<TestDevice, double>(); }
+TEST_F(TestCategory, BDF_time_dependence) { ::Test::test_BDF_time_dependence<TestDevice, double>(); }

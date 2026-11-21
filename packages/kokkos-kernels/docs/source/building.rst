@@ -57,7 +57,7 @@ OpenMP backend, g++ compiler, Intel Skylake architecture:
 First install Kokkos:
 
 .. code-block:: shell
-  
+
   > cmake \
     -DCMAKE_CXX_COMPILER=g++ \
     -DCMAKE_INSTALL_PREFIX=${HOME}/kokkos-install \
@@ -74,7 +74,7 @@ Then build Kokkos Kernels, pointing to Kokkos:
     -S <KOKKOS_KERNELS_SOURCE> \
     -B <KOKKOS_KERNELS_BUILD_DIRECTORY> \
     -DKokkos_ROOT=${HOME}/kokkos-install \
-    -DCMAKE_CXX_COMPILER=g++ 
+    -DCMAKE_CXX_COMPILER=g++
   > cmake --build <KOKKOS_KERNELS_BUILD_DIRECTORY> --parallel
 
 Cuda and Serial backends, nvcc_wrapper compiler, Power8 and Volta sm_70 architectures, various compilation flags
@@ -162,4 +162,3 @@ To run a specific test in the executable use the ``--gtest_filter`` flag:
 .. code-block:: shell
 
   > ./KokkosKernels_UnitTest_OpenMP --gtest_filter=openmp.dot_double`
-
