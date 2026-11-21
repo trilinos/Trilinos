@@ -1,7 +1,7 @@
 
 <div align="center">
 
-[<img src="https://github.com/kokkos/kokkos.github.io/blob/main/assets/img/kokkos-logo.png" width="50%">](https://kokkos.org)
+[<img src="https://kokkos.org/download/logos/kokkos.png" width="20%">](https://kokkos.org)
 
 </div>
 
@@ -42,20 +42,20 @@ To start learning about Kokkos:
 
 - [API reference](https://kokkos.org/kokkos-core-wiki/): organized by category, i.e., [core](https://kokkos.org/kokkos-core-wiki/API/core-index.html), [algorithms](https://kokkos.org/kokkos-core-wiki/API/algorithms-index.html), [containers](https://kokkos.org/kokkos-core-wiki/API/containers-index.html), and [simd](https://kokkos.org/kokkos-core-wiki/API/simd-index.html).
 
-- [Use cases and Examples](https://kokkos.org/kokkos-core-wiki/tutorials-and-examples/use-cases-and-examples.html): a serie of examples ranging from how to use Kokkos with MPI to Fortran interoperability.
+- [Use cases and Examples](https://kokkos.org/kokkos-core-wiki/tutorials-and-examples/use-cases-and-examples.html): a series of examples ranging from how to use Kokkos with MPI to Fortran interoperability.
 
 ## Obtaining Kokkos
 
 The latest release of Kokkos can be obtained from the [GitHub releases page](https://github.com/kokkos/kokkos/releases/latest).
 
-The current release is [5.2.0](https://github.com/kokkos/kokkos/releases/tag/5.2.0).
+The current release is [5.1.0](https://github.com/kokkos/kokkos/releases/tag/5.1.0).
 
 ```bash
-curl -OJ -L https://github.com/kokkos/kokkos/releases/download/5.2.0/kokkos-5.2.0.tar.gz
+curl -OJ -L https://github.com/kokkos/kokkos/releases/download/5.1.0/kokkos-5.1.0.tar.gz
 # Or with wget
-wget https://github.com/kokkos/kokkos/releases/download/5.2.0/kokkos-5.2.0.tar.gz
+wget https://github.com/kokkos/kokkos/releases/download/5.1.0/kokkos-5.1.0.tar.gz
 # Or with git
-git clone --depth=2 --branch 5.2.0 https://github.com/kokkos/kokkos.git
+git clone --depth=2 --branch 5.1.0 https://github.com/kokkos/kokkos.git
 ```
 
 To clone the latest development version of Kokkos from GitHub:
@@ -95,3 +95,17 @@ Please see the [following page](https://kokkos.org/kokkos-core-wiki/citation.htm
 
 The full license statement used in all headers is available [here](https://kokkos.org/kokkos-core-wiki/license.html) or
 [here](https://github.com/kokkos/kokkos/blob/develop/LICENSE).
+
+The repository follows the [REUSE specification](https://reuse.software/spec/):
+every file carries an [SPDX](https://spdx.dev/) license identifier, either in
+the file itself or in [`REUSE.toml`](REUSE.toml). The [`LICENSES`](LICENSES)
+directory contains the verbatim text of each license referenced by those
+identifiers:
+
+- `Apache-2.0.txt` and `LLVM-exception.txt`: the license of Kokkos itself
+  (`Apache-2.0 WITH LLVM-exception`), as reproduced in the top-level `LICENSE`.
+- `BSD-3-Clause.txt`: the license of bundled third-party code (`tpls/desul` and
+  `tpls/googletest-*`).
+
+The top-level `LICENSE` file remains the authoritative statement for Kokkos.
+Compliance can be checked with `reuse lint`.
