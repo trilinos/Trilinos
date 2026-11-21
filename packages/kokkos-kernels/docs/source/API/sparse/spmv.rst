@@ -79,4 +79,3 @@ Example
 .. literalinclude:: ../../../../example/wiki/sparse/KokkosSparse_wiki_spmv.cpp
   :language: c++
   :lines: 16-
-

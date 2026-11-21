@@ -10,8 +10,8 @@ set(KOKKOSKERNELS_TOP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(KokkosKernels_VERSION_MAJOR 5)
-set(KokkosKernels_VERSION_MINOR 2)
-set(KokkosKernels_VERSION_PATCH 2)
+set(KokkosKernels_VERSION_MINOR 3)
+set(KokkosKernels_VERSION_PATCH 99)
 set(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
 
 #Set variables for config file
@@ -79,6 +79,35 @@ kokkoskernels_add_option("ENABLE_COMPILER_WARNINGS" OFF BOOL
 kokkoskernels_add_option("ENABLE_WARNINGS_AS_ERRORS" OFF BOOL
   "Whether warnings should be treated as errors. Default: OFF")
 
+# ------------------------------------------------------------------
+# Optional build-time speedups for the test executables.  These are
+# opt-in and default to OFF/empty so they don't affect existing users.
+# See cmake/kokkoskernels_tribits.cmake::kokkoskernels_add_executable
+# for the code that consumes these options.
+# ------------------------------------------------------------------
+
+# IMPL_CI_BUILD indicates this is a CI build.  CI machines have fixed
+# toolchains and benefit most from the test build speedups, so turning
+# this ON flips the defaults of TEST_ENABLE_PCH and TEST_SLIM_DEBUG_INFO
+# to ON.  Developer / downstream builds leave it OFF so those speedups
+# stay opt-in.  This option is set by every CI workflow in
+# .github/workflows/.
+kokkoskernels_add_option("IMPL_CI_BUILD" OFF BOOL
+  "Enable defaults appropriate for CI (precompiled headers, slim debug "
+  "info).  Users do not normally set this; it is turned on by the "
+  "project's GitHub Actions workflows.  Default: OFF")
+
+kokkoskernels_add_option("TEST_ENABLE_PCH" ${KokkosKernels_IMPL_CI_BUILD} BOOL
+  "Enable precompiled headers (<gtest/gtest.h>, <Kokkos_Core.hpp>, "
+  "<Kokkos_Random.hpp>) on the test executables to speed up compilation. "
+  "Only applied on host-only, non-Trilinos builds. Default follows "
+  "KokkosKernels_IMPL_CI_BUILD.")
+
+kokkoskernels_add_option("TEST_SLIM_DEBUG_INFO" ${KokkosKernels_IMPL_CI_BUILD} BOOL
+  "In Debug and RelWithDebInfo builds, compile test executables with -g1 "
+  "(backtraces only, no locals/types) instead of the default -g2 to cut "
+  "compile and link time.  Default follows KokkosKernels_IMPL_CI_BUILD.")
+
 include(cmake/kokkoskernels_warnings.cmake)
 include(cmake/kokkoskernels_windows.cmake)
 
@@ -121,7 +150,7 @@ else()
     endif()
     if(${Kokkos_VERSION} VERSION_GREATER_EQUAL "5.1.1")
       message(STATUS "Found Kokkos version ${Kokkos_VERSION} at ${Kokkos_DIR}")
-      if((${Kokkos_VERSION} VERSION_GREATER "5.2.99"))
+      if((${Kokkos_VERSION} VERSION_GREATER "5.3.99"))
         message(WARNING "Configuring with Kokkos ${Kokkos_VERSION} which is newer than the expected develop branch - version check may need update")
       endif()
     else()

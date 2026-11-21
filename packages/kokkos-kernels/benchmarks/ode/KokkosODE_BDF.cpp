@@ -46,16 +46,17 @@ struct StiffChemistry {
   }
 };
 
-template <class ode_type, class mat_type, class vec_type, class scalar_type>
+template <class ode_type, class mat_type, class vec_type, class scalar_type, class status_view_type>
 struct BDF_Solve_wrapper {
   const ode_type my_ode;
   const scalar_type t_start, t_end, dt, max_step;
   const vec_type y0, y_new;
   const mat_type temp, temp2;
+  const status_view_type status;
 
   BDF_Solve_wrapper(const ode_type& my_ode_, const scalar_type& t_start_, const scalar_type& t_end_,
                     const scalar_type& dt_, const scalar_type& max_step_, const vec_type& y0_, const vec_type& y_new_,
-                    const mat_type& temp_, const mat_type& temp2_)
+                    const mat_type& temp_, const mat_type& temp2_, const status_view_type& status_)
       : my_ode(my_ode_),
         t_start(t_start_),
         t_end(t_end_),
@@ -64,7 +65,8 @@ struct BDF_Solve_wrapper {
         y0(y0_),
         y_new(y_new_),
         temp(temp_),
-        temp2(temp2_) {}
+        temp2(temp2_),
+        status(status_) {}
 
   KOKKOS_FUNCTION void operator()(const int idx) const {
     auto subTemp  = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::ALL(), idx);
@@ -72,7 +74,8 @@ struct BDF_Solve_wrapper {
     auto subY0    = Kokkos::subview(y0, Kokkos::ALL(), idx);
     auto subYnew  = Kokkos::subview(y_new, Kokkos::ALL(), idx);
 
-    KokkosODE::Experimental::BDFSolve(my_ode, t_start, t_end, dt, max_step, subY0, subYnew, subTemp, subTemp2);
+    status(idx) =
+        KokkosODE::Experimental::BDFSolve(my_ode, t_start, t_end, dt, max_step, subY0, subYnew, subTemp, subTemp2);
   }
 };
 
@@ -114,6 +117,7 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
   }
 
   mat_type temp("buffer1", neqs, 23 + 2 * neqs + 4, num_odes), temp2("buffer2", 6, 7, num_odes);
+  Kokkos::View<KokkosODE::Experimental::ode_solver_status*, execution_space> status("solver status", num_odes);
 
   if (verbose) {
     std::cout << "Number of problems solved in parallel: " << num_odes << std::endl;
@@ -133,7 +137,7 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
     Kokkos::deep_copy(y_new, KAT::zero());
     Kokkos::deep_copy(temp, KAT::zero());
     Kokkos::deep_copy(temp2, KAT::zero());
-    BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt, (t_end - t_start) / 10, y0, y_new, temp, temp2);
+    BDF_Solve_wrapper bdf_wrapper(mySys, t_start, t_end, dt, (t_end - t_start) / 10, y0, y_new, temp, temp2, status);
     state.ResumeTiming();
 
     // Actually run the time integrator
@@ -144,8 +148,13 @@ void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
   std::cout << "Run time: " << run_time << std::endl;
 
   Kokkos::deep_copy(y0_h, y0);
+  auto status_h = Kokkos::create_mirror_view(status);
+  Kokkos::deep_copy(status_h, status);
   double error;
   for (int odeIdx = 0; odeIdx < num_odes; ++odeIdx) {
+    if (status_h(odeIdx) != KokkosODE::Experimental::ode_solver_status::SUCCESS) {
+      std::cout << "Solve failed in problem " << odeIdx << " with status " << status_h(odeIdx) << std::endl;
+    }
     error = 0;
     // error += Kokkos::abs(y0_h(0, odeIdx) - 0.4193639) / 0.4193639;
     // error += Kokkos::abs(y0_h(1, odeIdx) - 0.000002843646) / 0.000002843646;

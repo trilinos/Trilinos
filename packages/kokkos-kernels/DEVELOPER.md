@@ -28,7 +28,7 @@ KOKKOSKERNELS_ADD_OPTION(
 )
 ````
 When running CMake, this will look for a user-provided cache variable `KokkosKernels_ENABLE_THING`.
-If not found, it sets to a default value `ON` - which is a `BOOL`. 
+If not found, it sets to a default value `ON` - which is a `BOOL`.
 `STRING` is the other common option type. The function additionally creates a regular CMake variable `KOKKOSKERNELS_ENABLE_THING` with the given value.
 
 ## Transitive Dependence on Kokkos
@@ -59,5 +59,3 @@ IF (KOKKOSKERNELS_ENABLE_TPL_BLAS)
   ...
 ENDIF()
 ````
-
-

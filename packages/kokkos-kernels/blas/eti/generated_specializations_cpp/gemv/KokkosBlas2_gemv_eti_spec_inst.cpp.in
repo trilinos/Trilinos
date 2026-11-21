@@ -9,5 +9,5 @@
 namespace KokkosBlas {
 namespace Impl {
 @BLAS2_GEMV_ETI_INST_BLOCK@
-  } //IMPL 
+  } //IMPL
 } //Kokkos

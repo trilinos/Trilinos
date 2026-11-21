@@ -68,7 +68,7 @@ void check_ccs_matrix(CcsType ccsMat, IdType crs_col_ids_d, MapType crs_row_map_
 
 template <class ScalarType, class LayoutType, class ExeSpaceType>
 void doCrs2Ccs(size_t m, size_t n, ScalarType min_val, ScalarType max_val, bool fully_sparse = false) {
-  RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> crsMat(m, n, min_val, max_val, fully_sparse);
+  TestUtils::RandCsMatrix<ScalarType, LayoutType, ExeSpaceType> crsMat(m, n, min_val, max_val, fully_sparse);
 
   auto ccsMat = KokkosSparse::crs2ccs(crsMat.get_dim1(), crsMat.get_dim2(), crsMat.get_nnz(), crsMat.get_vals(),
                                       crsMat.get_map(), crsMat.get_ids());
@@ -133,7 +133,7 @@ TEST_F(TestCategory, sparse_crs2ccs) {
   doCrs2Ccs<double, Kokkos::LayoutRight, TestDevice>(50, 10, 10, 100, true);
 
   // Test the convenience wrapper that accepts a crs matrix
-  RandCsMatrix<float, Kokkos::LayoutLeft, TestDevice> csMat(2, 2, 10, 10, false);
+  TestUtils::RandCsMatrix<float, Kokkos::LayoutLeft, TestDevice> csMat(2, 2, 10, 10, false);
   auto crsMatrix =
       ccs2crs(csMat.get_dim2(), csMat.get_dim1(), csMat.get_nnz(), csMat.get_vals(), csMat.get_map(), csMat.get_ids());
   auto ccsMatrix = crs2ccs(crsMatrix);

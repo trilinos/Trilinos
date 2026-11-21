@@ -12,6 +12,3 @@ l1_cache_hit_rate,tex_cache_hit_rate,\
 sm_efficiency,warp_execution_efficiency,branch_efficiency,\
 stall_inst_fetch,stall_memory_dependency,stall_exec_dependency,stall_memory_throttle,stall_pipe_busy,stall_not_selected \
     ./$exec -B $b |& tee $testfile
-
-
-

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
 #include "KokkosBlas1_swap.hpp"
 
 namespace Test {
@@ -36,8 +39,8 @@ void test_swap(int const vector_length) {
 
   const mag_type tol = 10 * KokkosKernels::ArithTraits<scalar_type>::eps();
   for (int idx = 0; idx < vector_length; ++idx) {
-    Test::EXPECT_NEAR_KK_REL(Xtest(idx), Xref(idx), tol);
-    Test::EXPECT_NEAR_KK_REL(Ytest(idx), Yref(idx), tol);
+    EXPECT_NEAR_KK_REL(Xtest(idx), Xref(idx), tol);
+    EXPECT_NEAR_KK_REL(Ytest(idx), Yref(idx), tol);
   }
 }
 

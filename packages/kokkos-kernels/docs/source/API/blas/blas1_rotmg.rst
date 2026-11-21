@@ -8,7 +8,7 @@ Defined in header: :code:`KokkosBlas1_rotmg.hpp`
   template <class execution_space, class DXView, class YView, class PView>
   void rotmg(execution_space const& space, DXView const& d1, DXView const& d2,
              DXView const& x1, YView const& y1, PView const& param);
-  
+
   template <class DXView, class YView, class PView>
   void rotmg(DXView const& d1, DXView const& d2, DXView const& x1,
              YView const& y1, PView const& param);

@@ -85,10 +85,10 @@ struct TplParams {
 ///                        Note: If the heuristics indicate SIMD views are required for optimal
 ///                              performance, notify the user that SIMD views are required for
 ///                              optimal performance.
-///    
+///
 ///                        Specifies which cmake-enabled TPL algorithm to invoke:
 ///                          TPL algorithms currently SUPPORTED by all batched routines:
-///    
+///
 ///                          TPL algorithms currently UNSUPPORTED by all batched routines:
 ///                            ARMPL    Invoke the ArmPL TPL interface
 ///                            MKL      Invoke the MKL TPL interface
@@ -100,7 +100,7 @@ struct TplParams {
 ///                        Note: If the user selects a TPL, an error will be thrown if:
 ///                                1. The TPL is not enabled via cmake
 ///                                2. The input views do not reside on the host/device as needed
-///    
+///
 ///                        Specifies which kokkos-kernels (KK) algorithm to invoke:
 ///                          KK algorithms currently SUPPORTED   by all KK batched routines:
 ///                            KK_SERIAL       Invoke SerialFUNC     via RangePolicy(BatchSz)

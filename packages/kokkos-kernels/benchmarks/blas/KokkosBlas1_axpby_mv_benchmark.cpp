@@ -54,4 +54,4 @@ BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
     ->Unit(benchmark::kMicrosecond)
     ->UseRealTime()
     ->ArgNames({"m", "n"})
-    ->ArgsProduct({benchmark::CreateRange(100000, 100000000, 10), benchmark::CreateRange(5, 5, 1)});
+    ->ArgsProduct({benchmark::CreateRange(100000, 100000000, 10), benchmark::CreateDenseRange(5, 5, 1)});

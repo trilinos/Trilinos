@@ -20,7 +20,7 @@ Applies the `Q` factor from the QR factorization of matrix :math:`A` to matrix :
 
    C=Q*C\quad\text{or}\quadC=C*Q
 
-where :math:`A` is a matrix previously factored using a call to ``geqrf`` and :math:`Tau` stores the associated scaling factors. 
+where :math:`A` is a matrix previously factored using a call to ``geqrf`` and :math:`Tau` stores the associated scaling factors.
 
 1. Overwrites :math:`C` with the :math:`Q*C` using the resources of ``space``.
 2. Same as 1. but uses the resources of the default execution space from ``CMatrix::execution_space``.
@@ -70,4 +70,3 @@ Example
 
 .. literalinclude:: ../../../../example/docs/lapack/KokkosLapack_docs_gemqr.cpp
   :language: c++
-

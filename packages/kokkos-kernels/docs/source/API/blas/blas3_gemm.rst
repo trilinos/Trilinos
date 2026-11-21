@@ -21,6 +21,9 @@ Perform a dense matrix-matrix multiplication
    C = \beta * C + \alpha * A * B
 
 
+When ``C`` has zero extent in the first or second dimension no computations are performed and ``gemm`` returns immediatly.
+When ``A`` has zero extent in the second dimension or when ``alpha == 0``, ``C`` is scaled by ``beta`` and ``gemm`` returns without computing ``A * B``.
+
 1. Iterate over the entries of ``C``, scale them with ``beta``, compute the corresponding dot product of a row of ``A`` with a column of ``B``, scale the result with ``alpha`` and accumulate back into ``C`` using the resources from the ``space`` instance, or
 2. Iterate over the entries of ``C``, scale them with ``beta``, compute the corresponding dot product of a row of ``A`` with a column of ``B``, scale the result with ``alpha`` and accumulate back into ``C`` using resources from the default instance of ``typename CViewType::execution_space``.
 
@@ -75,13 +78,13 @@ Example
       Kokkos::View<double**> A("A",M,N);
       Kokkos::View<double**> B("B",N,M);
       Kokkos::View<double**> C("C",M,M);
-   
+
       Kokkos::deep_copy(A,1.0);
       Kokkos::deep_copy(B,2.0);
 
       const double alpha = double(1.0);
       const double beta = double(0.0);
-   
+
       KokkosBlas::gemm("N","N",alpha,A,B,beta,C);
     }
     Kokkos::finalize();

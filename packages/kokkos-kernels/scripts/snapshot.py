@@ -58,7 +58,7 @@ def validate_options(options):
 
   options.source      = os.path.abspath(options.source)
   options.destination = os.path.abspath(options.destination)
-  
+
   if os.path.exists(options.source):
     apparent_source_repo_type, source_root = deterimine_repo_type(options.source)
   else:
@@ -111,7 +111,7 @@ def run_cmd(cmd, options, working_dir="."):
     print "==== %s stderr ====" % cmd_str
     print proc_stderr
     print "==== %s stderr ====" % cmd_str
- 
+
   if ret_val != 0:
     raise RuntimeError("Command '%s' failed with error code %d. Error message:%s%s%sstdout:%s" % \
       (cmd_str, ret_val, os.linesep, proc_stderr, os.linesep, proc_stdout))
@@ -171,23 +171,23 @@ def find_git_commit_information(options):
   ('sems', 'software.sandia.gov:/git/sems')
   """
   git_log_cmd = ["git", "log", "-1"]
-  
+
   output, error = run_cmd(git_log_cmd, options, options.source)
-  
+
   commit_match = re.match("commit ([0-9a-fA-F]+)", output)
   commit_id = commit_match.group(1)
   commit_log = output
-  
+
   git_remote_cmd = ["git", "remote", "-v"]
   output, error = run_cmd(git_remote_cmd, options, options.source)
-  
+
   remote_match = re.search("origin\s([^ ]*/([^ ]+))", output, re.MULTILINE)
   if not remote_match:
     raise RuntimeError("Could not find origin of repo at %s. Consider using none for source repo type." % (options.source))
 
   source_location = remote_match.group(1)
   source_name     = remote_match.group(2).strip()
-  
+
   if source_name[-1] == "/":
     source_name = source_name[:-1]
 
@@ -201,10 +201,10 @@ def do_git_commit(message, options):
 
   git_add_cmd = ["git", "add", "-A"]
   run_cmd(git_add_cmd, options, options.destination)
-  
+
   git_commit_cmd = ["git", "commit", "-m%s" % message]
   run_cmd(git_commit_cmd, options, options.destination)
-  
+
   git_log_cmd = ["git", "log", "--format=%h", "-1"]
   commit_sha1, error = run_cmd(git_log_cmd, options, options.destination)
 
@@ -214,7 +214,7 @@ def do_git_commit(message, options):
 def verify_git_repo_clean(location, options):
   git_status_cmd = ["git", "status", "--porcelain"]
   output, error = run_cmd(git_status_cmd, options, location)
-  
+
   if output != "":
     if options.no_validate_repo == False:
       raise RuntimeError("%s is not clean.%sPlease commit or stash all changes before running snapshot."
@@ -238,14 +238,14 @@ def main(options):
     commit_log    = "Unknown commit from %s snapshotted at: %s" % (options.source, datetime.datetime.now())
     repo_name     = options.source
     repo_location = options.source
-    
+
   commit_message = create_commit_message(commit_id, commit_log, repo_name, repo_location) + os.linesep*2
-  
+
   if options.dest_repo == "git":
     verify_git_repo_clean(options.destination, options)
 
   rsync(options.source, options.destination, options)
-  
+
   if options.dest_repo == "git":
     do_git_commit(commit_message, options)
   elif options.dest_repo == "none":
@@ -256,10 +256,10 @@ def main(options):
     cwd = os.getcwd()
     print "No commit done by request. Please use file at:"
     print "%s%sif you wish to commit this to a repo later." % (cwd+"/"+file_name, os.linesep)
-  
-  
-  
-  
+
+
+
+
 #end main
 
 if (__name__ == "__main__"):
@@ -267,7 +267,7 @@ if (__name__ == "__main__"):
     doctest.testmod()
     sys.exit(0)
 
-  try:    
+  try:
     options = parse_cmdline(__doc__)
     main(options)
   except RuntimeError, e:
@@ -275,5 +275,5 @@ if (__name__ == "__main__"):
     if "--debug" in sys.argv:
       traceback.print_exc()
     sys.exit(1)
-  else:  
+  else:
     sys.exit(0)

@@ -59,7 +59,12 @@ struct TrsvWrap {
     }
 
     template <bool IsLower, bool Transpose = false>
-    void divide(RangeMultiVectorType X, const scalar_t& A, const lno_t r, const lno_t j) {
+    void factor(const scalar_t& /*A*/) {
+      // Unblocked (scalar) path: no factorization needed.
+    }
+
+    template <bool IsLower, bool Transpose = false>
+    void solve(RangeMultiVectorType X, const scalar_t& A, const lno_t r, const lno_t j) {
       X(r, j) /= A;
     }
   };
@@ -84,8 +89,8 @@ struct TrsvWrap {
     lno_t m_block_items;
     Vector m_ones;
     Block m_data;
-    Block m_tmp;    // Needed for SerialGesv
-    UBlock m_utmp;  // Needed for SerialGesv
+    Block m_tmp;    // LU factorization workspace (stores factored diagonal blocks)
+    UBlock m_utmp;  // Reserved workspace view
     Vector m_vec_data1;
     Vector m_vec_data2;
 
@@ -133,19 +138,45 @@ struct TrsvWrap {
       }
     }
 
+    // Factor the diagonal block once (LU factorization without pivoting).
+    // The factored matrix is stored in m_tmp workspace.
     template <bool IsLower, bool Transpose = false>
-    void divide(RangeMultiVectorType X, const UBlock& A, const lno_t r, const lno_t j) {
+    void factor(const UBlock& A) {
+      UBlock Awork(m_tmp.data(), m_block_size, m_block_size);
+      Kokkos::deep_copy(Awork, A);
+      using LU = KokkosBatched::SerialLU<KokkosBatched::Algo::Level3::Unblocked>;
+      LU::invoke(Awork);
+    }
+
+    // Solve using the factored diagonal block (stored in m_tmp workspace)
+    // for a single right-hand-side vector j.
+    template <bool IsLower, bool Transpose = false>
+    void solve(RangeMultiVectorType X, const UBlock& /*A*/, const lno_t r, const lno_t j) {
       UVector x(m_vec_data1.data(), m_block_size);
       UVector y(m_vec_data2.data(), m_block_size);
       for (lno_t b = 0; b < m_block_size; ++b) {
         y(b) = X(r * m_block_size + b, j);
       }
 
-      // if StaticPivoting is used, there are compiler errors related to
-      // comparing complex and non-complex.
-      using Algo = KokkosBatched::Gesv::NoPivoting;
+      // The factored matrix (L in strictly lower, U in upper incl. diagonal)
+      // lives in m_tmp workspace (first m_block_size columns).
+      UBlock Awork(m_tmp.data(), m_block_size, m_block_size);
 
-      KokkosBatched::SerialGesv<Algo>::invoke(A, x, y, m_utmp);
+      // X = Y
+      KokkosBatched::SerialCopy<KokkosBatched::Trans::NoTranspose>::invoke(y, x);
+
+      // Solve L*x = y  (forward substitution, L has unit diagonal)
+      using KokkosBatched::Algo;
+      using KokkosBatched::Diag;
+      using KokkosBatched::Side;
+      using KokkosBatched::Trans;
+      using KokkosBatched::Uplo;
+      KokkosBatched::SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit,
+                                Algo::Level3::Unblocked>::invoke(1.0, Awork, x);
+
+      // Solve U*x = y  (backward substitution, U has non-unit diagonal)
+      KokkosBatched::SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
+                                Algo::Level3::Unblocked>::invoke(1.0, Awork, x);
 
       for (lno_t b = 0; b < m_block_size; ++b) {
         X(r * m_block_size + b, j) = x(b);
@@ -177,8 +208,10 @@ struct TrsvWrap {
       for (offset_type k = beg; k < end; ++k) {
         const scalar_t A_rc = val(k);
         const lno_t c       = ind(k);
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
+        if (r != c) {
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(r, j) -= A_rc * X(c, j);
+          }
         }
       }  // for each entry A_rc in the current row r
     }    // for each row r
@@ -221,8 +254,9 @@ struct TrsvWrap {
           }
         }
       }  // for each entry A_rc in the current row r
+      co.template factor<true>(A_rr);
       for (lno_t j = 0; j < numVecs; ++j) {
-        co.template divide<true>(X, A_rr, r, j);
+        co.template solve<true>(X, A_rr, r, j);
       }
     }  // for each row r
   }
@@ -255,8 +289,10 @@ struct TrsvWrap {
       for (offset_type k = beg; k < end; ++k) {
         const scalar_t A_rc = val(k);
         const lno_t c       = ind(k);
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
+        if (r != c) {
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(r, j) -= A_rc * X(c, j);
+          }
         }
       }  // for each entry A_rc in the current row r
     }    // for each row r
@@ -299,8 +335,9 @@ struct TrsvWrap {
           }
         }
       }  // for each entry A_rc in the current row r
+      co.template factor<false>(A_rr);
       for (lno_t j = 0; j < numVecs; ++j) {
-        co.template divide<false>(X, A_rr, r, j);
+        co.template solve<false>(X, A_rr, r, j);
       }
     }  // for each row r
   }
@@ -334,8 +371,10 @@ struct TrsvWrap {
       for (offset_type k = beg; k < end; ++k) {
         const scalar_t A_rc = val(k);
         const lno_t r       = ind(k);
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
+        if (r != c) {
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(r, j) -= A_rc * X(c, j);
+          }
         }
       }  // for each entry A_rc in the current column c
     }    // for each column c
@@ -367,6 +406,19 @@ struct TrsvWrap {
     for (lno_t c = numCols - 1; c != static_cast<lno_t>(-1); --c) {
       const offset_type beg = ptr(c);
       const offset_type end = ptr(c + 1);
+      // First pass: divide by the diagonal entry so that subsequent
+      // off-diagonal subtractions use the solved value X(c, j).
+      for (offset_type k = beg; k < end; ++k) {
+        const lno_t r = ind(k);
+        if (r == c) {
+          const auto A_rc = val(k);
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(c, j) = X(c, j) / A_rc;
+          }
+          break;
+        }
+      }
+      // Second pass: subtract off-diagonal contributions.
       for (offset_type k = end - 1; k != beg - 1; --k) {
         const lno_t r   = ind(k);
         const auto A_rc = val(k);
@@ -375,9 +427,7 @@ struct TrsvWrap {
           necessarily hold, depending on the row and column Maps.  See
           note above.*/
         for (lno_t j = 0; j < numVecs; ++j) {
-          if (r == c) {
-            X(c, j) = X(c, j) / A_rc;
-          } else {
+          if (r != c) {
             X(r, j) -= A_rc * X(c, j);
           }
         }
@@ -407,8 +457,10 @@ struct TrsvWrap {
       for (offset_type k = beg; k < end; ++k) {
         const lno_t r       = ind(k);
         const scalar_t A_rc = val(k);
-        for (lno_t j = 0; j < numVecs; ++j) {
-          X(r, j) -= A_rc * X(c, j);
+        if (r != c) {
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(r, j) -= A_rc * X(c, j);
+          }
         }
       }  // for each entry A_rc in the current column c
     }    // for each column c
@@ -476,6 +528,19 @@ struct TrsvWrap {
     for (lno_t c = numCols - 1; c != static_cast<lno_t>(-1); --c) {
       const offset_type beg = ptr(c);
       const offset_type end = ptr(c + 1);
+      // First pass: divide by the diagonal entry so that subsequent
+      // off-diagonal subtractions use the solved value X(c, j).
+      for (offset_type k = beg; k < end; ++k) {
+        const lno_t r = ind(k);
+        if (r == c) {
+          const scalar_t A_rc = STS::conj(val(k));
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(c, j) = X(c, j) / A_rc;
+          }
+          break;
+        }
+      }
+      // Second pass: subtract off-diagonal contributions.
       for (offset_type k = end - 1; k != beg - 1; --k) {
         const lno_t r       = ind(k);
         const scalar_t A_rc = STS::conj(val(k));
@@ -484,9 +549,7 @@ struct TrsvWrap {
           necessarily hold, depending on the row and column Maps.  See
           note above.*/
         for (lno_t j = 0; j < numVecs; ++j) {
-          if (r == c) {
-            X(c, j) = X(c, j) / A_rc;
-          } else {
+          if (r != c) {
             X(r, j) -= A_rc * X(c, j);
           }
         }
@@ -513,6 +576,19 @@ struct TrsvWrap {
     for (lno_t c = 0; c < numCols; ++c) {
       const offset_type beg = ptr(c);
       const offset_type end = ptr(c + 1);
+      // First pass: divide by the diagonal entry so that subsequent
+      // off-diagonal subtractions use the solved value X(c, j).
+      for (offset_type k = beg; k < end; ++k) {
+        const lno_t r       = ind(k);
+        const scalar_t A_rc = val(k);
+        if (r == c) {
+          for (lno_t j = 0; j < numVecs; ++j) {
+            X(c, j) = X(c, j) / A_rc;
+          }
+          break;
+        }
+      }
+      // Second pass: subtract off-diagonal contributions.
       for (offset_type k = beg; k < end; ++k) {
         const lno_t r       = ind(k);
         const scalar_t A_rc = val(k);
@@ -521,9 +597,7 @@ struct TrsvWrap {
           necessarily hold, depending on the row and column Maps.  See
           note above.*/
         for (lno_t j = 0; j < numVecs; ++j) {
-          if (r == c) {
-            X(c, j) = X(c, j) / A_rc;
-          } else {
+          if (r != c) {
             X(r, j) -= A_rc * X(c, j);
           }
         }
@@ -579,17 +653,24 @@ struct TrsvWrap {
     for (lno_t c = 0; c < numCols; ++c) {
       const offset_type beg = ptr(c);
       const offset_type end = ptr(c + 1);
+      // First pass: divide by the diagonal entry so that subsequent
+      // off-diagonal subtractions use the solved value X(c, j).
       for (offset_type k = beg; k < end; ++k) {
         const lno_t r       = ind(k);
         const scalar_t A_rc = STS::conj(val(k));
-        /*(vqd 20 Jul 2020) This assumes that the diagonal entry
-          has equal local row and column indices.  That may not
-          necessarily hold, depending on the row and column Maps.  See
-          note above.*/
-        for (lno_t j = 0; j < numVecs; ++j) {
-          if (r == c) {
+        if (r == c) {
+          for (lno_t j = 0; j < numVecs; ++j) {
             X(c, j) = X(c, j) / A_rc;
-          } else {
+          }
+          break;
+        }
+      }
+      // Second pass: subtract off-diagonal contributions.
+      for (offset_type k = beg; k < end; ++k) {
+        const lno_t r       = ind(k);
+        const scalar_t A_rc = STS::conj(val(k));
+        for (lno_t j = 0; j < numVecs; ++j) {
+          if (r != c) {
             X(r, j) -= A_rc * X(c, j);
           }
         }

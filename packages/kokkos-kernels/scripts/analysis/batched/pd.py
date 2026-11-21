@@ -4,15 +4,15 @@ pdhelp="""Process data.
 
    Run unit tests:
      ./pd.py -t
-     
+
    Parse KokkosKernels_Test_{routine}* files and do some simple plots:
      ./pd.py --kkt-parse --kkt-plot-vs-nthreads-loglog -f KokkosKernels_Test_Gemm.txt
      ./pd.py --kkt-parse --kkt-plot-vs-nthreads-loglog -f KokkosKernels_Test_LU.txt
      ./pd.py --kkt-parse --kkt-plot-vs-nthreads-loglog -f KokkosKernels_Test_Trsm.txt
-     
+
    Save the figure to pdf instead of showing it:
      ./pd.py --kkt-parse --kkt-plot-vs-nthreads-loglog -f KokkosKernels_Test_Gemm.txt -s foo
-     
+
    Linear-linear:
      ./pd.py --kkt-parse --kkt-plot-vs-nthreads-linlin -f KokkosKernels_Test_Trsm.txt
    Linear-log:
@@ -254,7 +254,7 @@ def kkt_plot_vs_nthreads(d, fn_prefix, xlinear=False, ylinear=False, perthread=F
             pat = patmap[rename(alg)] if patmap.has_key(rename(alg)) else ''
             for i, nthr in enumerate(nthreads):
                 f = scale
-                if perthread: 
+                if perthread:
                     f /= nthr
                 y.append(d[exespaces[i]][alg][bs][ival] * f)
 
@@ -334,7 +334,7 @@ def test_plot_lol(fn_prefix):
 def kkt_plot_workset(d, fn_prefix, speedup=False, wide=False):
     assert(len(d.keys()) == 1)
     d0 = d.values()[0]
-    
+
     algs = d0.keys()
     algs.sort()
     blkszs = d0.values()[0].keys()
@@ -411,7 +411,7 @@ def get_optparser():
     p = optparse.OptionParser(usage=pdhelp)
     p.add_option('-t', '--test', dest='test', action='store_true', default=False, help='Run unit tests.')
     p.add_option('-f', '--filename', dest='filename', default='', help='Filename to parse.')
-    
+
     p.add_option('--kkt-parse', dest='kkt_parse', action='store_true', default=False, help='Parse KokkosKernels_Test_{routine}* files.')
     p.add_option('--kkt-plot-vs-nthreads-loglog', dest='kkt_plot_vs_nthreads_loglog', action='store_true', default=False)
     p.add_option('--kkt-plot-vs-nthreads-linlin', dest='kkt_plot_vs_nthreads_linlin', action='store_true', default=False)
@@ -422,7 +422,7 @@ def get_optparser():
     p.add_option('--gflops', dest='gflops', action='store_true', default=False)
     p.add_option('--speedup', dest='speedup', action='store_true', default=False)
     p.add_option('--wide', dest='wide', action='store_true', default=False)
-    
+
     p.add_option('-s', '--save', dest='save_prefix', default='')
     return p
 
@@ -435,7 +435,7 @@ if __name__ == '__main__':
         text = readall(opts.filename)
         if len(text) == 0:
             print "Empty file '" + opts.filename + "'; exiting."
-            sys.exit(-1)        
+            sys.exit(-1)
 
     if opts.kkt_parse:
         d = kkt_parse(text, want_workset=opts.kkt_plot_workset)

@@ -14,19 +14,19 @@ void impl_test_dot(int N) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef KokkosKernels::ArithTraits<ScalarA> ats;
 
-  view_stride_adapter<ViewTypeA> a("a", N);
-  view_stride_adapter<ViewTypeB> b("b", N);
+  TestUtils::view_stride_adapter<ViewTypeA> a("a", N);
+  TestUtils::view_stride_adapter<ViewTypeB> b("b", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(b.d_view, rand_pool, randStart, randEnd);
   }
 
@@ -56,19 +56,19 @@ void impl_test_dot_mv(int N, int K) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef KokkosKernels::ArithTraits<ScalarA> ats;
 
-  view_stride_adapter<ViewTypeA> a("A", N, K);
-  view_stride_adapter<ViewTypeB> b("B", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> a("A", N, K);
+  TestUtils::view_stride_adapter<ViewTypeB> b("B", N, K);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   {
     ScalarA randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
   }
   {
     ScalarB randStart, randEnd;
-    Test::getRandomBounds(10.0, randStart, randEnd);
+    TestUtils::getRandomBounds(10.0, randStart, randEnd);
     Kokkos::fill_random(b.d_view, rand_pool, randStart, randEnd);
   }
 
