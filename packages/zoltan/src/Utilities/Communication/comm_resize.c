@@ -8,6 +8,7 @@
 // @HEADER
 
 #include <stdio.h>
+#include <limits.h>
 #include <mpi.h>
 #include "comm.h"
 #include "zoltan_mem.h"
@@ -91,6 +92,16 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
     }
 
     else {		/* Need to actually compute message sizes */
+
+	/* Reject negative item sizes (e.g. from a faulty application
+	 * ZOLTAN_OBJ_SIZE_FN callback) before they corrupt plan budgets. */
+	for (i = 0; i < plan->nvals; i++) {
+	    if (sizes[i] < 0) {
+		ZOLTAN_COMM_ERROR("Negative item size.", yo, my_proc);
+		return(ZOLTAN_FATAL);
+	    }
+	}
+
 	plan->sizes = (int *) ZOLTAN_MALLOC((plan->nvals + 1) * sizeof(int));
 	if (plan->sizes == NULL) {
 	    return_flag = ZOLTAN_MEMERR;
@@ -141,9 +152,14 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	    for (i = 0; i < nsends + self_msg; i++) {
 	        j = plan->starts_to[i];
 	        for (k = 0; k < plan->lengths_to[i]; k++) {
+		    if (sizes[j] > INT_MAX - sizes_to[i]) {
+			ZOLTAN_COMM_ERROR("Message size overflow.", yo, my_proc);
+			return_flag = ZOLTAN_FATAL;
+			goto Mem_Err;
+		    }
 	 	    sizes_to[i] += sizes[j++];
 	        }
-	        if (sizes_to[i] > plan->max_send_size && 
+	        if (sizes_to[i] > plan->max_send_size &&
 		    plan->procs_to[i] != my_proc)
 	            plan->max_send_size = sizes_to[i];
 	    }
@@ -158,6 +174,11 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	    sum = 0;
 	    for (i = 0; i < nsends + self_msg; i++) {
 		starts_to_ptr[index[i]] = sum;
+		if (sizes_to[index[i]] > INT_MAX - sum) {
+		    ZOLTAN_COMM_ERROR("Total send size overflow.", yo, my_proc);
+		    return_flag = ZOLTAN_FATAL;
+		    goto Mem_Err;
+		}
 		sum += sizes_to[index[i]];
 	    }
 
@@ -177,6 +198,11 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	    sum = 0;
 	    for (i = 0; i < plan->nvals; i++) {
 		offset[i] = sum;
+		if (sizes[i] > INT_MAX - sum) {
+		    ZOLTAN_COMM_ERROR("Total send size overflow.", yo, my_proc);
+		    return_flag = ZOLTAN_FATAL;
+		    goto Mem_Err;
+		}
 		sum += sizes[i];
 	    }
 
@@ -187,11 +213,21 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	        j = plan->starts_to[i];
 	        for (k = 0; k < plan->lengths_to[i]; k++) {
 		    indices_to_ptr[j] = offset[plan->indices_to[j]];
+		    if (sizes[plan->indices_to[j]] > INT_MAX - sizes_to[i]) {
+			ZOLTAN_COMM_ERROR("Message size overflow.", yo, my_proc);
+			return_flag = ZOLTAN_FATAL;
+			goto Mem_Err;
+		    }
 	 	    sizes_to[i] += sizes[plan->indices_to[j++]];
 	        }
-	        if (sizes_to[i] > plan->max_send_size && 
+	        if (sizes_to[i] > plan->max_send_size &&
 		    plan->procs_to[i] != my_proc)
 	            plan->max_send_size = sizes_to[i];
+		if (sizes_to[i] > INT_MAX - sum) {
+		    ZOLTAN_COMM_ERROR("Total send size overflow.", yo, my_proc);
+		    return_flag = ZOLTAN_FATAL;
+		    goto Mem_Err;
+		}
 		sum += sizes_to[i];
 	    }
 	    ZOLTAN_FREE(&offset);
@@ -247,7 +283,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
     }
 
 Mem_Err:
-    if (return_flag == ZOLTAN_MEMERR) {
+    if (return_flag != ZOLTAN_OK) {
 	ZOLTAN_FREE(&index);
 	ZOLTAN_FREE(&sort_val);
 	ZOLTAN_FREE(&offset);

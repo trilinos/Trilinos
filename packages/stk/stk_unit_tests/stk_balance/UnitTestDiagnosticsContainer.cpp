@@ -39,14 +39,14 @@ namespace {
 
 class UnitTestDiagnosticsContainer : public ::testing::Test {};
 
-class UnsignedDiagnosticTester : public stk::balance::UnsignedDiagnostic
+class ContainerUnsignedDiagnosticTester : public stk::balance::UnsignedDiagnostic
 {
 public:
   virtual std::string print_header1(unsigned ) override { return "Test"; }
   virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
 };
 
-class UnsignedDiagnosticTester2 : public stk::balance::UnsignedDiagnostic
+class ContainerUnsignedDiagnosticTester2 : public stk::balance::UnsignedDiagnostic
 {
 public:
   virtual std::string print_header1(unsigned ) override { return "Test"; }
@@ -57,39 +57,39 @@ public:
 TEST_F(UnitTestDiagnosticsContainer, queryDiagnostic_notFound)
 {
   stk::balance::DiagnosticsContainer diagContainer;
-  EXPECT_EQ(diagContainer.get<UnsignedDiagnosticTester>(), nullptr);
+  EXPECT_EQ(diagContainer.get<ContainerUnsignedDiagnosticTester>(), nullptr);
 }
 
 TEST_F(UnitTestDiagnosticsContainer, registration)
 {
   stk::balance::DiagnosticsContainer diagContainer;
-  diagContainer.register_diagnostic<UnsignedDiagnosticTester>();
-  diagContainer.register_diagnostic<UnsignedDiagnosticTester2>();
+  diagContainer.register_diagnostic<ContainerUnsignedDiagnosticTester>();
+  diagContainer.register_diagnostic<ContainerUnsignedDiagnosticTester2>();
 
-  auto retrievedUnsignedDiagnosticTester = diagContainer.get<UnsignedDiagnosticTester>();
-  auto retrievedUnsignedDiagnosticTester2 = diagContainer.get<UnsignedDiagnosticTester2>();
+  auto retrievedUnsignedDiagnosticTester = diagContainer.get<ContainerUnsignedDiagnosticTester>();
+  auto retrievedUnsignedDiagnosticTester2 = diagContainer.get<ContainerUnsignedDiagnosticTester2>();
 
   ASSERT_NE(retrievedUnsignedDiagnosticTester, nullptr);
   ASSERT_NE(retrievedUnsignedDiagnosticTester2, nullptr);
-  EXPECT_EQ(typeid(*retrievedUnsignedDiagnosticTester), typeid(UnsignedDiagnosticTester));
-  EXPECT_EQ(typeid(*retrievedUnsignedDiagnosticTester2), typeid(UnsignedDiagnosticTester2));
+  EXPECT_EQ(typeid(*retrievedUnsignedDiagnosticTester), typeid(ContainerUnsignedDiagnosticTester));
+  EXPECT_EQ(typeid(*retrievedUnsignedDiagnosticTester2), typeid(ContainerUnsignedDiagnosticTester2));
 }
 
 TEST_F(UnitTestDiagnosticsContainer, duplicateRegistration)
 {
   stk::balance::DiagnosticsContainer diagContainer;
-  diagContainer.register_diagnostic<UnsignedDiagnosticTester>();
-  EXPECT_ANY_THROW(diagContainer.register_diagnostic<UnsignedDiagnosticTester>());
+  diagContainer.register_diagnostic<ContainerUnsignedDiagnosticTester>();
+  EXPECT_ANY_THROW(diagContainer.register_diagnostic<ContainerUnsignedDiagnosticTester>());
 }
 
 TEST_F(UnitTestDiagnosticsContainer, iterateDiagnostics)
 {
   stk::balance::DiagnosticsContainer diagContainer;
-  diagContainer.register_diagnostic<UnsignedDiagnosticTester>();
-  diagContainer.register_diagnostic<UnsignedDiagnosticTester2>();
+  diagContainer.register_diagnostic<ContainerUnsignedDiagnosticTester>();
+  diagContainer.register_diagnostic<ContainerUnsignedDiagnosticTester2>();
 
-  std::vector<const std::type_info *> expectedTypes { &typeid(UnsignedDiagnosticTester),
-                                                      &typeid(UnsignedDiagnosticTester2) };
+  std::vector<const std::type_info *> expectedTypes { &typeid(ContainerUnsignedDiagnosticTester),
+                                                      &typeid(ContainerUnsignedDiagnosticTester2) };
 
   unsigned index = 0;
   for (auto it = diagContainer.begin(); it != diagContainer.end(); ++it, ++index) {

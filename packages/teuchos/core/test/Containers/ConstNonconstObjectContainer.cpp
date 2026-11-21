@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, arrow ) {
 TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, arrowEmpty ) {
   ConstNonconstObjectContainer<std::vector<double> > vectorObj;
 #ifdef TEUCHOS_DEBUG
-  TEST_THROW( vectorObj->size(), NullReferenceError );
+  TEST_THROW( std::ignore = vectorObj->size(), NullReferenceError );
 #endif
 }
 
@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, dereference ) {
 TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, dereferenceEmpty ) {
   ConstNonconstObjectContainer<std::vector<double> > vectorObj;
 #ifdef TEUCHOS_DEBUG
-  TEST_THROW( (*vectorObj).size(), NullReferenceError );
+  TEST_THROW( std::ignore = (*vectorObj).size(), NullReferenceError );
 #endif
 }
 

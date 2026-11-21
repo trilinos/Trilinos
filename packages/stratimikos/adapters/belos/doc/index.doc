@@ -66,7 +66,7 @@ through the paces.
 
 Below is a complete listing of the testing function with line numbers:
 
-\includelineno ../thyra/test/test_single_belos_thyra_solver.cpp
+\includelineno test_single_belos_thyra_solver.cpp
 
 */
 

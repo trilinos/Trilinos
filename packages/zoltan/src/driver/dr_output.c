@@ -223,7 +223,9 @@ int output_results(const char *cmd_file,
 
   /* generate the parallel filename for this processor;
    * pexo_fname is command-file-controlled, so bound the copies */
-  snprintf(ctemp, sizeof(ctemp), "%s.%s", pio_info->pexo_fname, tag);
+  snprintf(ctemp, sizeof(ctemp), "%.*s.%s",
+           (int)(sizeof(ctemp) - strlen(tag) - 2),
+           pio_info->pexo_fname, tag);
   gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
 
   fp = fopen(par_out_fname, "w");

@@ -74,7 +74,6 @@ namespace {
   [ save as animation with 60fps ]
 **/
 
-static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 typedef stk::mesh::fixtures::GearsFixture::CartesianField CartesianField;
 typedef stk::mesh::Field<int> IntField;
@@ -106,9 +105,9 @@ void separate_wedge(
 
   std::vector<size_t> requests(fixture.meta_data.entity_rank_count(), 0);
   if (do_separate_wedge) {
-    requests[NODE_RANK] = num_nodes_per_wedge;
+    requests[stk::topology::NODE_RANK] = num_nodes_per_wedge;
   } else {
-    requests[NODE_RANK] = 0;
+    requests[stk::topology::NODE_RANK] = 0;
   }
 
   // Parallel collective call:
@@ -232,7 +231,7 @@ void move_detached_wedges(stk::mesh::fixtures::GearsFixture & fixture, Cartesian
   stk::mesh::Selector select_detached_wedges =  (! fixture.cylindrical_coord_part ) &
     (fixture.meta_data.locally_owned_part() | fixture.meta_data.globally_shared_part());
 
-  stk::mesh::BucketVector const& node_buckets = fixture.bulk_data.get_buckets(NODE_RANK, select_detached_wedges);
+  stk::mesh::BucketVector const& node_buckets = fixture.bulk_data.get_buckets(stk::topology::NODE_RANK, select_detached_wedges);
 
   auto velocityData = velocity_field.data();
   auto oldCoordData = fixture.displacement_field->field_of_state(stk::mesh::StateOld).data();

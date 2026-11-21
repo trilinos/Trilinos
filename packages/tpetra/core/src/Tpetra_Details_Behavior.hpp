@@ -314,6 +314,12 @@ class Behavior {
 
   /// \brief Search the environment for TPETRA_ variables and reject unrecognized ones
   static void reject_unrecognized_env_vars();
+
+  /// \brief Use range shuffle spmv
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_USE_RANGE_SHUFFLE_SPMV</tt> environment variable.
+  static bool useRangeShuffleSpMV();
 };
 
 }  // namespace Details

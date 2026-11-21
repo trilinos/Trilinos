@@ -51,6 +51,7 @@
 #include "stk_util/util/NamedPair.hpp"
 #include <stk_unit_test_utils/stk_mesh_fixtures/TestHexFixture.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 namespace stk { namespace mesh { class Part; } }
 
@@ -347,21 +348,12 @@ TEST_F(TestHexMeta, superset_of_shared_part)
     }
 }
 
-std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim,
-                                                stk::ParallelMachine comm)
-{
-  stk::mesh::MeshBuilder builder(comm);
-  builder.set_spatial_dimension(spatialDim);
-  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  return bulk;
-}
-
 TEST(UnitTestMetaData, ConsistentSerialDebugCheck)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -381,7 +373,7 @@ TEST(UnitTestMetaData, ConsistentParallelDebugCheck)
   if (stk::parallel_machine_size(comm) != 2) { GTEST_SKIP(); }
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, comm);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, comm);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -454,7 +446,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameLength)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -473,7 +465,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameText)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -492,7 +484,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartRank)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -511,7 +503,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartTopology)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -530,7 +522,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartSubset)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -552,7 +544,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooFe
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -572,7 +564,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooMa
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -592,7 +584,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameLength)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -611,7 +603,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameText)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -630,7 +622,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldRank)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -649,7 +641,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNumberOfStates)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -670,7 +662,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooF
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 
@@ -690,7 +682,7 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooM
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
 
   const int spatial_dimension = 3;
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatial_dimension, MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   MetaData& meta = bulk.mesh_meta_data();
 

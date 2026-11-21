@@ -38,9 +38,6 @@
 #  include <type_traits>
 #endif // defined(HAVE_TEUCHOSCORE_CXX11)
 
-/** \example epetra/example/PCPG/PCPGEpetraExFile.cpp
-    This is an example of how to use the Belos::PCPGSolMgr with an ML preconditioner.
-*/
 /** \example tpetra/example/PCPG/PCPGTpetraExFile.cpp
     This is an example of how to use Belos::PCPGSolMgr with Tpetra.
 */

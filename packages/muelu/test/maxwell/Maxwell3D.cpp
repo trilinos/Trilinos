@@ -281,8 +281,7 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
       thyraA = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(SM_Matrix)->getCrsMatrix());
     else
       thyraA = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(GmhdA_Matrix)->getCrsMatrix());
-    RCP<Thyra::VectorBase<Scalar> > thyraX = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyraVector(X->getVectorNonConst(0)));
-    // TODO: Why do we loose a reference when running this with Epetra?
+    RCP<Thyra::VectorBase<Scalar> > thyraX       = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyraVector(X->getVectorNonConst(0)));
     RCP<const Thyra::VectorBase<Scalar> > thyraB = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyraVector(B->getVector(0));
 
     // Build Stratimikos solver

@@ -5,20 +5,19 @@
 #
 # Package options
 #
-PROJECT_NAME           = "Amesos/Thyra Linear Solver Adapter Software"
+PROJECT_NAME           = "Belos/Thyra Linear Solver Adapter Software"
 PROJECT_NUMBER         = "Version of the Day"
-OUTPUT_DIRECTORY       = ../thyra/doc
+OUTPUT_DIRECTORY       = ../adapters/belos/doc
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../thyra/doc/index.doc \
-                         ../thyra/src
+INPUT                  = ../adapters/belos/doc/index.doc \
+                         ../adapters/belos/src
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = ../thyra/example \
-                         ../thyra/test
+EXAMPLE_PATH           = ../adapters/belos/test/LOWSFactory
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES

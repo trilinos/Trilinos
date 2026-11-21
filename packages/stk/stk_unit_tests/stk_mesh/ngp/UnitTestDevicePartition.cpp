@@ -55,7 +55,7 @@ namespace {
 using stk::unit_test_util::Memspace;
 using stk::unit_test_util::DeviceBucket;
 
-void remove_entity(DeviceBucket* bucket, unsigned ordinal)
+void remove_entity_from_partition_bucket(DeviceBucket* bucket, unsigned ordinal)
 {
   stk::ngp::RangePolicy<stk::ngp::ExecSpace> policy(0, 1);
   auto func = KOKKOS_LAMBDA(int) { bucket->remove_entity(ordinal); };
@@ -84,7 +84,7 @@ TEST(DevicePartition, CopyToHost)
   stk::mesh::impl::DeviceBucketRepository<stk::mesh::NgpMeshDefaultMemSpace>& deviceBucketRepo = deviceMesh.get_device_bucket_repository();
 
   DeviceBucket* node_bucket = deviceBucketRepo.get_bucket(stk::topology::NODE_RANK, 0);
-  remove_entity(node_bucket, 1);
+  remove_entity_from_partition_bucket(node_bucket, 1);
 
   stk::mesh::impl::BucketRepository& hostBucketRepo = bulk.my_get_bucket_repository();
   for (stk::mesh::EntityRank rank = stk::topology::BEGIN_RANK; rank < stk::topology::END_RANK; ++rank)

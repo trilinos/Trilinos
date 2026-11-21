@@ -1280,9 +1280,11 @@ class ExodusModel(object):
         translation_list = {'hex': 'hex8',
                             'tet': 'tet4',
                             'tetra': 'tet4',
+                            'tetra4': 'tet4',
                             'tetra10': 'tet10',
                             'tri': 'tri3',
                             'triangle': 'tri3',
+                            'truss': 'line2',
                             'quad': 'quad4',
                             'shell4': 'quad4',
                             'wedge': 'wedge6'}

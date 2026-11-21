@@ -1,0 +1,60 @@
+%This turns on the SAND report covers
+\newif\ifdraft\drafttrue
+\newif\ifsand\sandfalse
+
+\SANDnum{SAND90-0247}
+\SANDauthor{John R. Red-Horse\\
+William C. Mills-Curran\\
+Dennis P. Flanagan}
+\SANDprintDate{\today}
+\newcommand{\theTitle}{SUPES Version 2.1\\
+A Software Utilities Package for the Engineering Sciences}
+\title{\theTitle}
+\ifsand
+\pdfbookmark[1]{Cover}{cover}
+\doCover
+\newpage
+\else
+\SANDmarks{cover}
+\setcounter{page}{3}
+\fi
+
+\pdfbookmark[1]{Title}{title}
+
+%\begin{titlepage}
+\begin{center}
+\SANDnumVar\\
+\SANDreleaseTypeVar\\
+\ifdraft
+Draft Date: \SANDprintDateVar\\
+\else
+Printed \SANDprintDateVar\\
+\fi
+
+\vspace{0.75in}
+\CoverFont{m}{24}{28pt}
+\theTitle\\
+\vspace{0.75in}
+\CoverFont{m}{12}{14pt}
+\SANDauthorVar\\
+\vspace*{.25in}
+Applied Mechanics Division IV\\
+Sandia National Laboratories\\
+Albuquerque, NM 87185-0380\\
+\vspace*{.5in}
+\textbf{Abstract}
+\end{center}
+\vspace{-.4cm}\par
+
+The Software Utilities Package for the Engineering Sciences (SUPES) is a
+collection of subprograms which perform frequently used non-numerical
+services for the engineering applications programmer.  The three functional
+categories of SUPES are: (1) input command parsing, (2) dynamic memory
+management, and (3) system dependent utilities.  The subprograms in categories
+one and two are written in standard FORTRAN-77, while the subprograms in
+category three are written to provide a standardized FORTRAN interface to
+several system dependent features.
+
+NOTE: This version has been cleaned up a little to reflect the current state
+of the code.  Some sections have been removed that are no longer relevant.
+%\end{titlepage}

@@ -19,6 +19,8 @@
 #include <vector>         // for vector
 template <typename INT> class Exo_Read;
 
+using suplib_cpp::Data;
+
 namespace {
   void build_variable_names(const char *type, NameList &names, std::vector<Tolerance> &tols,
                             const Tolerance &default_tol, bool do_all_flag,

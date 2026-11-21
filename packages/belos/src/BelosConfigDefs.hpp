@@ -90,6 +90,11 @@
 #define BELOS_MIN(x,y) (( (x) < (y) ) ? (x)  : (y) )     /* min function  */
 #define BELOS_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
 
+/* Windows shared-build DATA-symbol import/export (BELOS_LIB_DLL_EXPORT).
+ * Included here so every Belos header that pulls in BelosConfigDefs.hpp
+ * (e.g. BelosTypes.hpp DefaultSolverParameters) sees the annotation. */
+#include "Belos_DLLExportMacro.h"
+
 namespace Belos { std::string Belos_Version(); }
 
 // This include file defines macros to avoid warnings under CUDA.  See github issue #1133.

@@ -206,7 +206,7 @@ TEST(FieldIndexTypes, constructionAndArgumentPassing_byte)
 }
 
 
-using TestTypes = ::testing::Types<stk::mesh::ComponentIdx, stk::mesh::CopyIdx, stk::mesh::ScalarIdx,
+using IndexTestTypes = ::testing::Types<stk::mesh::ComponentIdx, stk::mesh::CopyIdx, stk::mesh::ScalarIdx,
                                    stk::mesh::EntityIdx, stk::mesh::ByteIdx>;
 using TestTypesInterop = ::testing::Types<std::pair<stk::mesh::ComponentIdx, int>,
                                           std::pair<stk::mesh::ComponentIdx, unsigned int>,
@@ -236,7 +236,7 @@ using TestTypesInterop = ::testing::Types<std::pair<stk::mesh::ComponentIdx, int
 
 template <typename T>
 class TestFieldIndexTypes : public testing::Test {};
-TYPED_TEST_SUITE(TestFieldIndexTypes, TestTypes,);
+TYPED_TEST_SUITE(TestFieldIndexTypes, IndexTestTypes,);
 
 template <typename T>
 class TestFieldIndexTypesInterop : public testing::Test {};

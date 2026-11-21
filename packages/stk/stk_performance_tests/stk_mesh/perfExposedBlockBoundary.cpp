@@ -10,7 +10,7 @@
 namespace
 {
 
-size_t get_num_global_faces(const stk::mesh::BulkData &bulk)
+size_t get_num_global_faces_exposed(const stk::mesh::BulkData &bulk)
 {
   std::vector<size_t> meshCounts;
   stk::mesh::comm_mesh_counts(bulk, meshCounts);
@@ -59,7 +59,7 @@ protected:
   }
   virtual size_t get_value_to_output_as_iteration_count()
   {
-    return get_num_global_faces(bulkData);
+    return get_num_global_faces_exposed(bulkData);
   }
 
   stk::mesh::BulkData &bulkData;

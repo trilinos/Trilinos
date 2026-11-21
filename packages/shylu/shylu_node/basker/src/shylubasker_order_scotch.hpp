@@ -39,22 +39,21 @@ namespace BaskerNS
    BASKER_BOOL keep_zeros
   )
   {
+    if (Options.verbose == BASKER_TRUE) {
+      printf( " Symmetrizing matrix by A + A'\n" );
+    }
     BASKER_MATRIX T;
     //get matrix transpose
     matrix_transpose(M, T, keep_zeros);
    
     C.set_shape(M.srow, M.nrow, M.scol, M.ncol);
 
-    //BASKER_ASSERT((M.ncol+1) > 0, "scotch ncol"); 
     BASKER_ASSERT(M.nrow > 0, "scotch nrow");
     BASKER_ASSERT(M.nnz  > 0, "scotch nnz");
 
     MALLOC_INT_1DARRAY(C.col_ptr, M.ncol+1);
     MALLOC_INT_1DARRAY(C.row_idx, 2*M.nnz);
 
-    //init_value(C.col_ptr, M.ncol+1, (Int) 0);
-    //init_value(C.row_idx, 2*M.nnz, (Int) 0);
-    
     INT_1DARRAY ws;
     MALLOC_INT_1DARRAY(ws, M.nrow);
     init_value(ws, M.nrow, BASKER_MAX_IDX);
@@ -597,7 +596,7 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE) {
           printf( "\n Output from METIS with %d subdomains\n",int(num_leaves/2) );
           for (int i=0; i<num_leaves-1; i++) {
-            printf( " * metis_size[%d] = %d\n",i,metis_sizes_i(i) );
+            printf( " * metis_size[%d] = %d\n",i,int(metis_sizes_i(i)) );
           }
           printf("\n");
         }
@@ -609,18 +608,15 @@ namespace BaskerNS
         for (Int level_k = 1; level_k <= num_levels; level_k++) {
           Int first_sep1  = pow(2.0, (double)(  level_k)) - 1; // id of the first leaf at this level         (top-to-bottom)
           Int first_leaf1 = pow(2.0, (double)(1+level_k)) - 1; // id of the first new leaf at the next level (top-to-bottom)
-          Int num_leaves = (first_leaf1 - first_sep1)/2;
-          //printf("\n - level = %d (%d:%d) with k=%d, k_metis=%d and num_leaves=%d -\n",level_k,first_sep1,first_leaf1-1,k,k_metis,num_leaves );
+          Int num_leaves_l = (first_leaf1 - first_sep1)/2;
           // fill the second half with empty blocks
-          for (Int j = first_sep1; j < first_sep1+num_leaves; j++) {
+          for (Int j = first_sep1; j < first_sep1+num_leaves_l; j++) {
             metis_sep_sizes[k-1] = 0;
-            //printf( " x metis_sep_size[%d] = 0\n",k-1 );
             k --;
           }
           // now fill the first half with blocks from METIS
-          for (Int j = first_sep1+num_leaves; j < first_leaf1; j++) {
+          for (Int j = first_sep1+num_leaves_l; j < first_leaf1; j++) {
             metis_sep_sizes[k-1] = metis_sizes_i[k_metis-1];
-            //printf( " > metis_sep_size[%d] = metis_sizes_i[%d] = %d\n",k-1, k_metis-1, metis_sizes_i[k_metis-1]);
             k --;
             k_metis --;
           }
@@ -628,7 +624,7 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE) {
           printf( "\n After adding Schur complement to the top\n" );
           for (int i=0; i<2*num_leaves-1; i++) {
-            printf( " + metis_size[%d] = %d\n",i,metis_sep_sizes(i) );
+            printf( " + metis_size[%d] = %d\n",i,int(metis_sep_sizes(i)) );
           }
           printf("\n");
         }

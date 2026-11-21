@@ -1,0 +1,138 @@
+\chapter{\caps{ABAQUS} to \caps{EXODUS} Translation} \label{chap:trans}
+
+The \caps{ABAQUS} output file format is described in
+Appendix~\ref{appx:abaqus}, and the \caps{EXODUS} database format is
+described in Appendix~\ref{appx:exodus}. This section describes how an
+\caps{ABAQUS} output file is translated into the \caps{EXODUS} format.
+
+The \caps{EXODUS} title is copied from the \caps{ABAQUS} header record
+(1922).
+
+The coordinates of the original nodes are copied from the \caps{ABAQUS}
+nodal coordinate records (1901). A node which does not have a coordinate
+record is still written to the \caps{EXODUS} database.
+The coordinates of the generated nodes
+are derived as explained in Section~\ref{intro:nodal}.
+The generated nodes are added to the end of
+the original node list, so that the node numbers of the original nodes
+do not change.
+
+The element block for each element is determined as explained in
+Section~\ref{intro:element}.
+There are no attributes for any element blocks.
+
+The connectivity of the original elements is read from the \caps{ABAQUS} element
+connectivity records (1900).
+An element which does not have a connectivity record is deleted from the
+\caps{EXODUS} database.
+The connectivity for the new elements is derived as explained in Section~\ref{intro:element}.
+The new elements replace the original
+elements so the element may be renumbered.
+The elements are also renumbered to group the
+elements by element block.
+
+The element order map lists the elements in the order they were input,
+with the new elements replacing each original element.
+
+There are no node sets and no side sets.
+
+Two \caps{QA} records are written: the first contain information about
+the \caps{ABAQUS} run that created the output file and the second
+describes the \caps{\PROGRAM} run. There are no information records
+written.
+
+The \caps{EXODUS} database requires names for the coordinates, the
+element blocks, and the variables, which the \caps{ABAQUS} output file does
+not supply.
+The coordinates are named ``\cmd{C1}'', ``\cmd{C2}'', and
+``\cmd{C3}'' to be consistent with the variable names.
+The element blocks are named ``\cmd{TRUSS}'' for \caps{1D} blocks,
+``\cmd{QUAD}'' for \caps{2D} blocks, and ``\cmd{HEX}'' for \caps{3D} blocks.
+The variable naming is explained below.
+
+The time for each time step is copied from the total time in the
+\caps{ABAQUS} time record (2000) at the start of each time step.
+
+\notetome{Mention modal record 1980}
+
+There are no history variables and no global variables.
+
+The nodal variables at the original nodes are copied from the
+\caps{ABAQUS} nodal variable records (101..1000). The variables at the
+generated nodes are the average of the variables at the original nodes
+that define the new nodes.
+
+The element variables at the original elements are read from the
+\caps{ABAQUS} element variable records (1..100). The variables for the
+generated elements are read from the input variables at the appropriate
+integration points. The \caps{ABAQUS} Manual has a diagram of the
+positions of the integration points for each element type. If a
+non-transformed element has more than one integration point, the
+variables for the element are averaged over all the points.
+
+\section{Variable Naming} \label{trans:varnam}
+
+The variables that are to be written to the \caps{EXODUS} database are
+found by scanning the entire \caps{ABAQUS} output file for all the variable
+records. The variables that are selected may be limited with the
+\cmd{EVARS} and \cmd{NVARS} commands. Each variable is assigned a name
+and a position in the \caps{EXODUS} database variable array. It is
+assumed that each time step has the same variables. If a variable is
+missing from the \caps{ABAQUS} output file, the output variable is set to
+zero.
+
+The element and nodal variables are assigned names according to the
+record types associated with the variables. These names can be changed
+by the code sponsor.
+
+Element variables may include a section number for shell type variables.
+The section number is included in the name only if any section number of
+the variable is greater than one. All shell sections from the
+\caps{ABAQUS} file are stored. The element records that have been named
+are:
+\begin{center} \begin{tabular}{||c|l|l|l||}
+\hline
+\multicolumn{1}{||c}{Record} &
+\multicolumn{1}{|c}{Name} &
+\multicolumn{1}{|c}{Section} &
+\multicolumn{1}{|c||}{Variable} \\
+\hline
+11       & \cmd{SIG\param{n}}      & \cmd{SIG\param{n}S\param{ss}}
+& Stress components \\
+12       & \cmd{INV\param{n}}      & \cmd{INV\param{n}S\param{ss}}
+& Stress invariants \\
+14       & \cmd{ENRGYDY\param{n}}  & \cmd{ENDY\param{n}S\param{ss}}
+& Energy densities \\
+21       & \cmd{EPS\param{n}}      & \cmd{EPS\param{n}S\param{ss}}
+& Total strain components \\
+other    & \cmd{R\param{rr}X\param{n}}
+& \cmd{R\param{rr}X\param{n}S\param{ss}} & \\
+\hline
+\end{tabular} \end{center}
+where \param{n} is the number of the variable in the record, and
+\param{ss} is the section number, and \param{rr} is the record type.
+
+The nodal records that have been named are:
+\begin{center} \begin{tabular}{||c|l|l||}
+\hline
+\multicolumn{1}{||c}{Record} &
+\multicolumn{1}{|c}{Name} &
+\multicolumn{1}{|c||}{Variable} \\
+\hline
+51       & \cmd{SIG\param{n}}      & Stress components at nodes \\
+55       & \cmd{EPS\param{n}}      & Plastic strains at nodes \\
+101      & \cmd{DISP\param{n}}     & Displacements \\
+102      & \cmd{VEL\param{n}}      & Velocities \\
+103      & \cmd{ACCEL\param{n}}    & Accelerations \\
+104      & \cmd{FORCE\param{n}}    & Residual/reaction forces \\
+201      & \cmd{TEMP\param{n}}     & Temperatures \\
+other    & \cmd{R\param{rrr}X\param{n}} & \\
+\hline
+\end{tabular} \end{center}
+where \param{n} is the number of the variable in the record and
+\param{rrr} is the record type.
+
+Note that element record types 51 through 58 are actually nodal
+variables (in lower versions).
+%%%They have a special first variable named ``\cmd{SECT}'',
+%%%which is the section point.

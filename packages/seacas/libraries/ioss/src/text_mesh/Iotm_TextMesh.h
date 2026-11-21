@@ -342,10 +342,14 @@ namespace Iotm {
 
     ErrorHandler m_errorHandler;
 
+    IossTopologyMapping m_topologyMapping;
+
     std::unordered_map<std::string, Topology> m_partToTopology;
 
     std::unordered_map<EntityId, BlockPartition> m_blockPartition;
 
     std::unordered_map<EntityId, std::vector<EntityId>> m_elementConnectivity;
+
+    double m_constantDistributionFactor{1.0};
   };
 } // namespace Iotm

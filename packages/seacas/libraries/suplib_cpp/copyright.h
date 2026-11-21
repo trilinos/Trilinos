@@ -7,4 +7,9 @@
  */
 #pragma once
 #include <string>
-std::string copyright(const std::string &year_range);
+
+namespace suplib_cpp {
+
+  std::string copyright(const std::string &year_range);
+
+}

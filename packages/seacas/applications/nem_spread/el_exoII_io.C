@@ -28,6 +28,9 @@
 #include <cstdlib> // for exit, free
 #include <string>  // for string
 #include <vector>  // for vector
+
+using suplib_cpp::Data;
+
 template <typename T, typename INT> class Globals;
 
 /*****************************************************************************/
@@ -393,6 +396,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   Num_Nodes_Per_Elem.resize(globals.Num_Elem_Blk);
   Num_Attr_Per_Elem.resize(globals.Num_Elem_Blk);
   Elem_Blk_Ids.resize(globals.Num_Elem_Blk);
+  Elem_Blk_Properties.resize(globals.Num_Elem_Blk);
 
   Elem_Blk_Types = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
                                         MAX_STR_LENGTH + 1, sizeof(char));
@@ -429,6 +433,15 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   read_elem_blk_ids(mesh_exoid, max_name_length);
 
   fmt::print("\tTime to read element block IDs:            {:.4f}\n", second() - start_time);
+
+  /*
+   * Process the element block attributes
+   */
+  start_time = second();
+
+  read_elem_blk_properties(mesh_exoid);
+
+  fmt::print("\tTime to read element block attributes:     {:.4f}\n", second() - start_time);
 
   /*
    * Process the Node Set IDs and associated information related to node sets
@@ -749,6 +762,27 @@ void NemSpread<T, INT>::read_elem_blk_ids(int mesh_exoid, int max_name_length)
     else {
       Elem_Blk_Attr_Names[i] = nullptr;
     }
+  }
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk_properties(int mesh_exoid)
+{
+
+  /* This function reads the user-defined element block properties from the EXODUS file.
+   * It reads all information having a length equal to the number of elements
+   * blocks, specifically.
+   */
+
+  for (int i = 0; i < globals.Num_Elem_Blk; i++) {
+
+    // Get "user defined element block attributes"
+    // These are single key-value per element block
+    read_exodus_entity_properties(mesh_exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[i],
+                                  Elem_Blk_Properties[i]);
   }
 }
 
@@ -1822,7 +1856,7 @@ void NemSpread<T, INT>::find_elem_block(std::vector<INT> &proc_elem_blk, int ipr
    */
 
   /* Internal Elements */
-  if (check_monot(&globals.GElems[iproc][0], globals.Num_Internal_Elems[iproc])) {
+  if (check_monot(Data(globals.GElems[iproc]), globals.Num_Internal_Elems[iproc])) {
     size_t tmp_cnt = globals.Num_Internal_Elems[iproc];
     int    j       = 0;
     size_t i       = 0;
@@ -1858,7 +1892,7 @@ void NemSpread<T, INT>::find_elem_block(std::vector<INT> &proc_elem_blk, int ipr
   }
 
   /* Border Elements */
-  if (check_monot(&globals.GElems[iproc][globals.Num_Internal_Elems[iproc]],
+  if (check_monot(Data(globals.GElems[iproc]) + globals.Num_Internal_Elems[iproc],
                   globals.Num_Border_Elems[iproc])) {
     INT tmp_cnt = globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc];
     int j       = 0;

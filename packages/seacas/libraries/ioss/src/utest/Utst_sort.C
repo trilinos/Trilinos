@@ -129,7 +129,7 @@ TEST_CASE("sort")
 
     DYNAMIC_SECTION("back-half reversed" << n << m << dist)
     {
-      std::reverse(&x[n / 2], &x[n]); // Back half reversed
+      std::reverse(x.begin() + n / 2, x.end()); // Back half reversed
       Ioss::sort(x);
       CHECK(verify_sorted(x));
       DYNAMIC_SECTION("already sorted" << n << m << dist)

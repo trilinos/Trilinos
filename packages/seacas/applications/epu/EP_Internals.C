@@ -29,6 +29,9 @@ extern "C" {
 #include <netcdf.h>
 }
 
+using suplib_cpp::copy_string;
+using suplib_cpp::Data;
+
 // Explicit Initialization of the functions used...
 namespace Excn {
   template int Internals<int>::write_meta_data(const Mesh &mesh, const std::vector<Block> &blocks,
@@ -291,6 +294,13 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
           }
           ierr = ex_put_attr_names(exodusFilePtr, EX_ELEM_BLOCK, blocks[i].id, names);
           SMART_ASSERT(ierr == 0);
+        }
+
+        if (blocks[i].property_count() > 0) {
+          // Put "user defined element block attributes"
+          // These are single key-value per element block
+          write_exodus_entity_properties(exodusFilePtr, EX_ELEM_BLOCK, blocks[i].id,
+                                         blocks[i].blockProperties);
         }
       }
     }

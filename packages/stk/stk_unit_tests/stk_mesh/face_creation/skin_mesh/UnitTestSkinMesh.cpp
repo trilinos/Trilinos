@@ -55,6 +55,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 template <std::size_t SIZE>
 bool check_if_one_owned_face_with_these_nodes_exists(const std::array <uint64_t, SIZE> &nodes, stk::mesh::BulkData &mesh)
@@ -80,7 +81,7 @@ bool check_if_one_owned_face_with_these_nodes_exists(const std::array <uint64_t,
   return face_vector.size() == 1;
 }
 
-void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vector<unsigned> > & shared_nodeIDs_and_procs )
+void setup_skin_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vector<unsigned> > & shared_nodeIDs_and_procs )
 {
   const unsigned p_rank = mesh.parallel_rank();
 
@@ -92,16 +93,6 @@ void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vecto
       mesh.add_node_sharing(node, sharingProc);
     }
   }
-}
-
-std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim,
-                                                stk::ParallelMachine comm,
-                                                stk::mesh::BulkData::AutomaticAuraOption auraOption)
-{
-  stk::mesh::MeshBuilder builder(comm);
-  builder.set_spatial_dimension(spatialDim);
-  builder.set_aura_option(auraOption);
-  return builder.create();
 }
 
 void test_skin_mesh_with_hexes(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
@@ -130,7 +121,7 @@ void test_skin_mesh_with_hexes(stk::mesh::BulkData::AutomaticAuraOption autoAura
   }
 
   const int spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, MPI_COMM_WORLD, autoAuraOption);
+  std::shared_ptr<stk::mesh::BulkData> meshPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD, autoAuraOption);
   stk::mesh::BulkData& mesh = *meshPtr;
   stk::mesh::MetaData& meta = mesh.mesh_meta_data();
 
@@ -340,7 +331,7 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
   }
 
   const unsigned spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, pm, autoAuraOption);
+  std::shared_ptr<stk::mesh::BulkData> meshPtr = stk::unit_test_util::build_mesh(spatialDim, pm, autoAuraOption);
   stk::mesh::BulkData& mesh = *meshPtr;
   stk::mesh::MetaData& meta = mesh.mesh_meta_data();
   const int p_rank = mesh.parallel_rank();
@@ -414,7 +405,7 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
 
   if (p_size > 1)
   {
-    setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+    setup_skin_node_sharing(mesh, shared_nodeIDs_and_procs );
   }
 
   mesh.modification_end();
@@ -524,7 +515,7 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
   }
 
   const unsigned spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, pm, autoAuraOption);
+  std::shared_ptr<stk::mesh::BulkData> meshPtr = stk::unit_test_util::build_mesh(spatialDim, pm, autoAuraOption);
   stk::mesh::BulkData& mesh = *meshPtr;
   stk::mesh::MetaData& meta = mesh.mesh_meta_data();
   const int p_rank = mesh.parallel_rank();
@@ -582,7 +573,7 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
 
   if (p_size > 1)
   {
-    setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+    setup_skin_node_sharing(mesh, shared_nodeIDs_and_procs );
   }
 
   mesh.modification_end();
@@ -685,7 +676,7 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
   }
 
   const unsigned spatialDim = 3;
-  std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, pm, autoAuraOption);
+  std::shared_ptr<stk::mesh::BulkData> meshPtr = stk::unit_test_util::build_mesh(spatialDim, pm, autoAuraOption);
   stk::mesh::BulkData& mesh = *meshPtr;
   stk::mesh::MetaData& meta = mesh.mesh_meta_data();
   const int p_rank = mesh.parallel_rank();
@@ -752,7 +743,7 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
 
   if (p_size > 1)
   {
-    setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+    setup_skin_node_sharing(mesh, shared_nodeIDs_and_procs );
   }
 
   mesh.modification_end();
@@ -855,7 +846,7 @@ void test_2_hex_2_block(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2)
   {
     const int spatialDim = 3;
-    std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, MPI_COMM_WORLD, autoAuraOption);
+    std::shared_ptr<stk::mesh::BulkData> meshPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD, autoAuraOption);
     stk::mesh::BulkData& mesh = *meshPtr;
     stk::mesh::MetaData& meta = mesh.mesh_meta_data();
 
@@ -911,7 +902,7 @@ void test_2_hex_2_block_with_second_selector(stk::mesh::BulkData::AutomaticAuraO
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 2)
   {
     const int spatialDim = 3;
-    std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, MPI_COMM_WORLD, autoAuraOption);
+    std::shared_ptr<stk::mesh::BulkData> meshPtr = stk::unit_test_util::build_mesh(spatialDim, MPI_COMM_WORLD, autoAuraOption);
     stk::mesh::BulkData& mesh = *meshPtr;
     stk::mesh::MetaData& meta = mesh.mesh_meta_data();
 

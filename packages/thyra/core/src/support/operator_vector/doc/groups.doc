@@ -663,12 +663,6 @@ Click \ref Thyra_Op_Vec_adapters_Spmd_concrete_std_grp "here" if you want to
 know about some general, yet very efficient, concrete implementations of
 SPMD vector spaces, vectors and multi-vectors.
 
-<li> <b><a href="../../../../../../epetra/thyra/doc/html/index.html">Epetra to Thyra Operator/Vector Adapters</a></b> (separate doxygen collection)
-
-Click <a href="../../../../../../epetra/thyra/doc/html/index.html">here</a> if
-you want to know about some general code that takes Epetra objects and creates
-%Thyra wrappers for them.
-
 </ol>
 
 </ol>
@@ -836,10 +830,6 @@ these subclasses for SPMD platforms.
 \brief Here we show some simple examples of using code in the %Thyra
 package with an example linear ANA algorithm for the power method for
 estimating the dominate eigen value of a matrix.
-
-These example programs are meant to mimic the power method example
-program shown in the <a href="../../../../../../epetra/doc/html/index.html#example">Epetra
-documentation</a>.
 
 The power method ANA is implemented in the function
 <tt>sillyPowerMethod()</tt> and its implementation is shown below:

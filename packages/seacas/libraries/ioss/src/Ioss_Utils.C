@@ -374,7 +374,8 @@ std::string Ioss::Utils::local_filename(const std::string &relative_filename,
                                         const std::string &type,
                                         const std::string &working_directory)
 {
-  if (relative_filename[0] == '/' || type == "generated" || working_directory.empty()) {
+  if (relative_filename[0] == '/' || type == "generated" || type == "textmesh" ||
+      working_directory.empty()) {
     return relative_filename;
   }
   std::string filename = working_directory;

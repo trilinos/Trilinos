@@ -44,12 +44,12 @@
 namespace
 {
 
-class BalanceSettingsTester : public stk::balance::GraphCreationSettings
+class CohesiveBalanceSettingsTester : public stk::balance::GraphCreationSettings
 {
 public:
-  BalanceSettingsTester(const std::string& decompMethod)
+  CohesiveBalanceSettingsTester(const std::string& decompMethod)
     : localMethod(decompMethod) { }
-  virtual ~BalanceSettingsTester() = default;
+  virtual ~CohesiveBalanceSettingsTester() = default;
 
   virtual std::string getDecompMethod() const override { return localMethod; }
 
@@ -95,7 +95,7 @@ protected:
                                    const CohesiveElementBlocks & cohesiveElements,
                                    const std::vector<unsigned> & expectedElemsOnEachProc)
   {
-    BalanceSettingsTester balanceSettings(decompType);
+    CohesiveBalanceSettingsTester balanceSettings(decompType);
     for (const auto & block : cohesiveElements) {
       balanceSettings.setCohesiveElements(block);
     }

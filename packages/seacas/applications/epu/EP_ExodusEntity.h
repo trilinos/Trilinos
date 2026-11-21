@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "exodus_property.h"
+
 namespace Excn {
   using IntVector   = std::vector<int>;
   using Int64Vector = std::vector<int64_t>;
@@ -75,14 +77,14 @@ namespace Excn {
   class Block
   {
   public:
-    Block() { copy_string(elType, ""); }
+    Block() { suplib_cpp::copy_string(elType, ""); }
 
     Block(const Block &other)
         : name_(other.name_), id(other.id), elementCount(other.elementCount),
           nodesPerElement(other.nodesPerElement), attributeCount(other.attributeCount),
           offset_(other.offset_), position_(other.position_)
     {
-      copy_string(elType, other.elType);
+      suplib_cpp::copy_string(elType, other.elType);
     }
 
     size_t entity_count() const { return elementCount; }
@@ -97,9 +99,14 @@ namespace Excn {
     int64_t                  offset_{0};
     int                      position_{0};
 
+    size_t                property_count() const { return blockProperties.count(); }
+    ExodusPropertyManager blockProperties; /* User defined properties for each *
+                                            * element block. These are single  *
+                                            * key-value per element block      */
+
     Block &operator=(const Block &other)
     {
-      copy_string(elType, other.elType);
+      suplib_cpp::copy_string(elType, other.elType);
       name_           = other.name_;
       id              = other.id;
       elementCount    = other.elementCount;
@@ -170,14 +177,14 @@ namespace Excn {
   template <typename INT> class EdgeBlock
   {
   public:
-    EdgeBlock() { copy_string(elType, ""); }
+    EdgeBlock() { suplib_cpp::copy_string(elType, ""); }
 
     EdgeBlock(const EdgeBlock &other)
         : name_(other.name_), id(other.id), edgeCount(other.edgeCount),
           nodesPerEdge(other.nodesPerEdge), attributeCount(other.attributeCount),
           offset_(other.offset_), position_(other.position_)
     {
-      copy_string(elType, other.elType);
+      suplib_cpp::copy_string(elType, other.elType);
     }
 
     char                     elType[MAX_STR_LENGTH + 1]{};
@@ -199,7 +206,7 @@ namespace Excn {
 
     EdgeBlock &operator=(const EdgeBlock &other)
     {
-      copy_string(elType, other.elType);
+      suplib_cpp::copy_string(elType, other.elType);
       name_          = other.name_;
       id             = other.id;
       edgeCount      = other.edgeCount;
@@ -215,14 +222,14 @@ namespace Excn {
   template <typename INT> class FaceBlock
   {
   public:
-    FaceBlock() { copy_string(elType, ""); }
+    FaceBlock() { suplib_cpp::copy_string(elType, ""); }
 
     FaceBlock(const FaceBlock &other)
         : name_(other.name_), id(other.id), faceCount(other.faceCount),
           nodesPerFace(other.nodesPerFace), attributeCount(other.attributeCount),
           offset_(other.offset_), position_(other.position_)
     {
-      copy_string(elType, other.elType);
+      suplib_cpp::copy_string(elType, other.elType);
     }
 
     char                     elType[MAX_STR_LENGTH + 1]{};
@@ -244,7 +251,7 @@ namespace Excn {
 
     FaceBlock &operator=(const FaceBlock &other)
     {
-      copy_string(elType, other.elType);
+      suplib_cpp::copy_string(elType, other.elType);
       name_          = other.name_;
       id             = other.id;
       faceCount      = other.faceCount;

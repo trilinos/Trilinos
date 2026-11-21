@@ -38,9 +38,9 @@ struct TestCase
   std::vector<std::vector<SplitElementInfo>> expectedSplitElementsPerProc;
 };
 
-typedef std::vector<TestCase> TestCaseData;
+typedef std::vector<TestCase> MeshCheckerTestCaseData;
 
-const TestCaseData badDecomps =
+const MeshCheckerTestCaseData badDecomps =
 {
   /* filename, #procs,      {local element id, remoted element id, remote proc} */
   {"Aef.e",     2,        { {{3u, 2u, 1}}, {{2u, 3u, 0}} }},
@@ -73,7 +73,7 @@ public:
     comm = MPI_COMM_WORLD;
   }
 
-  void run_all_test_cases(const TestCaseData &testCases, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+  void run_all_test_cases(const MeshCheckerTestCaseData &testCases, stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
     for(const TestCase& testCase : testCases)
     {

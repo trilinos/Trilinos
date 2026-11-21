@@ -42,32 +42,14 @@ Thyra ANA Operator Solve Interfaces</a>.
 
 <li> <b><a href="../../../../interfaces/operator_solve/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator Solve Interfaces</a></b>
 
-<li><b><a href="../../../../../../amesos/thyra/doc/html/index.html">ANA Linear Solver
-Adapters for Amesos</a></b>: This software defines the implementation of the
-extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
-<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of
-<tt>Amesos_BaseSolver</tt> implementations.  These adapters allow a client to
-take any <tt>Epetra_RowMatrix</tt> object embedded in a
-<tt>Thyra::EpetraLinearOp</tt> object and immediately use to to define a
-direct linear solver.
-
-<li><b><a href="../../../../../../aztecoo/thyra/doc/html/index.html">ANA Linear Solver
-Adapters for AztecOO</a></b>: This software defines the implementation of the
-extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
-<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of the <tt>AztecOO</tt>
-class.  These adapters allow a client to take any <tt>Epetra_RowMatrix</tt>
-object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
-to to define an iterative linear solver such as GMRES or CG.
-
 <li><b><a href="../../../../../../stratimikos/doc/html/index.html">Stratimikos: Unified
 Wrappers for Thyra Linear Solver and Preconditioner Adapters</a></b>:
 Stratimikos contains neatly packaged access to all of the Thyra linear solver
 and preconditioner wrappers.  Currently, these allow the creation of linear
-solvers for nearly any <tt>Epetra_RowMatrix</tt> object.  However, the Belos
-implementation allows for the arbitrary implementation of the linear operators
-and vector spaces.
+ solvers for nearly any linear operator.  However, the Belos
+ implementation allows for the arbitrary implementation of the linear operators
+ and vector spaces.
 
 </ul>
 
 */
-

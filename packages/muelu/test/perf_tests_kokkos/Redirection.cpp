@@ -126,7 +126,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
       typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type indices;
       typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #2: Tpetra/Epetra")));
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #2: Tpetra")));
       for (int i = 0; i < loops; i++) {
         for (LocalOrdinal row = 0; row < numRows; row++) {
           tA->getLocalRowView(row, indices, vals);

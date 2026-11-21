@@ -51,7 +51,6 @@
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Bucket; } }
 
-static const stk::topology::rank_t NODE_RANK = stk::topology::NODE_RANK;
 
 using stk::mesh::MetaData;
 
@@ -101,7 +100,7 @@ void UnitTestStkMeshSkinning::test_skinning()
   const unsigned num_shell_1_faces = 4;
   const unsigned num_shell_2_faces = 2;
   const unsigned num_shell_faces = num_shell_1_faces + num_shell_2_faces;
-  const unsigned num_entities = count[NODE_RANK] +
+  const unsigned num_entities = count[stk::topology::NODE_RANK] +
       count[element_rank];
 
   stk::mesh::PartVector shell_parts;
@@ -120,8 +119,8 @@ void UnitTestStkMeshSkinning::test_skinning()
   unsigned node_list_1[5] = {21, 26, 31, 36, 41};
   for (unsigned i = 0; i < num_shell_1_faces; ++i) {
     stk::mesh::Entity shell = shell_faces[i];
-    stk::mesh::Entity node1 = bulk_data.get_entity(NODE_RANK, node_list_1[i]);
-    stk::mesh::Entity node2 = bulk_data.get_entity(NODE_RANK, node_list_1[i+1]);
+    stk::mesh::Entity node1 = bulk_data.get_entity(stk::topology::NODE_RANK, node_list_1[i]);
+    stk::mesh::Entity node2 = bulk_data.get_entity(stk::topology::NODE_RANK, node_list_1[i+1]);
     bulk_data.declare_relation(shell, node1, 0);
     bulk_data.declare_relation(shell, node2, 1);
   }
@@ -130,8 +129,8 @@ void UnitTestStkMeshSkinning::test_skinning()
   unsigned node_list_2[3] = {31, 36, 41};
   for (unsigned i = 0; i < num_shell_2_faces; ++i) {
     stk::mesh::Entity shell = shell_faces[i + num_shell_1_faces];
-    stk::mesh::Entity node1 = bulk_data.get_entity(NODE_RANK, node_list_2[i]);
-    stk::mesh::Entity node2 = bulk_data.get_entity(NODE_RANK, node_list_2[i+1]);
+    stk::mesh::Entity node1 = bulk_data.get_entity(stk::topology::NODE_RANK, node_list_2[i]);
+    stk::mesh::Entity node2 = bulk_data.get_entity(stk::topology::NODE_RANK, node_list_2[i+1]);
     bulk_data.declare_relation(shell, node1, 0);
     bulk_data.declare_relation(shell, node2, 1);
   }

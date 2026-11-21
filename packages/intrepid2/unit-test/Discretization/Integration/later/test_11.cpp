@@ -136,7 +136,7 @@ Kokkos::initialize();
   << "|  Questions? Contact  Drew Kouri (dpkouri@sandia.gov) or                     |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
   << "|                                                                             |\n" \
-  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+  << "|  Intrepid2's website: https://trilinos.github.io/docs/intrepid2/index.html  |\n" \
   << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
   << "|                                                                             |\n" \
   << "===============================================================================\n"\

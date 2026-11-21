@@ -1,0 +1,34 @@
+     Genesis: UB:[GDSJAAR.EXECUTE.NUMBERS.SAND]2DP.GEN;1
+
+     Title:   2D MESH - CMT W/ APPROXIMATE FLANGES - 8/1/88 - PUNCH
+
+     Number of Nodes:      7755
+     Number of Elements:   6825
+     Two-Dimensional Mesh, Axisymmetric
+
+ Checking Master Surface 100 Versus Slave Surface 999
+
+ No nodes found penetrating master surface.
+
+ Checking Master Surface 200 Versus Slave Surface 300
+
+  Slave    Master  Penetration  Element
+   Node   Element    Distance     Face    Face Nodes
+   1898    1433     0.000E+00       3      1724   1723
+ Warning -    1 Nodes penetrate master surface.
+    26 Nodes on an element face.
+
+ Checking Master Surface 400 Versus Slave Surface 500
+
+ No nodes found penetrating master surface.
+    54 Nodes on an element face.
+
+ Checking Master Surface 600 Versus Slave Surface 700
+
+ No nodes found penetrating master surface.
+     1 Nodes on an element face.
+
+ Checking Master Surface 900 Versus Slave Surface 1000
+
+ No nodes found penetrating master surface.
+    31 Nodes on an element face.

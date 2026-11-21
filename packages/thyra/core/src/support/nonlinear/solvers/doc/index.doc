@@ -30,14 +30,6 @@ represented by a <tt>Thyra::ModelEvaluator</tt> object.
 
 </ul>
  
-\section thyra_src_support_nonlinear_solvers_examples_sec Examples
-
-<ul>
-
-<li> <a href="../../../../../../../epetraext/thyra/doc/html/index.html">EpetraExt/Thyra Examples</a>
-
-</ul>
-  
 \section thyra_src_support_nonlinear_solvers_links_sec Links
 
 <ul>

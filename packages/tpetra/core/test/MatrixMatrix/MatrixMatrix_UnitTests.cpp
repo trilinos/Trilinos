@@ -2757,6 +2757,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, same_colmap, SC, LO, GO, NT)
   TEST_ASSERT(verifySum(*A, *B, *C));
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, same_graph, SC, LO, GO, NT) {
+  using namespace AddTestUtils;
+  using exec_space                 = typename NT::execution_space;
+  using crs_matrix_type            = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using map_type                   = Tpetra::Map<LO, GO, NT>;
+  RCP<const Comm<int>> comm        = Tpetra::getDefaultComm();
+  int rank                         = comm->getRank();
+  GO numGlobalRows                 = 1000;
+  GO numGlobalCols                 = 1000;
+  RCP<const map_type> rowDomainMap = rcp(new map_type(numGlobalRows, 0, comm));
+  RCP<const map_type> colMap       = buildRandomColMap<LO, GO, NT>(rowDomainMap, 0, 0, numGlobalCols, 234 + rank, 0.03);
+  // Generate the first matrix without a given column map
+  RCP<crs_matrix_type> A = getTestMatrix<SC, LO, GO, NT>(rowDomainMap, rowDomainMap, colMap, rank + 42);
+  // Generate the second matrix using the first one's column map
+  RCP<crs_matrix_type> B = Teuchos::rcp(new crs_matrix_type(A->getCrsGraph()));
+  auto one               = Teuchos::ScalarTraits<SC>::one();
+  B->resumeFill();
+  B->setAllToScalar(one);
+  B->fillComplete();
+  TEST_ASSERT(A->getCrsGraph() == B->getCrsGraph());
+  RCP<crs_matrix_type> C = Tpetra::MatrixMatrix::add(one, false, *A, one, false, *B);
+  // Verify fillComplete and that local matrices are sorted
+  exec_space().fence();
+  TEST_ASSERT(C->isFillComplete());
+  TEST_ASSERT(checkLocallySorted(*C));
+  TEST_ASSERT(verifySum(*A, *B, *C));
+  // Check that graphs match
+  TEST_ASSERT(C->getCrsGraph() == A->getCrsGraph());
+
+  // Add them a second time
+  Tpetra::MatrixMatrix::Add(*A, false, one, *B, false, one, C);
+  // Verify fillComplete and that local matrices are sorted
+  exec_space().fence();
+  TEST_ASSERT(C->isFillComplete());
+  TEST_ASSERT(checkLocallySorted(*C));
+  TEST_ASSERT(verifySum(*A, *B, *C));
+  // Check that graphs still match
+  TEST_ASSERT(C->getCrsGraph() == A->getCrsGraph());
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT) {
   using namespace AddTestUtils;
   using crs_matrix_type     = Tpetra::CrsMatrix<SC, LO, GO, NT>;
@@ -2920,6 +2960,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)                \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, cancellation_zero_entry_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, same_colmap, SC, LO, GO, NT)               \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, same_graph, SC, LO, GO, NT)                \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT)              \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO, NT)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT)        \

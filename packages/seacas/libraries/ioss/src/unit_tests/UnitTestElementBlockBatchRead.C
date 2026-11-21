@@ -351,9 +351,12 @@ namespace {
 
   void run_block_batch_test(int numBlocks, ElemBlockFunc func)
   {
-    std::ostringstream oss;
+    // Include the processor count in the filename so that the tests run
+    // with different processor counts do not collide when run concurrently.
+    Ioss::ParallelUtils pu(Ioss::ParallelUtils::comm_world());
+    std::ostringstream  oss;
     oss << "randomizedManyBlocks_";
-    oss << numBlocks << ".g";
+    oss << numBlocks << "_np" << pu.parallel_size() << ".g";
 
     std::string outFile(oss.str());
     std::string elemFieldName = "elem_field";

@@ -13,6 +13,7 @@
 #include <ostream>
 #include <stk_search/ObjectOutsideDomainPolicy.hpp>
 #include <stk_transfer_util/TransferMainSettings.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace stk {
 namespace transfer_util {
@@ -131,6 +132,30 @@ void TransferMainSettings::set_3d_to_3d_axisymmetric_transfer_params(const Three
 {
   m_enable3Dto3DAxisymmetric = true;
   m_threeDToThreeDAxisymmetricParams = params;
+}
+
+void TransferMainSettings::add_field_group(const TransferMainSettings& groupSettings)
+{
+  STK_ThrowRequireMsg(!groupSettings.has_field_groups(), "A field group cannot contain field groups.");
+  m_fieldGroups.push_back(groupSettings);
+}
+
+const std::vector<TransferMainSettings>& TransferMainSettings::get_field_groups() const
+{
+  return m_fieldGroups;
+}
+
+bool TransferMainSettings::has_field_groups() const
+{
+  return !m_fieldGroups.empty();
+}
+
+std::vector<TransferMainSettings> TransferMainSettings::get_settings_for_each_transfer() const
+{
+  if (has_field_groups()) {
+    return m_fieldGroups;
+  }
+  return {*this};
 }
 
 unsigned TransferMainSettings::get_num_input_processors() const

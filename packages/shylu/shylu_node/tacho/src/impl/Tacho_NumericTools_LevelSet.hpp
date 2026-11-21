@@ -231,7 +231,7 @@ private:
   inline void checkStatus(const char *func, const char *lib) {
     if (_status != 0) {
       printf("Error: %s, %s returns non-zero status %d\n", lib, func, _status);
-      std::runtime_error("checkStatus failed");
+      TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "checkStatus failed");
     }
   }
   inline void checkDeviceLapackStatus(const char *func) {
@@ -1587,7 +1587,7 @@ public:
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
-            bool conjugate = false;
+            const bool conjugate = false;
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
@@ -1662,7 +1662,7 @@ public:
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
-            bool conjugate = false;
+            const bool conjugate = false;
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
@@ -1752,7 +1752,7 @@ public:
         {
           const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
-            bool conjugate = false;
+            const bool conjugate = false;
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
@@ -3132,7 +3132,7 @@ public:
     else if (variant == 2)
       solveLDL_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
-      bool conjugate = false;
+      const bool conjugate = false;
       auto &s0 = _h_supernodes(_h_level_sids(pbeg));
       _spmv->ApplyL_OnDevice(lvl, s0, t, _w_vec, conjugate);
     } else {

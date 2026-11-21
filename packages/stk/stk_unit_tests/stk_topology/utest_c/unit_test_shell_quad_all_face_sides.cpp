@@ -43,7 +43,7 @@
 
 namespace {
 
-std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_shell_quad4() {
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_shell_quad4_all_face_sides() {
   return std::vector<std::vector<uint8_t>> {
     {0, 1},
     {1, 2},
@@ -52,7 +52,7 @@ std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_shell_quad4() {
   };
 }
 
-std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_shell_quad4() {
+std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_shell_quad4_all_face_sides() {
   return std::vector<std::vector<uint8_t>> {
     {0, 1, 2, 3},
     {0, 3, 2, 1},
@@ -63,7 +63,7 @@ std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_shell_quad4() {
   };
 }
 
-std::vector<std::vector<uint8_t>> get_gold_side_node_ordinals_shell_quad4() {
+std::vector<std::vector<uint8_t>> get_gold_side_node_ordinals_shell_quad4_all_face_sides() {
   return std::vector<std::vector<uint8_t>> {
     {0, 1, 2, 3},
     {0, 3, 2, 1},
@@ -116,21 +116,21 @@ TEST(stk_topology, shell_shell_quad4_all_face_sides)
   EXPECT_EQ(t.side_topology(4), stk::topology::SHELL_SIDE_BEAM_2);
   EXPECT_EQ(t.side_topology(5), stk::topology::SHELL_SIDE_BEAM_2);
 
-  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_shell_quad4());
-  check_edge_nodes(t, get_gold_edge_node_ordinals_shell_quad4());
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_shell_quad4_all_face_sides());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_shell_quad4_all_face_sides());
 
-  check_face_node_ordinals(t, get_gold_face_node_ordinals_shell_quad4());
-  check_face_nodes(t, get_gold_face_node_ordinals_shell_quad4());
+  check_face_node_ordinals(t, get_gold_face_node_ordinals_shell_quad4_all_face_sides());
+  check_face_nodes(t, get_gold_face_node_ordinals_shell_quad4_all_face_sides());
 
-  check_side_node_ordinals(t, get_gold_side_node_ordinals_shell_quad4());
-  check_side_nodes(t, get_gold_side_node_ordinals_shell_quad4());
+  check_side_node_ordinals(t, get_gold_side_node_ordinals_shell_quad4_all_face_sides());
+  check_side_nodes(t, get_gold_side_node_ordinals_shell_quad4_all_face_sides());
 }
 
 void check_shell_quad_4_all_face_sides_on_device()
 {
-  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_shell_quad4());
-  OrdinalType goldFaceNodeOrdinals = fillGoldOrdinals(get_gold_face_node_ordinals_shell_quad4());
-  OrdinalType goldSideNodeOrdinals = fillGoldOrdinals(get_gold_side_node_ordinals_shell_quad4());
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_shell_quad4_all_face_sides());
+  OrdinalType goldFaceNodeOrdinals = fillGoldOrdinals(get_gold_face_node_ordinals_shell_quad4_all_face_sides());
+  OrdinalType goldSideNodeOrdinals = fillGoldOrdinals(get_gold_side_node_ordinals_shell_quad4_all_face_sides());
 
   stk::topology t = stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES>::num_nodes;
@@ -194,7 +194,7 @@ NGP_TEST(stk_topology_ngp, shell_quad_4_all_face_sides)
   check_shell_quad_4_all_face_sides_on_device();
 }
 
-std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_shell_quad8() {
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_shell_quad8_all_face_sides() {
   return std::vector<std::vector<uint8_t>> {
     {0, 1, 4},
     {1, 2, 5},
@@ -203,7 +203,7 @@ std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_shell_quad8() {
   };
 }
 
-std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_shell_quad8() {
+std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_shell_quad8_all_face_sides() {
   return std::vector<std::vector<uint8_t>> {
     {0, 1, 2, 3,  4, 5, 6, 7},
     {0, 3, 2, 1,  7, 6, 5, 4},
@@ -214,7 +214,7 @@ std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_shell_quad8() {
   };
 }
 
-std::vector<std::vector<uint8_t>> get_gold_side_node_ordinals_shell_quad8() {
+std::vector<std::vector<uint8_t>> get_gold_side_node_ordinals_shell_quad8_all_face_sides() {
   return std::vector<std::vector<uint8_t>> {
     {0, 1, 2, 3,  4, 5, 6, 7},
     {0, 3, 2, 1,  7, 6, 5, 4},
@@ -267,21 +267,21 @@ TEST(stk_topology, shell_shell_quad8_all_face_sides)
   EXPECT_EQ(t.side_topology(4), stk::topology::SHELL_SIDE_BEAM_3);
   EXPECT_EQ(t.side_topology(5), stk::topology::SHELL_SIDE_BEAM_3);
 
-  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_shell_quad8());
-  check_edge_nodes(t, get_gold_edge_node_ordinals_shell_quad8());
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_shell_quad8_all_face_sides());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_shell_quad8_all_face_sides());
 
-  check_face_node_ordinals(t, get_gold_face_node_ordinals_shell_quad8());
-  check_face_nodes(t, get_gold_face_node_ordinals_shell_quad8());
+  check_face_node_ordinals(t, get_gold_face_node_ordinals_shell_quad8_all_face_sides());
+  check_face_nodes(t, get_gold_face_node_ordinals_shell_quad8_all_face_sides());
 
-  check_side_node_ordinals(t, get_gold_side_node_ordinals_shell_quad8());
-  check_side_nodes(t, get_gold_side_node_ordinals_shell_quad8());
+  check_side_node_ordinals(t, get_gold_side_node_ordinals_shell_quad8_all_face_sides());
+  check_side_nodes(t, get_gold_side_node_ordinals_shell_quad8_all_face_sides());
 }
 
 void check_shell_quad_8_all_face_sides_on_device()
 {
-  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_shell_quad8());
-  OrdinalType goldFaceNodeOrdinals = fillGoldOrdinals(get_gold_face_node_ordinals_shell_quad8());
-  OrdinalType goldSideNodeOrdinals = fillGoldOrdinals(get_gold_side_node_ordinals_shell_quad8());
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_shell_quad8_all_face_sides());
+  OrdinalType goldFaceNodeOrdinals = fillGoldOrdinals(get_gold_face_node_ordinals_shell_quad8_all_face_sides());
+  OrdinalType goldSideNodeOrdinals = fillGoldOrdinals(get_gold_side_node_ordinals_shell_quad8_all_face_sides());
 
   stk::topology t = stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES>::num_nodes;
@@ -341,7 +341,7 @@ NGP_TEST(stk_topology_ngp, shell_quad_8_all_face_sides)
   check_shell_quad_8_all_face_sides_on_device();
 }
 
-std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_shell_quad9() {
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_shell_quad9_all_face_sides() {
   return std::vector<std::vector<uint8_t>> {
     {0, 1, 4},
     {1, 2, 5},
@@ -350,7 +350,7 @@ std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_shell_quad9() {
   };
 }
 
-std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_shell_quad9() {
+std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_shell_quad9_all_face_sides() {
   return std::vector<std::vector<uint8_t>> {
     {0, 1, 2, 3,  4, 5, 6, 7,  8},
     {0, 3, 2, 1,  7, 6, 5, 4,  8},
@@ -361,7 +361,7 @@ std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_shell_quad9() {
   };
 }
 
-std::vector<std::vector<uint8_t>> get_gold_side_node_ordinals_shell_quad9() {
+std::vector<std::vector<uint8_t>> get_gold_side_node_ordinals_shell_quad9_all_face_sides() {
   return std::vector<std::vector<uint8_t>> {
     {0, 1, 2, 3,  4, 5, 6, 7,  8},
     {0, 3, 2, 1,  7, 6, 5, 4,  8},
@@ -414,21 +414,21 @@ TEST(stk_topology, shell_shell_quad9_all_face_sides)
   EXPECT_EQ(t.side_topology(4), stk::topology::SHELL_SIDE_BEAM_3);
   EXPECT_EQ(t.side_topology(5), stk::topology::SHELL_SIDE_BEAM_3);
 
-  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_shell_quad9());
-  check_edge_nodes(t, get_gold_edge_node_ordinals_shell_quad9());
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_shell_quad9_all_face_sides());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_shell_quad9_all_face_sides());
 
-  check_face_node_ordinals(t, get_gold_face_node_ordinals_shell_quad9());
-  check_face_nodes(t, get_gold_face_node_ordinals_shell_quad9());
+  check_face_node_ordinals(t, get_gold_face_node_ordinals_shell_quad9_all_face_sides());
+  check_face_nodes(t, get_gold_face_node_ordinals_shell_quad9_all_face_sides());
 
-  check_side_node_ordinals(t, get_gold_side_node_ordinals_shell_quad9());
-  check_side_nodes(t, get_gold_side_node_ordinals_shell_quad9());
+  check_side_node_ordinals(t, get_gold_side_node_ordinals_shell_quad9_all_face_sides());
+  check_side_nodes(t, get_gold_side_node_ordinals_shell_quad9_all_face_sides());
 }
 
 void check_shell_quad_9_all_face_sides_on_device()
 {
-  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_shell_quad9());
-  OrdinalType goldFaceNodeOrdinals = fillGoldOrdinals(get_gold_face_node_ordinals_shell_quad9());
-  OrdinalType goldSideNodeOrdinals = fillGoldOrdinals(get_gold_side_node_ordinals_shell_quad9());
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_shell_quad9_all_face_sides());
+  OrdinalType goldFaceNodeOrdinals = fillGoldOrdinals(get_gold_face_node_ordinals_shell_quad9_all_face_sides());
+  OrdinalType goldSideNodeOrdinals = fillGoldOrdinals(get_gold_side_node_ordinals_shell_quad9_all_face_sides());
 
   stk::topology t = stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES>::num_nodes;

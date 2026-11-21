@@ -1,0 +1,60 @@
+%%% \includeonly{
+%%% algtitle,
+%%% algintro,
+%%% algeqn,
+%%% algcmd,
+%%% algoutput,
+%%% algerr,
+%%% algexec,
+%%% algref,
+%%% algfnctsum,
+%%% algcmdsum,
+%%% algexample,
+%%% algsite,
+%%% ../include/distrsand}
+%
+\documentclass{report}
+\usepackage{sandcover}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{alltt}
+\usepackage{calc}
+\usepackage{makeidx}
+\usepackage{amsmath,amssymb,amsfonts,textcomp}
+\usepackage{hyperref}
+%\usepackage{showkeys}
+\usepackage{longtable}
+\usepackage{bookmark}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=blue, urlcolor=blue}
+% Text styles
+\newcommand\textstyleInternetlink[1]{\textcolor{blue}{#1}}
+\newcommand\textstyleFootnoteSymbol[1]{\textsuperscript{#1}}
+% Outline numbering
+\setcounter{secnumdepth}{0}
+%
+\begin{document}
+%
+\input{../include/setup}
+\newcommand{\PROGRAM}{\mbox{\sf Algebra}\null}
+%
+\include{algtitle}
+\pagestyle{plain}
+\mbox{}
+\cleardoublepage\tableofcontents
+\cleardoublepage
+\include{algintro}
+\include{algeqn}
+\include{algcmd}
+\include{algoutput}
+\include{algerr}
+\include{algexec}
+\include{algref}
+%
+\appendix
+%
+\include{algfnctsum}
+\include{algcmdsum}
+\include{algexample}
+%
+\end{document}

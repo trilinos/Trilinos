@@ -28,9 +28,9 @@ LinearOp IdentityPreconditionerFactory::buildPreconditionerOperator(
 //! Initialize from a parameter list
 void IdentityPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList& pl) {
   Teko_DEBUG_SCOPE("IdentityPreconditionerFactory::initializeFromParameterList", 10);
-  Teko_DEBUG_MSG_BEGIN(9);
-  DEBUG_STREAM << "Parameter list: " << std::endl;
-  pl.print(DEBUG_STREAM);
+  Teko_DEBUG_MSG_BEGIN(9)
+    DEBUG_STREAM << "Parameter list: " << std::endl;
+    pl.print(DEBUG_STREAM);
   Teko_DEBUG_MSG_END();
 
   // get string specifying default inverse

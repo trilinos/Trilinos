@@ -26,6 +26,8 @@
 #include <sstream>
 #include <vector> // for vector
 
+using suplib_cpp::Data;
+
 /* Local function prototypes */
 namespace {
   template <typename INT>

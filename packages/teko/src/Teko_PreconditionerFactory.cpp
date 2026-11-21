@@ -180,9 +180,9 @@ RCP<PreconditionerFactory> PreconditionerFactory::buildPreconditionerFactory(
   // request the preconditioner factory from the CloneFactory
   RCP<PreconditionerFactory> precFact = precFactoryBuilder_.build(name);
 
-  Teko_DEBUG_MSG_BEGIN(5);
-  DEBUG_STREAM << "Looked up \"" << name << "\"" << std::endl;
-  DEBUG_STREAM << "Built " << precFact << std::endl;
+  Teko_DEBUG_MSG_BEGIN(5)
+    DEBUG_STREAM << "Looked up \"" << name << "\"" << std::endl;
+    DEBUG_STREAM << "Built " << precFact << std::endl;
   Teko_DEBUG_MSG_END();
 
   if (precFact == Teuchos::null) return Teuchos::null;

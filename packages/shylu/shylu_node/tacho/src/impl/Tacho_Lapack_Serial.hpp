@@ -265,7 +265,7 @@ template <typename T> struct LapackSerial {
         }
       }
       if (alpha == zero) {
-        *info = j*1;
+        *info = j+1;
         return *info;
       }
       ipiv[j] = idx+1;

@@ -1,0 +1,35 @@
+\chapter{The \caps{ABAQUS} Output File Format} \label{appx:abaqus}
+
+The \caps{ABAQUS} file format is described in the \caps{ABAQUS} Manual
+Section 10. However, the manual is unclear as to the order of the record
+types. This appendix defines the assumed record order determined by
+examining actual \caps{ABAQUS} output files. These assumptions are
+incorporated in \caps{\PROGRAM}, and if incorrect they may involve
+program changes.
+
+If the program encounters a record of an unexpected type, a warning is
+printed and the record is ignored. Records that are out of order may
+confuse the program.
+
+The header records are in the following order:
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item a version record (1921) and a heading record (1922);
+\item a series of element connectivity records (1900), which may not be
+in numerical order;
+\item a series of nodal coordinate records (1901), which may not be in
+numerical order;
+\item a start time steps record (1902), which is ignored; and
+\item an end time step record (2001), which is ignored.
+\end{itemize}
+
+A series of time steps follow. The records for a time step are in the
+following order:
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item a times record (2000) or an eigen record (?);
+\item an output set request record (1911), which is ignored;
+\item a series of element variable records (1..100), which may not be in
+numerical order, but all variables for one element are together;
+\item a series of nodal variable records (101..1000), which may not be in
+numerical order, and all variables for a node may not be together;
+\item an end time step record (2001), which is ignored.
+\end{itemize}

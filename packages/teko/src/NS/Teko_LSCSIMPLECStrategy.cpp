@@ -203,22 +203,19 @@ void LSCSIMPLECStrategy::initializeFromParameterList(const Teuchos::ParameterLis
     TEUCHOS_TEST_FOR_EXCEPT(scaleType_ == NotDiag);
   }
 
-  Teko_DEBUG_MSG_BEGIN(0) DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
-  DEBUG_STREAM << "   inv type   = \"" << invStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
-  DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
-  DEBUG_STREAM << "   scale type    = " << getDiagonalName(scaleType_) << std::endl;
-  DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
-  pl.print(DEBUG_STREAM);
+  Teko_DEBUG_MSG_BEGIN(0)
+    DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
+    DEBUG_STREAM << "   inv type   = \"" << invStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
+    DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
+    DEBUG_STREAM << "   scale type    = " << getDiagonalName(scaleType_) << std::endl;
+    DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
+    pl.print(DEBUG_STREAM);
   Teko_DEBUG_MSG_END()
 
   // set defaults as needed
-#if defined(Teko_ENABLE_Amesos)
-      if (invStr == "") invStr = "Amesos";
-#elif defined(Teko_ENABLE_Amesos2)
-      if (invStr == "") invStr = "Amesos2";
-#endif
+  if (invStr == "") invStr = "Amesos2";
   if (invVStr == "") invVStr = invStr;
   if (invPStr == "") invPStr = invStr;
 

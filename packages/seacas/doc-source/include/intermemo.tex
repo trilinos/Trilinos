@@ -1,0 +1,59 @@
+%
+\newcommand{\Covertitle}{}
+\renewcommand{\title}[1] {\newcommand{\Title}{#1}
+                          \renewcommand{\Covertitle}{\Title}}
+\newcommand{\covertitle}[1] {\renewcommand{\Covertitle}{#1}}
+\newcommand{\division}[1] {\newcommand{\Division}{#1}}
+\renewcommand{\author}[1] {\newcommand{\Author}{#1}}
+\renewcommand{\abstract}[1] {\newcommand{\Abstract}{#1}}
+\newcommand{\Date}{\Month}
+\renewcommand{\date}[1] {\renewcommand{\Date}{#1}}
+\renewcommand{\Release}[1] {\newcommand{\Rlse}{#1}}
+\newcommand{\Previous}[1] {\newcommand{\Prerel}{#1}}
+\newcommand{\RS}[1] {\newcommand{\Rs}{RS#1}}
+%
+%%% \memocover creates a cover page and title page for an internal memorandum.
+\newcommand{\memocover}{
+%
+\setcounter{page}{0} \pagestyle{empty}
+\par \Rs \\
+Internal Distribution Only \\
+\vspace*{0.5in}
+\par \Covertitle\ (U) \\
+\vspace*{0.5in}
+\par \Author \\
+\\
+Printed \Month \\
+%-% \vspace*{2.1in}
+\vfill
+%-% \openin2={\Abstract}
+%-% \ifeof2
+%-%    \typeout{File \Abstract\ not open}
+%-%    \relax
+%-% \else
+%-%    \closein2
+%-%    \typeout{File \Abstract\ open}
+   \par \begin{center} Abstract \end{center}
+   \vspace*{\smallskipamount}
+   \par \input{\Abstract}
+%-% \fi
+\vspace*{0.5in}
+\clearpage \pagestyle{plain}
+}
+%%% \memotitle creates a title page for an internal memorandum.
+\newcommand{\memotitle}{
+%
+\setcounter{page}{0} \pagestyle{empty}
+\vspace*{0.5in}
+\par \begin{flushright} {\Rs} \end{flushright}
+\vspace*{2.0in}
+\begin{center}
+   \par {\Large\bf \Title}
+   \vspace*{0.5in}
+   \large
+   \par \Author \\
+   \Division \\
+   \normalsize
+\end{center}
+\clearpage \pagestyle{plain}
+}

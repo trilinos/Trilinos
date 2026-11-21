@@ -33,6 +33,9 @@
 #
 
 FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+# Compiled on its own in unity builds: doc snippet duplicates helpers from useFieldBLAS.cpp
+set_source_files_properties(useSimpleFields.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 if(NOT ${PROJECT_NAME}_ENABLE_STKSearchUtil)
   LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/howToUseEquivalent.cpp")

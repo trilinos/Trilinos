@@ -297,7 +297,12 @@ static int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
       int status = nc_inq_dimid(out_exoid, dim_nm, &dim_out_id);
 
       if (status != EX_NOERR) {
-        if (dimid != recdimid) {
+        if (strcmp(dim_nm, DIM_STR_NAME) == 0 && dim_sz < 33) {
+          /* Some databases have a name length of 32 with no room for the
+           * trailing null; ensure the copy can hold 32-character names. */
+          status = nc_def_dim(out_exoid, dim_nm, 33, &dim_out_id);
+        }
+        else if (dimid != recdimid) {
           status = nc_def_dim(out_exoid, dim_nm, dim_sz, &dim_out_id);
         }
         else {

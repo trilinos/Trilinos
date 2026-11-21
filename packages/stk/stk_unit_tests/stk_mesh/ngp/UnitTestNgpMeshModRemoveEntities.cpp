@@ -1406,5 +1406,23 @@ NGP_TEST_F(NgpBatchDestroyElements, destroysElementWithMultiRankConnectivity_ngp
   EXPECT_EQ(8u,  num_entities(stk::topology::NODE_RANK));
 }
 
+NGP_TEST_F(NgpBatchDestroyElements, destroyElement_updatesNodeClosureCountsOnHost_ngpDevice)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  const stk::mesh::Entity elem = build_single_hex();
+  const std::vector<stk::mesh::Entity> nodes(m_bulk->begin_nodes(elem), m_bulk->end_nodes(elem));
+  for (const stk::mesh::Entity node : nodes) {
+    EXPECT_EQ(2u, m_bulk->owned_closure_count(node));
+  }
+
+  destroy_on_device({elem});
+
+  for (const stk::mesh::Entity node : nodes) {
+    ASSERT_TRUE(m_bulk->is_valid(node));
+    EXPECT_EQ(1u, m_bulk->owned_closure_count(node));
+  }
+}
+
 }  // namespace
 #endif

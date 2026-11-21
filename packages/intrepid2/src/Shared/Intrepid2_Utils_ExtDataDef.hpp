@@ -61,7 +61,15 @@ namespace Intrepid2 {
         ordinal_type num2;
         std::string::size_type loc = chunk.find( "/", 0);
         if( loc != std::string::npos ) {
+          // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
           chunk.replace( loc, 1, " ");
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic pop
+#endif
           std::istringstream chunkstream(chunk);
           chunkstream >> num1;
           chunkstream >> num2;
@@ -128,7 +136,15 @@ namespace Intrepid2 {
       while( linestream >> chunk ) {
         ordinal_type num1;
         ordinal_type num2;
+        // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
         std::string::size_type loc = chunk.find( "/", 0);
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic pop
+#endif
         if( loc != std::string::npos ) {
           chunk.replace( loc, 1, " ");
           std::istringstream chunkstream(chunk);

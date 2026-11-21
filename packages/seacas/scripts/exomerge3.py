@@ -115,6 +115,7 @@ class ExodusModel(object):
     # define translation from two faces to a 3D cohesive element
     COHESIVE_FORMULA = dict()
     COHESIVE_FORMULA["quad4"] = ["hex8", (0, 1, 2, 3, 4, 5, 6, 7)]
+    COHESIVE_FORMULA["shell4"] = COHESIVE_FORMULA["quad4"]
     COHESIVE_FORMULA["tri3"] = ["wedge6", (0, 1, 2, 3, 4, 5)]
     COHESIVE_FORMULA["tri6"] = ["wedge12", (0, 1, 2, 6, 7, 8, 3, 4, 5, 9, 10, 11)]
 
@@ -127,6 +128,7 @@ class ExodusModel(object):
     VOLUME_FORMULA["quad4"] = [0.5, (0, 2), (1, 3)]
     VOLUME_FORMULA["quad6"] = VOLUME_FORMULA["quad4"]
     VOLUME_FORMULA["quad8"] = VOLUME_FORMULA["quad4"]
+    VOLUME_FORMULA["shell4"] = VOLUME_FORMULA["quad4"]
     VOLUME_FORMULA["tet4"] = [1.0 / 6.0, (0, 1), (0, 2), (0, 3)]
     VOLUME_FORMULA["tet10"] = VOLUME_FORMULA["tet4"]
     VOLUME_FORMULA["wedge6"] = [
@@ -222,6 +224,14 @@ class ExodusModel(object):
         ("line3", (2, 3, 6)),
         ("line3", (3, 0, 7)),
     ]
+    FACE_MAPPING["shell4"] = [
+        ("quad4", (0, 1, 2, 3)),
+        ("quad4", (0, 3, 2, 1)),
+        ("line2", (0, 1)),
+        ("line2", (1, 2)),
+        ("line2", (2, 3)),
+        ("line2", (3, 0)),
+    ]
     FACE_MAPPING["line2"] = [("point", tuple([0])), ("point", tuple([1]))]
     FACE_MAPPING["line3"] = FACE_MAPPING["line2"]
     FACE_MAPPING["point"] = []
@@ -298,6 +308,7 @@ class ExodusModel(object):
     INVERTED_CONNECTIVITY["tri3"] = (0, 2, 1)
     INVERTED_CONNECTIVITY["tri6"] = (0, 2, 1, 5, 4, 3)
     INVERTED_CONNECTIVITY["quad4"] = (0, 3, 2, 1)
+    INVERTED_CONNECTIVITY["shell4"] = INVERTED_CONNECTIVITY["quad4"]
     INVERTED_CONNECTIVITY["quad6"] = (3, 2, 1, 0, 5, 4)
     INVERTED_CONNECTIVITY["quad8"] = (0, 3, 2, 1, 7, 6, 5, 4)
     INVERTED_CONNECTIVITY["line2"] = (1, 0)
@@ -307,6 +318,7 @@ class ExodusModel(object):
     # define a connectivity permutation which rotates the given 2d face
     ROTATED_CONNECTIVITY = dict()
     ROTATED_CONNECTIVITY["quad4"] = (3, 0, 1, 2)
+    ROTATED_CONNECTIVITY["shell4"] = ROTATED_CONNECTIVITY["quad4"]
     ROTATED_CONNECTIVITY["quad8"] = (3, 0, 1, 2, 7, 4, 5, 6)
     ROTATED_CONNECTIVITY["tri3"] = (2, 0, 1)
     ROTATED_CONNECTIVITY["tri6"] = (2, 0, 1, 5, 3, 4)
@@ -321,6 +333,7 @@ class ExodusModel(object):
     DIMENSION["quad4"] = 2
     DIMENSION["quad6"] = 2
     DIMENSION["quad8"] = 2
+    DIMENSION["shell4"] = 3
     DIMENSION["hex8"] = 3
     DIMENSION["hex20"] = 3
     DIMENSION["tet4"] = 3
@@ -466,6 +479,7 @@ class ExodusModel(object):
     ELEMENT_ORDER["tri3"] = 1
     ELEMENT_ORDER["tri6"] = 2
     ELEMENT_ORDER["quad4"] = 1
+    ELEMENT_ORDER["shell4"] = 1
     ELEMENT_ORDER["quad6"] = 1
     ELEMENT_ORDER["quad8"] = 2
     ELEMENT_ORDER["line2"] = 1
@@ -488,12 +502,14 @@ class ExodusModel(object):
         "y": 11,
         "z": 12,
         "s": 13,
-        "q": 14
+        "q": 14,
     }
 
     # Regular expression used to parse field names. It splits the name into three named groups: base_name, component, and integration_point.
     # See "_sort_field_names" method for details.
-    _FIELD_NAME_REGEX = re.compile(fr"^(?P<base_name>.*?)(?:[_]?)(?P<component>{'|'.join(_FIELD_NAME_SUBSCRIPT_ORDER.keys())})?(?:[_]?(?P<integration_point_1>\d+))?(?:[_]?(?P<integration_point_2>\d+))?$")
+    _FIELD_NAME_REGEX = re.compile(
+        rf"^(?P<base_name>.*?)(?:[_]?)(?P<component>{'|'.join(_FIELD_NAME_SUBSCRIPT_ORDER.keys())})?(?:[_]?(?P<integration_point_1>\d+))?(?:[_]?(?P<integration_point_2>\d+))?$"
+    )
 
     def __init__(self):
         """Initialize the model."""
@@ -1254,7 +1270,7 @@ class ExodusModel(object):
             entity=entity,
             *args,
             translator=dict(tuples),
-            **kwargs
+            **kwargs,
         )
 
     def _format_side_set_id_list(self, id_list, *args, **kwargs):
@@ -1276,7 +1292,7 @@ class ExodusModel(object):
             entity=entity,
             *args,
             translator=dict(tuples),
-            **kwargs
+            **kwargs,
         )
 
     def _format_node_set_id_list(self, id_list, *args, **kwargs):
@@ -1298,7 +1314,7 @@ class ExodusModel(object):
             entity=entity,
             *args,
             translator=dict(tuples),
-            **kwargs
+            **kwargs,
         )
 
     def _format_id_list(
@@ -1460,11 +1476,13 @@ class ExodusModel(object):
             "hex": "hex8",
             "tet": "tet4",
             "tetra": "tet4",
+            "tetra4": "tet4",
             "tetra10": "tet10",
             "tri": "tri3",
             "triangle": "tri3",
+            "truss": "line2",
             "quad": "quad4",
-            "shell4": "quad4",
+            "shell": "shell4",
             "wedge": "wedge6",
         }
         if element_type in translation_list:
@@ -1543,31 +1561,69 @@ class ExodusModel(object):
         """
         Return a list of external element faces.
 
-        External faces are element faces which are shared by no other elements.
+        External faces are element faces which are not covered by a matching
+        face from another element.  Shells are treated specially: the two
+        shell surface faces with identical node sets are distinct physical
+        sides and should not cancel each other.  A shell may therefore
+        contribute zero, one, or two external surface faces depending on
+        whether it is attached on neither, one, or both sides.
 
         A list is returned with members of the form:
         * '(element_block_id, element_index, face_index)'
 
         """
         element_block_ids = self._format_element_block_id_list(element_block_ids)
-        external_faces = dict()
+
+        grouped_faces = dict()
+
         for id_ in element_block_ids:
             info = self._get_block_info(id_)
             connectivity = self.get_connectivity(id_)
             face_mapping = self._get_face_mapping_from_id(id_)
+            element_type = self._get_standard_element_type(self._get_element_type(id_))
+
             for element_index in range(info[1]):
-                for face_index, (_, face) in enumerate(face_mapping):
+                for face_index, (face_type, face) in enumerate(face_mapping):
                     sorted_nodes = tuple(
                         sorted(
                             [connectivity[element_index * info[2] + x] for x in face]
                         )
                     )
-                    if sorted_nodes in external_faces:
-                        external_faces[sorted_nodes] = None
+                    key = (face_type, sorted_nodes)
+                    this_face = (id_, element_index, face_index, element_type)
+
+                    if key not in grouped_faces:
+                        grouped_faces[key] = [this_face]
                     else:
-                        this_face = (id_, element_index, face_index)
-                        external_faces[sorted_nodes] = this_face
-        return [value for value in list(external_faces.values()) if value is not None]
+                        grouped_faces[key].append(this_face)
+
+        external_faces = []
+
+        for (face_type, _), faces in list(grouped_faces.items()):
+            shell_surface_faces = []
+            other_faces = []
+
+            for id_, element_index, face_index, element_type in faces:
+                is_shell_surface = (
+                    element_type == "shell4"
+                    and face_type == "quad4"
+                    and face_index in [0, 1]
+                )
+                if is_shell_surface:
+                    shell_surface_faces.append((id_, element_index, face_index))
+                else:
+                    other_faces.append((id_, element_index, face_index))
+
+            if shell_surface_faces:
+                uncovered_shell_count = len(shell_surface_faces) - len(other_faces)
+                if uncovered_shell_count > 0:
+                    external_faces.extend(shell_surface_faces[:uncovered_shell_count])
+                continue
+
+            if len(other_faces) == 1:
+                external_faces.append(other_faces[0])
+
+        return external_faces
 
     @staticmethod
     def _mean(values):
@@ -2134,7 +2190,7 @@ class ExodusModel(object):
             self._error(
                 "Unrecognized file extension.",
                 'The filename extension "%s" was not recognized.  The '
-                "list of recognized extensions is : %s"
+                "list of recognized extensions is: %s"
                 % (extension, ", ".join(list(exporters.keys()))),
             )
         exporters[extension](filename, *args, **kwargs)
@@ -2504,7 +2560,7 @@ class ExodusModel(object):
                 'A "=" sign must be present in the expression but '
                 "was not found.\n\nExpression: %s" % expression,
             )
-        (name, expression) = expression.split("=", 1)
+        name, expression = expression.split("=", 1)
         new_name = name.strip()
         self.create_global_variable(new_name)
         # create list of variable names and modify them in the expression
@@ -2545,7 +2601,7 @@ class ExodusModel(object):
                 'A "=" sign must be present in the expression but '
                 "was not found.\n\nExpression: %s" % expression,
             )
-        (name, expression) = expression.split("=", 1)
+        name, expression = expression.split("=", 1)
         new_name = name.strip()
         self.create_node_field(new_name)
         new_values = self.node_fields[new_name]
@@ -2602,7 +2658,7 @@ class ExodusModel(object):
                 'A "=" sign must be present in the expression but '
                 "was not found.\n\nExpression: %s" % expression,
             )
-        (name, expression) = expression.split("=", 1)
+        name, expression = expression.split("=", 1)
         new_name = name.strip()
         # for each node set
         for node_set_id in node_set_ids:
@@ -2666,7 +2722,7 @@ class ExodusModel(object):
                 'A "=" sign must be present in the expression but '
                 "was not found.\n\nExpression: %s" % expression,
             )
-        (name, expression) = expression.split("=", 1)
+        name, expression = expression.split("=", 1)
         new_name = name.strip()
         # for each side set
         for side_set_id in side_set_ids:
@@ -2723,7 +2779,7 @@ class ExodusModel(object):
                 'A "=" sign must be present in the expression but '
                 "was not found.\n\nExpression: %s" % expression,
             )
-        (name, expression) = expression.split("=", 1)
+        name, expression = expression.split("=", 1)
         new_name = name.strip()
         # for each element block
         for element_block_id in element_block_ids:
@@ -3748,7 +3804,7 @@ class ExodusModel(object):
         # Create rotation matrix.
         # x --> R * x
         scale = math.sqrt(sum(x * x for x in axis))
-        (ux, uy, uz) = [float(x) / scale for x in axis]
+        ux, uy, uz = [float(x) / scale for x in axis]
         theta = float(angle_in_degrees) * math.pi / 180
         cost = math.cos(theta)
         sint = math.sin(theta)
@@ -3786,7 +3842,7 @@ class ExodusModel(object):
                 ]
         # Rotate the displacement field.
         if adjust_displacement_field:
-            (disp_x, disp_y, disp_z) = self._get_displacement_field_values()
+            disp_x, disp_y, disp_z = self._get_displacement_field_values()
             for timestep_index in range(len(self.timesteps)):
                 if node_indices == "all":
                     new_disp_x = [
@@ -3821,7 +3877,7 @@ class ExodusModel(object):
                         x = disp_x[timestep_index][index]
                         y = disp_y[timestep_index][index]
                         z = disp_z[timestep_index][index]
-                        (x, y, z) = [
+                        x, y, z = [
                             rxx * x + rxy * y + rxz * z,
                             ryx * x + ryy * y + ryz * z,
                             rzx * x + rzy * y + rzz * z,
@@ -3832,7 +3888,7 @@ class ExodusModel(object):
 
     def _translate_nodes(self, offset, node_indices="all"):
         """Translate nodes by the given offset."""
-        (dx, dy, dz) = [float(x) for x in offset]
+        dx, dy, dz = [float(x) for x in offset]
         if node_indices == "all":
             self.nodes = [[x + dx, y + dy, z + dz] for x, y, z in self.nodes]
         else:
@@ -6949,13 +7005,25 @@ class ExodusModel(object):
 
             match = self._FIELD_NAME_REGEX.match(elem.lower()).groupdict()  # type: ignore
             base_name = str(match["base_name"])
-            if base_name == '':
+            if base_name == "":
                 return (elem.lower(), 0, 0, 0)
-            integration_point_1 = int(match["integration_point_1"]) if match["integration_point_1"] is not None else 0
-            integration_point_2 = int(match["integration_point_2"]) if match["integration_point_2"] is not None else 0
+            integration_point_1 = (
+                int(match["integration_point_1"])
+                if match["integration_point_1"] is not None
+                else 0
+            )
+            integration_point_2 = (
+                int(match["integration_point_2"])
+                if match["integration_point_2"] is not None
+                else 0
+            )
 
             # Transform the component to a letter according to the _FIELD_NAME_SUBSCRIPT_ORDER
-            component = self._FIELD_NAME_SUBSCRIPT_ORDER[match["component"]] if match["component"] is not None else 0
+            component = (
+                self._FIELD_NAME_SUBSCRIPT_ORDER[match["component"]]
+                if match["component"] is not None
+                else 0
+            )
 
             return (base_name, integration_point_2, integration_point_1, component)
 

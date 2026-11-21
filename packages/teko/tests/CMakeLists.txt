@@ -1,5 +1,4 @@
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
-TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/src/Epetra)
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/src/Tpetra)
 
 SET(HEADERS "")
@@ -7,36 +6,7 @@ SET(SOURCES "")
 
 APPEND_GLOB(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/Tpetra/*.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp)
 
-APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Tpetra/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-
-IF(TEKO_HAVE_EPETRA)
-  APPEND_GLOB(HEADERS ./src/Epetra/*.hpp)
-  APPEND_GLOB(SOURCES ./src/Epetra/*.cpp)
-ELSE()
-  LIST(
-    REMOVE_ITEM
-    SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tLU2x2PreconditionerFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tLSCStablePreconditionerFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tAbsRowSum.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tLSCHIntegrationTest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tJacobi2x2PreconditionerFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tPCDStrategy.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tLSCIntegrationTest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tBlockJacobiPreconditionerFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/LSCIntegrationTest.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tLSCStabilized.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tNeumannSeries.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tParallelInverse.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tSIMPLEPreconditionerFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tLumping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tBlockLowerTriInverseOp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tExplicitOps.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tGraphLaplacian.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tBlockUpperTriInverseOp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/tDiagonalPreconditionerFactory.cpp
-  )
-ENDIF()
+APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Tpetra/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/*_tpetra.cpp)
 
 SET(UNIT_TEST_DRIVER "${PACKAGE_SOURCE_DIR}/tests/Teko_UnitTestMain.cpp")
 
@@ -58,34 +28,8 @@ ELSE()
   SET(CUSTOM_MPI_PROCS "4")
 ENDIF()
 
-IF(TEKO_HAVE_EPETRA)
-  TRIBITS_ADD_EXECUTABLE(
-    testdriver
-    SOURCES ${HEADERS}
-            ${SOURCES}
-            ./Test_Utils.cpp
-            ./Test_Utils.hpp
-            ./testdriver.cpp
-    COMM mpi serial
-  )
-
-  TRIBITS_ADD_TEST(
-    testdriver
-    ARGS ${PARALLEL_ARGS_STRING}
-    NUM_MPI_PROCS ${CUSTOM_MPI_PROCS}
-    FAIL_REGULAR_EXPRESSION "Teko tests failed"
-  )
-
-  TRIBITS_ADD_TEST(
-    testdriver
-    ARGS ${SERIAL_ARGS_STRING}
-    NUM_MPI_PROCS 1
-    FAIL_REGULAR_EXPRESSION "Teko tests failed"
-  )
-
-  IF(${PACKAGE_NAME}_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D)
-    SET(testdriver_TARGET_DEFINES -DTEKO_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D)
-  ENDIF()
+IF(${PACKAGE_NAME}_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D)
+  SET(testdriver_TARGET_DEFINES -DTEKO_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE(
@@ -137,16 +81,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
   EXEDEPS testdriver_tpetra
 )
 
-IF(TEKO_HAVE_EPETRA)
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
-    testdriver_copyfiles
-    SOURCE_FILES ${TEST_DRIVER_DATA_FILES}
-    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
-    DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
-    EXEDEPS testdriver
-  )
-ENDIF()
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   IterativePreconditionerFactory_test
   SOURCES unit_tests/tIterativePreconditionerFactory.cpp ${UNIT_TEST_DRIVER}
@@ -162,16 +96,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
 )
-
-IF(TEKO_HAVE_EPETRA)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    StridedEpetraOperator_test
-    SOURCES unit_tests/tStridedEpetraOperator.cpp ${UNIT_TEST_DRIVER}
-    COMM serial mpi
-    ARGS ${PARALLEL_ARGS_STRING}
-    NUM_MPI_PROCS ${CUSTOM_MPI_PROCS}
-  )
-ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RequestInterface_test
@@ -220,25 +144,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
 )
-
-IF(TEKO_HAVE_EPETRA)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    DiagonalPreconditionerFactory
-    SOURCES unit_tests/tDiagonalPreconditionerFactory.cpp ${UNIT_TEST_DRIVER}
-    COMM serial mpi
-    ARGS ${SERIAL_ARGS_STRING}
-    NUM_MPI_PROCS 2
-  )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    ExplicitOps
-    SOURCES unit_tests/tExplicitOps.cpp ${UNIT_TEST_DRIVER}
-    COMM serial mpi
-    ARGS ${SERIAL_ARGS_STRING}
-    NUM_MPI_PROCS 2
-  )
-
-ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   StratimikosFactory

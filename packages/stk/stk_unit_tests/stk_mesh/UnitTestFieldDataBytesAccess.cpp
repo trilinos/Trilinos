@@ -1903,7 +1903,7 @@ TEST_F(FieldDataBytesAccess, host_isFieldDefined)
 }
 
 //------------------------------------------------------------------------------
-void device_is_field_defined(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& field,
+void device_is_field_defined_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& field,
                              stk::mesh::Part& part1, stk::mesh::Part& part2)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
@@ -1952,7 +1952,7 @@ TEST_F(FieldDataBytesAccess, device_isFieldDefined)
 
   stk::mesh::Field<int>& field = *m_field;
 
-  device_is_field_defined(get_bulk(), field, part1, part2);
+  device_is_field_defined_bytes(get_bulk(), field, part1, part2);
 }
 
 // Note: We can only test host-side consistency and bounds-checking because the

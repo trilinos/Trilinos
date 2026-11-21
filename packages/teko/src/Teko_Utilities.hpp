@@ -20,10 +20,6 @@
 
 #include "Teko_ConfigDefs.hpp"
 
-#ifdef TEKO_HAVE_EPETRA
-#include "Epetra_CrsMatrix.h"
-#endif
-
 #include "Tpetra_CrsMatrix.hpp"
 
 // Teuchos includes
@@ -68,15 +64,14 @@ using Thyra::multiply;
 using Thyra::scale;
 using Thyra::zero;  // make it to take one argument (square matrix)
 
-/** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
+/** \brief Build a graph Laplacian stenciled on a Tpetra::CrsMatrix.
  *
  * This function builds a graph Laplacian given a (locally complete)
- * vector of coordinates and a stencil Epetra_CrsMatrix (could this be
- * a graph of Epetra_RowMatrix instead?). The resulting matrix will have
- * the negative of the inverse distance on off diagonals. And the sum
- * of the positive inverse distance of the off diagonals on the diagonal.
- * If there are no off diagonal entries in the stencil, the diagonal is
- * set to 0.
+ * vector of coordinates and a stencil Tpetra::CrsMatrix. The resulting
+ * matrix will have the negative of the inverse distance on off
+ * diagonals. And the sum of the positive inverse distance of the off
+ * diagonals on the diagonal. If there are no off diagonal entries in
+ * the stencil, the diagonal is set to 0.
  *
  * \param[in]     dim     Number of physical dimensions (2D or 3D?).
  * \param[in]     coords  A vector containing the coordinates, with the <code>i</code>-th
@@ -86,23 +81,17 @@ using Thyra::zero;  // make it to take one argument (square matrix)
  *
  * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
  */
-#ifdef TEKO_HAVE_EPETRA
-Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim, double *coords,
-                                                   const Epetra_CrsMatrix &stencil);
-#endif
-
 Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildGraphLaplacian(
     int dim, ST *coords, const Tpetra::CrsMatrix<ST, LO, GO, NT> &stencil);
 
-/** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
+/** \brief Build a graph Laplacian stenciled on a Tpetra::CrsMatrix.
  *
  * This function builds a graph Laplacian given a (locally complete)
- * vector of coordinates and a stencil Epetra_CrsMatrix (could this be
- * a graph of Epetra_RowMatrix instead?). The resulting matrix will have
- * the negative of the inverse distance on off diagonals. And the sum
- * of the positive inverse distance of the off diagonals on the diagonal.
- * If there are no off diagonal entries in the stencil, the diagonal is
- * set to 0.
+ * vector of coordinates and a stencil Tpetra::CrsMatrix. The resulting
+ * matrix will have the negative of the inverse distance on off
+ * diagonals. And the sum of the positive inverse distance of the off
+ * diagonals on the diagonal. If there are no off diagonal entries in
+ * the stencil, the diagonal is set to 0.
  *
  * \param[in]     x       A vector containing the x-coordinates, with the <code>i</code>-th
  *                        coordinate beginning at <code>coords[i*stride]</code>.
@@ -116,11 +105,6 @@ Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildGraphLaplacian(
  *
  * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
  */
-#ifdef TEKO_HAVE_EPETRA
-Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(double *x, double *y, double *z, int stride,
-                                                   const Epetra_CrsMatrix &stencil);
-#endif
-
 Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildGraphLaplacian(
     ST *x, ST *y, ST *z, GO stride, const Tpetra::CrsMatrix<ST, LO, GO, NT> &stencil);
 
@@ -309,11 +293,6 @@ inline LinearOp zero(const VectorSpace &vs) { return Thyra::zero<ST>(vs, vs); }
 inline LinearOp zero(const VectorSpace &range, const VectorSpace &domain) {
   return Thyra::zero<ST>(range, domain);
 }
-
-//! Replace nonzeros with a scalar value, used to zero out an operator
-#ifdef TEKO_HAVE_EPETRA
-void putScalar(const ModifiableLinearOp &op, double scalar);
-#endif
 
 //! Get the range space of a linear operator
 inline VectorSpace rangeSpace(const LinearOp &lo) { return lo->range(); }
@@ -862,10 +841,6 @@ std::string getDiagonalName(const DiagonalType &dt);
  *          a <code>NotDiag</code>
  */
 DiagonalType getDiagonalType(std::string name);
-
-#ifdef TEKO_HAVE_EPETRA
-LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, const LinearOp &Op);
-#endif
 
 /** Get the one norm of the vector
  */

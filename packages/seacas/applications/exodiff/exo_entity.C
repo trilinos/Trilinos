@@ -18,6 +18,8 @@
 #include <string>
 #include <vector>
 
+using suplib_cpp::Data;
+
 namespace {
   size_t get_index(int file_id, EXOTYPE exo_type, size_t id, const char *label);
   size_t get_num_entities(int file_id, EXOTYPE exo_type);

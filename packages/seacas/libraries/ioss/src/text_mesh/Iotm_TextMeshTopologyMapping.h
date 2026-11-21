@@ -393,7 +393,7 @@ namespace Iotm {
       static TopologyMapEntry entry(Ioss::Beam2::name);
 
       if (!entry.initialized) {
-        entry.set_valid_spatial_dimensions({false, false, true, true});
+        entry.set_valid_spatial_dimensions({false, true, true, true});
         entry.set_side_topologies({line_2_factory(), line_2_factory()});
         entry.initialized = true;
       }
@@ -410,7 +410,7 @@ namespace Iotm {
       static TopologyMapEntry entry(Ioss::Beam3::name);
 
       if (!entry.initialized) {
-        entry.set_valid_spatial_dimensions({false, false, true, true});
+        entry.set_valid_spatial_dimensions({false, true, true, true});
         entry.set_side_topologies({line_3_factory(), line_3_factory()});
         entry.initialized = true;
       }

@@ -67,6 +67,16 @@ namespace Thyra {
  * The same approach can be used for block upper triangular linear operators
  * as well of course.
  *
+ * The diagonal blocks are the LOWSB objects set in the block fill.  The
+ * off-diagonal blocks are those of the blocked linear operator set with
+ * <tt>setBlocks()</tt> or <tt>setNonconstBlocks()</tt> after the block fill
+ * (whose diagonal blocks are not used); they can not be set in the block fill.
+ * This blocked operator must have as many block rows and columns as there are
+ * diagonal blocks, and be block lower or block upper triangular, not both.
+ * The apply and the solves (block forward or backward substitution, also for
+ * the transposed operator) include the off-diagonal blocks.
+ * <tt>uninitialize()</tt> and a new block fill remove the off-diagonal blocks.
+ *
  * See the class <tt>DefaultBlockedTriangularLinearOpWithSolveFactory</tt> for
  * an example of how one of these objects can be created from any
  * <tt>PhysicallyBlockedLinearOpBase</tt> object and compatible
@@ -93,6 +103,18 @@ public:
 
   /** \brief . */
   void setBlocks( const RCP<const PhysicallyBlockedLinearOpBase<Scalar> > &blocks );
+
+  /** \brief Throws <tt>std::logic_error</tt> if <tt>blocks</tt> does not
+   * have as many block rows as block columns, or is not block triangular
+   * (has nonzero blocks both below and above the diagonal).
+   *
+   * <tt>setBlocks()</tt> and <tt>setNonconstBlocks()</tt> also check this
+   * (and the number of blocks); a factory can check it before reinitializing
+   * the diagonal blocks, so that a rejected operator leaves the object
+   * unchanged.
+   */
+  static void assertBlockTriangular(
+    const PhysicallyBlockedLinearOpBase<Scalar> &blocks );
 
   /** \brief . */
   RCP<PhysicallyBlockedLinearOpBase<Scalar> > getNonconstBlocks();
@@ -136,14 +158,17 @@ public:
     );
   /** \brief . */
   bool blockFillIsActive() const;
-  /** \brief . */
+  /** \brief Returns false: the diagonal blocks are set with
+   * <tt>setLOWSBlock()</tt> or <tt>setNonconstLOWSBlock()</tt>, and the
+   * off-diagonal blocks with <tt>setBlocks()</tt> or
+   * <tt>setNonconstBlocks()</tt> after the block fill. */
   bool acceptsBlock(const int i, const int j) const;
-  /** \brief . */
+  /** \brief Throws, see <tt>acceptsBlock()</tt>. */
   void setNonconstBlock(
     const int i, const int j,
     const RCP<LinearOpBase<Scalar> > &block
     );
-  /** \brief . */
+  /** \brief Throws, see <tt>acceptsBlock()</tt>. */
   void setBlock(
     const int i, const int j,
     const RCP<const LinearOpBase<Scalar> > &block
@@ -176,14 +201,17 @@ public:
   /** \brief . */
   RCP<const ProductVectorSpaceBase<Scalar> >
   productDomain() const;
-  /** \brief . */
+  /** \brief The diagonal blocks are the LOWSB blocks, and the off-diagonal
+   * blocks those of the blocked operator of <tt>setBlocks()</tt>. */
   bool blockExists(const int i, const int j) const; 
   /** \brief . */
   bool blockIsConst(const int i, const int j) const; 
-  /** \brief . */
+  /** \brief See <tt>blockExists()</tt>.  The off-diagonal blocks are
+   * nonconst only if the blocked operator was set with
+   * <tt>setNonconstBlocks()</tt> (throws otherwise). */
   RCP<LinearOpBase<Scalar> >
   getNonconstBlock(const int i, const int j); 
-  /** \brief . */
+  /** \brief See <tt>blockExists()</tt>. */
   RCP<const LinearOpBase<Scalar> >
   getBlock(const int i, const int j) const; 
 
@@ -280,6 +308,9 @@ private:
 
   // All blocks (including LOB form of diagonals)
   CNCPBLOB blocks_;
+  // Whether blocks_ has nonzero blocks below (above) the diagonal
+  bool hasLowerBlocks_;
+  bool hasUpperBlocks_;
 
   // /////////////////////////
   // Private member functions
@@ -293,6 +324,31 @@ private:
     const RCP<LinearOpWithSolveType> &block );
 
   void assertAndSetBlockStructure(const PhysicallyBlockedLinearOpBase<Scalar>& blocks);
+
+  // Check the numbers of blocks and the structure of blocks (see
+  // assertBlockTriangular()), and return whether it has nonzero blocks below
+  // (hasLower) and above (hasUpper) the diagonal.  hasLower and hasUpper are
+  // set only if the checks pass (they are unchanged if this throws).
+  static void getBlockStructure(
+    const PhysicallyBlockedLinearOpBase<Scalar> &blocks,
+    bool &hasLower, bool &hasUpper );
+
+  // Remove the off-diagonal blocks
+  void removeOffDiagonalBlocks();
+
+  // The off-diagonal block M[i,j], i != j, of blocks_ (null if zero or if
+  // blocks_ is not set)
+  RCP<const LinearOpBase<Scalar> >
+  getOffDiagonalBlock(const int i, const int j) const;
+
+  // The off-diagonal block op(M)[i,j] of op(M), to be applied with M_trans:
+  // M[i,j] for M_trans = NOTRANS or CONJ, and M[j,i] for TRANS or CONJTRANS
+  RCP<const LinearOpBase<Scalar> >
+  getOpOffDiagonalBlock(const EOpTransp M_trans, const int i, const int j) const;
+
+  // Whether all the off-diagonal blocks support op(), as needed by the apply
+  // and the solves with op()
+  bool offDiagonalBlocksSupport(const EOpTransp M_trans) const;
   
   // Not defined and not to be called
 

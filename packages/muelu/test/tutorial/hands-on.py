@@ -217,7 +217,11 @@ class ProblemHandler():
     cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt nodes*.txt"
     runCommand(cmd)
     print("RUN EXAMPLE")
-    cmd = "mpirun -np " + str(self.numprocs) + " " + str(self.executable) + " --matrixType=" + str(self.problem) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --mgridSweeps=" + str(self.mgsweeps) + " --xml=" + str(self.xmlFileName) + " | tee output.log 2>&1"
+    # Zoltan2 rebalancing needs node coordinates as user data
+    coordOpt = ""
+    if "Zoltan2Interface" in open(self.xmlFileName).read():
+      coordOpt = " --coordinates"
+    cmd = "mpirun -np " + str(self.numprocs) + " " + str(self.executable) + " --matrixType=" + str(self.problem) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --mgridSweeps=" + str(self.mgsweeps) + " --xml=" + str(self.xmlFileName) + coordOpt + " | tee output.log 2>&1"
     print(cmd)
     runCommand(cmd)
     runCommand("echo 'Press q to return.' >> output.log")
@@ -920,11 +924,13 @@ class MueLu_XMLgenerator():
         line = line.replace("$MANAGER_RESTRICTOR",  "myRestrictorFact")
         line = line.replace("$MANAGER_RAP", "myRAPFact")
         line = line.replace("$MANAGER_NULLSPACE", "PA-AMG")
+        line = line.replace("$MANAGER_COORDINATES", "myTransferCoordinatesFact")
       else:
         line = line.replace("$MANAGER_PROLONGATOR", "myRebalanceProlongatorFact")
         line = line.replace("$MANAGER_RESTRICTOR",  "myRebalanceRestrictionFact")
         line = line.replace("$MANAGER_RAP", "myRebalanceAFact")
         line = line.replace("$MANAGER_NULLSPACE", "myRebalanceProlongatorFact")
+        line = line.replace("$MANAGER_COORDINATES", "myRebalanceProlongatorFact")
       o.write(line)
     o.close()
     self.isDirty = False

@@ -63,10 +63,18 @@ endif()
 
 # ===============================================
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  test-side-set-tri4
+  SOURCES test-side-set-tri4.c
+  COMM mpi serial
+  NUM_MPI_PROCS 1
+)
+
 IF ( NETCDF_NCDUMP_BINARY )
   SET(NETCDF_NCDUMP ${NETCDF_NCDUMP_BINARY})
   SET( cbind_OLDTESTS
     test-field-utils
+    test-tet15-sideset
     testwt
     testwtd
     testwtd-to-f
@@ -165,6 +173,15 @@ IF ( NETCDF_NCDUMP_BINARY )
      NOEXEPREFIX
      NOEXESUFFIX
      NAME exodus-test-field-utils
+     COMM mpi serial
+     NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+     test-tet15-sideset
+     NOEXEPREFIX
+     NOEXESUFFIX
+     NAME exodus-test-tet15-sideset
      COMM mpi serial
      NUM_MPI_PROCS 1
     )

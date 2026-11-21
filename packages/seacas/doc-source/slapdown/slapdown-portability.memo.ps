@@ -1,0 +1,4811 @@
+%!PS-Adobe-3.0
+%%BoundingBox: (atend)
+%%Pages: (atend)
+%%PageOrder: (atend)
+%%DocumentFonts: (atend)
+%%Creator: Frame 4.0
+%%DocumentData: Clean7Bit
+%%EndComments
+%%BeginProlog
+%
+% Frame ps_prolog 5.0, for use with Frame 5.0 products
+% This ps_prolog file is Copyright (c) 1986-1995 Frame Technology
+% Corporation.  All rights reserved.  This ps_prolog file may be
+% freely copied and distributed in conjunction with documents created
+% using FrameMaker, FrameMaker/SGML and FrameViewer as long as this 
+% copyright notice is preserved.
+%
+% FrameMaker users specify the proper paper size for each print job in the
+% "Print" dialog's "Printer Paper Size" "Width" and "Height~ fields.  If the
+% printer that the PS file is sent to does not support the requested paper
+% size, or if there is no paper tray of the proper size currently installed, 
+% then the job will not be printed.  The following flag, if set to true, will
+% cause the job to print on the default paper in such cases.
+/FMAllowPaperSizeMismatch            false def
+%
+% Frame products normally print colors as their true color on a color printer
+% or as shades of gray, based on luminance, on a black-and white printer. The
+% following flag, if set to true, forces all non-white colors to print as pure
+% black. This has no effect on bitmap images.
+/FMPrintAllColorsAsBlack             false def
+%
+% Frame products can either set their own line screens or use a printer's 
+% default settings. Three flags below control this separately for no 
+% separations, spot separations and process separations. If a flag
+% is true, then the default printer settings will not be changed. If it is
+% false, Frame products will use their own settings from a table based on
+% the printer's resolution.
+/FMUseDefaultNoSeparationScreen      true  def
+/FMUseDefaultSpotSeparationScreen    true  def
+/FMUseDefaultProcessSeparationScreen false def
+%
+% For any given PostScript printer resolution, Frame products have two sets of 
+% screen angles and frequencies for printing process separations, which are 
+% recomended by Adobe. The following variable chooses the higher frequencies
+% when set to true or the lower frequencies when set to false. This is only
+% effective if the appropriate FMUseDefault...SeparationScreen flag is false.
+/FMUseHighFrequencyScreens true def
+%
+% The following is a set of predefined optimal frequencies and angles for various
+% common dpi settings. This is taken from "Advances in Color Separation Using
+% PostScript Software Technology," from Adobe Systems (3/13/89 P.N. LPS 0043)
+% and corrolated with information which is in various PPD (4.0) files.
+%
+% The "dpiranges" figure is the minimum dots per inch device resolution which
+% can support this setting. The "low" and "high" values are controlled by the
+% setting of the FMUseHighFrequencyScreens flag above. The "TDot" flags control
+% the use of the "Yellow Triple Dot" feature whereby the frequency id divided by
+% three, but the dot function is "trippled" giving a block of 3x3 dots per cell.
+%
+% PatFreq is a compromise pattern frequency for ps Level 2 printers which is close
+% to the ideal WYSIWYG pattern frequency of 9 repetitions/inch but does not beat
+% (too badly) against the screen frequencies of any separations for that DPI.
+/dpiranges   [  2540    2400    1693     1270    1200     635      600      0      ] def
+/CMLowFreqs  [ 100.402  94.8683 89.2289 100.402  94.8683  66.9349  63.2456 47.4342 ] def
+/YLowFreqs   [  95.25   90.0    84.65    95.25   90.0     70.5556  66.6667 50.0    ] def
+/KLowFreqs   [  89.8026 84.8528 79.8088  89.8026 84.8528  74.8355  70.7107 53.033  ] def
+/CLowAngles  [  71.5651 71.5651 71.5651 71.5651  71.5651  71.5651  71.5651 71.5651 ] def
+/MLowAngles  [  18.4349 18.4349 18.4349 18.4349  18.4349  18.4349  18.4349 18.4349 ] def
+/YLowTDot    [  true    true    false    true    true     false    false   false   ] def
+/CMHighFreqs [ 133.87  126.491 133.843  108.503 102.523  100.402   94.8683 63.2456 ] def
+/YHighFreqs  [ 127.0   120.0   126.975  115.455 109.091   95.25    90.0    60.0    ] def
+/KHighFreqs  [ 119.737 113.137 119.713  128.289 121.218   89.8026  84.8528 63.6395 ] def
+/CHighAngles [  71.5651 71.5651 71.5651  70.0169 70.0169  71.5651  71.5651 71.5651 ] def
+/MHighAngles [  18.4349 18.4349 18.4349  19.9831 19.9831  18.4349  18.4349 18.4349 ] def
+/YHighTDot   [  false   false   true     false   false    true     true    false   ] def
+/PatFreq     [	10.5833 10.0     9.4055  10.5833 10.0	  10.5833  10.0	   9.375   ] def
+%
+% PostScript Level 2 printers contain an "Accurate Screens" feature which can
+% improve process separation rendering at the expense of compute time. This 
+% flag is ignored by PostScript Level 1 printers.
+/FMUseAcccurateScreens true def
+%
+% The following PostScript procedure defines the spot function that Frame
+% products will use for process separations. You may un-comment-out one of
+% the alternative functions below, or use your own.
+%
+% Dot function
+/FMSpotFunction {abs exch abs 2 copy add 1 gt 
+		{1 sub dup mul exch 1 sub dup mul add 1 sub }
+		{dup mul exch dup mul add 1 exch sub }ifelse } def
+%
+% Line function
+% /FMSpotFunction { pop } def
+%
+% Elipse function
+% /FMSpotFunction { dup 5 mul 8 div mul exch dup mul exch add 
+%		sqrt 1 exch sub } def
+%
+%
+/FMversion (5.0) def 
+/fMLevel1 /languagelevel where {pop languagelevel} {1} ifelse 2 lt def
+/FMPColor
+	fMLevel1 {
+		false
+		/colorimage where {pop pop true} if
+	} {
+		true
+	} ifelse
+def
+/FrameDict 400 dict def 
+systemdict /errordict known not {/errordict 10 dict def
+		errordict /rangecheck {stop} put} if
+% The readline in PS 23.0 doesn't recognize cr's as nl's on AppleTalk
+FrameDict /tmprangecheck errordict /rangecheck get put 
+errordict /rangecheck {FrameDict /bug true put} put 
+FrameDict /bug false put 
+mark 
+% Some PS machines read past the CR, so keep the following 3 lines together!
+currentfile 5 string readline
+00
+0000000000
+cleartomark 
+errordict /rangecheck FrameDict /tmprangecheck get put 
+FrameDict /bug get { 
+	/readline {
+		/gstring exch def
+		/gfile exch def
+		/gindex 0 def
+		{
+			gfile read pop 
+			dup 10 eq {exit} if 
+			dup 13 eq {exit} if 
+			gstring exch gindex exch put 
+			/gindex gindex 1 add def 
+		} loop
+		pop 
+		gstring 0 gindex getinterval true 
+		} bind def
+	} if
+/FMshowpage /showpage load def
+/FMquit /quit load def
+/FMFAILURE { 
+	dup = flush 
+	FMshowpage 
+	/Helvetica findfont 12 scalefont setfont
+	72 200 moveto show
+	72 220 moveto show
+	FMshowpage 
+	FMquit 
+	} def 
+/FMVERSION {
+	FMversion ne {
+		(Frame product version does not match ps_prolog!  Check installation;)
+		(also check ~/fminit and ./fminit for old versions) FMFAILURE
+		} if
+	} def 
+/FMBADEPSF { 
+	(Adobe's PostScript Language Reference Manual, 2nd Edition, section H.2.4)
+	(says your EPS file is not valid, as it calls X              )
+	dup dup (X) search pop exch pop exch pop length 
+	5 -1 roll 
+	putinterval 
+	FMFAILURE
+	} def
+/fmConcatProcs
+	{
+	/proc2 exch cvlit def/proc1 exch cvlit def/newproc proc1 length proc2 length add array def
+	newproc 0 proc1 putinterval newproc proc1 length proc2 putinterval newproc cvx
+}def
+FrameDict begin [
+	/ALDsave
+	/FMdicttop
+	/FMoptop
+	/FMpointsize
+	/FMsaveobject
+	/b
+	/bitmapsave
+	/blut
+	/bpside
+	/bs
+	/bstring
+	/bwidth
+	/c
+	/cf
+	/cs
+	/cynu
+	/depth
+	/edown
+	/fh
+	/fillvals
+	/fw
+	/fx
+	/fy
+	/g
+	/gfile
+	/gindex
+	/grnt
+	/gryt
+	/gstring
+	/height
+	/hh
+	/i
+	/im
+	/indx
+	/is
+	/k
+	/kk
+	/landscape
+	/lb
+	/len
+	/llx
+	/lly
+	/m
+	/magu
+	/manualfeed
+	/n
+	/offbits
+	/onbits
+	/organgle
+	/orgbangle
+	/orgbfreq
+	/orgbproc
+	/orgbxfer
+	/orgfreq
+	/orggangle
+	/orggfreq
+	/orggproc
+	/orggxfer
+	/orgmatrix
+	/orgproc
+	/orgrangle
+	/orgrfreq
+	/orgrproc
+	/orgrxfer
+	/orgxfer
+	/pagesave
+	/paperheight
+	/papersizedict
+	/paperwidth
+	/pos
+	/pwid
+	/r
+	/rad
+	/redt
+	/sl
+	/str
+	/tran
+	/u
+	/urx
+	/ury
+	/val
+	/width
+	/width
+	/ws
+	/ww
+	/x
+	/x1
+	/x2
+	/xindex
+	/xpoint
+	/xscale
+	/xx
+	/y
+	/y1
+	/y2
+	/yelu
+	/yindex
+	/ypoint
+	/yscale
+	/yy
+] { 0 def } forall
+/FmBD {bind def} bind def
+systemdict /pdfmark known {
+	/fMAcrobat true def
+	
+	/FmPD /pdfmark load def
+	
+	
+	/FmPT /show load def
+	
+	
+	currentdistillerparams /CoreDistVersion get 2000 ge {
+	
+		
+		/FmPD2 /pdfmark load def
+		
+		
+		
+		
+		
+		/FmPA { mark exch /Dest exch 5 3 roll 
+				/View [ /XYZ null 6 -2 roll FmDC exch pop null] /DEST FmPD 
+		}FmBD
+	} {
+		
+		/FmPD2 /cleartomark load def
+		/FmPA {pop pop pop}FmBD
+	} ifelse
+} {
+	
+	/fMAcrobat false def
+	/FmPD /cleartomark load def
+	/FmPD2 /cleartomark load def
+	/FmPT /pop load def
+	/FmPA {pop pop pop}FmBD
+} ifelse
+/FmDC {
+	transform fMDefaultMatrix itransform cvi exch cvi exch
+}FmBD
+/FmBx {
+	dup 3 index lt {3 1 roll exch} if 
+	1 index 4 index lt {4 -1 roll 3 1 roll exch 4 1 roll} if
+}FmBD
+/FMnone 0 def
+/FMcyan 1 def
+/FMmagenta 2 def
+/FMyellow 3 def
+/FMblack 4 def
+/FMcustom 5 def
+/fMNegative false def 
+/FrameSepIs FMnone def 
+/FrameSepBlack 0 def
+/FrameSepYellow 0 def
+/FrameSepMagenta 0 def
+/FrameSepCyan 0 def
+/FrameSepRed 1 def
+/FrameSepGreen 1 def
+/FrameSepBlue 1 def
+/FrameCurGray 1 def
+/FrameCurPat null def
+/FrameCurColors [ 0 0 0 1 0 0 0 ] def 
+/FrameColorEpsilon .001 def	
+/eqepsilon {		
+	sub dup 0 lt {neg} if
+	FrameColorEpsilon le
+} bind def
+/FrameCmpColorsCMYK { 
+	2 copy 0 get exch 0 get eqepsilon {
+		2 copy 1 get exch 1 get eqepsilon {
+			2 copy 2 get exch 2 get eqepsilon {
+				3 get exch 3 get eqepsilon
+			} {pop pop false} ifelse
+		}{pop pop false} ifelse
+	} {pop pop false} ifelse
+} bind def
+/FrameCmpColorsRGB { 
+	2 copy 4 get exch 0 get eqepsilon {
+		2 copy 5 get exch 1 get eqepsilon {
+			6 get exch 2 get eqepsilon
+		}{pop pop false} ifelse
+	} {pop pop false} ifelse
+} bind def
+/RGBtoCMYK { 
+	1 exch sub 
+	3 1 roll 
+	1 exch sub 
+	3 1 roll 
+	1 exch sub 
+	3 1 roll 
+	3 copy 
+	2 copy 
+	le { pop } { exch pop } ifelse 
+	2 copy 
+	le { pop } { exch pop } ifelse 
+	dup dup dup 
+	6 1 roll 
+	4 1 roll 
+	7 1 roll 
+	sub 
+	6 1 roll 
+	sub 
+	5 1 roll 
+	sub 
+	4 1 roll 
+} bind def
+/CMYKtoRGB { 
+	dup dup 4 -1 roll add 						  
+	5 1 roll 3 -1 roll add 						  
+	4 1 roll add 								  
+	1 exch sub dup 0 lt {pop 0} if 3 1 roll 	  
+	1 exch sub dup 0 lt {pop 0} if exch 	      
+	1 exch sub dup 0 lt {pop 0} if exch	  		  
+} bind def
+/FrameSepInit {
+	1.0 RealSetgray
+} bind def
+/FrameSetSepColor { 
+	/FrameSepBlue exch def
+	/FrameSepGreen exch def
+	/FrameSepRed exch def
+	/FrameSepBlack exch def
+	/FrameSepYellow exch def
+	/FrameSepMagenta exch def
+	/FrameSepCyan exch def
+	/FrameSepIs FMcustom def
+	setCurrentScreen	
+} bind def
+/FrameSetCyan {
+	/FrameSepBlue 1.0 def
+	/FrameSepGreen 1.0 def
+	/FrameSepRed 0.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 1.0 def
+	/FrameSepIs FMcyan def
+	setCurrentScreen	
+} bind def
+ 
+/FrameSetMagenta {
+	/FrameSepBlue 1.0 def
+	/FrameSepGreen 0.0 def
+	/FrameSepRed 1.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 1.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMmagenta def
+	setCurrentScreen
+} bind def
+ 
+/FrameSetYellow {
+	/FrameSepBlue 0.0 def
+	/FrameSepGreen 1.0 def
+	/FrameSepRed 1.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 1.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMyellow def
+	setCurrentScreen
+} bind def
+ 
+/FrameSetBlack {
+	/FrameSepBlue 0.0 def
+	/FrameSepGreen 0.0 def
+	/FrameSepRed 0.0 def
+	/FrameSepBlack 1.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMblack def
+	setCurrentScreen
+} bind def
+ 
+/FrameNoSep { 
+	/FrameSepIs FMnone def
+	setCurrentScreen
+} bind def
+/FrameSetSepColors { 
+	FrameDict begin
+	[ exch 1 add 1 roll ]
+	/FrameSepColors  
+	exch def end
+	} bind def
+/FrameColorInSepListCMYK { 
+	FrameSepColors {  
+       		exch dup 3 -1 roll 
+       		FrameCmpColorsCMYK 
+       		{ pop true exit } if
+    	} forall 
+	dup true ne {pop false} if
+	} bind def
+/FrameColorInSepListRGB { 
+	FrameSepColors {  
+       		exch dup 3 -1 roll 
+       		FrameCmpColorsRGB 
+       		{ pop true exit } if
+    	} forall 
+	dup true ne {pop false} if
+	} bind def
+/RealSetgray /setgray load def
+/RealSetrgbcolor /setrgbcolor load def
+/RealSethsbcolor /sethsbcolor load def
+end 
+/setgray { 
+	FrameDict begin
+	FrameSepIs FMnone eq
+		{ RealSetgray } 
+		{ 
+		FrameSepIs FMblack eq 
+			{ RealSetgray } 
+			{ FrameSepIs FMcustom eq 
+			  FrameSepRed 0 eq and
+			  FrameSepGreen 0 eq and
+			  FrameSepBlue 0 eq and {
+			  	RealSetgray
+			  } {
+				1 RealSetgray pop 
+			  } ifelse
+			} ifelse
+		} ifelse
+	end
+} bind def
+/setrgbcolor { 
+	FrameDict begin
+	FrameSepIs FMnone eq
+	{  RealSetrgbcolor }
+	{
+		3 copy [ 4 1 roll ] 
+		FrameColorInSepListRGB
+		{
+				FrameSepBlue eq exch 
+			 	FrameSepGreen eq and exch 
+			 	FrameSepRed eq and
+			 	{ 0 } { 1 } ifelse
+		}
+		{
+			FMPColor {
+				RealSetrgbcolor
+				currentcmykcolor
+			} {
+				RGBtoCMYK
+			} ifelse
+			FrameSepIs FMblack eq
+			{1.0 exch sub 4 1 roll pop pop pop} {
+			FrameSepIs FMyellow eq
+			{pop 1.0 exch sub 3 1 roll pop pop} {
+			FrameSepIs FMmagenta eq
+			{pop pop 1.0 exch sub exch pop } {
+			FrameSepIs FMcyan eq
+			{pop pop pop 1.0 exch sub } 
+			{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+		} ifelse
+		RealSetgray
+	} 
+	ifelse
+	end
+} bind def
+/sethsbcolor {
+	FrameDict begin
+	FrameSepIs FMnone eq 
+	{ RealSethsbcolor } 
+	{
+		RealSethsbcolor 
+		currentrgbcolor  
+		setrgbcolor 
+	} 
+	ifelse
+	end
+} bind def
+FrameDict begin
+/setcmykcolor where {
+	pop /RealSetcmykcolor /setcmykcolor load def
+} {
+	/RealSetcmykcolor {
+		4 1 roll
+		3 { 3 index add 0 max 1 min 1 exch sub 3 1 roll} repeat 
+		RealSetrgbcolor pop
+	} bind def
+} ifelse
+userdict /setcmykcolor { 
+		FrameDict begin
+		FrameSepIs FMnone eq
+		{ RealSetcmykcolor } 
+		{
+			4 copy [ 5 1 roll ]
+			FrameColorInSepListCMYK
+			{
+				FrameSepBlack eq exch 
+				FrameSepYellow eq and exch 
+				FrameSepMagenta eq and exch 
+				FrameSepCyan eq and 
+				{ 0 } { 1 } ifelse
+			}
+			{
+				FrameSepIs FMblack eq
+				{1.0 exch sub 4 1 roll pop pop pop} {
+				FrameSepIs FMyellow eq
+				{pop 1.0 exch sub 3 1 roll pop pop} {
+				FrameSepIs FMmagenta eq
+				{pop pop 1.0 exch sub exch pop } {
+				FrameSepIs FMcyan eq
+				{pop pop pop 1.0 exch sub } 
+				{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+			} ifelse
+			RealSetgray
+		}
+		ifelse
+		end
+	} bind put
+fMLevel1 { 
+	
+	
+	
+	/patScreenDict 7 dict dup begin
+		<0f1e3c78f0e1c387> [ 45  { pop } {exch pop} 		.5   2 sqrt] FmBD
+		<0f87c3e1f0783c1e> [ 135 { pop } {exch pop}			.5   2 sqrt] FmBD
+		<cccccccccccccccc> [ 0   { pop } dup				.5   2	   ] FmBD
+		<ffff0000ffff0000> [ 90  { pop } dup				.5   2	   ] FmBD
+		<8142241818244281> [ 45  { 2 copy lt {exch} if pop}	dup .75  2 sqrt] FmBD
+		<03060c183060c081> [ 45  { pop } {exch pop}			.875 2 sqrt] FmBD
+		<8040201008040201> [ 135 { pop } {exch pop}			.875 2 sqrt] FmBD
+	end def
+} { 
+	
+	/patProcDict 5 dict dup begin
+		<0f1e3c78f0e1c387> { 3 setlinewidth -1 -1 moveto 9 9 lineto stroke 
+											4 -4 moveto 12 4 lineto stroke
+											-4 4 moveto 4 12 lineto stroke} bind def
+		<0f87c3e1f0783c1e> { 3 setlinewidth -1 9 moveto 9 -1 lineto stroke 
+											-4 4 moveto 4 -4 lineto stroke
+											4 12 moveto 12 4 lineto stroke} bind def
+		<8142241818244281> { 1 setlinewidth -1 9 moveto 9 -1 lineto stroke
+											-1 -1 moveto 9 9 lineto stroke } bind def
+		<03060c183060c081> { 1 setlinewidth -1 -1 moveto 9 9 lineto stroke 
+											4 -4 moveto 12 4 lineto stroke
+											-4 4 moveto 4 12 lineto stroke} bind def
+		<8040201008040201> { 1 setlinewidth -1 9 moveto 9 -1 lineto stroke 
+											-4 4 moveto 4 -4 lineto stroke
+											4 12 moveto 12 4 lineto stroke} bind def
+	end def
+	/patDict 15 dict dup begin
+		/PatternType 1 def		
+		/PaintType 2 def		
+		/TilingType 3 def		
+		/BBox [ 0 0 8 8 ] def 	
+		/XStep 8 def			
+		/YStep 8 def			
+		/PaintProc {
+			begin
+			patProcDict bstring known {
+				patProcDict bstring get exec
+			} {
+				8 8 true [1 0 0 -1 0 8] bstring imagemask
+			} ifelse
+			end
+		} bind def
+	end def
+} ifelse
+/combineColor {
+    FrameSepIs FMnone eq
+	{
+		graymode fMLevel1 or not {
+			
+			[/Pattern [/DeviceCMYK]] setcolorspace
+			FrameCurColors 0 4 getinterval aload pop FrameCurPat setcolor
+		} {
+			FrameCurColors 3 get 1.0 ge {
+				FrameCurGray RealSetgray
+			} {
+				fMAcrobat not FMPColor graymode and and {
+					0 1 3 { 
+						FrameCurColors exch get
+						1 FrameCurGray sub mul
+					} for
+					RealSetcmykcolor
+				} {
+					4 1 6 {
+						FrameCurColors exch get
+						graymode {
+							1 exch sub 1 FrameCurGray sub mul 1 exch sub
+						} {
+							1.0 lt {FrameCurGray} {1} ifelse
+						} ifelse
+					} for
+					RealSetrgbcolor
+				} ifelse
+			} ifelse
+		} ifelse
+	} { 
+		FrameCurColors 0 4 getinterval aload
+		FrameColorInSepListCMYK {
+			FrameSepBlack eq exch 
+			FrameSepYellow eq and exch 
+			FrameSepMagenta eq and exch 
+			FrameSepCyan eq and
+			FrameSepIs FMcustom eq and
+			{ FrameCurGray } { 1 } ifelse
+		} {
+			FrameSepIs FMblack eq
+			{FrameCurGray 1.0 exch sub mul 1.0 exch sub 4 1 roll pop pop pop} {
+			FrameSepIs FMyellow eq
+			{pop FrameCurGray 1.0 exch sub mul 1.0 exch sub 3 1 roll pop pop} {
+			FrameSepIs FMmagenta eq
+			{pop pop FrameCurGray 1.0 exch sub mul 1.0 exch sub exch pop } {
+			FrameSepIs FMcyan eq
+			{pop pop pop FrameCurGray 1.0 exch sub mul 1.0 exch sub } 
+			{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+		} ifelse
+		graymode fMLevel1 or not {
+			
+			[/Pattern [/DeviceGray]] setcolorspace
+			FrameCurPat setcolor
+		} { 
+			graymode not fMLevel1 and {
+				
+				dup 1 lt {pop FrameCurGray} if
+			} if
+			RealSetgray
+		} ifelse
+	} ifelse
+} bind def
+/savematrix {
+	orgmatrix currentmatrix pop
+	} bind def
+/restorematrix {
+	orgmatrix setmatrix
+	} bind def
+/fMDefaultMatrix matrix defaultmatrix def
+/fMatrix2 matrix def
+/dpi    72 0 fMDefaultMatrix dtransform
+    dup mul exch   dup mul add   sqrt def
+	
+/freq dpi dup 72 div round dup 0 eq {pop 1} if 8 mul div def
+/sangle 1 0 fMDefaultMatrix dtransform exch atan def
+	sangle fMatrix2 rotate 
+	fMDefaultMatrix fMatrix2 concatmatrix 
+	dup 0 get /sflipx exch def
+	    3 get /sflipy exch def
+/screenIndex {
+	0 1 dpiranges length 1 sub { dup dpiranges exch get 1 sub dpi le {exit} {pop} ifelse } for
+} bind def
+/getCyanScreen {
+	FMUseHighFrequencyScreens { CHighAngles CMHighFreqs} {CLowAngles CMLowFreqs} ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get /FMSpotFunction load
+} bind def
+/getMagentaScreen {
+	FMUseHighFrequencyScreens { MHighAngles CMHighFreqs } {MLowAngles CMLowFreqs} ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get /FMSpotFunction load
+} bind def
+/getYellowScreen {
+	FMUseHighFrequencyScreens { YHighTDot YHighFreqs} { YLowTDot YLowFreqs } ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get { 3 div
+			{2 { 1 add 2 div 3 mul dup floor sub 2 mul 1 sub exch} repeat
+			FMSpotFunction } } {/FMSpotFunction load } ifelse
+			0.0 exch
+} bind def
+/getBlackScreen  {
+	FMUseHighFrequencyScreens { KHighFreqs } { KLowFreqs } ifelse
+		screenIndex get 45.0 /FMSpotFunction load 
+} bind def
+/getSpotScreen {
+	getBlackScreen
+} bind def
+/getCompositeScreen {
+	getBlackScreen
+} bind def
+/FMSetScreen 
+	fMLevel1 { /setscreen load 
+	}{ {
+		8 dict begin
+		/HalftoneType 1 def
+		/SpotFunction exch def
+		/Angle exch def
+		/Frequency exch def
+		/AccurateScreens FMUseAcccurateScreens def
+		currentdict end sethalftone
+	} bind } ifelse
+def
+/setDefaultScreen {
+	FMPColor {
+		orgrxfer cvx orggxfer cvx orgbxfer cvx orgxfer cvx setcolortransfer
+	}
+	{
+		orgxfer cvx settransfer
+	} ifelse
+	orgfreq organgle orgproc cvx setscreen
+} bind def
+/setCurrentScreen {
+	FrameSepIs FMnone eq {
+		FMUseDefaultNoSeparationScreen {
+			setDefaultScreen
+		} {
+			getCompositeScreen FMSetScreen
+		} ifelse
+	} {
+		FrameSepIs FMcustom eq {
+			FMUseDefaultSpotSeparationScreen {
+				setDefaultScreen
+			} {
+				getSpotScreen FMSetScreen
+			} ifelse
+		} {
+			FMUseDefaultProcessSeparationScreen {
+				setDefaultScreen
+			} {
+				FrameSepIs FMcyan eq {
+					getCyanScreen FMSetScreen
+				} {
+					FrameSepIs FMmagenta eq {
+						getMagentaScreen FMSetScreen
+					} {
+						FrameSepIs FMyellow eq {
+							getYellowScreen FMSetScreen
+						} {
+							getBlackScreen FMSetScreen
+						} ifelse
+					} ifelse
+				} ifelse
+			} ifelse
+		} ifelse
+	} ifelse 
+} bind def
+end
+	
+/FMDOCUMENT { 
+	array /FMfonts exch def 
+	/#copies exch def
+	FrameDict begin
+	0 ne /manualfeed exch def
+	/paperheight exch def
+	/paperwidth exch def
+	0 ne /fMNegative exch def 
+	0 ne /edown exch def 
+	/yscale exch def
+	/xscale exch def
+	fMLevel1 {
+		manualfeed {setmanualfeed} if
+		/FMdicttop countdictstack 1 add def 
+		/FMoptop count def 
+		setpapername 
+		manualfeed {true} {papersize} ifelse 
+		{manualpapersize} {false} ifelse 
+		{desperatepapersize} {false} ifelse 
+		{papersizefailure} if
+		count -1 FMoptop {pop pop} for
+		countdictstack -1 FMdicttop {pop end} for 
+		}
+		{2 dict
+		 dup /PageSize [paperwidth paperheight] put
+		 manualfeed {dup /ManualFeed manualfeed put} if
+		 {setpagedevice} stopped {papersizefailure} if
+		}
+	ifelse 
+	
+	FMPColor {
+		currentcolorscreen
+			cvlit /orgproc exch def
+				  /organgle exch def 
+				  /orgfreq exch def
+			cvlit /orgbproc exch def
+				  /orgbangle exch def 
+				  /orgbfreq exch def
+			cvlit /orggproc exch def
+				  /orggangle exch def 
+				  /orggfreq exch def
+			cvlit /orgrproc exch def
+				  /orgrangle exch def 
+				  /orgrfreq exch def
+			currentcolortransfer 
+			fMNegative {
+				1 1 4 { 
+					pop { 1 exch sub } fmConcatProcs 4 1 roll
+				} for
+				4 copy
+				setcolortransfer
+			} if
+			cvlit /orgxfer exch def
+			cvlit /orgbxfer exch def
+			cvlit /orggxfer exch def
+			cvlit /orgrxfer exch def
+	} {
+		currentscreen 
+			cvlit /orgproc exch def
+				  /organgle exch def 
+				  /orgfreq exch def
+				  
+		currenttransfer 
+		fMNegative {
+			{ 1 exch sub } fmConcatProcs
+			dup settransfer
+		} if 
+		cvlit /orgxfer exch def
+	} ifelse
+	end 
+} def 
+/FMBEGINPAGE { 
+	FrameDict begin 
+	/pagesave save def
+	3.86 setmiterlimit
+	/landscape exch 0 ne def
+	landscape { 
+		90 rotate 0 exch dup /pwid exch def neg translate pop 
+	}{
+		pop /pwid exch def
+	} ifelse
+	edown { [-1 0 0 1 pwid 0] concat } if
+	0 0 moveto paperwidth 0 lineto paperwidth paperheight lineto 
+	0 paperheight lineto 0 0 lineto 1 setgray fill
+	xscale yscale scale
+	/orgmatrix matrix def
+	gsave 
+} def 
+/FMENDPAGE {
+	grestore 
+	pagesave restore
+	end 
+	showpage
+	} def 
+/FMFONTDEFINE { 
+	FrameDict begin
+	findfont 
+	ReEncode 
+	1 index exch 
+	definefont 
+	FMfonts 3 1 roll 
+	put
+	end 
+	} def 
+/FMFILLS {
+	FrameDict begin dup
+	array /fillvals exch def
+	dict /patCache exch def
+	end 
+	} def 
+/FMFILL {
+	FrameDict begin
+	 fillvals 3 1 roll put
+	end 
+	} def 
+/FMNORMALIZEGRAPHICS { 
+	newpath
+	1 setlinewidth
+	0 setlinecap
+	0 0 0 sethsbcolor
+	0 setgray 
+	} bind def
+/FMBEGINEPSF { 
+	end 
+	/FMEPSF save def 
+	/showpage {} def 
+% See Adobe's "PostScript Language Reference Manual, 2nd Edition", page 714.
+% "...the following operators MUST NOT be used in an EPS file:" (emphasis ours)
+	/banddevice {(banddevice) FMBADEPSF} def
+	/clear {(clear) FMBADEPSF} def
+	/cleardictstack {(cleardictstack) FMBADEPSF} def 
+	/copypage {(copypage) FMBADEPSF} def
+	/erasepage {(erasepage) FMBADEPSF} def
+	/exitserver {(exitserver) FMBADEPSF} def
+	/framedevice {(framedevice) FMBADEPSF} def
+	/grestoreall {(grestoreall) FMBADEPSF} def
+	/initclip {(initclip) FMBADEPSF} def
+	/initgraphics {(initgraphics) FMBADEPSF} def
+	/quit {(quit) FMBADEPSF} def
+	/renderbands {(renderbands) FMBADEPSF} def
+	/setglobal {(setglobal) FMBADEPSF} def
+	/setpagedevice {(setpagedevice) FMBADEPSF} def
+	/setshared {(setshared) FMBADEPSF} def
+	/startjob {(startjob) FMBADEPSF} def
+	/lettertray {(lettertray) FMBADEPSF} def
+	/letter {(letter) FMBADEPSF} def
+	/lettersmall {(lettersmall) FMBADEPSF} def
+	/11x17tray {(11x17tray) FMBADEPSF} def
+	/11x17 {(11x17) FMBADEPSF} def
+	/ledgertray {(ledgertray) FMBADEPSF} def
+	/ledger {(ledger) FMBADEPSF} def
+	/legaltray {(legaltray) FMBADEPSF} def
+	/legal {(legal) FMBADEPSF} def
+	/statementtray {(statementtray) FMBADEPSF} def
+	/statement {(statement) FMBADEPSF} def
+	/executivetray {(executivetray) FMBADEPSF} def
+	/executive {(executive) FMBADEPSF} def
+	/a3tray {(a3tray) FMBADEPSF} def
+	/a3 {(a3) FMBADEPSF} def
+	/a4tray {(a4tray) FMBADEPSF} def
+	/a4 {(a4) FMBADEPSF} def
+	/a4small {(a4small) FMBADEPSF} def
+	/b4tray {(b4tray) FMBADEPSF} def
+	/b4 {(b4) FMBADEPSF} def
+	/b5tray {(b5tray) FMBADEPSF} def
+	/b5 {(b5) FMBADEPSF} def
+	FMNORMALIZEGRAPHICS 
+	[/fy /fx /fh /fw /ury /urx /lly /llx] {exch def} forall 
+	fx fw 2 div add fy fh 2 div add  translate
+	rotate
+	fw 2 div neg fh 2 div neg translate
+	fw urx llx sub div fh ury lly sub div scale 
+	llx neg lly neg translate 
+	/FMdicttop countdictstack 1 add def 
+	/FMoptop count def 
+	} bind def
+/FMENDEPSF {
+	count -1 FMoptop {pop pop} for 
+	countdictstack -1 FMdicttop {pop end} for 
+	FMEPSF restore
+	FrameDict begin 
+	} bind def
+FrameDict begin 
+/setmanualfeed {
+%%BeginFeature *ManualFeed True
+	 statusdict /manualfeed true put
+%%EndFeature
+	} bind def
+/max {2 copy lt {exch} if pop} bind def
+/min {2 copy gt {exch} if pop} bind def
+/inch {72 mul} def
+/pagedimen { 
+	paperheight sub abs 16 lt exch 
+	paperwidth sub abs 16 lt and
+	{/papername exch def} {pop} ifelse
+	} bind def
+/setpapername { 
+	/papersizedict 14 dict def 
+	papersizedict begin
+	/papername /unknown def 
+		/Letter 8.5 inch 11.0 inch pagedimen
+		/LetterSmall 7.68 inch 10.16 inch pagedimen
+		/Tabloid 11.0 inch 17.0 inch pagedimen
+		/Ledger 17.0 inch 11.0 inch pagedimen
+		/Legal 8.5 inch 14.0 inch pagedimen
+		/Statement 5.5 inch 8.5 inch pagedimen
+		/Executive 7.5 inch 10.0 inch pagedimen
+		/A3 11.69 inch 16.5 inch pagedimen
+		/A4 8.26 inch 11.69 inch pagedimen
+		/A4Small 7.47 inch 10.85 inch pagedimen
+		/B4 10.125 inch 14.33 inch pagedimen
+		/B5 7.16 inch 10.125 inch pagedimen
+	end
+	} bind def
+/papersize {
+	papersizedict begin
+		/Letter {lettertray letter} def
+		/LetterSmall {lettertray lettersmall} def
+		/Tabloid {11x17tray 11x17} def
+		/Ledger {ledgertray ledger} def
+		/Legal {legaltray legal} def
+		/Statement {statementtray statement} def
+		/Executive {executivetray executive} def
+		/A3 {a3tray a3} def
+		/A4 {a4tray a4} def
+		/A4Small {a4tray a4small} def
+		/B4 {b4tray b4} def
+		/B5 {b5tray b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	statusdict begin stopped end 
+	} bind def
+/manualpapersize {
+	papersizedict begin
+		/Letter {letter} def
+		/LetterSmall {lettersmall} def
+		/Tabloid {11x17} def
+		/Ledger {ledger} def
+		/Legal {legal} def
+		/Statement {statement} def
+		/Executive {executive} def
+		/A3 {a3} def
+		/A4 {a4} def
+		/A4Small {a4small} def
+		/B4 {b4} def
+		/B5 {b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	stopped 
+	} bind def
+/desperatepapersize {
+	statusdict /setpageparams known
+		{
+		paperwidth paperheight 0 1 
+		statusdict begin
+		{setpageparams} stopped 
+		end
+		} {true} ifelse 
+	} bind def
+/papersizefailure {
+	FMAllowPaperSizeMismatch not
+		{
+(The requested paper size is not available in any currently-installed tray)
+(Edit the PS file to "FMAllowPaperSizeMismatch true" to use default tray)
+		 FMFAILURE } if
+	} def
+/DiacriticEncoding [
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /space /exclam /quotedbl
+/numbersign /dollar /percent /ampersand /quotesingle /parenleft
+/parenright /asterisk /plus /comma /hyphen /period /slash /zero /one
+/two /three /four /five /six /seven /eight /nine /colon /semicolon
+/less /equal /greater /question /at /A /B /C /D /E /F /G /H /I /J /K
+/L /M /N /O /P /Q /R /S /T /U /V /W /X /Y /Z /bracketleft /backslash
+/bracketright /asciicircum /underscore /grave /a /b /c /d /e /f /g /h
+/i /j /k /l /m /n /o /p /q /r /s /t /u /v /w /x /y /z /braceleft /bar
+/braceright /asciitilde /.notdef /Adieresis /Aring /Ccedilla /Eacute
+/Ntilde /Odieresis /Udieresis /aacute /agrave /acircumflex /adieresis
+/atilde /aring /ccedilla /eacute /egrave /ecircumflex /edieresis
+/iacute /igrave /icircumflex /idieresis /ntilde /oacute /ograve
+/ocircumflex /odieresis /otilde /uacute /ugrave /ucircumflex
+/udieresis /dagger /.notdef /cent /sterling /section /bullet
+/paragraph /germandbls /registered /copyright /trademark /acute
+/dieresis /.notdef /AE /Oslash /.notdef /.notdef /.notdef /.notdef
+/yen /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/ordfeminine /ordmasculine /.notdef /ae /oslash /questiondown
+/exclamdown /logicalnot /.notdef /florin /.notdef /.notdef
+/guillemotleft /guillemotright /ellipsis /.notdef /Agrave /Atilde
+/Otilde /OE /oe /endash /emdash /quotedblleft /quotedblright
+/quoteleft /quoteright /.notdef /.notdef /ydieresis /Ydieresis
+/fraction /currency /guilsinglleft /guilsinglright /fi /fl /daggerdbl
+/periodcentered /quotesinglbase /quotedblbase /perthousand
+/Acircumflex /Ecircumflex /Aacute /Edieresis /Egrave /Iacute
+/Icircumflex /Idieresis /Igrave /Oacute /Ocircumflex /.notdef /Ograve
+/Uacute /Ucircumflex /Ugrave /dotlessi /circumflex /tilde /macron
+/breve /dotaccent /ring /cedilla /hungarumlaut /ogonek /caron
+] def
+/ReEncode { 
+	dup 
+	length 
+	dict begin 
+	{
+	1 index /FID ne 
+		{def} 
+		{pop pop} ifelse 
+	} forall 
+	0 eq {/Encoding DiacriticEncoding def} if 
+	currentdict 
+	end 
+	} bind def
+FMPColor 
+	
+	{
+	/BEGINBITMAPCOLOR { 
+		BITMAPCOLOR} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPCOLORc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUECOLOR } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUECOLORc } def
+	/BEGINBITMAPCMYK { 
+		BITMAPCMYK } def
+	/BEGINBITMAPCMYKc { 
+		BITMAPCMYKc } def
+	}
+	
+	{
+	/BEGINBITMAPCOLOR { 
+		BITMAPGRAY} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPGRAYc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUEGRAY } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUEGRAYc } def
+	/BEGINBITMAPCMYK { 
+		BITMAPCMYKGRAY } def
+	/BEGINBITMAPCMYKc { 
+		BITMAPCMYKGRAYc } def
+	}
+ifelse
+/K { 
+	FMPrintAllColorsAsBlack {
+		dup 1 eq 2 index 1 eq and 3 index 1 eq and not
+			{7 {pop} repeat 0 0 0 1 0 0 0} if
+	} if 
+	FrameCurColors astore 
+	pop combineColor
+} bind def
+/graymode true def
+fMLevel1 {
+	/fmGetFlip {
+		fMatrix2 exch get mul 0 lt { -1 } { 1 } ifelse
+	} FmBD
+} if
+/setPatternMode {
+	fMLevel1 {
+		2 index patScreenDict exch known {
+			pop pop
+			patScreenDict exch get aload pop 
+			freq 								
+			mul									
+			5 2 roll							
+			fMatrix2 currentmatrix 1 get 0 ne {
+				3 -1 roll 90 add 3 1 roll 		
+				sflipx 1 fmGetFlip sflipy 2 fmGetFlip neg mul
+			} {  								
+				sflipx 0 fmGetFlip sflipy 3 fmGetFlip mul 
+			} ifelse
+			0 lt {exch pop} {pop} ifelse 		
+			fMNegative { 
+				{neg} fmConcatProcs 			
+			} if
+			bind
+			
+			
+			
+			systemdict /setscreen get exec		
+			/FrameCurGray exch def
+		} {
+			/bwidth  exch def
+			/bpside  exch def
+			/bstring exch def
+			/onbits 0 def  /offbits 0 def
+			freq sangle landscape {90 add} if 
+				{/ypoint exch def
+				 /xpoint exch def
+				 /xindex xpoint 1 add 2 div bpside mul cvi def
+				 /yindex ypoint 1 add 2 div bpside mul cvi def
+				 bstring yindex bwidth mul xindex 8 idiv add get
+				 1 7 xindex 8 mod sub bitshift and 0 ne fMNegative {not} if
+				 {/onbits  onbits  1 add def 1}
+				 {/offbits offbits 1 add def 0}
+				 ifelse
+				}
+				setscreen
+			offbits offbits onbits add div fMNegative {1.0 exch sub} if
+			/FrameCurGray exch def
+		} ifelse
+	} { 
+		pop pop
+		dup patCache exch known {
+			patCache exch get
+		} { 
+			dup
+			patDict /bstring 3 -1 roll put
+			patDict 
+			9 PatFreq screenIndex get div dup matrix scale
+			makepattern
+			dup 
+			patCache 4 -1 roll 3 -1 roll put
+		} ifelse
+		/FrameCurGray 0 def
+		/FrameCurPat exch def
+	} ifelse
+	/graymode false def
+	combineColor
+} bind def
+/setGrayScaleMode {
+	graymode not {
+		/graymode true def
+		fMLevel1 {
+			setCurrentScreen
+		} if
+	} if
+	/FrameCurGray exch def
+	combineColor
+} bind def
+/normalize {
+	transform round exch round exch itransform
+	} bind def
+/dnormalize {
+	dtransform round exch round exch idtransform
+	} bind def
+/lnormalize { 
+	0 dtransform exch cvi 2 idiv 2 mul 1 add exch idtransform pop
+	} bind def
+/H { 
+	lnormalize setlinewidth
+	} bind def
+/Z {
+	setlinecap
+	} bind def
+	
+/PFill {
+	graymode fMLevel1 or not {
+		gsave 1 setgray eofill grestore
+	} if
+} bind def
+/PStroke {
+	graymode fMLevel1 or not {
+		gsave 1 setgray stroke grestore
+	} if
+	stroke
+} bind def
+/X { 
+	fillvals exch get
+	dup type /stringtype eq
+	{8 1 setPatternMode} 
+	{setGrayScaleMode}
+	ifelse
+	} bind def
+/V { 
+	PFill gsave eofill grestore
+	} bind def
+/Vclip {
+	clip
+	} bind def
+/Vstrk {
+	currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+/N { 
+	PStroke
+	} bind def
+/Nclip {
+	strokepath clip newpath
+	} bind def
+/Nstrk {
+	currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+/M {newpath moveto} bind def
+/E {lineto} bind def
+/D {curveto} bind def
+/O {closepath} bind def
+/L { 
+ 	/n exch def
+	newpath
+	normalize
+	moveto 
+	2 1 n {pop normalize lineto} for
+	} bind def
+/Y { 
+	L 
+	closepath
+	} bind def
+/R { 
+	/y2 exch def
+	/x2 exch def
+	/y1 exch def
+	/x1 exch def
+	x1 y1
+	x2 y1
+	x2 y2
+	x1 y2
+	4 Y 
+	} bind def
+/rarc 
+	{rad 
+	 arcto
+	} bind def
+/RR { 
+	/rad exch def
+	normalize
+	/y2 exch def
+	/x2 exch def
+	normalize
+	/y1 exch def
+	/x1 exch def
+	mark
+	newpath
+	{
+	x1 y1 rad add moveto
+	x1 y2 x2 y2 rarc
+	x2 y2 x2 y1 rarc
+	x2 y1 x1 y1 rarc
+	x1 y1 x1 y2 rarc
+	closepath
+	} stopped {x1 y1 x2 y2 R} if 
+	cleartomark
+	} bind def
+/RRR { 
+	/rad exch def
+	normalize /y4 exch def /x4 exch def
+	normalize /y3 exch def /x3 exch def
+	normalize /y2 exch def /x2 exch def
+	normalize /y1 exch def /x1 exch def
+	newpath
+	normalize moveto 
+	mark
+	{
+	x2 y2 x3 y3 rarc
+	x3 y3 x4 y4 rarc
+	x4 y4 x1 y1 rarc
+	x1 y1 x2 y2 rarc
+	closepath
+	} stopped
+	 {x1 y1 x2 y2 x3 y3 x4 y4 newpath moveto lineto lineto lineto closepath} if
+	cleartomark
+	} bind def
+/C { 
+	grestore
+	gsave
+	R 
+	clip
+	setCurrentScreen
+} bind def
+/CP { 
+	grestore
+	gsave
+	Y 
+	clip
+	setCurrentScreen
+} bind def
+/F { 
+	FMfonts exch get
+	FMpointsize scalefont
+	setfont
+	} bind def
+/Q { 
+	/FMpointsize exch def
+	F 
+	} bind def
+/T { 
+	moveto show
+	} bind def
+/RF { 
+	rotate
+	0 ne {-1 1 scale} if
+	} bind def
+/TF { 
+	gsave
+	moveto 
+	RF
+	show
+	grestore
+	} bind def
+/P { 
+	moveto
+	0 32 3 2 roll widthshow
+	} bind def
+/PF { 
+	gsave
+	moveto 
+	RF
+	0 32 3 2 roll widthshow
+	grestore
+	} bind def
+/S { 
+	moveto
+	0 exch ashow
+	} bind def
+/SF { 
+	gsave
+	moveto
+	RF
+	0 exch ashow
+	grestore
+	} bind def
+/B { 
+	moveto
+	0 32 4 2 roll 0 exch awidthshow
+	} bind def
+/BF { 
+	gsave
+	moveto
+	RF
+	0 32 4 2 roll 0 exch awidthshow
+	grestore
+	} bind def
+/G { 
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath 
+	PFill fill
+	grestore
+	} bind def
+/Gstrk {
+	savematrix
+    newpath
+    2 index 2 div add exch 3 index 2 div sub exch 
+    normalize 2 index 2 div sub exch 3 index 2 div add exch 
+    translate
+    scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    restorematrix
+    currentlinewidth exch setlinewidth PStroke setlinewidth
+    } bind def
+/Gclip { 
+	newpath
+	savematrix
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath 
+	clip newpath
+	restorematrix
+	} bind def
+/GG { 
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto 
+	rotate 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath
+	PFill
+	fill
+	grestore
+	} bind def
+/GGclip { 
+	savematrix
+	newpath
+    normalize translate 0.0 0.0 moveto 
+    rotate 
+    dnormalize scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    closepath
+	clip newpath
+	restorematrix
+	} bind def
+/GGstrk { 
+	savematrix
+    newpath
+    normalize translate 0.0 0.0 moveto 
+    rotate 
+    dnormalize scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    closepath 
+	restorematrix
+    currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+/A { 
+	gsave
+	savematrix
+	newpath
+	2 index 2 div add exch 3 index 2 div sub exch 
+	normalize 2 index 2 div sub exch 3 index 2 div add exch 
+	translate 
+	scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	restorematrix
+	PStroke
+	grestore
+	} bind def
+/Aclip {
+	newpath
+	savematrix
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath 
+	strokepath clip newpath
+	restorematrix
+} bind def
+/Astrk {
+	Gstrk
+} bind def
+/AA { 
+	gsave
+	savematrix
+	newpath
+	
+	3 index 2 div add exch 4 index 2 div sub exch 
+	
+	normalize 3 index 2 div sub exch 4 index 2 div add exch
+	translate 
+	rotate 
+	scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	restorematrix
+	PStroke
+	grestore
+	} bind def
+/AAclip {
+	savematrix
+	newpath
+    normalize translate 0.0 0.0 moveto 
+    rotate 
+    dnormalize scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    closepath
+	strokepath clip newpath
+	restorematrix
+} bind def
+/AAstrk {
+	GGstrk
+} bind def
+/BEGINPRINTCODE { 
+	/FMdicttop countdictstack 1 add def 
+	/FMoptop count 7 sub def 
+	/FMsaveobject save def
+	userdict begin 
+	/showpage {} def 
+	FMNORMALIZEGRAPHICS 
+	3 index neg 3 index neg translate
+	} bind def
+/ENDPRINTCODE {
+	count -1 FMoptop {pop pop} for 
+	countdictstack -1 FMdicttop {pop end} for 
+	FMsaveobject restore 
+	} bind def
+/gn { 
+	0 
+	{	46 mul 
+		cf read pop 
+		32 sub 
+		dup 46 lt {exit} if 
+		46 sub add 
+		} loop
+	add 
+	} bind def
+/cfs { 
+	/str sl string def 
+	0 1 sl 1 sub {str exch val put} for 
+	str def 
+	} bind def
+/ic [ 
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0
+	{0 hx} {1 hx} {2 hx} {3 hx} {4 hx} {5 hx} {6 hx} {7 hx} {8 hx} {9 hx}
+	{10 hx} {11 hx} {12 hx} {13 hx} {14 hx} {15 hx} {16 hx} {17 hx} {18 hx}
+	{19 hx} {gn hx} {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}
+	{13} {14} {15} {16} {17} {18} {19} {gn} {0 wh} {1 wh} {2 wh} {3 wh}
+	{4 wh} {5 wh} {6 wh} {7 wh} {8 wh} {9 wh} {10 wh} {11 wh} {12 wh}
+	{13 wh} {14 wh} {gn wh} {0 bl} {1 bl} {2 bl} {3 bl} {4 bl} {5 bl} {6 bl}
+	{7 bl} {8 bl} {9 bl} {10 bl} {11 bl} {12 bl} {13 bl} {14 bl} {gn bl}
+	{0 fl} {1 fl} {2 fl} {3 fl} {4 fl} {5 fl} {6 fl} {7 fl} {8 fl} {9 fl}
+	{10 fl} {11 fl} {12 fl} {13 fl} {14 fl} {gn fl}
+	] def
+/ms { 
+	/sl exch def 
+	/val 255 def 
+	/ws cfs 
+	/im cfs 
+	/val 0 def 
+	/bs cfs 
+	/cs cfs 
+	} bind def
+400 ms 
+/ip { 
+	is 
+	0 
+	cf cs readline pop 
+	{	ic exch get exec 
+		add 
+		} forall 
+	pop 
+	
+	} bind def
+/rip { 
+	   
+	  
+	  bis ris copy pop 
+      is
+      0
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop 
+	  ris gis copy pop 
+	  dup is exch 
+	  
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop
+	  gis bis copy pop 
+	  dup add is exch 
+	  
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+      pop 
+      
+      } bind def
+/rip4 { 
+	   
+	  
+	  kis cis copy pop 
+      is
+      0
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop 
+	  cis mis copy pop 
+	  dup is exch 
+	  
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop
+	  mis yis copy pop 
+	  dup dup add is exch 
+	  
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop
+	  yis kis copy pop 
+	  3 mul is exch 
+	  
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+      pop 
+      
+      } bind def
+/wh { 
+	/len exch def 
+	/pos exch def 
+	ws 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/bl { 
+	/len exch def 
+	/pos exch def 
+	bs 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/s1 1 string def
+/fl { 
+	/len exch def 
+	/pos exch def 
+	/val cf s1 readhexstring pop 0 get def
+	pos 1 pos len add 1 sub {im exch val put} for
+	pos len 
+	} bind def
+/hx { 
+	3 copy getinterval 
+	cf exch readhexstring pop pop 
+	} bind def
+/wbytes { 
+      dup dup
+      8 gt { pop 8 idiv mul }
+      { 8 eq {pop} {1 eq {7 add 8 idiv} {3 add 4 idiv} ifelse} ifelse } ifelse
+	} bind def
+/BEGINBITMAPBWc { 
+	1 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAPGRAYc { 
+	8 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAP2BITc { 
+	2 {} COMMONBITMAPc
+	} bind def
+/COMMONBITMAPc { 
+		 
+	/cvtProc exch def
+	/depth exch def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/height exch def /width exch def
+	/lb width depth wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	cvtProc                
+	/is im 0 lb getinterval def 
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	width height depth [width 0 0 height neg 0 height] 
+	{ip} image 
+	bitmapsave restore 
+	grestore
+	} bind def
+/BEGINBITMAPBW { 
+	1 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAPGRAY { 
+	8 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAP2BIT { 
+	2 {} COMMONBITMAP
+	} bind def
+/COMMONBITMAP { 
+	/cvtProc exch def
+	/depth exch def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/height exch def /width exch def
+	/bitmapsave save def 
+	cvtProc              
+	/is width depth wbytes string def
+	/cf currentfile def 
+	width height depth [width 0 0 height neg 0 height] 
+	{cf is readhexstring pop} image
+	bitmapsave restore 
+	grestore
+	} bind def
+/ngrayt 256 array def
+/nredt 256 array def
+/nbluet 256 array def
+/ngreent 256 array def
+fMLevel1 {
+/colorsetup {
+	currentcolortransfer
+	/gryt exch def
+	/blut exch def
+	/grnt exch def
+	/redt exch def
+	0 1 255 {
+		/indx exch def
+		/cynu 1 red indx get 255 div sub def
+		/magu 1 green indx get 255 div sub def
+		/yelu 1 blue indx get 255 div sub def
+		/kk cynu magu min yelu min def
+		/u kk currentundercolorremoval exec def
+%		/u 0 def
+		nredt indx 1 0 cynu u sub max sub redt exec put
+		ngreent indx 1 0 magu u sub max sub grnt exec put
+		nbluet indx 1 0 yelu u sub max sub blut exec put
+		ngrayt indx 1 kk currentblackgeneration exec sub gryt exec put
+	} for
+	{255 mul cvi nredt exch get}
+	{255 mul cvi ngreent exch get}
+	{255 mul cvi nbluet exch get}
+	{255 mul cvi ngrayt exch get}
+	setcolortransfer
+	{pop 0} setundercolorremoval
+	{} setblackgeneration
+	} bind def
+}
+{
+/colorSetup2 {
+	[ /Indexed /DeviceRGB 255 
+		{dup red exch get 255 div 
+		 exch dup green exch get 255 div 
+		 exch blue exch get 255 div}
+	] setcolorspace
+} bind def
+} ifelse
+/fakecolorsetup {
+	/tran 256 string def
+	0 1 255 {/indx exch def 
+		tran indx
+		red indx get 77 mul
+		green indx get 151 mul
+		blue indx get 28 mul
+		add add 256 idiv put} for
+	currenttransfer
+	{255 mul cvi tran exch get 255.0 div}
+	exch fmConcatProcs settransfer
+} bind def
+/BITMAPCOLOR { 
+	/depth 8 def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/height exch def /width exch def
+	/bitmapsave save def
+	fMLevel1 {	
+		colorsetup
+		/is width depth wbytes string def
+		/cf currentfile def 
+		width height depth [width 0 0 height neg 0 height] 
+		{cf is readhexstring pop} {is} {is} true 3 colorimage 
+	} {
+		colorSetup2
+		/is width depth wbytes string def
+		/cf currentfile def 
+		7 dict dup begin
+			/ImageType 1 def
+			/Width width def
+			/Height height def
+			/ImageMatrix [width 0 0 height neg 0 height] def
+			/DataSource {cf is readhexstring pop} bind def
+			/BitsPerComponent depth def
+			/Decode [0 255] def
+		end image	
+	} ifelse
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPCOLORc { 
+	/depth 8 def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/height exch def /width exch def
+	/lb width depth wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	fMLevel1 {	
+		colorsetup
+		/is im 0 lb getinterval def 
+		ws 0 lb getinterval is copy pop 
+		/cf currentfile def 
+		width height depth [width 0 0 height neg 0 height] 
+		{ip} {is} {is} true 3 colorimage
+	} {
+		colorSetup2
+		/is im 0 lb getinterval def 
+		ws 0 lb getinterval is copy pop 
+		/cf currentfile def 
+		7 dict dup begin
+			/ImageType 1 def
+			/Width width def
+			/Height height def
+			/ImageMatrix [width 0 0 height neg 0 height] def
+			/DataSource {ip} bind def
+			/BitsPerComponent depth def
+			/Decode [0 255] def
+		end image	
+	} ifelse
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPTRUECOLORc { 
+	/depth 24 def
+        gsave
+ 	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/height exch def /width exch def
+	/lb width depth wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+        
+	/is im 0 lb getinterval def	
+	/ris im 0 width getinterval def	
+	/gis im width width getinterval def	
+	/bis im width 2 mul width getinterval def 
+        
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	width height 8 [width 0 0 height neg 0 height] 
+	{width rip pop ris} {gis} {bis} true 3 colorimage
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPCMYKc { 
+	/depth 32 def
+        gsave
+ 	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/height exch def /width exch def
+	/lb width depth wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+        
+	/is im 0 lb getinterval def	
+	/cis im 0 width getinterval def	
+	/mis im width width getinterval def	
+	/yis im width 2 mul width getinterval def 
+	/kis im width 3 mul width getinterval def 
+        
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	width height 8 [width 0 0 height neg 0 height] 
+	{width rip4 pop cis} {mis} {yis} {kis} true 4 colorimage
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPTRUECOLOR { 
+        gsave
+		
+		3 index 2 div add exch	
+		4 index 2 div add exch	
+		translate		
+		rotate			
+		1 index 2 div neg	
+		1 index 2 div neg	
+		translate		
+		scale			
+		/height exch def /width exch def
+        /bitmapsave save def 
+        /is width string def
+        /gis width string def
+        /bis width string def
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        { cf is readhexstring pop } 
+        { cf gis readhexstring pop } 
+        { cf bis readhexstring pop } 
+        true 3 colorimage 
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPCMYK { 
+        gsave
+		
+		3 index 2 div add exch	
+		4 index 2 div add exch	
+		translate		
+		rotate			
+		1 index 2 div neg	
+		1 index 2 div neg	
+		translate		
+		scale			
+		/height exch def /width exch def
+        /bitmapsave save def 
+        /is width string def
+        /mis width string def
+        /yis width string def
+        /kis width string def
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        { cf is readhexstring pop } 
+        { cf mis readhexstring pop } 
+        { cf yis readhexstring pop } 
+        { cf kis readhexstring pop } 
+        true 4 colorimage 
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPTRUEGRAYc { 
+	/depth 24 def
+        gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/height exch def /width exch def
+	/lb width depth wbytes def 
+	sl lb lt {lb ms} if 
+        /bitmapsave save def 
+        
+	/is im 0 lb getinterval def	
+	/ris im 0 width getinterval def	
+	/gis im width width getinterval def	
+	/bis im width 2 mul width getinterval def 
+        ws 0 lb getinterval is copy pop 
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        {width rip pop ris gis bis width gray} image
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPCMYKGRAYc { 
+	/depth 32 def
+        gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/height exch def /width exch def
+	/lb width depth wbytes def 
+	sl lb lt {lb ms} if 
+        /bitmapsave save def 
+        
+	/is im 0 lb getinterval def	
+	/cis im 0 width getinterval def	
+	/mis im width width getinterval def	
+	/yis im width 2 mul width getinterval def 
+	/kis im width 3 mul width getinterval def 
+        ws 0 lb getinterval is copy pop 
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        {width rip pop cis mis yis kis width cgray} image
+        bitmapsave restore 
+        grestore
+        } bind def
+/cgray { 
+        /ww exch def
+        /k exch def
+        /y exch def
+        /m exch def
+        /c exch def
+        0 1 ww 1 sub { /i exch def c i get m i get y i get k i get CMYKtoRGB
+				.144 mul 3 1 roll .587 mul 3 1 roll .299 mul add add
+				c i 3 -1 roll floor cvi put } for
+        c
+ 		} bind def
+/gray { 
+        /ww exch def
+        /b exch def
+        /g exch def
+        /r exch def
+        0 1 ww 1 sub { /i exch def r i get .299 mul g i get .587 mul
+			b i get .114 mul add add r i 3 -1 roll floor cvi put } for
+        r
+        } bind def
+/BITMAPTRUEGRAY { 
+        gsave
+		
+		3 index 2 div add exch	
+		4 index 2 div add exch	
+		translate		
+		rotate			
+		1 index 2 div neg	
+		1 index 2 div neg	
+		translate		
+		scale			
+		/height exch def /width exch def
+        /bitmapsave save def 
+        /is width string def
+        /gis width string def
+        /bis width string def
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        { cf is readhexstring pop 
+          cf gis readhexstring pop 
+          cf bis readhexstring pop width gray}  image
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPCMYKGRAY { 
+        gsave
+		
+		3 index 2 div add exch	
+		4 index 2 div add exch	
+		translate		
+		rotate			
+		1 index 2 div neg	
+		1 index 2 div neg	
+		translate		
+		scale			
+		/height exch def /width exch def
+        /bitmapsave save def 
+        /is width string def
+        /yis width string def
+        /mis width string def
+        /kis width string def
+        /cf currentfile def 
+        width height 8 [width 0 0 height neg 0 height] 
+        { cf is readhexstring pop 
+          cf mis readhexstring pop 
+          cf yis readhexstring pop 
+          cf kis readhexstring pop width cgray}  image
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPGRAY { 
+	8 {fakecolorsetup} COMMONBITMAP
+	} bind def
+/BITMAPGRAYc { 
+	8 {fakecolorsetup} COMMONBITMAPc
+	} bind def
+/ENDBITMAP {
+	} bind def
+end 
+	/ALDmatrix matrix def ALDmatrix currentmatrix pop
+/StartALD {
+	/ALDsave save def
+	 savematrix
+	 ALDmatrix setmatrix
+	} bind def
+/InALD {
+	 restorematrix
+	} bind def
+/DoneALD {
+	 ALDsave restore
+	} bind def
+/I { setdash } bind def
+/J { [] 0 setdash } bind def
+%%EndProlog
+%%BeginSetup
+(5.0) FMVERSION
+1 1 0 0 612 792 0 1 16 FMDOCUMENT
+0 0 /Times-Bold FMFONTDEFINE
+1 0 /Times-Roman FMFONTDEFINE
+2 0 /Helvetica-Oblique FMFONTDEFINE
+3 0 /Courier FMFONTDEFINE
+4 0 /Courier-Bold FMFONTDEFINE
+5 0 /Times-Italic FMFONTDEFINE
+32 FMFILLS
+0 0 FMFILL
+1 0.1 FMFILL
+2 0.3 FMFILL
+3 0.5 FMFILL
+4 0.7 FMFILL
+5 0.9 FMFILL
+6 0.97 FMFILL
+7 1 FMFILL
+8 <0f1e3c78f0e1c387> FMFILL
+9 <0f87c3e1f0783c1e> FMFILL
+10 <cccccccccccccccc> FMFILL
+11 <ffff0000ffff0000> FMFILL
+12 <8142241818244281> FMFILL
+13 <03060c183060c081> FMFILL
+14 <8040201008040201> FMFILL
+16 1 FMFILL
+17 0.9 FMFILL
+18 0.7 FMFILL
+19 0.5 FMFILL
+20 0.3 FMFILL
+21 0.1 FMFILL
+22 0.03 FMFILL
+23 0 FMFILL
+24 <f0e1c3870f1e3c78> FMFILL
+25 <f0783c1e0f87c3e1> FMFILL
+26 <3333333333333333> FMFILL
+27 <0000ffff0000ffff> FMFILL
+28 <7ebddbe7e7dbbd7e> FMFILL
+29 <fcf9f3e7cf9f3f7e> FMFILL
+30 <7fbfdfeff7fbfdfe> FMFILL
+%%EndSetup
+%%Page: "1" 1
+%%BeginPaperSize: Letter
+%%EndPaperSize
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+J
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+45 540 99 720 R
+7 X
+0 0 0 1 0 0 0 K
+V
+0 12 Q
+0 X
+(date:) 73.01 712 T
+(to:) 85.01 686 T
+(from:) 69.68 621 T
+(subject:) 58.34 556 T
+108 702 288 720 R
+7 X
+V
+1 F
+0 X
+(May 20, 1993) 108 712 T
+1 9 Q
+(Albuquerque, New Mexico 87185) 396.1 713 T
+0 16 253 721 313 163 14.38 377 730.38 FMBEGINEPSF
+%%BeginDocument: <inline>
+%!PS-Adobe-2.0 EPSF-1.2
+%%Creator: Adobe Illustrator 88(TM) 1.9.3
+%%For: (Sandia National Labs) (3100 Computing Tech. Support)
+%%Title: (Horz)
+%%CreationDate: (4/3/90) (2:47 PM)
+%%DocumentProcSets: Adobe_packedarray 0 0
+%%DocumentSuppliedProcSets: Adobe_packedarray 0 0
+%%DocumentProcSets: Adobe_cmykcolor 0 0
+%%DocumentSuppliedProcSets: Adobe_cmykcolor 0 0
+%%DocumentProcSets: Adobe_cshow 0 0
+%%DocumentSuppliedProcSets: Adobe_cshow 0 0
+%%DocumentProcSets: Adobe_customcolor 0 0
+%%DocumentSuppliedProcSets: Adobe_customcolor 0 0
+%%DocumentProcSets: Adobe_Illustrator881 0 0
+%%DocumentSuppliedProcSets: Adobe_Illustrator881 0 0
+%%ColorUsage: Black&White
+%%DocumentProcessColors: Black
+%%BoundingBox:16 253 721 313
+%%TemplateBox:288 360 288 360
+%%TileBox:-730 552 0 1104
+%%DocumentPreview: Macintosh_Pic
+%%EndComments
+%%BeginProcSet: Adobe_packedarray 0 0
+% packedarray Operators
+% Version 1.0 5/9/1988
+% Copyright (C) 1987, 1988
+% Adobe Systems Incorporated
+% All Rights Reserved
+userdict /Adobe_packedarray 5 dict dup begin put
+/initialize			% - initialize -
+{
+/packedarray where
+	{
+	pop
+	}
+	{
+	Adobe_packedarray begin
+	Adobe_packedarray
+		{
+		dup xcheck
+			{
+			bind
+			} if
+		userdict 3 1 roll put
+		} forall
+	end
+	} ifelse
+} def
+/terminate			% - terminate -
+{
+} def
+/packedarray		% arguments count packedarray array
+{
+array astore readonly
+} def
+/setpacking			% boolean setpacking -
+{
+pop
+} def
+/currentpacking		% - setpacking boolean
+{
+false
+} def
+currentdict readonly pop end
+%%EndProcSet
+Adobe_packedarray /initialize get exec
+
+%%BeginProcSet: Adobe_cmykcolor 0 0
+% cmykcolor Operators
+% Version 1.1 1/23/1989
+% Copyright (C) 1987, 1988, 1989
+% Adobe Systems Incorporated
+% All Rights Reserved
+currentpacking true setpacking
+userdict /Adobe_cmykcolor 4 dict dup begin put
+/initialize			% - initialize -
+{
+/setcmykcolor where
+	{
+	pop
+	}
+	{
+	userdict /Adobe_cmykcolor_vars 2 dict dup begin put
+	/_setrgbcolor
+		/setrgbcolor load def
+	/_currentrgbcolor
+		/currentrgbcolor load def
+	Adobe_cmykcolor begin
+	Adobe_cmykcolor
+		{
+		dup xcheck
+			{
+			bind
+			} if
+		pop pop
+		} forall
+	end
+	end
+	Adobe_cmykcolor begin
+	} ifelse
+} def
+/terminate			% - terminate -
+{
+currentdict Adobe_cmykcolor eq
+	{
+	end
+	} if
+} def
+/setcmykcolor		% cyan magenta yellow black setcmykcolor -
+{
+1 sub 4 1 roll
+3
+	{
+	3 index add neg dup 0 lt
+		{
+		pop 0
+		} if
+	3 1 roll
+	} repeat
+Adobe_cmykcolor_vars /_setrgbcolor get exec
+pop
+} def 
+/currentcmykcolor	% - currentcmykcolor cyan magenta yellow black
+{
+Adobe_cmykcolor_vars /_currentrgbcolor get exec
+3
+	{
+	1 sub neg 3 1 roll
+	} repeat
+0
+} def
+currentdict readonly pop end
+setpacking
+%%EndProcSet
+
+%%BeginProcSet: Adobe_cshow 0 0
+% cshow Operator
+% Version 1.1 1/23/1989
+% Copyright (C) 1987, 1988, 1989
+% Adobe Systems Incorporated
+% All Rights Reserved
+currentpacking true setpacking
+userdict /Adobe_cshow 3 dict dup begin put
+/initialize			% - initialize -
+{
+/cshow where
+	{
+	pop
+	}
+	{
+	userdict /Adobe_cshow_vars 1 dict dup begin put
+	/_cshow		% - _cshow proc
+		{} def
+	Adobe_cshow begin
+	Adobe_cshow
+		{
+		dup xcheck
+			{
+			bind
+			} if
+		userdict 3 1 roll put
+		} forall
+	end
+	end
+	} ifelse
+} def
+/terminate			% - terminate -
+{
+} def
+/cshow				% proc string cshow -
+{
+exch
+Adobe_cshow_vars
+	exch /_cshow
+	exch put
+	{
+	0 0 Adobe_cshow_vars /_cshow get exec
+	} forall
+} def
+currentdict readonly pop end
+setpacking
+%%EndProcSet
+
+%%BeginProcSet: Adobe_customcolor 0 0
+% Custom Color Operators
+% Version 1.0 5/9/1988
+% Copyright (C) 1987, 1988
+% Adobe Systems Incorporated
+% All Rights Reserved
+currentpacking true setpacking
+userdict /Adobe_customcolor 5 dict dup begin put
+/initialize			% - initialize -
+{
+/setcustomcolor where
+	{
+	pop
+	}
+	{
+	Adobe_customcolor begin
+	Adobe_customcolor
+		{
+		dup xcheck
+			{
+			bind
+			} if
+		pop pop
+		} forall
+	end
+	Adobe_customcolor begin
+	} ifelse
+} def
+/terminate			% - terminate -
+{
+currentdict Adobe_customcolor eq
+	{
+	end
+	} if
+} def
+/findcmykcustomcolor	% cyan magenta yellow black name findcmykcustomcolor object
+{
+5 packedarray
+}  def
+/setcustomcolor		% object tint setcustomcolor -
+{
+exch
+aload pop pop
+4
+	{
+	4 index mul 4 1 roll
+	} repeat
+5 -1 roll pop
+setcmykcolor
+} def
+/setoverprint		% boolean setoverprint -
+{
+pop
+} def
+currentdict readonly pop end
+setpacking
+%%EndProcSet
+
+%%BeginProcSet: Adobe_Illustrator881 0 0
+% Adobe Illustrator (TM) Prolog
+% Version 1.19 1/23/1989
+% Copyright (C) 1987, 1988, 1989
+% Adobe Systems Incorporated
+% All Rights Reserved
+currentpacking true setpacking
+userdict /Adobe_Illustrator881 72 dict dup begin put
+% initialization
+/initialize				% - initialize -
+{
+userdict /Adobe_Illustrator881_vars 29 dict dup begin put
+% paint operands
+/_lp /none def
+/_pf {} def
+/_ps {} def
+/_psf {} def
+/_pss {} def
+% text operands
+/_a null def
+/_as null def
+/_tt 2 array def
+/_tl 2 array def
+/_tm matrix def
+/t {} def
+% color operands
+/_gf null def
+/_cf 4 array def
+/_if null def
+/_of false def
+/_fc {} def
+/_gs null def
+/_cs 4 array def
+/_is null def
+/_os false def
+/_sc {} def
+/_i null def
+Adobe_Illustrator881 begin
+Adobe_Illustrator881
+	{
+	dup xcheck
+		{
+		bind
+		} if
+	pop pop
+	} forall
+end
+end
+Adobe_Illustrator881 begin
+Adobe_Illustrator881_vars begin
+newpath
+} def
+/terminate				% - terminate -
+{
+end
+end
+} def
+% definition operators
+/_					% - _ null
+null def
+/ddef				% key value ddef -
+{
+Adobe_Illustrator881_vars 3 1 roll put
+} def
+/xput				% key value literal xput -
+{
+dup load dup length exch maxlength eq
+	{
+	dup dup load dup
+	length 2 mul dict copy def
+	} if
+load begin def end
+} def
+/npop				% integer npop -
+{
+	{
+	pop
+	} repeat
+} def
+% marking operators
+/sw					% ax ay length string sw x y
+{
+stringwidth
+exch 5 -1 roll 3 index 1 sub mul add
+4 1 roll 3 1 roll 1 sub mul add
+} def
+/ss					% ax ay length string matrix ss -
+{
+3 -1 roll pop
+4 1 roll
+	{
+	2 npop (0) exch
+	2 copy 0 exch put pop
+	gsave
+	false charpath
+	currentpoint
+	4 index setmatrix
+	stroke
+	grestore
+	moveto
+	2 copy rmoveto
+	} exch cshow
+3 npop
+} def
+% path operators
+/sp					% ax ay length string sp -
+{
+exch pop
+	{
+	2 npop (0) exch
+	2 copy 0 exch put pop
+	false charpath
+	2 copy rmoveto
+	} exch cshow
+2 npop
+} def
+% path construction operators
+/pl					% x y pl x y
+{
+transform
+0.25 sub round 0.25 add exch
+0.25 sub round 0.25 add exch
+itransform
+} def
+/setstrokeadjust where
+{
+pop true setstrokeadjust
+/c				% x1 y1 x2 y2 x3 y3 c -
+{
+curveto
+} def
+/C
+/c load def
+/v				% x2 y2 x3 y3 v -
+{
+currentpoint 6 2 roll curveto
+} def
+/V
+/v load def
+/y				% x1 y1 x2 y2 y -
+{
+2 copy curveto
+} def
+/Y
+/y load def
+/l				% x y l -
+{
+lineto
+} def
+/L
+/l load def
+/m				% x y m -
+{
+moveto
+} def
+}
+{
+/c
+{
+pl curveto
+} def
+/C
+/c load def
+/v
+{
+currentpoint 6 2 roll pl curveto
+} def
+/V
+/v load def
+/y
+{
+pl 2 copy curveto
+} def
+/Y
+/y load def
+/l
+{
+pl lineto
+} def
+/L
+/l load def
+/m
+{
+pl moveto
+} def
+} ifelse
+% graphic state operators
+/d					% array phase d -
+{
+setdash
+} def
+/cf					% - cf flatness
+currentflat def
+/i					% flatness i -
+{
+dup 0 eq
+	{
+	pop cf
+	} if
+setflat
+} def
+/j					% linejoin j -
+{
+setlinejoin
+} def
+/J					% linecap J -
+{
+setlinecap
+} def
+/M					% miterlimit M -
+{
+setmiterlimit
+} def
+/w					% linewidth w -
+{
+setlinewidth
+} def
+% path painting operators
+/H					% - H -
+{} def
+/h					% - h -
+{
+closepath
+} def
+/N					% - N -
+{
+newpath
+} def
+/n					% - n -
+/N load def
+/F					% - F -
+{
+_pf
+} def
+/f					% - f -
+{
+closepath
+F
+} def
+/S					% - S -
+{
+_ps
+} def
+/s					% - s -
+{
+closepath
+S
+} def
+/B					% - B -
+{
+gsave F grestore
+S
+} def
+/b					% - b -
+{
+closepath
+B
+} def
+/W					% - W -
+{
+clip
+} def
+% text painting operators
+/ta					% length string ta ax ay length string
+{
+_as moveto
+_tt aload pop 4 -2 roll
+} def
+/tl					% - tl -
+{
+_tl aload pop translate
+} def
+/as					% - as array
+{
+{
+0 0
+}
+{
+2 copy _tt aload pop 4 -2 roll sw
+exch neg 2 div exch neg 2 div
+}
+{
+2 copy _tt aload pop 4 -2 roll sw
+exch neg exch neg
+}
+{
+0 0
+}
+} cvlit def
+/z					% literal size leading tracking align z -
+{
+/_a exch ddef
+/_as as _a get ddef
+_a 2 le
+	{
+	0 _tt astore pop
+	0 exch neg _tl astore pop
+	}
+	{
+	0 exch neg _tt astore pop
+	neg 0 _tl astore pop
+	} ifelse
+exch findfont exch scalefont setfont
+} def
+/tm					% matrix tm -
+{
+_tm currentmatrix pop
+concat
+} def
+/I					% matrix I -
+{
+tm
+/t
+	{
+	ta sp
+	tl
+	} ddef
+} def
+/o					% matrix o -
+{
+tm
+/t
+	{
+	ta 4 npop
+	tl
+	newpath
+	} ddef
+} def
+/e					% matrix e -
+{
+tm
+/t
+	{
+	ta _psf
+	tl
+	newpath
+	} ddef
+} def
+/r					% matrix r -
+{
+tm
+/t
+	{
+	ta _tm _pss
+	tl
+	newpath
+	} ddef
+} def
+/a					% matrix a -
+{
+tm
+/t
+	{
+	2 copy
+	ta _psf
+	newpath
+	ta _tm _pss
+	tl
+	newpath
+	} ddef
+} def
+/T					% - T -
+{
+_tm setmatrix
+} def
+% font operators
+/Z					% array literal literal direction Z -
+{
+pop
+findfont begin
+currentdict dup length 1 add dict begin
+	{
+	1 index /FID ne
+		{
+		def
+		}
+		{
+		2 npop
+		} ifelse
+	} forall
+/FontName exch def dup length 0 ne
+	{
+	/Encoding Encoding 256 array copy def
+	0 exch
+		{
+		dup type /nametype eq
+			{
+			Encoding 2 index 2 index put pop
+			1 add
+			}
+			{
+			exch pop
+			} ifelse
+		} forall
+	} if pop
+currentdict dup end end
+/FontName get exch definefont pop
+} def
+% group operators
+/u					% - u -
+{} def
+/U					% - U -
+{} def
+/q					% - q -
+{
+gsave
+} def
+/Q					% - Q -
+{
+grestore
+} def
+% place operators
+/`					% matrix llx lly urx ury string ` -
+{
+/_i save ddef
+6 1 roll 4 npop
+concat
+userdict begin
+/showpage {} def
+false setoverprint
+pop
+} def
+/~					% - ~ -
+{
+end
+_i restore
+} def
+% color operators
+/O					% flag O -
+{
+0 ne
+/_of exch ddef
+/_lp /none ddef
+} def
+/R					% flag R -
+{
+0 ne
+/_os exch ddef
+/_lp /none ddef
+} def
+/g					% gray g -
+{
+/_gf exch ddef
+/_fc
+{
+_lp /fill ne
+	{
+	_of setoverprint
+	_gf setgray
+	/_lp /fill ddef
+	} if
+} ddef
+/_pf
+{
+_fc
+fill
+} ddef
+/_psf
+{
+_fc
+exch pop
+ashow
+} ddef
+/_lp /none ddef
+} def
+/G					% gray G -
+{
+/_gs exch ddef
+/_sc
+{
+_lp /stroke ne
+	{
+	_os setoverprint
+	_gs setgray
+	/_lp /stroke ddef
+	} if
+} ddef
+/_ps
+{
+_sc
+stroke
+} ddef
+/_pss
+{
+_sc
+ss
+} ddef
+/_lp /none ddef
+} def
+/k					% cyan magenta yellow black k -
+{
+_cf astore pop
+/_fc
+{
+_lp /fill ne
+	{
+	_of setoverprint
+	_cf aload pop setcmykcolor
+	/_lp /fill ddef
+	} if
+} ddef
+/_pf
+{
+_fc
+fill
+} ddef
+/_psf
+{
+_fc
+exch pop
+ashow
+} ddef
+/_lp /none ddef
+} def
+/K					% cyan magenta yellow black K -
+{
+_cs astore pop
+/_sc
+{
+_lp /stroke ne
+	{
+	_os setoverprint
+	_cs aload pop setcmykcolor
+	/_lp /stroke ddef
+	} if
+} ddef
+/_ps
+{
+_sc
+stroke
+} ddef
+/_pss
+{
+_sc
+ss
+} ddef
+/_lp /none ddef
+} def
+/x					% cyan magenta yellow black name gray x -
+{
+/_gf exch ddef
+findcmykcustomcolor
+/_if exch ddef
+/_fc
+{
+_lp /fill ne
+	{
+	_of setoverprint
+	_if _gf 1 exch sub setcustomcolor
+	/_lp /fill ddef
+	} if
+} ddef
+/_pf
+{
+_fc
+fill
+} ddef
+/_psf
+{
+_fc
+exch pop
+ashow
+} ddef
+/_lp /none ddef
+} def
+/X					% cyan magenta yellow black name gray X -
+{
+/_gs exch ddef
+findcmykcustomcolor
+/_is exch ddef
+/_sc
+{
+_lp /stroke ne
+	{
+	_os setoverprint
+	_is _gs 1 exch sub setcustomcolor
+	/_lp /stroke ddef
+	} if
+} ddef
+/_ps
+{
+_sc
+stroke
+} ddef
+/_pss
+{
+_sc
+ss
+} ddef
+/_lp /none ddef
+} def
+% locked object operators
+/A					% value A -
+{
+pop
+} def
+currentdict readonly pop end
+setpacking
+%%EndProcSet
+
+%%EndProlog
+%%BeginSetup
+
+Adobe_cmykcolor /initialize get exec
+Adobe_cshow /initialize get exec
+Adobe_customcolor /initialize get exec
+Adobe_Illustrator881 /initialize get exec
+%%EndSetup
+0 A
+u
+0 O
+0 g
+0 i 0 J 0 j 1 w 4 M []0 d
+%%Note:
+89.9953 291.5662 m
+91.9347 293.4307 94.5417 294.5767 97.4472 294.5767 C
+97.7697 294.5767 L
+103.7337 294.5767 108.5697 289.7422 108.5697 283.7782 C
+108.5697 254.0767 L
+101.8737 254.0767 L
+101.8737 283.2382 L
+101.8737 286.5187 99.2142 289.1782 95.9337 289.1782 C
+95.9337 289.1782 L
+92.6562 289.1782 89.9953 286.5187 89.9953 283.2382 C
+89.9953 254.0767 L
+83.3007 254.0767 L
+83.3007 294.5767 L
+89.9953 294.5767 L
+89.9953 291.5662 L
+f
+63.0928 282.8063 m
+63.0928 284.3168 L
+63.0928 287.0018 65.2677 289.1767 67.9512 289.1767 C
+68.3818 289.1767 L
+71.0667 289.1767 73.2433 287.0018 73.2433 284.3168 C
+73.2552 254.0767 L
+79.9257 254.0767 L
+79.9257 283.7782 L
+79.9257 289.7422 75.0897 294.5767 69.1242 294.5767 C
+67.1817 294.5767 L
+61.2178 294.5767 56.3818 289.7422 56.3818 283.7782 C
+56.3818 282.8063 L
+63.0928 282.8063 L
+f
+73.2552 268.6582 m
+73.2552 264.8753 L
+73.2552 261.8947 70.8372 259.4767 67.8567 259.4767 C
+66.7752 259.4767 L
+63.7932 259.4767 61.3767 261.8947 61.3767 264.8753 C
+61.3767 268.6582 L
+61.3767 271.6387 65.4132 274.0567 68.3952 274.0567 C
+79.9512 274.0583 L
+79.9512 279.4568 L
+67.1007 279.4568 L
+61.1367 279.4568 54.6808 274.6208 54.6808 268.6567 C
+54.6808 264.8768 L
+54.6808 258.9127 59.5167 254.0782 65.4807 254.0782 C
+65.8047 254.0782 L
+71.7687 254.0782 76.6032 258.9127 76.6032 264.8768 C
+76.6032 268.6567 L
+73.2552 268.6582 L
+f
+137.1882 254.0767 m
+137.1882 308.0767 L
+130.4922 308.0767 L
+130.4922 254.0767 L
+137.1882 254.0767 L
+f
+133.8402 281.0767 m
+F
+118.6152 265.4152 m
+118.6152 262.1347 121.2717 259.4752 124.5538 259.4752 C
+124.5538 259.4752 L
+127.8327 259.4752 130.4922 262.1347 130.4922 265.4152 C
+130.4922 257.0873 L
+128.5527 255.2227 125.9472 254.0767 123.0417 254.0767 C
+122.7178 254.0767 L
+116.7522 254.0767 111.9177 258.9112 111.9177 264.8753 C
+111.9177 283.7782 L
+111.9177 289.7422 116.7522 294.5767 122.7178 294.5767 C
+123.0417 294.5767 L
+125.9472 294.5767 128.5527 293.4307 130.4922 291.5662 C
+130.4922 283.2382 L
+130.4922 286.5187 127.8327 289.1782 124.5538 289.1782 C
+124.5538 289.1782 L
+121.2717 289.1782 118.6152 286.5187 118.6152 283.2382 C
+118.6152 265.4152 L
+f
+140.5363 308.0767 m
+140.5363 301.3807 L
+147.2307 301.3807 L
+147.2307 308.0767 L
+140.5363 308.0767 L
+f
+143.8827 304.7288 m
+F
+147.2307 254.0767 m
+147.2307 294.5767 L
+140.5363 294.5767 L
+140.5363 254.0767 L
+147.2307 254.0767 L
+f
+143.8827 274.3267 m
+F
+159.0177 282.8063 m
+159.0177 284.3168 L
+159.0177 287.0018 161.1912 289.1767 163.8762 289.1767 C
+164.3067 289.1767 L
+166.9933 289.1767 169.1667 287.0018 169.1667 284.3168 C
+169.1817 254.0767 L
+175.8507 254.0767 L
+175.8507 283.7782 L
+175.8507 289.7422 171.0148 294.5767 165.0507 294.5767 C
+163.1052 294.5767 L
+157.1427 294.5767 152.3067 289.7422 152.3067 283.7782 C
+152.3067 282.8063 L
+159.0177 282.8063 L
+f
+169.1817 268.6582 m
+169.1817 264.8753 L
+169.1817 261.8947 166.7637 259.4767 163.7832 259.4767 C
+162.7003 259.4767 L
+159.7198 259.4767 157.3018 261.8947 157.3018 264.8753 C
+157.3018 268.6582 L
+157.3018 271.6387 161.3382 274.0567 164.3202 274.0567 C
+175.8762 274.0583 L
+175.8762 279.4568 L
+163.0257 279.4568 L
+157.0617 279.4568 150.6057 274.6208 150.6057 268.6567 C
+150.6057 264.8768 L
+150.6057 258.9127 155.4417 254.0782 161.4073 254.0782 C
+161.7297 254.0782 L
+167.6937 254.0782 172.5283 258.9127 172.5283 264.8768 C
+172.5283 268.6567 L
+169.1817 268.6582 L
+f
+34.4877 286.9958 m
+27.7393 289.7842 26.0637 292.2338 26.0637 297.9247 C
+26.0637 302.3978 29.6907 306.0233 34.1637 306.0233 C
+34.8102 306.0233 L
+39.2847 306.0233 42.9102 302.3978 42.9102 297.9247 C
+42.9102 294.5767 L
+51.3342 294.5767 L
+51.3342 295.2232 L
+51.3342 304.1707 44.0817 311.4233 35.1358 311.4233 C
+33.8382 311.4233 L
+24.8922 311.4233 17.6398 304.1707 17.6398 295.2232 C
+17.6398 285.5767 26.6457 281.7458 34.4877 278.5043 c
+41.2347 275.7143 42.9102 273.2662 42.9102 267.5752 C
+42.9102 263.1022 39.2847 259.4752 34.8102 259.4752 C
+34.1637 259.4752 L
+29.6907 259.4752 26.0637 263.1022 26.0637 267.5752 C
+26.0637 270.9233 L
+17.6398 270.9233 L
+17.6398 270.2752 L
+17.6398 261.3292 24.8922 254.0767 33.8382 254.0767 C
+35.1358 254.0767 L
+44.0817 254.0767 51.3342 261.3292 51.3342 270.2752 C
+51.3342 279.9217 42.3297 283.7543 34.4877 286.9958 c
+f
+U
+u
+250.1292 282.8063 m
+250.1292 284.3168 L
+250.1292 287.0018 252.3058 289.1767 254.9893 289.1767 C
+255.4212 289.1767 L
+258.1047 289.1767 260.2812 287.0018 260.2812 284.3168 C
+260.2947 254.0767 L
+266.9637 254.0767 L
+266.9637 283.7782 L
+266.9637 289.7422 262.1277 294.5767 256.1637 294.5767 C
+254.2198 294.5767 L
+248.2557 294.5767 243.4197 289.7422 243.4197 283.7782 C
+243.4197 282.8063 L
+250.1292 282.8063 L
+f
+260.2947 268.6582 m
+260.2947 264.8753 L
+260.2947 261.8947 257.8767 259.4767 254.8962 259.4767 C
+253.8147 259.4767 L
+250.8327 259.4767 248.4162 261.8947 248.4162 264.8753 C
+248.4162 268.6582 L
+248.4162 271.6387 252.4527 274.0567 255.4347 274.0567 C
+266.9907 274.0583 L
+266.9907 279.4568 L
+254.1387 279.4568 L
+248.1748 279.4568 241.7202 274.6208 241.7202 268.6567 C
+241.7202 264.8768 L
+241.7202 258.9127 246.5547 254.0782 252.5187 254.0782 C
+252.8442 254.0782 L
+258.8082 254.0782 263.6427 258.9127 263.6427 264.8768 C
+263.6427 268.6567 L
+260.2947 268.6582 L
+f
+290.5602 294.5767 m
+290.5602 289.1782 L
+270.3102 289.1782 L
+270.3102 294.5767 L
+290.5602 294.5767 L
+f
+280.4352 291.8768 m
+F
+282.7302 254.0767 m
+279.1527 254.0767 276.2502 256.9777 276.2502 260.5567 C
+276.2502 301.3823 L
+282.9463 304.7288 L
+282.9747 260.9872 L
+282.9747 260.1518 283.6512 259.4752 284.4852 259.4752 C
+290.5602 259.4752 L
+290.5602 254.0767 L
+282.7302 254.0767 L
+f
+293.9082 301.3807 m
+293.9082 308.0767 L
+300.6027 308.0767 L
+300.6027 301.3807 L
+293.9082 301.3807 L
+f
+297.2562 304.7288 m
+F
+293.9082 254.0767 m
+293.9082 294.5767 L
+300.6027 294.5767 L
+300.6027 254.0767 L
+293.9082 254.0767 L
+f
+297.2562 274.3267 m
+F
+310.6617 283.7032 m
+310.6617 286.6853 313.0797 289.1033 316.0602 289.1033 C
+317.1417 289.1033 L
+320.1237 289.1033 322.5402 286.6853 322.5402 283.7032 C
+322.5402 264.9112 L
+322.5402 261.9293 320.1237 259.5127 317.1417 259.5127 C
+316.0602 259.5127 L
+313.0797 259.5127 310.6617 261.9293 310.6617 264.9112 C
+310.6617 283.7032 L
+303.9507 283.7782 L
+303.9507 264.8753 L
+303.9507 258.9112 308.7852 254.0767 314.7492 254.0767 C
+318.4227 254.0767 L
+324.3867 254.0767 329.2212 258.9112 329.2212 264.8753 C
+329.2212 283.7782 L
+329.2212 289.7422 324.3867 294.5767 318.4227 294.5767 C
+314.7492 294.5767 L
+308.7852 294.5767 303.9507 289.7422 303.9507 283.7782 C
+310.6617 283.7032 L
+f
+339.2637 291.5662 m
+341.2047 293.4307 343.8117 294.5767 346.7158 294.5767 C
+347.0397 294.5767 L
+353.0037 294.5767 357.8397 289.7422 357.8397 283.7782 C
+357.8397 254.0767 L
+351.1437 254.0767 L
+351.1437 283.2382 L
+351.1437 286.5187 348.4842 289.1782 345.2037 289.1782 C
+345.2037 289.1782 L
+341.9248 289.1782 339.2652 286.5187 339.2652 283.2382 C
+339.2652 254.0767 L
+332.5693 254.0767 L
+332.5693 294.5767 L
+339.2637 294.5767 L
+339.2637 291.5662 L
+f
+369.6237 282.8063 m
+369.6237 284.3168 L
+369.6237 287.0018 371.8002 289.1767 374.4837 289.1767 C
+374.9157 289.1767 L
+377.5992 289.1767 379.7757 287.0018 379.7757 284.3168 C
+379.7892 254.0767 L
+386.4582 254.0767 L
+386.4582 283.7782 L
+386.4582 289.7422 381.6222 294.5767 375.6582 294.5767 C
+373.7142 294.5767 L
+367.7502 294.5767 362.9142 289.7422 362.9142 283.7782 C
+362.9142 282.8063 L
+369.6237 282.8063 L
+f
+379.7892 268.6582 m
+379.7892 264.8753 L
+379.7892 261.8947 377.3712 259.4767 374.3907 259.4767 C
+373.3092 259.4767 L
+370.3273 259.4767 367.9107 261.8947 367.9107 264.8753 C
+367.9107 268.6582 L
+367.9107 271.6387 371.9472 274.0567 374.9292 274.0567 C
+386.4852 274.0583 L
+386.4852 279.4568 L
+373.6332 279.4568 L
+367.6692 279.4568 361.2147 274.6208 361.2147 268.6567 C
+361.2147 264.8768 L
+361.2147 258.9127 366.0492 254.0782 372.0132 254.0782 C
+372.3387 254.0782 L
+378.3027 254.0782 383.1372 258.9127 383.1372 264.8768 C
+383.1372 268.6567 L
+379.7892 268.6582 L
+f
+389.8062 308.0767 m
+389.8062 254.0767 L
+396.5007 254.0767 L
+396.5007 308.0767 L
+389.8062 308.0767 L
+f
+393.1542 281.0767 m
+F
+213.1017 254.0767 m
+213.1017 311.4233 L
+204.6792 311.4233 L
+204.6792 254.0767 L
+213.1017 254.0767 L
+f
+208.8898 282.7492 m
+F
+238.3737 254.0767 m
+238.3737 311.4233 L
+229.9512 311.4233 L
+229.9512 254.0767 L
+238.3737 254.0767 L
+f
+234.1632 282.7492 m
+F
+216.4483 311.4233 m
+213.1017 311.4233 l
+213.1017 296.1952 l
+226.6032 254.0767 l
+229.9512 254.0767 l
+229.9512 269.3032 l
+216.4483 311.4233 l
+f
+U
+u
+462.3567 282.8063 m
+462.3567 284.3168 L
+462.3567 287.0018 464.5332 289.1767 467.2167 289.1767 C
+467.6487 289.1767 L
+470.3322 289.1767 472.5088 287.0018 472.5088 284.3168 C
+472.5222 254.0767 L
+479.1912 254.0767 L
+479.1912 283.7782 L
+479.1912 289.7422 474.3552 294.5767 468.3912 294.5767 C
+466.4472 294.5767 L
+460.4832 294.5767 455.6472 289.7422 455.6472 283.7782 C
+455.6472 282.8063 L
+462.3567 282.8063 L
+f
+472.5222 268.6582 m
+472.5222 264.8753 L
+472.5222 261.8947 470.1042 259.4767 467.1237 259.4767 C
+466.0422 259.4767 L
+463.0602 259.4767 460.6437 261.8947 460.6437 264.8753 C
+460.6437 268.6582 L
+460.6437 271.6387 464.6802 274.0567 467.6622 274.0567 C
+479.2182 274.0583 L
+479.2182 279.4568 L
+466.3663 279.4568 L
+460.4022 279.4568 453.9477 274.6208 453.9477 268.6567 C
+453.9477 264.8768 L
+453.9477 258.9127 458.7823 254.0782 464.7462 254.0782 C
+465.0717 254.0782 L
+471.0357 254.0782 475.8703 258.9127 475.8703 264.8768 C
+475.8703 268.6567 L
+472.5222 268.6582 L
+f
+482.5407 254.0767 m
+482.5407 308.0767 L
+489.2367 308.0767 L
+489.2367 254.0767 L
+482.5407 254.0767 L
+f
+485.8887 281.0767 m
+F
+501.1152 265.4152 m
+501.1152 262.1347 498.4572 259.4752 495.1768 259.4752 C
+495.1768 259.4752 L
+491.8962 259.4752 489.2367 262.1347 489.2367 265.4152 C
+489.2367 257.0873 L
+491.1777 255.2227 493.7832 254.0767 496.6872 254.0767 C
+497.0128 254.0767 L
+502.9767 254.0767 507.8112 258.9112 507.8112 264.8753 C
+507.8112 283.7782 L
+507.8112 289.7422 502.9767 294.5767 497.0128 294.5767 C
+496.6872 294.5767 L
+493.7832 294.5767 491.1777 293.4307 489.2367 291.5662 C
+489.2367 283.2382 L
+489.2367 286.5187 491.8962 289.1782 495.1768 289.1782 C
+495.1768 289.1782 L
+498.4572 289.1782 501.1152 286.5187 501.1152 283.2382 C
+501.1152 265.4152 L
+f
+517.8703 283.7032 m
+517.8703 286.6853 520.2882 289.1033 523.2687 289.1033 C
+524.3502 289.1033 L
+527.3322 289.1033 529.7487 286.6853 529.7487 283.7032 C
+529.7487 264.9112 L
+529.7487 261.9293 527.3322 259.5127 524.3502 259.5127 C
+523.2687 259.5127 L
+520.2882 259.5127 517.8703 261.9293 517.8703 264.9112 C
+517.8703 283.7032 L
+511.1593 283.7782 L
+511.1593 264.8753 L
+511.1593 258.9112 515.9937 254.0767 521.9577 254.0767 C
+525.6312 254.0767 L
+531.5952 254.0767 536.4297 258.9112 536.4297 264.8753 C
+536.4297 283.7782 L
+536.4297 289.7422 531.5952 294.5767 525.6312 294.5767 C
+521.9577 294.5767 L
+515.9937 294.5767 511.1593 289.7422 511.1593 283.7782 C
+517.8703 283.7032 L
+f
+606.3042 294.5767 m
+606.3042 289.1782 L
+586.0542 289.1782 L
+586.0542 294.5767 L
+606.3042 294.5767 L
+f
+596.1792 291.8768 m
+F
+598.4742 254.0767 m
+594.8967 254.0767 591.9942 256.9777 591.9942 260.5567 C
+591.9942 301.3823 L
+598.6902 304.7288 L
+598.7187 260.9872 L
+598.7187 260.1518 599.3952 259.4752 600.2292 259.4752 C
+606.3042 259.4752 L
+606.3042 254.0767 L
+598.4742 254.0767 L
+f
+616.3632 283.7032 m
+616.3632 286.6853 618.7812 289.1033 621.7617 289.1033 C
+622.8432 289.1033 L
+625.8253 289.1033 628.2417 286.6853 628.2417 283.7032 C
+628.2417 264.9112 L
+628.2417 261.9293 625.8253 259.5127 622.8432 259.5127 C
+621.7617 259.5127 L
+618.7812 259.5127 616.3632 261.9293 616.3632 264.9112 C
+616.3632 283.7032 L
+609.6522 283.7782 L
+609.6522 264.8753 L
+609.6522 258.9112 614.4867 254.0767 620.4507 254.0767 C
+624.1242 254.0767 L
+630.0882 254.0767 634.9227 258.9112 634.9227 264.8753 C
+634.9227 283.7782 L
+634.9227 289.7422 630.0882 294.5767 624.1242 294.5767 C
+620.4507 294.5767 L
+614.4867 294.5767 609.6522 289.7422 609.6522 283.7782 C
+616.3632 283.7032 L
+f
+655.9288 301.3807 m
+655.9288 308.0767 L
+662.6232 308.0767 L
+662.6232 301.3807 L
+655.9288 301.3807 L
+f
+659.2767 304.7288 m
+F
+655.9288 254.0767 m
+655.9288 294.5767 L
+662.6232 294.5767 L
+662.6232 254.0767 L
+655.9288 254.0767 L
+f
+659.2767 274.3267 m
+F
+539.7777 254.0767 m
+539.7777 294.5767 L
+546.4722 294.5767 L
+546.4722 254.0767 L
+539.7777 254.0767 L
+f
+543.1242 274.3267 m
+F
+543.2892 283.7782 m
+543.2892 289.7422 548.1237 294.5767 554.0877 294.5767 C
+554.0877 287.8807 L
+551.8707 287.8807 L
+548.8902 287.8807 546.4722 285.4627 546.4722 282.4808 C
+543.2892 283.7782 L
+f
+565.8717 282.8063 m
+565.8717 284.3168 L
+565.8717 287.0018 568.0482 289.1767 570.7317 289.1767 C
+571.1637 289.1767 L
+573.8472 289.1767 576.0237 287.0018 576.0237 284.3168 C
+576.0372 254.0767 L
+582.7062 254.0767 L
+582.7062 283.7782 L
+582.7062 289.7422 577.8703 294.5767 571.9062 294.5767 C
+569.9622 294.5767 L
+563.9982 294.5767 559.1622 289.7422 559.1622 283.7782 C
+559.1622 282.8063 L
+565.8717 282.8063 L
+f
+576.0372 268.6582 m
+576.0372 264.8753 L
+576.0372 261.8947 573.6192 259.4767 570.6387 259.4767 C
+569.5572 259.4767 L
+566.5753 259.4767 564.1587 261.8947 564.1587 264.8753 C
+564.1587 268.6582 L
+564.1587 271.6387 568.1952 274.0567 571.1772 274.0567 C
+582.7332 274.0583 L
+582.7332 279.4568 L
+569.8812 279.4568 L
+563.9172 279.4568 557.4627 274.6208 557.4627 268.6567 C
+557.4627 264.8768 L
+557.4627 258.9127 562.2972 254.0782 568.2612 254.0782 C
+568.5867 254.0782 L
+574.5507 254.0782 579.3852 258.9127 579.3852 264.8768 C
+579.3852 268.6567 L
+576.0372 268.6582 L
+f
+638.2707 254.0767 m
+638.2707 294.5767 L
+644.9652 294.5767 L
+644.9652 254.0767 L
+638.2707 254.0767 L
+f
+641.6172 274.3267 m
+F
+641.7823 283.7782 m
+641.7823 289.7422 646.6167 294.5767 652.5807 294.5767 C
+652.5807 287.8807 L
+650.3637 287.8807 L
+647.3832 287.8807 644.9652 285.4627 644.9652 282.4808 C
+641.7823 283.7782 L
+f
+684.5607 267.3638 m
+684.5607 264.9112 L
+684.5607 261.9293 682.1442 259.5127 679.1622 259.5127 C
+678.0807 259.5127 L
+675.1002 259.5127 672.6822 261.9293 672.6822 264.9112 C
+672.6822 283.7032 l
+672.6822 286.6853 675.1002 289.1033 678.0807 289.1033 C
+679.1622 289.1033 L
+682.1442 289.1033 684.5607 286.6853 684.5607 283.7032 C
+684.5457 277.7828 L
+672.6657 277.7828 L
+672.6657 272.3843 L
+691.2417 272.3843 L
+691.2417 283.7782 L
+691.2417 289.7422 686.4073 294.5767 680.4432 294.5767 C
+676.7697 294.5767 L
+670.8058 294.5767 665.9712 289.7422 665.9712 283.7782 c
+665.9712 264.8753 L
+665.9712 258.9112 670.8058 254.0767 676.7697 254.0767 C
+680.4432 254.0767 L
+686.4073 254.0767 691.2417 258.9112 691.2417 264.8753 C
+691.2417 267.3638 L
+684.5607 267.3638 L
+f
+707.8647 277.0447 m
+714.4362 275.3272 719.8602 270.8393 719.8602 264.8753 c
+719.8602 258.9112 715.0257 254.0767 709.0617 254.0767 C
+705.3882 254.0767 L
+699.4242 254.0767 694.5897 258.9112 694.5897 264.8753 C
+694.5897 267.3638 L
+701.2707 267.3638 L
+701.2707 264.9112 L
+701.2707 261.9293 703.6872 259.5127 706.6692 259.5127 C
+707.7807 259.5127 L
+710.7628 259.5127 713.1792 261.9293 713.1792 264.9112 c
+713.1792 267.8932 710.2707 270.6713 706.5837 271.6088 c
+700.4817 273.1598 694.5897 277.8143 694.5897 283.7782 c
+694.5897 289.7422 699.4242 294.5767 705.3882 294.5767 C
+709.0617 294.5767 L
+715.0257 294.5767 719.8602 289.7422 719.8602 283.7782 C
+719.8602 281.2897 L
+713.1792 281.2897 L
+713.1792 283.7422 L
+713.1792 286.7243 710.7628 289.1407 707.7807 289.1407 C
+706.6692 289.1407 L
+703.6872 289.1407 701.2707 286.7243 701.2707 283.7422 c
+701.2707 280.7602 704.2707 277.9838 707.8647 277.0447 c
+f
+425.3292 259.4752 m
+425.3292 254.0767 L
+450.6027 254.0767 L
+450.6027 259.4752 L
+425.3292 259.4752 L
+f
+437.9667 256.7752 m
+F
+425.3292 254.0767 m
+425.3292 311.4233 L
+433.7532 311.4233 L
+433.7532 254.0767 L
+425.3292 254.0767 L
+f
+429.5412 282.7492 m
+F
+U
+%%Trailer
+Adobe_Illustrator881 /terminate get exec
+Adobe_customcolor /terminate get exec
+Adobe_cshow /terminate get exec
+Adobe_cmykcolor /terminate get exec
+
+
+%%EndDocument
+FMENDEPSF
+188.89 514.29 108 514.29 2 L
+V
+0.7 H
+0 Z
+N
+0 14 Q
+(Introduction:) 108 515.69 T
+2 11 Q
+-0.42 (SLAPDOWN) 108 495.02 P
+1 12 Q
+-0.41 ([1]) 173.95 495.02 P
+-0.41 ([2] is a computer program written to help analysts determine the behavior) 190.95 495.02 P
+0.41 (of a body impacting onto an unyielding surface. The program models the body as a three) 108 481.02 P
+1.84 (degree-of-freedom system. The deformation of the body is approximated by nonlinear) 108 467.02 P
+-0.48 (springs at each end of the model. The program was written primarily to model the eccentric) 108 453.02 P
+0.46 (impact behavior of nuclear waste transportation casks subjected to the regulatory 30-foot) 108 439.02 P
+(drops onto an unyielding surface.) 108 425.02 T
+-0.43 (When) 108 397.02 P
+2 11 Q
+-0.44 (SLAPDOWN) 139.23 397.02 P
+1 12 Q
+-0.43 ( was originally written, it was intended to be used primarily by analysts) 202.18 397.02 P
+1.52 (in the Engineering Sciences Center as a tool in the Sandia Engineering Analysis Code) 108 383.02 P
+-0.65 (Access System \050) 108 369.02 P
+1 11 Q
+-0.59 (SEACAS) 186.02 369.02 P
+1 12 Q
+-0.65 (\051) 228.2 369.02 P
+-0.65 ([3]. Therefore, it was written using the) 235.2 369.02 P
+1 11 Q
+-0.59 (SUPES) 418.95 369.02 P
+1 12 Q
+-0.65 ([4] library and the) 454.97 369.02 P
+0.75 (results output file was written in the) 108 355.02 P
+1 11 Q
+0.68 (EXODUS) 288.88 355.02 P
+1 12 Q
+0.75 ([5] binary database file format so that the) 336.49 355.02 P
+1.64 (standard postprocessing programs could be used to visualize the results. Although this) 108 341.02 P
+1.04 (design decision enhanced the usability of) 108 327.02 P
+2 11 Q
+1.06 (SLAPDOWN) 314.9 327.02 P
+1 12 Q
+1.04 ( within the Engineering Sciences) 377.85 327.02 P
+2.11 (Center, it required the additional overhead of porting and distributing) 108 313.02 P
+1 11 Q
+1.94 (SUPES) 464.77 313.02 P
+1 12 Q
+2.11 ( and the) 497.78 313.02 P
+(postprocessing programs whenever) 108 299.02 T
+2 11 Q
+(SLAPDOWN) 280.3 299.02 T
+1 12 Q
+( was installed on a new computer.) 343.25 299.02 T
+0.5 (To reduce the porting and distribution overhead, a new version of) 108 279.02 P
+2 11 Q
+0.51 (SLAPDOWN) 431.4 279.02 P
+1 12 Q
+0.5 ( has been) 494.36 279.02 P
+(written that:) 108 265.02 T
+(\245) 123 245.02 T
+( requires no external software libraries and,) 130 245.02 T
+(\245) 123 231.02 T
+(writes results data to a portable text output file.) 130 231.02 T
+0.64 (These modifications will enhance the usability of) 108 203.02 P
+2 11 Q
+0.65 (SLAPDOWN) 352.13 203.02 P
+1 12 Q
+0.64 ( by significantly reducing) 415.09 203.02 P
+0.46 (the effort required to port it to various computers. The remainder of this memo describes) 108 189.02 P
+0.04 (the output file format, the customizations that can be made to the source to modify it for a) 108 175.02 P
+3.6 (specific computer and operating system, and compiling suggestions. The input file) 108 161.02 P
+0.62 (instructions are given in an appendix to the memo. The input instructions are unchanged) 108 147.02 P
+0.93 (from References) 108 133.02 P
+0.93 ([1] and) 191.56 133.02 P
+0.93 ([2] except for the addition of the) 229.82 133.02 P
+1 11 Q
+0.86 ( BASENAME) 391.38 133.02 P
+1 12 Q
+0.93 ( command which) 455.48 133.02 P
+(specifies the output filenames.) 108 119.02 T
+(Allen R. York, 5165) 108 686 T
+(Gregory D. Sjaardema, 1562) 108 621 T
+(Modifications of the) 108 556 T
+2 11 Q
+(SLAPDOWN) 208.99 556 T
+1 12 Q
+( program to improve portability.) 271.95 556 T
+FMENDPAGE
+%%EndPage: "1" 1
+%%Page: "2" 2
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+108 743.98 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+1 12 Q
+0 X
+(Allen R. York, 5165) 108 748 T
+(-2-) 317 748 T
+(May 20, 1993) 473 748 T
+230.88 709.27 108 709.27 2 L
+V
+0.7 H
+0 Z
+N
+0 14 Q
+(Output File Format:) 108 710.67 T
+2 11 Q
+-0.17 (SLAPDOWN) 108 696 P
+1 12 Q
+-0.16 ( writes six output files during a normal execution in addition to the input data) 170.95 696 P
+-0.17 (echo and summary data which are written to standard output or to the terminal. The output) 108 682 P
+0.63 (files are identified by a basename and a file extension. The basename is specified by the) 108 668 P
+(user in the input file with the) 108 654 T
+1 11 Q
+(BASENAME) 249.66 654 T
+1 12 Q
+( keyword. The file extensions are listed below:) 310.16 654 T
+(\245) 123 637 T
+3 F
+(glo) 130 637 T
+1 F
+(global output data \050energies and angular quantities\051,) 162 637 T
+(\245) 123 623 T
+3 F
+(ele) 130 623 T
+1 F
+(element output data \050forces and radii\051,) 162 623 T
+(\245) 123 609 T
+3 F
+(dis) 130 609 T
+1 F
+(nodal displacements at the center of gravity, nose, and tail,) 162 609 T
+(\245) 123 595 T
+3 F
+(pos) 130 595 T
+1 F
+(nodal positions at the center of gravity, nose, and tail,) 162 595 T
+(\245) 123 581 T
+3 F
+(vel) 130 581 T
+1 F
+(nodal velocities at the center of gravity, nose, and tail, and) 162 581 T
+(\245) 123 567 T
+3 F
+(acc) 130 567 T
+1 F
+(nodal accelerations at the center of gravity, nose, and tail.) 162 567 T
+0.04 (The first two lines of each file are the title entered by the user and a quality assurance line) 108 539 P
+-0.35 (which specifies the name of the program \050slapdown\051, the version date of) 108 525 P
+2 11 Q
+-0.36 (SLAPDOWN) 454.07 525 P
+1 12 Q
+-0.35 (, and) 517.02 525 P
+0.14 (the time and date of the analysis.) 108 511 P
+1 9.6 Q
+0.11 (1) 266.47 515.8 P
+1 12 Q
+0.14 ( The \324#\325 character is the first character of each line. The) 271.27 511 P
+-0.72 (next line of each file specifies the data that will be written in each column and the remainder) 108 497 P
+(of the lines are the data. The columns are separated by one or more spaces.) 108 483 T
+0 F
+(Global Output Data File) 108 455 T
+1 F
+(:) 233.02 455 T
+(Column 1\321TIME) 122.98 438 T
+(simulation time) 252 438 T
+(Column 2\321THETA) 122.98 424 T
+(angular position) 252 424 T
+(Column 3\321OMEGA) 122.98 410 T
+(angular velocity) 252 410 T
+(Column 4\321ALPHA) 122.98 396 T
+(angular acceleration) 252 396 T
+(Column 5\321KE) 122.98 382 T
+(kinetic energy) 252 382 T
+(Column 6\321INTE) 122.98 368 T
+(internal strain energy in the springs) 252 368 T
+(Column 7\321DAMKE) 122.98 354 T
+(damaging kinetic energy) 252 354 T
+0 F
+(Element Output Data File:) 108 326 T
+1 F
+(Column 1\321TIME) 122.98 309 T
+(simulation time) 252 309 T
+(Column 2\321FORCE) 122.98 295 T
+(force in nose spring) 252 295 T
+(Column 3\321FORCE) 122.98 281 T
+(force in tail spring) 252 281 T
+(Column 4\321FRICTION) 122.98 267 T
+(frictional force at nose spring contact point) 252 267 T
+(Column 5\321FRICTION) 122.98 253 T
+(frictional force at tail spring contact point) 252 253 T
+(Column 6\321RADIUS) 122.98 239 T
+(length of nose spring) 252 239 T
+(Column 7\321RADIUS) 122.98 225 T
+(length of tail spring) 252 225 T
+0 F
+(Nodal Displacement Output Data File:) 108 197 T
+1 F
+(Column 1\321TIME) 122.98 180 T
+(simulation time) 252 180 T
+(Column 2\321DISY) 122.98 166 T
+(vertical displacement at nose) 252 166 T
+(Column 3\321DISY) 122.98 152 T
+(vertical displacement at center of gravity) 252 152 T
+(Column 4\321DISY) 122.98 138 T
+(vertical displacement at tail) 252 138 T
+(Column 5\321DISY) 122.98 124 T
+(vertical displacement at nose contact) 252 124 T
+108 96 540 110.98 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+108 96 540 110.98 R
+7 X
+0 0 0 1 0 0 0 K
+V
+117 108.96 261 108.96 2 L
+V
+0.5 H
+2 Z
+0 X
+N
+0 0 612 792 C
+1 10 Q
+0 X
+0 0 0 1 0 0 0 K
+0.44 (1. The time and date will be output at 00:00:00 and 00/00/00 if) 126 89.33 P
+2 11 Q
+0.54 (SLAPDOWN) 385.63 89.33 P
+1 10 Q
+0.44 ( has not been cus-) 448.58 89.33 P
+(tomized as described in the Customization section of this memo.) 126 77.33 T
+FMENDPAGE
+%%EndPage: "2" 2
+%%Page: "3" 3
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+108 743.98 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+1 12 Q
+0 X
+(Allen R. York, 5165) 108 748 T
+(-3-) 317 748 T
+(May 20, 1993) 473 748 T
+(Column 6\321DISY) 122.98 712 T
+(vertical displacement at tail contact) 252 712 T
+(Column 7\321DISX) 122.98 698 T
+(horizontal displacement at nose) 252 698 T
+(Column 8\321DISX) 122.98 684 T
+(horizontal displacement at center of gravity) 252 684 T
+(Column 9\321DISX) 122.98 670 T
+(horizontal displacement at tail) 252 670 T
+(Column 10\321DISX) 122.98 656 T
+(horizontal displacement at nose contact) 252 656 T
+(Column 11\321DISX) 122.98 642 T
+(horizontal displacement at tail contact) 252 642 T
+0 F
+-0.39 (Nodal Position, Velocity, and Acceleration Output Data Files) 108 614 P
+1 F
+-0.39 (: The column layout is the) 416.28 614 P
+(same as the nodal displacement output data files.) 108 600 T
+199.77 565.27 108 565.27 2 L
+V
+0.7 H
+0 Z
+N
+0 14 Q
+(Customization:) 108 566.67 T
+1 12 Q
+2.04 (The new version of) 108 552 P
+2 11 Q
+2.07 (SLAPDOWN) 212.12 552 P
+1 12 Q
+2.04 ( uses portions of the skeleton implementation of the) 275.07 552 P
+1 11 Q
+1.62 (SUPES) 108 538 P
+1 12 Q
+1.76 (library which is written in standard) 145.38 538 P
+1 11 Q
+1.62 (FORTRAN-77) 327.27 538 P
+1 12 Q
+1.76 (. This implementation has no) 393.27 538 P
+1.15 (system-dependent coding and should compile on all) 108 524 P
+1 11 Q
+1.06 (FORTRAN-77) 368.39 524 P
+1 12 Q
+1.15 ( compilers. However,) 434.39 524 P
+2.88 (since the) 108 510 P
+1 11 Q
+2.64 (SUPES) 159.09 510 P
+1 12 Q
+2.88 (skeleton version is standard) 197.49 510 P
+1 11 Q
+2.64 (FORTRAN) 345 510 P
+1 12 Q
+2.88 (, it is slightly limited in its) 396.34 510 P
+1.16 (capabilities. The only functions used by) 108 496 P
+2 11 Q
+1.18 (SLAPDOWN) 309.28 496 P
+1 12 Q
+1.16 ( are the time, date, and CPU time) 372.23 496 P
+-0.05 (functions) 108 482 P
+3 F
+-0.12 (EXTIME) 155.61 482 P
+1 F
+-0.05 (,) 198.81 482 P
+3 F
+-0.12 (EXDATE) 204.76 482 P
+1 F
+-0.05 (, and) 247.96 482 P
+3 F
+-0.12 (EXCPUS) 274.19 482 P
+1 F
+-0.05 (. In the skeleton version, these return 00:00:00) 317.39 482 P
+-0.37 (for the current time, 00/00/00 for the current date, and 0.0 for the) 108 468 P
+1 11 Q
+-0.34 (CPU) 418.43 468 P
+1 12 Q
+-0.37 ( time used. This does) 439.82 468 P
+0.87 (not affect the execution of) 108 454 P
+2 11 Q
+0.88 (SLAPDOWN) 241.29 454 P
+1 12 Q
+0.87 (; however, it does lessen the QA of the analysis) 304.24 454 P
+(since there is no time and date stamp of the execution.) 108 440 T
+0.69 (The time, date, and) 108 412 P
+1 11 Q
+0.63 (CPU) 206.09 412 P
+1 12 Q
+0.69 ( time are common extensions available in) 227.48 412 P
+1 11 Q
+0.63 (FORTRAN) 434.64 412 P
+1 12 Q
+0.69 ( compilers.) 485.98 412 P
+0.49 (The following routines can be modified if desired to create a fully-operational version of) 108 398 P
+2 11 Q
+(SLAPDOWN) 108 384 T
+1 12 Q
+(:) 170.95 384 T
+(\245) 123 367 T
+(Time \321) 130 367 T
+3 F
+(extime.f) 173.33 367 T
+1 F
+(\245) 123 353 T
+(Date \321) 130 353 T
+3 F
+(exdate.f) 170.66 353 T
+1 F
+(\245) 123 339 T
+(CPU Time \321) 130 339 T
+3 F
+(excpus.f) 199.67 339 T
+1 F
+0.31 (The only other customization that may be needed with this version of) 108 311 P
+2 11 Q
+0.32 (SLAPDOWN) 447.75 311 P
+1 12 Q
+0.31 ( is the) 510.7 311 P
+2.26 (specification of the input file name. The distributed version reads the input from the) 108 297 P
+0.55 (terminal or standard input. On a Unix system, data in a file can be redirected to standard) 108 283 P
+(input using a command similar to:) 108 269 T
+4 10 Q
+(slapdown < input.file) 151 253.33 T
+1 12 Q
+1.46 (On other operating systems, this may not be possible, or it may be done in a different) 108 226 P
+1.2 (manner. The file rdinp.f should be modified to customize the input file reading to each) 108 212 P
+(particular system.) 108 198 T
+187.34 163.27 108 163.27 2 L
+V
+N
+0 14 Q
+(Compilation:) 108 164.67 T
+1 12 Q
+0.9 (This version of) 108 150 P
+2 11 Q
+0.92 (SLAPDOWN) 186.37 150 P
+1 12 Q
+0.9 ( consists of 27) 249.33 150 P
+1 11 Q
+0.83 (FORTRAN) 324.94 150 P
+1 12 Q
+0.9 ( source files. These must each be) 376.28 150 P
+-0.64 (compiled and then linked together to create the executable. The details of this process differ) 108 136 P
+0.18 (for each compiler/computer/operating system combination; however details can generally) 108 122 P
+-0.02 (be found in the documentation of the) 108 108 P
+1 11 Q
+-0.02 (FORTRAN) 288.14 108 P
+1 12 Q
+-0.02 ( compiler. A Unix-compatible makefile is) 339.48 108 P
+0.26 (provided for compilation on Unix systems. An Imakefile is also supplied for systems that) 108 94 P
+(have) 108 80 T
+1 11 Q
+(SEACAS) 133.66 80 T
+1 12 Q
+( installed.) 175.83 80 T
+FMENDPAGE
+%%EndPage: "3" 3
+%%Page: "4" 4
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+108 743.98 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+1 12 Q
+0 X
+(Allen R. York, 5165) 108 748 T
+(-4-) 317 748 T
+(May 20, 1993) 473 748 T
+177.96 709.27 108 709.27 2 L
+V
+0.7 H
+0 Z
+N
+0 14 Q
+(References:) 108 710.67 T
+1 12 Q
+(1.) 108 687 T
+-0.17 (Gregory D. Sjaardema and Gerald W. Wellman, \322Numerical and Analytical Methods) 130 687 P
+(for Approximating the Eccentric Impact Response \050) 130 673 T
+2 11 Q
+(SLAPDOWN) 378.62 673 T
+1 12 Q
+(\051 of Deformable) 441.57 673 T
+(Bodies,\323 SAND88-0616, Sandia National Laboratories, Albuquerque, New Mexico,) 130 659 T
+(March 1988.) 130 645 T
+(2.) 108 622 T
+-0.26 (Gregory D. Sjaardema, \322Modifications of) 130 622 P
+2 11 Q
+-0.26 (SLAPDOWN) 331.67 622 P
+1 12 Q
+-0.26 (,\323 memo to Distribution dated) 394.62 622 P
+(February) 130 608 T
+(22, 1989, Sandia National Laboratories, Albuquerque, New Mexico.) 176.32 608 T
+(3.) 108 585 T
+(Gregory D. Sjaardema, \322Overview of the Sandia National Laboratories Engineering) 130 585 T
+(Analysis Code Access System,\323 SAND92-2292, Sandia National Laboratories,) 130 571 T
+(Albuquerque, New Mexico, January 1993.) 130 557 T
+(4.) 108 534 T
+(John R. Red-Horse, William C. Mills-Curran, and Dennis P. Flanagan, \322SUPES) 130 534 T
+(Version 2.1: A Software Utilities Package for the Engineering Sciences,\323 SAND90-) 130 520 T
+(0247, Sandia National Laboratories, Albuquerque, New Mexico, May 1990.) 130 506 T
+(5.) 108 483 T
+(William C. Mills-Curran, Amy P. Gilkey, and Dennis P. Flanagan, \322EXODUS: A) 130 483 T
+(Finite Element File Format for Pre- and Post-Processing,\323 SAND87-2977, Sandia) 130 469 T
+(National Laboratories, Albuquerque, New Mexico, September 1988.) 130 455 T
+FMENDPAGE
+%%EndPage: "4" 4
+%%Page: "5" 5
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+108 743.98 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+1 12 Q
+0 X
+(Allen R. York, 5165) 108 748 T
+(-5-) 317 748 T
+(May 20, 1993) 473 748 T
+0 18 Q
+(SlapDown Input Instructions) 108 708 T
+1 12 Q
+1.53 (The input data to) 108 678 P
+2 11 Q
+1.56 (SLAPDOWN) 198.79 678 P
+1 12 Q
+1.53 ( is a free field form using keywords. The keywords are) 261.74 678 P
+-0.07 (intended to define a user friendly program language input. The input is order independent.) 108 664 P
+0.96 (The free field input allows the user to delimit entries by either a blank, a comma, or an) 108 650 P
+-0.27 (equals sign. A dollar sign indicates that whatever follows on the line of input is a comment) 108 636 P
+-0.09 (and is ignored. Although it is seldom necessary, an asterisk indicates that the current input) 108 622 P
+(line is to be continued on the next line.) 108 608 T
+-0.04 (The keyword input parsing is designed to allow the user to create readable input files. The) 108 580 P
+-0.71 (parsing system used in) 108 566 P
+2 11 Q
+-0.73 (SLAPDOWN) 217.15 566 P
+1 12 Q
+-0.71 ( examines only the) 280.11 566 P
+389.92 564.8 370.59 564.8 2 L
+V
+0.6 H
+0 Z
+N
+-0.71 (first) 370.59 566 P
+-0.71 ( keyword and the) 389.92 566 P
+489.72 564.8 473.05 564.8 2 L
+V
+N
+-0.71 (last) 473.05 566 P
+-0.71 ( numerical) 489.72 566 P
+0.65 (constant found in the input line. For example, the two sample input lines below are both) 108 552 P
+(equivalent to the) 108 538 T
+2 11 Q
+(SLAPDOWN) 190.99 538 T
+1 12 Q
+( parser.) 253.95 538 T
+3 10 Q
+(VERTICAL -527.5) 108 522.33 T
+(VERTICAL VELOCITY IS -527.5 INCHES PER SECOND) 108 510.33 T
+1 12 Q
+0.45 (Both of these lines set the initial vertical velocity to the value -527.5. Note that all of the) 108 483 P
+-0.34 (words in the second line except for) 108 469 P
+3 F
+-0.8 (VERTICAL) 276.62 469 P
+1 F
+-0.34 ( and) 334.22 469 P
+3 F
+-0.8 (-527.5) 356.88 469 P
+1 F
+-0.34 ( are ignored by) 400.08 469 P
+2 11 Q
+-0.34 (SLAPDOWN) 474.05 469 P
+1 12 Q
+-0.34 (.) 537 469 P
+0.34 (Tables 1, 2, and 3 list the keywords recognized by) 108 441 P
+2 11 Q
+0.35 (SLAPDOWN) 355.41 441 P
+1 12 Q
+0.34 (. Normally,) 418.36 441 P
+2 11 Q
+0.35 (SLAPDOWN) 477.05 441 P
+1 12 Q
+0.58 (is run in a batch mode where the input data are read from the specified input file. In this) 108 427 P
+1.91 (mode the program prints an error message and then aborts if an incorrect keyword is) 108 413 P
+2.37 (entered. If) 108 399 P
+2 11 Q
+2.42 (SLAPDOWN) 165.05 399 P
+1 12 Q
+2.37 ( is run interactively and an incorrect keyword is entered, the) 228.01 399 P
+-0.06 (program prints a warning message and then returns to input mode so that the correct value) 108 385 P
+-0.73 (may be entered. In both the interactive and batch mode, the program checks that all required) 108 371 P
+2.15 (values have been input. If it detects any undefined quantities, they are listed and the) 108 357 P
+(program terminates. A complete echo of the input data is written to the output file.) 108 343 T
+0.35 (In the keyword list, the nose of the body refers to the part of the body in contact with the) 108 315 P
+0.06 (rigid surface at the beginning of the analysis. The tail of the body is the opposite end. The) 108 301 P
+1.04 (input quantities are divided into two types\321geometric and global. Geometric quantities) 108 287 P
+-0.35 (must be defined for both the nose and tail of the body. To select the correct end of the body) 108 273 P
+0.17 (in the input file type NOSE or TAIL, and then input the geometric quantities for that end.) 108 259 P
+-0.15 (The global quantities are items, such as mass and moment of inertia, where only one value) 108 245 P
+0.17 (is required to describe the body. Global quantities may be input at any time. The first line) 108 231 P
+0.65 (of the input file must be a title which is used to identify the problem. The input phase is) 108 217 P
+(terminated by inputting either EXIT or END.) 108 203 T
+0 F
+(T) 213.14 179 T
+(able 1: K) 220.04 179 T
+(eyw) 266.4 179 T
+(ords f) 286.28 179 T
+(or Slapdo) 315.64 179 T
+(wn\321General) 365.2 179 T
+5 11 Q
+(K) 123.2 153.67 T
+(e) 130.15 153.67 T
+(ywor) 134.71 153.67 T
+(d) 156.3 153.67 T
+(Description) 332.03 153.67 T
+1 10 Q
+(B) 114 131.33 T
+(ASEN) 120.32 131.33 T
+(AME) 146.08 131.33 T
+(Speci\336es the base name of the output \336les written by SLAPDO) 183 131.33 T
+(WN. If this k) 435.41 131.33 T
+(e) 488.08 131.33 T
+(yw) 492.37 131.33 T
+(ord is) 504.49 131.33 T
+(not speci\336ed, the base name \324slapdo) 183 119.33 T
+(wn\325 will be used.) 327.17 119.33 T
+(HELP) 114 99.33 T
+-0.07 (Lists all k) 183 99.33 P
+-0.07 (e) 222.21 99.33 P
+-0.07 (yw) 226.5 99.33 P
+-0.07 (ords and their v) 238.62 99.33 P
+-0.07 (alues. Required quantities that ha) 300.66 99.33 P
+-0.07 (v) 433.23 99.33 P
+-0.07 (e not yet been assigned) 438.08 99.33 P
+(v) 183 87.33 T
+(alues are gi) 187.75 87.33 T
+(v) 233.04 87.33 T
+(en the v) 237.89 87.33 T
+(alue) 269.3 87.33 T
+3 F
+(-9.999E0) 288.46 87.33 T
+1 F
+(.) 336.46 87.33 T
+108 168.75 108 80.25 2 L
+V
+0.5 H
+N
+177 169.25 177 79.75 2 L
+V
+N
+539 168.75 539 80.25 2 L
+V
+N
+107.75 169 539.25 169 2 L
+V
+N
+108.25 145.25 538.75 145.25 2 L
+V
+N
+108.25 142.75 538.75 142.75 2 L
+V
+N
+107.75 112 539.25 112 2 L
+V
+N
+107.75 80 539.25 80 2 L
+V
+N
+FMENDPAGE
+%%EndPage: "5" 5
+%%Page: "6" 6
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+108 743.98 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+1 12 Q
+0 X
+(Allen R. York, 5165) 108 748 T
+(-6-) 317 748 T
+(May 20, 1993) 473 748 T
+108 388 539 394 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 612 792 C
+1 10 Q
+0 X
+0 0 0 1 0 0 0 K
+-0.11 (a. \324REQ\325 indicates that a value must be input for this quantity; no default is supplied. \324\321\325 indicates) 126 381.33 P
+(that the field is not applicable.) 126 369.33 T
+0 12 Q
+(T) 197.73 712 T
+(able 2: K) 204.63 712 T
+(eyw) 251 712 T
+(ords f) 270.87 712 T
+(or SLAPDO) 300.23 712 T
+(WN\321Geometric) 362.63 712 T
+5 10 Q
+(K) 126.46 687.33 T
+(e) 132.77 687.33 T
+(ywor) 136.91 687.33 T
+(d) 156.54 687.33 T
+(Default) 188.75 687.33 T
+5 8 Q
+(a) 218.75 691.33 T
+5 10 Q
+(Description) 361.64 687.33 T
+1 F
+(NOSE) 114 665.33 T
+(\321) 186 665.33 T
+(Indicates that the geometric quantities follo) 235 665.33 T
+(wing this line refer to the nose) 408.34 665.33 T
+-0.2 (end of the body) 235 653.33 P
+-0.2 (. If SYMMETRIC is the second \336eld, the geometric quanti-) 296.23 653.33 P
+(ties that ha) 235 641.33 T
+(v) 278.13 641.33 T
+(e been de\336ned for the tail are copied to the nose quantities. If) 282.98 641.33 T
+(SQ) 235 629.33 T
+(U) 247.68 629.33 T
+(ARE is the second \336eld, the nose is treated as square.) 254.5 629.33 T
+(T) 114 609.33 T
+(AIL) 119.18 609.33 T
+(\321) 186 609.33 T
+(Indicates that the geometric quantities follo) 235 609.33 T
+(wing this line refer to the tail) 408.34 609.33 T
+-0.2 (end of the body) 235 597.33 P
+-0.2 (. If SYMMETRIC is the second \336eld, the geometric quanti-) 296.23 597.33 P
+(ties that ha) 235 585.33 T
+(v) 278.13 585.33 T
+(e been de\336ned for the tail are copied to the nose quantities. If) 282.98 585.33 T
+(SQ) 235 573.33 T
+(U) 247.68 573.33 T
+(ARE is the second \336eld, the tail is treated as square.) 254.5 573.33 T
+(LENGTH) 114 553.33 T
+(REQ) 186 553.33 T
+-0.13 (The length along the longitudinal axis from the center of gra) 235 553.33 P
+-0.13 (vity to a point) 475.17 553.33 P
+(perpendicular to the contact point of the current end of the body) 235 541.33 T
+(.) 490.13 541.33 T
+(RADIUS) 114 521.33 T
+(REQ) 186 521.33 T
+(The distance from the longitudinal axis to the contact point of the current) 235 521.33 T
+(end of the body measured perpendicular to the longitudinal axis.) 235 509.33 T
+(MU) 114 489.33 T
+(0.0) 186 489.33 T
+(Coef) 235 489.33 T
+(\336cient of friction between body and rigid surf) 254.19 489.33 T
+(ace at contact point) 436.56 489.33 T
+(SPRING) 114 469.33 T
+(REQ) 186 469.33 T
+(Indicates the be) 235 469.33 T
+(ginning of the spring de\336nition, spring data are input as) 297.61 469.33 T
+-0.1 (pairs of data with one pair per record. Each record consists of the displace-) 235 457.33 P
+(ment and the force e) 235 445.33 T
+(x) 316.49 445.33 T
+(erted by the spring at that displacement. T) 321.34 445.33 T
+(erminate) 488.95 445.33 T
+(the spring de\336nition with END) 235 433.33 T
+(UNLO) 114 413.33 T
+(AD) 141.42 413.33 T
+( 0.0) 186 413.33 T
+(Spring unloading modulus. If this v) 235 413.33 T
+(alue is zero, the spring unloads elasti-) 376.98 413.33 T
+(cally along the force-displacement curv) 235 401.33 T
+(e input for the spring.) 393.14 401.33 T
+0 12 Q
+(T) 207.38 344 T
+(able 3: K) 214.28 344 T
+(eyw) 260.64 344 T
+(ords f) 280.52 344 T
+(or SLAPDO) 309.88 344 T
+(WN\321Global) 372.28 344 T
+5 10 Q
+(K) 114 319.33 T
+(e) 120.32 319.33 T
+(ywor) 124.46 319.33 T
+(d) 144.09 319.33 T
+(Default) 197 319.33 T
+5 8 Q
+(a) 227 323.33 T
+5 10 Q
+(Description) 246.5 319.33 T
+1 F
+(MASS) 114 297.33 T
+(REQ) 197 297.33 T
+( Body mass) 244 297.33 T
+(MOMENT) 114 277.33 T
+(REQ) 197 277.33 T
+( Mass moment of inertia about the center of gra) 244 277.33 T
+(vity) 434.04 277.33 T
+(.) 448.95 277.33 T
+(VER) 114 257.33 T
+(TICAL) 133.4 257.33 T
+(0.0) 197 257.33 T
+( Initial v) 244 257.33 T
+(ertical v) 277.74 257.33 T
+(elocity) 310.08 257.33 T
+(, positi) 336.65 257.33 T
+(v) 363.63 257.33 T
+(e upw) 368.48 257.33 T
+(ard.) 392.54 257.33 T
+(HORIZONT) 114 237.33 T
+(AL) 164.17 237.33 T
+(0.0) 197 237.33 T
+( Initial horizontal v) 244 237.33 T
+(elocity \050positi) 320.79 237.33 T
+(v) 375.82 237.33 T
+(e to) 380.67 237.33 T
+(w) 395.14 237.33 T
+(ards tail\051) 402.26 237.33 T
+(THET) 114 217.33 T
+(A) 138.62 217.33 T
+(0.0) 197 217.33 T
+( Initial angle in de) 244 217.33 T
+(grees. Positi) 316.62 217.33 T
+(v) 365.26 217.33 T
+(e counterclockwise if the nose is to the) 370.11 217.33 T
+(left of the tail.) 244 205.33 T
+(OMEGA) 114 185.33 T
+( 0.0) 197 185.33 T
+( Initial angular v) 244 185.33 T
+(elocity \050radians/time\051) 310.23 185.33 T
+(GRA) 114 165.33 T
+(VITY) 133.76 165.33 T
+( 0.0) 197 165.33 T
+-0.12 ( Constant v) 244 165.33 P
+-0.12 (ertical acceleration applied to body) 289.18 165.33 P
+-0.12 (, positi) 428.58 165.33 P
+-0.12 (v) 455.44 165.33 P
+-0.12 (e upw) 460.29 165.33 P
+-0.12 (ard. \050length/) 484.24 165.33 P
+(time) 244 153.33 T
+1 8 Q
+(2) 261.78 158.33 T
+1 10 Q
+(\051) 265.78 153.33 T
+(TIME) 114 133.33 T
+( 0.1) 197 133.33 T
+( T) 244 133.33 T
+(ime step scale f) 252.26 133.33 T
+(actor applied to the internally calculated time step.) 314.09 133.33 T
+(TERMIN) 114 113.33 T
+(A) 151.98 113.33 T
+(TION) 158.09 113.33 T
+( T) 244 113.33 T
+(ime to terminate the analysis. If TERMIN) 252.26 113.33 T
+(A) 419.39 113.33 T
+(TION is not speci\336ed, the) 425.5 113.33 T
+(calculation will continue until either both springs ha) 244 101.33 T
+(v) 452.4 101.33 T
+(e unloaded, or the) 457.25 101.33 T
+(v) 244 89.33 T
+(elocities of both the NOSE and T) 248.85 89.33 T
+(AIL are positi) 381.24 89.33 T
+(v) 437.09 89.33 T
+(e.) 441.94 89.33 T
+108 701.75 108 394.25 2 L
+V
+0.5 H
+0 Z
+N
+180 702.25 180 393.75 2 L
+V
+N
+229 702.25 229 393.75 2 L
+V
+N
+539 701.75 539 394.25 2 L
+V
+N
+107.75 702 539.25 702 2 L
+V
+N
+108.25 679.25 538.75 679.25 2 L
+V
+N
+108.25 676.75 538.75 676.75 2 L
+V
+N
+107.75 622 539.25 622 2 L
+V
+N
+107.75 566 539.25 566 2 L
+V
+N
+107.75 534 539.25 534 2 L
+V
+N
+107.75 502 539.25 502 2 L
+V
+N
+107.75 482 539.25 482 2 L
+V
+N
+107.75 426 539.25 426 2 L
+V
+N
+107.75 394 539.25 394 2 L
+V
+N
+108 333.75 108 82.25 2 L
+V
+N
+191 334.25 191 81.75 2 L
+V
+N
+238 334.25 238 81.75 2 L
+V
+N
+539 333.75 539 82.25 2 L
+V
+N
+107.75 334 539.25 334 2 L
+V
+N
+108.25 311.25 538.75 311.25 2 L
+V
+N
+108.25 308.75 538.75 308.75 2 L
+V
+N
+107.75 290 539.25 290 2 L
+V
+N
+107.75 270 539.25 270 2 L
+V
+N
+107.75 250 539.25 250 2 L
+V
+N
+107.75 230 539.25 230 2 L
+V
+N
+107.75 198 539.25 198 2 L
+V
+N
+107.75 178 539.25 178 2 L
+V
+N
+107.75 146 539.25 146 2 L
+V
+N
+107.75 126 539.25 126 2 L
+V
+N
+107.75 82 539.25 82 2 L
+V
+N
+FMENDPAGE
+%%EndPage: "6" 6
+%%Page: "7" 7
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+108 743.98 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+1 12 Q
+0 X
+(Allen R. York, 5165) 108 748 T
+(-7-) 317 748 T
+(May 20, 1993) 473 748 T
+108 608 539 614 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 612 792 C
+1 10 Q
+0 X
+0 0 0 1 0 0 0 K
+-0.11 (a. \324REQ\325 indicates that a value must be input for this quantity; no default is supplied. \324\321\325 indicates) 126 601.33 P
+(that the field is not applicable.) 126 589.33 T
+(PLO) 114 665.33 T
+(T) 132.49 665.33 T
+( 1) 197 665.33 T
+-0.15 (The Plot data output interv) 244 665.33 P
+-0.15 (al speci\336es the number of time steps between) 350.36 665.33 P
+(output of the plot data to the output \336les. Plot data are al) 244 653.33 T
+(w) 469.17 653.33 T
+(ays output at) 476.29 653.33 T
+(the be) 244 641.33 T
+(ginning and end of the problem.) 268.01 641.33 T
+(FRICTION) 114 621.33 T
+( 1.0) 197 621.33 T
+( The friction f) 244 621.33 T
+(actor is used to smooth the applied friction force.) 299.72 621.33 T
+0 12 Q
+(T) 207.38 712 T
+(able 3: K) 214.28 712 T
+(eyw) 260.64 712 T
+(ords f) 280.52 712 T
+(or SLAPDO) 309.88 712 T
+(WN\321Global) 372.28 712 T
+5 10 Q
+(K) 114 687.33 T
+(e) 120.32 687.33 T
+(ywor) 124.46 687.33 T
+(d) 144.09 687.33 T
+(Default) 197 687.33 T
+5 8 Q
+(a) 227 691.33 T
+5 10 Q
+(Description) 246.5 687.33 T
+108 701.75 108 614.25 2 L
+V
+0.5 H
+0 Z
+N
+191 702.25 191 613.75 2 L
+V
+N
+238 702.25 238 613.75 2 L
+V
+N
+539 701.75 539 614.25 2 L
+V
+N
+107.75 702 539.25 702 2 L
+V
+N
+108.25 679.25 538.75 679.25 2 L
+V
+N
+108.25 676.75 538.75 676.75 2 L
+V
+N
+107.75 634 539.25 634 2 L
+V
+N
+107.75 614 539.25 614 2 L
+V
+N
+FMENDPAGE
+%%EndPage: "7" 7
+%%Page: "8" 8
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+108 743.98 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+1 12 Q
+0 X
+(Allen R. York, 5165) 108 748 T
+(-8-) 317 748 T
+(May 20, 1993) 473 748 T
+0 18 Q
+(Distribution) 108 708 T
+1 12 Q
+(1425) 114 676 T
+(M. K. Smith) 155 676 T
+(1500) 114 656 T
+(D. J. McClosk) 155 656 T
+(e) 224.22 656 T
+(y) 229.36 656 T
+(1501) 114 636 T
+(C. W) 155 636 T
+(. Peterson) 179.23 636 T
+(Route to: 1512, 1513, 1551, 1552) 155 622 T
+(1502) 114 602 T
+(P) 155 602 T
+(. J. Hommert) 160.34 602 T
+(Route to: 1503, 1511, 1553, 1554) 155 588 T
+(1561) 114 568 T
+(H. S. Mor) 155 568 T
+(g) 202.78 568 T
+(an) 208.72 568 T
+(1561) 114 548 T
+(G. W) 155 548 T
+(. W) 179.89 548 T
+(ellman) 196.26 548 T
+(1562) 114 528 T
+(R. K. Thomas \050Route to Staf) 155 528 T
+(f\051) 292.36 528 T
+(1562) 114 508 T
+(QA File) 155 508 T
+(5165) 114 488 T
+(J. M. Freedman) 155 488 T
+108 688 354 688 2 L
+V
+0.5 H
+0 Z
+N
+108 480 354 480 2 L
+V
+N
+FMENDPAGE
+%%EndPage: "8" 8
+%%Trailer
+%%BoundingBox: 0 0 612 792
+%%PageOrder: Ascend
+%%Pages: 8
+%%DocumentFonts: Times-Bold
+%%+ Times-Roman
+%%+ Helvetica-Oblique
+%%+ Courier
+%%+ Courier-Bold
+%%+ Times-Italic
+%%EOF

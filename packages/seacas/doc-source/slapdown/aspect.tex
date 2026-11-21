@@ -1,0 +1,462 @@
+\chapter{Effect of Aspect Ratio}
+
+\section{Introduction}
+
+     An important issue for radioactive materials transportation casks
+is the aspect ratio at which shallow angle slapdown impact events
+result in a higher velocity secondary impact than primary impact.  Two
+primary parameters have been identified, slenderness and location of
+the center of gravity.
+
+\section{Slenderness}
+
+The slenderness issue was studied using solid and hollow cylinders
+(simple models which capture the essential geometry of most
+radioactive materials transportation casks).  For the solid cylinder
+model, the initial geometry had a radius of 30 and a length of 120.
+The length was reduced in steps to 50 while the radius was increased
+to keep the overall model volume constant. The
+hollow cylinder model was treated similarly.  The initial
+hollow cylinder model
+had a length of 120 with an outer radius of 30 and an inner
+radius of 21.21.  These radii gave a cross-sectional area of the
+hollow cylinder equal to half the area enclosed by the outer radius.
+As for the solid cylinder, the length was reduced to 50 while the
+overall model volume and the relationship between cross-sectional
+areas were held constant. The details of the model geometries are
+shown in Tables 4.1 and 4.3.
+The slapdown analysis was performed for an
+initial angle of 15$^\circ$.  Two linear springs were investigated, one of
+which was elastic and the other plastic.  The elastic spring had a
+linear spring constant for both loading and unloading of 600,000.
+Thus no energy was absorbed in the spring.  The plastic spring had a
+loading constant of 600,000 (same as the elastic spring) but had an
+unloading constant of 600,000,000,000 (6 orders of magnitude higher
+than the loading constant).  The effect of this high unloading
+constant was to prevent energy being returned to the structure on
+spring unloading thus giving an almost perfectly plastic spring. The
+initial angle of 15$^\circ$ was sufficient to ensure that for all cases,
+the nose was rebounding from the target prior to the tail impact.  No
+frictional effects were considered here.
+
+\begin{table}
+\begin{center}
+\caption{Effect of Aspect Ratio on Slapdown for Solid Cylinder Model
+with a Linear-Elastic Spring}
+\makeqnum
+\begin{tabular}{||r|r|r|r|r|r|r||}
+\hline
+&\multicolumn{1}{c|}{Outer}
+&\multicolumn{1}{c|}{Moment of}
+&\multicolumn{1}{c|}{Radius of}
+&\multicolumn{1}{c|}{Aspect}
+&\multicolumn{1}{c|}{Tail}
+&\multicolumn{1}{c||}{Tail}\\
+\multicolumn{1}{||c|}{Length}
+&\multicolumn{1}{c|}{Radius}
+&\multicolumn{1}{c|}{Inertia}
+&\multicolumn{1}{c|}{Gyration}
+&\multicolumn{1}{c|}{(L/r)}
+&\multicolumn{1}{c|}{Velocity}
+&\multicolumn{1}{c||}{Displ}\\
+\hline
+ $120$ &$30.00$ &$??114,000$ &$?37.75$ &$3.18$ &$?-979$ &$6.028$\\
+ $?80$ &$36.75$ &$???69,700$ &$?29.51$ &$2.71$ &$?-831$ &$5.689$\\
+ $?60$ &$42.33$ &$???60,000$ &$?27.39$ &$2.19$ &$?-613$ &$4.745$\\
+ $?55$ &$44.31$ &$???59,400$ &$?27.25$ &$2.02$ &$?-526$ &$4.243$\\
+ $?50$ &$46.48$ &$???61,200$ &$?27.26$ &$1.83$ &$?-409$ &$3.468$\\
+\hline
+\end{tabular}
+\end{center}
+
+Analysis performed at the following initial conditions:
+
+\makeqnum
+\begin{tabular}{lll}
+Initial vertical velocity &= &$-527.5$\\
+Initial angle             &= &$???15.0^\circ$\\
+Total mass                &= &$???80.0$\\
+Spring - elastic     Load &= &$??600.0\times10^3$\\
+Spring - elastic   Unload &= &$??600.0\times10^3$\\
+\end{tabular}
+\end{table}
+
+\begin{table}
+\begin{center}
+\caption{Effect of Aspect Ratio on Slapdown for Solid Cylinder Model
+with a Plastic (Energy-Absorbing) Spring}
+\makeqnum
+\begin{tabular}{||r|r|r|r|r|r|r||}
+\hline
+&\multicolumn{1}{c|}{Outer}
+&\multicolumn{1}{c|}{Moment of}
+&\multicolumn{1}{c|}{Radius of}
+&\multicolumn{1}{c|}{Aspect}
+&\multicolumn{1}{c|}{Tail}
+&\multicolumn{1}{c||}{Tail}\\
+\multicolumn{1}{||c|}{Length}
+&\multicolumn{1}{c|}{Radius}
+&\multicolumn{1}{c|}{Inertia}
+&\multicolumn{1}{c|}{Gyration}
+&\multicolumn{1}{c|}{(L/r)}
+&\multicolumn{1}{c|}{Velocity}
+&\multicolumn{1}{c||}{Displ}\\
+\hline
+ $120$ &$30.00$ &$??114,000$ &$?37.75$ &$3.18$ &$-754$ &$5.031$\\
+ $?80$ &$36.75$ &$???69,700$ &$?29.51$ &$2.71$ &$-678$ &$4.804$\\
+ $?60$ &$42.33$ &$???60,000$ &$?27.39$ &$2.19$ &$-567$ &$4.426$\\
+ $?55$ &$44.31$ &$???59,400$ &$?27.25$ &$2.02$ &$-523$ &$4.261$\\
+ $?50$ &$46.48$ &$???61,200$ &$?27.26$ &$1.83$ &$-465$ &$3.990$\\
+\hline
+\end{tabular}
+\end{center}
+
+Analysis performed at the following initial conditions:
+
+\begin{tabular}{lll}
+Initial vertical velocity &=  &$-527.5$\\
+Initial angle             &=  &$???15.0^\circ$\\
+Total mass                &=  &$???80.0$\\
+Spring - plastic     Load &=  &$??600.0\times10^3$\\
+Spring - plastic   Unload &=  &$??600.0\times10^9$\\
+\end{tabular}
+\end{table}
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Effect of Aspect Ratio (L/r) on Slapdown Severity}
+\end{figure}
+
+     The results of the slapdown analysis for the solid cylinders
+with elastic and plastic springs
+are presented in Tables 4.1 and 4.2
+respectively.  For the hollow cylinders, the results are shown
+in Tables 4.3 and 4.4.
+The ratio of length to
+radius of gyration (L/r) was
+selected to describe the slenderness of an object
+subjected to shallow angle slapdown.
+The vertical velocity of the tail
+at the secondary impact and the maximum tail spring displacement
+were chosen to represent the severity of the secondary
+impact event.  The maximum spring displacement is directly related to
+the energy required to stop the tail of the object while the vertical
+velocity at impact provides a clear representation of the slapdown
+event independent of the tail spring characteristics. Tail vertical
+velocity at impact, non-dimensionalized by the initial velocity, is
+plotted against aspect ratio for both the solid and hollow
+cylinders in Figure 4.1.
+In Figure 4.1, non-dimensional tail velocities
+less than one, indicate that slapdown did not occur (secondary impact
+was less severe than primary impact).  Slapdown did not occur when the
+aspect ratio was less than 2 for both model geometries and both
+spring types.  The plastic spring brings the tail
+velocity at secondary impact closer to the initial velocity for all
+aspect ratios.  Thus, with the plastic spring, secondary impact
+velocities are lower for aspect ratios greater than 2 and higher
+(but still less than the initial velocity) for aspect ratios less
+than 2.
+
+\begin{table}
+\begin{center}
+\caption{Effect of Aspect Ratio on Slapdown for Hollow Cylinder Model
+with a Linear-Elastic Spring}
+\makeqnum
+\begin{tabular}{||r|r|r|r|r|r|r|r||}
+\hline
+&\multicolumn{1}{c|}{Outer}
+&\multicolumn{1}{c|}{Inner}
+&\multicolumn{1}{c|}{Moment of}
+&\multicolumn{1}{c|}{Radius of}
+&\multicolumn{1}{c|}{Aspect}
+&\multicolumn{1}{c|}{Tail}
+&\multicolumn{1}{c||}{Tail}\\
+\multicolumn{1}{||c|}{Length}
+&\multicolumn{1}{c|}{Radius}
+&\multicolumn{1}{c|}{Radius}
+&\multicolumn{1}{c|}{Inertia}
+&\multicolumn{1}{c|}{Gyration}
+&\multicolumn{1}{c|}{(L/r)}
+&\multicolumn{1}{c|}{Velocity}
+&\multicolumn{1}{c||}{Displ}\\
+\hline
+$120$ &$30.00$ &$21.21$ &$??123,000$ &$?39.21$ &$3.06$ &$?-944$
+&$5.974$\\
+$?80$ &$36.75$ &$25.99$ &$???83,200$ &$?32.25$ &$2.48$ &$?-741$
+&$5.360$\\
+$?62$ &$41.74$ &$29.52$ &$???77,900$ &$?31.20$ &$1.99$ &$?-508$
+&$4.128$\\
+$?55$ &$44.31$ &$31.34$ &$???79,100$ &$?31.44$ &$1.75$ &$?-373$
+&$3.202$\\
+$?50$ &$46.48$ &$32.87$ &$???81,500$ &$?31.91$ &$1.57$ &$?-261$
+&$2.315$\\
+\hline
+\end{tabular}
+\end{center}
+
+Analysis performed at the following initial conditions:
+
+\begin{tabular}{lll}
+Initial vertical velocity &=  &$-527.5$\\
+Initial angle             &=  &$???15.0^\circ$\\
+Total mass                &=  &$???80.0$\\
+Spring - elastic     Load &=  &$??600.0\times10^3$\\
+Spring - elastic   Unload &=  &$??600.0\times10^3$\\
+\end{tabular}
+\end{table}
+
+\begin{table}
+\begin{center}
+\caption{Effect of Aspect Ratio on Slapdown for Hollow Cylinder Model
+with a Plastic (Energy-Absorbing) Spring}
+\makeqnum
+\begin{tabular}{||r|r|r|r|r|r|r|r||}
+\hline
+&\multicolumn{1}{c|}{Outer}
+&\multicolumn{1}{c|}{Inner}
+&\multicolumn{1}{c|}{Moment of}
+&\multicolumn{1}{c|}{Radius of}
+&\multicolumn{1}{c|}{Aspect}
+&\multicolumn{1}{c|}{Tail}
+&\multicolumn{1}{c||}{Tail}\\
+\multicolumn{1}{||c|}{Length}
+&\multicolumn{1}{c|}{Radius}
+&\multicolumn{1}{c|}{Radius}
+&\multicolumn{1}{c|}{Inertia}
+&\multicolumn{1}{c|}{Gyration}
+&\multicolumn{1}{c|}{(L/r)}
+&\multicolumn{1}{c|}{Velocity}
+&\multicolumn{1}{c||}{Displ}\\
+\hline
+$120$ &$30.00$ &$21.21$ &$??123,000$ &$?39.21$ &$3.06$ &$-736$
+&$4.962$\\
+$?80$ &$36.75$ &$25.99$ &$???83,200$ &$?32.25$ &$2.48$ &$-633$
+&$4.659$\\
+$?62$ &$41.74$ &$29.52$ &$???77,900$ &$?31.20$ &$1.99$ &$-515$
+&$4.224$\\
+$?55$ &$44.31$ &$31.34$ &$???79,100$ &$?31.44$ &$1.75$ &$-448$
+&$3.896$\\
+$?50$ &$46.48$ &$32.87$ &$???81,500$ &$?31.91$ &$1.57$ &$-391$
+&$3.562$\\
+\hline
+\end{tabular}
+\end{center}
+
+Analysis performed at the following initial conditions:
+
+\makeqnum
+\begin{tabular}{lll}
+Initial vertical velocity &=  &$-527.5$\\
+Initial angle             &=  &$???15.0^\circ$\\
+Total mass                &=  &$???80.0$\\
+Spring - plastic     Load &=  &$??600.0\times10^3$\\
+Spring - plastic   Unload &=  &$??600.0\times10^9$\\
+\end{tabular}
+\end{table}
+
+     A secondary impact less severe than the primary impact has been
+shown, in Chapter 2,
+to be a general relationship for aspect ratios less than two.  In
+Chapter 2, the aspect ratio was defined in terms of $\beta_{n} =
+l_{n}/r$ and $\beta_{t} = l_{t}/r$ where:
+\begin{tabbing}
+$r  \;$ \= is the radius of gyration,\\
+$l_{n}$ \> is the distance from the center of mass to the nose, and\\
+$l_{t}$ \> is the distance from the center of mass to the tail.\\
+\end{tabbing}
+
+Here $l_{n}$ = $l_{t}$ = ${{L}\over{2}}$, so that
+\begin{equation}
+\beta_{n} = \beta_{t} = {{L}\over{2r}}.
+\end{equation}
+
+Thus
+\begin{equation}
+\beta_{n}\cdot\beta_{t} = {{L^{2}}\over{4r^{2}}}.
+\end{equation}
+
+As shown in Equation 2.3.19, the tail impact velocity is less than the
+nose impact velocity when
+\begin{equation}
+\beta_{n} \cdot \beta_{t}\leq 1
+\end{equation}
+or when
+\begin{equation}
+{{L}\over{r}} \leq 2.
+\end{equation}
+
+\section{Center of Gravity Location}
+
+     In most
+transportation systems, due to the impact limiters, closure
+systems, gamma shielding, and contents, the center of gravity rarely
+coincides with the midpoint between loading springs. Thus,
+variation in the location of the center of gravity
+are of concern for transportation system design.  Two of the solid
+cylinder models, those with length 120 and length 55, were chosen to
+investigate this phenomenon.  These two models provide a wide
+variation in aspect ratio (3.18 and 2.02, respectively).  The
+center of gravity was shifted independently of all other parameters
+including the moment of inertia. A physical interpretation of this
+shift is difficult to provide.  It can be regarded as resulting from
+the appropriate distribution of a variable density material within the
+confines of the solid cylinder model geometry.  Alternately, it can be
+regarded as a structure with the given mass and moment of inertia
+placed at varying locations along a rigid massless bar. The elastic
+and plastic springs described in Section 4.2 were also used here.
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Effect of the Location of the center of gravity on Slapdown
+Severity}
+\end{figure}
+
+     The results of shifting the center of gravity axially on the two
+solid cylinder models are shown in Figure 4.2 and in
+Tables 4.5 and 4.6.  As can be seen
+in these tables, both the aspect ratio and the nose spring
+characteristics, influence
+the effects shifting the center of gravity.
+For the long cylinder, the tail velocity is
+maximized when the center of gravity is at the 30\% location (closer to
+the nose than the tail) for both the linear and the nonlinear springs.
+For the short cylinder, maximum tail velocity occurs when the
+center of gravity
+coincides with the cylinder center (50\% location). As
+expected, for an arbitrary center of gravity location, maximum energy
+absorption at the tail does not coincide with maximum tail
+velocity.  The maximum tail energy occurs at a different
+center of gravity
+location for each case investigated.  For the long cylinder
+with an elastic nose spring, maximum tail energy occurs at a
+center of gravity
+location of 60\% (slightly toward the tail).  With a plastic
+nose spring, maximum tail energy occurs at the 90\% location. For the
+short cylinder, the maximum tail energy center of gravity location is
+70\% for an elastic nose spring and 80\% for a plastic nose spring.
+
+\begin{table}
+\begin{center}
+\caption{Effect of Shift of center of gravity on Slapdown for Solid
+Cylinder Model Length=120 with Elastic and Plastic Spring}
+\makeqnum
+\begin{tabular}{||c|r|r|c|r|r||}
+\hline
+\multicolumn{3}{||c|}{Elastic Spring} &\multicolumn{3}{c||}{Plastic
+Spring}\\
+\hline
+\multicolumn{1}{||c|}{C. G.}
+&  &
+&\multicolumn{1}{c|}{C. G.}
+& &\\
+\multicolumn{1}{||c|}{Location}
+&\multicolumn{1}{c|}{Tail}
+&\multicolumn{1}{c|}{Tail}
+&\multicolumn{1}{c|}{Location}
+&\multicolumn{1}{c|}{Tail}
+&\multicolumn{1}{c||}{Tail}\\
+\multicolumn{1}{||c|}{\% Length}
+&\multicolumn{1}{c|}{Velocity}
+&\multicolumn{1}{c|}{Displ}
+&\multicolumn{1}{c|}{\% Length}
+&\multicolumn{1}{c|}{Velocity}
+&\multicolumn{1}{c||}{Displ}\\
+$10$ &$?-406$ &$1.557$ &$10$ &$-470$ &$1.791$\\
+$20$ &$?-967$ &$4.085$ &$20$ &$-743$ &$3.165$\\
+$30$ &$-1132$ &$5.357$ &$30$ &$-827$ &$4.080$\\
+$40$ &$-1093$ &$5.865$ &$40$ &$-809$ &$4.654$\\
+$50$ &$?-979$ &$6.028$ &$50$ &$-754$ &$5.031$\\
+$60$ &$?-847$ &$6.065$ &$60$ &$-689$ &$5.263$\\
+$70$ &$?-721$ &$6.049$ &$70$ &$-626$ &$5.466$\\
+$80$ &$?-608$ &$5.945$ &$80$ &$-570$ &$5.607$\\
+$90$ &$?-501$ &$5.613$ &$90$ &$-520$ &$5.722$\\
+\hline
+\end{tabular}
+\end{center}
+
+Analysis performed at the following initial conditions:
+
+\makeqnum
+\begin{tabular}{llllll}
+Initial vertical velocity &= &$-527.5$
+&Initial vertical velocity &= &$-527.5$\\
+Initial angle &= &$???15.0^\circ$ &Initial angle &= &$???15.0^\circ$\\
+Total mass &= &$???80.0$ &Total mass &= &$???80.0$\\
+Spring - elastic     Load &=  &$??600.0\times10^3$
+&Spring - plastic     Load &= &$??600.0\times10^3$\\
+Spring - elastic   Unload &= &$??600.0\times10^9$
+&Spring - plastic   Unload &= &$??600.0\times10^9$\\
+\end{tabular}
+\end{table}
+
+\begin{table}
+\begin{center}
+\caption{Effect of Shift of center of gravity on Slapdown for Solid
+Cylinder Model Length=55 with Elastic and Plastic Spring}
+\makeqnum
+\begin{tabular}{||c|r|r|c|r|r||}
+\hline
+\multicolumn{3}{||c|}{Elastic Spring} &\multicolumn{3}{c||}{Plastic
+Spring}\\
+\hline
+\multicolumn{1}{||c|}{C. G.}
+& &
+&\multicolumn{1}{c|}{C. G.}
+& &\\
+\multicolumn{1}{||c|}{Location}
+&\multicolumn{1}{c|}{Tail}
+&\multicolumn{1}{c|}{Tail}
+&\multicolumn{1}{c|}{Location}
+&\multicolumn{1}{c|}{Tail}
+&\multicolumn{1}{c||}{Tail}\\
+\multicolumn{1}{||c|}{\% Length}
+&\multicolumn{1}{c|}{Velocity}
+&\multicolumn{1}{c|}{Displ}
+&\multicolumn{1}{c|}{\% Length}
+&\multicolumn{1}{c|}{Velocity}
+&\multicolumn{1}{c||}{Displ}\\
+$10$ &No Hit &$0.???$ &$10$ &$-198$ &$1.110$\\
+$20$ &$-193$ &$1.146$ &$20$ &$-358$ &$2.185$\\
+$30$ &$-401$ &$2.658$ &$30$ &$-460$ &$3.075$\\
+$40$ &$-500$ &$3.655$ &$40$ &$-510$ &$3.755$\\
+$50$ &$-526$ &$4.243$ &$50$ &$-523$ &$4.261$\\
+$60$ &$-508$ &$4.522$ &$60$ &$-516$ &$4.636$\\
+$70$ &$-467$ &$4.562$ &$70$ &$-496$ &$4.902$\\
+$80$ &$-416$ &$4.398$ &$80$ &$-471$ &$5.044$\\
+$90$ &$-361$ &$4.048$ &$90$ &$-444$ &$5.031$\\
+\hline
+\end{tabular}
+\end{center}
+
+Analysis performed at the following initial conditions:
+
+\makeqnum
+\begin{tabular}{llllll}
+Initial vertical velocity &= &$-527.5$
+&Initial vertical velocity &= &$-527.5$\\
+Initial angle &= &$???15.0^\circ$ &Initial angle &= &$???15.0^\circ$\\
+Total mass &= &$???80.0$ &Total mass &= &$???80.0$\\
+Spring - elastic     Load &=  &$??600.0\times10^3$
+&Spring - plastic     Load &= &$??600.0\times10^3$\\
+Spring - elastic   Unload &=  &$??600.0\times10^9$
+&Spring - plastic   Unload &=  &$??600.0\times10^9$\\
+\end{tabular}
+\end{table}
+
+\section{Conclusions}
+The ratio of length to radius of gyration is the most appropriate
+parameter to describe the body geometry for shallow angle
+slapdown.  The conclusion reached in Chapter 2 for linear behavior,
+that for a length to radius of gyration ratio less than two, no
+slapdown (increase in tail velocity at impact) can occur, has been
+numerically confirmed for nonlinear spring behavior as well.
+It is difficult to draw general conclusions concerning location of the
+center of gravity.  For
+off-center location of the center of gravity, a simple relationship
+between tail velocity at impact and required energy absorption no
+longer exists.  The maximum tail velocity occurs at a different
+center of gravity location than does the maximum tail spring energy
+absorption.  Therefore, severity of the secondary (tail) impact is
+difficult to define.  Thus, off-center location of the
+center of gravity can have an important effect on slapdown but each
+case must be investigated individually.

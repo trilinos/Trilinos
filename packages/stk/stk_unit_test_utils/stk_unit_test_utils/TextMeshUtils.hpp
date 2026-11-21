@@ -240,9 +240,9 @@ class TextMeshOptionParser
 
     if (option.size() == 2) {
       m_parsedDimension = std::stoull(option[1]);
-      if (m_parsedDimension != 2 && m_parsedDimension != 3) {
+      if (m_parsedDimension != 1 && m_parsedDimension != 2 && m_parsedDimension != 3) {
         std::ostringstream errmsg;
-        errmsg << "Error!  Parsed spatial dimension (" << m_parsedDimension << " not defined to be 2 or 3.";
+        errmsg << "Error!  Parsed spatial dimension (" << m_parsedDimension << " not defined to be 1, 2 or 3.";
         m_errorHandler(errmsg);
       }
 

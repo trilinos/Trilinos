@@ -1,0 +1,21 @@
+\chapter{Site Supplements} \label{appx:site}
+
+\section{CRAY CTSS}
+
+To execute \caps{\PROGRAM}, the user must have selected the
+\cmd{acclib} library and be running \cmd{ccl}.
+
+The command to execute \caps{\PROGRAM} on \caps{CTSS} is:
+\begin{center}
+\cmd{abaexo \param{EXODUS\_database}
+   i=\param{input} o=\param{output}}
+\end{center}
+
+The filename of the input \caps{ABAQUS} database must be \cmd{tape8}.
+
+\param{EXODUS\_database} is the filename of the output \caps{EXODUS}
+database. The default is \cmd{tape11}.
+
+User input is read from \param{input}, which defaults to \cmd{tty} (the
+terminal keyword). User output is directed to \param{output}, which
+defaults to \cmd{tty} (the terminal).

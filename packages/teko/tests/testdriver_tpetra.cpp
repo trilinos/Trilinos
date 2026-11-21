@@ -71,16 +71,6 @@ int main(int argc, char* argv[]) {
     Teuchos::GlobalMPISession mpiSession(&argc, &argv);
     Kokkos::initialize(argc, argv);
 
-#ifdef TEKO_HAVE_EPETRA
-    // build MPI/Serial communicators
-#ifdef HAVE_MPI
-    Epetra_MpiComm Comm_epetra(MPI_COMM_WORLD);
-#else
-    Epetra_SerialComm Comm_epetra;
-#endif  // HAVE_MPI
-    Teko::Test::UnitTest::SetComm(Teuchos::rcpFromRef(Comm_epetra));
-#endif  // TEKO_HAVE_EPETRA
-
     Teuchos::RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
     Teko::Test::UnitTest::SetComm_tpetra(Comm);
 
@@ -118,10 +108,8 @@ int main(int argc, char* argv[]) {
     Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory_tpetra,
                        BlockJacobiPreconditionerFactory_tpetra);
     Teko_ADD_UNIT_TEST(Teko::Test::tTpetraOperatorWrapper, tTpetraOperatorWrapper);
-#ifdef TEKO_HAVE_EPETRA
     Teko_ADD_UNIT_TEST(Teko::Test::tDiagonalPreconditionerFactory_tpetra,
                        DiagonalPreconditionerFactory_tpetra);
-#endif
     Teko_ADD_UNIT_TEST(Teko::Test::tLU2x2PreconditionerFactory_tpetra,
                        LU2x2PreconditionerFactory_tpetra);
     Teko_ADD_UNIT_TEST(Teko::Test::tLSCStablePreconditionerFactory_tpetra,

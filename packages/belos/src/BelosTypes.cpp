@@ -196,11 +196,13 @@ namespace Belos {
   // Initialize DefaultSolverParameters.  Has to be done this way because
   // the "static consexpr double blah = ...;" pattern can create ODR-used
   // linking errors (usually in debug builds).
-  const double DefaultSolverParameters::convTol = 1.0e-8;
-  const double DefaultSolverParameters::polyTol = 1.0e-12;
-  const double DefaultSolverParameters::orthoKappa = -1.0;
-  const double DefaultSolverParameters::resScaleFactor = 1.0;
-  const double DefaultSolverParameters::impTolScale = 10.0;
+  // BELOS_LIB_DLL_EXPORT: dllexport'd from belos.dll, dllimport'd by consumers
+  // on Windows shared builds (see Belos_DLLExportMacro.h).
+  BELOS_LIB_DLL_EXPORT const double DefaultSolverParameters::convTol = 1.0e-8;
+  BELOS_LIB_DLL_EXPORT const double DefaultSolverParameters::polyTol = 1.0e-12;
+  BELOS_LIB_DLL_EXPORT const double DefaultSolverParameters::orthoKappa = -1.0;
+  BELOS_LIB_DLL_EXPORT const double DefaultSolverParameters::resScaleFactor = 1.0;
+  BELOS_LIB_DLL_EXPORT const double DefaultSolverParameters::impTolScale = 10.0;
 
 } // end Belos namespace
 

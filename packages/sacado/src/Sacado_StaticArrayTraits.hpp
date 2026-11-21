@@ -70,12 +70,7 @@ namespace Sacado {
         for (int i=0; i<sz; ++i)
           dest[i] = T(0.);
 #else
-        if constexpr (std::is_trivially_copyable_v<T>) {
-          std::memset(dest,0,sz*sizeof(T));
-        } else {
-          for (int i=0; i<sz; ++i)
-            dest[i] = T(0.);
-        }
+        std::fill_n(dest, sz, T(0.));
 #endif
       }
     }

@@ -11,8 +11,7 @@ namespace {
 
 using Complex = std::complex<double>;
 
-template <typename T>
-using Mat2x2 = utils::impl::Mat2x2<T>;
+using utils::impl::Mat2x2;
 
 // func = f(A) -> T
 template <typename T, typename Tfunc>

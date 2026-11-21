@@ -272,21 +272,18 @@ TEST_F(NgpMeshHostDevice, host_mesh_host_space)
 
   setup_mesh(1,1,1);
 
-  constexpr bool isCPUbuild = std::is_same_v<stk::ngp::MemSpace,stk::ngp::HostMemSpace>;
+  auto ngpMesh = stk::mesh::get_updated_ngp_mesh<stk::ngp::MemSpace>(get_bulk());
 
-  if constexpr(isCPUbuild) {
-    auto ngpMeshIsHostMesh = stk::mesh::get_updated_ngp_mesh<stk::ngp::HostMemSpace>(get_bulk());
-#if defined(STK_USE_DEVICE_MESH) && defined(STK_ENABLE_GPU)
-    ASSERT_TRUE((std::is_same_v<decltype(ngpMeshIsHostMesh),stk::mesh::HostMesh>));
-#elif defined(STK_USE_DEVICE_MESH)
-    ASSERT_TRUE((std::is_same_v<decltype(ngpMeshIsHostMesh),stk::mesh::DeviceMesh>));
+  constexpr bool isCPUbuild = std::is_same_v<stk::ngp::MemSpace,stk::ngp::HostMemSpace>;
+  if constexpr (isCPUbuild) {
+#if defined(STK_USE_DEVICE_MESH)
+    ASSERT_TRUE((std::is_same_v<decltype(ngpMesh),stk::mesh::DeviceMesh>));
 #else
-    ASSERT_TRUE((std::is_same_v<decltype(ngpMeshIsHostMesh),stk::mesh::HostMesh>));
+    ASSERT_TRUE((std::is_same_v<decltype(ngpMesh),stk::mesh::HostMesh>));
 #endif
   }
   else {
-    auto ngpMeshIsDeviceMesh = stk::mesh::get_updated_ngp_mesh<stk::ngp::MemSpace>(get_bulk());
-    ASSERT_TRUE((std::is_same_v<decltype(ngpMeshIsDeviceMesh),stk::mesh::DeviceMesh>));
+    ASSERT_TRUE((std::is_same_v<decltype(ngpMesh),stk::mesh::DeviceMesh>));
   }
 
   test_HostMesh_works_on_host_in_any_build(get_bulk());
@@ -404,6 +401,49 @@ NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap_custom_NgpMemSpace)
     Kokkos::deep_copy(deviceNgpMeshIndices, hostNgpMeshIndices);
     check_volatile_fast_shared_comm_map_values_on_device(ngpMesh, proc, deviceNgpMeshIndices);
   }
+}
+
+NGP_TEST_F(NgpMeshTest, hostMeshVolatileFastSharedCommMap_cacheTracksIncludeGhostsAndModification)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  setup_mesh(1, 1, 4);
+  stk::mesh::BulkData& bulk = get_bulk();
+  const int peer = 1 - bulk.parallel_rank();
+  stk::mesh::HostMesh hostMesh(bulk);
+
+  auto expect_bulk_data_and_host_mesh_point_to_same_view = [&](bool includeGhosts) {
+    auto fromBulk = bulk.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(stk::topology::NODE_RANK, peer,
+                                                                                    includeGhosts);
+    auto fromHostMesh = hostMesh.volatile_fast_shared_comm_map(stk::topology::NODE_RANK, peer, includeGhosts);
+    EXPECT_EQ(fromBulk.extent(0), fromHostMesh.extent(0)) << "includeGhosts=" << includeGhosts;
+    EXPECT_EQ(fromBulk.data(), fromHostMesh.data()) << "includeGhosts=" << includeGhosts;
+  };
+
+  // Fill the cache before the mesh changes.
+  expect_bulk_data_and_host_mesh_point_to_same_view(true);
+
+  // Ghosting every owned element to the peer adds ghost entries, so the comm map is rebuilt at a new size.
+  bulk.modification_begin();
+  stk::mesh::Ghosting& ghosting = bulk.create_ghosting("ghostAllOwnedElements");
+  std::vector<stk::mesh::EntityProc> sendElements;
+  for (stk::mesh::Entity elem :
+       stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part())) {
+    sendElements.emplace_back(elem, peer);
+  }
+  bulk.change_ghosting(ghosting, sendElements);
+  bulk.modification_end();
+
+  const size_t numShared =
+      bulk.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(stk::topology::NODE_RANK, peer, false).extent(0);
+  const size_t numAll =
+      bulk.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(stk::topology::NODE_RANK, peer, true).extent(0);
+  ASSERT_LT(numShared, numAll);
+
+  // Cache properly refreshes when toggling between includeGhosts being true and false
+  expect_bulk_data_and_host_mesh_point_to_same_view(true);
+  expect_bulk_data_and_host_mesh_point_to_same_view(false);
+  expect_bulk_data_and_host_mesh_point_to_same_view(true);
 }
 
 void test_ngp_permutations_1side_2perms(const stk::mesh::BulkData& mesh,

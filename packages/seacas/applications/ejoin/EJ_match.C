@@ -97,6 +97,42 @@ namespace {
     }
   }
 
+  void fill_3D_coordinates(Ioss::NodeBlock *nb, std::vector<double> &coord)
+  {
+    // Depending on the spatial dimension, the length of the coordinate vector
+    // varies. The usage of this returned vector is based on the assumption that
+    // it represents a 3D mesh. For lower dimensions, expand the vector and copy
+    // data values into the correct locations while setting other coordinate values
+    // to zero. This is done by doing a reverse loop so as not to overwrite values
+
+    nb->get_field_data("mesh_model_coordinates", coord);
+
+    auto db     = nb->get_database();
+    auto region = db->get_region();
+
+    int spatialDim = region->get_property("spatial_dimension").get_int();
+    if (spatialDim == 3)
+      return;
+
+    int64_t numNodes = nb->entity_count();
+    coord.resize(3 * numNodes, 0.0);
+
+    if (spatialDim == 2) {
+      for (int64_t i = numNodes - 1; i >= 0; i--) {
+        coord[3 * i + 2] = 0.0;
+        coord[3 * i + 1] = coord[spatialDim * i + 1];
+        coord[3 * i + 0] = coord[spatialDim * i + 0];
+      }
+    }
+    else if (spatialDim == 1) {
+      for (int64_t i = numNodes - 1; i >= 0; i--) {
+        coord[3 * i + 2] = 0.0;
+        coord[3 * i + 1] = 0.0;
+        coord[3 * i + 0] = coord[spatialDim * i + 0];
+      }
+    }
+  }
+
   template <typename INT>
   void match_nodes(const RegionVector &part_mesh, double tolerance,
                    std::vector<INT> &global_node_map, std::vector<INT> &local_node_map)
@@ -109,7 +145,7 @@ namespace {
       vector3d            i_min;
       std::vector<double> i_coord;
       Ioss::NodeBlock    *inb = part_mesh[ip]->get_node_blocks()[0];
-      inb->get_field_data("mesh_model_coordinates", i_coord);
+      fill_3D_coordinates(inb, i_coord);
       find_range(i_coord, i_min, i_max);
 
       size_t i_offset = part_mesh[ip]->get_property("node_offset").get_int();
@@ -119,7 +155,7 @@ namespace {
         vector3d            j_min;
         std::vector<double> j_coord;
         Ioss::NodeBlock    *jnb = part_mesh[jp]->get_node_blocks()[0];
-        jnb->get_field_data("mesh_model_coordinates", j_coord);
+        fill_3D_coordinates(jnb, j_coord);
         find_range(j_coord, j_min, j_max);
 
         size_t j_offset = part_mesh[jp]->get_property("node_offset").get_int();

@@ -43,13 +43,15 @@
 #include "stk_topology/topology.hpp"
 #include "stk_mesh/base/NgpUtils.hpp"
 #include "stk_mesh/base/BucketConnectivity.hpp"
-#include "stk_mesh/baseImpl/NgpMeshImpl.hpp"
+#include "stk_mesh/baseImpl/NgpMeshTypes.hpp"
 #include "stk_mesh/baseImpl/MeshConnectivity.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/ngp/NgpSpaces.hpp"
 #include "stk_util/stk_config.h"
 #include "stk_util/util/StridedArray.hpp"
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Sort.hpp"
+#include "Kokkos_StdAlgorithms.hpp"
 
 namespace stk {
 namespace mesh {

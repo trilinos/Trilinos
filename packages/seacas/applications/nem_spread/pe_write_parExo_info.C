@@ -35,6 +35,9 @@ template <typename INT> struct NODE_COMM_MAP;
 #define FALL_THROUGH ((void)0)
 #endif
 
+using suplib_cpp::copy_string;
+using suplib_cpp::Data;
+
 namespace {
   template <typename INT>
   void reverse_map(INT *global, int p01, size_t gsize, INT *glmap, INT *index, INT *mapout);
@@ -773,6 +776,27 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
             exit(1);
           }
         }
+      }
+    }
+
+    /* Output user defined element block properties for each element block */
+    for (INT i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
+
+      ex_entity_id iglobal_blk = Elem_Blk_Ids[i1];
+
+      /* Find the local element block index */
+      INT ilocal;
+      for (ilocal = 0; ilocal < globals.Num_Elem_Blk; ilocal++) {
+        if (globals.Proc_Elem_Blk_Ids[iproc][ilocal] == iglobal_blk) {
+          break;
+        }
+      }
+
+      /* If it's a non-null block output attribute name information */
+      if (ilocal < globals.Proc_Num_Elem_Blk[iproc]) {
+        // These are single key-value per element block
+        write_exodus_entity_properties(mesh_exoid, EX_ELEM_BLOCK, Elem_Blk_Ids[i1],
+                                       Elem_Blk_Properties[i1]);
       }
     }
 

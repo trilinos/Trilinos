@@ -78,27 +78,28 @@
 
 // extern char hdf5_access[64];
 
-namespace {
-  extern "C" {
-  // From private CGNS header: `cgio_internal_type.h`
-  typedef struct _cgns_io_ctx_t
-  {
-    /* Flag indicating if HDF5 file accesses is PARALLEL or NATIVE */
-    char hdf5_access[64];
+extern "C" {
+// From private CGNS header: `cgio_internal_type.h`
+typedef struct _cgns_io_ctx_t
+{
+  /* Flag indicating if HDF5 file accesses is PARALLEL or NATIVE */
+  char hdf5_access[64];
 #if CG_BUILD_PARALLEL
-    /* MPI-2 info object */
-    MPI_Comm pcg_mpi_comm;
-    int      pcg_mpi_comm_size;
-    int      pcg_mpi_comm_rank;
-    /* flag indicating if mpi_initialized was called */
-    int      pcg_mpi_initialized;
-    MPI_Info pcg_mpi_info;
-    int64_t  default_pio_mode;
+  /* MPI-2 info object */
+  MPI_Comm pcg_mpi_comm;
+  int      pcg_mpi_comm_size;
+  int      pcg_mpi_comm_rank;
+  /* flag indicating if mpi_initialized was called */
+  int      pcg_mpi_initialized;
+  MPI_Info pcg_mpi_info;
+  int64_t  default_pio_mode;
 #endif
-  } cgns_io_ctx_t;
+} cgns_io_ctx_t;
 
-  extern cgns_io_ctx_t ctx_cgio; /* located in cgns_io.c */
-  }
+extern cgns_io_ctx_t ctx_cgio; /* located in cgns_io.c */
+}
+
+namespace {
 
   // There is a bug in the CGNS library (4.4.0 and before) where it
   // has a global symbol `ctx_cgio` which controls whether

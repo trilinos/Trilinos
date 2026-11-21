@@ -82,7 +82,7 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
 	append[0] = '\0';
 	break;
       }
-      strncat(filename, append, EXTENSION_SIZE);
+      strncat(filename, append, sizeof(filename) - strlen(filename) - 1);
     }
     else {
       strncpy(filename, path, FILE_NAME_SIZE);

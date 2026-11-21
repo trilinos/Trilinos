@@ -1021,7 +1021,14 @@ get_matrix_p (const CrsMatrix& A, const Array<Int>& p,
     sd.ir[i+1] = sd.ir[i] + nc;
     memcpy(sd.jc + sd.ir[i], A.jc + A.ir[r], nc*sizeof(*sd.jc));
     Sclr* const d_start = sd.d + sd.ir[i];
-    memcpy(d_start, A.d + A.ir[r], nc*sizeof(*sd.d));
+    if constexpr (std::is_trivially_copyable_v<Sclr>) {
+      memcpy(d_start, A.d + A.ir[r], nc*sizeof(*sd.d));
+    } else {
+      auto rhs = A.d + A.ir[r];
+      for (Size k = 0; k<nc; ++k) {
+        d_start[k] = rhs[k];
+      }
+    }
     if (set_diag_reciprocal)
       d_start[nc-1] = Sclr{1.0}/d_start[nc-1];
   }
@@ -2143,7 +2150,14 @@ inline void Impl<Int, Size, Sclr>::OnDiagTri::inv_copy () {
   for (int tid = 0; tid < nthreads(); ++tid) {
     Thread& t = t_[tid];
     const Int nr0 = ntri<Int>(t.r0);
-    memcpy(t.d, d_ + nr0, (ntri<Int>(t.r0 + t.nr) - nr0)*sizeof(*t.d));
+    if constexpr (std::is_trivially_copyable_v<Sclr>) {
+      memcpy(t.d, d_ + nr0, (ntri<Int>(t.r0 + t.nr) - nr0)*sizeof(*t.d));
+    } else {
+      auto rhs = d_ + nr0;
+      for (int k = 0; k<(ntri<Int>(t.r0 + t.nr) - nr0); ++k) {
+        t.d[k] = rhs[k];
+      }
+    }
   }
 }
 
@@ -3246,7 +3260,14 @@ LevelSetTri::reinit_numeric (const CrsMatrix& T) {
       const Int r = p[i], nc = static_cast<Int>(T.ir[r+1] - T.ir[r]);
       assert(nc == static_cast<Int>(t.m->ir[i+1] - t.m->ir[i]));
       Sclr* const d_start = t.m->d + t.m->ir[i];
-      memcpy(d_start, T.d + T.ir[r], nc*sizeof(*t.m->d));
+      if constexpr (std::is_trivially_copyable_v<Sclr>) {
+        memcpy(d_start, T.d + T.ir[r], nc*sizeof(*t.m->d));
+      } else {
+        auto rhs = T.d+ + T.ir[r];
+        for (int k = 0; k<nc; ++k) {
+          d_start[k] = rhs[k];
+        }
+      }
       d_start[nc-1] = Sclr{1.0}/d_start[nc-1];
     }
   } while (0);
@@ -4046,10 +4067,19 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
 #endif
     // Copy wrk_ to x.
     const Int row_start = t.block_row_start(tid), nr = t.block_nr(tid);
-    for (Int irhs = 0; irhs < nrhs; ++irhs)
-      memcpy(x + irhs*ldx + row_start,
-             wrk_.data() + irhs*t.get_n() + row_start,
-             nr*sizeof(Sclr));
+    for (Int irhs = 0; irhs < nrhs; ++irhs) {
+      if constexpr (std::is_trivially_copyable_v<Sclr>) {
+        memcpy(x + irhs*ldx + row_start,
+               wrk_.data() + irhs*t.get_n() + row_start,
+               nr*sizeof(Sclr));
+      } else {
+        auto lhs = x + irhs*ldx + row_start;
+        auto rhs = wrk_.data() + irhs*t.get_n() + row_start;
+        for (int k = 0; k<nr; ++k) {
+          lhs[k] = rhs[k];
+        }
+      }
+    }
     // release
 #ifdef _OPENMP
 #   pragma omp flush

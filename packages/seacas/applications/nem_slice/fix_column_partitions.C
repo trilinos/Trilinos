@@ -19,6 +19,8 @@
 #include <map>
 #include <vector>
 
+using suplib_cpp::Data;
+
 namespace {
   // Opposite side IDs in a hex according to Exodus II convention
 

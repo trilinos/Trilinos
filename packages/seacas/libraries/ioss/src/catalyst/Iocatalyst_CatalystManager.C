@@ -142,6 +142,28 @@ namespace Iocatalyst {
     return catPipes[id];
   }
 
+  bool CatalystManager::setupConduitNodeForCatalystExecute(conduit_cpp::Node &n, CatalystProps &p,
+                                                           int state, double time,
+                                                           conduit_cpp::Node &data)
+  {
+    if (p.enableCatalystMultiInputPipeline) {
+      setMultiInputWaitState(p.catalystPipelineID, state, time, data);
+      if (canExecuteMultiInputScript(p.catalystPipelineID)) {
+        for (auto &cp : catPipes) {
+          addExecuteData(n, cp.second.catalystInputName, cp.second.state, cp.second.time,
+                         cp.second.data);
+        }
+      }
+      else {
+        return true;
+      }
+    }
+    else {
+      addExecuteData(n, p.catalystInputName, state, time, data);
+    }
+    return false;
+  }
+
   void CatalystManager::execute(CatalystManager::CatalystPipelineID id, int state, double time,
                                 conduit_cpp::Node &data)
   {
@@ -165,20 +187,11 @@ namespace Iocatalyst {
     conduit_cpp::Node n;
     addExecuteProps(n, p, state, time);
 
-    if (p.enableCatalystMultiInputPipeline) {
-      setMultiInputWaitState(p.catalystPipelineID, state, time, data);
-      if (canExecuteMultiInputScript(p.catalystPipelineID)) {
-        for (auto cp : catPipes) {
-          addExecuteData(n, cp.second.catalystInputName, cp.second.state, cp.second.time,
-                         cp.second.data);
-        }
-      }
-      else {
-        return;
-      }
-    }
-    else {
-      addExecuteData(n, p.catalystInputName, state, time, data);
+    bool returnDueToMultiPipeNotReady = false;
+
+    returnDueToMultiPipeNotReady = setupConduitNodeForCatalystExecute(n, p, state, time, data);
+    if (returnDueToMultiPipeNotReady) {
+      return;
     }
 
     catalyst_execute(conduit_cpp::c_node(&n));

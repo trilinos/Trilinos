@@ -408,9 +408,10 @@ int read_cmd_file (
 	  break;
 	sscanf(original_line + (pline-line), NEXTARG LASTARG, dummy, value); /* reread value from orig line to preserve case */
 
-	if (strcmp(string, "root") == 0)
+	if (strcmp(string, "root") == 0) {
 	  strncpy(pio_info->pdsk_root, value, sizeof(pio_info->pdsk_root)-1);
 	  pio_info->pdsk_root[sizeof(pio_info->pdsk_root)-1] = '\0';
+	}
 	if (strcmp(string, "subdir") == 0)   {
 	  strncpy(pio_info->pdsk_subdir, value, sizeof(pio_info->pdsk_subdir)-1);
 	  pio_info->pdsk_subdir[sizeof(pio_info->pdsk_subdir)-1] = '\0';
@@ -563,8 +564,7 @@ int read_cmd_file (
     else {
       if (undef){
 	if (undef->list_size < UNDEFINED_LIST_MAX){
-	  strncpy((char *)(undef->line + undef->list_size), line,
-	    UNDEFINED_LENGTH_MAX-1);
+	  snprintf((char *)(undef->line + undef->list_size), UNDEFINED_LENGTH_MAX, "%s", line);
 	  undef->list_size++;
 	}
 	else{

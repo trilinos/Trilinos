@@ -1,0 +1,43 @@
+\chapter{The Output \exo{} Database} \label{chap:outexo}
+
+The \exo{} database documentation can be accessed at
+\url{http://sandialabs.github.io/seacas/exodusII-new.pdf}. It contains
+a full detailed description of \exo{}. This section presents an
+overview of the concepts and structure of an \exo{} database. The
+first part of the \exo{} database consists of the mesh
+description which includes the nodal coordinates, the
+element block information (including the element connectivity), the
+node sets, and the side sets. The second part of the database contains
+the time step information, including all the variable values for each
+time step.
+
+If nodes and/or elements have been deleted from the database with a
+\cmd{ZOOM}, \cmd{FILTER}, or \cmd{VISIBLE} command, the entire output
+database reflects the deletions and any node or element renumbering
+caused by the deletions.
+
+The output database mesh description is copied (with changes for
+deletions) from the input database. The database title may be changed
+with the \cmd{TITLE} command.
+
+All QA records from the input database are copied to the output
+database, and a record is added describing the current \caps{\PROGRAM}
+run. All input database informational records are copied to the output
+database.
+
+All names on the output database are in uppercase and have all embedded
+blanks removed. The coordinate and element block names from the input
+database are converted and copied (with changes for deletions) to the
+output database. The output variable names are assigned in the
+equations.
+
+The output database element variable truth table has an entry for each
+output element variable which indicates whether the variable is defined
+for each element block. This is determined by the input element variable
+truth table, the equations, and the \cmd{BLOCKS} command.
+
+The output time steps include the time step times and the output
+variables for each time step. Each selected input time step is
+processed; non-selected time steps are ignored. For
+each time step, all variables are evaluated and written to the
+output database.

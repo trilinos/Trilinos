@@ -62,7 +62,6 @@ namespace {
 
 using stk::mesh::EntityRank;
 
-static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, EntityRank skin_rank ) {
 
@@ -323,7 +322,7 @@ void separate_and_skin_mesh(
 
   //ask for new nodes to represent the copies
   std::vector<size_t> requests(fem_meta.entity_rank_count(), 0);
-  requests[NODE_RANK] = nodes.size();
+  requests[stk::topology::NODE_RANK] = nodes.size();
 
   mesh.modification_begin();
 

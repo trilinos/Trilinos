@@ -98,7 +98,7 @@ private:
   */
   void parse_step_option(const char *tokens);
 
-  GetLongOption options_; //!< Options parsing
+  suplib_cpp::GetLongOption options_; //!< Options parsing
 
   int  debugLevel_{0};
   int  stepMin_{1};

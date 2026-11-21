@@ -32,6 +32,8 @@
 #include <time_stamp.h>
 #include <tokenize.h>
 
+using suplib_cpp::time_stamp;
+
 //! \file
 
 extern unsigned int debug_level;

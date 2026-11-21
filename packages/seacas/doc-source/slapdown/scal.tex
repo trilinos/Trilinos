@@ -1,0 +1,342 @@
+\chapter{Scaling Behavior}
+
+\section{Introduction}
+
+     In the field of radioactive materials transportation cask design,
+testing of scale models is very important.  In order to successfully
+utilize the results of scale model tests, the appropriate parameters
+and techniques for extrapolating the results to full-scale behavior
+must be identified.  Because the accelerations of practical interest
+are sufficiently high, the effects of a one G (gravity) field are
+ignored in the following discussion.
+
+\section{Simplified Analysis for Linear Systems}
+
+     For linear behavior, a simplified engineering approach to scaling
+relations can be applied.  For radioactive materials transportation
+cask applications, the linear accelerations at various locations along
+the cask length tend to be the most important parameters.  These
+accelerations are used primarily to assess inertial loads on bolted
+closures, cask contents and other components.  Therefore, the
+discussion below centers on the scaling relations for acceleration
+values.  A more complete description of scaling relations can be found
+in Table 7.1.
+
+Linear acceleration of the center-of-gravity is described
+by the equation relating force ($F$), mass ($M$),
+and acceleration ($a$):
+
+\begin{equation}
+                 F = M \cdot a.
+\end{equation}
+
+Angular acceleration about the center-of-gravity is similarly
+described by the equation relating torque ($T$), moment of
+inertia ($I$), and angular acceleration ($\alpha$):
+
+\begin{equation}
+                 T = I \cdot \alpha.
+\end{equation}
+
+     For linear acceleration, the forces are proportional to the
+square of the linear dimensions of the body.  The mass is proportional
+to the cube of the linear dimensions.  Therefore, the acceleration of
+a full-scale object should be half that of a half-scale object.
+
+     For angular acceleration, the torques are proportional to the
+cube of the body scale
+(T = force $\cdot$ length, where force $\propto$ length$^{2}$).
+The moment of inertia is
+proportional to the fifth power of the body scale
+(I = mass $\cdot$ length$^{2}$, where mass $\propto$ length$^{3}$).
+Therefore, the angular acceleration of a full-scale object
+should be one fourth that of a half-scale object.  However, the linear
+acceleration of the end of an object is equal to the angular
+acceleration times a length dimension.  Thus, the linear acceleration
+of the tip of a rotating full-scale object should again be half that
+of a half-scale object.  Note, for simplicity of the argument and
+because we are primarily concerned with the tangential component of
+acceleration for shallow angle slapdown events, the inward component
+of acceleration (centripetal acceleration) due to the square of the
+angular velocity times the length has been neglected in this argument.
+Inclusion of centripetal acceleration does not change the stated
+conclusion.
+
+\section{Numerical Confirmation Using \SLAP}
+
+     Nonlinear behavior of the structure at the impact locations is
+much more common than linear behavior.  Nonlinear behavior arises from
+both geometric and material properties sources.  The nonlinear
+behavior is easily incorporated into numeric solution procedures such
+as those found in the slapdown analysis program, \SLAP , discussed in
+this report.  \SLAP\ will therefore be used to address the effects
+of nonlinear behavior on the scaling relations for slapdown impact
+events.  Two sets of analyses will be performed.  First, an analysis
+of linear behavior will be compared to the results of the simple
+engineering analysis described above.  Then, an analysis of nonlinear
+behavior will determine the effects of nonlinearity on the scaling
+relations derived for linear behavior.
+
+\subsection{Linear Springs}
+
+     A simple solid cylinder was selected to demonstrate the
+scaling relations.  No system of units was assumed, thus any
+consistent units may be applied. In full-scale, the cylinder
+was given
+a mass of 80, a length of 120 units, and a radius of
+30 units resulting in a
+moment of inertia of 114,000.
+An identical spring at each end of the
+cylinder had a travel of 10 units with a spring rate of
+600,000 and an identical
+unloading modulus (that is the spring was linear on both loading and
+unloading with no energy dissipation). This cylinder
+was impacted onto a
+rigid target at an initial angle of 10$^\circ$ with an initial velocity
+of 527.45.  This velocity was selected,
+based on the author's bias, because it is consistent, in units of
+in/sec, with the NRC 30-foot free drop
+hypothetical accident condition. A solid cylinder consistent
+with the half-
+scale of the cylinder described above has a mass of 10,
+a length of 60 units,
+and a radius of 15 units
+for a moment of inertia of 3563.  In half-scale,
+the spring travel was 5 units with a spring rate of
+300,000 for both loading
+and unloading.  The initial impact conditions were identical with
+those of the
+full-scale cylinder.  The model description parameters are listed in
+Table 7.1 for easy comparison.
+
+\begin{table}
+\begin{center}
+\caption{Comparison of Full- and Half-Scale Linear Spring Models}
+\makeqnum
+\begin{tabular}{||l|r|r|r||}
+\hline
+ &\multicolumn{1}{|c}{Full-Scale}
+ &\multicolumn{1}{|c}{Half-Scale}
+ &\multicolumn{1}{|c||}{Ratio}\\
+ & & &\multicolumn{1}{|c||}{(Full/Half)}\\
+Geometry and & & & \\
+Initial Conditions: & & & \\
+\quad Overall Length     &$???120.0$ &$??60.0$ &$?2.0?$\\
+\quad Mass               &$????80.0$ &$??10.0$ &$?8.0?$\\
+\quad Moment of Inertia  &$114000.0$ &$3563.0$ &$32.0?$\\
+\quad Spring Constants: & & &\\
+\quad \quad Loading             &$600000.$ &$300000.$ &$2.0?$\\
+\quad \quad Unloading           &$600000.$ &$300000.$ &$2.0?$\\
+\quad Initial Velocity  &$-527.5$ &$-527.5$ &$1.0?$\\
+\quad Initial Angle     &$??10.0$ &$??10.0$ &$1.0?$\\
+\hline
+Results: & & & \\
+Maximum Accelerations & & & \\
+\quad    Nose            &$?85720.$ &$?171400.$ &$0.5?$\\
+                    &$-67780.$ &$-135600.$ &$0.5?$\\
+\quad    Tail            &$158400.$ &$316700.$ &$0.5?$\\
+                    &$-36610.$ &$-73210.$ &$0.5?$\\
+\quad    C.-G.            &$45300.$ &$90590.$ &$0.5?$\\
+                     &$????0.$ &$????0.$ &$0.5?$\\
+\quad    Angular          &$?1893.$ &$?7583.$ &$0.25$\\
+                     &$-1023.$ &$-4090.$ &$0.25$\\
+Maximum Velocities & & & \\
+\quad    Nose              &$?536.4$ &$?536.4$ &$1.0?$\\
+                      &$-527.5$ &$-527.5$ &$1.0?$\\
+\quad    Tail          &$???1.7$ &$???1.7$ &$1.0?$\\
+                  &$-983.2$ &$-983.2$ &$1.0?$\\
+\quad    C.-G.            &$??56.7$ &$??56.7$  &$1.0?$\\
+                     &$-527.5$ &$-527.5$  &$1.0?$\\
+\quad    Angular            &$??0.0$ &$??0.0$ &$0.5?$\\
+                       &$-12.7$ &$-25.3$ &$0.5?$\\
+Maximum Displacements & & & \\
+\quad    Nose            &$3.28$ &$1.64$ &$2.0?$\\
+\quad    Tail            &$6.04$ &$3.02$ &$2.0?$\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+     \SLAP\ analysis results show that the sequence of
+events occurs at twice the speed for the half-scale cylinder
+as for the
+full-scale cylinder.  The displacements for the half-scale cylinder
+are half the full-scale cylinder's
+displacements.
+Linear velocities are the same for
+both half- and full-scale cylinders, and linear accelerations of the
+half-scale cylinder are double those of the full-scale cylinder.
+The angular
+velocities of the half-scale cylinder are double those of the full-scale
+cylinder, and the angular accelerations for
+the half-scale cylinder are four times those
+for the full-scale cylinder.
+Thus, if an object has a non-zero angular velocity
+at impact, the half-scale object must have
+double the initial angular velocity of the full-scale object,
+for proper scaling.  These
+results are shown in Figures 7.1-7.3.  The maximum values of
+displacement, velocity, and acceleration are shown in Table 7.1.
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Nose, Center-of-Gravity, and Tail Displacements versus Time
+for Full- and Half-Scale Cylinders with Linear Springs}
+\end{figure}
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Nose, Center-of-Gravity, and Tail Velocities versus Time
+for Full- and Half-Scale Cylinders with Linear Springs}
+\end{figure}
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Nose, Center-of-Gravity, and Tail Accelerations versus Time
+for Full- and Half-Scale Cylinders with Linear Springs}
+\end{figure}
+
+\subsection{Nonlinear Springs}
+
+     To investigate the nonlinear behavior, the cylinders described
+above were again used.  The only differences were the springs.  For
+the full-scale cylinder,
+a spring with an initial spring rate of 750,000 for
+the initial travel of 2 units
+followed by a tangent spring rate of 0 for the
+next 8 units
+was selected.  Thus the force curve rose linearly to a value of
+1,500,000
+and then remained at that value for the remainder of the
+compression.  An unloading modulus of 600,000 was again selected.
+Since unloading occurs linearly from the maximum load reached, the
+spring selected has the potential to absorb a considerable amount of
+energy.  The half-scale spring has an initial spring rate of 375,000
+over the first unit
+of displacement. This force remains constant for the
+next 4 units of displacement.  The unloading modulus is 300,000.  The
+initial conditions for the impact event were identical with those
+described above for the linear analysis.  The impact initial
+conditions and model description are shown in Table 7.2.
+
+\begin{table}
+\begin{center}
+\caption{Comparison of Full- and Half-Scale Nonlinear Spring Models}
+\makeqnum
+\begin{tabular}{||l|r|r|r||}
+\hline
+ &\multicolumn{1}{|c}{Full-Scale}
+ &\multicolumn{1}{|c}{Half-Scale}
+ &\multicolumn{1}{|c||}{Ratio}\\
+ & & &\multicolumn{1}{|c||}{(Full/Half)}\\
+Geometry and & & & \\
+Initial Conditions: & & & \\
+\quad Overall Length     &$???120.0$ &$??60.0$ &$?2.0?$\\
+\quad Mass               &$????80.0$ &$??10.0$ &$?8.0?$\\
+\quad Moment of Inertia  &$114000.0$ &$3563.0$ &$32.0?$\\
+\quad Spring Constants: & & &\\
+\quad \quad Loading section 1   &$750000.?$ &$375000.?$ &$2.0?$\\
+\quad \quad Loading section 2   &$     0.?$ &$     0.?$ &$2.0?$\\
+\quad \quad Unloading           &$600000.?$ &$300000.?$ &$2.0?$\\
+\quad Initial Velocity  &$-527.5$ &$-527.5$ &$1.0?$\\
+\quad Initial Angle     &$??10.0$ &$??10.0$ &$1.0?$\\
+\hline
+Results: & & & \\
+Maximum Accelerations & & & \\
+\quad    Nose    &$65630.?$ &$131300.?$ &$0.5?$\\
+            &$-28760.?$ &$-57530.?$ &$0.5?$\\
+\quad    Tail    &$66260.?$ &$132500.?$ &$0.5?$\\
+            &$-28130.?$ &$-56260.?$ &$0.5?$\\
+\quad    C.-G.   &$18750.?$ &$37500.?$ &$0.5?$\\
+            &$0.?$    &$0.?$    &$0.5?$\\
+\quad    Angular &$788.5$  &$3154.$  &$0.25$\\
+            &$-781.5$ &$-3126.$ &$0.25$\\
+Maximum Velocities & & & \\
+\quad    Nose &$409.5???$ &$409.5???$ &$1.0?$\\
+         &$-527.5???$ &$-527.5???$ &$1.0?$\\
+\quad    Tail &$7.5???$ &$7.5???$ &$1.0?$\\
+         &$-928.8???$ &$-928.8???$ &$1.0?$\\
+\quad   C.-G. &$6.6???$ &$6.6???$ &$1.0?$\\
+         &$-527.5???$ &$-527.5???$ &$1.0?$\\
+\quad Angular &$0.0158$ &$???0.0316$ &$0.5?$\\
+         &$-11.15??$ &$-22.3???$ &$0.5?$\\
+Maximum Displacements & & & \\
+\quad    Nose &$3.16$ &$1.58$ &$2.0?$\\
+\quad    Tail &$7.53$ &$3.77$ &$2.0?$\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+     The results for the nonlinear springs showed exactly the same
+behavior as described for the linear springs.  Nonlinear behavior is
+shown in Figures 7.4-7.6 and the maximum values in Table 7.2.
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Nose, Center-of-Gravity, and Tail Displacements versus Time
+for Full- and Half-Scale Cylinders with Nonlinear Springs}
+\end{figure}
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Nose, Center-of-Gravity, and Tail Velocities versus Time
+for Full- and Half-Scale Cylinders with Nonlinear Springs}
+\end{figure}
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Nose, Center-of-Gravity, and Tail Accelerations versus Time
+for Full- and Half-Scale Cylinders with Nonlinear Springs}
+\end{figure}
+
+\section{Conclusions}
+
+     In this section, we have shown that the results of impact testing
+scale models can easily be related to the behavior of full-scale
+objects.  Model displacements can be related to full-scale object
+displacements by multiplying by the model scale.  Model linear
+accelerations can be related to full-scale object linear accelerations
+by dividing by the model scale.  Model angular accelerations can be
+related to those of the full-scale object by dividing by the square of
+the model scale. Linear velocities are identical between model and
+full-scale objects regardless of scale.  Angular velocities scale in
+the manner of linear accelerations.  The scaling relations for
+velocities indicate that the initial conditions for a model impact
+test should be identical to those expected for the full-scale event
+except for initial angular velocity.  Initial angular velocity for the
+model should be inversely proportional to the scale of the model used.
+These scaling relations are summarized in Table 7.2.
+\begin{table}
+\begin{center}
+\caption{Summary of Relationships for Scale Model Testing}
+\makeqnum
+\begin{tabular}{||l|c||}
+\hline
+\multicolumn{1}{|c}{Parameter}
+ &\multicolumn{1}{|c||}{Scaling Relationships}\\
+Geometry and & \\
+Initial Conditions: &\\
+\quad Overall Length     & $l_{sm} = l_{fs} \times (Scale)^{1}$\\
+\quad Mass               & $M_{sm} = M_{fs} \times (Scale)^{3}$\\
+\quad Moment of Inertia  & $I_{sm} = I_{fs} \times (Scale)^{5}$\\
+\quad Spring Constants   & $K_{sm} = K_{fs} \times (Scale)^{1}$\\
+\quad Initial Velocity   & $V_{sm} = V_{fs} \times (Scale)^{0}$\\
+\quad Initial Angle      & $\theta _{sm} = \theta _{fs} \times
+(Scale)^{0}$\\
+\hline
+Results: & \\
+\quad    Linear Accelerations  & $a_{sm} = a_{fs} \times (Scale)^{-1}$\\
+\quad    Angular Accelerations & $\alpha _{sm} = \alpha _{fs} \times
+(Scale)^{-2}$\\
+\quad    Linear Velocities     & $V_{sm} = V_{fs} \times (Scale)^{0}$\\
+\quad    Angular Velocities    & $\omega _{sm} = \omega _{fs} \times
+(Scale)^{-1}$\\
+\quad    Linear Displacements  & $\Delta _{sm} = \Delta _{fs} \times
+(Scale)^{1}$\\
+\quad    Angular Displacements & $\theta _{sm} = \theta _{f} \times
+(Scale)^{0}$\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}

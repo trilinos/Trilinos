@@ -13,6 +13,9 @@
 #include <smart_assert.h>
 #include <vector> // for vector
 
+using suplib_cpp::Data;
+using suplib_cpp::index_qsort;
+
 template <typename INT> Node_Set<INT>::Node_Set() : Exo_Entity() {}
 
 template <typename INT> Node_Set<INT>::Node_Set(int file_id, size_t id) : Exo_Entity(file_id, id) {}

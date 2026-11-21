@@ -1,0 +1,61 @@
+\newif\ifdraft\draftfalse
+\newif\ifsand\sandtrue
+
+\SANDprintDate{\today}
+\SANDnum{SAND88-0616}
+\SANDauthor{G. D. Sjaardema and G. W. Wellman\\
+        Applied Mechanics Division I}
+\newcommand{\theTitle}{Numerical and Analytical Methods for Approximating the
+Eccentric Impact Response (Slapdown) of Deformable Bodies}
+
+\title{\theTitle}
+\ifsand
+\pdfbookmark[1]{Cover}{cover}
+\doCover
+\newpage
+\else
+\SANDmarks{cover}
+\setcounter{page}{3}
+\fi
+
+\pdfbookmark[1]{Title}{title}
+
+%\begin{titlepage}
+\begin{center}
+\SANDnumVar\\
+\SANDreleaseTypeVar\\
+\ifdraft
+Draft Date: \SANDprintDateVar\\
+\else
+Printed \SANDprintDateVar\\
+\fi
+
+\vspace{0.75in}
+\CoverFont{m}{24}{28pt}
+\theTitle\\
+\vspace{0.5in}
+\CoverFont{m}{12}{14pt}
+\SANDauthorVar\\
+Simulation Modeling Sciences Department\\
+Sandia National Laboratories\\
+Albuquerque, NM 87185-0380\\
+\vspace*{.4in}
+\textbf{Abstract}
+\end{center}
+\vspace{-.4cm}\par
+Analytical and numerical methods have been developed to approximate
+the eccentric impact response of deformable bodies.  The eccentric
+impact response is commonly known as {\em slapdown} since the
+off-center impact gives the body a rotational velocity which causes
+impact at the opposite end.  A code, \SLAP , has been written to
+approximate the slapdown behavior of deformable bodies. The body is
+idealized as a three degree-of-freedom system with nonlinear impact
+behavior.
+
+Several parameters of interest to the analysis and design of laydown
+weapons were studied to determine their effects on the secondary
+impact velocities (slapdown).  Parameters studied are aspect ratio of
+the body, stiffness of the initial impact, and friction between the
+target and the body. Rules for applying the results of scale model
+tests to full scale bodies are developed and confirmed for nonlinear
+spring behavior.

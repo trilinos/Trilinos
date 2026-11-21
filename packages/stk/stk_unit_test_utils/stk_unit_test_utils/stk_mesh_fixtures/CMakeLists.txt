@@ -37,6 +37,9 @@ SET(SOURCES "")
 
 FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
 FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+# Compiled on its own in unity builds: shares file-scope enums and tables with degenerate_mesh.cpp
+set_source_files_properties(heterogeneous_mesh.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 IF(NOT ${PROJECT_NAME}_ENABLE_STKIO)
 

@@ -52,13 +52,9 @@ InverseLibrary::InverseLibrary() {
 
   // set valid solve factory names
   stratValidSolver_.push_back("Belos");
-  stratValidSolver_.push_back("Amesos");
   stratValidSolver_.push_back("Amesos2");
-  stratValidSolver_.push_back("AztecOO");
 
   // set valid preconditioner factory name
-  stratValidPrecond_.push_back("ML");
-  stratValidPrecond_.push_back("Ifpack");
   stratValidPrecond_.push_back("Neumann Series");
   stratValidPrecond_.push_back("MueLu");
   stratValidPrecond_.push_back("Ifpack2");
@@ -66,10 +62,11 @@ InverseLibrary::InverseLibrary() {
   // set valid Teko preconditioner factory names
   PreconditionerFactory::getPreconditionerFactoryNames(blockValidPrecond_);
 
-  Teko_DEBUG_MSG_BEGIN(10) DEBUG_STREAM << "Loaded \"block\" preconditioners = ";
-  for (std::size_t i = 0; i < blockValidPrecond_.size(); i++)
-    DEBUG_STREAM << blockValidPrecond_[i] << ", ";
-  DEBUG_STREAM << std::endl;
+  Teko_DEBUG_MSG_BEGIN(10)
+    DEBUG_STREAM << "Loaded \"block\" preconditioners = ";
+    for (std::size_t i = 0; i < blockValidPrecond_.size(); i++)
+      DEBUG_STREAM << blockValidPrecond_[i] << ", ";
+    DEBUG_STREAM << std::endl;
   Teko_DEBUG_MSG_END()
 }
 
@@ -87,28 +84,31 @@ InverseLibrary::InverseLibrary(const Teuchos::RCP<Stratimikos::DefaultLinearSolv
   // set valid solve factory names
   for (itr = lst.begin(); itr != lst.end(); ++itr) stratValidSolver_.push_back(itr->first);
 
-  Teko_DEBUG_MSG_BEGIN(10) DEBUG_STREAM << "Loaded \"Stratimikos\" solvers = ";
-  for (std::size_t i = 0; i < stratValidSolver_.size(); i++)
-    DEBUG_STREAM << stratValidSolver_[i] << ", ";
-  DEBUG_STREAM << std::endl;
+  Teko_DEBUG_MSG_BEGIN(10)
+    DEBUG_STREAM << "Loaded \"Stratimikos\" solvers = ";
+    for (std::size_t i = 0; i < stratValidSolver_.size(); i++)
+      DEBUG_STREAM << stratValidSolver_[i] << ", ";
+    DEBUG_STREAM << std::endl;
   Teko_DEBUG_MSG_END()
 
-      // set valid prec factory names
-      for (itr = pft.begin(); itr != pft.end(); ++itr) stratValidPrecond_.push_back(itr->first);
+  // set valid prec factory names
+  for (itr = pft.begin(); itr != pft.end(); ++itr) stratValidPrecond_.push_back(itr->first);
 
-  Teko_DEBUG_MSG_BEGIN(10) DEBUG_STREAM << "Loaded \"Stratimikos\" preconditioners = ";
-  for (std::size_t i = 0; i < stratValidPrecond_.size(); i++)
-    DEBUG_STREAM << stratValidPrecond_[i] << ", ";
-  DEBUG_STREAM << std::endl;
+  Teko_DEBUG_MSG_BEGIN(10)
+    DEBUG_STREAM << "Loaded \"Stratimikos\" preconditioners = ";
+    for (std::size_t i = 0; i < stratValidPrecond_.size(); i++)
+      DEBUG_STREAM << stratValidPrecond_[i] << ", ";
+    DEBUG_STREAM << std::endl;
   Teko_DEBUG_MSG_END()
 
-      // set valid Teko preconditioner factory names
-      PreconditionerFactory::getPreconditionerFactoryNames(blockValidPrecond_);
+  // set valid Teko preconditioner factory names
+  PreconditionerFactory::getPreconditionerFactoryNames(blockValidPrecond_);
 
-  Teko_DEBUG_MSG_BEGIN(10) DEBUG_STREAM << "Loaded \"block\" preconditioners = ";
-  for (std::size_t i = 0; i < blockValidPrecond_.size(); i++)
-    DEBUG_STREAM << blockValidPrecond_[i] << ", ";
-  DEBUG_STREAM << std::endl;
+  Teko_DEBUG_MSG_BEGIN(10)
+    DEBUG_STREAM << "Loaded \"block\" preconditioners = ";
+    for (std::size_t i = 0; i < blockValidPrecond_.size(); i++)
+      DEBUG_STREAM << blockValidPrecond_[i] << ", ";
+    DEBUG_STREAM << std::endl;
   Teko_DEBUG_MSG_END()
 }
 
@@ -274,18 +274,18 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
     }
 
     // print some debuggin info
-    Teko_DEBUG_MSG_BEGIN(10);
-    DEBUG_STREAM << "Printing parameter list: " << std::endl;
-    Teko_DEBUG_PUSHTAB();
-    plCopy->print(DEBUG_STREAM);
-    Teko_DEBUG_POPTAB();
-
-    if (xtraParams != Teuchos::null) {
-      DEBUG_STREAM << "Printing extra parameters: " << std::endl;
+    Teko_DEBUG_MSG_BEGIN(10)
+      DEBUG_STREAM << "Printing parameter list: " << std::endl;
       Teko_DEBUG_PUSHTAB();
-      xtraParams->print(DEBUG_STREAM);
+      plCopy->print(DEBUG_STREAM);
       Teko_DEBUG_POPTAB();
-    }
+
+      if (xtraParams != Teuchos::null) {
+        DEBUG_STREAM << "Printing extra parameters: " << std::endl;
+        Teko_DEBUG_PUSHTAB();
+        xtraParams->print(DEBUG_STREAM);
+        Teko_DEBUG_POPTAB();
+      }
     Teko_DEBUG_MSG_END();
 
     // Stratimikos::DefaultLinearSolverBuilder strat;

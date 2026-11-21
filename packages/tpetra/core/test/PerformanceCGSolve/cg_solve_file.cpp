@@ -246,6 +246,7 @@ int run() {
 
   std::string testBaseName = "Tpetra CGSolve ";
   if (Tpetra::Details::Behavior::cudaLaunchBlocking()) testBaseName += "CUDA_LAUNCH_BLOCKING ";
+  if (Tpetra::Details::Behavior::useRangeShuffleSpMV()) testBaseName += "RangeShuffleSpMV ";
 
   auto xmlOut = timer->reportWatchrXML(testBaseName + std::to_string(comm->getSize()) + " ranks", comm);
   if (myRank == 0) {

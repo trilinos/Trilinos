@@ -101,7 +101,7 @@ class MeshProjectionCalculatorTester : public ::testing::Test
     }
 };
 
-void expect_near(const utils::Point& pt1, const utils::Point& pt2, double tol)
+void expect_near_projection_calculator(const utils::Point& pt1, const utils::Point& pt2, double tol)
 {
   EXPECT_NEAR(pt1.x, pt2.x, tol);
   EXPECT_NEAR(pt1.y, pt2.y, tol);
@@ -218,7 +218,7 @@ TEST_F(MeshProjectionCalculatorTester, IdenticalQuads)
   for (auto& vert : m_mesh1->get_vertices())
   {
     nonconformal4::impl::FakeVert fv = verts1ToFakeVerts(vert, 0, 0);
-    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+    expect_near_projection_calculator(fv.pt, vert->get_point_orig(0), 1e-13);
   }
 
   auto& verts2ToFakeVerts   = *(mRelationalData->verts2ToFakeVerts);
@@ -227,7 +227,7 @@ TEST_F(MeshProjectionCalculatorTester, IdenticalQuads)
   for (auto& vert : m_mesh2->get_vertices())
   {
     nonconformal4::impl::FakeVert fv = verts2ToFakeVerts(vert, 0, 0);
-    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+    expect_near_projection_calculator(fv.pt, vert->get_point_orig(0), 1e-13);
 
     predicates::impl::PointRecord& record = verts2ClassOnMesh1(vert, 0, 0);
     EXPECT_EQ(record.type, PointClassification::Vert);
@@ -268,7 +268,7 @@ TEST_F(MeshProjectionCalculatorTester, IdenticalTris)
   for (auto& vert : m_mesh1->get_vertices())
   {
     nonconformal4::impl::FakeVert fv = verts1ToFakeVerts(vert, 0, 0);
-    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+    expect_near_projection_calculator(fv.pt, vert->get_point_orig(0), 1e-13);
   }
 
   auto& verts2ToFakeVerts   = *(mRelationalData->verts2ToFakeVerts);
@@ -277,7 +277,7 @@ TEST_F(MeshProjectionCalculatorTester, IdenticalTris)
   for (auto& vert : m_mesh2->get_vertices())
   {
     nonconformal4::impl::FakeVert fv = verts2ToFakeVerts(vert, 0, 0);
-    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+    expect_near_projection_calculator(fv.pt, vert->get_point_orig(0), 1e-13);
 
     predicates::impl::PointRecord& record = verts2ClassOnMesh1(vert, 0, 0);
     EXPECT_EQ(record.type, PointClassification::Vert);
@@ -325,14 +325,14 @@ TEST_F(MeshProjectionCalculatorTester, EdgeIntersection)
   for (auto& vert : m_mesh1->get_vertices())
   {
     nonconformal4::impl::FakeVert fv = verts1ToFakeVerts(vert, 0, 0);
-    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+    expect_near_projection_calculator(fv.pt, vert->get_point_orig(0), 1e-13);
   }
 
   auto& verts2ToFakeVerts = *(mRelationalData->verts2ToFakeVerts);
   for (auto& vert : m_mesh2->get_vertices())
   {
     nonconformal4::impl::FakeVert fv = verts2ToFakeVerts(vert, 0, 0);
-    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+    expect_near_projection_calculator(fv.pt, vert->get_point_orig(0), 1e-13);
   }
 
   auto& els                                                              = m_mesh1->get_elements();
@@ -386,14 +386,14 @@ TEST_F(MeshProjectionCalculatorTester, EdgeIntersectionTri)
   for (auto& vert : m_mesh1->get_vertices())
   {
     nonconformal4::impl::FakeVert fv = verts1ToFakeVerts(vert, 0, 0);
-    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+    expect_near_projection_calculator(fv.pt, vert->get_point_orig(0), 1e-13);
   }
 
   auto& verts2ToFakeVerts = *(mRelationalData->verts2ToFakeVerts);
   for (auto& vert : m_mesh2->get_vertices())
   {
     nonconformal4::impl::FakeVert fv = verts2ToFakeVerts(vert, 0, 0);
-    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+    expect_near_projection_calculator(fv.pt, vert->get_point_orig(0), 1e-13);
   }
 
   auto& els                                                              = m_mesh1->get_elements();
@@ -444,14 +444,14 @@ TEST_F(MeshProjectionCalculatorTester, EdgeCoincident)
   for (auto& vert : m_mesh1->get_vertices())
   {
     nonconformal4::impl::FakeVert fv = verts1ToFakeVerts(vert, 0, 0);
-    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+    expect_near_projection_calculator(fv.pt, vert->get_point_orig(0), 1e-13);
   }
 
   auto& verts2ToFakeVerts = *(mRelationalData->verts2ToFakeVerts);
   for (auto& vert : m_mesh2->get_vertices())
   {
     nonconformal4::impl::FakeVert fv = verts2ToFakeVerts(vert, 0, 0);
-    expect_near(fv.pt, vert->get_point_orig(0), 1e-13);
+    expect_near_projection_calculator(fv.pt, vert->get_point_orig(0), 1e-13);
   }
 
   auto& els                                                              = m_mesh1->get_elements();

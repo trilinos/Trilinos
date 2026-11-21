@@ -2202,7 +2202,7 @@ namespace Ioex {
 
         blockComponentCount[i] = blk.nodesPerEntity;
         ex_get_partial_conn(filePtr, EX_ELEM_BLOCK, id, offset + 1, count,
-                            &file_conn[fileConnOffset[i]], nullptr, nullptr);
+                            Data(file_conn) + fileConnOffset[i], nullptr, nullptr);
       }
 
       retval = decompData->m_decomposition.communicate_entity_data(

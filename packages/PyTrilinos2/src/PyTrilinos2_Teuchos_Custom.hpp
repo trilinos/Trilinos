@@ -65,8 +65,8 @@ pybind11::array_t<T> copyTeuchosArrayToNumPy(Teuchos::Array< T > & tArray) {
     return array;
 }
 
-// Implementation based on:
-// https://github.com/trilinos/Trilinos/tree/master/packages/PyTrilinos/src/PyTrilinos_Teuchos_Util.cpp
+// Implementation based on Teuchos Python utilities from the archived
+// PyTrilinos repository: https://github.com/trilinos/PyTrilinos
 bool setPythonParameter(Teuchos::RCP<Teuchos::ParameterList> plist,
 			const std::string      & name,
 			py::object             value);
@@ -82,8 +82,8 @@ bool setPythonParameterArray(Teuchos::RCP<Teuchos::ParameterList> plist,
   return true;
 }
 
-// Implementation based on:
-// https://github.com/trilinos/Trilinos/tree/master/packages/PyTrilinos/src/PyTrilinos_Teuchos_Util.cpp
+// Implementation based on Teuchos Python utilities from the archived
+// PyTrilinos repository: https://github.com/trilinos/PyTrilinos
 py::object getPythonParameter(Teuchos::RCP<Teuchos::ParameterList> plist,
 			      const std::string            & name);
 
