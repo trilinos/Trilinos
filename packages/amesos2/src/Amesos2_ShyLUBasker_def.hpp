@@ -132,12 +132,6 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
   if(this->root_)
   {
     int nthreads = num_threads;
-    if (ShyLUbasker->Options.partial_facto != 0) {
-      // User needs to provide 2x threads, to avoid dead-lock due to busy-wait
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (nthreads < 2, std::runtime_error,
-         "ShyLU-Basker dense Schur option requires # of threads (2x # of leaves) to be greater than 1 (" << nthreads << ")");
-    }
     if (ShyLUbasker->Options.worker_threads) {
       if (nthreads > 1) {
         // keep one worker-thread / subdomain (where originally subdomain = num_threads)

@@ -324,7 +324,6 @@ namespace BaskerNS
     //----------------------Update offdiag-----------------//
     X_row++;
     L_row++;
-    //for(; X_row < LL_size[X_col]; X_row++, L_row++)
     for(; X_row < LL_size(X_col); X_row++, L_row++)
     {
 
@@ -346,16 +345,12 @@ namespace BaskerNS
            k, col_idx_offset,
            U.val,
            U.row_idx,
-           //U.col_ptr[k-bcol+1]-U.col_ptr[k-bcol],
            U.col_ptr(k+1)-U.col_ptr(k),
-           //U.col_ptr[k-bcol],
            U.col_ptr(k),
            A_option);
 
      }//end for over all offdiag
      #endif // end of BASKER_MULTIPLE_UPPER
-     //Bgood(removed)
-     //B.flip_base();
      
      return info;
   }//end t_upper_col_factor()
@@ -484,7 +479,6 @@ namespace BaskerNS
     const Int U_col = S(lvl)(kid);
     const Int U_row = LU_size(U_col)-1;
     const Int X_col = S(0)(kid);
-    //Int col_idx_offset = 0; //can we get rid of now?
 
     #ifdef BASKER_DEBUG_NFACTOR_SEP
     printf("LOWER_SEP_FACTOR kid: %d \n", kid);
@@ -824,7 +818,6 @@ namespace BaskerNS
     for( i = top; i < ws_size; i++)
     {
       j = pattern[i];
-      //t = gperm[j];
       t = gperm(j+brow_g);
 
 #ifdef BASKER_DEBUG_NFACTOR_SEP
@@ -855,7 +848,6 @@ namespace BaskerNS
                    X[j], t-brow_g, unnz);
              }
 #endif
-             //U.row_idx[unnz] = gperm[j];
              //can't we reuse, this seems
              //stupid
              U.row_idx(unnz) = t-brow_g;
@@ -938,26 +930,12 @@ namespace BaskerNS
     #endif
     for(Int blk_row = L_row+1, x_row = l+2; blk_row < LL_size(L_col); blk_row++, x_row++)
     { 
-      /*old
-       t_back_solve_offdiag(kid,
-       L_col, blk_row,
-       X_col, x_row,
-       k, col_idx_offset,
-       U.val, U.row_idx,
-       //U.col_ptr[k-bcol+1]-U.col_ptr[k-bcol],
-       U.col_ptr(k+1)-U.col_ptr(k),
-       //U.col_ptr[k-bcol],
-       U.col_ptr(k),
-       BASKER_TRUE);
-      */
       t_dense_back_solve_offdiag(kid,
           L_col, blk_row,
           X_col, x_row,
           k, col_idx_offset,
           U.val, U.row_idx,
-          //U.col_ptr[k-bcol+1]-U.col_ptr[k-bcol],
           U.col_ptr(k+1)-U.col_ptr(k),
-          //U.col_ptr[k-bcol],
           U.col_ptr(k),
           BASKER_TRUE);
 
@@ -974,9 +952,6 @@ namespace BaskerNS
     print_factor(L,U);
     #endif
 
-   //Bgood(remove)
-   //B.flip_base();
-   
     return 0;
   }//end t_lower_col_fact()
 
@@ -995,35 +970,41 @@ namespace BaskerNS
   (
    const TeamMember &thread,
    const Int my_kid,
-   const Int leader_kid, 
-   const Int size,
-   const Int function_n,
-   const Int k, 
-   const Int lvl
+   const Int leader_kid,
+   const Int num_threads_in_team,
+   const Int barrier_id,
+   const Int tug,
+   const Int lvl,
+   const Int max_thread,
+   const Int num_threads_tot
   )
   {
-    //printf("before call. lkid: %d kid: %d task: %d size: %d k: %d \n",
-    //               leader_kid, my_kid, function_n, size, k);
+    //printf("before call. lkid: %d kid: %d task: %d num_threads: %d tug: %d \n",
+    //               leader_kid, my_kid, barrier_id, num_threads_in_team, tug);
 
     #ifdef HAVE_VTUNE
     //__itt_pause();
     #endif
 
-    //printf( " t_basker_barrier(size = %d, thread.team_size = %d: my_id = %d, leader_id = %d)\n",size,thread.team_size(), my_kid,leader_kid ); fflush(stdout);
-    if(size <= thread.team_size())
+    //printf( " t_basker_barrier(num_threads = %d, thread.team_size = %d: my_id = %d, leader_id = %d)\n",num_threads_in_team,thread.team_size(), my_kid,leader_kid ); fflush(stdout);
+    if(num_threads_in_team <= thread.team_size())
     {
       // synch only within team
+      //printf( " Barriering within team\n" ); fflush(stdout);
       thread.team_barrier();
     }
     else
     {
       // synch between teams (two sibling teams in ND tree)
+      //printf( " Barriering within domain\n" ); fflush(stdout);
       basker_barrier.BarrierDomain(leader_kid,
-         my_kid, 
-         function_n,
-         size, 
-         k, 
-         lvl);
+         my_kid,
+         barrier_id,
+         num_threads_in_team,
+         tug,
+         lvl,
+         max_thread,
+         num_threads_tot);
     }
 
     #ifdef HAVE_VTUNE
@@ -1039,12 +1020,13 @@ namespace BaskerNS
    const TeamMember &thread,
    const Int my_kid,
    const Int my_leader,
-   const Int num_threads_in,
-   const Int size,
-   const Int function_n,
-   const Int k,
+   const Int num_threads_tot,
+   const Int num_threads_in_team,
+   const Int barrier_id,
+   const Int tug,
    const Int lvl,
-   const bool flag
+   const Int max_threads,
+   const bool check_error
   )
   {
     Int info = BASKER_SUCCESS;
@@ -1052,9 +1034,10 @@ namespace BaskerNS
     thread.team_barrier();
     #else
     t_basker_barrier(thread, my_kid, my_leader, 
-                     size, function_n, k, lvl);
-    if (flag) {
-      for(Int tid = 0; tid < num_threads_in; tid++) {
+                     num_threads_in_team, barrier_id, tug, lvl,
+                     max_threads, num_threads_tot);
+    if (check_error) {
+      for(Int tid = 0; tid < num_threads_tot; tid++) {
         if (thread_array(tid).error_type != BASKER_SUCCESS) {
           info = BASKER_ERROR;
         }

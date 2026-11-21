@@ -488,7 +488,9 @@ namespace BaskerNS
           if (schur_part(i) == 1) schur_size ++;
         }
         // allocate storage for schur complement (schur_out_ptr may be nullptr, if user does not want it)
-        MALLOC_ENTRY_RANK2DARRAY(schur_out, schur_size, schur_size);
+        if (schur_size > 0) {
+          MALLOC_ENTRY_RANK2DARRAY(schur_out, schur_size, schur_size);
+        }
       }
       schur_out_ptr = schur_out_in;
 
@@ -2000,7 +2002,7 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::SetThreads(Int nthreads)
   {
-    //Need to test if power of nparts
+    //Need to test if power of nparts (e.g., called from symbolicFactorization_impl of  Amesos2's ShyLUBaskers interface)
     //TODO: hard-coded to be two. It is also hard-coded in shylubasker_structs.hpp
     Int check_value = pow(2, log2(nthreads));
     if (check_value != nthreads)
@@ -2027,7 +2029,12 @@ namespace BaskerNS
       }
       nthreads = check_value;
     }
-    BASKER_ASSERT((Options.partial_facto == 0 || nthreads > 1), "Basker SetThreads Assert: Partial Factorization requires at least two threads.");
+    if (Options.partial_facto != 0) {
+      if(Options.verbose == BASKER_TRUE) {
+        printf( " > Doubling number of threads (%d -> %d) for Partial Factorization\n",int(nthreads),2*int(nthreads));
+      }
+      nthreads *= 2;
+    }
 
     // Finally, set the internal number of threads used by ShyLU-Basker.
     num_threads = nthreads;

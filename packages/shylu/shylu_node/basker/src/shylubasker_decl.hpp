@@ -384,6 +384,7 @@ namespace BaskerNS
     BASKER_INLINE
     int AplusAT(BASKER_MATRIX &M, BASKER_MATRIX &C, BASKER_BOOL keep_zeros = BASKER_TRUE);
 
+    BASKER_INLINE
     int nested_dissect(BASKER_MATRIX &M, BASKER_TREE &BT);
 
     BASKER_INLINE
@@ -396,11 +397,22 @@ namespace BaskerNS
     #endif
     BASKER_INLINE
     int nested_dissect_metis (BASKER_MATRIX &M, BASKER_TREE &BT, Int num_domains, partition_graph<graph_integral_type>& sg);
+    BASKER_INLINE
     int nested_dissect_scotch(BASKER_MATRIX &M, BASKER_TREE &BT, Int num_domains, partition_graph<graph_integral_type>& sg);
 
+    #ifdef HAVE_SHYLU_NODEBASKER_METIS
+    BASKER_INLINE
+    int dissect_metis_kway (idx_t metis_size_k,
+                            idx_t *options,
+                            METIS_1DARRAY &metis_rowptr,
+                            METIS_1DARRAY &metis_colidx,
+                            METIS_1DARRAY &metis_part_k);
+    #endif
 
+    BASKER_INLINE
     void to_complete_tree(Int lvl, Int iblks, Int nblks, INT_1DARRAY tabs, INT_1DARRAY tree);
 
+    BASKER_INLINE
     void rec_build_tree(Int lvl, Int &lpos, Int &rpos, Int &mynum, INT_1DARRAY tree);
 
     
@@ -759,10 +771,12 @@ namespace BaskerNS
     void t_basker_barrier(const TeamMember &thread,
                           const Int my_kid,
                           const Int leader_kid, 
-                          const Int size,
+                          const Int num_threads_in_team,
                           const Int function_n,
                           const Int k, 
-                          const Int lvl);
+                          const Int lvl,
+                          const Int max_thread = -1,
+                          const Int num_threads = -1);
     inline
     Int basker_barrier_sep(const TeamMember &thread,
                            const Int my_kid,
@@ -772,6 +786,7 @@ namespace BaskerNS
                            const Int function_n,
                            const Int k, 
                            const Int lvl,
+                           const Int max_threads,
                            const bool flag);
                           
     //basker_util.hpp

@@ -196,10 +196,10 @@ namespace BaskerNS
             printf("Factoring Sep(# teams = %ld with # threads = %ld) at level = %d\n",
                    (long)lnteams, (long)lthreads, (int)l); fflush(stdout);
           }
-          //if(Options.partial_facto != 0) {
-          //  if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",lnteams,lnteams/2 );
-          //  lnteams /= 2;
-          //}
+          if(Options.partial_facto != 0) {
+            if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",int(lnteams),int(lnteams)/2 );
+            lnteams /= 2;
+          }
 
           kokkos_nfactor_sep2 <Int, Entry, Exe_Space> sep_nfactor(this, l, tree.nlvls);
           Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
