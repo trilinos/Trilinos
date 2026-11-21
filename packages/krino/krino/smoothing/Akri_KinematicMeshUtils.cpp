@@ -135,7 +135,7 @@ std::vector<double> compute_element_metric_mappings_from_nodal_metrics(
         const ElemNodeIndices elemNodes = elemNodeIndices.element_node_indices(e);
         check_supported_element(spatialDim, elemNodes.size());
         for (const unsigned nodeIndex : elemNodes)
-          elemNodalMetrics.push_back(&nodalMetrics[nodeIndex*metricSize]);
+          elemNodalMetrics.push_back(&nodalMetrics[static_cast<size_t>(nodeIndex) * metricSize]);
       });
 }
 
