@@ -1,23 +1,22 @@
 [build-system]
-requires = ["scikit-build-core>=0.3.3","pybind11 @ git+https://github.com/pybind/pybind11.git@c6c9a9e59b2b64393de0432aa6867ed27367912a"]
+requires = ["scikit-build-core>=0.10,<2", "pybind11==3.1.0"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "rol-python"
 version = "VERSION"
 description="Python interface to the Rapid Optimization Library (ROL)"
-readme = "packages/rol/README.md"
+readme = "packages/rol/pyrol/README.md"
 license = "BSD-3-Clause"
 authors = [
   { name = "Christian Glusa" },
   { name = "Kim Liegeois" },
   { name = "Aurya Javeed" },
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = ["numpy"]
 classifiers = [
   "Development Status :: 4 - Beta",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -29,9 +28,11 @@ classifiers = [
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
 build.verbose = true
-logging.level = "DEBUG"
 cmake.version = ">=3.23.0"
 wheel.install-dir = "pyrol"
+# Not needed at run time, and installed whatever the options below say:
+# TriBITS' files for BLAS and LAPACK.
+wheel.exclude = ["pyrol/lib/external_packages/**"]
 
 [tool.scikit-build.cmake.define]
 CMAKE_BUILD_TYPE = "RELEASE"
@@ -48,3 +49,11 @@ PYROL_ENABLE_BINDER = "OFF"
 PYROL_PIP_INSTALL = "ON"
 CMAKE_INSTALL_RPATH="$ORIGIN/lib64;$ORIGIN/lib;$ORIGIN;@loader_path/lib64;@loader_path/lib;@loader_path"
 CMAKE_INTERPROCEDURAL_OPTIMIZATION="OFF"
+# Install only what PyROL needs at run time: the shared libraries, but not
+# the headers, the CMake package files or TriBITS. A wheel cannot hold
+# symlinks, so unversioned library names avoid storing each library three
+# times (libfoo.dylib, libfoo.17.dylib and libfoo.17.3.0.dylib).
+Trilinos_INSTALL_LIBRARIES_AND_HEADERS = "OFF"
+Trilinos_ENABLE_INSTALL_CMAKE_CONFIG_FILES = "OFF"
+Trilinos_INSTALL_TriBITS = "OFF"
+CMAKE_PLATFORM_NO_VERSIONED_SONAME = "ON"

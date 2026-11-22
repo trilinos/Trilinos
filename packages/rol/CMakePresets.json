@@ -1,0 +1,38 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "standalone-ci-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "cacheVariables": {
+        "ENABLE_TESTS": true,
+        "ENABLE_EXAMPLES": true
+      }
+    },
+    {
+      "name": "standalone-ci-release",
+      "inherits": "standalone-ci-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "standalone-ci-debug",
+      "inherits": "standalone-ci-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "HAVE_ROL_DEBUG": true
+      }
+    },
+    {
+      "name": "standalone-dev",
+      "hidden": false,
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "ENABLE_TESTS": true,
+        "ENABLE_EXAMPLES": true
+      }
+    }
+  ]
+}
