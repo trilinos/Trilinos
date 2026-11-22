@@ -6,10 +6,10 @@
  * See packages/seacas/LICENSE for details
  */
 
+#define _GNU_SOURCE
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include <assert.h>
-#define _GNU_SOURCE
 #include <string.h>
 
 #define SIZE(X) sizeof(X) / sizeof(X[0])
