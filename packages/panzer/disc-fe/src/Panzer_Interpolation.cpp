@@ -873,12 +873,15 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
         auto valuesAtDofCoordsOrientedWorkset_d = Kokkos::subview(valuesAtDofCoordsOriented_d, worksetRange, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto basisCoeffsLIOrientedWorkset_d     = Kokkos::subview(basisCoeffsLIOriented_d,     worksetRange, Kokkos::ALL(), Kokkos::ALL());
 
+        {
+          Teuchos::TimeMonitor tmOrientations(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply no_trans orientations ") + name));
         // apply orientations for LO basis
         // shuffles things in the second dimension, i.e. wrt LO basis
         ots::modifyBasisByOrientation(valuesAtDofCoordsOrientedWorkset_d,
                                       valuesAtDofCoordsNonOriented_d,
                                       elemOrtsWorkset_d,
                                       domain_basis.get());
+        }
 
         Kokkos::deep_copy(reducedValuesAtDofCoordsOriented_d, 0.0);
 
@@ -900,12 +903,15 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
                                  }
           });
 
-          for (size_t j = 0; j<numVectors; ++j)
-            li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), j),
-                               Kokkos::subview(reducedValuesAtDofCoordsOriented_d, worksetRange, Kokkos::ALL(), Kokkos::ALL(), j),
-                               range_basis.get(),
-                               elemOrtsWorkset_d
-                               );
+          {
+            Teuchos::TimeMonitor tmOrientations(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply no_trans LagrangianInterpolation ") + name));
+
+            for (size_t j = 0; j<numVectors; ++j)
+              li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), j),
+                                 Kokkos::subview(reducedValuesAtDofCoordsOriented_d, worksetRange, Kokkos::ALL(), Kokkos::ALL(), j),
+                                 range_basis.get(),
+                                 elemOrtsWorkset_d);
+          }
         } else {
           Kokkos::parallel_for("miniEM:MatrixFreeInterpolationOp:cellLoop1",
                                range_type(0, std::min(numCells, elementIds_d.extent_int(0)-Teuchos::as<int>(elemIter))),
@@ -922,12 +928,16 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
                                  }
           });
 
-          for (size_t j = 0; j<numVectors; ++j)
-            li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), j),
-                               Kokkos::subview(reducedValuesAtDofCoordsOriented_d, worksetRange, Kokkos::ALL(), j),
-                               range_basis.get(),
-                               elemOrtsWorkset_d
-                               );
+          {
+            Teuchos::TimeMonitor tmOrientations(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply no_trans LagrangianInterpolation ") + name));
+
+            for (size_t j = 0; j<numVectors; ++j)
+              li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), j),
+                                 Kokkos::subview(reducedValuesAtDofCoordsOriented_d, worksetRange, Kokkos::ALL(), j),
+                                 range_basis.get(),
+                                 elemOrtsWorkset_d
+                                 );
+          }
         }
 
         auto owner_d = owner_d_;
@@ -984,6 +994,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
     const_view_t lclX = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
     colmapMV_->putScalar(ZERO);
     view_t lclYtemp = colmapMV_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    size_t numVectors = lclYtemp.extent(1);
 
     // get the domain and range bases
     auto domain_fieldPattern = domain_ugi->getFieldPattern(domain_basis_name);
@@ -1016,6 +1027,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
     // the ranks of these depend on dimension
     DynRankDeviceView valuesAtDofCoordsNonOriented_d;
     DynRankDeviceView valuesAtDofCoordsOriented_d;
+    DynRankDeviceView reducedValuesAtDofCoordsOriented_d;
 
     {
       // Let Intrepid2 give us the correctly dimensioned view, then build one with +1 ranks and extent(0) == numCells
@@ -1027,9 +1039,11 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
       if (temp.rank() == 3) {
         valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", temp.extent(0), temp.extent(1), temp.extent(2));
         valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsOriented_d", numCells, temp.extent(0), temp.extent(1), temp.extent(2));
+        reducedValuesAtDofCoordsOriented_d = DynRankDeviceView("reducedValuesAtDofCoordsOriented_d", numCells, temp.extent(1), temp.extent(2), numVectors);
       } else {
         valuesAtDofCoordsNonOriented_d = DynRankDeviceView("valuesAtDofCoordsNonOriented_d", temp.extent(0), temp.extent(1));
         valuesAtDofCoordsOriented_d    = DynRankDeviceView("valuesAtDofCoordsOriented_d", numCells, temp.extent(0), temp.extent(1));
+        reducedValuesAtDofCoordsOriented_d = DynRankDeviceView("reducedValuesAtDofCoordsOriented_d", numCells, temp.extent(1), numVectors);
       }
     }
 
@@ -1066,6 +1080,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
       // get element orientations
       auto elemOrts_d = orientations_.at(elementBlockIds[blockIter]);
 
+      Teuchos::TimeMonitor tmLoopElem(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply trans elem ") + name));
       for(std::size_t elemIter = 0; elemIter < elementIds_d.extent(0); elemIter += numCells) {
 
         int endCellRange =
@@ -1080,49 +1095,204 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
         auto valuesAtDofCoordsOrientedWorkset_d = Kokkos::subview(valuesAtDofCoordsOriented_d, worksetRange, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto basisCoeffsLIOrientedWorkset_d     = Kokkos::subview(basisCoeffsLIOriented_d,     worksetRange, Kokkos::ALL(), Kokkos::ALL());
 
-        // apply orientations for domain basis
-        // shuffles things in the second dimension, i.e. wrt domain basis
-        ots::modifyBasisByOrientation(valuesAtDofCoordsOrientedWorkset_d,
-                                      valuesAtDofCoordsNonOriented_d,
-                                      elemOrtsWorkset_d,
-                                      domain_basis.get());
-        Kokkos::fence();
+        {
+          Teuchos::TimeMonitor tmOrientations(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply trans orientations ") + name));
+          // apply orientations for domain basis
+          // shuffles things in the second dimension, i.e. wrt domain basis
+          ots::modifyBasisByOrientation(valuesAtDofCoordsOrientedWorkset_d,
+                                        valuesAtDofCoordsNonOriented_d,
+                                        elemOrtsWorkset_d,
+                                        domain_basis.get());
+          Kokkos::fence();
+        }
 
-        // get basis coefficients of domain basis functions wrt range basis
-        for(size_t domainIter=0; domainIter<domainCardinality; domainIter++)
-          // Get basis coeffs wrt range basis on reference element.
-          // basisCoeffsLI has dimensions (numCells, numFields=rangeCardinality, domainCardinality)
-          li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), domainIter),
-                             Kokkos::subview(valuesAtDofCoordsOrientedWorkset_d, Kokkos::ALL(), domainIter, Kokkos::ALL(), Kokkos::ALL()),
-                             range_basis.get(), elemOrtsWorkset_d);
-        Kokkos::fence();
+        Kokkos::deep_copy(reducedValuesAtDofCoordsOriented_d, 0.0);
 
         auto owner_d = owner_d_;
 
+        if (reducedValuesAtDofCoordsOriented_d.rank() == 4) {
 
-        Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop",
-                             range_type(elemIter, std::min(elemIter+numCells,
-                                                           elementIds_d.extent(0))),
-                             KOKKOS_LAMBDA(const LocalOrdinal cellNo2) {
-                               LocalOrdinal cellNo = cellNo2-elemIter;
-                               LocalOrdinal elemId = elementIds_d(cellNo2);
+          // THIS DOES NOT WORK
 
-                               // loop over range LIDs
-                               for(size_t rangeIter = 0; rangeIter < rangeLIDs_d.extent(1); ++rangeIter) {
-                                 LocalOrdinal range_row = rangeLIDs_d(elemId, rangeOffsets_d(rangeIter));
+          // Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop1",
+          //                      range_type(elemIter, std::min(elemIter+numCells,
+          //                                                    elementIds_d.extent(0))),
+          //                      KOKKOS_LAMBDA(const LocalOrdinal cellNo2) {
+          //   LocalOrdinal cellNo = cellNo2-elemIter;
+          //   LocalOrdinal elemId = elementIds_d(cellNo2);
+          //   for(size_t rangeIter = 0; rangeIter < rangeLIDs_d.extent(1); ++rangeIter) {
+          //     LocalOrdinal range_row = rangeLIDs_d(elemId, rangeOffsets_d(rangeIter));
+          //     if ((range_row < (LocalOrdinal) lclX.extent(0)) && (owner_d(range_row) == elemId)) {
+          //       for(size_t domainIter = 0; domainIter < domainLIDs_d.extent(1); domainIter++) {
+          //         for(size_t d=0; d<valuesAtDofCoordsOriented_d.extent(3); d++) {
+          //           auto val = valuesAtDofCoordsOrientedWorkset_d(cellNo, domainIter, rangeIter, d);
+          //           for (size_t j = 0; j<numVectors; ++j)
+          //             reducedValuesAtDofCoordsOriented_d(cellNo, domainIter, d, j) += val*lclX(range_row, j);
+          //         }
+          //       }
+          //     }
+          //   } //end domain LID loop
+          // }); // end element loop
 
-                                 // if owned
-                                 if ((range_row < (LocalOrdinal) lclX.extent(0)) && (owner_d(range_row) == elemId)) {
+          // {
+          //   Teuchos::TimeMonitor tmLI(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply trans LagrangianInterpolation ") + name));
 
-                                   for(size_t domainIter = 0; domainIter < domainLIDs_d.extent(1); domainIter++) {
-                                     LocalOrdinal J = domainLIDs_d(elemId, domainOffsets_d(domainIter));
-                                     Scalar val = basisCoeffsLIOriented_d(cellNo, rangeIter, domainIter);
-                                     for (size_t j = 0; j<lclYtemp.extent(1); ++j)
-                                       Kokkos::atomic_add(&lclYtemp(J,j), alpha*val*lclX(range_row,j));
-                                   }
-                                 } //end if owned
-                               } //end range LID loop
-                             }); // end element loop
+          //   // get basis coefficients of domain basis functions wrt range basis
+          //   for (size_t j = 0; j<numVectors; ++j)
+          //     li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), j),
+          //                        Kokkos::subview(reducedValuesAtDofCoordsOriented_d, worksetRange, Kokkos::ALL(), Kokkos::ALL(), j),
+          //                        range_basis.get(),
+          //                        elemOrtsWorkset_d);
+          //   Kokkos::fence();
+          // }
+
+          // Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop2",
+          //                      range_type(elemIter, std::min(elemIter+numCells,
+          //                                                    elementIds_d.extent(0))),
+          //                      KOKKOS_LAMBDA(const LocalOrdinal cellNo2) {
+          //   LocalOrdinal cellNo = cellNo2-elemIter;
+          //   LocalOrdinal elemId = elementIds_d(cellNo2);
+
+          //   for(size_t domainIter = 0; domainIter < domainLIDs_d.extent(1); domainIter++) {
+          //     LocalOrdinal J = domainLIDs_d(elemId, domainOffsets_d(domainIter));
+          //     for (size_t j = 0; j<numVectors; ++j) {
+          //       Scalar val = basisCoeffsLIOriented_d(cellNo, domainIter, j);
+          //       Kokkos::atomic_add(&lclYtemp(J,j), alpha*val);
+          //     }
+          //   } //end domain LID loop
+          // }); // end element loop
+
+
+          // SLOW IMPLEMENTATION
+
+          {
+            Teuchos::TimeMonitor tmLI(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply trans LagrangianInterpolation ") + name));
+
+            // get basis coefficients of domain basis functions wrt range basis
+            for(size_t domainIter=0; domainIter<domainCardinality; domainIter++)
+              // Get basis coeffs wrt range basis on reference element.
+              // basisCoeffsLI has dimensions (numCells, numFields=rangeCardinality, domainCardinality)
+              li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), domainIter),
+                                 Kokkos::subview(valuesAtDofCoordsOrientedWorkset_d, Kokkos::ALL(), domainIter, Kokkos::ALL(), Kokkos::ALL()),
+                                 range_basis.get(), elemOrtsWorkset_d);
+            Kokkos::fence();
+          }
+
+          auto owner_d = owner_d_;
+
+
+          Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop",
+                               range_type(elemIter, std::min(elemIter+numCells,
+                                                             elementIds_d.extent(0))),
+                               KOKKOS_LAMBDA(const LocalOrdinal cellNo2) {
+            LocalOrdinal cellNo = cellNo2-elemIter;
+            LocalOrdinal elemId = elementIds_d(cellNo2);
+
+            // loop over range LIDs
+            for(size_t rangeIter = 0; rangeIter < rangeLIDs_d.extent(1); ++rangeIter) {
+              LocalOrdinal range_row = rangeLIDs_d(elemId, rangeOffsets_d(rangeIter));
+
+              // if owned
+              if ((range_row < (LocalOrdinal) lclX.extent(0)) && (owner_d(range_row) == elemId)) {
+
+                for(size_t domainIter = 0; domainIter < domainLIDs_d.extent(1); domainIter++) {
+                  LocalOrdinal J = domainLIDs_d(elemId, domainOffsets_d(domainIter));
+                  Scalar val = basisCoeffsLIOriented_d(cellNo, rangeIter, domainIter);
+                  for (size_t j = 0; j<lclYtemp.extent(1); ++j)
+                    Kokkos::atomic_add(&lclYtemp(J,j), alpha*val*lclX(range_row,j));
+                }
+              } //end if owned
+            } //end range LID loop
+          }); // end element loop
+
+        } else {
+
+          Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop1",
+                               range_type(elemIter, std::min(elemIter+numCells,
+                                                             elementIds_d.extent(0))),
+                               KOKKOS_LAMBDA(const LocalOrdinal cellNo2) {
+            LocalOrdinal cellNo = cellNo2-elemIter;
+            LocalOrdinal elemId = elementIds_d(cellNo2);
+            for(size_t rangeIter = 0; rangeIter < rangeLIDs_d.extent(1); ++rangeIter) {
+              LocalOrdinal range_row = rangeLIDs_d(elemId, rangeOffsets_d(rangeIter));
+              if ((range_row < (LocalOrdinal) lclX.extent(0)) && (owner_d(range_row) == elemId)) {
+                for(size_t domainIter = 0; domainIter < domainLIDs_d.extent(1); domainIter++) {
+                  auto val = valuesAtDofCoordsOrientedWorkset_d(cellNo, domainIter, rangeIter);
+                  for (size_t j = 0; j<numVectors; ++j)
+                    reducedValuesAtDofCoordsOriented_d(cellNo, domainIter, j) += val*lclX(range_row, j);
+                }
+              }
+            } //end domain LID loop
+          }); // end element loop
+
+          {
+            Teuchos::TimeMonitor tmLI(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply trans LagrangianInterpolation ") + name));
+
+            // get basis coefficients of domain basis functions wrt range basis
+            for (size_t j = 0; j<numVectors; ++j)
+              li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), j),
+                                 Kokkos::subview(reducedValuesAtDofCoordsOriented_d, worksetRange, Kokkos::ALL(), j),
+                                 range_basis.get(),
+                                 elemOrtsWorkset_d);
+            Kokkos::fence();
+          }
+
+          Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop2",
+                               range_type(elemIter, std::min(elemIter+numCells,
+                                                             elementIds_d.extent(0))),
+                               KOKKOS_LAMBDA(const LocalOrdinal cellNo2) {
+            LocalOrdinal cellNo = cellNo2-elemIter;
+            LocalOrdinal elemId = elementIds_d(cellNo2);
+
+            for(size_t domainIter = 0; domainIter < domainLIDs_d.extent(1); domainIter++) {
+              LocalOrdinal J = domainLIDs_d(elemId, domainOffsets_d(domainIter));
+              for (size_t j = 0; j<numVectors; ++j) {
+                Scalar val = basisCoeffsLIOriented_d(cellNo, domainIter, j);
+                Kokkos::atomic_add(&lclYtemp(J,j), alpha*val);
+              }
+            } //end domain LID loop
+          }); // end element loop
+        }
+
+        // {
+        //   Teuchos::TimeMonitor tmLI(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: matrix-free apply trans LagrangianInterpolation ") + name));
+
+        //   // get basis coefficients of domain basis functions wrt range basis
+        //   for(size_t domainIter=0; domainIter<domainCardinality; domainIter++)
+        //     // Get basis coeffs wrt range basis on reference element.
+        //     // basisCoeffsLI has dimensions (numCells, numFields=rangeCardinality, domainCardinality)
+        //     li::getBasisCoeffs(Kokkos::subview(basisCoeffsLIOrientedWorkset_d, Kokkos::ALL(), Kokkos::ALL(), domainIter),
+        //                        Kokkos::subview(valuesAtDofCoordsOrientedWorkset_d, Kokkos::ALL(), domainIter, Kokkos::ALL(), Kokkos::ALL()),
+        //                        range_basis.get(), elemOrtsWorkset_d);
+        //   Kokkos::fence();
+        // }
+
+        // auto owner_d = owner_d_;
+
+
+        // Kokkos::parallel_for("miniEM::MatrixFreeInterpolationOp::cellLoop",
+        //                      range_type(elemIter, std::min(elemIter+numCells,
+        //                                                    elementIds_d.extent(0))),
+        //                      KOKKOS_LAMBDA(const LocalOrdinal cellNo2) {
+        //                        LocalOrdinal cellNo = cellNo2-elemIter;
+        //                        LocalOrdinal elemId = elementIds_d(cellNo2);
+
+        //                        // loop over range LIDs
+        //                        for(size_t rangeIter = 0; rangeIter < rangeLIDs_d.extent(1); ++rangeIter) {
+        //                          LocalOrdinal range_row = rangeLIDs_d(elemId, rangeOffsets_d(rangeIter));
+
+        //                          // if owned
+        //                          if ((range_row < (LocalOrdinal) lclX.extent(0)) && (owner_d(range_row) == elemId)) {
+
+        //                            for(size_t domainIter = 0; domainIter < domainLIDs_d.extent(1); domainIter++) {
+        //                              LocalOrdinal J = domainLIDs_d(elemId, domainOffsets_d(domainIter));
+        //                              Scalar val = basisCoeffsLIOriented_d(cellNo, rangeIter, domainIter);
+        //                              for (size_t j = 0; j<lclYtemp.extent(1); ++j)
+        //                                Kokkos::atomic_add(&lclYtemp(J,j), alpha*val*lclX(range_row,j));
+        //                            }
+        //                          } //end if owned
+        //                        } //end range LID loop
+        //                      }); // end element loop
       } //end workset loop
     } //end element block loop
     Kokkos::fence();

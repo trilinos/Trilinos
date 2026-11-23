@@ -446,6 +446,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     DynRankView ConstructWithLabel(jacobianAtQPoints_det, numOwnedElems, numQPoints);
     ct::setJacobian(jacobianAtQPoints, quadPoints, physVertexes, hexa);
     ct::setJacobianInv (jacobianAtQPoints_inv, jacobianAtQPoints);
+    ct::setJacobianDet (jacobianAtQPoints_det, jacobianAtQPoints);
 
     fst::HGRADtransformGRAD(transformedBasisGradsAtQPointsOriented, jacobianAtQPoints_inv, basisGradsAtQPointsOriented);
 
@@ -456,7 +457,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     DynRankView ConstructWithLabel(weightedTransformedBasisValuesAtQPointsOriented, numOwnedElems, basisCardinality, numQPoints);
     DynRankView ConstructWithLabel(weightedTransformedBasisGradsAtQPointsOriented, numOwnedElems, basisCardinality, numQPoints, dim);
     DynRankView ConstructWithLabel(cellWeights, numOwnedElems, numQPoints);
-    rst::clone(cellWeights, weights);
+    fst::computeCellMeasure (cellWeights, jacobianAtQPoints_det, weights);
 
     fst::multiplyMeasure(weightedTransformedBasisGradsAtQPointsOriented, cellWeights, transformedBasisGradsAtQPointsOriented);
     fst::multiplyMeasure(weightedTransformedBasisValuesAtQPointsOriented, cellWeights, transformedBasisValuesAtQPointsOriented);
