@@ -19,6 +19,7 @@
 #endif
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalIndexer.hpp"
+#include "Panzer_FEGraphGeometry.hpp"
 
 #include "KokkosSparse_SortCrs.hpp"
 
@@ -1452,101 +1453,37 @@ buildTpetraGhostedGraph(int i,int j) const
 
 // Build the FE graph for block (i,j).
 //
-// This walks the same element/GID traversal as buildTpetraGhostedGraph(i,j) -- rows come
-// from indexer i, columns from indexer j -- but hands the result to the FECrsGraph "V2"
-// constructor, which carries both the owned and the owned+shared graph in one object.
+// The couplings are the same as buildTpetraGhostedGraph(i,j) -- rows come from indexer i,
+// columns from indexer j -- assembled on device by Tpetra::assembleFECrsGraphWithMaps into a
+// single, fully assembled Tpetra::FECrsGraph. The result is identical to inserting them into
+// an FECrsGraph built with the "V2" constructor and calling beginAssembly()/endAssembly().
 //
 // There is no getColMap() in this class and none is needed: block (i,j) takes its rows from
 // indexer i and its columns from indexer j, so block j's row map IS this block's column map.
 // That is the same convention the classic path already uses -- buildTpetraGhostedGraph()
 // fill-completes with (getMap(j),getMap(i)).
 //
-// The V2 constructor requires that the owned row/domain gids appear, in the same order, as a
-// leading prefix of the owned+shared row/domain map. Every concrete panzer::GlobalIndexer
-// builds getOwnedAndGhostedIndices() as owned_ followed by ghosted_, so getMap(i)/
-// getGhostedMap(i) satisfy this directly.
+// Tpetra requires that the owned row gids appear, in the same order, as a leading prefix of
+// the owned+shared row map. Every concrete panzer::GlobalIndexer builds
+// getOwnedAndGhostedIndices() as owned_ followed by ghosted_, so getMap(i)/getGhostedMap(i)
+// satisfy this directly.
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<typename BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FECrsGraphType>
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildFEGraph(int i,int j) const
 {
-   using Teuchos::RCP;
-   using Teuchos::rcp;
+   // each sub provider "should" have the same element blocks and elements
+   const Tpetra::Geometry<LocalOrdinalT,GlobalOrdinalT,NodeT> geometry =
+     buildFEGraphGeometry<LocalOrdinalT,GlobalOrdinalT,NodeT>(*getGlobalIndexer(i),*getGlobalIndexer(j),
+                                                              *gidProviders_[0],Teuchos::null);
 
-   // NOTE: these must be RCP<const MapType> (not RCP<MapType>). FECrsGraph has both a "V1"
-   // ctor (4th positional arg = importer) and a "V2" ctor (4th positional arg =
-   // ownedPlusSharedDomainMap); Teuchos::RCP's converting constructor is an unconstrained
-   // template, so an RCP<MapType> is equally "convertible" to either as far as overload
-   // resolution is concerned. Typing the locals as RCP<const MapType> binds them to V2's
-   // domain-map parameter with no conversion at all, resolving the ambiguity in V2's favor.
-   RCP<const MapType> ownedRowMap             = getMap(i);
-   RCP<const MapType> ownedPlusSharedRowMap   = getGhostedMap(i);
-   RCP<const MapType> ownedDomainMap          = getMap(j);
-   RCP<const MapType> ownedPlusSharedDomainMap = getGhostedMap(j);
-
-   RCP<const GlobalIndexer> rowProvider = getGlobalIndexer(i);
-   RCP<const GlobalIndexer> colProvider = getGlobalIndexer(j);
-
-   std::vector<std::string> elementBlockIds;
-   gidProviders_[0]->getElementBlockIds(elementBlockIds); // each sub provider "should" have
-                                                          // the same element blocks
-
-   // count entries per owned+shared row, exactly as buildTpetraGhostedGraph() does
-   std::vector<size_t> nEntriesPerRow(ownedPlusSharedRowMap->getLocalNumElements(),0);
-
-   std::vector<std::string>::const_iterator blockItr;
-   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
-      const std::vector<LocalOrdinalT> & elements = gidProviders_[0]->getElementBlock(*blockItr);
-
-      std::vector<GlobalOrdinalT> row_gids;
-      std::vector<GlobalOrdinalT> col_gids;
-
-      for(std::size_t elmt=0;elmt<elements.size();elmt++) {
-         rowProvider->getElementGIDs(elements[elmt],row_gids);
-         colProvider->getElementGIDs(elements[elmt],col_gids);
-         for(std::size_t row=0;row<row_gids.size();row++) {
-            LocalOrdinalT lid = ownedPlusSharedRowMap->getLocalElement(row_gids[row]);
-            nEntriesPerRow[lid] += col_gids.size();
-         }
-      }
-   }
-
-   size_t maxNumRowEntries = 0;
-   for(std::size_t r=0;r<nEntriesPerRow.size();r++)
-      maxNumRowEntries = std::max(maxNumRowEntries,nEntriesPerRow[r]);
-
-   RCP<FECrsGraphType> feGraph = rcp(new FECrsGraphType(
-       ownedRowMap, ownedPlusSharedRowMap, maxNumRowEntries,
-       ownedPlusSharedDomainMap,
-       Teuchos::null,
-       ownedDomainMap));
-
-   // Panzer's DOFManager does not guarantee a locally owned element has an owned dof, so
-   // Tpetra's debug-only check for that is too strict here; the cost is at most a structurally
-   // empty column. Must be set after construction -- the ctor's validator rejects the option.
-   {
-      Teuchos::RCP<Teuchos::ParameterList> feGraphParams = Teuchos::parameterList();
-      feGraphParams->set("Check Col GIDs In At Least One Owned Row",false);
-      feGraph->setParameterList(feGraphParams);
-   }
-
-   feGraph->beginAssembly();
-   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
-      const std::vector<LocalOrdinalT> & elements = gidProviders_[0]->getElementBlock(*blockItr);
-
-      std::vector<GlobalOrdinalT> row_gids;
-      std::vector<GlobalOrdinalT> col_gids;
-
-      for(std::size_t elmt=0;elmt<elements.size();elmt++) {
-         rowProvider->getElementGIDs(elements[elmt],row_gids);
-         colProvider->getElementGIDs(elements[elmt],col_gids);
-         for(std::size_t row=0;row<row_gids.size();row++)
-            feGraph->insertGlobalIndices(row_gids[row],col_gids);
-      }
-   }
-   feGraph->endAssembly();
-
-   return feGraph;
+   return Tpetra::assembleFECrsGraphWithMaps(geometry,
+                                             getMap(i),          // owned rows
+                                             getGhostedMap(i),   // owned+shared rows
+                                             Teuchos::null,      // column map: built by Tpetra
+                                             getGhostedMap(j),   // owned+shared domain map
+                                             getGhostedImport(i),// owned -> owned+shared rows
+                                             getMap(j));         // owned domain map
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
