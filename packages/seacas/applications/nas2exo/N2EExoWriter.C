@@ -13,6 +13,8 @@
 #include <iostream>
 #include <tuple>
 
+using suplib_cpp::Data;
+
 namespace ExoModules {
 
   N2EExoWriter::~N2EExoWriter()

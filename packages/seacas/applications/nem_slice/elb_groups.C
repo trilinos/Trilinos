@@ -23,6 +23,8 @@
 #include <fmt/format.h>
 #include <vector> // for vector
 
+using suplib_cpp::Data;
+
 /*****************************************************************************/
 namespace {
   template <typename INT>

@@ -865,12 +865,6 @@ class TestFactory {
 // Helper class which has some Tpetra specific code inside
 // We put this into an extra helper class as we need partial specializations and
 // do not want to introduce partial specializations for the full TestFactory class
-//
-// The BuildBlockMatrix is only available with Tpetra. However, if both Epetra
-// and Tpetra are enabled it may be that Tpetra is not instantiated on either
-// GO=int/long long and/or Node=Serial/OpenMP. We need partial specializations
-// with an empty BuildBlockMatrix routine for all instantiations Teptra is not
-// enabled for, but are existing in Xpetra due to Epetra enabled.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class TpetraTestFactory {
 #include "MueLu_UseShortNames.hpp"
@@ -940,9 +934,6 @@ class TpetraTestFactory {
 
 };  // class TpetraTestFactory
 
-// TAW: 3/14/2016: If both Epetra and Tpetra are enabled we need partial specializations
-//                 on GO=int/long long as well as NO=EpetraNode to disable BuildBlockMatrix
-
 //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
 ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string& filter);
 
@@ -950,7 +941,7 @@ ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string&
 
 }  // namespace MueLuTests
 
-// Macro to skip a test when UnderlyingLib==Epetra or Tpetra
+// Macro to skip a test when UnderlyingLib does not match
 #define MUELU_TEST_ONLY_FOR(UnderlyingLib)                  \
   if (TestHelpers::Parameters::getLib() != UnderlyingLib) { \
     out << "Skipping test for "                             \

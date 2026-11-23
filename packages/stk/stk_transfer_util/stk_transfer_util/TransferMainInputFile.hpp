@@ -33,6 +33,18 @@ struct TransferInputFilePartLists
   std::vector<std::string> recv;
 };
 
+// One entry of the grouped form of 'field-list'. Each group is transferred with its own
+// transfer type, receive type, etc.; options not given in the group default to the
+// corresponding top-level options.
+struct TransferInputFileFieldGroup
+{
+  std::vector<std::pair<std::string, std::string>> fields;
+  std::optional<std::string> transferType;
+  std::optional<std::string> recvType;
+  std::optional<std::string> extrapolateOption;
+  std::optional<TransferInputFilePartLists> parts;
+};
+
 struct TransferInputFileOptions
 {
   std::optional<std::string> sendMesh;
@@ -45,7 +57,10 @@ struct TransferInputFileOptions
   std::optional<std::string> timeSteps;
   std::optional<std::string> mappingType2dTo3d;
   std::optional<std::string> coordTransformZExpr;
+  // At most one of 'fields' and 'fieldGroups' is set, depending on which form of
+  // 'field-list' the file uses (a list of field names, or a list of field groups).
   std::optional<std::vector<std::pair<std::string, std::string>>> fields;
+  std::optional<std::vector<TransferInputFileFieldGroup>> fieldGroups;
   std::optional<TransferInputFilePartLists> parts;
   std::optional<TwoDTo3DAxisymmetricParams> twoDTo3DAxisymmetric;
   std::optional<ThreeDTo3DAxisymmetricParams> threeDTo3DAxisymmetric; // theta values in radians

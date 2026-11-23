@@ -8,7 +8,7 @@ namespace impl {
 
 namespace {
 
-void expect_float_eq2(const utils::Point& pt, const utils::Point& pt2)
+void expect_float_eq2_plane(const utils::Point& pt, const utils::Point& pt2)
 {
   EXPECT_FLOAT_EQ(pt.x, pt2.x);
   EXPECT_FLOAT_EQ(pt.y, pt2.y);
@@ -29,7 +29,7 @@ void test_projection(utils::impl::PlaneProjection val, const utils::Point& pt)
   auto pt2 = proj->compute_plane_coords(pt);
   auto pt3 = utils::impl::apply_plane_projection(val, pt);
 
-  expect_float_eq2(pt2, pt3);
+  expect_float_eq2_plane(pt2, pt3);
 
   // test inverse function
   auto pt4 = utils::impl::apply_inverse_plane_projection(val, pt3);

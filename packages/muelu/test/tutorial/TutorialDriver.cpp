@@ -131,6 +131,9 @@ int main(int argc, char* argv[]) {
       double diffusion = 1e-5;
       clp.setOption("diffusion", &diffusion, "diffusion coefficient, also denoted epsilon");
 
+      bool useCoordinates = false;
+      clp.setOption("coordinates", "no-coordinates", &useCoordinates, "pass node coordinates to MueLu as user data (needed for Zoltan2 rebalancing)");
+
       switch (clp.parse(argc, argv)) {
         case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS; break;
         case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -208,7 +211,7 @@ int main(int argc, char* argv[]) {
         dofMap = nodeMap;
 
       // Create coordinates
-      RCP<const RealValuedMultiVector> coordinates;
+      RCP<RealValuedMultiVector> coordinates;
       if (matrixType == "Laplace2D" || matrixType == "Recirc2D" || matrixType == "Elasticity2D")
         coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("2D", nodeMap, galeriList);
       else if (matrixType == "Laplace3D")
@@ -265,9 +268,11 @@ int main(int argc, char* argv[]) {
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
       //! [InsertNullspaceInUserData begin]
-      // Register nullspace as user data in the MueLu parameter list
+      // Register nullspace (and optionally coordinates) as user data in the MueLu parameter list
       ParameterList& userDataList = mueluParams->sublist("user data");
       userDataList.set<RCP<MultiVector>>("Nullspace", nullspace);
+      if (useCoordinates)
+        userDataList.set<RCP<RealValuedMultiVector>>("Coordinates", coordinates);
       //! [InsertNullspaceInUserData end]
 
       //! [CreateTpetraPreconditioner begin]

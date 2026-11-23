@@ -93,15 +93,14 @@ namespace Belos {
   /// the wrapper defined in \c Belos::InnerSolveTraits.  The \c
   /// InnerSolveTraits::makeInnerSolveOperator() method wraps an
   /// InnerSolve instance in an operator appropriate for your linear
-  /// algebra library: \c Epetra_Operator for Epetra, \c
-  /// Tpetra::Operator for Tpetra, or \c Thyra::LinearOpBase for
-  /// Thyra.  Then, you can mix and match InnerSolver instances with
-  /// ordinary matrices or other kinds of operators in your Belos
-  /// iterative solvers.  The wrappers have an "envelope" capability,
-  /// so your custom iterative solvers can receive the InnerSolver
-  /// wrapped up in the wrapper, extract the InnerSolver (via \c
-  /// Belos::InnerSolveTraits::getInnerSolver()), discard the wrapper
-  /// if desired, and use the InnerSolver directly.
+  /// algebra library: \c Tpetra::Operator for Tpetra, or \c
+  /// Thyra::LinearOpBase for Thyra.  Then, you can mix and match
+  /// InnerSolver instances with ordinary matrices or other kinds of
+  /// operators in your Belos iterative solvers.  The wrappers have an
+  /// "envelope" capability, so your custom iterative solvers can
+  /// receive the InnerSolver wrapped up in the wrapper, extract the
+  /// InnerSolver (via \c Belos::InnerSolveTraits::getInnerSolver()),
+  /// discard the wrapper if desired, and use the InnerSolver directly.
   template<class Scalar, class MV, class OP>
   class InnerSolver {
   public:
@@ -272,8 +271,8 @@ namespace Belos {
   ///
   /// Take an InnerSolver instance, and wrap it in an implementation
   /// of OP, where OP is one of the base operator interfaces that
-  /// Belos supports (currently Thyra::LinearOpBase, Tpetra::Operator,
-  /// and Epetra_Operator).
+  /// Belos supports (currently Thyra::LinearOpBase and
+  /// Tpetra::Operator)
   ///
   /// \note The reason for this class is that Belos solvers require
   ///   that the preconditioner(s) and the operator have the same type

@@ -4,9 +4,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 # first ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Galeri
-  ${PACKAGE_NAME}_ENABLE_Isorropia
   ${PACKAGE_NAME}_ENABLE_Tpetra
   ${PACKAGE_NAME}_ENABLE_Belos
+  ${PACKAGE_NAME}_ENABLE_Zoltan2Core
 )
 
 SET(XML_FILES_ALL
@@ -50,7 +50,6 @@ SET(XML_FILES_ALL
     s4b.xml
     s4c.xml
     s5a.xml
-    s5b.xml
     s6_dep.xml
     s6_export.xml
 )
@@ -128,8 +127,7 @@ IF(${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Belos)
     n2_easy_export.xml
     s4av.xml
     s4c.xml
-    s5a.xml
-    s5b.xml
+    s5a.xml # requires Zoltan2, tested separately below
     # xmls never mentioned in the tutorial
     n1_easy_pg.xml
     s2_easy.xml
@@ -165,5 +163,24 @@ IF(${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Belos)
       NUM_MPI_PROCS 4
     )
   ENDFOREACH()
+
+  # Rebalancing with Zoltan2 (multijagged, needs coordinates)
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    TRIBITS_ADD_TEST(
+      TutorialDriver
+      NAME "Test_Tutorial_laplace2d_s5a"
+      ARGS "--matrixType=Laplace2D --xml=s5a.xml --coordinates"
+      COMM mpi
+      NUM_MPI_PROCS 2
+    )
+
+    TRIBITS_ADD_TEST(
+      TutorialDriver
+      NAME "Test_Tutorial_recirc2d_s5a"
+      ARGS "--matrixType=Recirc2D --xml=s5a.xml --diffusion=1e-5 --coordinates"
+      COMM mpi
+      NUM_MPI_PROCS 4
+    )
+  ENDIF()
 
 ENDIF()

@@ -27,6 +27,8 @@
 #include "Grid.h"
 #include "ZE_SystemInterface.h"
 
+using suplib_cpp::time_stamp;
+
 #ifdef SEACAS_HAVE_MPI
 #include <mpi.h>
 #endif

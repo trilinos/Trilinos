@@ -164,7 +164,7 @@ class DefaultMappingStrategy : public MappingStrategy {
 
 /** \brief
  * Implements the Tpetra::Operator interface with a Thyra LinearOperator. This
- * enables the use of absrtact Thyra operators in AztecOO as preconditioners and
+ * enables the use of abstract Thyra operators as preconditioners and
  * operators, without being rendered into concrete Tpetra matrices. This is my own
  * modified version that was originally in Thyra.
  */

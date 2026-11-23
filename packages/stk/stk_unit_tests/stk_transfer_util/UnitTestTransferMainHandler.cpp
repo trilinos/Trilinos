@@ -38,7 +38,16 @@
 #include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_unit_test_utils/ioUtils.hpp"
 #include "stk_unit_test_utils/CommandLineArgs.hpp"
+#include "stk_unit_test_utils/FieldEvaluator.hpp"
+#include "stk_unit_test_utils/TransferTesters.hpp"
+#include "stk_io/FillMesh.hpp"
+#include "stk_io/IossBridge.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_search_util/ObjectCoordinates.hpp"
 #include <stk_util/parallel/OutputStreams.hpp>
+#include <stk_util/stk_config.h>
+#include <fstream>
 
 namespace {
 
@@ -132,6 +141,145 @@ TEST(TransferMainHandler, all)
   unlink(sendMesh.c_str());
   unlink(recvMesh.c_str());
 }
+
+#ifdef STK_HAS_YAML_CPP
+
+void write_mesh_with_node_and_elem_fields(stk::ParallelMachine comm, const std::string& meshSpec,
+                                          const std::string& fileName, const stk::unit_test_util::FieldEvaluator& eval)
+{
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).set_spatial_dimension(3).create();
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
+  stk::mesh::Field<double>& nodeField = meta.declare_field<double>(stk::topology::NODE_RANK, "nodeField", 1);
+  stk::mesh::put_field_on_mesh(nodeField, meta.universal_part(), nullptr);
+  stk::io::set_field_role(nodeField, Ioss::Field::TRANSIENT);
+
+  stk::mesh::Field<double>& elemField = meta.declare_field<double>(stk::topology::ELEM_RANK, "elemField", 1);
+  stk::mesh::put_field_on_mesh(elemField, meta.universal_part(), nullptr);
+  stk::io::set_field_role(elemField, Ioss::Field::TRANSIENT);
+
+  stk::io::fill_mesh("generated:" + meshSpec, *bulk);
+
+  stk::unit_test_util::set_node_field(*bulk, nodeField, eval);
+  stk::unit_test_util::set_entity_field(*bulk, elemField, eval);
+
+  stk::io::StkMeshIoBroker ioBroker(comm);
+  ioBroker.set_bulk_data(bulk);
+  size_t outputIndex = ioBroker.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
+  ioBroker.add_field(outputIndex, nodeField);
+  ioBroker.add_field(outputIndex, elemField);
+  ioBroker.process_output_request(outputIndex, 1.0);
+}
+
+void expect_field_matches_eval(const stk::mesh::BulkData& bulk, const std::string& fieldName,
+                               stk::mesh::EntityRank rank, const stk::unit_test_util::FieldEvaluator& eval)
+{
+  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  const stk::mesh::FieldBase* field = meta.get_field(rank, fieldName);
+  ASSERT_TRUE(field != nullptr) << fieldName;
+
+  stk::mesh::EntityVector entities;
+  stk::mesh::get_selected_entities(stk::mesh::Selector(*field), bulk.buckets(rank), entities);
+  ASSERT_FALSE(entities.empty());
+
+  std::vector<double> location;
+  for (stk::mesh::Entity entity : entities) {
+    stk::search::determine_centroid(meta.spatial_dimension(), entity, *meta.coordinate_field(), location);
+    stk::unit_test_util::test_expected_value_at_location(bulk, field, entity, eval, location.data());
+  }
+}
+
+TEST(TransferMainHandler, inputFileFieldGroupsWithDifferentTransferTypes)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  const std::string sendMesh = "fieldGroupsSource.exo";
+  const std::string recvMesh = "fieldGroupsTarget.exo";
+  const std::string outputMesh = "fieldGroupsOutput.exo";
+  const std::string inputFile = "fieldGroups.yaml";
+
+  stk::unit_test_util::LinearFieldEvaluator eval(3u);
+  write_mesh_with_node_and_elem_fields(comm, "2x2x2", sendMesh, eval);
+  stk::unit_test_util::generated_mesh_to_file_in_serial("3x3x3|bbox:0,0,0,2,2,2", recvMesh);
+
+  {
+    std::ofstream yaml(inputFile);
+    yaml << "send-mesh: " << sendMesh << "\n"
+         << "recv-mesh: " << recvMesh << "\n"
+         << "output-mesh: " << outputMesh << "\n"
+         << "use-master-elements: intrepid2\n"
+         << "field-list:\n"
+         << "  - fields: nodeField\n"
+         << "    xfer-type: INTERP\n"
+         << "    recv-type: NODE\n"
+         << "  - fields: elemField\n"
+         << "    xfer-type: PATCH\n"
+         << "    recv-type: ELEMENT_CENTROID\n";
+  }
+
+  stk::unit_test_util::Args args({"stk_transfer", "--input-file", inputFile});
+  stk::set_outputP0(&stk::outputNull(), comm);
+  stk::transfer_util::TransferMainHandler handler(comm, args.argc(), args.argv());
+  ASSERT_EQ(2u, handler.get_transfer_settings().get_field_groups().size());
+  handler.run();
+  stk::reset_default_output_streams(comm);
+
+  EXPECT_EQ(handler.exit_code(), stk::transfer_util::TransferMainStatus::SUCCESS);
+
+  {
+    auto output = stk::mesh::MeshBuilder(comm).create();
+    stk::io::fill_mesh_with_fields(outputMesh, *output);
+    expect_field_matches_eval(*output, "nodeField", stk::topology::NODE_RANK, eval);
+    expect_field_matches_eval(*output, "elemField", stk::topology::ELEM_RANK, eval);
+  }
+
+  unlink(sendMesh.c_str());
+  unlink(recvMesh.c_str());
+  unlink(outputMesh.c_str());
+  unlink(inputFile.c_str());
+}
+
+TEST(TransferMainHandler, inputFileFieldGroupsWithSameRecvFieldIsExecutionError)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  const std::string sendMesh = "fieldGroupsDupSource.exo";
+  const std::string recvMesh = "fieldGroupsDupTarget.exo";
+  const std::string inputFile = "fieldGroupsDup.yaml";
+
+  stk::unit_test_util::LinearFieldEvaluator eval(3u);
+  write_mesh_with_node_and_elem_fields(comm, "2x2x2", sendMesh, eval);
+  stk::unit_test_util::generated_mesh_to_file_in_serial("2x2x2", recvMesh);
+
+  {
+    std::ofstream yaml(inputFile);
+    yaml << "send-mesh: " << sendMesh << "\n"
+         << "recv-mesh: " << recvMesh << "\n"
+         << "use-master-elements: intrepid2\n"
+         << "field-list:\n"
+         << "  - {fields: nodeField, xfer-type: INTERP}\n"
+         << "  - {fields: nodeField, xfer-type: COPY}\n";
+  }
+
+  stk::unit_test_util::Args args({"stk_transfer", "--input-file", inputFile});
+  stk::set_outputP0(&stk::outputNull(), comm);
+  stk::transfer_util::TransferMainHandler handler(comm, args.argc(), args.argv());
+  testing::internal::CaptureStderr();
+  handler.run();
+  const std::string errorOutput = testing::internal::GetCapturedStderr();
+  stk::reset_default_output_streams(comm);
+
+  EXPECT_EQ(handler.exit_code(), stk::transfer_util::TransferMainStatus::EXECUTION_ERROR);
+  EXPECT_NE(errorOutput.find("more than one field group"), std::string::npos) << errorOutput;
+
+  unlink(sendMesh.c_str());
+  unlink(recvMesh.c_str());
+  unlink(inputFile.c_str());
+}
+
+#endif // STK_HAS_YAML_CPP
 
 TEST(TransferMainHandler, noArgs)
 {

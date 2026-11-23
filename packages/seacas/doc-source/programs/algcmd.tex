@@ -1,0 +1,283 @@
+\chapter{Command Input} \label{chap:command}
+
+The user can issue a command whenever an equation is expected.
+\input{texmisc:cominput}
+
+The commands are summarized in Appendix~\ref{appx:command}.
+
+\section{Database Editing Commands} \label{cmd:dbedit}
+
+\cmddef{\cmdverb{TITLE}
+} {
+\cmd{TITLE} sets the title to be written to the output database. The
+title is input on the next line. If no \cmd{TITLE} command is issued,
+the input database title is written to the output database.
+}
+
+\newpage
+\section{Variable Selection Commands} \label{cmd:varsel}
+
+\cmddef{\cmdverb{SAVE}
+   \param{variable$_{1}$}, \param{variable$_{2}$}, \ldots\
+   or \param{option$_{1}$}, \param{option$_{2}$}, \ldots\
+      \nodefault
+} {
+\cmd{SAVE} transfers variables from the input database to the output
+database. An individual variable may be transferred by listing its name
+as a parameter. For example,
+\cenlinesbegin
+\cmd{SAVE Y, Z}
+\cenlinesend
+has the same effect as the equations (with the exception noted below):
+\cenlinesbegin
+\cmd{Y = Y} \\
+\cmd{Z = Z}.
+\cenlinesend
+Assigned variables are affected by the \cmd{BLOCKS} command; \cmd{SAVE}d
+variables are not.
+
+The following \param{option}s transfer sets of variables:
+\cmdoption{\cmd{SAVE HISTORY}
+} {
+transfers all input database history variables.
+}
+\cmdoption{\cmd{SAVE GLOBAL}
+} {
+transfers all input database global variables.
+}
+\cmdoption{\cmd{SAVE NODAL}
+} {
+transfers all input database nodal variables.
+}
+\cmdoption{\cmd{SAVE ELEMENT}
+} {
+transfers all input database element variables.
+}
+\cmdoption{\cmd{SAVE ALL}
+} {
+transfers all input database history, global, nodal, and element
+variables.
+}
+
+The \cmd{SAVE} command causes the variables to be output in the same
+order they would be if they were assigned by equations at that point.
+
+If a \cmd{SAVE}d variable is also an assigned variable, the assigned
+value is written to the output database, regardless of whether the
+\cmd{SAVE} is done before or after the assignment.
+}
+
+\newpage %%%
+\cmddef{\cmdverb{DELETE}
+   \param{variable$_{1}$}, \param{variable$_{2}$}, \ldots\ \nodefault
+} {
+\cmd{DELETE} marks an assigned variable as a temporary variable that
+will not be written to the output database. A variable must be assigned
+(or \cmd{SAVE}d) before it is listed in a \cmd{DELETE} command.
+}
+
+\newpage
+\section{Time Step Selection Commands} \label{cmd:timesel}
+
+\caps{\PROGRAM} allows the user to restrict the time steps from the
+input database that are written to the output database. By default, all
+the time steps from the input database are written to the output
+database.
+
+\input{texmisc:timemode}
+
+\input{texmisc:timeintro}
+
+\input{texmisc:timecmd}
+
+\cmddef{\cmdverb{HISTORY}
+   \cmd{ON} or \cmd{OFF} \default{\cmd{ON}}
+} {
+\cmd{HISTORY} controls whether history time steps are included in the
+selected time steps (if \cmd{ON}) or only whole time steps (if
+\cmd{OFF}).
+}
+
+\input{texmisc:timeexample}
+
+Another example is given in Appendix~\ref{appx:example}.
+
+\newpage
+\section{Mesh Limiting Commands} \label{cmd:meshlimit}
+
+These commands limit the mesh that is written to the output database by
+deleting nodes and elements that do not satisfy the limiting conditions.
+A deleted node or element is entirely removed from the output database
+and is ignored in all equation evaluations. Deleting nodes and elements
+may cause the nodes and elements on the output database to be numbered
+differently than those on the input database.
+
+If both the \cmd{ZOOM} and \cmd{VISIBLE} commands are in effect, the
+nodes and elements must satisfy both the limiting conditions to be
+written to the output database.
+
+By default, the entire mesh is written to the output database.
+
+\cmddef{\cmdverb{ZOOM}
+   \param{xmin}, \param{xmax}, \param{ymin}, \param{ymax},
+      \param{zmin}, \param{zmax} \nodefault
+} {
+\cmd{ZOOM} sets the limits of the mesh to be written to the output
+database. Limits \param{xmin} to \param{xmax} apply to the first
+coordinate, \param{ymin} to \param{ymax} to the second coordinate, and
+\param{zmin} to \param{zmax} to the third coordinate (if any). A node is
+deleted if it is not within the rectangle (or brick) defined by these
+limits. An element is deleted if all of its nodes are deleted.
+}
+
+\cmddef{\cmdverb{VISIBLE}
+   [\cmd{ADD} or \cmd{DELETE},]
+   \param{block\_id$_{1}$}, \param{block\_id$_{2}$}, \ldots\
+      \default{all element blocks}
+} {
+\cmd{VISIBLE} limits the element blocks to be written to the output
+database. An element that is not in a ``visible'' element block is
+deleted. A node is deleted if all the elements containing the node are
+deleted.
+
+The \param{block\_id} refers to the element block identifier (displayed
+by the \cmd{LIST BLOCKS} command).
+
+If there is no parameter, all element blocks are visible. If the first
+parameter is \cmd{ADD} or \cmd{DELETE}, the element blocks listed are
+added to or deleted from the current visible set. Otherwise, only the
+element blocks listed in the command are visible.
+}
+
+\newpage
+\section{Element Block Selection Commands} \label{cmd:blocksel}
+
+\cmddef{\cmdverb{BLOCKS}
+   [\cmd{ADD} or \cmd{DELETE},]
+   \param{block\_id$_{1}$}, \param{block\_id$_{2}$}, \ldots\
+      \default{all element blocks}
+} {
+\cmd{BLOCKS} selects the element blocks which have defined values for
+all following equations. An element variable can be defined for an
+element block only if that block is selected. This command can only mark
+element variables as undefined, it cannot mark previously undefined
+variables as defined. It has no effect on nodal variables.
+
+The \cmd{BLOCKS} command affects all following equations unless another
+\cmd{BLOCKS} command is entered. The \cmd{BLOCKS} command has no effect
+on the output of \cmd{SAVE}d element variables.
+
+The \param{block\_id} refers to the element block identifier (displayed
+by the \cmd{LIST BLOCKS} command).
+
+If there is no parameter, all element blocks are selected. If the first
+parameter is \cmd{ADD} or \cmd{DELETE}, the element blocks listed are
+added to or deleted from the current selected set. Otherwise, only the
+element blocks listed in the command are selected.
+}
+
+\cmddef{\cmdverb{MATERIAL}
+   [\cmd{ADD} or \cmd{DELETE},]
+   \param{block\_id$_{1}$}, \param{block\_id$_{2}$}, \ldots\
+      \default{all element blocks}
+} {
+\cmd{MATERIAL} is exactly equivalent to a \cmd{BLOCKS} command.
+}
+
+\newpage
+\section{Information and Termination Commands} \label{cmd:infoterm}
+
+\cmddef{\cmdverb{SHOW}
+   \param{command} \default{no parameter}
+} {
+\cmd{SHOW} displays the settings of parameters relevant to the
+\param{command}. For example, \cmd{SHOW TMIN} displays the time step
+selection criteria.
+
+\cmd{SHOW} with no parameters displays any nondefault command parameters
+and all input equations.
+}
+
+\cmddef{\cmdverb{LIST}
+   \param{option} \default{no parameter}
+} {
+\cmd{LIST} displays database information, depending on the
+\param{option}.
+
+\cmdoption{\cmd{LIST VARS}
+} {
+displays a summary of the database. The summary includes the database
+title; the number of nodes, elements, and element blocks; the number of
+node sets and side sets; and the number of variables.
+}
+\cmdoption{\cmd{LIST BLOCKS} or \cmd{MATERIAL}
+} {
+displays a summary of the element blocks. The summary includes the block
+identifier, the number of elements in the block, the number of nodes per
+element, and the number of attributes per element.
+}
+\cmdoption{\cmd{LIST QA}
+} {
+displays the QA records and the information records.
+}
+\cmdoption{\cmd{LIST NAMES}
+} {
+displays the names of the history, global, nodal, and element variables.
+}
+\cmdoption{\cmd{LIST STEPS}
+} {
+displays the number of time steps and the minimum and maximum time step
+times.
+}
+\cmdoption{\cmd{LIST TIMES}
+} {
+displays the step numbers and times for all time steps on the database.
+}
+}
+
+\newpage %%%
+\cmddef{\cmdverb{HELP}
+   \param{option} \default{no parameter}
+} {
+\cmd{HELP} displays information about the \caps{\PROGRAM} program,
+depending on the \param{option}.
+
+\cmdoption{\cmd{HELP RULES}
+} {
+displays a summary of the equation syntax rules.
+}
+\cmdoption{\cmd{HELP COMMANDS}
+} {
+displays a summary of the commands.
+}
+\cmdoption{\cmd{HELP FUNCTIONS}
+} {
+lists the names of all available functions and displays some useful
+equations, such as the equation for effective strain.
+}
+\cmdoption{\cmd{HELP}
+} {
+lists the available \cmd{HELP} options and displays any nondefault
+command parameters and all input equations.
+}
+}
+
+\cmddef{\cmdverb{LOG}
+} {
+\cmd{LOG} requests that the log file be saved when the program is
+exited. Each correct equation and command that the user enters
+(excluding informational commands such as \cmd{SHOW}) is written to the
+log file.
+}
+
+\cmddef{\cmdverb{END}
+} {
+\cmd{END} ends the equation input and begins the equation evaluation.
+The word ``\cmd{EXIT}'' may be used in place of ``\cmd{END}''.
+}
+
+\cmddef{\cmdverb{QUIT}
+} {
+\cmd{QUIT} ends the equation input and exits the program immediately
+without writing an output database.
+}

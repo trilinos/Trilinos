@@ -116,19 +116,19 @@ namespace Ioss {
     bool end_mode(State current_state);
 
     // Add a new state at this time, return state number
-    virtual int add_state(double time)
+    int add_state(double time)
     {
       IOSS_FUNC_ENTER(m_);
       return add_state_nl(time);
     }
-    virtual int add_state_nl(double time);
+    int add_state_nl(double time);
 
     // Get time corresponding to specified state
 
-    IOSS_NODISCARD virtual double get_state_time(int state = -1) const;
-    IOSS_NODISCARD int            get_current_state() const;
-    double                        begin_state(int state);
-    double                        end_state(int state);
+    IOSS_NODISCARD double get_state_time(int state = -1) const;
+    IOSS_NODISCARD int    get_current_state() const;
+    double                begin_state(int state);
+    double                end_state(int state);
 
     /** \brief Determine whether the metadata defining the model (nontransient,
      *         geometry, and toploloty) has been set.

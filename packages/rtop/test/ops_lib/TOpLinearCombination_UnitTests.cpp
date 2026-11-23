@@ -71,7 +71,15 @@ void basicTestGuts(
 
   if (verbose) {
     for (int k = 0; k < as<int>(v.size()); ++k) {
+      // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
       dumpSubVectorView(v[k], "v"+TU::toString(k), out);
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic pop
+#endif
     }
     dumpSubVectorView(orig_z0, "orig_z0", out);
     dumpSubVectorView(z0, "z0", out);

@@ -144,12 +144,7 @@ void LU2x2DiagonalStrategy::initializeFromParameterList(const Teuchos::Parameter
                                                         const InverseLibrary& invLib) {
   Teko_DEBUG_SCOPE("LU2x2DiagonalStrategy::initializeFromParameterList", 10);
 
-  std::string invStr = "", invA00Str = "", invSStr = "";
-#if defined(Teko_ENABLE_Amesos)
-  invStr = "Amesos";
-#elif defined(Teko_ENABLE_Amesos2)
-  invStr = "Amesos2";
-#endif
+  std::string invStr = "Amesos2", invA00Str = "", invSStr = "";
 
   // "parse" the parameter list
   if (pl.isParameter("Inverse Type")) invStr = pl.get<std::string>("Inverse Type");
@@ -166,16 +161,17 @@ void LU2x2DiagonalStrategy::initializeFromParameterList(const Teuchos::Parameter
   if (invA00Str == "") invA00Str = invStr;
   if (invSStr == "") invSStr = invStr;
 
-  Teko_DEBUG_MSG_BEGIN(5) DEBUG_STREAM << "LU2x2 Diagonal Strategy Parameters: " << std::endl;
-  DEBUG_STREAM << "   inv type   = \"" << invStr << "\"" << std::endl;
-  DEBUG_STREAM << "   inv A00 type = \"" << invA00Str << "\"" << std::endl;
-  DEBUG_STREAM << "   inv S type = \"" << invSStr << "\"" << std::endl;
-  DEBUG_STREAM << "LU2x2 Diagonal Strategy Parameter list: " << std::endl;
-  pl.print(DEBUG_STREAM);
+  Teko_DEBUG_MSG_BEGIN(5)
+    DEBUG_STREAM << "LU2x2 Diagonal Strategy Parameters: " << std::endl;
+    DEBUG_STREAM << "   inv type   = \"" << invStr << "\"" << std::endl;
+    DEBUG_STREAM << "   inv A00 type = \"" << invA00Str << "\"" << std::endl;
+    DEBUG_STREAM << "   inv S type = \"" << invSStr << "\"" << std::endl;
+    DEBUG_STREAM << "LU2x2 Diagonal Strategy Parameter list: " << std::endl;
+    pl.print(DEBUG_STREAM);
   Teko_DEBUG_MSG_END()
 
-      // build velocity inverse factory
-      invFactoryA00_ = invLib.getInverseFactory(invA00Str);
+  // build velocity inverse factory
+  invFactoryA00_ = invLib.getInverseFactory(invA00Str);
 
   if (invA00Str == invSStr)
     invFactoryS_ = invFactoryA00_;

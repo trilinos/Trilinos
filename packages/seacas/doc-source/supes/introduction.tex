@@ -1,0 +1,64 @@
+\chapter{INTRODUCTION}
+The Software Utilities Package for the Engineering
+Sciences (SUPES) is a collection of subprograms which perform frequently
+used non-numerical services for the engineering applications programmer.
+The
+three functional categories of SUPES are:
+
+\begin{enumerate}
+
+\item input command parsing,
+
+\item dynamic memory management, and
+
+\item system dependent utilities.
+
+\end{enumerate}
+
+The subprograms in categories one and two are written in standard
+FORTRAN-77~\cite{ansi}, while the subprograms in category three are
+written in the C programming language.  Thus providing a standardized
+FORTRAN interface to several system dependent features across a
+variety of hardware configurations while using a single set of source
+files.  This feature can be viewed as a maintenance aid from several
+perspectives.  Among these are: there is only one set of source files
+to account for, it allows one to standardize the build procedure, and
+it provides a clearer starting point for any future ports.  In fact, a
+build procedure is now part of the standard SUPES distribution and is
+documented in Chapter~\ref{sec:install}.  Further, the system
+dependent modules set an appropriate template for the porting of SUPES
+to other hardware and/or software configurations.
+
+Applications programmers face many similar user and system interface problems
+during code development.  Because ANSI standard FORTRAN does not address many of
+these problems, each programmer solves these problems for his/her own code.
+SUPES aids the programmer by:
+\begin{enumerate}
+
+\item Providing a library of useful subprograms.
+
+\item Defining a standard interface format for common utilities.
+
+\item Providing a single point for debugging of common utilities.  That
+is, SUPES has to be debugged only once and then is ready for use
+by any code.
+\end{enumerate}
+
+Use of SUPES by the applications programmer can expand a code's capability,
+reduce errors, minimize support effort and reduce development time.  Because
+SUPES was designed to be reliable and supportable, there are some features
+that are not included.
+\begin{enumerate}
+
+\item It is not extremely sophisticated, rather it is
+reliable and maintainable.
+
+\item Except for the extension library (Chapter~\ref{sec:extlib}), it is not system dependent.
+
+\item It does not take advantage of extended
+system capabilities since they may not be available on a wide range of
+operating systems.
+
+\item It is not written to maximize cpu speed.
+
+\end{enumerate}

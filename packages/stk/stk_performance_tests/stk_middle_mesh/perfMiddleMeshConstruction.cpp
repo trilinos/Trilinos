@@ -313,8 +313,8 @@ TEST(MiddleMesh, CreateMiddleMeshMPMD)
     snapOpts.incrementalMeshBoundarySnapOpts.qualityImproverOpts.nlayers=5;
 
     MiddleGridOpts middleMeshOpts;
-    middleMeshOpts.normalProjectionOpts.classifierTolerances = impl::PointClassifierNormalWrapperTolerances(eps);
-    middleMeshOpts.normalProjectionOpts.edgeTracerTolerances = impl::EdgeTracerTolerances(eps);
+    middleMeshOpts.normalProjectionOpts.classifierTolerances = stk::middle_mesh::impl::PointClassifierNormalWrapperTolerances(eps);
+    middleMeshOpts.normalProjectionOpts.edgeTracerTolerances = stk::middle_mesh::impl::EdgeTracerTolerances(eps);
     auto interface = application_interface_factory(ApplicationInterfaceType::Parallel, mesh1, mesh2,
                                                     MPI_COMM_WORLD, nullptr, ParallelSearchOpts(), 
                                                     VolumeSnapOpts(),

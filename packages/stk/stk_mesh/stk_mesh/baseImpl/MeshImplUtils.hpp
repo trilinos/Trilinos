@@ -212,6 +212,8 @@ bool internal_clean_and_verify_parallel_change(
 int check_no_shared_elements_or_higher(const BulkData& mesh);
 int check_for_connected_nodes(const BulkData& mesh);
 bool check_permutations_on_all(const BulkData& mesh);
+uint16_t calc_owned_closure_count(const BulkData& mesh, Entity entity);
+
 bool check_owned_closure_on_shared(const BulkData& mesh);
 void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes);
 

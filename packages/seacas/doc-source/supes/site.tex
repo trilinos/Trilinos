@@ -1,0 +1,69 @@
+\chapter{SITE SUPPLEMENTS} \label{sec:site}
+
+\section{Site Supplement for Unix / Linux Systems}
+
+\subsection{Linking}
+In what follows,
+an example of how the SUPES routines can be linked to an application program
+is given:
+\begin{verbatim}
+% f77 -o your-executable your-source.f -L<library directory path> -lsupes
+\end{verbatim}
+
+\subsection{Defining Unit/File or Symbol/Value for EXNAME}
+A file name is connected to a unit number via an environment
+variable of the form FOR0nn,
+where ``nn'' is a two digit integer indicating the FORTRAN unit number. For
+example, if the user is currently running under the shell program
+\verb+/bin/csh+, the required sequence is:
+\begin{verbatim}
+
+% setenv FOR007 cards.dat
+
+\end{verbatim}
+This causes the following FORTRAN statements to open '\verb+cards.dat+' on unit 7.
+\begin{verbatim}
+
+CALL EXNAME( 7, FILENM, LN )
+IF( LN .EQ. 0 ) THEN             ! EXNAME returns a zero for LN if no ASSIGN
+                                 ! has been performed.  Use the system default.
+  OPEN( 7 )
+ELSE                             ! I've found an ASSIGN'd filename, use it.
+  OPEN( 7, FILE=FILENM )
+ENDIF
+
+\end{verbatim}
+
+From the Bourne Shell,
+\verb+/bin/sh+,
+the following sequence is required:
+\begin{verbatim}
+
+$ export FOR007=cards.dat
+
+\end{verbatim}
+If no file has been assigned,
+a system default file name of the form \verb+fort.nn+, where ``\verb+nn+''
+is a one (if less than
+ten) or two digit integer indicating the FORTRAN unit number that will be written.
+
+Similarly,
+EXNAME looks for an environment variable of the form
+EXTnn.
+So that
+\begin{verbatim}
+
+% setenv EXT05 hello   #csh
+% export EXT05=hello   # bourne shell
+
+\end{verbatim}
+will cause the following call to return NAME=``hello'' and LN=5.
+\begin{verbatim}
+
+CALL EXNAME( -1, NAME, LN )
+\end{verbatim}
+
+\subsection{Interface to EXREAD}
+EXREAD will read from \verb+stdin+ and automatically echo to \verb+stdout+.
+
+\cleardoublepage

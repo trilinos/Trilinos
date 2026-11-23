@@ -32,6 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#ifndef STK_MIDDLE_MESH_MESH_EXCHANGE_BOUNDARY_EDGES_HPP
+#define STK_MIDDLE_MESH_MESH_EXCHANGE_BOUNDARY_EDGES_HPP
+
 #include <unordered_map>
 #include "stk_middle_mesh/mesh.hpp"
 #include "stk_middle_mesh/parallel_exchange.hpp"
@@ -149,3 +152,5 @@ class MeshExchangeBoundaryEdges
 }
 }
 }
+
+#endif // STK_MIDDLE_MESH_MESH_EXCHANGE_BOUNDARY_EDGES_HPP

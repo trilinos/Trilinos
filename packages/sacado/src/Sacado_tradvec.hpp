@@ -435,6 +435,7 @@ ConstADvari: public ADvari<Double> {
 	typedef Derp<Double> DErp;
 	static CADcontext<Double> cadc;
 	inline void *operator new(size_t len) { return ConstADvari::cadc.Memalloc(len); }
+        inline void operator delete(void*) {} /*Should never be called.*/
 	inline ConstADvari(Double t): ADVari(t) { prevcad = lastcad; lastcad = this; }
 	static void aval_reset(void);
 	};

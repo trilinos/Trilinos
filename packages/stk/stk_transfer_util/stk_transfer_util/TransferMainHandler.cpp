@@ -37,6 +37,11 @@
 #include "stk_transfer_util/LogMessage.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
 namespace stk {
 namespace transfer_util {
 
@@ -130,17 +135,47 @@ void TransferMainHandler::print_no_op_message() const
   stk::outputP0() << "Aborting transfer! Input and output mesh names are the same" << std::endl;
 }
 
+namespace {
+
+void require_unique_recv_fields(const std::vector<std::unique_ptr<TransferMainBroker>>& brokers)
+{
+  std::map<std::string, unsigned> recvFieldToTransferIndex;
+  for (unsigned i = 0; i < brokers.size(); ++i) {
+    for (const std::string& recvFieldName : brokers[i]->get_recv_fields_for_transfer()) {
+      auto [iter, inserted] = recvFieldToTransferIndex.emplace(recvFieldName, i);
+      STK_ThrowRequireMsg(inserted, "Recv field " + recvFieldName + " is the target of more than one field group "
+                                    "(groups " + std::to_string(iter->second + 1) + " and " + std::to_string(i + 1) + ").");
+    }
+  }
+}
+
+}
+
 void TransferMainHandler::transfer()
 {
   TransferMainIO io(m_comm, m_settings.get_sendMesh_filename(), m_settings.get_recvMesh_filename());
   io.load_meshes();
 
-  TransferMainBroker broker(m_comm, io.get_sendBulkData(), io.get_recvBulkData(), m_settings, m_masterElementProvider);
-  
-  broker.check_parts();
-  broker.check_and_create_fields();
- 
-  broker.transfer_initialize();
+  // One broker (and therefore one SimpleTransfer) per field group, since each group can
+  // have a different transfer type, receive type, etc. The brokers hold references to
+  // their settings, so 'transferSettings' must outlive them and not be resized.
+  const std::vector<TransferMainSettings> transferSettings = m_settings.get_settings_for_each_transfer();
+  std::vector<std::unique_ptr<TransferMainBroker>> brokers;
+
+  // All recv fields must be created before any transfer is initialized and before the
+  // output mesh is set up.
+  for (const TransferMainSettings& settings : transferSettings) {
+    brokers.push_back(std::make_unique<TransferMainBroker>(m_comm, io.get_sendBulkData(), io.get_recvBulkData(),
+                                                            settings, m_masterElementProvider));
+    brokers.back()->check_parts();
+    brokers.back()->check_and_create_fields();
+  }
+
+  require_unique_recv_fields(brokers);
+
+  for (auto& broker : brokers) {
+    broker->transfer_initialize();
+  }
 
   const std::vector<double> sendTimeSteps = io.get_send_time_steps();
   const std::vector<double> recvTimeSteps = io.get_recv_time_steps();
@@ -163,7 +198,9 @@ void TransferMainHandler::transfer()
       io.load_recv_fields_at_time(time);
     }
 
-    broker.transfer_apply();
+    for (auto& broker : brokers) {
+      broker->transfer_apply();
+    }
 
     io.write_transfer_output(step, time);
   }
@@ -195,19 +232,27 @@ void TransferMainHandler::print_running_message() const
   stk::transfer_util::log_message(m_comm, "Send-mesh: "+ m_settings.get_sendMesh_filename());
   stk::transfer_util::log_message(m_comm, "Recv-mesh: "+ m_settings.get_recvMesh_filename());
   stk::transfer_util::log_message(m_comm, "Output-mesh: "+ m_settings.get_outputMesh_filename());
-  stk::transfer_util::log_message(m_comm, "Transfer type: "+ m_settings.get_transfer_type());
-  stk::transfer_util::log_message(m_comm, "Receive type: "+ m_settings.get_recv_type_string());
-  stk::transfer_util::log_message(m_comm, "Fields being transferred: "
-                                          + (m_settings.get_transfer_fields().size() == 0 ? "all fields" : 
-                                             m_settings.get_field_list_string()));
-  stk::transfer_util::log_message(m_comm, "Send parts for transfer: "
-                                          + (m_settings.get_transfer_send_parts().size() == 0 ? "all send parts" : 
-                                             m_settings.get_send_part_list_string()));
-  stk::transfer_util::log_message(m_comm, "Recv parts for transfer: "
-                                          + (m_settings.get_transfer_recv_parts().size() == 0 ? "all recv parts" : 
-                                             m_settings.get_recv_part_list_string()));
+  const std::vector<TransferMainSettings> transferSettings = m_settings.get_settings_for_each_transfer();
+  for (unsigned i = 0; i < transferSettings.size(); ++i) {
+    const TransferMainSettings& settings = transferSettings[i];
+    const std::string indent = m_settings.has_field_groups() ? "  " : "";
+    if (m_settings.has_field_groups()) {
+      stk::transfer_util::log_message(m_comm, "Field group " + std::to_string(i + 1) + ":");
+    }
+    stk::transfer_util::log_message(m_comm, indent + "Transfer type: "+ settings.get_transfer_type());
+    stk::transfer_util::log_message(m_comm, indent + "Receive type: "+ settings.get_recv_type_string());
+    stk::transfer_util::log_message(m_comm, indent + "Fields being transferred: "
+                                            + (settings.get_transfer_fields().size() == 0 ? "all fields" :
+                                               settings.get_field_list_string()));
+    stk::transfer_util::log_message(m_comm, indent + "Send parts for transfer: "
+                                            + (settings.get_transfer_send_parts().size() == 0 ? "all send parts" :
+                                               settings.get_send_part_list_string()));
+    stk::transfer_util::log_message(m_comm, indent + "Recv parts for transfer: "
+                                            + (settings.get_transfer_recv_parts().size() == 0 ? "all recv parts" :
+                                               settings.get_recv_part_list_string()));
+    stk::transfer_util::log_message(m_comm, indent + "Extrapolate option: "+ settings.get_extrapolate_option_string());
+  }
   stk::transfer_util::log_message(m_comm, "Time-steps: "+ m_settings.get_time_steps_spec());
-  stk::transfer_util::log_message(m_comm, "Extrapolate option: "+ m_settings.get_extrapolate_option_string());
   stk::transfer_util::log_message(m_comm, "MasterElements implementation: "+ m_settings.get_master_elements_name());
 }
 

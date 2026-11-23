@@ -1,0 +1,783 @@
+\input{titlepage.tex}
+\section{GEN3D}
+GEN3D transforms a 2D finite element geometry database into a 3D database.
+
+SPONSOR:  Gregory D. Sjaardema, 1543, gdsjaar\@sandia.gov
+
+KEYWORDS: preprocessor, mesh\_generation
+\subsection{Documentation  }
+``GEN3D - A GENESIS Database 2D to 3D Transformation Program''
+Amy P. Gilkey and Gregory D. Sjaardema, SAND89-0485,
+March 1989.
+
+``Updates to the mesh generation program GEN3D,''
+Gregory D. Sjaardema, 1521, dated April 11, 1990.
+
+\subsection{Unix}
+\begin{verbatim}
+     gen3d [-help] [-options option] exo_in exo_out
+ Options:
+     -executable=exe  Specifies alternate executable
+     -help            Prints short usage summary
+     -MANUAL          Prints extended usage summary
+     -VMS             Reads/Writes files in VMS format (Unicos only)
+\end{verbatim}
+\begin{verbatim}
+ Path:
+     The standard location for gen3d on Unix systems is:
+        /usr/local/eng_sci/struct/etc/gen3d
+     See the entry 'seacas usage' for an up-to-date list of SEACAS
+     locations for all supported systems.
+\end{verbatim}
+\subsection{VMS}
+To execute GEN3D on VMS, type:
+
+\begin{verbatim}
+     GEN3D 2d_database 3d_database [input_file]
+\end{verbatim}
+
+``2d\_database'' is the filename of the input  2D GENESIS database.
+``3d\_database'' is the filename of the output 3D GENESIS database.
+``input\_file''  is the optional input file containing commands.
+
+Commands are read from the terminal keyboard if ``input\_file''
+is not specified.
+\subsection{Commands}
+Mesh Transformation
+\begin{verbatim}
+   TRANSLATE  ROTATE     WARP_P     WARP_A     SPLINE    PROJECT
+   SPLINE     PROJECT    TWIST      INTERVAL   SCALE     CHANGE
+\end{verbatim}
+
+Mesh Orientation
+\begin{verbatim}
+   REVOLVE    REVCEN     OFFSET     MIRROR     ZERO      SHIFT
+\end{verbatim}
+
+Element Block Types
+\begin{verbatim}
+   BLOCK      TUNNEL     CENTER     NSETS      SSETS     CHANGE
+\end{verbatim}
+
+Information and Processing
+\begin{verbatim}
+   SHOW       LIST       HELP       END        QUIT
+\end{verbatim}
+
+Undocumented and experimental
+\begin{verbatim}
+   TRANSPLINE
+\end{verbatim}
+\subsubsection{TRANSLATE}
+\begin{verbatim}
+ TRANSLATE {ntran} <1>, {tottran} <1.0>, {grad} <1.0>, ...
+\end{verbatim}
+
+TRANSLATE causes the 2D mesh to be translated to create the 3D mesh.
+The number of levels is \{ntran\}, which is also the number of 3D elements
+derived from each input 2D element.  The total range of the Z coordinate
+is \{tottran\} with a gradient of \{grad\}.  The translation is always in
+the negative Z direction.  This command supersedes previous
+transformation commands.
+The gradient affects the spacing of the levels.  The displacement or
+thickness of level i is zi where:
+\begin{verbatim}
+         z1 = tottran X grad - 1)/(grad^{ntran} - 1)  if grad ne 1;
+              tottran / ntran                         if grad = 1
+         zi = z1 X grad^{i-1}
+\end{verbatim}
+Multiple translation increments can be specified with a single translate
+command by repeating the \{ntran\}, \{tottran\}, and \{grad\} parameters on
+the command line.  For example, the following command specifies two
+translation increments of thickness 1.0 for a total translation of 2.0:
+
+\begin{verbatim}
+        TRANSLATE 5 1.0 0.5, 5 1.0 2.0
+\end{verbatim}
+
+All increments must be specified with a single TRANSLATE command.
+\subsubsection{ROTATE}
+\begin{verbatim}
+ ROTATE {nrot} <1>, {totdeg} <360.0>, {grad} <1.0>, {cenrot} <0.0>
+\end{verbatim}
+
+ROTATE causes the 2D mesh to be rotated to create the 3D mesh.  The
+number of rotation levels is \{nrot\}, which is also the number of 3D
+elements derived from each input 2D element (with the exception of those
+affected by the CENTER command).  The mesh is rotated a total of \{nrot\}
+rotations through a total arc of \{totdeg\} degrees.  The angle of each
+rotation is equal to \{grad\} times the previous rotation.  The center of
+rotation \{cenrot\} and the gradient \{grad\} are only meaningful if no
+center element blocks are defined (see the CENTER command).
+\paragraph{Gradient}
+The gradient affects the rotation of the levels.  The angular rotation
+of level i is thetai where:
+\begin{verbatim}
+         theta1 = totdeg X (grad - 1)/(grad^{nrot} - 1)  if grad ne 1;
+                  totdeg / nrot                          if grad = 1
+         thetai = theta1 X grad^{i-1}
+\end{verbatim}
+Rotation is always counterclockwise.  This command supersedes previous
+transformation commands.
+\subsubsection{WARP\_P}
+\begin{verbatim}
+ WARP POINT {ntran} <1>, {tottran} <1.0>, {grad} <1.0>, {radius} <no
+     default>, {edge_type} <RADIAL>
+\end{verbatim}
+
+WARP POINT causes the 2D mesh to be mapped onto a spherical surface to
+create the 3D mesh.  The spherical surface has a radius of curvature
+equal to \{radius\}.  The center of curvature is located on the z-axis,
+and it is a distance of \{radius\} above the X-Y plane.  The number of
+levels is \{ntran\}, which is also the number of 3D elements derived from
+each input 2D element.  The total thickness (measured radially) is
+\{tottran\} with a gradient of \{grad\}.  Note that \{radius\} must be greater
+than the maximum distance from the z-axis to the boundary of the 2D
+mesh.  This command supersedes previous transformation commands.
+The \{edge\_type\}, which can be either VERTICAL or RADIAL, determines how
+the created nodes are generated.  If VERTICAL is selected, the x and y
+coordinates of the generated nodes are equal to the x and y coordinates
+of the original 2D node.  If RADIAL is selected, the x and y coordinates
+of the generated nodes are calculated to lie on a line from the center
+of curvature (0.0, 0.0, \{radius\}) to the coordinates of the warped node
+(xw, yw, zw) where xw and yw are the coordinates of the original 2D
+node, and zw is determined such that the distance from the warped node
+to the center of curvature is equal to \{radius\}.  Figure 2.1 in manual
+illustrates the VERTICAL edge type, and Figure 2.2 in manual illustrates
+the RADIAL edge type.
+
+The mesh transformation is performed in two parts.  First, the warped
+nodal positions (xw, yw, zw) are calculated by mapping the original 2D
+mesh onto a spherical surface with a radius of curvature equal to
+\{radius\}.  The original x and y coordinates of the 2D mesh remain at the
+same values; the z coordinate is calculated such that the distance to
+the center of curvature is equal to \{radius\}.
+\begin{verbatim}
+         xw = x0
+         yw = y0
+         zw = radius - (radius^2 - x0^2 - y0^2)^{1/2}
+\end{verbatim}
+The warped nodal positions are projections parallel to the z-axis onto a
+spherical surface of radius \{radius\}; Figure 2.1 in manual illustrates
+this process. Then, the generated nodal positions are determined by
+translating either vertically or radially from the warped nodal
+position.  A total of \{ntran\} translations are performed through a
+distance of \{tottran\} with a gradient of \{grad\}.  Note that the
+thickness is measured radially for either \{edge\_type\}.
+
+The gradient affects the spacing of the levels.  The thickness or length
+of level i is zi where:
+\begin{verbatim}
+         z1 = tottran X grad - 1)/(grad^{ntran} - 1)  if grad ne 1;
+              tottran / ntran                         if grad = 1
+         zi = z1 X grad^{i-1}
+\end{verbatim}
+\subsubsection{WARP\_A}
+\begin{verbatim}
+ WARP {axis} <no default>, {ntran} <1>, {tottran} <1.0>, {grad} <1.0>,
+     {radius} <no default>, {edge_type} <RADIAL>
+\end{verbatim}
+
+This second form of the WARP command maps the 2D mesh to a cylindrical
+surface centered on the \{axis\}-axis to create the 3D mesh.  The \{axis\}
+parameter must be either X or Y.  The cylindrical surface has a radius
+of curvature equal to \{radius\}.  The center of curvature is located a
+distance of \{radius\} above the X-Y plane.  The number of levels is
+\{ntran\}, which is also the number of 3D elements derived from each input
+2D element.  The total thickness (measured radially) is \{tottran\} with a
+gradient of \{grad\}.  This command supersedes previous transformation
+commands.
+The \{edge\_type\}, which can be either VERTICAL or RADIAL, determines how
+the created nodes are generated.  If VERTICAL is selected, the x and y
+coordinates of the generated nodes are equal to the x and y coordinates
+of the projected 2D node.  If RADIAL is selected, the x and y
+coordinates of the generated nodes are calculated to lie on a line from
+the center of curvature to the coordinates of the warped node (xw, yw,
+zw) where xw, yw, and zw are the coordinates of the mapped 2D node.
+
+The mesh transformation is performed in two parts.  First, the warped
+nodal positions (xw, yw, zw) are calculated by mapping the original 2D
+mesh onto a cylinder about the \{axis\}-axis with a radius of curvature
+equal to \{radius\}.  If \{axis\} is X, then the original X-coordinate
+remains at the same value.  The generated Y and z coordinates are
+calculated such that the distance from the generated node to the X-Z
+plane measured along the cylindrical surface is equal to the X
+coordinate of the node in the 2D mesh.  This is illustrated in Figure
+2.2 in manual.  If \{axis\} is Y, the X's and Y's are switched in the
+above discussion.  Then, the generated nodal positions are determined by
+translating either vertically or radially from the warped nodal
+position.  A total of \{ntran\} translations are performed through a
+distance of \{tottran\} with a gradient of \{grad\}.  Note that the distance
+is measured radially for either \{edge\_type\}.
+
+The gradient affects the spacing of the levels.  The thickness or length
+of level i is zi where:
+\begin{verbatim}
+         z1 = tottran X grad - 1)/(grad^{ntran} - 1)  if grad ne 1;
+              tottran / ntran                         if grad = 1
+         zi = z1 X grad^{i-1}
+\end{verbatim}
+
+The resulting 3D mesh will have an cylindrical angle of (x\{max\}/radius)
+radians if warped about the Y axis, or (y\{max\}/radius) radians if warped
+about the X axis, where x\{max\} and y\{max\} are the maximum X and Y
+coordinates in the 2D mesh.
+\subsubsection{SPLINE}
+\begin{verbatim}
+ SPLINE {ntran} <1>, {tottran} <1.0>, {grad}  <1.0>,  ...
+\end{verbatim}
+
+where \{ntran\} is the number of levels, \{tottran\} is the total
+transformation distance (thickness), and \{grad\} is the gradient which
+affects the spacing of the levels (see page 21 in Reference GEN3D
+for an explanation of the gradient).  Multiple transformation increments
+can be specified with a single SPLINE command by repeating the \{ntran\},
+\{tottran\}, \{grad\} parameters on a single line.  Note that the actual
+thickness of the generated mesh is determined by the input front and
+back spline surfaces; therefore, the distances entered as \{tottran\} are
+the proportional distance of the segments.  For example, if the
+following command was entered:
+
+\begin{verbatim}
+        SPLINE 2 1.0 0.5   4 2.0 1.0   2 1.0 2.0
+\end{verbatim}
+
+then, segments 1 and 3 would each be 25\% of the total thickness, and
+segment 2 would be 50\% of the total thickness.
+
+Following the SPLINE command line, GEN3D enters the spline input mode in
+which the various spline options described below can be entered.
+\paragraph{LINEAR}
+\begin{verbatim}
+ LINEAR
+\end{verbatim}
+
+the spline data are input as Radius-Z data pairs, and the slopes at the
+end of the curves are linear slopes.
+\paragraph{ANGULAR}
+\begin{verbatim}
+ ANGULAR
+\end{verbatim}
+
+the spline data are input as Theta(degrees)-Distance data pairs, where
+Theta is the angle of the line between the origin (X = Y = Z = 0) and
+the defined point and the Distance is the length of this curve.  The
+slopes at the end of the curves are relative to this curve.
+\paragraph{ANGULAR}
+\begin{verbatim}
+ FRONT !  FRONT
+\end{verbatim}
+
+the curve data and slope specifications up to the next BACK, END, or
+EXIT command will  the FRONT spline.  The front surface Z
+values are greater (more positive) than the back surface Z values.
+\paragraph{BACK}
+\begin{verbatim}
+ BACK
+\end{verbatim}
+
+the curve data and slope specifications up to the next FRONT, END, or
+EXIT command will  the BACK spline.  The front surface Z
+values are greater (more positive) than the back surface Z values.
+\paragraph{LEFT}
+\begin{verbatim}
+ LEFT {slope}
+\end{verbatim}
+
+the parameter \{slope\} specifies the slope of the spline curve at the
+LEFT end of the curve.  The slope is measured in the same units
+specified in the ANGULAR or LINEAR command.  If the slope is not
+specified, the end conditions of the curve will be set such that the
+second derivative is equal to zero which is the so-called natural
+cubic spline.
+\paragraph{RIGHT}
+\begin{verbatim}
+ RIGHT {slope}
+\end{verbatim}
+
+the parameter \{slope\} specifies the slope of the spline curve at the
+RIGHT end of the curve.  The slope is measured in the same units
+specified in the ANGULAR or LINEAR command.  If the slope is not
+specified, the end conditions of the curve will be set such that the
+second derivative is equal to zero which is the so-called em natural
+cubic spline.
+\paragraph{EXIT}
+\begin{verbatim}
+ EXIT or END
+\end{verbatim}
+
+terminate spline input mode and return to general GEN3D command
+processing.
+\paragraph{See Also}
+\begin{verbatim}
+ Memo:  "Updates to the mesh generation program GEN3D,"
+        Gregory D. Sjaardema, 1521, dated April 11, 1990.
+        See the author for copies.
+\end{verbatim}
+\subsubsection{PROJECT}
+\begin{verbatim}
+ PROJECT {ntran} <1>, {tottran} <1.0>, {grad}  <1.0>, ...
+\end{verbatim}
+
+where \{ntran\} is the number of levels, \{tottran\} is the total
+transformation distance (thickness), and \{grad\} is the gradient which
+affects the spacing of the levels (see page 21 in Reference GEN3D
+for an explanation of the gradient).  Multiple transformation increments
+can be specified with a single PROJECT command by repeating the \{ntran\},
+\{tottran\}, \{grad\} parameters on a single line.
+\paragraph{NORMAL}
+\begin{verbatim}
+ NORMAL {x_normal} <0.0>, {y_normal} <0.0>, {z_normal} <0.0>
+ PLANE  {x_normal} <0.0>, {y_normal} <0.0>, {z_normal} <0.0>
+\end{verbatim}
+
+NORMAL or PLANE  the normal vector to the back surface.  The
+\{x\_normal\}, \{y\_normal\}, and \{z\_normal\} parameters are vector components
+of the normal vector.  The front surface will be projected onto the
+plane with the specified normal vector.  Because of the way GEN3D
+generates the ddd mesh, the \{z\_normal\} component of the vector must be
+negative; if a positive value of \{z\_normal\} is entered, all of the
+components will be multiplied by negative one.footnoteThe test version
+of GEN3D did not do this reversal correctly; instead it always made
+\{z\_normal\} negative which made it confusing to determine the surface
+orientation.  This bug has been fixed; however, old input files will now
+give an incorrect orientation.  To use your old input files, either
+correct the normal vector, or put the keyword DOOLDWAY after the
+\{z\_normal\} component.
+
+NORMAL or PLANE supersede previous WARP commands.
+\paragraph{WARP}
+\begin{verbatim}
+ WARP {distance} {CONVEX|CONCAVE}
+\end{verbatim}
+
+WARP projects the front surface (original dd mesh) onto a spherical
+surface with a radius of \{distance\}.  If CONVEX is specified, the
+generated mesh will have a spherical or bulbous surface; if CONCAVE is
+specified, the generated mesh will have a dimpled surface.  The distance
+\{tottran\} specified in the PROJECT command is measured to the center of
+the spherical surface.
+
+WARP supersedes previous NORMAL or PLANE commands.  Note that the SPLINE
+transformation can be used if a non-spherical surface is required.
+\paragraph{SCALE}
+\begin{verbatim}
+ SCALE {x_scale} <1.0>, {y_scale} <1.0>
+\end{verbatim}
+
+SCALE multiplies the X and Y coordinates of the projected
+surface by the respective scale factors.  See the SCLCEN command for the
+equations used to transform the coordinates.
+\paragraph{SCLCEN}
+\begin{verbatim}
+ SCLCEN {x_cen} <0.0>, {y_cen} <0.0>
+\end{verbatim}
+
+SCLCEN specifies the origin of the coordinate system for scaling.  This
+is best illustrated by examining the equations used in the
+transformation:
+
+\begin{verbatim}
+       x_new = (x_old - x_cen) X x_scale + x_cen
+       y_new = (y_old - y_cen) X y_scale + y_cen
+\end{verbatim}
+
+\paragraph{OFFSET}
+\begin{verbatim}
+ OFFSET {x_offset} <0.0>, {y_offset} <0.0>
+\end{verbatim}
+
+OFFSET offsets the nodal coordinates of the projected surface by the
+specified \{x\_offset\} and \{y\_offset\} which shifts the back surface with
+respect to the front surface.  The offsets are performed after the
+surface has been projected onto the plane or spherical surface.
+\paragraph{RESET}
+\begin{verbatim}
+ RESET
+\end{verbatim}
+
+RESET resets all parameters to their default values.
+\paragraph{EXIT}
+\begin{verbatim}
+ EXIT or END
+\end{verbatim}
+
+EXIT or END terminates the PROJECT input mode and returns to normal GEN3D
+command processing.
+\paragraph{See Also}
+\begin{verbatim}
+ Memo:  "Updates to the mesh generation program GEN3D,"
+        Gregory D. Sjaardema, 1521, dated April 11, 1990.
+        See the author for copies.
+\end{verbatim}
+\subsubsection{TWIST}
+\begin{verbatim}
+ TWIST  {twangl} <0.0>, {twxcen} <0.0>, {twycen} <0.0>, {TRANSLATE},
+        {ntran} <1>, {tottran} <1.0>, {grad} <1.0>,  ...
+\end{verbatim}
+
+\begin{verbatim}
+ TWIST  {twangl} <0.0>, {twxcen} <0.0>, {twycen} <0.0>, {Rotate},
+        {cenrot} <0.0>, {ntran} <1>, {tottran} <1.0>, {grad}  <1.0>,  ...
+\end{verbatim}
+
+where \{twangl\} is the rotational offset in degrees of the front surface
+with respect to the back surface, \{twxcen\} and \{twxcen\} specify the
+center of the twist rotation, \{ntran\} is the number of levels, \{tottran\}
+is the total transformation distance (distance for the TRANSLATE option,
+or degrees for the ROTATE option), and \{grad\} is the gradient which
+affects the spacing of the levels (see page 21 in Reference GEN3D
+for an explanation of the gradient).  Multiple transformation increments
+can be specified by repeating the \{ntran\}, \{tottran\}, \{grad\} parameters
+on a single line.
+
+The twist angle per level is determined by dividing \{twangl\} by the
+total number of translation increments \{ntran\}, not by the total
+translation/rotation distance \{tottran\}.  Note that this means that the
+incremental twist per level depends on the gradient.
+\subsubsection{INTERVAL}
+\begin{verbatim}
+ INTERVAL {ntran} <1>, {tottran} <1.0>, {grad}  <1.0>, ...
+\end{verbatim}
+
+where \{ntran\} is the number of levels, \{tottran\} is the total
+transformation distance in units applicable to the currently active
+transformation option, and \{grad\} is the gradient which affects the
+spacing of the levels (see page 21 in Reference GEN3D for an
+explanation of the gradient).  Multiple transformation increments can be
+specified with a single INTERVAL command by repeating the \{ntran\},
+\{tottran\}, \{grad\} parameters on a single line.
+\subsubsection{SCALE}
+\begin{verbatim}
+ SCALE {axis_1}, {scale_1}, {...}
+ SCALE ALL {scale}
+ SCALE RESET
+\end{verbatim}
+
+where \{axis\_i\} is either X, Y, or Z; and \{scale\_i\} is the factor by
+which the specified axis coordinates are multiplied.  If ALL is
+specified, all three coordinates are multiplied by \{scale\}.  Scaling can
+be reset by the command SCALE RESET.
+\subsubsection{CHANGE}
+\begin{verbatim}
+ CHANGE {Material|Nodeset|Sideset} {old_id} {new_id}
+\end{verbatim}
+
+where \{old\_id\} is an existing ID in the original mesh, and \{new\_id\} is
+an ID that does not exist in the original mesh.  Note that you cannot
+combine IDs using this command; the ID \{new\_id\} must not exist in the
+original mesh, and it must not match an ID created using the
+NODESET$|$SIDESET FRONT$|$BACK commands or the TUNNEL commands.
+
+\subsubsection{REVOLVE}
+\begin{verbatim}
+ REVOLVE {axis_{1}}, {ndeg_{1}}, {axis_{2}}, {ndeg_{2}}, ... <last
+      selection> REVOLVE RESET <initial condition>
+\end{verbatim}
+
+REVOLVE causes the transformed 3D mesh to be rotated.  Each (\{axis\},
+\{ndeg\}) parameter pair specifies an axis (X or Y or Z) and the number of
+degrees to rotate.  The axis refers to the ``viewing'' axis, not to the
+object axis.  The rotations are according to right-hand rule.  The
+center of the rotation is specified by the REVCEN command.
+
+Revolutions are cumulative; however, only one center of revolution may
+be specified.  The REVOLVE RESET command resets to no rotation.
+\subsubsection{REVCEN}
+\begin{verbatim}
+ REVCEN {xcen} <2D minimum X coordinate>, {ycen} <2D minimum Y
+      coordinate>, {zcen} <0.0>
+\end{verbatim}
+
+REVCEN sets the center of revolution for the REVOLVE command to the
+point (\{xcen\},\{ycen\},\{zcen\}).
+\subsubsection{SHIFT}
+\begin{verbatim}
+ SHIFT [ADD] {axis_{1}}, {offset_{1}}, {axis_{2}}, {offset_{2}}, ...
+ SHIFT ALL {offset} <0.0>
+ SHIFT RESET <initial condition>
+ SHIFT {xoff} <0.0>, {yoff} <0.0>, {zoff} <0.0>
+\end{verbatim}
+
+(NOTE: SHIFT is a synonym for OFFSET)
+SHIFT specifies offsets to be added to the coordinates.  If a REVOLVE
+command has been issued, the mesh is rotated before it is offset.  The
+last form of the offset command is included to maintain compatibility
+with the offset command in GEN3D.
+
+SHIFT ALL offsets all of the coordinates by the specified offset, and
+SHIFT RESET resets the offsets to zero.
+
+Offsets are not cumulative unless ADD is specified, that is,
+if SHIFT X 0.5 X 1.0 is entered, the X coordinates will be offset by 1.0.
+if SHIFT ADD X 0.5 X 1.0 is entered, the X coordinates will be offset by 1.5.
+\subsubsection{OFFSET}
+\begin{verbatim}
+ OFFSET [ADD] {axis_{1}}, {offset_{1}}, {axis_{2}}, {offset_{2}}, ...
+ OFFSET ALL {offset} <0.0>
+ OFFSET RESET <initial condition>
+ OFFSET {xoff} <0.0>, {yoff} <0.0>, {zoff} <0.0>
+\end{verbatim}
+
+(NOTE: OFFSET is a synonym for SHIFT)
+OFFSET specifies offsets to be added to the coordinates.  If a REVOLVE
+command has been issued, the mesh is rotated before it is offset.  The
+last form of the offset command is included to maintain compatibility
+with the offset command in GEN3D.
+
+OFFSET ALL offsets all of the coordinates by the specified offset, and
+OFFSET RESET resets the offsets to zero.
+
+Offsets are not cumulative unless ADD is specified, that is,
+if OFFSET X 0.5 X 1.0 is entered, the X coordinates will be offset by 1.0.
+if OFFSET ADD X 0.5 X 1.0 is entered, the X coordinates will be offset by 1.5.
+\subsubsection{MIRROR}
+\begin{verbatim}
+ MIRROR {axis_{1}}, {axis_{2}}, ... <no default>
+ MIRROR RESET <no reflections>
+\end{verbatim}
+
+MIRROR causes the transformed 3D mesh to be reflected about a coordinate
+plane.  Each \{axis\} parameter specifies an axis (X or Y or Z) which is
+the normal to the reflection plane.  Reflections are performed after the
+mesh has been repositioned by the REVOLVE and OFFSET commands.
+
+The MIRROR RESET command resets to no reflection.
+
+Reflections are not cumulative, that is, if MIRROR X Y X is entered,
+only one reflection about the X axis will be performed.  If an odd
+number of reflections are performed, the element connectivity and the
+sideset face numberings will be correctly reordered.
+\subsubsection{ZERO}
+\begin{verbatim}
+ ZERO {axis_1}, {min_1}, {axis_2}, {min_2}, ...
+ ZERO RESET <no automatic zeroing>
+\end{verbatim}
+
+ZERO sets all \{axis\_i\} coordinates with an absolute value less than
+\{min\_i\} equal to zero.  The ZERO RESET command resets to no automatic
+zeroing.  This command is used to zero nodal coordinates that should be
+equal to zero, but due to roundoff errors they have slightly nonzero
+values.
+\subsubsection{BLOCK}
+\begin{verbatim}
+ BLOCK {block_id_{1}}, {block_id_{2}}, ... <all element blocks>
+\end{verbatim}
+
+BLOCK defines the specified element blocks as normal blocks.  This
+command supersedes any previous TUNNEL or CENTER commands.
+\subsubsection{TUNNEL}
+\begin{verbatim}
+ TUNNEL {block_id} <no default>, {start} <1>, {end} <number of levels>,
+      {inc} <1>
+\end{verbatim}
+
+TUNNEL defines the specified element block as a tunnel block.  A
+TRANSLATE command must be in effect before this command is issued.  If a
+ROTATE command is issued, all tunnel blocks are changed to normal
+blocks.
+For each tunnel block, a separate 3D element block is created starting
+at level \{start\}, with each block having \{inc\} levels.  Any levels after
+level \{end\} are put in a single block.
+
+For example, the commands
+
+\begin{verbatim}
+        TRANSLATE 15, 15.0
+        TUNNEL 999, 5, 9, 2
+\end{verbatim}
+
+create five blocks consisting of the following 3D elements (derived from
+the 2D elements of element block 999):
+
+\begin{verbatim}
+        1) the elements in levels 1, 2, 3, and 4,
+        2) the elements in levels 5 and 6,
+        3) the elements in levels 7 and 8,
+        4) the elements in level 9,
+        5) the elements in levels 10, 11, 12, 13, 14, and 15.
+\end{verbatim}
+
+
+The block identifier of the first block is always \{block\_id\}.  The new
+blocks are assigned consecutive identifiers greater than the maximum
+existing (and new) identifier.
+\subsubsection{CENTER}
+\begin{verbatim}
+ CENTER {block_id_{1}}, {block_id_{2}}, ... <all element blocks>
+\end{verbatim}
+
+CENTER defines the specified element blocks as center blocks.  A ROTATE
+command must be in effect before this command is issued.  The mesh must
+be rotated a complete quadrant (90, 180, 270 or 360 degrees) and the
+number of rotation levels must be a multiple of 2 for each 90 degrees of
+rotation.  If em nrot is the number of rotations, there must be at least
+em nrot/2 elements along the X axis in the center block.  If a TRANSLATE
+command is issued, all center blocks are changed to normal blocks.  If
+center blocks are defined, the center of rotation defined by the ROTATE
+command is ignored.  The center of rotation is the minimum coordinate of
+all elements in the center blocks.
+\subsubsection{NSETS}
+\begin{verbatim}
+ NSETS FRONT or BACK <no default>, {set_id_{1}}, {set_id_{2}}, ...
+      <no default>
+\end{verbatim}
+
+NSETS defines front or back node sets with the given identifiers.  The
+identifiers must be unique from existing node set identifiers and
+previously defined front and back node set identifiers.
+
+Back sets cannot be defined on a 360-degree rotation.
+\subsubsection{SSETS}
+\begin{verbatim}
+ SSETS FRONT or BACK <no default>, {set_id_{1}}, {set_id_{2}}, ...
+      <no default>
+\end{verbatim}
+
+SSETS is equivalent to the NSETS command except that it defines side
+sets.
+\subsubsection{SHOW}
+\begin{verbatim}
+ SHOW {command} <no parameter>
+\end{verbatim}
+
+SHOW displays the settings of parameters relevant to the \{command\}.  For
+example, the command SHOW BLOCK displays information about all the
+element blocks.
+\subsubsection{LIST}
+\begin{verbatim}
+ LIST VARS
+\end{verbatim}
+
+LIST VARS displays a summary of the input database.  The summary
+includes the database title; the number of nodes, elements, and element
+blocks; and the number of node sets and side sets.
+\subsubsection{HELP}
+\begin{verbatim}
+ HELP {command} <no parameter>
+\end{verbatim}
+
+HELP displays information about the program command given as the
+parameter.  If no parameter is given, all the command verbs are
+displayed.  This command is system-dependent and may not be available on
+some systems.
+\subsubsection{END}
+\begin{verbatim}
+ END
+\end{verbatim}
+
+END ends the command input and starts the database transformation.
+\subsubsection{QUIT}
+QUIT ends the command input and exits the program immediately without
+writing an output database.
+\subsection{Problems/Bugs}
+\begin{verbatim}
+ CENTER BLOCKS -- Incorrect mesh will be generated if center blocks are
+       not contiguous (ie. contain slidelines).  Problem will appear
+       at junction of pieces connected by slideline.  The nodes on the
+        of the  piece will not be generated correctly.
+\end{verbatim}
+
+\begin{verbatim}
+       FIX: Generate each piece separately and join together with GJOIN
+       Problem involves changing several routines and has only been
+       reported once in two years.  Sorry, Greg Sjaardema
+\end{verbatim}
+\subsection{ChangeLog}
+\begin{verbatim}
+      DATA (QAINFO(I), I=1,3) /
+     * 'GEN3D   ',
+     * '07/16/90',
+     * 'X1.02.03' /
+ C Version : Date      Time      Modifier
+ C -------   ----      ----      --------
+ C X1.01.05: --/--/--  --:--:--  GREG SJAARDEMA1
+ C        : Fixed orientation of NORMAL vector in GETPRO.  Added option
+ C         : DOOLDWAY to maintain compatibility with previous bug version.
+ C X1.01.05: --/--/--  --:--:--  GREG SJAARDEMA1
+ C         : Initial compilation of TRANSLATE SPLINE routine
+ C X1.01.06: --/--/--  --:--:--  GREG SJAARDEMA1
+ C         : Modify SPTIN2 - total Z distance given by spline coordinates
+ C X1.01.06: --/--/--  --:--:--  GREG SJAARDEMA1
+ C         : Recompile with no debug
+ C X1.01.06: --/--/--  --:--:--  GREG SJAARDEMA1
+ C         : Fix problem in RDSPLN - increased MAXFLD to 4
+ C X1.01.07: 03/21/90  16:23:19  GREG SJAARDEMA1
+ C         : Reorganized SPLINE transformation, read from sys$input
+ C X1.01.08: 03/22/90  07:31:23  GREG SJAARDEMA1
+ C         : Added A to COMAND call list to fix bug in SPLINE transformation
+ C X1.01.09: 03/22/90  08:39:58  GREG SJAARDEMA1
+ C         : Fixed SPLXYZ - Added INIGRD lines to set ZCORD
+ C X1.01.10: 03/22/90  09:01:10  GREG SJAARDEMA1
+ C         : Modify SPLINE input routine (GETSPL) to use Amy's FREFLD routines
+ C X1.01.11: 03/27/90  08:44:46  GREG SJAARDEMA1
+ C         : TRANSPLINE now reads from standard input, not file
+ C X1.01.12: 03/27/90  12:26:46  GREG SJAARDEMA1
+ C         : Installed as XGEN3D in XACCESS.  Recompile only
+ C X1.01.13: 03/27/90  13:05:47  GREG SJAARDEMA1
+ C         : Reordered SPTXYZ for efficiency
+ C X1.01.14: 03/29/90  15:49:40  GREG SJAARDEMA1
+ C         : Fixed problem with 360 ROTATE - ndegr not set, X version only
+ C X1.02.00: 04/12/90  07:43:50  GREG SJAARDEMA1
+ C         : Install SPLINE version in XACCESS. No other changes
+ C X1.02.01: 07/06/90  14:08:02  GREG SJAARDEMA2
+ C         : Problem with noncontiguous material blocks in center
+ C         : blocks. (ie. Slidelines separating materials.)
+ C         : Problem not fixed, error checking enabled.
+ C         : Problem is in setting node numbers in NPCEN (sub: FNPCEN)
+ C X1.02.02: 07/09/90  14:32:11  GREG SJAARDEMA2
+ C         : Fixed Typo in FNPCEN -- Second contiguous block warning
+ C         : was IBOT, now ITOP
+ C X1.02.03: 07/16/90  15:44:30  GREG SJAARDEMA4
+ C         : Added SHIFT as synonym for OFFSET,
+ C         : Added OFFSET/SHIFT RESET/ADD/ALL/X/Y/Z -- now same as GREPOS
+\end{verbatim}
+
+\subsection{QA}
+\begin{verbatim}
+       VERSION X1.02.03
+\end{verbatim}
+
+Code Goal/Status: (See HELP 1520\_CODES QA for more information)
+
+\begin{verbatim}
+          Category      Goal   Status  Comment
+     -------------     ------  ------  -------
+     Documentation:    Formal  Formal  See
+           Sponsor:    X       X
+      Traceability:    X       X
+    Retrievability:    X       X
+      Verification:    X       X
+          Archived:    X
+   Maintainability:    X       X       See
+        Help Entry:    X       X
+        Executable:    X       X
+\end{verbatim}
+
+\begin{verbatim}
+  Source Code Location: $CVSROOT/ACCESS/prepost/gen3d
+      Archive Location: --- Not yet Archived ---
+\end{verbatim}
+\subsubsection{Requirements}
+GEN3D Requires the following Utilities/Files:
+
+\begin{verbatim}
+       o COMMON.OLB    Library of common routines for reading/writing
+                       EXODUS files and other support routines.
+       o SUPES.OLB     Memory management and Free-field input routines
+       o CPUIFC.OLB    Interrupt processing (Control-C).  Pseudo, non-
+                       functional routine provided for non-VMS systems
+\end{verbatim}
+
+\subsection{See\_Also}
+\begin{verbatim}
+       o FASTQ:        Generate two-dimensional GENESIS mesh file
+       o GJOIN:        Merge two or more mesh files into single file
+       o GREPOS:       Reposition/Modify mesh file
+       o NUMBERS:      Calculate several parameters of a mesh file
+       o APREPRO:      Algebraic preprocessor for input files.
+       o BLOT:         Plot mesh files.
+\end{verbatim}
+
+
+\end{document}

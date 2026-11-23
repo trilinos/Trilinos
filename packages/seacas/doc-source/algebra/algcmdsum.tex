@@ -1,0 +1,122 @@
+\chapter{Command Summary} \label{appx:command}
+
+\bigskip \begin{center}
+Database Editing Commands (page~\pageref{cmd:dbedit})
+\end{center}
+
+\cmdsum{\cmd{TITLE}
+} {
+sets the title to be written to the output database.
+}
+
+\bigskip \begin{center}
+Variable Selection Commands (page~\pageref{cmd:varsel})
+\end{center}
+
+\cmdsum{\cmd{SAVE}
+   \param{variable$_{1}$}, \param{variable$_{2}$}, \ldots\
+   or \param{option$_{1}$}, \param{option$_{2}$}, \ldots\
+} {
+transfers variables from the input database to the output database.
+}
+
+\cmdsum{\cmd{DELETE}
+   \param{variable$_{1}$}, \param{variable$_{2}$}, \ldots\
+} {
+marks an assigned variable as a temporary variable that will not be
+written to the output database.
+}
+
+\bigskip \begin{center}
+Time Step Selection Commands (page~\pageref{cmd:timesel})
+\end{center}
+
+\input{../include/timesum}
+
+\bigskip \begin{center}
+Mesh Limiting Commands (page~\pageref{cmd:meshlimit})
+\end{center}
+
+\cmdsum{\cmd{ZOOM}
+   \param{xmin}, \param{xmax}, \param{ymin}, \param{ymax},
+      \param{zmin}, \param{zmax} [\cmd{OUTSIDE}]
+} {
+sets the limits of the mesh to be written to the output database.
+}
+
+\cmdsum{\cmd{VISIBLE}
+   [\cmd{ADD} or \cmd{DELETE},]
+   \param{block\_id$_{1}$}, \param{block\_id$_{2}$}, \ldots\
+} {
+limits the element blocks to be written to the output database.
+}
+
+\cmdsum{\cmd{FILTER ELEMENT}
+  \param{variable} \param{lt$|$le$|$ge$|$ne$|$gt$|$ge} \param{value} \cmd{TIME} \param{db\_time}
+} {
+will delete all elements that satisfy the specified condition.
+}
+
+\cmdsum{\cmd{REMOVE ELEMENT}
+  [\cmd{GLOBAL} or \cmd{LOCAL}] \param{id$_1$} \param{id$_2$} \ldots\ \param{id$_n$}
+} {
+  will remove the elements with the specified global or local id(s).
+}
+
+\bigskip \begin{center}
+Element Block Selection Commands (page~\pageref{cmd:blocksel})
+\end{center}
+
+\cmdsum{\cmd{BLOCKS}
+   [\cmd{ADD} or \cmd{DELETE},]
+   \param{block\_id$_{1}$}, \param{block\_id$_{2}$}, \ldots\
+} {
+selects the element blocks which have defined values for all following
+equations.
+}
+
+\cmdsum{\cmd{MATERIAL}
+   [\cmd{ADD} or \cmd{DELETE},]
+   \param{block\_id$_{1}$}, \param{block\_id$_{2}$}, \ldots\
+} {
+is exactly equivalent to a \cmd{BLOCKS} command.
+}
+
+\newpage %%%
+\bigskip \begin{center}
+Information and Termination Commands (page~\pageref{cmd:infoterm})
+\end{center}
+
+\cmdsum{\cmd{SHOW}
+   \param{command}
+} {
+displays the settings of parameters relevant to the \param{command}.
+}
+
+\cmdsum{\cmd{LIST}
+   \param{option}
+} {
+displays database information.
+}
+
+\cmdsum{\cmd{HELP}
+   \param{option}
+} {
+displays information about the \caps{\PROGRAM} program.
+}
+
+\cmdsum{\cmd{LOG}
+} {
+requests that the log file be saved when the program is exited.
+}
+
+\cmdsum{\cmd{END}
+} {
+ends the equation input and begins the equation evaluation.
+}
+
+\cmdsum{\cmd{QUIT}
+} {
+ends the equation input and exits the program immediately without
+writing an output database.
+}

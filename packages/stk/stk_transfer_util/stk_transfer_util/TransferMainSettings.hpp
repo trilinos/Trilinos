@@ -14,6 +14,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <string>
+#include <vector>
 #include <ostream>
 #include <stk_search/ObjectOutsideDomainPolicy.hpp>
 #include <stk_transfer_util/spmd/GeometricTransferOptions.hpp>
@@ -58,6 +59,17 @@ public:
   bool set_2d_to_3d_mapping_type(const std::string& mappingType);
   void set_2d_to_3d_axisymmetric_transfer_params(const TwoDTo3DAxisymmetricParams& params);
   void set_3d_to_3d_axisymmetric_transfer_params(const ThreeDTo3DAxisymmetricParams& params);
+
+  // A field group is a set of fields that is transferred with its own transfer type,
+  // receive type, extrapolate option and part lists. Each group is stored as a complete
+  // TransferMainSettings object (with no field groups of its own).
+  void add_field_group(const TransferMainSettings& groupSettings);
+  const std::vector<TransferMainSettings>& get_field_groups() const;
+  bool has_field_groups() const;
+
+  // The settings to use for each separate transfer: the field groups if there are any,
+  // otherwise just these settings.
+  std::vector<TransferMainSettings> get_settings_for_each_transfer() const;
 
   unsigned get_num_input_processors() const;
   unsigned get_num_output_processors() const;
@@ -108,6 +120,7 @@ private:
   bool m_enable3Dto3DAxisymmetric = false;
   ThreeDTo3DAxisymmetricParams m_threeDToThreeDAxisymmetricParams;
   std::string m_coordTransformZExpr;
+  std::vector<TransferMainSettings> m_fieldGroups;
 };
 
 } // namespace transfer_util

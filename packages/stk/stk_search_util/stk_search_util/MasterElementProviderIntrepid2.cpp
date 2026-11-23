@@ -40,11 +40,16 @@ void MasterElementProviderIntrepid2::evaluate_field(const Topology& topo,
                         // needs the first two
   }
 
-  if (stkTopo != m_lastTopology || numEvalPoints != m_numEvalPoints) {
+  if (stkTopo != m_lastTopology) {
     m_basis = Teuchos::rcp(lagrangeBasisFactory(stkTopo, m_useCompositeTet10));
     m_lastTopology = stkTopo;
+  }
+
+  if (numNodes != m_numNodes || numParCoords != m_numParCoords || numEvalPoints != m_numEvalPoints) {
+    m_numNodes = numNodes;
+    m_numParCoords = numParCoords;
     m_numEvalPoints = numEvalPoints;
-    m_basisVals = BasisViewType("evaluate_field_basis_vals", stkTopo.num_nodes(), numEvalPoints);
+    m_basisVals = BasisViewType("evaluate_field_basis_vals", numNodes, numEvalPoints);
     m_paramCoords = PointViewType("int_point", numEvalPoints, numParCoords);
   }
 

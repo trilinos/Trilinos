@@ -87,8 +87,8 @@ public:
       value_type *aptr = s.u_buf;
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
-      bool conjugate = false;
-      int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
+      const bool conjugate = false;
+      const int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
       member.team_barrier();
       if (ndefs < 0) {
         // LDL_nopiv (without diag-perturb) encountered zero pivot
@@ -147,8 +147,8 @@ public:
       aptr += m * m;
 
       // Factor diagonal block
-      bool conjugate = false;
-      int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
+      const bool conjugate = false;
+      const int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
       member.team_barrier();
       if (ndefs < 0) {
         // LDL_nopiv (without diag-perturb) encountered zero pivot
@@ -239,8 +239,8 @@ public:
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
       // Factor diagonal block
-      bool conjugate = false;
-      int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
+      const bool conjugate = false;
+      const int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
       member.team_barrier();
       if (ndefs < 0) {
         // LDL_nopiv (without diag-perturb) encountered zero pivot
@@ -417,7 +417,10 @@ public:
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
       // Factor diagonal block
-      err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      if (_tol > 0.0)
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL);
+      else
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
       member.team_barrier();
       if (err != 0) {
         Kokkos::atomic_add(_rval, 1);

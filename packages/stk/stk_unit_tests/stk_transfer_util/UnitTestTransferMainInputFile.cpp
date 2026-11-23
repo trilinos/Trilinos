@@ -287,6 +287,126 @@ TEST_F(TransferMainInputFile, fieldListErrors)
   expect_yaml_error("field-list:\n  - {send: [a, b]}\n", "'field-list[0].send' must be a single value");
 }
 
+TEST_F(TransferMainInputFile, flatFieldListHasNoFieldGroups)
+{
+  stk::transfer_util::TransferMainSettings settings =
+    parse_and_generate("send-mesh: s.exo\nrecv-mesh: r.exo\nfield-list: [a, b]\nxfer-type: COPY\n");
+
+  EXPECT_FALSE(settings.has_field_groups());
+  std::vector<stk::transfer_util::TransferMainSettings> transfers = settings.get_settings_for_each_transfer();
+  ASSERT_EQ(1u, transfers.size());
+  EXPECT_EQ("a:a, b:b", transfers[0].get_field_list_string());
+  EXPECT_EQ("COPY", transfers[0].get_transfer_type());
+}
+
+TEST_F(TransferMainInputFile, fieldGroups)
+{
+  const std::string yaml = R"(
+send-mesh: source.exo
+recv-mesh: target.exo
+time-steps: LAST
+extrapolate-option: TRUNCATE
+part-list: {send: [block_1]}
+field-list:
+  - fields: field2
+    xfer-type: interp
+    recv-type: NODE
+  - fields: [elemField, {send: a, recv: b}]
+    xfer-type: PATCH
+    recv-type: element_centroid
+    extrapolate-option: PROJECT
+    part-list: {recv: [block_2]}
+)";
+  stk::transfer_util::TransferMainSettings settings = parse_and_generate(yaml);
+
+  ASSERT_TRUE(settings.has_field_groups());
+  EXPECT_EQ(0u, settings.get_transfer_fields().size());
+
+  std::vector<stk::transfer_util::TransferMainSettings> groups = settings.get_settings_for_each_transfer();
+  ASSERT_EQ(2u, groups.size());
+
+  EXPECT_EQ("field2:field2", groups[0].get_field_list_string());
+  EXPECT_EQ("INTERP", groups[0].get_transfer_type());
+  EXPECT_EQ("NODE", groups[0].get_recv_type_string());
+  EXPECT_EQ("TRUNCATE", groups[0].get_extrapolate_option_string());
+  EXPECT_EQ("block_1:", groups[0].get_part_list_string());
+  EXPECT_EQ("LAST", groups[0].get_time_steps_spec());
+  EXPECT_EQ("source.exo", groups[0].get_sendMesh_filename());
+  EXPECT_FALSE(groups[0].has_field_groups());
+
+  EXPECT_EQ("elemField:elemField, a:b", groups[1].get_field_list_string());
+  EXPECT_EQ("PATCH", groups[1].get_transfer_type());
+  EXPECT_EQ("ELEMENT_CENTROID", groups[1].get_recv_type_string());
+  EXPECT_EQ("PROJECT", groups[1].get_extrapolate_option_string());
+  EXPECT_EQ(":block_2", groups[1].get_part_list_string());
+}
+
+TEST_F(TransferMainInputFile, fieldGroupDefaultsToTopLevelAndCommandLineOptions)
+{
+  const std::string yaml = R"(
+send-mesh: source.exo
+recv-mesh: target.exo
+xfer-type: COPY
+recv-type: ELEMENT_CENTROID
+field-list:
+  - fields: a
+  - {fields: b, xfer-type: PATCH}
+)";
+  stk::transfer_util::TransferMainSettings settings = parse_and_generate(yaml, {"--recv-type", "NODE"});
+
+  std::vector<stk::transfer_util::TransferMainSettings> groups = settings.get_settings_for_each_transfer();
+  ASSERT_EQ(2u, groups.size());
+  EXPECT_EQ("COPY", groups[0].get_transfer_type());
+  EXPECT_EQ("NODE", groups[0].get_recv_type_string());
+  EXPECT_EQ("PATCH", groups[1].get_transfer_type());
+  EXPECT_EQ("NODE", groups[1].get_recv_type_string());
+}
+
+TEST_F(TransferMainInputFile, singleFieldGroupWithoutSequence)
+{
+  stk::transfer_util::TransferInputFileOptions options =
+    stk::transfer_util::parse_transfer_input_file_yaml("field-list: {fields: a, recv-type: NODE}");
+  EXPECT_FALSE(options.fields.has_value());
+  ASSERT_TRUE(options.fieldGroups.has_value());
+  ASSERT_EQ(1u, options.fieldGroups->size());
+  EXPECT_EQ("a", (*options.fieldGroups)[0].fields[0].first);
+  EXPECT_EQ("NODE", (*options.fieldGroups)[0].recvType.value());
+  EXPECT_FALSE((*options.fieldGroups)[0].transferType.has_value());
+}
+
+TEST_F(TransferMainInputFile, commandLineFieldListOverridesFieldGroups)
+{
+  stk::transfer_util::TransferMainSettings settings =
+    parse_and_generate("send-mesh: s.exo\nrecv-mesh: r.exo\nfield-list:\n  - {fields: a, xfer-type: PATCH}\n",
+                       {"--field-list", "cli_field"});
+  EXPECT_FALSE(settings.has_field_groups());
+  EXPECT_EQ("cli_field:cli_field", settings.get_field_list_string());
+  EXPECT_EQ("INTERP", settings.get_transfer_type());
+}
+
+TEST_F(TransferMainInputFile, fieldGroupErrors)
+{
+  expect_yaml_error("field-list:\n  - {fields: a}\n  - b\n", "Field groups and plain field names cannot be mixed");
+  expect_yaml_error("field-list:\n  - {fields: a, xfer-typ: COPY}\n", "unrecognized key 'xfer-typ' in 'field-list[0]'");
+  expect_yaml_error("field-list:\n  - {fields: }\n", "'field-list[0].fields' must not be empty");
+  expect_yaml_error("field-list:\n  - {fields: []}\n", "'field-list[0].fields' must not be empty");
+  expect_yaml_error("field-list:\n  - {fields: a, recv-type: [NODE]}\n", "'field-list[0].recv-type' must be a single value");
+  expect_yaml_error("field-list:\n  - {fields: a, part-list: block_1}\n", "'field-list[0].part-list' must be a map");
+  expect_yaml_error("field-list:\n  - {fields: a, fields: b}\n", "more than once");
+}
+
+TEST_F(TransferMainInputFile, invalidFieldGroupValuesThrow)
+{
+  for (const std::string option : {"xfer-type", "recv-type", "extrapolate-option"}) {
+    stk::transfer_util::TransferMainParser parser(m_comm);
+    parser.set_input_file_contents("send-mesh: s.exo\nrecv-mesh: r.exo\nfield-list:\n  - {fields: a, " + option + ": FAKE}\n");
+    stk::unit_test_util::Args args({"stk_transfer"});
+    parser.parse_command_line_options(args.argc(), args.argv());
+    EXPECT_EQ(TransferParserStatus::SUCCESS, parser.get_parser_status());
+    EXPECT_ANY_THROW(parser.generate_transfer_settings()) << option;
+  }
+}
+
 TEST_F(TransferMainInputFile, partListSendOnly)
 {
   const std::string yaml = R"(

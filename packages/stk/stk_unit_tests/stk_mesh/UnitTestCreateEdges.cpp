@@ -55,6 +55,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/StkMeshFromGeneratedMesh.hpp>
+#include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/BuildMesh.hpp>
 #include <string>                       // for string
 #include <vector>                       // for vector, vector<>::iterator
@@ -626,3 +627,58 @@ TEST( UnitTestCreateEdges, particle )
   EXPECT_EQ( 1u, counts[stk::topology::ELEM_RANK] );
 }
 
+TEST(UnitTestCreateEdges, Tet10_faceConnectsToEdgeWithItsEndNodes_notToEdgeWhoseMidNodeIsAnEndNode)
+{
+  // Edge (1,2,5) of element 1 is connected to nodes 1 and 5, the end nodes of element 2's face edge
+  // (1,5,11), as when a refined quadratic parent edge still exists.  The face must use edge (1,5,11).
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    return;
+  }
+
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& mesh = *bulkPtr;
+
+  const std::string meshDesc =
+      "0,1,TET_10,1,2,3,4,5,6,7,8,9,10\n"
+      "0,2,TET_10,1,5,3,4,11,12,7,8,13,10";
+  stk::unit_test_util::setup_text_mesh(mesh, meshDesc);
+
+  stk::mesh::Part& edgePart = meta.get_topology_root_part(stk::topology::LINE_3);
+  const stk::mesh::Entity elem1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+  const stk::mesh::Entity elem2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
+
+  mesh.modification_begin();
+  auto declare_edge_of_element = [&](stk::mesh::Entity elem, stk::mesh::EntityId edgeId, unsigned edgeOrdinal) {
+    stk::mesh::Entity edgeNodes[3];
+    stk::topology(stk::topology::TET_10).edge_nodes(mesh.begin_nodes(elem), edgeOrdinal, edgeNodes);
+    const stk::mesh::Entity edge = mesh.declare_edge(edgeId, stk::mesh::PartVector{&edgePart});
+    for (unsigned n = 0; n < 3; ++n) mesh.declare_relation(edge, edgeNodes[n], n);
+    mesh.declare_relation(elem, edge, edgeOrdinal);
+    return edge;
+  };
+  // Declared last, edge (1,2,5) is the one a lookup keeping the last match would pick.
+  const stk::mesh::Entity edge1511 = declare_edge_of_element(elem2, 1, 0);
+  const stk::mesh::Entity edge125 = declare_edge_of_element(elem1, 2, 0);
+  mesh.modification_end();
+
+  ASSERT_EQ(1u, mesh.identifier(mesh.begin_nodes(edge1511)[0]));
+  ASSERT_EQ(5u, mesh.identifier(mesh.begin_nodes(edge1511)[1]));
+  ASSERT_EQ(5u, mesh.identifier(mesh.begin_nodes(edge125)[2]));
+
+  mesh.modification_begin();
+  stk::mesh::Entity face;
+  EXPECT_NO_THROW(face = mesh.declare_element_side(elem2, 0, stk::mesh::PartVector{}));
+  mesh.modification_end();
+
+  ASSERT_TRUE(mesh.is_valid(face));
+  const stk::mesh::Entity* faceEdges = mesh.begin_edges(face);
+  const unsigned numFaceEdges = mesh.num_edges(face);
+  bool connectedToEdge1511 = false;
+  for (unsigned i = 0; i < numFaceEdges; ++i) {
+    EXPECT_NE(edge125, faceEdges[i]);
+    if (faceEdges[i] == edge1511) connectedToEdge1511 = true;
+  }
+  EXPECT_TRUE(connectedToEdge1511);
+}

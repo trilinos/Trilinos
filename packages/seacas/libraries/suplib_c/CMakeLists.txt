@@ -13,7 +13,7 @@ TRIBITS_INCLUDE_DIRECTORIES(
 SET(SOURCES
   add_to_log.c
   adler.c
-  copy_string.c
+  copy_c_string.c
   open_file_limit.c
   term_width.c
   )

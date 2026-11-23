@@ -654,12 +654,6 @@ Click \ref Thyra_Op_Vec_adapters_Spmd_concrete_std_grp "here" if you want to
 know about some general, yet very efficient, concrete implementations of
 SPMD vector spaces, vectors and multi-vectors.
 
-<li> <b><a href="../../../../../../epetra/thyra/doc/html/index.html">Epetra to Thyra Operator/Vector Adapters</a></b> (separate doxygen collection)
-
-Click <a href="../../../../../../epetra/thyra/doc/html/index.html">here</a> if
-you want to know about some general code that takes Epetra objects and creates
-%Thyra wrappers for them.
-
 </ol>
 
 </ol>
@@ -853,72 +847,6 @@ added, multiplied, blocked, etc. linear operators).
 
 
 //
-// C.1) Thyra/Epetra adapters
-//
-
-
-/** \defgroup Epetra_Thyra_Op_Vec_adapters_grp Thyra/Epetra Operator/Vector Adapter Code
-
-\ingroup thyra_adapters_grp
-
-The following functions and classes are used to create %Thyra objects which
-wrap (or adapt) Epetra objects:
-
-<ul>
-
-<li><tt>Thyra::create_VectorSpace()</tt> accepts an <tt>Epetra_Map</tt> object
-and returns a <tt>Thyra::VectorSpaceBase</tt> object.
-
-<li><tt>Thyra::create_Vector()</tt> accepts an <tt>Epetra_Vector</tt> object
-and returns a <tt>Thyra::VectorBase</tt> object.
-
-<li><tt>Thyra::create_MultiVector()</tt> accepts an
-<tt>Epetra_MultiVector</tt> object and returns a
-<tt>Thyra::MultiVectorBase</tt> object.
-
-<li><tt>Thyra::epetraLinearOp()</tt> adapts an <tt>Epetra_Operator</tt> object
-to form a <tt>Thyra::EpetraLinearOp</tt> object.
-
-</ul>
-
-The above adapter code is based directly from the general
-\ref Thyra_Op_Vec_spmd_adapters_grp.  Therefore these Epetra adapted objects
-are automatically compatible with any other such MPI-based SPMD adapter
-subclasses.
-
-There is, however, one issue that requires a little care and that is using
-arbitrary <tt>Thyra::VectorBase</tt> and <tt>Thyra::MultiVectorBase</tt>
-objects with the vector and multi-vector versions of
-<tt>Thyra::EpetraLinearOp::apply()</tt>.  The issue is that the underlying
-<tt>Epetra_Operator::Apply()</tt> function can only accept
-<tt>Epetra_MultiVector</tt> objects.  The utility functions
-<tt>Thyra::get_Epetra_MultiVector()</tt> return an <tt>Epetra_MultiVector</tt>
-view of any <tt>Thyra::MultiVectorBase</tt> object with a compatible range
-space.  Studying the implementations of these utility functions will show you
-how simple it is to provide for this type of interoperabiity.  This type of
-interoperabiity machinary should also be used for other types of concrete
-adapter subclasses.
-
-Other types of code will need to extract an <tt>Epetra_Vector</tt> view of a
-<tt>Thyra::VectorBase</tt> object.  For this purpose the
-<tt>Thyra::get_Epetra_Vector()</tt> functions are provided.
-
-The utility functions <tt>Thyra::get_Epetra_Operator()</tt> are also provided
-that encapsulate the extraction of an "adapted" <tt>Epetra_Operator</tt>
-object out of a <tt>Thyra::EpetraLinearOp</tt> object through its
-<tt>Thyra::LinearOpBase</tt> base interface.  This is a common type of
-activity in object-oriented programming.
-
-\section Epetra_Thyra_Op_Vec_examples_sec Examples
-
-<ul>
-<li> \ref Epetra_Thyra_Op_Vec_examples_grp
-</ul>
-
-*/
-
-
-//
 // C.2) Thyra/Tpetra adapters
 //
 
@@ -929,16 +857,5 @@ activity in object-oriented programming.
 
 */
 
-
-//
-// C.3) Thyra/EpetraExt adapters
-//
-
-
-/** \defgroup EpetraExt_Thyra_Op_Vec_adapters_grp Thyra/EpetraExt Adapter Code
-
-\ingroup thyra_adapters_grp
-
-*/
 
 /** \defgroup Thyra_deprecated_grp Thyra deprecated software */

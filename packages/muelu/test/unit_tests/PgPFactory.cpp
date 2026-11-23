@@ -976,18 +976,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PgPFactory, ReUseOmegasTransP, Scalar, LocalOr
   ReUseOmegasTransPInternal<Scalar, LocalOrdinal, GlobalOrdinal, Node>(out, success, MueLu::DINVANORM);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PgPFactory, EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-  out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2)." << std::endl;
-
-}  // EpetraVsTpetra
-
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                               \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, Test0, Scalar, LO, GO, Node)             \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, nonsymExample, Scalar, LO, GO, Node)     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, MinimizationModes, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, ReUseOmegas, Scalar, LO, GO, Node)       \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, ReUseOmegasTransP, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, EpetraVsTpetra, Scalar, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PgPFactory, ReUseOmegasTransP, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

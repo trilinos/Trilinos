@@ -577,15 +577,7 @@ TVMET is optional and hidden behind an ifdef.  The performance tests will be bui
 
 \subsection ug_step1_fem C. Nonlinear Finite Element Example Requirements
 
-To build the example problem in "phalanx/example/FEM_Nonlinear", distributed vector, distributed sparse matrix, and corresponding linear solvers are required.  The following <b>Trilinos</b> packages need to be enabled to build the FEM_Nonlinear example:
-
- - <b>Requires:</b> the <a href="http://trilinos.sandia.gov/packages/epetra">Epetra Library</a>, supplies the linear algebra data structures for spares matrices.  Can be enabled during the Trilinos configure with the flag "-D Trilinos_ENABLE_Epetra=ON". 
-
- - <b>Requires:</b> the <a href="http://trilinos.sandia.gov/packages/ifpack">Ifpack Library</a>, supplies incomplete factorization preconditioners.  Can be enabled during the Trilinos configure with the flag "-D Trilinos_ENABLE_Ifpack=ON". 
-
- -  <b>Requires:</b> the <a href="http://trilinos.sandia.gov/packages/belos">Belos Library</a>, supplies block GMRES iterative linear solver.  Can be enabled during the Trilinos configure with the flag "-D Trilinos_ENABLE_Belos=ON".  
-
-This example will be disabled if the above packages are not enabled.
+The historical nonlinear finite-element example under `phalanx/example/FiniteElementAssembly/deprecated` is no longer part of the supported build guidance.  The supported Phalanx examples rely on Teuchos, Sacado, and other currently maintained Trilinos packages.
 
 \subsection db D. Configure Trilinos/Phalanx
 The general instructions for building trilinos can be found at <a href="http://trilinos.sandia.gov/documentation.html">Trilinos Documentation Page</a>.  Of particular importance are the Overview, User Guide, and Tutorial documents.  At a minimum you must enable the Teuchos, Sacado, and Phalanx packages.  An example configure script is:

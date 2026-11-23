@@ -232,23 +232,22 @@ void evalResponseGradientP(const Thyra::ModelEvaluator<Scalar>& model,
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid dg/dp support");
 }
 
-/** \brief Compute y = alpha * df/dp^T * v + beta * y.
+/** \brief Evaluate df/dp of parameter p_index at inArgs, in the form
+ *  supported by the model, and return the transpose mode trans such that
+ *  df/dp^T * v = apply(dfdp_op, trans, v).
  *
- *  v is a multivector in the residual (f) space and y a multivector in the
- *  space of parameter p_index, with the same number of columns.  df/dp is
- *  evaluated at inArgs in the form supported by the model (linear operator,
- *  Jacobian or gradient multivector).  dfdp_op and dfdp_mv cache the
- *  derivative objects between calls (pass null RCPs on the first call).
+ *  The forms are, in order of preference: a linear operator (dfdp_op,
+ *  trans = CONJTRANS), the Jacobian multivector (dfdp_op = dfdp_mv, f space x
+ *  num_p, trans = CONJTRANS) and the gradient multivector (dfdp_op = dfdp_mv,
+ *  p space x dim(f), trans = CONJ).  dfdp_op and dfdp_mv cache the derivative
+ *  objects between calls (pass null RCPs on the first call).
  */
 template <class Scalar>
-void applyDfDpTranspose(const Thyra::ModelEvaluator<Scalar>& model,
-                        const int p_index,
-                        const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-                        const Thyra::MultiVectorBase<Scalar>& v,
-                        Thyra::MultiVectorBase<Scalar>& y, const Scalar alpha,
-                        const Scalar beta,
-                        Teuchos::RCP<Thyra::LinearOpBase<Scalar>>& dfdp_op,
-                        Teuchos::RCP<Thyra::MultiVectorBase<Scalar>>& dfdp_mv)
+Thyra::EOpTransp evalDfDp(const Thyra::ModelEvaluator<Scalar>& model,
+                          const int p_index,
+                          const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+                          Teuchos::RCP<Thyra::LinearOpBase<Scalar>>& dfdp_op,
+                          Teuchos::RCP<Thyra::MultiVectorBase<Scalar>>& dfdp_mv)
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs        = model.createOutArgs();
@@ -274,6 +273,28 @@ void applyDfDpTranspose(const Thyra::ModelEvaluator<Scalar>& model,
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid df/dp support");
   model.evalModel(inArgs, outArgs);
+  return trans;
+}
+
+/** \brief Compute y = alpha * df/dp^T * v + beta * y.
+ *
+ *  v is a multivector in the residual (f) space and y a multivector in the
+ *  space of parameter p_index, with the same number of columns.  df/dp is
+ *  evaluated at inArgs by evalDfDp(), with which dfdp_op and dfdp_mv cache
+ *  the derivative objects between calls (pass null RCPs on the first call).
+ */
+template <class Scalar>
+void applyDfDpTranspose(const Thyra::ModelEvaluator<Scalar>& model,
+                        const int p_index,
+                        const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+                        const Thyra::MultiVectorBase<Scalar>& v,
+                        Thyra::MultiVectorBase<Scalar>& y, const Scalar alpha,
+                        const Scalar beta,
+                        Teuchos::RCP<Thyra::LinearOpBase<Scalar>>& dfdp_op,
+                        Teuchos::RCP<Thyra::MultiVectorBase<Scalar>>& dfdp_mv)
+{
+  const Thyra::EOpTransp trans =
+      evalDfDp(model, p_index, inArgs, dfdp_op, dfdp_mv);
   dfdp_op->apply(trans, v, Teuchos::ptrFromRef(y), alpha, beta);
 }
 

@@ -33,9 +33,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example epetra/example/RCG/RCGEpetraExFile.cpp
-    This is an example of how to use the Belos::RCGSolMgr solver manager in Epetra.
-*/
 /** \example tpetra/example/RCG/RCGTpetraExFile.cpp
     This is an example of how to use the Belos::RCGSolMgr solver manager in Tpetra.
 */

@@ -28,11 +28,6 @@
 
 namespace MueLuTests {
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, MatMatMult_EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-  out << "Skipping test because some required packages are not enabled (Tpetra, EpetraExt)." << std::endl;
-
-}  // EpetraVersusTpetra
-
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, DetectDirichletRows, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
@@ -872,7 +867,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, TransposeBlockedCrsMatrix, Scalar, 
 }
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                             \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities, MatMatMult_EpetraVsTpetra, Scalar, LO, GO, Node)        \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities, DetectDirichletRows, Scalar, LO, GO, Node)              \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities, EnforceInitialCondition, Scalar, LO, GO, Node)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities, GetDiagonalInverse, Scalar, LO, GO, Node)               \

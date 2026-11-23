@@ -50,6 +50,8 @@
 #include "stk_mesh/base/Types.hpp"                   // for EntityVector, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
 #include "stk_io/FillMesh.hpp"
+#include "stk_mesh/base/Comm.hpp"                    // for comm_mesh_counts
+#include "stk_mesh/base/FEMHelpers.hpp"              // for get_ordinal_and_permutation
 
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
@@ -625,3 +627,62 @@ TEST(UnitTestBulkData, resolveSharedModifiedFaceNextToUnmodifiedFaces)
   assert_shared_faces(bulk, 3);
 }
 
+// Each processor declares the face between the elements of generated:1x1x2, with the same id and nodes, by
+// declare_entity and relations, without the face adjacent element graph, so that sharing is resolved by its nodes.
+// With use_entity_ids_for_resolving_sharing, the faces match because their ids do too: there is one face, shared by
+// both.
+void test_same_face_declared_on_both_procs_is_shared(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(comm) != 2) {
+    GTEST_SKIP();
+  }
+
+  MeshBuilder builder(comm);
+  builder.set_aura_option(auraOption);
+  builder.set_spatial_dimension(3);
+  std::shared_ptr<BulkData> bulkPtr = builder.create();
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  stk::io::fill_mesh("generated:1x1x2", bulk);
+
+  const stk::mesh::EntityId faceId = 100;
+  const std::vector<stk::mesh::EntityId> faceNodeIds = {5, 6, 8, 7};
+  stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, bulk.parallel_rank() + 1);
+  ASSERT_TRUE(bulk.is_valid(elem) && bulk.bucket(elem).owned());
+
+  bulk.delete_face_adjacent_element_graph();
+  bulk.set_use_entity_ids_for_resolving_sharing(true);
+  bulk.modification_begin();
+  stk::mesh::Entity face = bulk.declare_entity(
+      stk::topology::FACE_RANK, faceId, stk::mesh::PartVector{&meta.get_topology_root_part(stk::topology::QUAD_4)});
+  stk::mesh::EntityVector faceNodes;
+  for (size_t i = 0; i < faceNodeIds.size(); ++i) {
+    faceNodes.push_back(bulk.get_entity(stk::topology::NODE_RANK, faceNodeIds[i]));
+    bulk.declare_relation(face, faceNodes.back(), i);
+  }
+  const stk::mesh::OrdinalAndPermutation ordinalAndPermutation =
+      stk::mesh::get_ordinal_and_permutation(bulk, elem, stk::topology::FACE_RANK, faceNodes);
+  bulk.declare_relation(elem, face, ordinalAndPermutation.first, ordinalAndPermutation.second);
+  bulk.modification_end();
+
+  std::vector<size_t> globalCounts;
+  stk::mesh::comm_mesh_counts(bulk, globalCounts);
+  EXPECT_EQ(1u, globalCounts[stk::topology::FACE_RANK]);
+
+  ASSERT_TRUE(bulk.bucket(face).shared());
+  EXPECT_EQ(0, bulk.parallel_owner_rank(face));
+  std::vector<int> sharingProcs;
+  bulk.comm_shared_procs(bulk.entity_key(face), sharingProcs);
+  EXPECT_EQ(std::vector<int>{1 - bulk.parallel_rank()}, sharingProcs);
+}
+
+TEST(UnitTestBulkData, sameFaceDeclaredOnBothProcsWithEntityIdsForResolvingSharing_sharedFace_noAura)
+{
+  test_same_face_declared_on_both_procs_is_shared(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST(UnitTestBulkData, sameFaceDeclaredOnBothProcsWithEntityIdsForResolvingSharing_sharedFace_withAura)
+{
+  test_same_face_declared_on_both_procs_is_shared(stk::mesh::BulkData::AUTO_AURA);
+}

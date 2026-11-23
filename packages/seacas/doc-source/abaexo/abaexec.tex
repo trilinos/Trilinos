@@ -1,0 +1,43 @@
+\chapter{Executing \caps{\PROGRAM}} \label{chap:exec}
+
+\input{../include/execsite}
+
+\section{Execution Files} \label{exec:files}
+
+The table below summarizes \caps{\PROGRAM}'s file usage.
+
+\begin{center} \begin{tabular}{||l|c|c|c||}
+\hline
+\multicolumn{1}{||c}{Description} &
+\multicolumn{1}{|c}{Unit Number} &
+\multicolumn{1}{|c}{Type} &
+\multicolumn{1}{|c||}{File Format} \\
+\hline
+User input & standard input & input & Section~\ref{chap:command} \\
+User output & standard output & output & ASCII \\
+ABAQUS database & 8 & input & Appendix~\ref{appx:abaqus} \\
+EXODUS database & 11 & output & Appendix~\ref{appx:exodus} \\
+Scratch file & 20 & scratch & binary \\
+\hline
+\end{tabular} \end{center}
+
+All files must be connected to the appropriate unit before
+\caps{\PROGRAM} is run. Each file (except standard input and output) is
+opened with the name retrieved by the \caps{EXNAME} routine of the
+\caps{SUPES} library \cite{bib:supes}.
+
+\section{Special Software}
+
+\caps{\PROGRAM} is written in ANSI \caps{FORTRAN}-77 \cite{bib:f77}
+with the exception of the following system-dependent features:
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item the \caps{OPEN} options for the files.
+\end{itemize}
+
+\caps{\PROGRAM} uses the following software packages:
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item the \caps{ABAQUS} library package which opens and reads the
+\caps{ABAQUS} database and
+\item the \caps{SUPES} package \cite{bib:supes} which includes dynamic
+memory allocation, a free-field reader, and \caps{FORTRAN} extensions.
+\end{itemize}

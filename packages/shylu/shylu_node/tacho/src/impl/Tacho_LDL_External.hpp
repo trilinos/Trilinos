@@ -169,6 +169,17 @@ template <> struct LDL<Uplo::Lower, Algo::External> {
 
 template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::External> {
   // just call serial for now
+  template <typename ViewTypeA>
+  inline static int invoke(const double tol, const ViewTypeA &A, const bool conjugate) {
+
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
+    if constexpr(runOnHost) {
+      return LDL_nopiv<ArgUplo, Algo::Serial>::invoke(tol, A, conjugate);
+    }
+    return 0;
+  }
+
+  // just call serial for now
   template <typename MemberType, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double tol, const ViewTypeA &A, const bool conjugate) {
     return LDL_nopiv<ArgUplo, Algo::Serial>::invoke(member, tol, A, conjugate);

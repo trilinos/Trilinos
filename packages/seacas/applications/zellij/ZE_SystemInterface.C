@@ -16,6 +16,8 @@
 #include <fmt/format.h>
 #include <tokenize.h>
 
+using suplib_cpp::copyright;
+
 //! \file
 
 SystemInterface::SystemInterface(int my_rank) : myRank_(my_rank) { enroll_options(); }

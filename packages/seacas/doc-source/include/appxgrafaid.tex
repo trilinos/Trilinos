@@ -1,0 +1,109 @@
+\chapter{The GRAFAID Neutral File Format} \label{appx:grafaid}
+
+The \caps{GRAFAID} neutral file format is described in Section 9-2 of
+the \caps{GRAFAID} Code User Manual~\cite{bib:grafaid}. The
+following description covers only those parts that are relevant to the
+\caps{\PROGRAM} program.
+
+The neutral file is a sequential file written in \caps{ASCII} format.
+Each record is free format with fields separated by a comma.
+
+The general structure of the \caps{GRAFAID} neutral file is:
+\cenlinesbegin
+Neutral file title record (optional) \\
+\nth{1}{st} Curve Definition Record Set \\
+\nth{2}{nd} Curve Definition Record Set \\
+\ldots\ \\
+\nth{N}{th} Curve Definition Record Set \\
+\cmd{END NEUTRAL FILE}
+\cenlinesend
+
+The neutral file title contains the name of the program which wrote the
+neutral file (\caps{\PROGRAM}) and the name, date, and time of the
+programs that created and last modified the database.
+
+The format of the records in a curve definition record set is:
+\cenlinesbegin
+\cmd{BEGIN CURVE},\param{curve-name} \\
+\param{ntitle},\param{title$_{1}$} \\
+\param{title$_{2}$} \\
+\ldots\ \\
+\param{title$_{ntitle}$} \\
+\param{x-label} \\
+\param{y-label} \\
+\param{x-min},\param{x-max},\param{y-min},\param{y-max},\param{npts},\param{aux-data}
+\\
+\param{axis-type},\param{x-type},\param{aux-type} \\
+\param{x$_{1}$},\param{y$_{1}$} \\
+\param{x$_{2}$},\param{y$_{2}$} \\
+\ldots\ \\
+\param{x$_{npts}$},\param{y$_{npts}$} \\
+\cmd{END CURVE},\param{curve-name}
+\cenlinesend
+
+\newpage
+\newlength{\graftag}
+\newlength{\grafdesc}
+\settowidth{\graftag}{\param{curve-name} 15 characters }
+\setlength{\grafdesc}{\textwidth}
+\addtolength{\grafdesc}{-\graftag}
+\addtolength{\grafdesc}{-\tabbingsep}
+
+\begin{tabular}{lcp{\grafdesc}}
+%
+\multicolumn{1}{c}{Field} &
+\multicolumn{1}{c}{Type} &
+\multicolumn{1}{c}{Description}
+\\ \hline \\
+%
+\param{curve-name} & 15 characters & The curve name, set by the
+\cmd{ACURVE} and \cmd{NCURVE} commands.
+\medskip
+\\
+\param{ntitle} & integer & The number of title lines (5 maximum). \\
+\param{title$_{i}$} & 80 characters & The \nth{i}{th} curve title line.
+If the user has requested QA information with the \cmd{QA} command, the
+database title is the first title line. The caption lines set by the
+\cmd{CAPTION} command are the next title lines. The last title line is a
+description of the curve.
+\medskip
+\\
+\param{x-label} & 40 characters & The X axis label, set by the
+\cmd{XLABEL} command. \\
+\param{y-label} & 40 characters & The Y axis label, set by the
+\cmd{YLABEL} command.
+\medskip
+\\
+\param{x-min} & real & The X axis lower plot limit, set by the
+\cmd{XSCALE} command. \\
+\param{x-max} & real & The X axis upper plot limit, set by the
+\cmd{XSCALE} command. \\
+\param{y-min} & real & The Y axis lower plot limit, set by the
+\cmd{YSCALE} command. \\
+\param{y-max} & real & The Y axis upper plot limit, set by the
+\cmd{YSCALE} command.
+\medskip
+\\
+\param{npts} & integer & The number of curve data X-Y pairs.
+\medskip
+\\
+\param{aux-data} & 1 character & \cmd{F} to indicate that no auxiliary
+data exists.
+\medskip
+\\
+\param{axis-type} & 4 characters & \cmd{NOLO} to indicate a linear scale
+on both axes.
+\medskip
+\\
+\param{x-type} & 4 characters & \cmd{NONM} if the X data is nonmonotonic
+or \cmd{MONO} if the X data is monotonic.
+\medskip
+\\
+\param{aux-type} & 1 character & Blank field to indicate that no
+auxiliary data exists.
+\medskip
+\\
+\param{x$_{i}$} & real & The \nth{i}{th} X data value. \\
+\param{y$_{i}$} & real & The \nth{i}{th} Y data value.
+%
+\end{tabular}

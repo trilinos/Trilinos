@@ -52,7 +52,7 @@ namespace Teko {
   \code
     <ParameterList name="Iterative Solve">
       <Parameter name="Type" type="string" value="Iterative Preconditioner"/>
-      <Parameter name="Preconditioner Type" type="string" value="ML"/>
+      <Parameter name="Preconditioner Type" type="string" value="Ifpack2"/>
       <Parameter name="Iteration Count" type="int" value="3"/>
     </ParameterList>
   \endcode

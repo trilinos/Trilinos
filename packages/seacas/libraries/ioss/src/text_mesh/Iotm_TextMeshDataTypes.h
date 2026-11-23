@@ -304,6 +304,35 @@ namespace Iotm {
       bool operator()(const EntityId lhs, const EntityId rhs) { return lhs < rhs; };
     };
 
+    template <typename EntityId> struct NodeData
+    {
+      int         proc;
+      EntityId    identifier;
+      std::string partName = "";
+
+      operator EntityId() const { return identifier; }
+    };
+
+    template <typename EntityId> struct NodeDataLess
+    {
+      bool operator()(const NodeData<EntityId> &lhs, const NodeData<EntityId> &rhs)
+      {
+        return lhs.identifier < rhs.identifier;
+      };
+
+      bool operator()(const NodeData<EntityId> &lhs, const EntityId rhs)
+      {
+        return lhs.identifier < rhs;
+      };
+
+      bool operator()(const EntityId lhs, const NodeData<EntityId> &rhs)
+      {
+        return lhs < rhs.identifier;
+      };
+
+      bool operator()(const EntityId lhs, const EntityId rhs) { return lhs < rhs; };
+    };
+
     template <typename EntityId, typename Topology> class Sidesets;
 
     template <typename EntityId> class Nodesets;
@@ -314,6 +343,7 @@ namespace Iotm {
     {
       unsigned                                     spatialDim{0};
       std::vector<ElementData<EntityId, Topology>> elementDataVec{};
+      std::vector<NodeData<EntityId>>              nodeDataVec{};
       PartIdMapping                                partIds;
       std::set<EntityId>                           nodeIds{};
       Coordinates<EntityId>                        coords;
@@ -330,6 +360,14 @@ namespace Iotm {
           nodeIds.insert(nodeId);
           associate_node_with_proc(nodeId, elem.proc);
         }
+      }
+
+      void add_node(const NodeData<EntityId> &node)
+      {
+        nodeDataVec.push_back(node);
+
+        nodeIds.insert(node.identifier);
+        associate_node_with_proc(node.identifier, node.proc);
       }
 
       const std::set<EntityId> &nodes_on_proc(int proc) const

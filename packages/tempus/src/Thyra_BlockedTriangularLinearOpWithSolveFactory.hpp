@@ -428,12 +428,28 @@ void BlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeOp(
   // LOWSB objects for the diagonal blocks.
   const bool firstTime = is_null(btlows.range());
 
+  // Check the blocked operator before changing btlows, so that a rejected
+  // operator leaves btlows unchanged (setBlocks() below checks it too)
+  const int N = blo->productRange()->numBlocks();
+  DBTLOWS::assertBlockTriangular(*blo);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      N != static_cast<int>(lowsf_.size()), std::logic_error,
+      "Error, BlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeOp(): "
+      "the blocked operator has "
+          << N << " block rows, but there are " << lowsf_.size()
+          << " LOWS factories!");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      !firstTime && N != btlows.productRange()->numBlocks(), std::logic_error,
+      "Error, BlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeOp(): "
+      "the blocked operator has "
+          << N << " block rows, but the operator being reinitialized has "
+          << btlows.productRange()->numBlocks() << "!");
+
   // If this is the first time through, we need to fill and create the block
   // structure
   if (firstTime)
     btlows.beginBlockFill(blo->productRange(), blo->productDomain());
 
-  const int N = blo->productRange()->numBlocks();
   for (int k = 0; k < N; ++k) {
     const RCP<const LinearOpBase<Scalar> > fwdOp_k =
         blo->getBlock(k, k).assert_not_null();

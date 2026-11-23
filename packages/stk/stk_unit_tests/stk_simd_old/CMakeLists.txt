@@ -1,5 +1,8 @@
 
 FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+# Compiled on its own in unity builds: file-scope globals and helpers shared with the Double variants
+set_source_files_properties(UnitTestStkMathFloat.cpp UnitTestStkSimdMathFloat.cpp
+  PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})

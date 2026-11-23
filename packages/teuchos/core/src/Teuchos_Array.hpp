@@ -745,7 +745,15 @@ public:
     size_t starPos = formatString.find("*");
     std::string prefix = formatString.substr(0,starPos);
     std::string postFix = formatString.substr(starPos+1);
+    // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
     return prefix+TypeNameTraits<T>::name()+postFix;
+#if defined(__GNUC__) && __GNUC__ == 12
+#pragma GCC diagnostic pop
+#endif
   }
   static std::string concreteName(const Array<T>&)
     { return name(); }

@@ -32,7 +32,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FactoryFactory, BuildFactory, Scalar, LocalOrd
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
-  // Determine Epetra/Tpetra mode
+  // Determine underlying linear algebra library
   Teuchos::CommandLineProcessor clp(false);
   Xpetra::Parameters xpetraParameters(clp);
   Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();

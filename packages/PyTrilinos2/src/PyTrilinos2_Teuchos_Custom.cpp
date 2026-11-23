@@ -34,8 +34,8 @@
 
 namespace py = pybind11;
 
-// Implementation based on:
-// https://github.com/trilinos/Trilinos/tree/master/packages/PyTrilinos/src/PyTrilinos_Teuchos_Util.cpp
+// Implementation based on Teuchos Python utilities from the archived
+// PyTrilinos repository: https://github.com/trilinos/PyTrilinos
 bool setPythonParameter(Teuchos::RCP<Teuchos::ParameterList> plist,
 			const std::string      & name,
 			py::object             value)
@@ -97,8 +97,8 @@ bool setPythonParameter(Teuchos::RCP<Teuchos::ParameterList> plist,
 }    // setPythonParameter
 
 
-// Implementation based on:
-// https://github.com/trilinos/Trilinos/tree/master/packages/PyTrilinos/src/PyTrilinos_Teuchos_Util.cpp
+// Implementation based on Teuchos Python utilities from the archived
+// PyTrilinos repository: https://github.com/trilinos/PyTrilinos
 py::object getPythonParameter(Teuchos::RCP<Teuchos::ParameterList> plist,
 			      const std::string            & name)
 {

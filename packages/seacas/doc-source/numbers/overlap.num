@@ -1,0 +1,24 @@
+     Genesis: UB:[GDSJAAR.EXECUTE.NUMBERS.SAND]OVERLAP.GEN;4
+
+     Title:    
+
+     Number of Nodes:        32
+     Number of Elements:     15
+     Two-Dimensional Mesh, Axisymmetric
+
+ Checking Master Surface 3 Versus Slave Surface 2
+
+  Slave    Master  Penetration  Element
+   Node   Element    Distance     Face    Face Nodes
+      2      11     7.387E-02       3        29      1
+      4      12     7.387E-02       3        30     29
+      6      13     7.387E-02       3        31     30
+      8      14     7.387E-02       3        32     31
+     10      15     7.387E-02       3        11     32
+ Warning -    7 Nodes penetrate master surface.
+     3 Nodes on an element face.
+
+ Checking Master Surface 2 Versus Slave Surface 3
+
+ No nodes found penetrating master surface.
+     2 Nodes on an element face.

@@ -9,7 +9,7 @@ namespace {
 using namespace stk::middle_mesh;
 
 
-class XiCoordinatesForTest : public XiCoordinates
+class XiCoordinatesForSpmdTest : public XiCoordinates
 {
   public:
     const std::vector<utils::Point>& get_xi_coords(mesh::MeshEntityType type) override
@@ -56,7 +56,7 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
 
       create_input_meshes(createTriangles);
 
-      auto xiPts = std::make_shared<XiCoordinatesForTest>();
+      auto xiPts = std::make_shared<XiCoordinatesForSpmdTest>();
       auto interface =
           application_interface_factory(type, inputMesh1, inputMesh2, MPI_COMM_WORLD,
                                         xiPts,
@@ -231,7 +231,7 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
     std::shared_ptr<mesh::Mesh> middleGrid2;
 };
 
-const std::vector<stk::middle_mesh::ApplicationInterfaceType> InterfaceTypes = {/*stk::middle_mesh::ApplicationInterfaceType::FakeParallel,*/ stk::middle_mesh::ApplicationInterfaceType::Parallel};
+const std::vector<stk::middle_mesh::ApplicationInterfaceType> SpmdInterfaceTypes = {/*stk::middle_mesh::ApplicationInterfaceType::FakeParallel,*/ stk::middle_mesh::ApplicationInterfaceType::Parallel};
 
 
 } // namespace
@@ -249,7 +249,7 @@ TEST_F(ApplicationInterfaceSPMDTester, Defaults)
 
   for (bool createTriangles : {false, true})
   {
-    for (stk::middle_mesh::ApplicationInterfaceType type : InterfaceTypes)
+    for (stk::middle_mesh::ApplicationInterfaceType type : SpmdInterfaceTypes)
     {
       for (int nprocs = 1; nprocs <= commsize; ++nprocs)
       {
@@ -273,7 +273,7 @@ TEST_F(ApplicationInterfaceSPMDTester, MToN)
 
   for (bool createTriangles : {false, true})
   {
-    for (stk::middle_mesh::ApplicationInterfaceType type : InterfaceTypes)
+    for (stk::middle_mesh::ApplicationInterfaceType type : SpmdInterfaceTypes)
     {
       for (int nprocs1 = 1; nprocs1 <= commsize; ++nprocs1)
         for (int nprocs2 = 1; nprocs2 <= commsize; ++nprocs2)
@@ -316,7 +316,7 @@ TEST_F(ApplicationInterfaceSPMDTester, BoundarySnapThenQuality)
 
   for (bool createTriangles : {false, true})
   {
-    for (stk::middle_mesh::ApplicationInterfaceType type : InterfaceTypes)
+    for (stk::middle_mesh::ApplicationInterfaceType type : SpmdInterfaceTypes)
     {
       for (int nprocs = 1; nprocs < commsize; ++nprocs)
       {
@@ -346,7 +346,7 @@ TEST(ApplicationInterfaceSPMD, MeshNotCreatedError)
   auto inputMesh2 = mesh::impl::create_mesh(spec1, f, comm1);
 
 
-  for (stk::middle_mesh::ApplicationInterfaceType type : InterfaceTypes)
+  for (stk::middle_mesh::ApplicationInterfaceType type : SpmdInterfaceTypes)
   {
     auto interface = application_interface_factory(type, inputMesh1, inputMesh2, comm1);
 

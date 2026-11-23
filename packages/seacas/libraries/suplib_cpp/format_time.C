@@ -9,27 +9,31 @@
 #include <fmt/format.h>
 #include <format_time.h>
 
-std::string format_time(double seconds)
-{
-  std::string suffix("u");
-  if (seconds > 0.0 && seconds < 1.0) {
-    seconds *= 1000.;
-    suffix = "ms";
+namespace suplib_cpp {
+
+  std::string format_time(double seconds)
+  {
+    std::string suffix("u");
+    if (seconds > 0.0 && seconds < 1.0) {
+      seconds *= 1000.;
+      suffix = "ms";
+    }
+    else if (seconds > 86400) {
+      suffix = "d";
+      seconds /= 86400.;
+    }
+    else if (seconds > 3600) {
+      suffix = "h";
+      seconds /= 3600.;
+    }
+    else if (seconds > 60) {
+      suffix = "m";
+      seconds /= 60.;
+    }
+    else {
+      suffix = "s";
+    }
+    return fmt::format("{:.3}{}", seconds, suffix);
   }
-  else if (seconds > 86400) {
-    suffix = "d";
-    seconds /= 86400.;
-  }
-  else if (seconds > 3600) {
-    suffix = "h";
-    seconds /= 3600.;
-  }
-  else if (seconds > 60) {
-    suffix = "m";
-    seconds /= 60.;
-  }
-  else {
-    suffix = "s";
-  }
-  return fmt::format("{:.3}{}", seconds, suffix);
-}
+
+} // namespace suplib_cpp

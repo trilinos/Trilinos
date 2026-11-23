@@ -37,6 +37,10 @@
 #include <dirent.h>
 #endif
 
+using suplib_cpp::copyright;
+using suplib_cpp::FileInfo;
+using suplib_cpp::GetLongOption;
+
 namespace {
   bool str_equal(const std::string &s1, const std::string &s2)
   {

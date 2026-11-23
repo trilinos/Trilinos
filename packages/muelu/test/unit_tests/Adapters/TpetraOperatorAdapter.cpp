@@ -333,7 +333,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
@@ -350,9 +349,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }  // CreatePreconditioner_ConstOperator
 
 // CreateTpetraPreconditioner(inA) with a default-constructed (empty) ParameterList must
@@ -363,7 +359,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
@@ -380,9 +375,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }  // CreatePreconditioner_ConstOperator_NoParameterList
 
 // Smaller 1D problem (fewer rows per rank).  Residual reduction is looser on a shallow grid.
@@ -392,7 +384,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
@@ -409,9 +400,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }  // CreatePreconditioner_ConstOperator_SmallGrid
 
 // Hierarchy depth from CreateTpetraPreconditioner must not depend on const vs non-const Operator handle.
@@ -421,7 +409,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
     ConstOverloadFixture<SC, LO, GO, NO> fx(/*rowsPerRank=*/2187);
     Teuchos::ParameterList baseList;
@@ -433,9 +420,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }  // CreatePreconditioner_ConstOperator_HierarchyLevels
 
 // Two-column multivector: const vs non-const CreateTpetraPreconditioner apply must agree column-wise.
@@ -445,7 +429,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
@@ -462,9 +445,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }  // CreatePreconditioner_ConstOperator_TwoVectors
 
 // ReuseTpetraPreconditioner with RCP<const CrsMatrix> vs RCP<CrsMatrix> on the same fine matrix.
@@ -474,7 +454,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, ReuseTpetraPreconditioner_Cons
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
@@ -492,9 +471,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, ReuseTpetraPreconditioner_Cons
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }  // ReuseTpetraPreconditioner_ConstCrsMatrix
 
 // Regression: Teuchos::RCP<Tpetra::CrsMatrix> used to be ambiguous between the overloads taking
@@ -506,7 +482,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_RcpCrsMat
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
 
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
@@ -523,9 +498,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_RcpCrsMat
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }  // CreatePreconditioner_RcpCrsMatrixOverload
 
 #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node)                                                                                    \

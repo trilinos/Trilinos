@@ -62,7 +62,7 @@ namespace Excn {
   private:
     void enroll_options();
 
-    GetLongOption options_{}; //!< Options parsing
+    suplib_cpp::GetLongOption options_{}; //!< Options parsing
 
     int  debugLevel_{0};
     int  screenWidth_{80};

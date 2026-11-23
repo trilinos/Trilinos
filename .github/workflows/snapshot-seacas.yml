@@ -1,0 +1,76 @@
+name: snapshot-seacas
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 0 * * 0
+
+permissions:
+  contents: read
+
+jobs:
+  seacas-snapshot:
+    permissions:
+      contents: write
+      pull-requests: write
+    if: ${{ github.repository == 'trilinos/Trilinos' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: generate-token
+        with:
+          client-id: ${{ secrets.SNAPSHOT_APP_ID }}
+          private-key: ${{ secrets.SNAPSHOT_APP_PRIVATE_KEY }}
+
+      - name: Clone Trilinos
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: develop
+          path: Trilinos
+
+      - name: Clone SEACAS
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: sandialabs/seacas
+          ref: master
+          path: seacas
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config --global user.name "Snapshot Action"
+          git config --global user.email "snapshot@action.com"
+
+      - name: Snapshot SEACAS
+        id: snapshot
+        run: |
+          cd seacas
+          echo "describe=$(git describe --always)" >> "$GITHUB_OUTPUT"
+          # snapshot-dir.py exits 1 even on success (TriBITS bug), so check its output instead
+          cmake/tribits/python_utils/snapshot-dir.py --skip-commit \
+            --orig-dir=packages/seacas/ --dest-dir=../Trilinos/packages/seacas/ \
+            --exclude libraries/ioss/src/private_copy_fmt libraries/suplib_cpp/fmt libraries/aprepro_lib/fmt \
+            > ../snapshot.log 2>&1 || true
+          grep -q 'Skipping commit on request!' ../snapshot.log || { cat ../snapshot.log; exit 1; }
+          cd ../Trilinos
+          # The exodus.py/exomerge.py tests run from CMAKE_INSTALL_PREFIX, which Trilinos CI does not install
+          sed -i -E 's/^( *)(ADD_TEST\(NAME test_exo(dus|merge)3\.py)/\1# \2/' packages/seacas/scripts/CMakeLists.txt
+          test "$(grep -c '# *ADD_TEST(NAME test_exo' packages/seacas/scripts/CMakeLists.txt)" = 2
+          git status --short
+
+      - name: Create/update PR
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          path: Trilinos
+          token: ${{ steps.generate-token.outputs.token }}
+          commit-message: "SEACAS: Snapshot of sandialabs/seacas ${{ steps.snapshot.outputs.describe }}"
+          title: "Snapshot of SEACAS"
+          body: |
+            Automatic snapshot of SEACAS at sandialabs/seacas ${{ steps.snapshot.outputs.describe }}.
+            This snapshot gets updated via a GitHub Action.
+          branch: seacas-snapshot
+          base: develop
+          delete-branch: true
+          draft: true
+          labels: |
+            pkg: seacas
+            PA: Data Services

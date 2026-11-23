@@ -452,12 +452,8 @@ int exi_put_name(int exoid, int varid, size_t index, const char *name, ex_entity
 int exi_get_names(int exoid, int varid, size_t num_names, char **names, ex_entity_type obj_type,
                   const char *routine)
 {
-  /* Query size of names on file
-   * Use the smaller of the size on file or user-specified length
-   */
-  int db_name_size  = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);
-  int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
-  int name_size     = db_name_size < api_name_size ? db_name_size : api_name_size;
+  /* Use the user-specified length; exi_get_name limits the read to the size on file. */
+  int name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
 
   for (size_t i = 0; i < num_names; i++) {
     int status = exi_get_name(exoid, varid, i, names[i], name_size, obj_type, routine);
@@ -470,20 +466,38 @@ int exi_get_names(int exoid, int varid, size_t num_names, char **names, ex_entit
 
 /*!
   \internal
-  \undoc
+  Read the name at `index` of the name variable `varid` into `name`, which
+  must hold at least `name_size + 1` characters.  At most `name_size`
+  characters are returned.  A name that fills the string dimension of the
+  variable (no trailing null on the database) is returned in full if it fits.
 */
 int exi_get_name(int exoid, int varid, size_t index, char *name, int name_size,
                  ex_entity_type obj_type, const char *routine)
 {
+  /* Determine the length of the string dimension of the name variable */
+  int    dimids[2];
+  size_t str_len = 0;
+  int    status  = nc_inq_vardimid(exoid, varid, dimids);
+  if (status == EX_NOERR) {
+    status = nc_inq_dimlen(exoid, dimids[1], &str_len);
+  }
+  if (status != EX_NOERR) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to get %s name length from file id %d [Called from %s]",
+             ex_name_of_object(obj_type), exoid, routine);
+    ex_err_fn(exoid, __func__, errmsg, status);
+    return EX_FATAL;
+  }
 
-  /* read the name */
+  /* read the name; never more than is on the database or fits in `name` */
   size_t start[2], count[2];
   start[0] = index;
   count[0] = 1;
   start[1] = 0;
-  count[1] = name_size + 1;
+  count[1] = (size_t)name_size + 1 < str_len ? (size_t)name_size + 1 : str_len;
 
-  int status = nc_get_vara_text(exoid, varid, start, count, name);
+  status = nc_get_vara_text(exoid, varid, start, count, name);
   if (status != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
@@ -493,7 +507,7 @@ int exi_get_name(int exoid, int varid, size_t index, char *name, int name_size,
     return EX_FATAL;
   }
 
-  name[name_size] = '\0';
+  name[count[1] < (size_t)name_size ? count[1] : (size_t)name_size] = '\0';
 
   exi_trim(name);
   return EX_NOERR;

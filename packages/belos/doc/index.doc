@@ -17,8 +17,8 @@ via a simple interface for adding vectors together or computing their
 inner products or norms.
 
 Implementations of operator and vector interfaces for
-Epetra, Tpetra, and Thyra objects are provided.  As a result, any existing code
-employing Epetra, Tpetra, or Thyra operators and vectors (such as
+Tpetra and Thyra objects are provided.  As a result, any existing code
+employing Tpetra or Thyra operators and vectors (such as
 other packages in Trilinos) may also be used in conjunction with
 %Belos.  %Belos is extensible because users may define this
 interface for their own operators and vectors.  This allows them to

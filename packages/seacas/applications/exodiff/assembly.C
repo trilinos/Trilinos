@@ -11,6 +11,8 @@
 #include <smart_assert.h> // for SMART_ASSERT
 #include <string>         // for string, char_traits
 
+using suplib_cpp::Data;
+
 template <typename INT> Assembly<INT>::Assembly() : Exo_Entity() {}
 
 template <typename INT>

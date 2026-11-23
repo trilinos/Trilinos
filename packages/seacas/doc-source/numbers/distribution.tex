@@ -1,0 +1,49 @@
+\documentstyle[12pt,tabs]{sreport}
+\columnseprule 0pt       %    Width of rule between columns.
+
+\def\address{\filbreak\bigskip\parindent0pt\everypar{\hangindent2em}}
+\def\name{\parindent2em\everypar{\hangindent4em}}
+\def\sandis#1 #2.#3.#4/{\filbreak\tabalign#1&\ifx#2\blank\else#2.&\fi
+                                     \ifx#3\blank\else#3.&\fi
+                                     \ifx#4\blank\else#4\fi\cr}
+\settabs\+1111\quad&W.$\,$&W.$\,$& \cr
+\long\def\SanInt{\filbreak\bigskip\medskip\parindent0pt
+      {\large\bf Sandia Internal:}\medskip}
+
+\parskip=0pt\relax
+
+\begin{document}
+\setcounter{page}{65}
+\twocolumn\obeylines%\small
+\begin{flushleft}
+{\large \bf Distribution:}
+\medskip
+%\SanInt
+\sandis 1510  J. W. Nunziato /
+\sandis 1511  D. K. Gartling /
+\sandis 1520  L. W. Davison~(2)/
+\sandis 1521  R. D. Krieg and Staff (12) /
+\sandis 1521  G. D. Sjaardema (20) /
+\sandis 1522  R. C. Reuter, Jr.\ and Staff (15) /
+\sandis 1523  J. H. Biffle and Staff (12) /
+\sandis 1524  L. W. Davison (Acting) and Staff (12) /
+\sandis 1530  D. B. Hayes /
+\sandis 1531  S. L. Thompson /
+\sandis 1550  C. W. Peterson /
+\sandis 1556  W. L. Oberkampf /
+\sandis 3141  S. A. Landenberger (5) /
+\sandis 3141-1 C. L. Ward {for DOE/OSTI~(8)}/
+\sandis 3151  W. I. Klein (3) /
+\sandis 6258  D. S. Preece /
+\sandis 6322  R. E. Glass /
+\sandis 8240  C. W. Robinson /
+\sandis 8241  G. A. Benedetti /
+\sandis 8242  M. R. Birnbaum /
+\sandis 8243  M. L. Callabresi /
+\sandis 8244  C. M. Hartwig /
+\sandis 8245  R. J. Kee /
+\sandis 8524  J. A. Wackerly /
+%
+% Issue a "\onecolumn" command to start a new page
+\end{flushleft}
+\end{document}

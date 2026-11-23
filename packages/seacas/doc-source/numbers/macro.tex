@@ -1,0 +1,37 @@
+\newcount\secno\newcount\subsecno
+\newread\tocf\newwrite\indx
+\def\section#1{\global\advance\secno by1\global\subsecno=0
+\message{*\the\secno*}
+\write\indx{\noexpand\t #1\noexpand\\\the\pageno\noexpand\\}
+\goodbreak
+\noindent{\bf\number\secno.\ #1}\nobreak}
+\def\paragraph#1{\global\advance\subsecno by1
+\write\indx{\noexpand\u #1\noexpand\\\the\pageno\noexpand\\}
+\goodbreak
+\noindent{\bf\number\secno.\number\subsecno\ #1}\nobreak}
+\def\toc{\secno=0
+\def\leaderfill{\leaders\hbox to 1em{\hss.\hss}\hfill}
+\def\t##1\\##2\\{\global\advance\secno by1\global\subsecno=0
+\vb\line{{\bf\number\secno.\ ##1}\leaderfill ##2}}
+\def\u##1\\##2\\{\global\advance\subsecno by1
+\vb\line{\hskip\parindent{\bf\number\secno.\number\subsecno\ ##1}\leaderfill
+##2}}
+\ct{Table of Contents}
+\vb
+\openin\tocf=\jobname.toc
+\ifeof\tocf\message{Table of contents file nonexistent}
+(none yet)\closein\tocf\else
+\closein\tocf\input\jobname.toc\fi
+\openout\indx\jobname.toc
+\global\secno=0
+\vfill\eject}
+
+\def\vb{\vskip\baselineskip}
+\def\ct#1{\centerline{\bf #1}}
+\def\ti#1{\leftline{\bf #1}}
+
+\def\today{\ifcase\month\or
+   January\or February\or March\or April\or May\or June\or
+   July\or August\or September\or October\or November\or December\fi
+   \space\number\day, \number\year}
+%

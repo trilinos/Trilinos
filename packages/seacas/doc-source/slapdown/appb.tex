@@ -1,0 +1,208 @@
+\chapter{Verification}
+
+\section{Introduction}
+
+     \SLAP\ was verified by comparison of the analytical
+results of this code with accelerometer data from the half-scale
+Defense High Level Waste (DHLW)
+cask test program [3].  The half-scale DHLW cask geometry and
+instrumentation locations are shown in Figure B.1.
+The cask was dropped
+from a height of 30 ft. $\pm$ 1 in. at an initial angle of 10$^\circ
+\pm$ 1$^\circ$. such that the narrower end (opposite the closure) of
+the cask contacted the unyielding target first.  Comparisons of
+experimental and analytical accelerations and velocities (integrated
+accelerations) were made at the accelerometer locations A7, A1, and
+A3.  A7 is located on the cask bottom end (initial impact end).  A1 is
+located slightly toward the closure from the center of gravity.  A3 is
+located on the closure (secondary impact) end.
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Half-Scale DHLW Cask Model Instrumentation Drawing}
+\end{figure}
+
+\section{\SLAP\ Input Development}
+
+      A typical input to \SLAP\ is shown in Table B.1.  The total
+mass was determined from the measured weight of the half-scale cask.
+The moment of inertia was calculated from the geometry, weight, and
+location of the individual cask components.  The moment of inertia
+calculation was not experimentally verified.  The location of the cask
+center of gravity (length from nose to CG and tail to CG) was also
+calculated and verified experimentally.  Agreement between the
+calculation and measurement of the center of gravity location was
+within .09 in.
+
+\begin{table}
+\begin{center}
+\caption{Input Parameters to \SLAP\ for the 30 Foot Drop Test of the
+DHLW Half-Scale Model at 10$^\circ$}
+\makeqnum
+\begin{tabular}{||l|c||}
+\hline
+Geometry: & \\
+\quad Nose to CG         &$??25.68$\\
+\quad Tail to CG         &$??23.5?$\\
+\quad Mass               &$??15.2?$\\
+\quad Moment of Inertia  &$8900.??$\\
+Nose Spring: & \\
+\quad Loading            &$400000.$ at 1.\\
+                   &$973000.$ at 3.\\
+\quad Unloading          &$8000000.$\\
+Tail Spring: &\\
+\quad Loading            &$388000.$ at 1.\\
+                   &$888000.$ at 2.8\\
+\quad Unloading          &$8000000.$\\
+\hline
+Initial Conditions: & \\
+\quad Initial Velocity   &$-527.45$\\
+\quad Initial Angle      &$??10.??$\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+    The springs were defined using the results of finite element
+analysis and testing of a honeycomb structure similar to
+(but much simpler to analyse) that used for
+side impact limiters on the DHLW cask.  A ring of aluminum honeycomb
+with an inside diameter of 20 in., an outside diameter of 31.75 in. and
+an axial length of 10.125 in. was applied to the axial center of a
+5500 lb. cylinder. The honeycomb cell structure
+was aligned radially, as
+in the DHLW impact limiters.  A
+sketch of the test structure is shown in Figure B.2.
+\begin{figure}
+\vspace{3.5 in}
+\caption{Honeycomb Crush Test Structure}
+\end{figure}
+The cylinder was
+dropped from 15 and 22 ft.  The cylinder drops were analysed using
+DYNA3D [4].  The analysis results for acceleration, final honeycomb
+crush (permanent impact limiter displacement), and footprint were in
+good agreement with the experimental results. These analysis results
+were then used to define the spring behavior of the DHLW impact
+limiters required by \SLAP .  The results for the 22-foot test
+cylinder drop were
+used because the amount of crush matched that expected in the
+DHLW impact limiters due to a 30-foot drop.
+The acceleration of the
+center of gravity of the cylinder predicted by DYNA3D for the 22-foot
+drop is shown plotted against the center of gravity displacement in
+Figure B.3.
+\begin{figure}
+\vspace{3.5 in}
+\caption{Acceleration versus Displacement for Honeycomb Crush Test
+Structure from DYNA3D for a 22-Foot Drop}
+\end{figure}
+This curve was smoothed, using the Butterworth low pass
+filter implemented in GRAFAID [5],
+to eliminate the contribution of the high frequency deformation
+modes to the acceleration.  In order to apply a Butterworth filter,
+the curve must be single valued.
+A series of
+initial and trailing zeros will also facilitate the filtering
+operation.
+Thus the analytical curve of Figure B.3
+was modified as shown in Figure B.4 by eliminating the unloading
+portion of the curve and adding the leading and trailing zeros.
+\begin{figure}
+\vspace{3.5 in}
+\caption{Acceleration versus Displacement for Honeycomb Crush Test
+Structure from DYNA3D for a 22-Foot Drop - Filtered}
+\end{figure}
+After filtering, the acceleration was converted into load
+by multiplying by the mass, and then scaled to the length used in the
+DHLW impact limiter. This result was approximated with bi-linear
+spring definition shown in Fig B.5 and used in the \SLAP\ input
+described in Table B.1.
+\begin{figure}
+\vspace{3.5 in}
+\caption{Approximation of Load versus Displacement Behavior of
+Honeycomb Impact Limiters on the DHLW Half-Scale Model}
+\end{figure}
+The unloading modulus was estimated directly
+from Figure B.3. The effects of friction were ignored in the {\em
+spring} definition.
+
+\section{Comparison of \SLAP\ with Experiment}
+
+The \SLAP\ program writes results at the locations of the nose spring,
+the center of gravity, and the tail spring.  For the half-scale DHLW
+cask test, these locations do not coincide with the accelerometer
+locations. However, because the cask is analysed as a rigid body, the
+analytical data may be determined at any arbitrary location by linear
+interpolation.  Thus, the \SLAP\ results were interpolated to be
+consistent with the accelerometer locations shown in Figure B.1.
+
+     Variation in drop height, within the experimental uncertainty,
+has a negligible effect on the cask behavior and thus was ignored.
+The initial angle, however, has an appreciable effect on the duration
+of the slapdown event along with a minor effect on the magnitudes of
+the accelerations and velocities.  Therefore, slapdown analyses were
+run with initial angles between 9$^\circ$ and 14$^\circ$.
+The values of acceleration and velocity from \SLAP\
+for the 13$^\circ$ initial angle are compared to the experimental data
+(at the three accelerometer locations A7, A1, and A3) in Figures B.6
+- B.11.  The 13$^\circ$ initial angle was chosen for display here
+because it
+provided the best match for the experimental data, perhaps indicating
+some rotation during the 30-foot free drop
+of the test.
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Comparison of Analytical and Experimental Vertical
+Accelerations at Location A7}
+\end{figure}
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Comparison of Analytical and Experimental Vertical
+Accelerations at Location A1}
+\end{figure}
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Comparison of Analytical and Experimental Vertical
+Accelerations at Location A3}
+\end{figure}
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Comparison of Analytical and Experimental Vertical
+Velocities at Location A7}
+\end{figure}
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Comparison of Analytical and Experimental Vertical
+Velocities at Location A1}
+\end{figure}
+
+\begin{figure}
+\vspace{3.5 in}
+\caption{Comparison of Analytical and Experimental Vertical
+Velocities at Location A3}
+\end{figure}
+
+Because the actual
+cask is not perfectly rigid, the accelerometers record some high
+frequency response.  The experimental data in the Figures B.6 -
+B.11 has been filtered at 500 Hz to allow for easier comparison.  500
+Hz was the lowest frequency which did not significantly alter the
+rise and fall times and the total pulse width of the data.
+Unfortunately, there
+is still a significant high frequency component in the accelerometer
+response remaining.
+Because of this remaining high frequency response, even after
+filtering, it is difficult to make accurate quantitative comparisons
+of acceleration values. However, when the accelerometer data are
+integrated to give velocities, the comparison is remarkably good.
+When the coarseness of the spring definition, the neglect of friction,
+and the experimental uncertainties are considered, these results
+indicate that slapdown events can be analysed with sufficient accuracy
+for a great number of purposes including determination of worst
+initial angles for testing and the effects of variations in impact
+limiter and cask parameters.

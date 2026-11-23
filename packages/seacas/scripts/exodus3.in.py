@@ -101,8 +101,6 @@ Authors:
 # show the banner on first use
 SHOW_BANNER = True
 
-sys.dont_write_bytecode = True
-
 ONELINE = "Gather from or export to Exodus files using the Exodus library"
 
 

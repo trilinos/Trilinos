@@ -16,14 +16,11 @@
 
     <ParameterList name="myNspFact">
       <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
-      <!--<Paramter name="Nullspace" type="string" value="myRebalanceProlongatorFact"/>-->
     </ParameterList>
 
     <ParameterList name="myCoalesceDropFact">
       <Parameter name="factory"                             type="string" value="CoalesceDropFactory"/>
       <Parameter name="lightweight wrap"                    type="bool"   value="true"/>
-      <!-- for aggregation dropping -->
-      <!-- <Parameter name="aggregation: drop tol"               type="double" value="0.1"/> -->
     </ParameterList>
 
     <ParameterList name="UncoupledAggregationFact">
@@ -57,7 +54,6 @@
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"                             type="string" value="SaPFactory"/>
       <Parameter name="P"                                   type="string" value="myTentativePFact"/>
-      <!-- <Parameter name="sa: damping factor"                  type="double" value="1.333"/> -->
     </ParameterList>
 
     <ParameterList name="myRestrictorFact">
@@ -65,29 +61,22 @@
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
     </ParameterList>
 
-    <!-- <ParameterList name="myTransferCoordinatesFact"> -->
-    <!--   <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/> -->
-    <!-- </ParameterList> -->
+    <ParameterList name="myTransferCoordinatesFact">
+      <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
+    </ParameterList>
 
     <ParameterList name="myRAPFact">
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
       <ParameterList name="TransferFactories">
-	<!-- <Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/> -->
-        <!-- <Parameter name="Visualization"                     type="string" value="myAggExportFact"/> -->
+        <Parameter name="For Coordinates"                   type="string" value="myTransferCoordinatesFact"/>
       </ParameterList>
     </ParameterList>
 
 <!-- -->
-<!-- Repartitioning -->
+<!-- Repartitioning (Zoltan2) -->
 <!-- -->
-
-	<!-- amalgamation of coarse level matrix -->
-    <ParameterList name="myRebAmalgFact">
-      <Parameter name="factory"                             type="string" value="AmalgamationFactory"/>
-      <Parameter name="A"                                   type="string" value="myRAPFact"/>
-    </ParameterList>
 
     <ParameterList name="myRepartitionHeuristicFact">
       <Parameter name="factory"                             type="string" value="RepartitionHeuristicFactory"/>
@@ -97,26 +86,22 @@
       <Parameter name="repartition: start level"            type="int"    value="1"/>
     </ParameterList>
 
-    <ParameterList name="myIsorropiaInterface">
-      <Parameter name="factory"                             type="string" value="IsorropiaInterface"/>
+    <ParameterList name="myZoltan2Interface">
+      <Parameter name="factory"                             type="string" value="Zoltan2Interface"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
       <Parameter name="number of partitions"                type="string" value="myRepartitionHeuristicFact"/>
-      <Parameter name="UnAmalgamationInfo"                  type="string" value="myRebAmalgFact"/>
+      <Parameter name="repartition: heuristic target rows per process" type="string" value="myRepartitionHeuristicFact"/>
+      <Parameter name="Coordinates"                         type="string" value="myTransferCoordinatesFact"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="algorithm"                         type="string" value="multijagged"/>
+      </ParameterList>
     </ParameterList>
-
-    <ParameterList name="myRepartitionInterface">
-      <Parameter name="factory"                             type="string" value="RepartitionInterface"/>
-      <Parameter name="A"                                   type="string" value="myRAPFact"/>
-      <Parameter name="number of partitions"                type="string" value="myRepartitionHeuristicFact"/>
-      <Parameter name="AmalgamatedPartition"                type="string" value="myIsorropiaInterface"/>
-    </ParameterList>
-
 
     <ParameterList name="myRepartitionFact">
       <Parameter name="factory"                             type="string" value="RepartitionFactory"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
       <Parameter name="number of partitions"                type="string" value="myRepartitionHeuristicFact"/>
-      <Parameter name="Partition"                           type="string" value="myRepartitionInterface"/>
+      <Parameter name="Partition"                           type="string" value="myZoltan2Interface"/>
       <Parameter name="repartition: remap parts"            type="bool"   value="false"/>
     </ParameterList>
 
@@ -125,13 +110,14 @@
       <Parameter name="type"                                type="string" value="Interpolation"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       <Parameter name="Nullspace"                           type="string" value="myTentativePFact"/>
+      <Parameter name="Coordinates"                         type="string" value="myTransferCoordinatesFact"/>
     </ParameterList>
 
+    <!-- Wire the rebalanced Nullspace back into myNspFact via "dependency for" -->
     <ParameterList name="myNspFactDeps">
-      <Parameter name="dependency for"                             type="string" value="myNspFact"/>
-      <Parameter name="Nullspace" type="string" value="myRebalanceProlongatorFact"/>
+      <Parameter name="dependency for"                      type="string" value="myNspFact"/>
+      <Parameter name="Nullspace"                           type="string" value="myRebalanceProlongatorFact"/>
     </ParameterList>
-
 
     <ParameterList name="myRebalanceRestrictionFact">
       <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
@@ -144,8 +130,6 @@
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
     </ParameterList>
 
-<!-- -->
-<!-- -->
 <!-- -->
 <!-- -->
 <!-- -->
@@ -207,18 +191,15 @@
     <Parameter name="coarse: max size"                      type="int"      value="500"/> <!-- Min number of rows on coarsest level -->
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
-    <!-- Will result in a new FactoryMap for a new FactoryManager on Level 1.  Will be used as a model for FM's on later levels.
-         Will refer to Factory Collection defined above. -->
     <ParameterList name="All">
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="Chebyshev"/>
-      <!-- <Parameter name="PreSmoother"                         type="string" value="ForwardGaussSeidel"/> -->
-      <!-- <Parameter name="PostSmoother"                        type="string" value="BackwardGaussSeidel"/> -->
       <Parameter name="A"                                   type="string"   value="myRebalanceAFact"/>
       <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
       <Parameter name="Nullspace"                           type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="Coordinates"                         type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
       <Parameter name="Graph"                               type="string"   value="myCoalesceDropFact"/>
       <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>

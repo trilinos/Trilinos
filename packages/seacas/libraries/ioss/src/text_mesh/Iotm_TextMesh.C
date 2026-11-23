@@ -134,6 +134,8 @@ namespace Iotm {
 
   void TextMesh::initialize()
   {
+    m_topologyMapping.initialize_topology_map();
+
     build_part_to_topology_map();
     build_block_partition_map();
     build_element_connectivity_map();
@@ -779,6 +781,21 @@ namespace Iotm {
                             << elementData.identifier << " in part named: " << elementData.partName
                             << " is attempting to reset the part topology: " << iter->second
                             << " with: " << elementData.topology.name());
+      }
+    }
+
+    Topology nodeTopology = m_topologyMapping.topology("NODE");
+    for (const auto &nodeData : m_data.nodeDataVec) {
+      auto iter = m_partToTopology.find(nodeData.partName);
+      if (iter == m_partToTopology.end()) {
+        m_partToTopology[nodeData.partName] = nodeTopology;
+      }
+      else {
+        ThrowRequireMsg(iter->second == nodeTopology,
+                        "Node with id: "
+                            << nodeData.identifier << " in part named: " << nodeData.partName
+                            << " is attempting to reset the part topology: " << iter->second
+                            << " with: " << nodeTopology.name());
       }
     }
   }

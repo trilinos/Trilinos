@@ -20,6 +20,9 @@
 #include "iqsort.h"
 #include "util.h"
 
+using suplib_cpp::Data;
+using suplib_cpp::index_qsort;
+
 namespace {
   double find_range(const double *x, size_t num_nodes);
 

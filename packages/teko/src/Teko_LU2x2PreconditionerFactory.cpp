@@ -151,16 +151,16 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(
   // initialize the defaults if necessary
   if (strategyBuilder_.cloneCount() == 0) initializeStrategyBuilder();
 
-  Teko_DEBUG_MSG_BEGIN(1) std::vector<std::string> names;
-  strategyBuilder_.getCloneNames(names);
-  DEBUG_STREAM << "Strategy names = ";
-  for (std::size_t i = 0; i < names.size(); i++) DEBUG_STREAM << names[i] << ", ";
-  DEBUG_STREAM << std::endl;
+  Teko_DEBUG_MSG_BEGIN(1)
+    std::vector<std::string> names;
+    strategyBuilder_.getCloneNames(names);
+    DEBUG_STREAM << "Strategy names = ";
+    for (std::size_t i = 0; i < names.size(); i++) DEBUG_STREAM << names[i] << ", ";
+    DEBUG_STREAM << std::endl;
   Teko_DEBUG_MSG_END()
 
-      // request the preconditioner factory from the CloneFactory
-      RCP<LU2x2Strategy>
-          strategy = strategyBuilder_.build(name);
+  // request the preconditioner factory from the CloneFactory
+  RCP<LU2x2Strategy> strategy = strategyBuilder_.build(name);
 
   if (strategy == Teuchos::null) {
     Teko_DEBUG_MSG("Warning: Could not build LU2x2Strategy named \""

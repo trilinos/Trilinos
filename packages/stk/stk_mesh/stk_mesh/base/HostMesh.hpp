@@ -41,6 +41,7 @@
 #include "stk_mesh/baseImpl/BucketRepository.hpp"
 #include "stk_mesh/base/DestroyRelations.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_mesh/baseImpl/NgpMeshEntityLifecycle.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/NgpTypes.hpp"
@@ -52,6 +53,7 @@
 #include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_mesh/base/NgpUtils.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 
 namespace stk {
 namespace mesh {
@@ -344,13 +346,31 @@ public:
   NgpCommMapIndicesHostMirror<stk::ngp::MemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc,
                                                                          bool includeGhosts=false) const
   {
-    if (rank != cachedRank || proc != cachedProc) {
+    // The cached view points into BulkData's comm map storage, which is rebuilt (and may be reallocated)
+    // whenever the mesh is modified, so the synchronized count is part of the key.
+    const size_t syncCount = bulk->synchronized_count();
+    if (rank != cachedRank || proc != cachedProc || includeGhosts != cachedIncludeGhosts ||
+        syncCount != cachedSyncCount) {
       cachedCommMap = bulk->template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(rank, proc, includeGhosts);
       cachedRank = rank;
       cachedProc = proc;
+      cachedIncludeGhosts = includeGhosts;
+      cachedSyncCount = syncCount;
     }
 
     return cachedCommMap;
+  }
+
+  size_t volatile_fast_shared_comm_map_size_on_host(stk::mesh::EntityRank rank, int proc, bool includeGhosts) const
+  {
+    return bulk->template volatile_fast_shared_comm_map_size<stk::ngp::MemSpace>(rank, proc, includeGhosts);
+  }
+
+  NgpCommMapIndicesHostMirror<stk::ngp::MemSpace> volatile_fast_shared_comm_map_on_host(stk::mesh::EntityRank rank,
+                                                                                    int proc,
+                                                                                    bool includeGhosts) const
+  {
+    return volatile_fast_shared_comm_map(rank, proc, includeGhosts);
   }
 
   template <typename... EntityIdsParams, typename... AddPartParams, typename... EntitiesParams>
@@ -362,6 +382,9 @@ public:
     using EntitiesMemorySpace = typename std::remove_reference<decltype(entityIds)>::type::memory_space;
     static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, EntitiesMemorySpace>::accessible,
                   "The memory space of the 'entities' View is inaccessible from the HostMesh execution space");
+    STK_ThrowRequireMsg(rank == stk::topology::NODE_RANK,
+                        "batch_declare_entities: rank " << rank << " entities have connected nodes; use the "
+                        "overload that takes 'nodeIds'");
 
     Kokkos::resize(requestedEntities, entityIds.extent(0));
     std::vector<Entity> requestedEntitiesVector;
@@ -382,6 +405,68 @@ public:
     for (unsigned i = 0; i < requestedEntities.extent(0); ++i) {
       requestedEntities(i) = requestedEntitiesVector[i];
     }
+  }
+
+  // Not supported:
+  //  - existing nodes must be locally owned, and neither shared nor ghosted to other procs (checked);
+  //  - an entity id must not already exist (checked);
+  //  - new nodes must not also be declared on another process (not checked).
+  // BulkData could handle some of these, but they are restricted to what a DeviceMesh implementation can
+  // support without communication, so that the two NgpMesh implementations stay interchangeable.
+  template <typename... EntityIdsParams, typename... NodeIdsParams, typename... AddPartParams,
+            typename... EntitiesParams, typename... NodesParams>
+  void batch_declare_entities(stk::topology::rank_t rank,
+                              const Kokkos::View<EntityId*, EntityIdsParams...>& entityIds,
+                              const Kokkos::View<EntityId**, NodeIdsParams...>& nodeIds,
+                              const Kokkos::View<PartOrdinal*, AddPartParams...>& addPartOrdinals,
+                              Kokkos::View<Entity*, EntitiesParams...>& declaredEntities,
+                              Kokkos::View<Entity**, NodesParams...>& connectedNodes)
+  {
+    using EntityIdsMemorySpace = typename std::remove_reference<decltype(entityIds)>::type::memory_space;
+    using NodeIdsMemorySpace = typename std::remove_reference<decltype(nodeIds)>::type::memory_space;
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, EntityIdsMemorySpace>::accessible,
+                  "The memory space of the 'entityIds' View is inaccessible from the HostMesh execution space");
+    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, NodeIdsMemorySpace>::accessible,
+                  "The memory space of the 'nodeIds' View is inaccessible from the HostMesh execution space");
+
+    const size_t numEntities = entityIds.extent(0);
+    const size_t numNodesPerEntity = nodeIds.extent(1);
+    STK_ThrowRequireMsg(nodeIds.extent(0) == numEntities,
+                        "batch_declare_entities: 'nodeIds' must have one row per entity id");
+
+    const MetaData& meta = bulk->mesh_meta_data();
+    std::vector<PartOrdinal> partOrdinals(addPartOrdinals.data(), addPartOrdinals.data() + addPartOrdinals.extent(0));
+    impl::get_topology_for_entities_with_nodes(meta, rank, partOrdinals, numNodesPerEntity);
+
+    PartVector parts;
+    for (PartOrdinal ord : partOrdinals) {
+      parts.push_back(&meta.get_part(ord));
+    }
+
+    // Validate everything before modification_begin(), so a rejected batch leaves the mesh untouched.
+    check_entities_with_nodes_are_declarable(rank, entityIds, nodeIds);
+
+    Kokkos::resize(declaredEntities, numEntities);
+    Kokkos::resize(connectedNodes, numEntities, numNodesPerEntity);
+
+    const PartVector noParts;
+    const Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+    OrdinalVector scratch1, scratch2, scratch3;
+
+    bulk->modification_begin();
+    for (size_t i = 0; i < numEntities; ++i) {
+      Entity entity = bulk->declare_entity(rank, entityIds(i), parts);
+      for (size_t j = 0; j < numNodesPerEntity; ++j) {
+        Entity node = bulk->get_entity(stk::topology::NODE_RANK, nodeIds(i, j));
+        if (!bulk->is_valid(node)) {
+          node = bulk->declare_node(nodeIds(i, j), noParts);
+        }
+        bulk->declare_relation(entity, node, static_cast<RelationIdentifier>(j), perm, scratch1, scratch2, scratch3);
+        connectedNodes(i, j) = node;
+      }
+      declaredEntities(i) = entity;
+    }
+    bulk->modification_end();
   }
 
   template <typename... EntitiesParams>
@@ -555,14 +640,6 @@ public:
   }
 #endif
 
-  template <typename... EntitiesParams, typename... AddPartParams, typename... RemovePartParams>
-  void impl_batch_change_entity_parts(const Kokkos::View<stk::mesh::Entity*, EntitiesParams...>& entities,
-                                 const Kokkos::View<stk::mesh::PartOrdinal*, AddPartParams...>& addPartOrdinals,
-                                 const Kokkos::View<stk::mesh::PartOrdinal*, RemovePartParams...>& removePartOrdinals)
-  {
-    batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals);
-  }
-
   auto& get_ngp_parallel_sum_host_buffer_offsets() {
     return impl::get_ngp_mesh_host_data<stk::ngp::MemSpace>(*bulk)->m_hostBufferOffsets;
   }
@@ -584,6 +661,35 @@ public:
   }
 
 private:
+  template <typename... EntityIdsParams, typename... NodeIdsParams>
+  void check_entities_with_nodes_are_declarable(stk::topology::rank_t rank,
+                                                const Kokkos::View<EntityId*, EntityIdsParams...>& entityIds,
+                                                const Kokkos::View<EntityId**, NodeIdsParams...>& nodeIds) const
+  {
+    const size_t numEntities = entityIds.extent(0);
+    const size_t numNodesPerEntity = nodeIds.extent(1);
+
+    std::vector<EntityId> sortedEntityIds(entityIds.data(), entityIds.data() + numEntities);
+    stk::util::sort_and_unique(sortedEntityIds);
+    STK_ThrowRequireMsg(sortedEntityIds.size() == numEntities,
+                        "batch_declare_entities: 'entityIds' contains duplicate ids");
+
+    for (size_t i = 0; i < numEntities; ++i) {
+      STK_ThrowRequireMsg(!bulk->is_valid(bulk->get_entity(rank, entityIds(i))),
+                          "batch_declare_entities: declaring an entity that already exists is not yet supported");
+      for (size_t j = 0; j < numNodesPerEntity; ++j) {
+        Entity node = bulk->get_entity(stk::topology::NODE_RANK, nodeIds(i, j));
+        if (!bulk->is_valid(node)) { continue; }
+        STK_ThrowRequireMsg(bulk->bucket(node).owned() && !bulk->bucket(node).shared(),
+                            "batch_declare_entities: connecting to existing nodes that are not locally owned, or are "
+                            "shared, is not yet supported");
+        STK_ThrowRequireMsg(!bulk->in_send_ghost(node),
+                            "batch_declare_entities: connecting to existing nodes that are ghosted to other procs is "
+                            "not yet supported");
+      }
+    }
+  }
+
   template <typename... FromParams, typename... OffsetParams, typename... ToParams,
             typename... OrdinalParams, typename... PermParams>
   void impl_batch_declare_relations(const Kokkos::View<stk::mesh::Entity*, FromParams...>& fromEntities,
@@ -707,6 +813,8 @@ private:
   size_t m_syncCountWhenUpdated;
   mutable stk::mesh::EntityRank cachedRank = stk::topology::INVALID_RANK;
   mutable int cachedProc = -1;
+  mutable bool cachedIncludeGhosts = false;
+  mutable size_t cachedSyncCount = 0;
   mutable NgpCommMapIndicesHostMirror<stk::ngp::MemSpace> cachedCommMap;
 };
 

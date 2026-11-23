@@ -28,7 +28,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, SetParameterList, Sc
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-  out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2, Amesos, Amesos2)." << std::endl;
+  MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+    RCP<Matrix> A                       = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(99);
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/ParameterListInterpreter/"), std::string(".xml"));
+
+    for (int i = 0; i < fileList.size(); i++) {
+      // Ignore files with "BlockCrs" in their name
+      auto found = fileList[i].find("BlockCrs");
+      if (found != std::string::npos) continue;
+
+      // Ignore files with "Comparison" in their name
+      found = fileList[i].find("Comparison");
+      if (found != std::string::npos) continue;
+
+      out << "Processing file: " << fileList[i] << std::endl;
+      ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i], *comm);
+
+      RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
+      H->GetLevel(0)->Set("A", A);
+
+      mueluFactory.SetupHierarchy(*H);
+
+      // TODO: check no unused parameters
+      // TODO: check results of Iterate()
+    }
+  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node) {

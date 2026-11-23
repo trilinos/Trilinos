@@ -52,7 +52,7 @@ class TriangleCoordUtilsTester : public ::testing::Test
     // utils::impl::Projection proj_zx;
 };
 
-void expect_near(const Point& pt1, const Point& pt2, double tol)
+void expect_near_triangle_coords(const Point& pt1, const Point& pt2, double tol)
 {
   for (int i = 0; i < 3; ++i)
     EXPECT_NEAR(pt1[i], pt2[i], tol);
@@ -66,9 +66,9 @@ TEST_F(TriangleCoordUtilsTester, compute_xyz_coords_Verts)
   PointRecordForTriangle r2(PointClassification::Vert, 1, tri);
   PointRecordForTriangle r3(PointClassification::Vert, 2, tri);
 
-  expect_near(triCoordUtils.compute_xyz_coords(r1), v1->get_point_orig(0), 1e-13);
-  expect_near(triCoordUtils.compute_xyz_coords(r2), v2->get_point_orig(0), 1e-13);
-  expect_near(triCoordUtils.compute_xyz_coords(r3), v3->get_point_orig(0), 1e-13);
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r1), v1->get_point_orig(0), 1e-13);
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r2), v2->get_point_orig(0), 1e-13);
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r3), v3->get_point_orig(0), 1e-13);
 }
 
 TEST_F(TriangleCoordUtilsTester, compute_xyz_coords_Edges)
@@ -77,9 +77,9 @@ TEST_F(TriangleCoordUtilsTester, compute_xyz_coords_Edges)
   PointRecordForTriangle r2(PointClassification::Edge, 1, tri, Point(0.5, 0.5));
   PointRecordForTriangle r3(PointClassification::Edge, 2, tri, Point(0.0, 0.5));
 
-  expect_near(triCoordUtils.compute_xyz_coords(r1), (v1->get_point_orig(0) + v2->get_point_orig(0)) / 2, 1e-13);
-  expect_near(triCoordUtils.compute_xyz_coords(r2), (v2->get_point_orig(0) + v3->get_point_orig(0)) / 2, 1e-13);
-  expect_near(triCoordUtils.compute_xyz_coords(r3), (v3->get_point_orig(0) + v1->get_point_orig(0)) / 2, 1e-13);
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r1), (v1->get_point_orig(0) + v2->get_point_orig(0)) / 2, 1e-13);
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r2), (v2->get_point_orig(0) + v3->get_point_orig(0)) / 2, 1e-13);
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r3), (v3->get_point_orig(0) + v1->get_point_orig(0)) / 2, 1e-13);
 }
 
 TEST_F(TriangleCoordUtilsTester, compute_xyz_coords_Interior)
@@ -87,24 +87,24 @@ TEST_F(TriangleCoordUtilsTester, compute_xyz_coords_Interior)
   PointRecordForTriangle r1(PointClassification::Interior, -1, tri, Point(1.0 / 3.0, 1.0 / 3.0));
 
   Point centroid = (v1->get_point_orig(0) + v2->get_point_orig(0) + v3->get_point_orig(0)) / 3;
-  expect_near(triCoordUtils.compute_xyz_coords(r1), centroid, 1e-13);
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r1), centroid, 1e-13);
 }
 
 TEST_F(TriangleCoordUtilsTester, get_edge_xi_Standard)
 {
   PointRecordForTriangle r1(PointClassification::Edge, 0, tri, Point(1.0 / 3.0, 0));
   EXPECT_NEAR(triCoordUtils.get_edge_xi(r1), 1.0 / 3.0, 1e-13);
-  expect_near(triCoordUtils.compute_xyz_coords(r1), mesh::compute_edge_coords_orig(e1, triCoordUtils.get_edge_xi(r1)),
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r1), mesh::compute_edge_coords_orig(e1, triCoordUtils.get_edge_xi(r1)),
               1e-13);
 
   PointRecordForTriangle r2(PointClassification::Edge, 1, tri, Point(2.0 / 3.0, 1.0 / 3.0));
   EXPECT_NEAR(triCoordUtils.get_edge_xi(r2), 1.0 / 3.0, 1e-13);
-  expect_near(triCoordUtils.compute_xyz_coords(r2), mesh::compute_edge_coords_orig(e2, triCoordUtils.get_edge_xi(r2)),
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r2), mesh::compute_edge_coords_orig(e2, triCoordUtils.get_edge_xi(r2)),
               1e-13);
 
   PointRecordForTriangle r3(PointClassification::Edge, 2, tri, Point(0, 2.0 / 3.0));
   EXPECT_NEAR(triCoordUtils.get_edge_xi(r3), 1.0 / 3.0, 1e-13);
-  expect_near(triCoordUtils.compute_xyz_coords(r3), mesh::compute_edge_coords_orig(e3, triCoordUtils.get_edge_xi(r3)),
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r3), mesh::compute_edge_coords_orig(e3, triCoordUtils.get_edge_xi(r3)),
               1e-13);
 }
 
@@ -112,17 +112,17 @@ TEST_F(TriangleCoordUtilsTester, get_edge_xi_Reversed)
 {
   PointRecordForTriangle r1(PointClassification::Edge, 0, triReversed, Point(1.0 / 3.0, 0));
   EXPECT_NEAR(triCoordUtils.get_edge_xi(r1), 2.0 / 3.0, 1e-13);
-  expect_near(triCoordUtils.compute_xyz_coords(r1),
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r1),
               mesh::compute_edge_coords_orig(e1Reversed, triCoordUtils.get_edge_xi(r1)), 1e-13);
 
   PointRecordForTriangle r2(PointClassification::Edge, 1, triReversed, Point(2.0 / 3.0, 1.0 / 3.0));
   EXPECT_NEAR(triCoordUtils.get_edge_xi(r2), 2.0 / 3.0, 1e-13);
-  expect_near(triCoordUtils.compute_xyz_coords(r2),
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r2),
               mesh::compute_edge_coords_orig(e2Reversed, triCoordUtils.get_edge_xi(r2)), 1e-13);
 
   PointRecordForTriangle r3(PointClassification::Edge, 2, triReversed, Point(0, 2.0 / 3.0));
   EXPECT_NEAR(triCoordUtils.get_edge_xi(r3), 2.0 / 3.0, 1e-13);
-  expect_near(triCoordUtils.compute_xyz_coords(r3),
+  expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(r3),
               mesh::compute_edge_coords_orig(e3Reversed, triCoordUtils.get_edge_xi(r3)), 1e-13);
 }
 
@@ -136,9 +136,9 @@ TEST_F(TriangleCoordUtilsTester, compute_orthogonal_dist)
 
 TEST_F(TriangleCoordUtilsTester, orthogonal_proj_triangle)
 {
-  expect_near(triCoordUtils.orthogonal_proj_triangle(Point(0.5, -0.5), 0), Point(0.5, 0), 1e-13);
-  expect_near(triCoordUtils.orthogonal_proj_triangle(Point(-0.5, 0.5), 2), Point(0, 0.5), 1e-13);
-  expect_near(triCoordUtils.orthogonal_proj_triangle(Point(1, 1), 1), Point(-0.5, 0.5), 1e-13);
+  expect_near_triangle_coords(triCoordUtils.orthogonal_proj_triangle(Point(0.5, -0.5), 0), Point(0.5, 0), 1e-13);
+  expect_near_triangle_coords(triCoordUtils.orthogonal_proj_triangle(Point(-0.5, 0.5), 2), Point(0, 0.5), 1e-13);
+  expect_near_triangle_coords(triCoordUtils.orthogonal_proj_triangle(Point(1, 1), 1), Point(-0.5, 0.5), 1e-13);
 }
 
 TEST_F(TriangleCoordUtilsTester, create_tri_record_edge)
@@ -151,8 +151,8 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_edge)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Edge);
     EXPECT_EQ(record.id, 0);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(0, 0, 0), 1e-13);
-    expect_near(triCoordUtils.compute_xyz_coords(record), utils::Point(0.0, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(0, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record), utils::Point(0.0, 0, 0), 1e-13);
   }
 
   {
@@ -160,8 +160,8 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_edge)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Edge);
     EXPECT_EQ(record.id, 0);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(0.25, 0, 0), 1e-13);
-    expect_near(triCoordUtils.compute_xyz_coords(record), utils::Point(0.25, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(0.25, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record), utils::Point(0.25, 0, 0), 1e-13);
   }  
 
   {
@@ -169,8 +169,8 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_edge)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Edge);
     EXPECT_EQ(record.id, 0);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(1, 0, 0), 1e-13);
-    expect_near(triCoordUtils.compute_xyz_coords(record), utils::Point(1, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(1, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record), utils::Point(1, 0, 0), 1e-13);
   }  
 
   // edge 2
@@ -179,8 +179,8 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_edge)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Edge);
     EXPECT_EQ(record.id, 1);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(1, 0, 0), 1e-13);
-    expect_near(triCoordUtils.compute_xyz_coords(record), utils::Point(1, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(1, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record), utils::Point(1, 0, 0), 1e-13);
   }
 
   {
@@ -188,8 +188,8 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_edge)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Edge);
     EXPECT_EQ(record.id, 1);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(0.75, 0.25, 0), 1e-13);
-    expect_near(triCoordUtils.compute_xyz_coords(record), utils::Point(0.75, 0.25, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(0.75, 0.25, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record), utils::Point(0.75, 0.25, 0), 1e-13);
   }  
 
   {
@@ -197,8 +197,8 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_edge)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Edge);
     EXPECT_EQ(record.id, 1);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(0, 1, 0), 1e-13);
-    expect_near(triCoordUtils.compute_xyz_coords(record), utils::Point(0, 1, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(0, 1, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record), utils::Point(0, 1, 0), 1e-13);
 
   }  
 
@@ -208,8 +208,8 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_edge)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Edge);
     EXPECT_EQ(record.id, 2);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(0, 1, 0), 1e-13);
-    expect_near(triCoordUtils.compute_xyz_coords(record), utils::Point(0, 1, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(0, 1, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record), utils::Point(0, 1, 0), 1e-13);
   }
 
   {
@@ -217,8 +217,8 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_edge)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Edge);
     EXPECT_EQ(record.id, 2);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(0, 0.75, 0), 1e-13);
-    expect_near(triCoordUtils.compute_xyz_coords(record), utils::Point(0, 0.75, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(0, 0.75, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record), utils::Point(0, 0.75, 0), 1e-13);
   }  
 
   {
@@ -226,8 +226,8 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_edge)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Edge);
     EXPECT_EQ(record.id, 2);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(0, 0, 0), 1e-13);
-    expect_near(triCoordUtils.compute_xyz_coords(record), utils::Point(0, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(0, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record), utils::Point(0, 0, 0), 1e-13);
 
   }    
 }
@@ -241,7 +241,7 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_vert)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Vert);
     EXPECT_EQ(record.id, 0);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(0, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(0, 0, 0), 1e-13);
   }
 
   {
@@ -249,7 +249,7 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_vert)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Vert);
     EXPECT_EQ(record.id, 1);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(1, 0, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(1, 0, 0), 1e-13);
   }  
 
   {
@@ -257,7 +257,7 @@ TEST_F(TriangleCoordUtilsTester, create_tri_record_vert)
     EXPECT_EQ(record.el, tri);
     EXPECT_EQ(record.type, PointClassification::Vert);
     EXPECT_EQ(record.id, 2);
-    expect_near(triCoordUtils.compute_xi_coords(record), utils::Point(0, 1, 0), 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xi_coords(record), utils::Point(0, 1, 0), 1e-13);
   }  
 }
 
@@ -284,7 +284,7 @@ TEST(TriangleCoordUtils, classify_onto)
     EXPECT_EQ(record2.el, tri2);
     EXPECT_EQ(record2.type, PointClassification::Vert);
     EXPECT_EQ(record2.id, 0);
-    expect_near(triCoordUtils.compute_xyz_coords(record2), {0, 0, 0}, 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record2), {0, 0, 0}, 1e-13);
   }
 
   {
@@ -294,7 +294,7 @@ TEST(TriangleCoordUtils, classify_onto)
     EXPECT_EQ(record2.el, tri4);
     EXPECT_EQ(record2.type, PointClassification::Vert);
     EXPECT_EQ(record2.id, 0);
-    expect_near(triCoordUtils.compute_xyz_coords(record2), {0, 0, 0}, 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record2), {0, 0, 0}, 1e-13);
   }  
 
   // vertex 2
@@ -305,7 +305,7 @@ TEST(TriangleCoordUtils, classify_onto)
     EXPECT_EQ(record2.el, tri2);
     EXPECT_EQ(record2.type, PointClassification::Vert);
     EXPECT_EQ(record2.id, 2);
-    expect_near(triCoordUtils.compute_xyz_coords(record2), {1, 0, 0}, 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record2), {1, 0, 0}, 1e-13);
   }
 
   {
@@ -315,7 +315,7 @@ TEST(TriangleCoordUtils, classify_onto)
     EXPECT_EQ(record2.el, tri3);
     EXPECT_EQ(record2.type, PointClassification::Vert);
     EXPECT_EQ(record2.id, 0);
-    expect_near(triCoordUtils.compute_xyz_coords(record2), {1, 0, 0}, 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record2), {1, 0, 0}, 1e-13);
   }
 
   // vertex 3   
@@ -326,7 +326,7 @@ TEST(TriangleCoordUtils, classify_onto)
     EXPECT_EQ(record2.el, tri3);
     EXPECT_EQ(record2.type, PointClassification::Vert);
     EXPECT_EQ(record2.id, 2);
-    expect_near(triCoordUtils.compute_xyz_coords(record2), {0, 1, 0}, 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record2), {0, 1, 0}, 1e-13);
   }
 
   {
@@ -336,7 +336,7 @@ TEST(TriangleCoordUtils, classify_onto)
     EXPECT_EQ(record2.el, tri4);
     EXPECT_EQ(record2.type, PointClassification::Vert);
     EXPECT_EQ(record2.id, 1);
-    expect_near(triCoordUtils.compute_xyz_coords(record2), {0, 1, 0}, 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record2), {0, 1, 0}, 1e-13);
   }   
 
   // edge 1
@@ -347,7 +347,7 @@ TEST(TriangleCoordUtils, classify_onto)
     EXPECT_EQ(record2.el, tri2);
     EXPECT_EQ(record2.type, PointClassification::Edge);
     EXPECT_EQ(record2.id, 2);
-    expect_near(triCoordUtils.compute_xyz_coords(record2), {0.25, 0, 0}, 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record2), {0.25, 0, 0}, 1e-13);
   }
 
   // edge 2
@@ -358,7 +358,7 @@ TEST(TriangleCoordUtils, classify_onto)
     EXPECT_EQ(record2.el, tri3);
     EXPECT_EQ(record2.type, PointClassification::Edge);
     EXPECT_EQ(record2.id, 2);
-    expect_near(triCoordUtils.compute_xyz_coords(record2), {0.75, 0.25, 0}, 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record2), {0.75, 0.25, 0}, 1e-13);
   }  
 
   // edge 3
@@ -369,7 +369,7 @@ TEST(TriangleCoordUtils, classify_onto)
     EXPECT_EQ(record2.el, tri4);
     EXPECT_EQ(record2.type, PointClassification::Edge);
     EXPECT_EQ(record2.id, 0);
-    expect_near(triCoordUtils.compute_xyz_coords(record2), {0, 0.75, 0}, 1e-13);
+    expect_near_triangle_coords(triCoordUtils.compute_xyz_coords(record2), {0, 0.75, 0}, 1e-13);
   }  
 }
 

@@ -49,6 +49,8 @@
 #error "MatIO Version 1.5.1 or greater is required"
 #endif
 
+using suplib_cpp::Data;
+
 /**********************************************************************/
 mat_t *mat_file = nullptr; /* file for binary .mat input */
 

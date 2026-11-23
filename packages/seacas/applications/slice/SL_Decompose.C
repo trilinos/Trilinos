@@ -33,9 +33,17 @@
 using idx_t = int;
 #endif
 
-extern int    debug_level;
-extern double seacas_timer();
-extern void   progress(const std::string &output);
+extern int debug_level;
+
+namespace suplib_cpp {
+
+  extern double seacas_timer();
+
+}
+
+using suplib_cpp::seacas_timer;
+
+extern void progress(const std::string &output);
 
 namespace {
   char **get_name_array(size_t count, size_t size)
@@ -398,7 +406,18 @@ std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface 
       for (int i = 0; i < map_count; i++) {
         if (case_compare(names[i], map_name)) {
           elem_to_proc.resize(element_count);
-          error = ex_get_num_map(exoid, EX_ELEM_MAP, i + 1, Data(elem_to_proc));
+          if (sizeof(INT) == 8) {
+            std::vector<INT> tmp_e2p(element_count);
+            error = ex_get_num_map(exoid, EX_ELEM_MAP, i + 1, Data(tmp_e2p));
+            if (error >= 0) {
+              for (size_t ii = 0; ii < element_count; ii++) {
+                elem_to_proc[ii] = (int)tmp_e2p[ii];
+              }
+            }
+          }
+          else {
+            error = ex_get_num_map(exoid, EX_ELEM_MAP, i + 1, Data(elem_to_proc));
+          }
           if (error < 0) {
             exodus_error(__LINE__);
           }

@@ -218,8 +218,15 @@ namespace impl {
         std::swap(edgeNodes[0], edgeNodes[1]);
       }
 
+      // An edge connected to both nodes may not have them as its end nodes: one can be its
+      // mid-edge node (e.g. a refined quadratic parent edge that still exists).
       for(auto edge : commonEdges) {
-        edge_map[edgeNodes] = edge;
+        const Entity* commonEdgeNodes = bulk.begin_nodes(edge);
+        const bool haveSameEndNodes = (commonEdgeNodes[0] == edgeNodes[0] && commonEdgeNodes[1] == edgeNodes[1]) ||
+                                      (commonEdgeNodes[0] == edgeNodes[1] && commonEdgeNodes[1] == edgeNodes[0]);
+        if (haveSameEndNodes) {
+          edge_map[edgeNodes] = edge;
+        }
       }
     }
   }

@@ -433,10 +433,12 @@ TEST(MasterElementProviderIntrepid2Test, UnsupportedTopology)
   double paramDistance{0.0};
   std::vector<double> paramCoords;
   if constexpr (stk::search::intrepid2_has_param_dist) {
+    std::cout << "NO THROW" << std::endl;
     EXPECT_NO_THROW(masterElemProvider->find_parametric_coordinates(meTopo, numFieldComponents, elementCoords,
                                                        elementCentroid, paramCoords, paramDistance));
   }
   else {
+    std::cout << "THROW" << std::endl;
     EXPECT_ANY_THROW(masterElemProvider->find_parametric_coordinates(meTopo, numFieldComponents, elementCoords,
                                                        elementCentroid, paramCoords, paramDistance));
   }
@@ -948,6 +950,275 @@ TEST(MasterElementProviderIntrepid2Test, EvaluateField_tet4_twoEvalPoints)
 
   test_evaluate_field_nodal_two_points(meshDesc, pointInside, pointOnFace,
                                        expectedScalarValueInside, expectedScalarValueOnFace);
+}
+
+struct ParametrizedMasterElement
+{
+  stk::topology                                         topology;
+  unsigned                                              numIntegrationPoints;
+  unsigned                                              spatialDimension;
+  double                                                centroidParametricDistance;
+  std::string                                           meshDesc;
+};
+
+using AcceptanceFunction = std::function<void(std::shared_ptr<stk::search::MasterElementProviderInterface>, const ParametrizedMasterElement&)>;
+
+struct ParametrizedMasterElementEntry
+{
+  ParametrizedMasterElement masterElement;
+  AcceptanceFunction        acceptanceCheck;
+};
+
+using ParametrizedMasterElementList = std::vector<ParametrizedMasterElementEntry>;
+
+std::shared_ptr<stk::mesh::BulkData> create_bulk_data(const ParametrizedMasterElement& masterElement)
+{
+  std::shared_ptr<stk::mesh::BulkData> bulk;
+
+  if(!masterElement.meshDesc.empty()) {
+    MPI_Comm comm = stk::parallel_machine_world();
+    bulk = stk::mesh::MeshBuilder(comm).set_spatial_dimension(masterElement.spatialDimension).create();
+    stk::unit_test_util::setup_text_mesh(*bulk, masterElement.meshDesc);
+  }
+
+  return bulk;
+}
+
+stk::mesh::Entity get_mesh_entity(std::shared_ptr<stk::mesh::BulkData> bulk, const std::string& partName, stk::mesh::EntityRank rank)
+{
+  const stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
+  stk::mesh::Part* part = meta.get_part(partName);
+  EXPECT_TRUE(part != nullptr);
+
+  stk::mesh::EntityVector entities;
+  stk::mesh::get_selected_entities(*part, bulk->buckets(rank), entities);
+  EXPECT_EQ(1u, entities.size());
+
+  stk::mesh::Entity entity = entities[0];
+  EXPECT_TRUE(bulk->is_valid(entity));
+
+  return entity;
+}
+
+void print_marker(const ParametrizedMasterElement& masterElement, const std::string& support)
+{
+  // Deprecate this function once full support is provided for all topologies
+  std::cout << "Testing " << support << " topology: " << masterElement.topology;
+  if(!masterElement.meshDesc.empty()) {
+    std::cout << " with meshDesc: " << masterElement.meshDesc;
+  }
+  std::cout << std::endl;
+}
+
+void supported_entity_topology(std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                               const ParametrizedMasterElement& masterElement,
+                               const std::string& partName, stk::mesh::EntityRank rank)
+{
+  print_marker(masterElement, "supported");
+
+  std::cout << "\tnum_integration_points" << std::endl;
+  stk::search::SearchTopology meTopo(masterElement.topology);
+  unsigned goldNumIntegrationPoints = masterElement.numIntegrationPoints;
+  EXPECT_NO_THROW(EXPECT_EQ(goldNumIntegrationPoints, masterElemProvider->num_integration_points(meTopo)) << "For topology:" << masterElement.topology);
+
+  if(!masterElement.meshDesc.empty()) {
+    std::shared_ptr<stk::mesh::BulkData> bulk = create_bulk_data(masterElement);
+    stk::mesh::Entity entity = get_mesh_entity(bulk, partName, rank);
+
+    const stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+    const stk::mesh::FieldBase* coords = meta.coordinate_field();
+
+    stk::topology topo = bulk->bucket(entity).topology();
+    EXPECT_EQ(masterElement.topology, topo);
+
+    std::vector<double> entityCentroid;
+    stk::search::determine_centroid(meta.spatial_dimension(), entity, *coords, entityCentroid);
+
+    unsigned numFieldComponents{0};
+    unsigned numNodes{0};
+    std::vector<double> entityCoords;
+
+    stk::search::spmd::EntityKeyPair elementKey(stk::search::spmd::make_entity_key_pair(bulk,entity));
+    EXPECT_NO_THROW(masterElemProvider->nodal_field_data(elementKey, coords, numFieldComponents, numNodes, entityCoords));
+
+    EXPECT_EQ(numFieldComponents, meta.spatial_dimension());
+    EXPECT_EQ(numNodes, topo.num_nodes());
+
+    double paramDistance{0.0};
+    std::vector<double> paramCoords;
+    std::cout << "\tfind_parametric_coordinates" << std::endl;
+    EXPECT_NO_THROW(masterElemProvider->find_parametric_coordinates(meTopo, numFieldComponents, entityCoords, entityCentroid,
+                                                                    paramCoords, paramDistance));
+    EXPECT_NEAR(masterElement.centroidParametricDistance, paramDistance, 1.0e-6);
+
+    std::vector<double> fieldData(numFieldComponents*numNodes, 5.0);
+    std::vector<double> result(numFieldComponents, 0.);
+    std::cout << "\tevaluate_field" << std::endl;
+    EXPECT_NO_THROW(masterElemProvider->evaluate_field(meTopo, paramCoords, numFieldComponents, fieldData, result));
+    for(unsigned i=0; i<numFieldComponents; i++) {
+      EXPECT_NEAR(5.0, result[i], 1.0e-6);
+    }
+  }
+}
+
+void supported_entity_topology_param_dist(std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                                          const ParametrizedMasterElement& masterElement,
+                                          const std::string& partName, stk::mesh::EntityRank rank)
+{
+  // Deprecate this function once full support is provided for parametric distance in Intrepid2
+  print_marker(masterElement, "supported");
+
+  std::cout << "\tnum_integration_points" << std::endl;
+  stk::search::SearchTopology meTopo(masterElement.topology);
+  unsigned goldNumIntegrationPoints = masterElement.numIntegrationPoints;
+  EXPECT_NO_THROW(EXPECT_EQ(goldNumIntegrationPoints, masterElemProvider->num_integration_points(meTopo)) << "For topology:" << masterElement.topology);
+
+  if(!masterElement.meshDesc.empty()) {
+    std::shared_ptr<stk::mesh::BulkData> bulk = create_bulk_data(masterElement);
+    stk::mesh::Entity entity = get_mesh_entity(bulk, partName, rank);
+
+    const stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+    const stk::mesh::FieldBase* coords = meta.coordinate_field();
+
+    stk::topology topo = bulk->bucket(entity).topology();
+    EXPECT_EQ(masterElement.topology, topo);
+
+    std::vector<double> entityCentroid;
+    stk::search::determine_centroid(meta.spatial_dimension(), entity, *coords, entityCentroid);
+
+    unsigned numFieldComponents{0};
+    unsigned numNodes{0};
+    std::vector<double> entityCoords;
+
+    stk::search::spmd::EntityKeyPair elementKey(stk::search::spmd::make_entity_key_pair(bulk,entity));
+    EXPECT_NO_THROW(masterElemProvider->nodal_field_data(elementKey, coords, numFieldComponents, numNodes, entityCoords));
+
+    EXPECT_EQ(numFieldComponents, meta.spatial_dimension());
+    EXPECT_EQ(numNodes, topo.num_nodes());
+
+    double paramDistance{0.0};
+    std::vector<double> paramCoords;
+    std::cout << "\tfind_parametric_coordinates" << std::endl;
+    if constexpr (stk::search::intrepid2_has_param_dist) {
+      EXPECT_NO_THROW(masterElemProvider->find_parametric_coordinates(meTopo, numFieldComponents, entityCoords, entityCentroid,
+                                                                      paramCoords, paramDistance));
+      EXPECT_NEAR(masterElement.centroidParametricDistance, paramDistance, 1.0e-6);
+    }  else {
+      EXPECT_ANY_THROW(masterElemProvider->find_parametric_coordinates(meTopo, numFieldComponents, entityCoords, entityCentroid,
+                                                                       paramCoords, paramDistance));
+    }
+
+    std::vector<double> fieldData(numFieldComponents*numNodes, 5.0);
+    std::vector<double> result(numFieldComponents, 0.);
+    std::cout << "\tevaluate_field" << std::endl;
+    if constexpr (stk::search::intrepid2_has_param_dist) {
+      EXPECT_NO_THROW(masterElemProvider->evaluate_field(meTopo, paramCoords, numFieldComponents, fieldData, result));
+      for(unsigned i=0; i<numFieldComponents; i++) {
+        EXPECT_NEAR(5.0, result[i], 1.0e-6);
+      }
+    } else  {
+      EXPECT_ANY_THROW(masterElemProvider->evaluate_field(meTopo, paramCoords, numFieldComponents, fieldData, result));
+    }
+  }
+}
+
+void supported_element_topology(std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                        const ParametrizedMasterElement& masterElement)
+{
+  supported_entity_topology(masterElemProvider, masterElement, "block_1", stk::topology::ELEM_RANK);
+}
+
+void supported_element_topology_param_dist(std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                                           const ParametrizedMasterElement& masterElement)
+{
+  supported_entity_topology_param_dist(masterElemProvider, masterElement, "block_1", stk::topology::ELEM_RANK);
+}
+
+void unsupported_entity_topology(std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                                 const ParametrizedMasterElement& masterElement,
+                                 const std::string& partName, stk::mesh::EntityRank rank,
+                                 const std::string& support = "unsupported")
+{
+  print_marker(masterElement, support);
+
+  if(!masterElement.meshDesc.empty()) {
+    std::shared_ptr<stk::mesh::BulkData> bulk = create_bulk_data(masterElement);
+    stk::mesh::Entity entity = get_mesh_entity(bulk, partName, rank);
+
+    stk::topology topo = bulk->bucket(entity).topology();
+    EXPECT_EQ(masterElement.topology, topo);
+
+    EXPECT_TRUE(masterElemProvider);
+  }
+}
+
+void unsupported_element_topology(std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                                  const ParametrizedMasterElement& masterElement)
+{
+  unsupported_entity_topology(masterElemProvider, masterElement, "block_1", stk::topology::ELEM_RANK);
+}
+
+void unsupported_face_topology(std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                               const ParametrizedMasterElement& masterElement)
+{
+  unsupported_entity_topology(masterElemProvider, masterElement, "surface_1", stk::topology::FACE_RANK);
+}
+
+void unsupported_edge_topology(std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+                               const ParametrizedMasterElement& masterElement)
+{
+  unsupported_entity_topology(masterElemProvider, masterElement, "surface_1", stk::topology::EDGE_RANK);
+}
+
+TEST(MasterElementProviderIntrepid2Test, supportedTopologies)
+{
+  MPI_Comm comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) {
+    GTEST_SKIP();
+  }
+
+  std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
+      std::make_shared<stk::search::MasterElementProviderIntrepid2>();
+
+  ParametrizedMasterElementList masterElementList {
+    {{stk::topology::LINE_2,            2u, 3u, 0.0, stk::unit_test_util::line_2_edge_mesh_desc() }, unsupported_edge_topology},
+    {{stk::topology::LINE_3,            3u, 3u, 0.0, stk::unit_test_util::line_3_edge_mesh_desc() }, unsupported_edge_topology},
+    {{stk::topology::TRI_3,             3u, 3u, 0.0, stk::unit_test_util::tri_3_face_mesh_desc()  }, unsupported_face_topology},
+    {{stk::topology::TRI_6,             7u, 3u, 0.0, stk::unit_test_util::tri_6_face_mesh_desc()  }, unsupported_face_topology},
+    {{stk::topology::QUAD_4,            4u, 3u, 0.0, stk::unit_test_util::quad_4_face_mesh_desc() }, unsupported_face_topology},
+    {{stk::topology::QUAD_8,            9u, 3u, 0.0, stk::unit_test_util::quad_8_face_mesh_desc() }, unsupported_face_topology},
+    {{stk::topology::QUAD_9,            9u, 3u, 0.0, stk::unit_test_util::quad_9_face_mesh_desc() }, unsupported_face_topology},
+    {{stk::topology::LINE_2_1D,         2u, 1u, 0.0, stk::unit_test_util::line_2_1d_mesh_desc()   }, unsupported_element_topology},
+    {{stk::topology::LINE_3_1D,         3u, 1u, 0.0, stk::unit_test_util::line_3_1d_mesh_desc()   }, unsupported_element_topology},
+    {{stk::topology::BEAM_2,            2u, 3u, 0.0, stk::unit_test_util::beam_2_mesh_desc()      }, unsupported_element_topology},
+    {{stk::topology::BEAM_3,            3u, 3u, 0.0, stk::unit_test_util::beam_3_mesh_desc()      }, unsupported_element_topology},
+    {{stk::topology::SHELL_LINE_2,      2u, 2u, 0.0, stk::unit_test_util::shell_line_2_mesh_desc()}, unsupported_element_topology},
+    {{stk::topology::SHELL_LINE_3,      3u, 2u, 0.0, stk::unit_test_util::shell_line_3_mesh_desc()}, unsupported_element_topology},
+    {{stk::topology::TRI_3_2D,          3u, 2u, 0.0, stk::unit_test_util::tri_3_2d_mesh_desc()    },   supported_element_topology},
+    {{stk::topology::TRI_6_2D,          7u, 2u, 0.0, stk::unit_test_util::tri_6_2d_mesh_desc()    }, unsupported_element_topology},
+    {{stk::topology::QUAD_4_2D,         4u, 2u, 0.0, stk::unit_test_util::quad_4_2d_mesh_desc()   },   supported_element_topology},
+    {{stk::topology::QUAD_8_2D,         9u, 2u, 0.0, stk::unit_test_util::quad_8_2d_mesh_desc()   }, unsupported_element_topology},
+    {{stk::topology::QUAD_9_2D,         9u, 2u, 0.0, stk::unit_test_util::quad_9_2d_mesh_desc()   }, unsupported_element_topology},
+    {{stk::topology::SHELL_TRI_3,       3u, 3u, 0.0, stk::unit_test_util::shell_tri_3_mesh_desc() }, unsupported_element_topology},
+    {{stk::topology::SHELL_TRI_6,       7u, 3u, 0.0, stk::unit_test_util::shell_tri_6_mesh_desc() }, unsupported_element_topology},
+    {{stk::topology::SHELL_QUAD_4,      4u, 3u, 0.0, stk::unit_test_util::shell_quad_4_mesh_desc()},   supported_element_topology_param_dist},
+    {{stk::topology::SHELL_QUAD_8,      9u, 3u, 0.0, stk::unit_test_util::shell_quad_8_mesh_desc()}, unsupported_element_topology},
+    {{stk::topology::SHELL_QUAD_9,      9u, 3u, 0.0, stk::unit_test_util::shell_quad_9_mesh_desc()}, unsupported_element_topology},
+    {{stk::topology::TET_4,             4u, 3u, 0.0, stk::unit_test_util::tet_4_mesh_desc()       },   supported_element_topology},
+    {{stk::topology::TET_10,            4u, 3u, 0.0, stk::unit_test_util::tet_10_mesh_desc()      },   supported_element_topology},
+    {{stk::topology::PYRAMID_5,         8u, 3u, 0.4, stk::unit_test_util::pyr_5_mesh_desc()       },   supported_element_topology},
+    {{stk::topology::PYRAMID_13,       27u, 3u, 0.4, stk::unit_test_util::pyr_13_mesh_desc()      }, unsupported_element_topology},
+    {{stk::topology::WEDGE_6,           6u, 3u, 0.0, stk::unit_test_util::wedge_6_mesh_desc()     },   supported_element_topology},
+    {{stk::topology::WEDGE_15,         18u, 3u, 0.0, stk::unit_test_util::wedge_15_mesh_desc()    }, unsupported_element_topology},
+    {{stk::topology::HEX_8,             8u, 3u, 0.0, stk::unit_test_util::hex_8_mesh_desc()       },   supported_element_topology},
+    {{stk::topology::HEX_20,           27u, 3u, 0.0, stk::unit_test_util::hex_20_mesh_desc()      },   supported_element_topology},
+    {{stk::topology::HEX_27,           27u, 3u, 0.0, stk::unit_test_util::hex_27_mesh_desc()      }, unsupported_element_topology}
+  };
+
+  for(const auto& entry : masterElementList) {
+    entry.acceptanceCheck(masterElemProvider, entry.masterElement);
+  }
 }
 
 }

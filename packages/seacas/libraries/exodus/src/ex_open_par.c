@@ -325,7 +325,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
   if (mode & EX_WRITE) { /* Appending */
     /* turn off automatic filling of netCDF variables */
     if (is_pnetcdf) {
-      if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
+      if ((status = nc_redef(exoid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
         free(canon_path);

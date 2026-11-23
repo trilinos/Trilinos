@@ -1,0 +1,36 @@
+\chapter{Site Supplements} \label{a:site}
+
+\input{site}
+
+\section{Execution Files} \label{exec:files}
+
+The table below summarizes the files used by \numbers.
+
+\begin{center} \begin{tabular}{||l|c|c|c||}
+\hline
+\multicolumn{1}{||c}{Description} &
+\multicolumn{1}{|c}{Unit Number} &
+\multicolumn{1}{|c}{Type} &
+\multicolumn{1}{|c||}{File Format} \\
+\hline
+     User input & standard input  & input  & Section~\ref{c:commands} \\
+    User output & standard output & output & ASCII \\
+Output file     &               7 & output & ASCII \\
+EXODUS database &               9 & input  & \\
+\hline
+\end{tabular} \end{center}
+
+All files must be connected to the appropriate unit before
+\numbers\ is run. Each file (except standard input and output) is
+opened with the name retrieved by the \caps{EXNAME} routine of the
+\caps{SUPES} library \cite{supes}.
+
+\section{Special Software}
+
+\numbers\ is written in ANSI \caps{FORTRAN}-77.
+\numbers\ uses the following software package:
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item the \caps{SUPES} package \cite{supes} which includes dynamic
+memory allocation, a free-field reader, and \caps{\caps{FORTRAN}}
+extensions.
+\end{itemize}

@@ -1,0 +1,196 @@
+\documentstyle[12pt]{smemo}
+\def\SLAP{{\sf Slap\-down}}
+\def\slap{{\sf Slap\-down}}
+\def\exo{{\sf EXODUS}}
+\newcommand{\caps}[1]
+   {\uppercase{#1}\null}
+\newcommand{\cmd}[1]
+   {\mbox{\sf\uppercase{#1}}\null}
+\newcommand{\lcmd}[1]
+   {\mbox{\sf#1}\null}
+\newcommand{\param}[1]
+   {{\em #1}\null}
+\newcommand{\optparam}[1]
+   {[{\em #1\/}]\null}
+\newcommand{\bold}[1]
+   {{\bf #1}\null}
+%%\input{setup}
+\begin{document}
+\begin{memo}
+
+\to{ Distribution}
+\from{G. D. Sjaardema, 1521}
+\subject Modifications to \slap
+
+\SLAP\ is a computer program written to help analysts determine the
+behavior of a body impacting onto an unyielding surface.  The program
+models the body as a three degree-of-freedom system.  The deformation of
+the body is approximated by nonlinear springs at each end of the model.
+The program was written to model the impact behavior of both nuclear
+waste transportation casks (subjected to the regulatory 30-foot drops
+onto an unyielding surface) and laydown weapons.
+
+The code documentation and users' manual are in SAND88-0616, "Numerical
+and Analytical Methods for Approximating the Eccentric Impact Response
+(Slapdown) of Deformable Bodies."  However, several modifications and
+improvements have been added to \slap\ since the users' manual was
+written.  The modifications and improvements are documented in this
+memo.
+
+\section*{New Commands}
+
+A \slap\ analysis normally continues until either both springs have
+unloaded, or the velocities of both the \cmd{NOSE} and \cmd{TAIL} are
+positive.  Sometimes a longer or shorter time duration is needed for
+special cases; therefore, a command has been added to let the analyst
+control the length of the analysis.  The command syntax is:
+\begin{quote}
+\sf TERMINATION [TIME] \em end\_time
+\end{quote}
+where the keyword \cmd{TIME} is optional, and the parameter
+\param{end\_time} is the time to terminate the analysis.
+
+If \cmd{TERMINATION~TIME} is not specified, the calculation will
+continue until either both springs have unloaded, or the velocities of
+both the \cmd{NOSE} and \cmd{TAIL} are positive.
+
+The square end treatment (see Section~3.1, page~19 of the users' manual)
+can now be specified for both the nose and tail of the body; previously
+it could only be specified for the nose.  The command syntax is:
+\begin{quote}
+\sf TAIL SQUARE \\
+\end{quote}
+\rm or, if the nose has been specified as \cmd{SQUARE}, the \cmd{TAIL
+SYMMETRIC} command will also result in a square tail.
+
+\section*{Friction Algorithm Improved}
+
+The friction algorithm has been extensively modified and improved.  The
+algorithm correctly handles both square and round ends and will
+``stick'' at the impact point if the coefficient of friction is high
+enough.  The new algorithm also works when both ends are in contact
+simultaneously--the oscillations that occurred with the old algorithm no
+longer occur.
+
+The algorithm uses an iterative approach to determine the lateral force
+required to completely stick the impacting end.  It then compares this
+with the maximum possible lateral force (normal force times the
+coefficient of friction) and returns the minimum of these two values. In
+several test problems and a comparison with an actual test, the new
+algorithm gives much better results.
+
+\section*{Modifications to \slap\ Output Files}
+
+\paragraph*{\exo\ Database Changes:} Two new nodes have been added to
+the \exo\ database file.  The left end contact point is node~4 and the
+right end contact point is node 5. Figure~\ref{geometry} shows the node
+and element numberings used in \slap.  The nodes at the contact points
+were added to provide information about the behavior at these points for
+bodies with square ends. For square ends, the $x$-velocities at the
+contact points are not the same as the $x$-velocities at the ends of the
+body centerline.
+
+The global variable \cmd{DAMKE} (damaging kinetic energy) has been added
+to the database.  This variable is sometimes used in laydown weapon
+analysis to indicate the severity of the impact.  The damaging kinetic
+energy is equal to
+\begin{displaymath}
+\cmd{DAMKE} = \sfrac1/2 \left(m v_y^2 + I \omega^2\right)
+\end{displaymath}
+where $m$ is the mass, $I$ is the mass moment of inertia, $v_y$ is the
+vertical velocity at the center of gravity, and $\omega$ is the angular
+velocity about the center of gravity.
+
+\paragraph*{Output File Changes:}  The text output file has also been
+modified slightly.  The event sequence summary (see Figure~A.5 in the
+users' manual) now includes the ratio of the impact velocity to the
+initial velocity which makes it easier to determine the severity of the
+slapdown effect.
+
+Also, the maximum strain energy in each of the springs during the impact
+event is output in the results summary.  These values are important
+in determining the severity of the slapdown effect since for some
+geometries the second impact will occur at a velocity greater than the
+initial velocity; however, due to the bodies angular position and
+velocity, the strain energy in the spring will be less than that caused
+by a flat impact.  The opposite effect will also occur (higher strain
+energy at lower impact velocity).
+
+\section*{Support and Notification of Modifications}
+An \cmd{ICER} facility has been created for \slap.  This facility will
+be used to provide a more immediate notification of any future
+modifications or problems. If there are any problems with \slap, contact
+Greg Sjaardema, 1521, at 844--7045.
+
+\begin{figure}
+%\begin{center}
+\unitlength 1in
+\begin{picture}(6.0,4)
+\thicklines
+\put(0.25, 2.5){\framebox(.75,.3){Nose}}
+\put(5.00, 3.5){\framebox(.75,.3){Tail}}
+\put(3.125,2.0){\framebox(.75,.3){CG}}
+\put(1.25, 1){\line(-1,4){0.25}}
+\put(1.00, 2){\line( 4,1){4.0}}
+\put(5.00, 3){\line(0,-1){1.0}}
+\put(3.50, 2.6250){\circle*{.1}}
+%\put(5.25, 2.4000){\vector(0,-1){.4}}
+
+\put(0.8, 2.0000){\makebox(0,0){N1}}
+\put(3.50, 2.7750){\makebox(0,0){N2}}
+\put(5.2, 3.0000){\makebox(0,0){N3}}
+\put(1.4, 1.1){\makebox(0,0){N4}}
+\put(5.2, 1.9500){\makebox(0,0){N5}}
+\put(2.25, 2.4625){\makebox(0,0){E1}}
+\put(4.25, 2.9625){\makebox(0,0){E2}}
+%\put(5.25, 2.5000){\makebox(0,0){$R_t$}}
+%\put(5.25, 2.6000){\vector(0, 1){.4}}
+%
+% force vectors
+%
+%\put(3.50, 2.6250){\vector(0, 1){.5}}
+%\put(3.50, 3.1250){\makebox(0,0)[b]{$V_{Y0}$}}
+%\put(3.50, 2.6250){\vector(1, 0){.5}}
+%\put(4.000,2.6250){\makebox(0,0)[l]{$V_{X0}$}}
+%%
+%\put(5.00, 1.5   ){\vector(0, 1){.5}}
+%\put(5.00, 1.5   ){\makebox(0,0)[t]{$F_N^t$}}
+%\put(4.50, 2.0   ){\vector(1, 0){.5}}
+%\put(4.50, 2.0   ){\makebox(0,0)[r]{$F_T^t$}}
+%%
+%\put(1.25, 0.5   ){\vector(0, 1){.5}}
+%\put(1.25, 0.5   ){\makebox(0,0)[t]{$F_N^n$}}
+%\put(0.75, 1.0   ){\vector(1, 0){.5}}
+%\put(0.75, 1.0   ){\makebox(0,0)[r]{$F_T^n$}}
+%%
+%% Dimensions
+%%
+%\put(1.40, 1.4){\vector(1,-4){.10}}
+%\put(1.375,1.5){\makebox(0,0){$R_n$}}
+%\put(1.35, 1.6){\vector(-1,4){.10}}
+%%
+%\put(2.10, 2.5250){\vector(-4,-1){1.10}}
+%\put(2.25, 2.5625){\makebox(0,0){$L_n$}}
+%\put(2.40, 2.6000){\vector( 4, 1){1.10}}
+%%
+%\put(4.10, 3.0250){\vector(-4,-1){0.60}}
+%\put(4.25, 3.0625){\makebox(0,0){$L_t$}}
+%\put(4.40, 3.1000){\vector( 4, 1){0.60}}
+%
+% Rigid surface
+%
+\put(1,1){\line(1,0){4.5}}
+\put(3.5,.8){Rigid Surface}
+%
+\put(1.50,2){\line(1,0){0.5}}
+\put(1.75,2.05){\makebox(0,0)[b]{$\theta$}}
+\thinlines
+%
+\end{picture}
+%\end{center}
+\caption{\SLAP\ Node (N) and Element (E) Numberings ({\sf SQUARE}
+end)}\label{geometry}
+\end{figure}
+
+\end{memo}
+\end{document}

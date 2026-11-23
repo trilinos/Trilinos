@@ -49,14 +49,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#  example_fem_nonlinear_Jv_timings
-#  SOURCES Example_FEM_Nonlinear_Jv_Timings.cpp 
-#          ${example_fem_nonlinear_SOURCES}
-#  COMM serial mpi
-#  PASS_REGULAR_EXPRESSION "Run has completed successfully!"
-#  )
-
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING 
                             ${CMAKE_CURRENT_SOURCE_DIR}/auxiliary_tests)
   

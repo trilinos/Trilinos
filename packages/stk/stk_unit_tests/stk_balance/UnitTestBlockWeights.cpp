@@ -44,12 +44,12 @@
 namespace
 {
 
-class BalanceSettingsTester : public stk::balance::GraphCreationSettings
+class BlockWeightsBalanceSettingsTester : public stk::balance::GraphCreationSettings
 {
 public:
-  BalanceSettingsTester(const std::string& decompMethod)
+  BlockWeightsBalanceSettingsTester(const std::string& decompMethod)
     : localMethod(decompMethod) { }
-  virtual ~BalanceSettingsTester() = default;
+  virtual ~BlockWeightsBalanceSettingsTester() = default;
 
   virtual std::string getDecompMethod() const override { return localMethod; }
 
@@ -90,7 +90,7 @@ protected:
                                    const BlockWeightsMap & weightForBlock,
                                    const std::vector<unsigned> & expectedElemsOnEachProc)
   {
-    BalanceSettingsTester balanceSettings(decompType);
+    BlockWeightsBalanceSettingsTester balanceSettings(decompType);
     for (const auto & weights : weightForBlock) {
       balanceSettings.setVertexWeightBlockMultiplier(weights.first, weights.second);
     }

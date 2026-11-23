@@ -1,0 +1,281 @@
+\chapter{Equation Input} \label{chap:equation}
+
+The expressions to be evaluated are entered by the user as equations.
+The syntax is very similar to \caps{FORTRAN} equation syntax. The first
+item is the variable to be assigned, followed by an ``\cmd{=}'', then
+the expression to be evaluated. The expression consists of constants,
+variables, arithmetic operators, and functions.
+
+The equations must adhere to the following syntax rules.
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item
+Blanks are treated as delimiters, but are otherwise ignored.
+\item
+Either lowercase or uppercase letters are acceptable, but lowercase
+letters are converted to uppercase.
+\item
+A ``\verb|'|'' character in any equation starts a comment. The
+``\verb|'|'' and any characters following it on the line are ignored.
+\item
+An equation may be continued over several lines with a ``\verb|>|''
+character. The ``\verb|>|'' and any characters following it on the
+current line are ignored and the next line is appended to the current
+line.
+\end{itemize}
+
+\section{The Assigned Variable} \label{assvar}
+
+The assigned variable name must start with a letter and can be up to
+eight alphanumeric characters (A--Z, 0--9) long. A name that is longer
+than eight characters is truncated with a warning. Blanks cannot be
+embedded in a variable name.
+
+All assigned variables (except temporary variables specified by a
+\cmd{DELETE} command) will be written to the output database. The input
+database variables are not written to the output database unless they
+are assigned in an equation (such as \cmd{X~=~X}) or transferred with a
+\cmd{SAVE} command.
+
+The type of the assigned variable depends on the expression. There are
+three types of ``quantities'' in an expression that are related to the
+variable types:
+\setlength{\itemsep}{\medskipamount} \begin{itemize}
+\item
+Global quantities include global variables and nodal or element
+variables for specific nodes or elements.
+\item
+Nodal quantities include nodal variables and nodal coordinates, unless
+the value is limited to a specific node.
+\item
+Element quantities include element variables, unless the value is
+limited to a specific element.
+\end{itemize}
+Global quantities are referred to as ``single-value''
+quantities. Nodal and element quantities are referred to as ``arrays''.
+
+Each part of an expression yields a result of a particular type. The
+types of constants and variables are defined above. The type of an
+arithmetic operation is dependent on the types of its operands. If both
+operands are global quantities, the operation yields a global
+quantity. If either operand is an array, the operation type is
+the array type. Thus a nodal quantity and an element quantity cannot
+appear in the same operation. For array operations, the operator is
+applied to each array element. The type of a function is dependent on
+the types of its parameters. The rules for operand types also apply to
+all function parameters. One special type of function yields a global
+quantity regardless of the parameter type.
+
+The assigned variable can be reassigned, but it must be assigned to the
+same variable type (global, nodal or element).
+
+The equations are evaluated in order. The assigned variables are grouped
+by variable type, but are otherwise output in the order they are first
+assigned by the equations.
+
+If there are no timesteps on the input database, a timestep will be
+added to the output database. The equation defining new variable(s)
+can access constants and coordinates.
+
+\section{Restricting the Nodes and/or Elements}
+
+Nodes and/or elements may be deleted from the input database with the
+\cmd{ZOOM}, \cmd{VISIBLE}, \cmd{FILTER}, or \cmd{REMOVE} commands. An
+input variable is defined for all input nodes and/or elements. An
+output variable is only defined for the nodes and/or elements to be
+output.
+
+Element variables may be undefined for certain element blocks. This may
+be further restricted with the \cmd{BLOCKS} command. If two or more
+element variables are combined with an operator or are function
+parameters, the resulting variable is only defined for an element block
+if all the variables involved are defined for that block.
+
+When an operation or function is performed on an array variable, it is
+only performed for the defined nodes/elements. This is done to prevent
+problems with numerical errors such as divide by zero for undefined
+values.
+
+\section{Constants}
+
+Constants can be entered in any legal \caps{FORTRAN} numeric format
+(e.g., 5, 5.4 or 5.4E3). All integers are converted to real numbers. If
+the constant is signed, parenthesis should surround the sign and
+constant.
+
+\section{Variables}
+
+The variables that may be found in the expression to be evaluated are:
+\setlength{\itemsep}{\smallskipamount} \begin{itemize}
+\item any input database global, nodal or element variable,
+\item the values for any coordinate,
+\item a reference to a specific nodal or element quantity,
+\item the time associated with each time step, and
+\item any previously assigned variable.
+\end{itemize}
+
+If an embedded blank is included in an input database variable or
+coordinate name, the blank must be deleted in references to the
+variable. For example, variable ``\cmd{SIG X}'' must be entered as
+``\cmd{SIGX}''.
+
+The coordinates may be referenced in the expression by name. They are
+treated as an input database nodal variable whose value remains constant
+in all ``whole'' time steps.
+
+If the value for a specific node or element is desired, a ``\cmd{\$}''
+and the node or element number is appended to the variable name. For
+example, \cmd{SIGR\$40} refers to the value for the \nth{40}{th} element
+of variable \cmd{SIGR}. A specifier may be appended to the name of any
+nodal or element quantity in an expression, including coordinates and
+previously assigned variables. References to specific nodes and/or
+elements can only be made if the variable is defined at that node and/or
+element.
+
+The value of a variable in the previous time step is referenced by
+appending a ``\cmd{:}'' to the variable name. The value in the first
+time step is referenced by appending a ``\cmd{:1}'' to the variable
+name. If time steps are selected, the previous and first time steps
+refer to the selected time steps, not the input time steps.
+
+The name ``\cmd{TIME}'' is reserved for the time associated with each
+time step. The output database times are copied from the input database
+unless a value is assigned to the variable \cmd{TIME}. \cmd{TIME} may also
+appear in the expression, referring to the input or assigned database
+time.
+
+The equations are evaluated in order. References to a variable name in
+the expression refer to the last assigned value, or to the input
+variable if the name has not been assigned. For example, if input global
+variable \cmd{CONST} has a value of 4 and the following equations are
+executed,
+\cenlinesbegin
+\cmd{X = CONST} \\
+\cmd{CONST = 2$*$CONST} \\
+\cmd{Y = CONST}
+\cenlinesend
+the result is \cmd{X} equals 4, \cmd{CONST} equals 8, and \cmd{Y} equals
+8.
+
+\section{Operators}
+
+The legal operations are addition ($+$), subtraction ($-$),
+multiplication ($*$), division ($/$), and exponentiation ($**$). The
+operands may be either single-value or array quantities as explained in
+Section~\ref{assvar}.
+
+\caps{FORTRAN} operator precedence rules apply (e.g., multiplication is
+performed before addition). Parenthesis may be used to change the order
+of evaluation.
+
+Two operators cannot be placed in succession. To precede a value with a
+sign, enclose the sign and value in parenthesis. For example,
+\cenlinesbegin
+\cmd{A = $-$5 $*$ $-$SIN(0.5)}
+\cenlinesend
+should be written as
+\cenlinesbegin
+\cmd{A = ($-$5) $*$ ($-$SIN(0.5))}
+\cenlinesend
+where the parenthesis around the \cmd{$-$5} are optional.
+
+\section{Functions}
+
+Many of the standard \caps{FORTRAN} functions and several special
+functions are implemented in \caps{\PROGRAM}.
+These functions are summarized in Appendix~\ref{appx:function}.
+The parameters for any
+function may be expressions and all parameters must be supplied. The
+parameters may be either single-value or array quantities as explained
+in Section~\ref{assvar}.
+
+A function in an equation is distinguished from a variable name by the
+``\cmd{(}'' which follows the function name. This allows the user to
+assign variable names which are the same as the function names and to
+reference input database variables with the same names as the functions.
+
+\subsection*{\caps{FORTRAN} Functions}
+
+The standard \caps{FORTRAN} functions implemented are: \cmd{AINT},
+\cmd{ANINT}, \cmd{ABS}, \cmd{MOD}, \cmd{SIGN}, \cmd{DIM}, \cmd{MAX},
+\cmd{MIN}, \cmd{SQRT}, \cmd{EXP}, \cmd{LOG}, \cmd{LOG10}, \cmd{SIN},
+\cmd{COS}, \cmd{TAN}, \cmd{ASIN}, \cmd{ACOS}, \cmd{ATAN}, \cmd{ATAN2},
+\cmd{SINH}, \cmd{COSH}, and \cmd{TANH}. The use and result of these
+functions is the same as in \caps{FORTRAN}, and the same restrictions
+apply.
+
+\subsection*{Tensor Principal Values and Magnitude Functions}
+
+Functions \cmd{PMAX} and \cmd{PMIN} calculate the maximum and minimum
+principal values of a symmetric tensor. For example, to obtain the
+maximum principal values for a tensor $T$,
+\cenlinesbegin
+\cmd{SMAX = PMAX ($T_{11}$, $T_{22}$, $T_{33}$, $T_{12}$, $T_{23}$,
+$T_{31}$)}.
+\cenlinesend
+For a two-dimensional tensor or a tensor using cylindrical coordinates
+for an axisymmetric solution, \cmd{PMAX2} and \cmd{PMIN2} may be used:
+\cenlinesbegin
+\cmd{SMAX = PMAX2 ($T_{11}$, $T_{22}$, $T_{12}$)}.
+\cenlinesend
+
+The function \cmd{TMAG} calculates the magnitude of the deviatoric part
+of a symmetric tensor. To calculate the magnitude of tensor $T$,
+\cenlinesbegin
+\cmd{SMAG = TMAG ($T_{11}$, $T_{22}$, $T_{33}$, $T_{12}$, $T_{23}$,
+$T_{31}$)}
+\cenlinesend
+where the following calculation is made:
+\cenlinesbegin
+\cmd{SMAG = }$\sqrt{(T_{11} - T_{22})^{2} + (T_{22} - T_{33})^{2} +
+(T_{33} - T_{11})^{2} + 6 * (T_{12}^{2} + T_{23}^{2} + T_{31}^{2})}$.
+\cenlinesend
+
+To obtain the von Mises stress, the value supplied by function
+\cmd{TMAG} is multiplied by the constant $1/\sqrt{2}$. To calculate
+effective strain, multiply by the constant $\sqrt{2.0}/3.0$.
+
+\subsection*{IF Functions}
+
+The functions \cmd{IFLZ}, \cmd{IFEZ}, and \cmd{IFGZ} provide a simple
+\mbox{if-then-else} capability. Each function expects three parameters:
+a condition, a true result, and a false result. Function \cmd{IFLZ}
+returns the true result if the condition evaluates to less than zero;
+otherwise the function returns the false result. Function \cmd{IFEZ}
+checks for equal to zero and \cmd{IFGZ} checks for greater than zero.
+For example, the equation
+\cenlinesbegin
+\cmd{\param{x} = IFLZ (\param{cond}, \param{rtrue}, \param{rfalse})}
+\cenlinesend
+with global parameters \param{cond}, \param{rtrue}, and \param{rfalse}
+could be implemented in \caps{FORTRAN} by
+\cenlinesbegin
+\cmd{IF (\param{cond} .LT. 0.0) THEN} \\
+\hspace*{\myindent} \cmd{\param{x} = \param{rtrue}} \\
+\cmd{ELSE} \\
+\hspace*{\myindent} \cmd{\param{x} = \param{rfalse}} \\
+\cmd{END IF}
+\cenlinesend
+All the parameters are evaluated before the function, so both the true
+result and the false result are evaluated even though only one is
+needed.
+
+\subsection*{Array $\Rightarrow$ Global Variable Functions}
+
+The functions \cmd{SUM}, \cmd{SMAX}, and \cmd{SMIN} perform a
+calculation on a nodal or element array parameter which produces a
+global result. \cmd{SUM} sums all the array values. \cmd{SMAX} and
+\cmd{SMIN} return the maximum and minimum of all the array values.
+
+Values for specific nodes and/or elements are only included in the
+function calculation if the variable is defined at that node and/or
+element.
+
+\subsection*{Envelope Functions}
+
+An ``envelope'' function performs a calculation that is cumulative for
+all previous time steps. The function \cmd{ENVMAX} results in an array
+(assuming the parameter is an array) that is the maximum of each array
+value for all previous selected time steps and the current time step. On
+the last time step, \cmd{ENVMAX} contains the maximum of each array
+value for all selected time steps. \cmd{ENVMIN} is the corresponding
+minimum function.

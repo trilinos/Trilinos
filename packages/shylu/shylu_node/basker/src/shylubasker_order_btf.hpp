@@ -392,8 +392,8 @@ namespace BaskerNS
       //           ((double)1/num_threads) +
       //           ((double)BASKER_BTF_IMBALANCE));
       #if 0 // forcing to have the big A bloock for debug
-      double break_work_size = 0.0;
-      double break_block_size = 0.0;
+      double break_work_size = -1.0;
+      double break_block_size = -1.0;
       printf( " > debug: break_size = %f, %f\n",break_work_size,break_block_size );
       #else
       // A block if it is larger than work esitimate assigned to one thread (otherwise, we could factor in parallel)
@@ -406,8 +406,8 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE) {
           printf("Basker: Forcing to perform ND factorization of one BTF block for partial factorization %d\n",Options.partial_facto);
         }
-        break_work_size = 0.0;
-        break_block_size = 0.0;
+        break_work_size = -1.0;
+        break_block_size = -1.0;
         #if !defined (HAVE_SHYLU_NODEBASKER_METIS)
         if (Options.partial_facto == 2) {
           BASKER_ASSERT(1==0, "Basker: partial factorization requires METIS.");

@@ -71,49 +71,61 @@ namespace Ioss {
      */
     enum RoleType {
       INTERNAL,
-      MESH,      /**< A field which is used to define the basic geometry
-                      or topology of the model and is not normally transient
-                      in nature. Examples would be element connectivity or
-                      nodal coordinates. */
-      ATTRIBUTE, /**< A field which is used to define an attribute on an
-                      EntityBlock derived class. Examples would be thickness
-                      of the elements in a shell element block or the radius
-                      of particles in a particle element block. */
-      MAP,
-      COMMUNICATION,
+      MESH,           /**< A field which is used to define the basic geometry
+                           or topology of the model and is not normally transient
+                           in nature. Examples would be element connectivity or
+                           nodal coordinates. */
+      ATTRIBUTE,      /**< A field which is used to define an attribute on an
+                           EntityBlock derived class. Examples would be thickness
+                           of the elements in a shell element block or the radius
+                           of particles in a particle element block. */
+      MAP,            ///< A list of integers specifying some ordering or mapping of the entties
+      COMMUNICATION,  ///< Related to parallel communication
       MESH_REDUCTION, /**< A field which summarizes some non-transient data
                          about an entity (\sa REDUCTION). This could be an
                          offset applied to an element block, or the units
                          system of a model or the name of the solid model
                          which this entity is modelling... */
-      INFORMATION = MESH_REDUCTION,
-      REDUCTION, /**< A field which typically summarizes some transient data
-                      about an entity. The size of this field is typically not
-                      proportional to the number of entities in a GroupingEntity.
-                      An example would be average displacement over a group of
-                      nodes or the kinetic energy of a model. This data is also
-                      transient. */
-      TRANSIENT  /**< A field which is typically calculated at multiple steps
-                      or times in an analysis. These are typically "results"
-                      data. Examples would be nodal displacement or element
-                      stress. */
+      INFORMATION = MESH_REDUCTION, ///< Same as MESH_REDUCTION
+      REDUCTION,                    /**< A field which typically summarizes some transient data
+                                         about an entity. The size of this field is typically not
+                                         proportional to the number of entities in a GroupingEntity.
+                                         An example would be average displacement over a group of
+                                         nodes or the kinetic energy of a model. This data is also
+                                         transient. */
+      TRANSIENT                     /**< A field which is typically calculated at multiple steps
+                                         or times in an analysis. These are typically "results"
+                                         data. Examples would be nodal displacement or element
+                                         stress. */
     };
 
     Field();
 
-    // Create a field named 'name' that contains values of type 'type'
-    // in a storage format of type 'storage'.  There are 'value_count'
-    // items in the field. If `value_count==0`, then the correct size
-    // will be set when the field is added to a `GroupingEntity`
+    /**< Create a field named 'name' that contains values of type 'type'
+     in a storage format of type 'storage'.  There are 'value_count'
+     items in the field. If `value_count==0`, then the correct size
+     will be set when the field is added to a `GroupingEntity` */
     Field(std::string name, BasicType type, const std::string &storage, RoleType role,
           size_t value_count = 0, size_t index = 0);
 
+    /**< Create a composite field named 'name' that contains values of type 'type'
+     in a storage format of type 'storage'.  There will be `copies` instances of the `storage`
+     format. There are 'value_count' items in the field. If `value_count==0`, then the correct size
+     will be set when the field is added to a `GroupingEntity` */
     Field(std::string name, BasicType type, const std::string &storage, int copies, RoleType role,
           size_t value_count = 0, size_t index = 0);
 
+    /**< Create a composed field named 'name' that contains values of type 'type'
+     in a primary storage format of type 'storage' and a secondary storage format of type
+     `secondary`. There are 'value_count' items in the field. If `value_count==0`, then the correct
+     size will be set when the field is added to a `GroupingEntity` */
     Field(std::string name, BasicType type, const std::string &storage,
           const std::string &secondary, RoleType role, size_t value_count = 0, size_t index = 0);
 
+    /**< Create a field named 'name' that contains values of type 'type'
+     in a storage format of type 'storage' (specified via instance and not name).
+     There are 'value_count' items in the field. If `value_count==0`, then the correct size
+     will be set when the field is added to a `GroupingEntity` */
     Field(std::string name, BasicType type, const VariableType *storage, RoleType role,
           size_t value_count = 0, size_t index = 0);
 
@@ -171,14 +183,14 @@ namespace Ioss {
     IOSS_NODISCARD const VariableType *raw_storage() const { return rawStorage_; }
     IOSS_NODISCARD const VariableType *transformed_storage() const { return transStorage_; }
 
-    IOSS_NODISCARD size_t raw_count() const { return rawCount_; } // Number of items in field
+    IOSS_NODISCARD size_t raw_count() const { return rawCount_; } ///< Number of items in field
     IOSS_NODISCARD size_t transformed_count() const
     {
       return transCount_;
-    } // Number of items in field
+    } ///< Number of items in field after transforms have been applied.
 
-    IOSS_NODISCARD size_t get_size() const; // data size (in bytes) required to hold entire field
-    IOSS_NODISCARD size_t get_basic_size() const; // data size (in bytes) of the basic type
+    IOSS_NODISCARD size_t get_size() const; ///< data size (in bytes) required to hold entire field
+    IOSS_NODISCARD size_t get_basic_size() const; ///< data size (in bytes) of the basic type
 
     /** \brief Get the role (MESH, ATTRIBUTE, TRANSIENT, REDUCTION, etc.) of the data in the field.
      *
@@ -198,16 +210,17 @@ namespace Ioss {
       return *this;
     }
 
-    void reset_count(size_t new_count);  // new number of items in field
-    void reset_type(BasicType new_type); // new type of items in field.
+    void reset_count(size_t new_count);  ///< new number of items in field
+    void reset_type(BasicType new_type); ///< new type of items in field.
 
-    // Verify that data_size is valid.  Return value is the maximum
-    // number of entities to get ('RawCount')
-    // Throws runtime error if data_size too small.
+    /**  Verify that data_size is valid.  Return value is the maximum
+     * number of entities to get ('RawCount')
+     * Throws runtime error if data_size too small.
+     */
     size_t verify(size_t data_size) const;
 
-    // Verify that the type 'the_type' matches the field's type.
-    // throws exception if the types don't match.
+    /** Verify that the type 'the_type' matches the field's type.
+     * throws exception if the types don't match. */
     void check_type(BasicType the_type) const;
 
     IOSS_NODISCARD bool is_type(BasicType the_type) const { return the_type == type_; }
@@ -225,23 +238,23 @@ namespace Ioss {
   private:
     std::string name_{};
 
-    size_t rawCount_{};   // Count of items in field before transformation
-    size_t transCount_{}; // Count of items in field after transformed
-    size_t size_{};       // maximum data size (in bytes) required to hold entire field
+    size_t rawCount_{};   ///< Count of items in field before transformation
+    size_t transCount_{}; ///< Count of items in field after transformed
+    size_t size_{};       ///< maximum data size (in bytes) required to hold entire field
     mutable size_t
-        index_{}; // Optional flag that can be used by a client to indicate an ordering.
+        index_{}; ///< Optional flag that can be used by a client to indicate an ordering.
                   // Unused by field itself.  Used by some DatabaeIO objects to set ordering.
-    BasicType type_{INVALID};
-    RoleType  role_{INTERNAL};
+    BasicType type_{INVALID};  ///< The basic type of the field (Integer, Real, String)
+    RoleType  role_{INTERNAL}; ///< The role of the field.
 
-    const VariableType *rawStorage_{nullptr};   // Storage type of raw field
-    const VariableType *transStorage_{nullptr}; // Storage type after transformation
+    const VariableType *rawStorage_{nullptr};   ///< Storage type of raw field
+    const VariableType *transStorage_{nullptr}; ///< Storage type after transformation
 
     std::vector<std::shared_ptr<Transform>> transforms_{};
-    char         suffixSeparator1_{1};      // Value = 1 means unset; use database default.
-    char         suffixSeparator2_{1};      // Value = 1 means unset; use database default.
-    bool         sufficesUppercase_{false}; // True if the suffices are uppercase on database...
-    mutable bool zeroCopyable_{false};      // True if the field is zero-copyable.
+    char         suffixSeparator1_{1};      ///< Value = 1 means unset; use database default.
+    char         suffixSeparator2_{1};      ///< Value = 1 means unset; use database default.
+    bool         sufficesUppercase_{false}; ///< True if the suffices are uppercase on database...
+    mutable bool zeroCopyable_{false};      ///< True if the field is zero-copyable.
 
     bool equal_(const Ioss::Field &rhs, bool quiet) const;
   };

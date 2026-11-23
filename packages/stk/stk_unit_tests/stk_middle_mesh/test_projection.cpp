@@ -8,7 +8,7 @@ namespace impl {
 
 namespace {
 
-void test_float_eq(const utils::Point& p1, const utils::Point& p2)
+void test_float_eq_projection(const utils::Point& p1, const utils::Point& p2)
 {
   EXPECT_FLOAT_EQ(p1.x, p2.x);
   EXPECT_FLOAT_EQ(p1.y, p2.y);
@@ -28,19 +28,19 @@ TEST(Projection, ProjectToPlane)
   utils::Point p4(1, 2, 3);
   utils::impl::Projection proj(p1, p2, p3);
 
-  test_float_eq(proj.project_to_plane(p4), utils::Point(1, 2, 0));
+  test_float_eq_projection(proj.project_to_plane(p4), utils::Point(1, 2, 0));
 
   // test projection onto yz plane
   p2   = utils::Point(0, 2, 0);
   p3   = utils::Point(0, 0, 3);
   proj = utils::impl::Projection(p1, p2, p3);
-  test_float_eq(proj.project_to_plane(p4), utils::Point(0, 2, 3));
+  test_float_eq_projection(proj.project_to_plane(p4), utils::Point(0, 2, 3));
 
   // test projection onto xz plane
   p2   = utils::Point(2, 0, 0);
   p3   = utils::Point(0, 0, 3);
   proj = utils::impl::Projection(p1, p2, p3);
-  test_float_eq(proj.project_to_plane(p4), utils::Point(1, 0, 3));
+  test_float_eq_projection(proj.project_to_plane(p4), utils::Point(1, 0, 3));
 }
 
 TEST(Projection, ComputePlaneCoords)
@@ -53,7 +53,7 @@ TEST(Projection, ComputePlaneCoords)
   utils::Point p4(1, 2, 3);
   utils::impl::Projection proj(p1, p2, p3);
 
-  test_float_eq(proj.project_plane_coords(p4), utils::Point(0.5, 2.0 / 3.0, 0));
+  test_float_eq_projection(proj.project_plane_coords(p4), utils::Point(0.5, 2.0 / 3.0, 0));
 
   // test non-orthogonal input basis
   p2 = utils::Point(1, 1, 0);
@@ -63,8 +63,8 @@ TEST(Projection, ComputePlaneCoords)
   p4   = utils::Point(-1, 5, 0);
   proj = utils::impl::Projection(p1, p2, p3);
 
-  // test_float_eq(proj.project_plane_coords(p4), utils::Point(0.5, 0.75, 0));
-  test_float_eq(proj.project_plane_coords(p4), utils::Point(2, 3, 0));
+  // test_float_eq_projection(proj.project_plane_coords(p4), utils::Point(0.5, 0.75, 0));
+  test_float_eq_projection(proj.project_plane_coords(p4), utils::Point(2, 3, 0));
 }
 
 TEST(Projection, ProjectToPlane_rev)

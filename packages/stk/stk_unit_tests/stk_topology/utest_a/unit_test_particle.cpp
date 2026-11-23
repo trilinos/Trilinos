@@ -41,7 +41,7 @@
 
 namespace {
 
-std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals() {
+std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals_particle() {
   return std::vector<std::vector<uint8_t>> {
     {0}
   };
@@ -75,16 +75,16 @@ TEST(stk_topology, particle)
 
   EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-  check_permutation_node_ordinals(t, get_gold_permutation_node_ordinals());
-  check_permutation_nodes(t, get_gold_permutation_node_ordinals());
+  check_permutation_node_ordinals(t, get_gold_permutation_node_ordinals_particle());
+  check_permutation_nodes(t, get_gold_permutation_node_ordinals_particle());
 
-  check_equivalent(t, get_gold_permutation_node_ordinals());
-  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals());
+  check_equivalent(t, get_gold_permutation_node_ordinals_particle());
+  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals_particle());
 }
 
 void check_particle_on_device()
 {
-  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals());
+  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_particle());
 
   stk::topology t = stk::topology::PARTICLE;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::PARTICLE>::num_nodes;

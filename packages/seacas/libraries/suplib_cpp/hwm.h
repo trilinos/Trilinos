@@ -5,4 +5,9 @@
 // See packages/seacas/LICENSE for details
 #pragma once
 #include <cstdlib>
-size_t get_hwm_memory_info();
+
+namespace suplib_cpp {
+
+  size_t get_hwm_memory_info();
+
+}

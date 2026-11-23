@@ -35,7 +35,7 @@ namespace MueLu {
 
   This is a general class that allows to translate node-based rebalancing information (given by "AmalgamatedPartition") to
   DOF-based rebalancing information (stored as output in the "Partition" variable).
-  It is meant to be used together with the IsorropiaInterface class which provides the node-based rebalancing information
+  It is meant to be used together with a partitioner interface class which provides the node-based rebalancing information
   in the "AmalgamatedPartition" variable. It uses the striding information of "A" to transform the amalgamated rebalaning info
   into DOF-based rebalancing information that can be processed by the RepartitionFactory class.
 
@@ -47,7 +47,7 @@ namespace MueLu {
   Parameter | type | default | master.xml | validated | requested | description
   ----------|------|---------|:----------:|:---------:|:---------:|------------
   | A                                      | Factory | null  |   | * | * | Generating factory of the matrix A used during the prolongator smoothing process |
-  | AmalgamatedPartition | Factory | null |  | * | * | Factory generating the AmalgamatedPartition (e.g. an IsorropiaInterface)
+  | AmalgamatedPartition | Factory | null |  | * | * | Factory generating the AmalgamatedPartition
   | number of partitions                   | GO      | - |  |  |  | Short-cut parameter set by RepartitionFactory. Avoid repartitioning algorithms if only one partition is necessary (see details below)
 
   The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>

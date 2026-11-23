@@ -104,7 +104,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     Gblks.dat
     generalBlkSmoothing.xml
     iso_poisson.xml
-    isorropia.xml
     map_rankWithoutUnknowns.m
     material.mm
     material.xml
@@ -276,7 +275,6 @@ TRIBITS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "Belos converged"
 )
 
-# not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
 IF(${PACKAGE_NAME}_ENABLE_Belos)
   TRIBITS_ADD_EXECUTABLE(
     Reuse
@@ -587,6 +585,15 @@ IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
     NAME "DriverRebalanceInitialSystem"
     ARGS "--linAlgebra=Tpetra --belosType=\"Pseudoblock GMRES\" --tol=1e-8 --xml=scaling.xml --matrix=aux2.mat --coords=coords2.mat --repartXML=repart.xml --its=9"
     NUM_MPI_PROCS 3
+    COMM mpi # HAVE_MPI required
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "DriverNspDependency"
+    ARGS "--linAlgebra=Tpetra --xml=circ_nsp_dependency.xml"
+    NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
     PASS_REGULAR_EXPRESSION "Belos converged"
   )

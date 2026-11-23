@@ -24,6 +24,9 @@
 
 using entity_id = int64_t;
 
+using suplib_cpp::copy_string;
+using suplib_cpp::Data;
+
 namespace {
   nc_type get_type(int exoid, unsigned int type)
   {

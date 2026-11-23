@@ -51,7 +51,11 @@
 #include "stk_mesh/baseImpl/DevicePartRepository.hpp"
 #include "stk_mesh/baseImpl/DeviceMeshViewVector.hpp"
 #include "stk_mesh/baseImpl/DevicePartition.hpp"
-#include "stk_mesh/baseImpl/NgpMeshImpl.hpp"
+#include "stk_mesh/baseImpl/NgpMeshBucketPlacement.hpp"
+#include "stk_mesh/baseImpl/NgpMeshConnectivity.hpp"
+#include "stk_mesh/baseImpl/NgpMeshPartChange.hpp"
+#include "stk_mesh/baseImpl/NgpMeshTypes.hpp"
+#include "stk_mesh/baseImpl/NgpViewAlgorithms.hpp"
 #include "stk_mesh/baseImpl/ViewVector.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 
@@ -62,52 +66,6 @@ class DeviceMeshT;
 }
 
 namespace stk::mesh::impl {
-
-struct PartOrdinalsProxyIndices {
-  KOKKOS_DEFAULTED_FUNCTION
-  PartOrdinalsProxyIndices() = default;
-
-  KOKKOS_INLINE_FUNCTION
-  PartOrdinalsProxyIndices(EntityRank entityRank, Ordinal* ptr, unsigned len)
-    : rank(entityRank),
-      startPtr(ptr),
-      length(len)
-  {}
-
-  KOKKOS_INLINE_FUNCTION
-  bool operator==(PartOrdinalsProxyIndices const& other) const
-  {
-    if (rank != other.rank) { return false; }
-    if (length != other.length) { return false; }
-
-    for (unsigned i = 0; i < length; ++i) {
-      auto thisOrd = startPtr + i;
-      auto otherOrd = other.startPtr + i;
-      if (*thisOrd != *otherOrd) { return false; }
-    }
-    return true;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  bool operator<(PartOrdinalsProxyIndices const& other) const
-  {
-    if (rank != other.rank) { return rank < other.rank; }
-    if (length != other.length) { return length < other.length; }
-
-    for (unsigned i = 0; i < length; ++i) {
-      auto thisOrd = startPtr + i;
-      auto otherOrd = other.startPtr + i;
-      if (*thisOrd != *otherOrd) {
-        return *thisOrd < *otherOrd;
-      }
-    }
-    return false;
-  }
-
-  EntityRank rank;
-  Ordinal* startPtr;
-  unsigned length;
-};
 
 struct EntitySrcDest {
   Entity entity;
@@ -563,6 +521,7 @@ class DeviceBucketRepository
   void batch_create_buckets(NewBucketsToAddViewType numNewBucketsToAddInPartition)
   {
     Kokkos::Profiling::pushRegion("batch_create_buckets");
+    Kokkos::Profiling::pushRegion("collect_partitions_to_add_buckets");
     auto hostNumBucketsToCreate =
         Kokkos::create_mirror_view_and_copy(stk::ngp::HostMemSpace{}, numNewBucketsToAddInPartition);
 
@@ -578,6 +537,7 @@ class DeviceBucketRepository
 
       partitionsAndNumBucketsPerRank[rank].emplace_back(get_partition(rank, partitionId), numBucketsToCreate);
     }
+    Kokkos::Profiling::popRegion();
 
     for (EntityRank rank = stk::topology::BEGIN_RANK; rank < m_entityEndRank; ++rank) {
       construct_new_buckets(rank, partitionsAndNumBucketsPerRank[rank]);
@@ -1316,7 +1276,7 @@ class DeviceBucketRepository
   }
 
   KOKKOS_INLINE_FUNCTION
-  bool does_induce(unsigned partOrdinal) const
+  bool is_inducible_part(unsigned partOrdinal) const
   {
     return is_ranked_part(partOrdinal) && !force_no_induce(partOrdinal);
   }

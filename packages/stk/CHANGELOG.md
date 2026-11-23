@@ -1,4 +1,8 @@
 # CHANGELOG
+5.33.2.patch1   (STK_VERSION 5330201) 11/16/2026
+  stk_unit_tests: fix HIP compile issue
+  stk_mesh: various DeviceMesh developments/improvements
+
 5.33.2   (STK_VERSION 5330200) 10/27/2026
   stk_transfer: add YAML input file
   stk_transfer: add ability for receiver in ReducedDependencyGeometricTransfer

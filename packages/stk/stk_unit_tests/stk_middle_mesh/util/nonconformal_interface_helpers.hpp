@@ -1,4 +1,7 @@
 
+#ifndef STK_MIDDLE_MESH_NONCONFORMAL_INTERFACE_HELPERS_HPP
+#define STK_MIDDLE_MESH_NONCONFORMAL_INTERFACE_HELPERS_HPP
+
 #include "stk_middle_mesh/create_mesh.hpp"
 #include "stk_middle_mesh/field.hpp"
 #include "stk_middle_mesh/variable_size_field.hpp"
@@ -29,3 +32,5 @@ void test_every_element_classified_inverse(std::shared_ptr<mesh::Mesh> mesh,
 } // namespace test_util
 } // namespace middle_mesh
 } // namespace stk
+
+#endif // STK_MIDDLE_MESH_NONCONFORMAL_INTERFACE_HELPERS_HPP

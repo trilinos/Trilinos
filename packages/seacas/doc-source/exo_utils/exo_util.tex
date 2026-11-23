@@ -1,0 +1,130 @@
+\documentclass{report}
+\usepackage{sandcover}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{alltt}
+\usepackage{calc}
+\usepackage{makeidx}
+\usepackage{amsmath,amssymb,amsfonts,textcomp}
+\usepackage{hyperref}
+%\usepackage{showkeys}
+\usepackage{longtable}
+\usepackage{bookmark}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=blue, urlcolor=blue}
+% Text styles
+\newcommand\textstyleInternetlink[1]{\textcolor{blue}{#1}}
+\newcommand\textstyleFootnoteSymbol[1]{\textsuperscript{#1}}
+% Outline numbering
+\setcounter{secnumdepth}{0}
+\newcommand{\superscript}[1]{\ensuremath{^{\textrm{#1}}}}
+\newcommand{\subscript}[1]{\ensuremath{_{\textrm{#1}}}}
+% Welcome to the 21\superscript{st} century.
+\renewcommand{\th}[0]{\superscript{th}}
+\newcommand{\st}[0]{\superscript{st}}
+\newcommand{\nd}[0]{\superscript{nd}}
+\newcommand{\rd}[0]{\superscript{rd}}
+% Carl took 1\st place. Elly, Tom and Ann came in 2\nd, 3\rd and 4\th.
+
+\newcommand{\texifylineno}[1]{{\footnotesize\hspace{-4em}\makebox[4em][r]{#1\hspace{1.5ex}}}}
+
+\newcommand{\sectionline}{%
+  \nointerlineskip \vspace{\baselineskip}%
+  \hspace{\fill}\rule{\linewidth}{.7pt}\hspace{\fill}%
+	\par\nointerlineskip
+}
+\def\SNLA{Sandia National Laboratories, Albuquerque, NM}
+
+\newcommand\dash{\raise2.1pt\hbox{\rule{5pt}{0.3pt}}\hspace{1pt}}
+\newcommand{\gap}{\hspace{12pt}}
+\newcommand{\param}[1]
+   {\mbox{\tt #1\index{#1}\index{Options!#1}}\null}
+\newcommand{\cfunc}[1]
+   {\mbox{\tt #1\index{#1}\index{Functions!#1}}\null}
+\newcommand{\dfunc}[1]
+   {\mbox{\tt #1\index{#1!Deprecated}\index{Deprecated Functions!#1}}\null}
+\newcommand{\cmd}[1]
+   {\mbox{\tt #1}\null}
+\newcommand{\code}[1]
+   {\mbox{\bf\tt #1}\null}
+\newcommand{\file}[1]
+   {\mbox{\bf\em #1}\null}
+
+\newcommand{\paramdef}[2]
+ {\color{red}\begin{tabular}{@{}l@{}p{6.0in}}\bf\tt #1\enspace\enspace &\tt #2\\\index{#1!Parameter}\index{Parameter!#1}\end{tabular}\color{black}}
+
+\newcommand{\funcdef}[2]
+ {\color{red}\begin{tabular}{@{}l@{}p{0.5in}}\Large\bf\tt int #1\enspace(&\Large\bf\tt #2)\\\index{#1!Definition}\index{Functions!#1!Definition}\end{tabular}\color{black}}
+\newcommand{\funcdefv}[2]
+ {\color{red}\begin{tabular}{@{}l@{}p{3.7in}}\Large\bf\tt void #1\enspace(&\Large\bf\tt #2)\\\index{#1!Definition}\index{Functions!#1!Definition}\end{tabular}\color{black}}
+%
+% Set left margin and counter
+\setlength{\oddsidemargin}{0.25in}
+\setlength{\evensidemargin}{0.25in}
+\setcounter{secnumdepth}{10}
+\setcounter{tocdepth}{3}
+\setlength{\textwidth}{6in}
+\setlength{\topmargin}{-0.25in}
+\setlength{\textheight}{8.5in}
+\parskip 0.2cm
+\parindent 0.0cm
+
+\newenvironment{syntax}
+{\begin{quote}\begin{alltt}\color{blue}}
+{\end{alltt}\end{quote}}
+
+\newenvironment{csource}
+{\small\begin{quote}\color{blue}\begin{alltt}}
+{\end{alltt}\end{quote}\normalsize}
+
+\newenvironment{fsource}
+{\small\begin{quote}\color{red}\begin{alltt}}
+{\end{alltt}\end{quote}\normalsize}
+
+\newcommand{\api}
+   {\mbox{\em API Functions:\hspace{0.1in}}\null}
+
+\newcommand{\exo}
+   {\mbox{\sf \sc Exodus}\null}
+
+\newcommand{\exodiff}
+   {\mbox{\sf Exodiff}\null}
+
+\newcommand{\epu}
+   {\mbox{\sf EPU}\null}
+
+\newcommand{\ejoin}
+   {\mbox{\sf EJoin}\null}
+
+\newcommand{\conjoin}
+   {\mbox{\sf Conjoin}\null}
+
+\newcommand{\entrylabel}[1]{
+   {\parbox[b]{\labelwidth-4pt}{\makebox[0pt][l]{\color{red}\tt\textbf{#1}}\vspace{1.0\baselineskip}}}}
+\newenvironment{parameters}
+{\begin{list}{}
+  {
+    \settowidth{\labelwidth}{80pt}
+    \setlength{\leftmargin}{\labelwidth}
+    \setlength{\parsep}{-10pt}
+    \setlength{\itemsep}{24pt}  % Between items
+    \renewcommand{\makelabel}{\entrylabel}
+  }
+}
+{\end{list}}
+
+\begin{document}
+\include{title}
+\pagestyle{plain}
+\setcounter{page}{4}
+\mbox{}
+\cleardoublepage\tableofcontents
+\cleardoublepage
+\include{introduction}
+\include{exodiff}
+\include{epu}
+\include{ejoin}
+\include{conjoin}
+\include{references}
+\include{endmatter}
+\end{document}

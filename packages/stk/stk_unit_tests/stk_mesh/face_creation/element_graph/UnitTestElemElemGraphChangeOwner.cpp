@@ -490,7 +490,7 @@ TEST_F(ElemGraphChangeOwnerMoveNeighborsToDifferentProcs, withoutAura)
   run_test_on_num_procs(4, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-std::shared_ptr<stk::mesh::BulkData> build_mesh(stk::ParallelMachine comm,
+std::shared_ptr<stk::mesh::BulkData> build_mesh_with_aura(stk::ParallelMachine comm,
                                                 stk::mesh::BulkData::AutomaticAuraOption auraOption,
                                                 unsigned spatialDim = 0,
                                                 const std::vector<std::string>& entityRankNames = std::vector<std::string>())
@@ -515,7 +515,7 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
     {
       aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
     }
-    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(comm, aura_option);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh_with_aura(comm, aura_option);
     stk::mesh::BulkData& bulkData = *bulkPtr;
 
     stk::io::fill_mesh("generated:1x1x4", bulkData);
@@ -600,7 +600,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
     {
       aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
     }
-    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(comm, aura_option, spatial_dim, stk::mesh::entity_rank_names());
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh_with_aura(comm, aura_option, spatial_dim, stk::mesh::entity_rank_names());
     stk::mesh::BulkData& bulkData = *bulkPtr;
     stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
 
@@ -797,7 +797,7 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
     {
       aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
     }
-    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(comm, aura_option);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh_with_aura(comm, aura_option);
     stk::mesh::BulkData& bulkData = *bulkPtr;
 
     setup_hex_shell_hex_mesh(bulkData);
@@ -931,7 +931,7 @@ void change_entity_owner_hex_test_4_procs(bool aura_on)
     {
       aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
     }
-    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(comm, aura_option);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh_with_aura(comm, aura_option);
     stk::mesh::BulkData& bulkData = *bulkPtr;
 
     stk::io::fill_mesh("generated:1x1x4", bulkData);

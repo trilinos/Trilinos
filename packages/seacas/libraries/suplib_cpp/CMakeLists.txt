@@ -16,6 +16,7 @@ SET(SOURCES
   FileInfo.C
   GetLongOpt.C
   SL_tokenize.C
+  alloc.C
   copyright.C
   format_time.C
   hwm.C

@@ -48,7 +48,7 @@ namespace Ioss {
         out << "Assertion failed (level=" << nLevel << ")";
         return out.str();
       }
-      };
+      }
     }
 
     // helpers, for dumping the assertion context

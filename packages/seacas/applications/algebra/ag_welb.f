@@ -4,7 +4,7 @@ C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
-      SUBROUTINE WELB (NDBOUT, NELBLK, VISELB, ALLELE, BLKTYP,
+      SUBROUTINE WELB (NDBOUT, NELBLK, VISELB, ALLELE, BLKTYP, BLKNAM,
      &           NUMLNK, NUMATR, LINK, ATRIB, NUMELB, IXELB, IXELBO,
      &           IXELEM, NEWNOD, NODIX, IDELB, A, IA, C, MERR)
 C=======================================================================
@@ -23,6 +23,7 @@ C   --   NELBLK   - IN - the number of element blocks
 C   --   VISELB   - IN - true iff element block i is to be written
 C   --   ALLELE   - IN - true iff all elements are selected
 C   --   BLKTYP   - IN - element type for each element block
+C   --   BLKNAM   - IN - the name of each element block        
 C   --   NUMLNK   - IN - Number of nodes per element for each element block
 C   --   NUMATR   - IN - Number of attributes for each element block
 C   --   LINK     - IN - Connectivity array for element blocks
@@ -40,12 +41,14 @@ C   --   A        - IN - the dynamic memory array
 C   --   MERR     - OUT - memory error flag
 
       include 'exodusII.inc'
-
+      include 'ag_namlen.blk'
+      
       INTEGER NDBOUT
       INTEGER NELBLK
       LOGICAL VISELB(NELBLK)
       LOGICAL ALLELE
       CHARACTER*(MXSTLN) BLKTYP(*)
+      CHARACTER*(NAMLEN) BLKNAM(*)
       INTEGER NUMLNK(*)
       INTEGER NUMATR(*)
       INTEGER LINK(*)
@@ -64,7 +67,7 @@ C   --   MERR     - OUT - memory error flag
 
       CHARACTER*(MXSTLN) NAEB
       INTEGER NELB, EBID, NLNK, NATR
-      INTEGER NERR
+      INTEGER NERR, CERR
 
       MERR  = 0
       ILNK  = 0
@@ -89,15 +92,18 @@ C   --   MERR     - OUT - memory error flag
 
       if (allele) then
         call expclb(ndbout, IDELB, BLKTYP, NUMELB, NUMLNK, NUMATR,
-     *    .TRUE., IERR)
+     *        .TRUE., IERR)
+        call EXPNAMS (ndbout, EXEBLK, NELBLK, BLKNAM, IERR)
       else
         call mdrsrv('IDSCR',  kidscr,  nelblk)
         call mdrsrv('NUMSCR', knumscr, nelblk)
         call mdrsrv('LNKSCR', klnkscr, nelblk)
         call mdrsrv('NATSCR', knatscr, nelblk)
-        call mcrsrv('NAMSCR', knamscr, nelblk*mxstln)
+        call mcrsrv('TYPSCR', ktypscr, nelblk*mxstln)
+        call mcrsrv('NAMSCR', knamscr, nelblk*NAMLEN)
         CALL MDSTAT (NERR, MEM)
-        IF (NERR .GT. 0) then
+        CALL MCSTAT (CERR, MEM)
+        IF ((NERR .GT. 0) .OR. (CERR .GT. 0)) THEN    
           call memerr
           MERR = 1
           return
@@ -110,21 +116,24 @@ C     Loop from 1 to number of element blocks
             itmp = isetarr(ia(kidscr),  ielbo, idelb(ielb))
             itmp = isetarr(ia(knatscr), ielbo, numatr(ielb))
             itmp = isetarr(ia(klnkscr), ielbo, numlnk(ielb))
-            call cpynam(blktyp(ielb), c(knamscr), ielbo)
+            call cpytyp(blktyp(ielb), c(ktypscr), ielbo)
+            call cpynam(blknam(ielb), c(knamscr), ielbo)
             NELBO = IXELBO(IELB) - IXELBO(IELB-1)
             itmp = isetarr(ia(knumscr), ielbo, nelbo)
           end if
         end do
 C ... Wrap this call to handle character*(1) vs character*(mxstln) weirdness
-        call blkout(ndbout, ia(kidscr), c(knamscr), ia(knumscr),
-     *    ia(klnkscr), ia(knatscr))
+        call blkout(ndbout, ia(kidscr), c(ktypscr), c(knamscr),
+     *    ia(knumscr), ia(klnkscr), ia(knatscr), ielbo)
         call mddel('IDSCR')
         call mddel('NUMSCR')
         call mddel('LNKSCR')
         call mddel('NATSCR')
-        call mcdel('NAMSCR')
+        call mcdel('TYPSCR')
+        call mcdel('NAMSCR')    
         CALL MDSTAT (NERR, MEM)
-        IF (NERR .GT. 0) then
+        CALL MCSTAT (CERR, MEM)
+        IF ((NERR .GT. 0) .OR. (CERR .GT. 0)) THEN        
           call memerr
           MERR = 1
           return
@@ -211,7 +220,7 @@ C           Write element block attributes
       return
       end
 
-      subroutine cpynam(namei, nameo, idx)
+      subroutine cpytyp(namei, nameo, idx)
       include 'exodusII.inc'
 
       character*(mxstln) namei
@@ -220,14 +229,28 @@ C           Write element block attributes
       return
       end
 
-      subroutine blkout(ndbout, idelb, names, numelb, numlnk, numatr)
+      subroutine cpynam(namei, nameo, idx)
       include 'exodusII.inc'
+      include 'ag_namlen.blk'
+      
+      character*(namlen) namei
+      character*(namlen) nameo(*)
+      nameo(idx) = namei
+      return
+      end
+
+      subroutine blkout(ndbout, idelb, types, names,
+     &                  numelb, numlnk, numatr, nelblk)
+      include 'exodusII.inc'
+      include 'ag_namlen.blk'
       integer idelb(*)
-      character*(mxstln) names(*)
+      character*(mxstln) types(*)
+      character*(NAMLEN) names(*)      
       integer numelb(*)
       integer numlnk(*)
       integer numatr(*)
-      call expclb(ndbout, idelb, names, numelb, numlnk, numatr,
+      call expclb(ndbout, idelb, types, numelb, numlnk, numatr,
      *  .true., ierr)
+      call EXPNAMS (ndbout, EXEBLK, NELBLK, NAMES, IERR)
       return
       end

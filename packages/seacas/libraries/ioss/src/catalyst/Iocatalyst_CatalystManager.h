@@ -104,6 +104,8 @@ namespace Iocatalyst {
 
     CatalystPipelineID initialize(const Ioss::PropertyManager &props,
                                   const Ioss::ParallelUtils   &putils);
+    bool setupConduitNodeForCatalystExecute(conduit_cpp::Node &n, CatalystProps &p, int state,
+                                            double time, conduit_cpp::Node &data);
     void execute(CatalystPipelineID id, int state, double time, conduit_cpp::Node &data);
     void finalize(CatalystPipelineID id);
     void addScriptProps(conduit_cpp::Node &n, const CatalystProps &p);

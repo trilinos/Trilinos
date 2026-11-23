@@ -51,7 +51,7 @@ LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(
         BDP = MyState.BDP_;
       }
 
-      RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > Hcrs = BDP->createCrsMatrix();
+      RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > Hcrs = BDP->getInverseBlockDiagonal();
       return Thyra::tpetraLinearOp<ST, LO, GO, NT>(
           Thyra::tpetraVectorSpace<ST, LO, GO, NT>(Hcrs->getRangeMap()),
           Thyra::tpetraVectorSpace<ST, LO, GO, NT>(Hcrs->getDomainMap()), Hcrs);

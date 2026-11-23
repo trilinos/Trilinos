@@ -38,7 +38,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearSolverAdapter, FullCycle_WithoutParamete
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   typedef Tpetra::CrsMatrix<SC, LO, GO, NO> tpetra_crsmatrix_type;
   typedef Tpetra::Operator<SC, LO, GO, NO> tpetra_operator_type;
   typedef MueLu::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NO>, tpetra_operator_type,
@@ -75,9 +74,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearSolverAdapter, FullCycle_WithoutParamete
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearSolverAdapter, FullCycle_WithParameterList, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -86,7 +82,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearSolverAdapter, FullCycle_WithParameterLi
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   typedef Tpetra::CrsMatrix<SC, LO, GO, NO> tpetra_crsmatrix_type;
   typedef Tpetra::Operator<SC, LO, GO, NO> tpetra_operator_type;
   typedef MueLu::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NO>, tpetra_operator_type,
@@ -125,9 +120,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearSolverAdapter, FullCycle_WithParameterLi
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }
 
 // Second setMatrix must use a different RCP (to a different CrsMatrix) so that changedA_ is set; same RCP with
@@ -138,7 +130,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearSolverAdapter, MatrixUpdate_ReuseTpetraP
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   typedef Tpetra::CrsMatrix<SC, LO, GO, NO> tpetra_crsmatrix_type;
   typedef Tpetra::Operator<SC, LO, GO, NO> tpetra_operator_type;
   typedef MueLu::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NO>, tpetra_operator_type,
@@ -188,9 +179,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearSolverAdapter, MatrixUpdate_ReuseTpetraP
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearSolverAdapter, ReuseWithNonCrsOperatorThrows, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -199,7 +187,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearSolverAdapter, ReuseWithNonCrsOperatorTh
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-#if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
   typedef Tpetra::CrsMatrix<SC, LO, GO, NO> tpetra_crsmatrix_type;
   typedef Tpetra::Operator<SC, LO, GO, NO> tpetra_operator_type;
   typedef MueLu::TpetraOperator<SC, LO, GO, NO> muelu_tpetra_operator_type;
@@ -233,9 +220,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearSolverAdapter, ReuseWithNonCrsOperatorTh
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
   }
-#else
-  out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
-#endif
 }
 
 #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node)                                                                             \

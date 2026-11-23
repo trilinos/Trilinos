@@ -5,7 +5,7 @@ C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE DBIELB (NDB, OPTION, NELBS, NELBE, IDELB, NUMELB,
-     &           NUMLNK, NUMATR, BLKTYP, A, IELNK, IEATR, IOERR)
+     &           NUMLNK, NUMATR, BLKTYP, BLKNAM, A, IELNK, IEATR, IOERR)
 C=======================================================================
 
 C   --*** DBIELB *** (EXOLIB) Read database element blocks
@@ -34,6 +34,7 @@ C   --   NUMLNK - OUT - the number of nodes per element in each block
 C   --                  (if OPTION)
 C   --   NUMATR - OUT - the number of attributes in each block (if OPTION)
 C   --   BLKTYP - OUT - the type of elements in the each block
+C   --   BLKNAM - OUT - the name of each element block      
 C   --   A      - I/O - the dynamic memory base array
 C   --   IELNK  - OUT - the size of the connectivity array
 C   --   IEATR  - OUT - the size of the attribute array
@@ -41,7 +42,8 @@ C   --   IOERR  - OUT - error flag
 C   --
 
       include 'exodusII.inc'
-
+      include 'ag_namlen.blk'
+      
       INTEGER NDB
       CHARACTER*(*) OPTION
       INTEGER NELBS, NELBE
@@ -52,6 +54,7 @@ C   --
       DIMENSION A(1)
       INTEGER KLINK, KATRIB
       CHARACTER*(MXSTLN) BLKTYP(*)
+      CHARACTER*(NAMLEN) BLKNAM(*)
       INTEGER IELNK, IEATR
       INTEGER IOERR
       LOGICAL ALL, HOPT, COPT, AOPT
@@ -83,6 +86,7 @@ C           5. number of attributes per element in the element block
 C           6. error id
             call exgelb(ndb, idelb(ielb), blktyp(ielb), numelb(ielb),
      &                  numlnk(ielb), numatr(ielb), ierr)
+            call exgnam(ndb, EXEBLK, idelb(ielb), blknam(ielb), ierr)
             call exupcs(blktyp(ielb))
             call pckstr(1, blktyp(ielb))
   100    CONTINUE
