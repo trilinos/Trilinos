@@ -31,6 +31,8 @@
 #include "MueLu_ClassicalMapFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_LWGraph.hpp"
+#include "MueLu_LWGraph_kokkos.hpp"
+#include "MueLu_NoFactory.hpp"
 
 //#define CMS_DEBUG
 //#define CMS_DUMP
@@ -60,6 +62,7 @@ RCP<const ParameterList> ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, 
   SET_VALID_ENTRY("aggregation: deterministic");
   SET_VALID_ENTRY("aggregation: coloring algorithm");
   SET_VALID_ENTRY("aggregation: classical scheme");
+  SET_VALID_ENTRY("filtered matrix: lumping choice");
 
   // To know if we need BlockNumber
   SET_VALID_ENTRY("aggregation: drop scheme");
@@ -75,6 +78,7 @@ RCP<const ParameterList> ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, 
   validParamList->set<RCP<const FactoryBase> >("CoarseMap", Teuchos::null, "Generating factory of the CoarseMap");
   validParamList->set<RCP<const FactoryBase> >("FC Splitting", Teuchos::null, "Generating factory of the FC Splitting");
   validParamList->set<RCP<const FactoryBase> >("BlockNumber", Teuchos::null, "Generating factory for Block Number");
+  validParamList->set<RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Generating factory of the coordinates");
   //    validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Generating factory of the nullspace");
 
   return validParamList;
@@ -93,6 +97,12 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(
   std::string drop_algo   = pL.get<std::string>("aggregation: drop scheme");
   if (drop_algo.find("block diagonal") != std::string::npos || drop_algo == "signed classical") {
     Input(fineLevel, "BlockNumber");
+  }
+  if (drop_algo == "signed classical distance laplacian") {
+    if (fineLevel.GetLevelID() == 0 && fineLevel.IsAvailable("Coordinates", NoFactory::get()))
+      fineLevel.DeclareInput("Coordinates", NoFactory::get(), this);
+    else
+      Input(fineLevel, "Coordinates");
   }
 }
 
@@ -114,7 +124,15 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   RCP<const Matrix> A                              = Get<RCP<Matrix> >(fineLevel, "A");
   RCP<const Map> ownedCoarseMap                    = Get<RCP<const Map> >(fineLevel, "CoarseMap");
   RCP<const LocalOrdinalVector> owned_fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel, "FC Splitting");
-  RCP<const LWGraph> graph                         = Get<RCP<LWGraph> >(fineLevel, "Graph");
+  using LWGraphDevice                              = MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>;
+
+  RCP<const LWGraph> graph = Teuchos::null;
+  if (IsType<RCP<LWGraphDevice> >(fineLevel, "Graph")) {
+    RCP<LWGraphDevice> graphKokkos = Get<RCP<LWGraphDevice> >(fineLevel, "Graph");
+    graph                          = graphKokkos->copyToHost();
+  } else {
+    graph = Get<RCP<LWGraph> >(fineLevel, "Graph");
+  }
   //    LO nDofsPerNode                 = Get<LO>(fineLevel, "DofsPerNode");
   //    RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
   RCP<const Import> Importer = A->getCrsGraph()->getImporter();
@@ -135,7 +153,10 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   TEUCHOS_TEST_FOR_EXCEPTION(!A->getRowMap()->isSameAs(*A->getDomainMap()), Exceptions::RuntimeError, "ClassicalPFactory: MPI Ranks > 1 not supported yet");
 
   // Do we need ghosts rows of A and myPointType?
-  std::string scheme   = pL.get<std::string>("aggregation: classical scheme");
+  std::string scheme              = pL.get<std::string>("aggregation: classical scheme");
+  std::string lumpingChoiceString = pL.get<std::string>("filtered matrix: lumping choice");
+  bool useDistributedLumping      = false;
+  if (lumpingChoiceString == "distributed lumping") useDistributedLumping = true;
   bool need_ghost_rows = false;
   if (scheme == "ext+i")
     need_ghost_rows = true;
@@ -290,15 +311,21 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   // Phase 3: Generate the P matrix
   RCP<const Map> coarseColMap    = coarseMap;
   RCP<const Map> coarseDomainMap = ownedCoarseMap;
+  Teuchos::Array<Scalar> lumpWeight;
+  if (useDistributedLumping) {
+    size_t numEntries = A->getLocalNumRows();
+    lumpWeight.resize(numEntries);
+    setupDistributedLump(*A, lumpWeight, edgeIsStrong, eis_rowptr);
+  }
   if (scheme == "ext+i") {
     SubFactoryMonitor sfm(*this, "Ext+i Interpolation", coarseLevel);
     Coarsen_Ext_Plus_I(*A, Aghost, *graph, coarseColMap, coarseDomainMap, num_c_points, num_f_points, myPointType(), myPointType_ghost(), cpoint2pcol, pcol2cpoint, eis_rowptr, edgeIsStrong, BlockNumber, P);
   } else if (scheme == "direct") {
     SubFactoryMonitor sfm(*this, "Direct Interpolation", coarseLevel);
-    Coarsen_Direct(*A, Aghost, *graph, coarseColMap, coarseDomainMap, num_c_points, num_f_points, myPointType(), myPointType_ghost(), cpoint2pcol, pcol2cpoint, eis_rowptr, edgeIsStrong, BlockNumber, P);
+    Coarsen_Direct(*A, Aghost, *graph, coarseColMap, coarseDomainMap, num_c_points, num_f_points, myPointType(), myPointType_ghost(), cpoint2pcol, pcol2cpoint, eis_rowptr, edgeIsStrong, BlockNumber, P, useDistributedLumping, lumpWeight);
   } else if (scheme == "classical modified") {
     SubFactoryMonitor sfm(*this, "Classical Modified Interpolation", coarseLevel);
-    Coarsen_ClassicalModified(*A, Aghost, *graph, coarseColMap, coarseDomainMap, num_c_points, num_f_points, myPointType(), myPointType_ghost(), cpoint2pcol, pcol2cpoint, eis_rowptr, edgeIsStrong, BlockNumber, remoteOnlyImporter, P);
+    Coarsen_ClassicalModified(*A, Aghost, *graph, coarseColMap, coarseDomainMap, num_c_points, num_f_points, myPointType(), myPointType_ghost(), cpoint2pcol, pcol2cpoint, eis_rowptr, edgeIsStrong, BlockNumber, remoteOnlyImporter, P, useDistributedLumping, lumpWeight);
   }
   // NOTE: ParameterList validator will check this guy so we don't really need an "else" here
 
@@ -312,6 +339,33 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   RCP<const CrsGraph> pg = P->getCrsGraph();
   Set(coarseLevel, "P Graph", pg);
 
+  // generate coarse level coordinates by injecting them at Cpts
+  if (drop_algo == "signed classical distance laplacian") {
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using xdMV           = Xpetra::MultiVector<magnitude_type, LO, GO, NO>;
+
+    RCP<xdMV> fineCoords = Teuchos::null;
+    if (fineLevel.GetLevelID() == 0 && fineLevel.IsAvailable("Coordinates", NoFactory::get()))
+      fineCoords = fineLevel.Get<RCP<xdMV> >("Coordinates", NoFactory::get());
+    else
+      fineCoords = Get<RCP<xdMV> >(fineLevel, "Coordinates");
+    RCP<xdMV> coarseCoords = Xpetra::MultiVectorFactory<magnitude_type, LO, GO, NO>::Build(coarseDomainMap, fineCoords->getNumVectors(), false);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(fineCoords->getGlobalLength() != A->getGlobalNumRows(), Exceptions::RuntimeError, "ClassicalPFactory: Distance Laplacian for PDE systems not implemented");
+
+    const auto dim = fineCoords->getNumVectors();
+    for (size_t j = 0; j < dim; j++) {
+      ArrayRCP<const magnitude_type> fineCoordData = fineCoords->getData(j);
+      ArrayRCP<magnitude_type> coarseCoordData     = coarseCoords->getDataNonConst(j);
+      for (LO i = 0; i < (LO)coarseCoordData.size(); i++) {
+        coarseCoordData[i] = fineCoordData[pcol2cpoint[i]];
+      }
+    }
+
+    Set(coarseLevel, "Coordinates", coarseCoords);
+    coarseLevel.AddKeepFlag("Coordinates", this, MueLu::Keep);
+  }
+
   // RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap, fineNullspace->getNumVectors());
   //     P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
   //     Set(coarseLevel, "Nullspace", coarseNullspace);
@@ -322,10 +376,74 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
     GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
   }
 }
+// Pre-compute weights that determines how kept strong entries are adjusted to acount for dropped entries
+// After lumping, kept entries are set via
+//     A_vals[iii] = A_vals[iii] + Teuchos::ScalarTraits<SC>::magnitude(A_vals[iii]) * lumpWeight[row];
+// so positive kept entries are scaled by
+//     A_vals[iii] = A_vals[iii] (1 +  lumpWeight[row]) ;
+// while negative kept entries are scaled by
+//     A_vals[iii] = A_vals[iii] (1 -  lumpWeight[row]) ;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    setupDistributedLump(const Matrix& A, Teuchos::Array<Scalar>& lumpWeight, const Teuchos::Array<bool>& edgeIsStrong, const Teuchos::Array<size_t>& rowptr) const {
+  using STS      = Teuchos::ScalarTraits<Scalar>;
+  using mag_type = typename STS::magnitudeType;
+
+  size_t Nrows = A.getLocalNumRows();
+  ArrayView<const LocalOrdinal> A_indices;
+  ArrayView<const Scalar> A_vals;
+
+  for (LocalOrdinal i = 0; i < (LocalOrdinal)Nrows; i++) {
+    size_t row_start = rowptr[i];
+    A.getLocalRowView(i, A_indices, A_vals);
+    LocalOrdinal n = A_vals.size();
+    TEUCHOS_ASSERT((size_t)edgeIsStrong.size() >= row_start + n);
+
+    SC sumDropped             = STS::zero();
+    mag_type sumKeptMagnitude = Teuchos::ScalarTraits<mag_type>::zero();
+
+    for (LocalOrdinal ii = 0; ii < n; ++ii) {
+      if (!edgeIsStrong[row_start + ii]) {
+        sumDropped += A_vals[ii];
+      } else {
+        sumKeptMagnitude += STS::magnitude(A_vals[ii]);
+      }
+    }
+    lumpWeight[i] = sumDropped / sumKeptMagnitude;
+  }
+}
+// Macro to perform distributed lumping on a single row using pre-computing lumpWeight
+#define DISTRIBUTED_LUMP(A_vals, edgeIsStrong, row_start, row, lumpWeight)                               \
+  {                                                                                                      \
+    for (LO iii = 0; iii < (A_vals).size(); ++iii) {                                                     \
+      if (!(edgeIsStrong)[(row_start) + iii])                                                            \
+        (A_vals)[iii] = Teuchos::ScalarTraits<SC>::zero();                                               \
+      else                                                                                               \
+        A_vals[iii] = A_vals[iii] + Teuchos::ScalarTraits<SC>::magnitude(A_vals[iii]) * lumpWeight[row]; \
+    }                                                                                                    \
+  }
+// Macro to fetch and perform distributed lumping on a single row using pre-computing lumpWeight
+// It invokes either getLocalRowCopy() or getLocalRowView() depending or not on whether
+// distributred lumping is employed
+#define FETCH_AND_POSSIBLY_LUMP_ROW(useDistributedLumping, A, i, A_indices_i, A_vals_i, A_indices_i_copy, A_vals_i_copy, edgeIsStrong, row_start, lumpWeight) \
+  {                                                                                                                                                           \
+    if (useDistributedLumping) {                                                                                                                              \
+      size_t numEntries = (A).getNumEntriesInLocalRow(i);                                                                                                     \
+      (A_indices_i_copy).resize(numEntries);                                                                                                                  \
+      (A_vals_i_copy).resize(numEntries);                                                                                                                     \
+      (A).getLocalRowCopy(i, (A_indices_i_copy)(), (A_vals_i_copy)(), numEntries);                                                                            \
+      DISTRIBUTED_LUMP((A_vals_i_copy)(), edgeIsStrong, row_start, i, lumpWeight);                                                                            \
+      (A_indices_i) = (A_indices_i_copy)();                                                                                                                   \
+      (A_vals_i)    = (A_vals_i_copy)();                                                                                                                      \
+    } else {                                                                                                                                                  \
+      (A).getLocalRowView(i, A_indices_i, A_vals_i);                                                                                                          \
+    }                                                                                                                                                         \
+  }
+
 /* ************************************************************************* */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    Coarsen_ClassicalModified(const Matrix& A, const RCP<const Matrix>& Aghost, const LWGraph& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& /*myPointType_ghost*/, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<const Import> remoteOnlyImporter, RCP<Matrix>& P) const {
+    Coarsen_ClassicalModified(const Matrix& A, const RCP<const Matrix>& Aghost, const LWGraph& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& /*myPointType_ghost*/, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& BlockNumber, RCP<const Import> remoteOnlyImporter, RCP<Matrix>& P, bool useDistributedLumping, const Teuchos::Array<Scalar>& lumpWeight) const {
   /* ============================================================= */
   /* Phase 3 : Classical Modified Interpolation                    */
   /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
@@ -359,6 +477,18 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   /* f_ij = \sum_{k\in{F_i^s\setminusF_i^s*}} \frac{a_ik \bar{a}_kj}{\sum_{m\inC_i^s \bar{a}_km}}    */
   /*                                                                     */
   /* w_ij = \frac{1}{\tilde{a}_ii} ( a_ij + f_ij)  for all j in C_i^s    */
+  /*                                                                     */
+  /* The NLAA paper has ambiguity concerning F_i^s\star definition. So   */
+  /* code previously did not check that Cpts were indeed strong in row k.*/
+  /* It only checked that second_denominator was not zero, which could   */
+  /* happen because of a weak a_km Cpt. Revised code now checks whether  */
+  /* either second_denominator or commonStrongCpt is false. The only     */
+  /* only difference between these is that the commonStrongCpt           */
+  /*    1) checks if a_km is strong before including in calculation      */
+  /*    2) ignores \bar{a}_ik definition that zeros out entries with     */
+  /*          "incorrect" sign when computing commonStrongCpt.           */
+  /* commonStrongCpt==true assures common strong C-point in row i & k.   */
+  /* second_denominator!=0 must be checked due to presence of \bar{a}_ik */
 
   //    const point_type F_PT = ClassicalMapFactory::F_PT;
   const point_type C_PT         = ClassicalMapFactory::C_PT;
@@ -486,6 +616,10 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Aghostcol_to_Acol[i] = A.getColMap()->getLocalElement(Aghost->getColMap()->getGlobalElement(i));
   }  // end Aghost
 
+#ifdef CMS_DEBUG
+  int altCount = 0;  // See commonStrongCpt comments. Counts # rows with F_i^s\star modification.
+#endif
+
   // Algorithm (numeric)
   for (LO i = 0; i < (LO)Nrows; i++) {
     if (myPointType[i] == DIRICHLET_PT) {
@@ -509,10 +643,12 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #endif
 
       // Get all of the relevant information about this row
+      size_t row_start = eis_rowptr[i];
       ArrayView<const LO> A_indices_i, A_indices_k;
       ArrayView<const SC> A_vals_i, A_vals_k;
-      A.getLocalRowView(i, A_indices_i, A_vals_i);
-      size_t row_start = eis_rowptr[i];
+      Teuchos::Array<LO> A_indices_i_copy;
+      Teuchos::Array<SC> A_vals_i_copy;
+      FETCH_AND_POSSIBLY_LUMP_ROW(useDistributedLumping, A, i, A_indices_i, A_vals_i, A_indices_i_copy, A_vals_i_copy, edgeIsStrong, row_start, lumpWeight);
 
       ArrayView<const LO> P_indices_i = P_colind.view(P_rowptr[i], P_rowptr[i + 1] - P_rowptr[i]);
       ArrayView<SC> P_vals_i          = P_values.view(P_rowptr[i], P_rowptr[i + 1] - P_rowptr[i]);
@@ -578,11 +714,14 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
           SC a_kk               = SC_ZERO;
           SC second_denominator = SC_ZERO;
+          bool commonStrongCpt  = false;  // See commonStrongCpt comments.
           int sign_akk          = 0;
 
           if (k < (LO)Nrows) {
-            // Grab the diagonal a_kk
-            A.getLocalRowView(k, A_indices_k, A_vals_k);
+            Teuchos::Array<LO> A_indices_k_copy;
+            Teuchos::Array<SC> A_vals_k_copy;
+            FETCH_AND_POSSIBLY_LUMP_ROW(useDistributedLumping, A, k, A_indices_k, A_vals_k, A_indices_k_copy, A_vals_k_copy, edgeIsStrong, eis_rowptr[k], lumpWeight);
+
             for (LO m0 = 0; m0 < (LO)A_indices_k.size(); m0++) {
               LO m = A_indices_k[m0];
               if (k == m) {
@@ -598,12 +737,17 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
               if (m != k && Acol_to_Pcol[A_indices_k[m0]] >= (LO)P_rowptr[i]) {
                 SC a_km = A_vals_k[m0];
                 second_denominator += (Sign(a_km) == sign_akk ? SC_ZERO : a_km);
+                // only add this edge to the alternative sum if it is strong
+                // See commonStrongCpt comments.
+                if (edgeIsStrong[eis_rowptr[k] + m0]) {
+                  commonStrongCpt = true;
+                }
               }
             }  // end for A_indices_k
 
             // Now we have the second denominator, for this particular strong F point.
             // So we can now add the sum to the w_ij components for the P values
-            if (second_denominator != SC_ZERO) {
+            if ((second_denominator != SC_ZERO) && (commonStrongCpt == true)) {
               for (LO j0 = 0; j0 < (LO)A_indices_k.size(); j0++) {
                 LO j = A_indices_k[j0];
                 // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
@@ -620,7 +764,10 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             }    // end if second_denominator != 0
             else {
 #ifdef CMS_DEBUG
-              printf("- - A(%d,%d) second denominator is zero\n", i, k);
+              if (second_denominator != SC_ZERO)
+                altCount++;
+              else
+                printf("- - A(%d,%d) second denominator is zero\n", i, k);
 #endif
               if (block_id.size() == 0 || block_id[i] == block_id[k])
                 first_denominator += a_ik;
@@ -701,6 +848,16 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   }  // end if i < Nrows
 
+#ifdef CMS_DEBUG
+  if (GetVerbLevel() & Statistics1) {
+    GO l_counts[1] = {(GO)altCount};
+    GO g_counts[1];
+    RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, l_counts, g_counts);
+    GetOStream(Statistics1) << "# of modified F_i^{s-star} rows = " << g_counts[0] << std::endl;
+  }
+#endif
+
   // Finish up
   Pcrs->setAllValues(P_rowptr, P_colind, P_values);
   Pcrs->expertStaticFillComplete(/*domain*/ coarseDomainMap, /*range*/ A.getDomainMap());
@@ -712,7 +869,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 /* ************************************************************************* */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    Coarsen_Direct(const Matrix& A, const RCP<const Matrix>& /*Aghost*/, const LWGraph& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& /*myPointType_ghost*/, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& /*BlockNumber*/, RCP<Matrix>& P) const {
+    Coarsen_Direct(const Matrix& A, const RCP<const Matrix>& /*Aghost*/, const LWGraph& graph, RCP<const Map>& coarseColMap, RCP<const Map>& coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO>& myPointType, const Teuchos::ArrayView<const LO>& /*myPointType_ghost*/, const Teuchos::Array<LO>& cpoint2pcol, const Teuchos::Array<LO>& pcol2cpoint, Teuchos::Array<size_t>& eis_rowptr, Teuchos::Array<bool>& edgeIsStrong, RCP<LocalOrdinalVector>& /*BlockNumber*/, RCP<Matrix>& P, const bool useDistributedLumping, const Teuchos::Array<Scalar>& lumpWeight) const {
   /* ============================================================= */
   /* Phase 3 : Direct Interpolation                                */
   /* We do not use De Sterck, Falgout, Nolting and Yang (2008)     */
@@ -851,8 +1008,11 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       /*           { -  beta_i (a_ik / a_ii),   if k\in P_i^+                                  */
       ArrayView<const LO> A_indices_i, A_incides_k;
       ArrayView<const SC> A_vals_i, A_indices_k;
-      A.getLocalRowView(i, A_indices_i, A_vals_i);
       size_t row_start = eis_rowptr[i];
+
+      Teuchos::Array<LO> A_indices_i_copy;
+      Teuchos::Array<SC> A_vals_i_copy;
+      FETCH_AND_POSSIBLY_LUMP_ROW(useDistributedLumping, A, i, A_indices_i, A_vals_i, A_indices_i_copy, A_vals_i_copy, edgeIsStrong, row_start, lumpWeight);
 
       ArrayView<LO> P_indices_i = P_colind.view(P_rowptr[i], P_rowptr[i + 1] - P_rowptr[i]);
       ArrayView<SC> P_vals_i    = P_values.view(P_rowptr[i], P_rowptr[i + 1] - P_rowptr[i]);
@@ -935,7 +1095,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 /* ************************************************************************* */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    Coarsen_Ext_Plus_I(const Matrix& /*A*/, const RCP<const Matrix>& /*Aghost*/, const LWGraph& /*graph*/, RCP<const Map>& /*coarseColMap*/, RCP<const Map>& /*coarseDomainMap*/, LO /*num_c_points*/, LO /*num_f_points*/, const Teuchos::ArrayView<const LO>& /*myPointType*/, const Teuchos::ArrayView<const LO>& /*myPointType_ghost*/, const Teuchos::Array<LO>& /*cpoint2pcol*/, const Teuchos::Array<LO>& /*pcol2cpoint*/, Teuchos::Array<size_t>& /*eis_rowptr*/, Teuchos::Array<bool>& /*edgeIsStrong*/, RCP<LocalOrdinalVector>& /*BlockNumber*/, RCP<Matrix>& /*P*/) const {
+    Coarsen_Ext_Plus_I(const Matrix& /*A*/, const RCP<const Matrix>& /*Aghost*/, const LWGraph& /*graph*/, RCP<const Map>& /*coarseColMap*/, RCP<const Map>& /*coarseDomainMap*/, LO /*num_c_points*/, LO /*num_f_points*/, const Teuchos::ArrayView<const LO>& /*myPointType*/, const Teuchos::ArrayView<const LO>& /*myPointType_ghost*/, const Teuchos::Array<LO>& /*cpoin t2pcol*/, const Teuchos::Array<LO>& /*pcol2cpoint*/, Teuchos::Array<size_t>& /*eis_rowptr*/, Teuchos::Array<bool>& /*edgeIsStrong*/, RCP<LocalOrdinalVector>& /*BlockNumber*/, RCP<Matrix>& /*P*/) const {
   /* ============================================================= */
   /* Phase 3 : Extended+i Interpolation                            */
   /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
@@ -980,6 +1140,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // To make this easier, we'll create a bool array equal to the nnz in the matrix
   // so we know whether each edge is strong or not.  This will save us a bunch of
   // trying to match the graph and matrix later
+
   size_t Nrows = A.getLocalNumRows();
   eis_rowptr.resize(Nrows + 1);
 
@@ -1019,12 +1180,12 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // Now cycle through and set the flags - if the edge is in G it is strong
     for (LO g_idx = 0, a_idx = 0; g_idx < G_size; g_idx++) {
       LO col = G_indices(g_idx);
-      while (A_indices[a_idx] != col && a_idx < A_size) a_idx++;
+      while (a_idx < A_size && A_indices[a_idx] != col) a_idx++;
       if (a_idx == A_size) {
-        is_ok = false;
         break;
       }
       edgeIsStrong[rowstart + a_idx] = true;
+      a_idx++;
     }
 
     eis_rowptr[i + 1] = eis_rowptr[i] + A_size;

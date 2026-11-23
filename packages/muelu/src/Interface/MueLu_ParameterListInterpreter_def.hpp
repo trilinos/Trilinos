@@ -283,6 +283,8 @@ bool ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       useCoordinates_ = true;
     } else if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "block diagonal distance laplacian")) {
       useCoordinates_ = true;
+    } else if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "signed classical distance laplacian")) {
+      useCoordinates_ = true;
     }
 
     // Rotations need coordinates
@@ -1424,6 +1426,15 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: use blocking", dropParams);
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: symmetrize color graph", dropParams);
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: symmetrize graph after dropping", dropParams);
+      if (paramList.isParameter("aggregation: drop scheme")) {
+        const std::string dropScheme = paramList.get<std::string>("aggregation: drop scheme");
+        if ((dropScheme == "signed classical distance laplacian") || (dropScheme == "signed classical")) {
+          paramList.set("aggregation: coloring: use color graph", true);
+          paramList.set("aggregation: coloring: localize color graph", true);
+          dropParams.set("aggregation: coloring: use color graph", true);
+          dropParams.set("aggregation: coloring: localize color graph", true);
+        }
+      }
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: strength-of-connection: matrix", dropParams);
       test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: strength-of-connection: measure", dropParams);
       test_and_set_param_2list<bool>(paramList, defaultList, "filtered matrix: use lumping", dropParams);
@@ -1465,7 +1476,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     if (dropParams.isParameter("aggregation: drop scheme")) {
       std::string drop_scheme = dropParams.get<std::string>("aggregation: drop scheme");
-      if (drop_scheme == "block diagonal colored signed classical")
+      if ((drop_scheme == "block diagonal colored signed classical") || (drop_scheme == "signed classical distance laplacian") || (drop_scheme == "signed classical"))
         manager.SetFactory("Coloring Graph", dropFactory);
       if ((test_param_2list<bool>(dropParams, defaultList, "aggregation: use blocking", true)) ||
           (drop_scheme.find("block diagonal") != std::string::npos || drop_scheme == "signed classical")) {
@@ -1562,6 +1573,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RCP<Factory> mapFact = rcp(new ClassicalMapFactory());
     ParameterList mapParams;
     test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: deterministic", mapParams);
+    test_and_set_param_2list<bool>(paramList, defaultList, "aggregation: coloring: use color graph", mapParams);
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: coloring algorithm", mapParams);
 
     ParameterList tempParams;
@@ -1582,6 +1594,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ParameterList aggParams;
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: classical scheme", aggParams);
     test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: drop scheme", aggParams);
+    test_and_set_param_2list<std::string>(paramList, defaultList, "filtered matrix: lumping choice", aggParams);
+    test_and_set_param_2list<std::string>(paramList, defaultList, "aggregation: coloring algorithm", aggParams);
     aggFactory->SetParameterList(aggParams);
     aggFactory->SetFactory("FC Splitting", manager.GetFactory("FC Splitting"));
     aggFactory->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
@@ -1593,6 +1607,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         aggFactory->SetFactory("BlockNumber", this->GetFactoryManager(levelID - 1)->GetFactory("BlockNumber"));
       else
         aggFactory->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
+    }
+    if (drop_algo == "signed classical distance laplacian") {
+      if (levelID > 0)
+        aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID - 1)->GetFactory("Coordinates"));
+      else
+        aggFactory->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
     }
 
     // Now we short-circuit, because we neither need nor want TentativePFactory here
@@ -1827,14 +1847,24 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       RCP<Factory> coords = rcp(new CoordinatesTransferFactory());
       coords->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
       coords->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
-      manager.SetFactory("Coordinates", coords);
+
+      const bool classicalSignedDLap =
+          paramList.isParameter("multigrid algorithm") &&
+          (paramList.get<std::string>("multigrid algorithm") == "classical") &&
+          paramList.isParameter("aggregation: drop scheme") &&
+          (paramList.get<std::string>("aggregation: drop scheme") == "signed classical distance laplacian");
+
+      if (!classicalSignedDLap)
+        manager.SetFactory("Coordinates", coords);
 
       auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
       if (!RAP.is_null()) {
-        RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+        if (!classicalSignedDLap)
+          RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
       } else {
         auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
-        RAPs->AddTransferFactory(manager.GetFactory("Coordinates"));
+        if (!classicalSignedDLap)
+          RAPs->AddTransferFactory(manager.GetFactory("Coordinates"));
       }
     }
   }
