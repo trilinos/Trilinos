@@ -103,10 +103,6 @@ ENDIF()
 # Check if immintrin.h is available
 CHECK_INCLUDE_FILE_CXX(immintrin.h HAVE_STOKHOS_INTRINSICS)
 
-#IF(Stokhos_ENABLE_ML)
-#  SET(HAVE_STOKHOS_ML ON)
-#ENDIF()
-
 #
 # C) Add the libraries, tests, and examples
 #
