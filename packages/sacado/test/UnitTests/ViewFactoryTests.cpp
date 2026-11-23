@@ -323,6 +323,72 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     TEST_EQUALITY(Sacado::dimension_scalar(b),derivative_dim_plus_one);
   }
 
+  // Test unmanaged DynRankView of double
+  {
+    Kokkos::DynRankView<double> a("a",5*3);
+    using b_type = Kokkos::DynRankView<double,Kokkos::MemoryUnmanaged>;
+    b_type b = Sacado::createDynRankViewWithType<b_type>(a,a.data(),5,3);
+    TEST_EQUALITY(b.rank(),2);
+    TEST_EQUALITY(b.extent(0),5);
+    TEST_EQUALITY(b.extent(1),3);
+    TEST_EQUALITY(Sacado::dimension_scalar(b),1);
+  }
+
+  // Test unmanaged DynRankView of Fad: the Fad dimension must not count in
+  // the rank (see kokkos/kokkos#9651)
+  {
+    Kokkos::DynRankView<FadType> a("a",5*3*4,derivative_dim_plus_one);
+    using b_type = Kokkos::DynRankView<FadType,Kokkos::MemoryUnmanaged>;
+    b_type b = Sacado::createDynRankViewWithType<b_type>(a,a.data(),5,3);
+    TEST_EQUALITY(b.rank(),2);
+    TEST_EQUALITY(b.extent(0),5);
+    TEST_EQUALITY(b.extent(1),3);
+    TEST_EQUALITY(Sacado::dimension_scalar(b),derivative_dim_plus_one);
+    TEST_ASSERT(b.data() == a.data());
+
+    b_type c = Sacado::createDynRankViewWithType<b_type>(a,a.data(),5,3,4);
+    TEST_EQUALITY(c.rank(),3);
+    TEST_EQUALITY(c.extent(2),4);
+    TEST_EQUALITY(Sacado::dimension_scalar(c),derivative_dim_plus_one);
+
+    b_type d = Sacado::createDynRankViewWithType<b_type>(a,a.data());
+    TEST_EQUALITY(d.rank(),0);
+    TEST_EQUALITY(Sacado::dimension_scalar(d),derivative_dim_plus_one);
+
+    auto e = Sacado::createDynRankView(a,Kokkos::view_wrap(a.data()),5,3);
+    TEST_EQUALITY(e.rank(),2);
+    TEST_EQUALITY(e.extent(0),5);
+    TEST_EQUALITY(e.extent(1),3);
+    TEST_EQUALITY(Sacado::dimension_scalar(e),derivative_dim_plus_one);
+    TEST_ASSERT(e.data() == a.data());
+  }
+
+  // Test creation of unmanaged views of Fad on device
+  {
+    Kokkos::DynRankView<FadType> a("a",5*3,derivative_dim_plus_one);
+    using b_type = Kokkos::DynRankView<FadType,Kokkos::MemoryUnmanaged>;
+    using c_type = Kokkos::View<FadType**,Kokkos::MemoryUnmanaged>;
+    int errors = 0;
+    Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<Kokkos::DefaultExecutionSpace>(0,1),
+      KOKKOS_LAMBDA(const int, int& err) {
+        b_type b = Sacado::createDynRankViewWithType<b_type>(a,a.data(),5,3);
+        if (b.rank() != 2 || b.extent(0) != 5 || b.extent(1) != 3 ||
+            Sacado::dimension_scalar(b) != derivative_dim_plus_one ||
+            b.data() != a.data())
+          ++err;
+        auto d = Sacado::createDynRankView(a,a.data(),3,5);
+        if (d.rank() != 2 || d.extent(0) != 3 || d.extent(1) != 5 ||
+            Sacado::dimension_scalar(d) != derivative_dim_plus_one)
+          ++err;
+        c_type c = Sacado::createViewWithType<c_type>(a,a.data(),5,3);
+        if (c.extent(0) != 5 || c.extent(1) != 3 ||
+            Sacado::dimension_scalar(c) != derivative_dim_plus_one)
+          ++err;
+      }, errors);
+    TEST_EQUALITY(errors,0);
+  }
+
   // Test LayoutStride view of double
   {
     Kokkos::DynRankView<double> a("a",10,13);
