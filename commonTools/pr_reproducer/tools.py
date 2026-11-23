@@ -90,6 +90,7 @@ def parse_workflow(workflow_file, pr_number):
             genconfig_build_id = withBlock['genconfig-string']
             dashboard_build_name = withBlock['dashboard-build-name']
             dashboard_build_name = dashboard_build_name.replace("${AT2_IMAGE}", image.split("/")[-1]).replace("${{ github.event.pull_request.number }}", str(pr_number))
+            dashboard_build_name = dashboard_build_name.replace("${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}", "")
             if "extra-pr-driver-args" in withBlock:
                 extraArgs = withBlock["extra-pr-driver-args"].split("=")
                 if len(extraArgs) > 0 and extraArgs[0] == "--extra-configure-args":
@@ -122,6 +123,10 @@ def parse_workflows(source_dir, pr_number):
     nightly_workflow = source_dir/'.github'/'workflows'/'nightly.yml'
     assert nightly_workflow.exists()
     builds.update(parse_workflow(nightly_workflow, pr_number))
+
+    weekly_workflow = source_dir/'.github'/'workflows'/'weekly.yml'
+    assert weekly_workflow.exists()
+    builds.update(parse_workflow(weekly_workflow, pr_number))
 
     return builds
 
