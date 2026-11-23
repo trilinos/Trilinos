@@ -86,53 +86,52 @@ IF (KokkosEnable)
   # being treated as an internal package.
 ENDIF()
 
+# Listing of warning options for GCC
+# https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
+
 set(explicitly_disabled_warnings
     deprecated-declarations
     inline
 )
 set(upcoming_warnings
-    aggressive-loop-optimizations
-    array-bounds=2  # -Wall
-    class-memaccess  # -Wall
-    dangling-pointer=2  # -Wall
-    # deprecated-copy  # -Wextra, lots of warnings
-    implicit-fallthrough=3  # -Wextra
-    maybe-uninitialized  # -Wall
-    mismatched-new-delete  # -Wall
-    pessimizing-move  # -Wall
+    # Missing for -Wall
+    array-bounds=1
+    array-parameter=2
+    dangling-pointer=2
+    maybe-uninitialized
+    pessimizing-move
     restrict
-    #unused-parameter  # -Wextra, lots of warnings
+
+    # Missing for -Wextra
+    # deprecated-copy  # lots of warnings
+    implicit-fallthrough=3
+    # unused-parameter  # lots of warnings
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
 set(promoted_warnings
+
+    # All the warnings set by -Wall
     address
     aligned-new
-    alloc-size  # -Wextra
+    # array-bounds=1
     array-compare
+    # array-parameter=2
     bool-compare
     bool-operation
-    builtin-declaration-mismatch
     c++11-compat
     c++14-compat
     c++17compat
     c++20compat
-    calloc-transposed-args
-    cast-align
-    cast-function-type  # -Wextra
     catch-value
     char-subscripts
-    clobbered
+    class-memaccess
     comment
     dangling-else
-    dangling-reference  # -Wextra
+    # dangling-pointer=2
     delete-non-virtual-dtor
-    div-by-zero
     duplicate-decl-specifier
-    empty-body
     enum-compare
     enum-int-mismatch
-    expansion-to-defined  # -Wextra
-    format
     format=1
     format-contains-nul
     format-diag
@@ -141,22 +140,22 @@ set(promoted_warnings
     format-truncation=1
     format-zero-length
     frame-address
-    ignored-qualifiers  # -Wextra
     implicit
     implicit-function-declaration
     implicit-int
     infinite-recursion
     init-self
     int-in-bool-context
-    int-to-pointer-cast
     logical-not-parentheses
     main
+    # maybe-uninitialized
     memset-elt-size
     memset-transposed-args
     misleading-indentation
     mismatched-dealloc
+    mismatched-new-delete
     missing-attributes
-    missing-field-initializers  # -Wextra
+    # missing-braces  # only turned on for C/ObjC by -Wall
     multistatement-macros
     narrowing
     nonnull
@@ -165,30 +164,25 @@ set(promoted_warnings
     overloaded-virtual=1
     packed-not-aligned
     parentheses
+    # pessimizing-move
     pointer-sign
     range-loop-construct
-    redundant-move  # -Wextra
     reorder
+    # restrict
     return-type
     self-move
     sequence-point
-    shadow
     sign-compare
-    sized-deallocation  # -Wextra
     sizeof-array-div
     sizeof-pointer-div
     sizeof-pointer-memaccess
     strict-aliasing
-    strict-overflow=1
-    string-compare  # -Wextra
     switch
     tautological-compare
     trigraphs
-    type-limits
     uninitialized
     unknown-pragmas
     unused
-    unused-but-set-parameter
     unused-but-set-variable
     unused-const-variable=1
     unused-function
@@ -197,11 +191,52 @@ set(promoted_warnings
     unused-value
     unused-variable
     use-after-free=2
-    variadic-macros
     vla-parameter
     volatile-register-var
-    write-strings
     zero-length-bounds
+
+    # All the warnings set by -Wextra
+    # absolute-value
+    alloc-size
+    calloc-transposed-args
+    cast-function-type
+    clobbered
+    dangling-reference
+    # deprecated-copy
+    empty-body
+    # enum-conversion
+    expansion-to-defined
+    ignored-qualifiers
+    # implicit-fallthrough=3
+    # maybe-uninitialized is already in -Wall
+    missing-field-initializers
+    # missing-parameter-name
+    # missing-parameter-type
+    # old-style-declaration
+    # multiple-parameter-fwd-decl-lists
+    # override-init
+    redundant-move
+    # shift-negative-value (in C++11 to C++17 and in C99 and newer)
+    # sign-compare is already in -Wall
+    sized-deallocation
+    string-compare
+    type-limits
+    # uninitialized is already in -Wall
+    # unterminated-string-initialization
+    # unused-parameter
+    unused-but-set-parameter
+
+    # other warning flags
+    aggressive-loop-optimizations
+    builtin-declaration-mismatch
+    cast-align
+    div-by-zero
+    format
+    int-to-pointer-cast
+    shadow
+    strict-overflow=1
+    variadic-macros
+    write-strings
 )
 
 include(CheckCXXCompilerFlag)
