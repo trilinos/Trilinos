@@ -30,6 +30,7 @@ jobs:
       max-cores-allowed: 56
       num-concurrent-tests: 112
       slots-per-gpu: 8
+      skip-create-packageenables: true
 
   address-sanitizer:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
@@ -44,6 +45,7 @@ jobs:
       max-cores-allowed: 29
       num-concurrent-tests: 16
       extra-pr-driver-args: --extra-configure-args=-D;CTEST_TEST_TIMEOUT=1200
+      skip-create-packageenables: true
 
   coverage-check:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
@@ -58,6 +60,7 @@ jobs:
       max-cores-allowed: 29
       num-concurrent-tests: 16
       extra-pr-driver-args: --extra-configure-args=-D;CTEST_TEST_TIMEOUT=1200
+      skip-create-packageenables: true
 
   cxx23:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
@@ -72,6 +75,7 @@ jobs:
       max-cores-allowed: 29
       num-concurrent-tests: 16
       extra-pr-driver-args: --extra-configure-args=-D;CMAKE_CXX_STANDARD=23
+      skip-create-packageenables: true
 
   deprecated_off:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
@@ -85,6 +89,7 @@ jobs:
       dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_deprecated_off${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      skip-create-packageenables: true
 
   experimental:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
@@ -99,3 +104,4 @@ jobs:
       max-cores-allowed: 29
       num-concurrent-tests: 16
       extra-pr-driver-args: --extra-configure-args=-DTpetra_ENABLE_Experimental=ON;-DAmesos2_ENABLE_Experimental=ON;-DBelos_ENABLE_Experimental=ON;-DIfpack2_ENABLE_Experimental=ON;-DXpetra_ENABLE_Experimental=ON;-DMueLu_ENABLE_Experimental=ON;-DStokhos_ENABLE_Experimental=ON;-DZoltan2Core_ENABLE_Experimental=ON
+      skip-create-packageenables: true

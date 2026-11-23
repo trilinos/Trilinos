@@ -15,9 +15,9 @@ jobs:
     if: ${{ github.repository == 'trilinos/Trilinos' }}
     uses: ./.github/workflows/ci.yml
     with:
-      target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
+      target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260903']"
       genconfig-string: "rhel8_gcc-openmpi-openmp_release-debug_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all"
-      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260507
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260903
       target-branch: "develop"
       cdash-track: "Nightly"
       dashboard-build-name: ${AT2_IMAGE}_debug_shared_warnings_as_errors
@@ -25,3 +25,4 @@ jobs:
       num-concurrent-tests: 16
       skip-run-tests: true
       extra-pr-driver-args: --extra-configure-args=-D;Trilinos_WARNINGS_MODE=ERROR
+      skip-create-packageenables: true
