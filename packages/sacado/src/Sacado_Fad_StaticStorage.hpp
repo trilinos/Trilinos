@@ -49,12 +49,12 @@ namespace Sacado {
       //! Default constructor
       SACADO_INLINE_FUNCTION
       StaticStorage() :
-        val_(), sz_(0) {}
+        val_(), dx_(), sz_(0) {}
 
       //! Constructor with value
       SACADO_INLINE_FUNCTION
       StaticStorage(const T & x) :
-        val_(x), sz_(0) {}
+        val_(x), dx_(), sz_(0) {}
 
       //! Constructor with size \c sz
       /*!
