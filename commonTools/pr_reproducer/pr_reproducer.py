@@ -9,6 +9,7 @@ import questionary
 import argparse
 from shutil import which
 import os
+import sys
 from pprint import pformat
 import subprocess
 from github import Github
@@ -22,7 +23,8 @@ from tools import (is_valid_pr_number,
                    generate_package_enables,
                    image_available,
                    pull_image,
-                   launch_container)
+                   launch_container,
+                   ensure_podman_machine)
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -77,6 +79,9 @@ logger.debug(f"container_engine_cmd = {container_engine_cmd}")
 if container_engine_cmd is None:
     logger.warning(f"No command \"{container_engine}\" in path. Aborting.")
     exit(1)
+# On Mac: make sure that we can get a running machine
+if container_engine == "podman" and sys.platform == "darwin":
+    ensure_podman_machine()
 
 ##################################################
 # Check that cmake is available
@@ -160,10 +165,12 @@ else:
 dashboard_build_name = pr_builds[pr_build]["dashboard_build_name"]
 genconfig_build_id = pr_builds[pr_build]["genconfig_build_id"]
 cmake_extra_args = pr_builds[pr_build]["cmake_extra_args"]
+skipPackageEnables = pr_builds[pr_build]["skipPackageEnables"]
 logger.debug(f"image = {image}")
 logger.debug(f"tag = {tag}")
 logger.debug(f"genconfig_build_id = {genconfig_build_id}")
 logger.debug(f"cmake_extra_args = {cmake_extra_args}")
+logger.debug(f"skipPackageEnables = {skipPackageEnables}")
 
 ##################################################
 # Retrieve PR information from Github
@@ -188,12 +195,13 @@ g.close()
 ##################################################
 # Generate packageEnables.cmake
 
-packageEnablesFile = Path(".")/f'packageEnables-PR-{pr_number}.cmake'
-if packageEnablesFile.exists():
-    overwrite = questionary.confirm(f"File {packageEnablesFile} already exists. Overwrite?", default=True).ask()
-    if not overwrite:
-        questionary.print("Not overwriting file. Aborting.")
-        exit()
+if not skipPackageEnables:
+    packageEnablesFile = Path(".")/f'packageEnables-PR-{pr_number}.cmake'
+    if packageEnablesFile.exists():
+        overwrite = questionary.confirm(f"File {packageEnablesFile} already exists. Overwrite?", default=True).ask()
+        if not overwrite:
+            questionary.print("Not overwriting file. Aborting.")
+            exit()
 
 logger.debug("Fetching target branch")
 subprocess.run(["git", "fetch", remote, f"{pr_base_ref}:{pr_number}-target"],
@@ -202,16 +210,19 @@ logger.debug("Fetching merge branch")
 subprocess.run(["git", "fetch", remote, f"refs/pull/{pr_number}/merge:{pr_number}-merge"],
                capture_output=True, cwd=trilinos_source, universal_newlines=True)
 
-output = generate_package_enables(trilinos_source, packageEnablesFile, f"{pr_number}-target", f"{pr_number}-merge")
-if not packageEnablesFile.exists():
-    logger.info("Output from script that generates CMake fragment with package enables:\n"+output)
-    continueWithoutPackageEnables = questionary.confirm(f"No package enables generated. The PR might not have changed any packages. Continue anyway?", default=False).ask()
-    if not continueWithoutPackageEnables:
-        exit(1)
+if not skipPackageEnables:
+    output = generate_package_enables(trilinos_source, packageEnablesFile, f"{pr_number}-target", f"{pr_number}-merge")
+    if not packageEnablesFile.exists():
+        logger.info("Output from script that generates CMake fragment with package enables:\n"+output)
+        continueWithoutPackageEnables = questionary.confirm(f"No package enables generated. The PR might not have changed any packages. Continue anyway?", default=False).ask()
+        if not continueWithoutPackageEnables:
+            exit(1)
+    else:
+        with open(packageEnablesFile, 'r') as f:
+            packageEnables = f.readlines()
+        logger.debug(f"{packageEnablesFile}:" + ''.join(packageEnables))
 else:
-    with open(packageEnablesFile, 'r') as f:
-        packageEnables = f.readlines()
-    logger.debug(f"{packageEnablesFile}:" + ''.join(packageEnables))
+    packageEnablesFile = None
 
 ##################################################
 # Summary

@@ -1,0 +1,32 @@
+{
+  "project_id": "trilinos",
+  "project_name": "Trilinos",
+  "data_classifications": ["Non-sensitive", "UUR"],
+  "launcher": {
+    "container_project_path": "/workspace/trilinos/source"
+  },
+  "default_vendor": "local",
+  "vendors": {
+    "local": {
+      "network": {
+        "port": 8000
+      }
+    }
+  },
+  "mount_points": [
+    {
+      "host_path": "/home/your-user-name/builds/trilinos",
+      "container_path": "/workspace/trilinos/build",
+      "mode": "rw",
+      "label": "Trilinos build dir",
+      "data_classifications": ["Non-sensitive", "UUR"]
+    },
+    {
+      "host_path": "/home/your-user-name/install/trilinos",
+      "container_path": "/workspace/trilinos/install",
+      "mode": "rw",
+      "label": "Trilinos install dir",
+      "data_classifications": ["Non-sensitive", "UUR"]
+    }
+  ]
+}

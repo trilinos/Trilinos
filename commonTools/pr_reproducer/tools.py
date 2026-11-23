@@ -90,11 +90,16 @@ def parse_workflow(workflow_file, pr_number):
             genconfig_build_id = withBlock['genconfig-string']
             dashboard_build_name = withBlock['dashboard-build-name']
             dashboard_build_name = dashboard_build_name.replace("${AT2_IMAGE}", image.split("/")[-1]).replace("${{ github.event.pull_request.number }}", str(pr_number))
+            dashboard_build_name = dashboard_build_name.replace("${{ case(inputs.target_branch == 'develop', '', format('_{0}', inputs.target_branch)) }}", "")
             if "extra-pr-driver-args" in withBlock:
                 extraArgs = withBlock["extra-pr-driver-args"].split("=")
                 if len(extraArgs) > 0 and extraArgs[0] == "--extra-configure-args":
                     cmake_extra_args = "=".join(extraArgs[1:])
                     cmake_extra_args = cmake_extra_args.replace("${GITHUB_WORKSPACE}", "/workspace/trilinos/source").replace(";", " ")
+            if "skip-create-packageenables" in withBlock:
+                skipPackageEnables = withBlock["skip-create-packageenables"]
+            else:
+                skipPackageEnables = False
         else:
             logger.debug("Could not parse job")
             continue
@@ -103,7 +108,8 @@ def parse_workflow(workflow_file, pr_number):
                               "tag": tag,
                               "genconfig_build_id": genconfig_build_id,
                               "cmake_extra_args": cmake_extra_args,
-                              "dashboard_build_name": dashboard_build_name}
+                              "dashboard_build_name": dashboard_build_name,
+                              "skipPackageEnables": skipPackageEnables}
         logger.debug(f"\"{jobname}\" added")
 
     return pr_builds
@@ -117,6 +123,10 @@ def parse_workflows(source_dir, pr_number):
     nightly_workflow = source_dir/'.github'/'workflows'/'nightly.yml'
     assert nightly_workflow.exists()
     builds.update(parse_workflow(nightly_workflow, pr_number))
+
+    weekly_workflow = source_dir/'.github'/'workflows'/'weekly.yml'
+    assert weekly_workflow.exists()
+    builds.update(parse_workflow(weekly_workflow, pr_number))
 
     return builds
 
@@ -166,7 +176,7 @@ def launch_container(container_engine, source_dir, packageEnablesFile, image, ta
             "-e" "TRILINOS_BUILD_DIR=/workspace/trilinos/build",
             "-e" "TRILINOS_INSTALL_DIR=/workspace/trilinos/install"]
     # mount package enables file
-    if packageEnablesFile.exists():
+    if packageEnablesFile is not None and packageEnablesFile.exists():
         cmd += ["-v", f"{packageEnablesFile.absolute()}:/workspace/packageEnables.cmake"]
     # set environment variable for GenConfig
     cmd += ["-e", f"GENCONFIG_BUILD_ID={genconfig_build_id}"]
@@ -214,6 +224,9 @@ def launch_container(container_engine, source_dir, packageEnablesFile, image, ta
             cmd += ["-v", f"{requests_ca_bundle}:/certs/requests-cert.crt:ro",
                     "-e", "REQUESTS_CA_BUNDLE=/certs/requests-cert.crt"]
 
+    # set timezone
+    cmd += ["--tz", "local"]
+
     # image to run
     cmd += [f"{image}:{tag}"]
     # command to be executed
@@ -236,3 +249,48 @@ def launch_container(container_engine, source_dir, packageEnablesFile, image, ta
         """
         print(message)
         exit(1)
+
+
+def ensure_podman_machine():
+    proc = subprocess.run(["podman", "machine", "list", "--format", "json"], capture_output=True, text=True)
+    assert proc.returncode == 0
+
+    try:
+        machines = json.loads(proc.stdout.strip())
+    except json.JSONDecodeError:
+        # Fallback if older podman version doesn't support json format perfectly
+        machines = []
+
+    # Handle initialization if no machines exist
+    if not machines or len(machines) == 0:
+        logger.debug("No Podman machine found. Initializing 'podman-machine-default'...")
+        proc = subprocess.run(["podman", "machine", "init"], capture_output=False, text=True)
+        assert proc.returncode == 0
+        logger.debug("Initialization successful.")
+        # Reload machine list to include the newly created machine
+        proc = subprocess.run(["podman", "machine", "list", "--format", "json"], capture_output=True, text=True)
+        assert proc.returncode == 0
+        try:
+            machines = json.loads(proc.stdout.strip())
+        except json.JSONDecodeError:
+            exit(1)
+
+    # Check running state of the default/first machine
+    target_machine = machines[0]
+    machine_name = target_machine.get("Name", "podman-machine-default")
+    is_running = target_machine.get("Running", False)
+
+    if is_running:
+        logger.debug(f"Podman machine '{machine_name}' is already running.")
+    else:
+        logger.debug(f"Podman machine '{machine_name}' is stopped. Starting it now.")
+        proc = subprocess.run(["podman", "machine", "start"], capture_output=False, text=True)
+        if proc.returncode != 0:
+            # Handle edge case where it's already starting or active but misreported
+            if "already running" in proc.stderr.strip().lower():
+                logger.debug(f"Podman machine '{machine_name}' is now active.")
+            else:
+                logger.debug(f"Failed to start machine")
+                exit(1)
+        else:
+            logger.debug(f"Podman machine '{machine_name}' started successfully.")
