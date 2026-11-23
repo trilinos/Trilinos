@@ -8,11 +8,11 @@ interface are given in \S\ref{sec:examples in code}.
 %algorithm types
 %problems types
 \muelu{} is an extensible algebraic multigrid (AMG) library that is part of the
-\trilinos{} project. \muelu{} works with \epetra (32-bit version) and
-\tpetra matrix types. The library is written in C++ and allows for different
-ordinal (index) and scalar types.  \muelu{} is designed to be efficient on many
-different computer architectures, from workstations to supercomputers, relying
-on ``MPI+X" principle, where ``X" can be threading, CUDA, or any other back-end provided by the \kokkos package.
+\trilinos{} project. \muelu{} works with \tpetra matrix types. The library is
+written in C++ and allows for different ordinal (index) and scalar types.
+\muelu{} is designed to be efficient on many different computer architectures,
+from workstations to supercomputers, relying on ``MPI+X" principle, where ``X"
+can be threading, CUDA, HIP, SYCL, or any other back-end provided by the \kokkos package.
 
 \muelu{} provides a number of different multigrid algorithms:
 \be
@@ -47,10 +47,9 @@ The most important features of \muelu{} can be summarized as:
   \item \textbf{Integration with \trilinos{} library}
 
     As a package of \trilinos, \muelu{} is well integrated into the \trilinos
-    environment. \muelu{} can be used with either the \tpetra{} or \epetra{}
-    (32-bit) linear algebra stack. It is templated on the local index, global
-    index, scalar, and compute node types. This makes \muelu{} ready for
-    future developments.
+    environment. \muelu{} uses the \tpetra{} linear algebra stack. It is
+    templated on the local index, global index, scalar, and compute node types.
+    This makes \muelu{} ready for future developments.
 
   \item \textbf{Broad range of supported platforms}
 
@@ -65,16 +64,15 @@ The most important features of \muelu{} can be summarized as:
 \section{Configuration and Build}
 \label{sec:configuration and build}
 
-\muelu{} has been compiled successfully under Linux with the following C++
-compilers: GNU versions 4.1 and later, Intel versions 12.1/13.1, and clang versions 3.2 and later.
-In the future, we recommend using compilers supporting C++11 standard.
+\muelu{} requires a C++20 compliant compiler.
+\trilinos{} is tested with GCC 12.3.0 and Clang 19.1.7; earlier versions may work.
+The \trilinos{} testing dashboard is at \url{https://my.cdash.org/index.php?project=Trilinos}.
 
 \subsection{Dependencies}
 
 \noindent{\bf Required Dependencies}
 
-\muelu{} requires that \teuchos{} and either \epetra/\ifpack or \tpetra/\ifpacktwo
-are enabled.
+\muelu{} requires that \teuchos{} and \tpetra/\ifpacktwo are enabled.
 
 \noindent{\bf Recommended Dependencies}
 
@@ -111,7 +109,6 @@ having to install the \trilinos{} libraries. Therefore, it is an ideal starting 
     \belos         &          &          &          & $\times$  \\
     \ifpacktwo     &          &          & $\times$ & $\times$  \\
     \galeri        &          &          &          & $\times$  \\
-    \kokkosclassic &          &          & $\times$ & \\
     \teuchos{}     & $\times$ & $\times$ &          & \\
     \tpetra        &          &          & $\times$ & $\times$  \\
     \xpetra        & $\times$ & $\times$ &          & \\
@@ -134,9 +131,9 @@ optional. If an optional dependency is not present, the tests requiring that
 dependency are not built.
 
 \begin{mycomment}
-\amesos{}/\amesostwo{} are necessary if one wants to use a sparse direct solve on the coarsest level.
+\amesostwo{} is necessary if one wants to use a sparse direct solve on the coarsest level.
 \zoltan{}/\zoltantwo{} are necessary if one wants to use matrix rebalancing in parallel runs (see~\S\ref{sec:performance}).
-\aztecoo{}/\belos{} are necessary if one wants to test \muelu{} as a preconditioner instead of a solver.
+\belos{} is necessary if one wants to test \muelu{} as a preconditioner instead of a solver.
 \end{mycomment}
 
 \begin{mycomment}
@@ -147,7 +144,7 @@ Some packages that \muelu{} depends on may come with additional requirements for
 third party libraries, which are not listed here as explicit dependencies of \muelu{}.
 It is highly recommended to install ParMetis 3.1.1 or newer for \zoltan{},
 ParMetis 4.0.x for \zoltantwo{}, and SuperLU 4.1 or newer for
-\amesos{}/\amesostwo{}.
+\amesostwo{}.
 \end{mycomment}
 
 \subsection{Configuration}
@@ -179,15 +176,13 @@ For more information on configuring, see the \trilinos CMake Quickstart guide \c
 % simple scaling test
 %   galeri
 %   XML input
-%   belos/aztecoo or stand-alone solver
+%   belos or stand-alone solver
 %   look @ tutorial or elsewhere for more advanced usage
 
 The most commonly used scenario involving \muelu{} is using a multigrid
-preconditioner inside an iterative linear solver. In \trilinos{}, a user has a
-choice between \epetra and \tpetra for the underlying linear algebra library.
-Important Krylov subspace methods (such as preconditioned CG and GMRES) are
-provided in \trilinos{} packages \aztecoo (\epetra{}) and \belos
-(\epetra{}/\tpetra{}).
+preconditioner inside an iterative linear solver. Important Krylov subspace
+methods (such as preconditioned CG and GMRES) are provided in the \trilinos{}
+package \belos.
 
 At this point, we assume that the reader is comfortable with \teuchos{} referenced-counted
 pointers (RCPs) for memory management (an introduction to RCPs can be found
@@ -303,53 +298,6 @@ Finally, we solve the system.
     Belos::ReturnType ret = solver.solve();
 \end{lstlisting}
 
-\subsection{\muelu{} as a preconditioner for \aztecoo}
-
-For \epetra, users have two library options: \belos{} (recommended) and \aztecoo{}.
-\aztecoo{} and \belos both provide fast and mature implementations of common iterative Krylov linear solvers.
-\belos has additional capabilities, such as Krylov subspace recycling and ``tall skinny QR".
-
-Constructing a \muelu{} preconditioner for Epetra operators is done in a similar
-manner to Tpetra.
-\begin{lstlisting}[language=C++]
-    Teuchos::RCP<Epetra_CrsMatrix> A;
-    // create A here ...
-    Teuchos::RCP<MueLu::EpetraOperator> mueLuPreconditioner;
-    std::string optionsFile = "mueluOptions.xml";
-    mueLuPreconditioner = MueLu::CreateEpetraPreconditioner(A, optionsFile);
-\end{lstlisting}
-\muelu{} parameters are generally Epetra/Tpetra agnostic, thus the XML parameter file
-could be the same as~\S\ref{sec:tpetraexample}.
-
-Furthermore, we assume that a right hand side vector and a solution vector with
-the initial guess are defined.
-\begin{lstlisting}[language=C++]
-    Teuchos::RCP<const Epetra_Map> map = A->DomainMap();
-    Teuchos::RCP<Epetra_Vector> B = Teuchos::rcp(new Epetra_Vector(map));
-    Teuchos::RCP<Epetra_Vector> X = Teuchos::rcp(new Epetra_Vector(map));
-    X->PutScalar(0.0);
-\end{lstlisting}
-
-Then, an \texttt{Epetra\_LinearProblem} can be defined.
-\begin{lstlisting}[language=C++]
-    Epetra_LinearProblem epetraProblem(A.get(), X.get(), B.get());
-\end{lstlisting}
-
-The following code constructs an \aztecoo{} CG solver.
-\begin{lstlisting}[language=C++]
-    AztecOO aztecSolver(epetraProblem);
-    aztecSolver.SetAztecOption(AZ_solver, AZ_cg);
-    aztecSolver.SetPrecOperator(mueLuPreconditioner.get());
-\end{lstlisting}
-
-Finally, the linear system is solved.
-\begin{lstlisting}[language=C++]
-    int maxIts = 100;
-    double tol = 1e-10;
-    aztecSolver.Iterate(maxIts, tol);
-\end{lstlisting}
-
-
 \subsection{\muelu's structured algorithms}
 
 Some users might use structured meshes to discretize their problems. In such cases it can be advantageous to use the structured grid algorithms provided in \muelu. To use these algorithms the user has to provide extra information to \muelu such as the number of spatial dimensions in the problem and the number of nodes in each direction on the local rank. As demonstrated in the code bellow \muelu expect these additional inputs to be stored in a sublist called ``user data".
@@ -445,7 +393,7 @@ Further examples of how to use \muelu to solve Maxwell's equations can be found 
 This section is only meant to give a brief introduction on how to use \muelu{}
 as a preconditioner within the \trilinos{} packages for iterative solvers. There
 are other, more complicated, ways to use \muelu{} as a preconditioner for \belos
-and \aztecoo through the \xpetra interface. Of course, \muelu{} can also work as
+through the \xpetra interface. Of course, \muelu{} can also work as
 standalone multigrid solver. For more information on these topics, the reader
 may refer to the examples and tests in the \muelu{} source directory
 (\texttt{packages/muelu/example} and \texttt{packages/muelu/test}) and in the trilinosCouplings source directory
