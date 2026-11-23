@@ -11,21 +11,15 @@
 #include "Galeri_XpetraProblemFactory.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_CreateCrsGraphFromStencil_decl.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StackedTimer.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#ifndef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#include "Tpetra_CreateCrsGraphFromStencil_def.hpp"
-#endif
 
-#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 namespace {
 
@@ -33,32 +27,8 @@ using scalar_type = double;
 using map_type    = Tpetra::Map<>;
 using matrix_type = Tpetra::CrsMatrix<>;
 using vector_type = Tpetra::MultiVector<>;
-using graph_type  = Tpetra::CrsGraph<>;
 using LO          = typename map_type::local_ordinal_type;
 using GO          = typename map_type::global_ordinal_type;
-using offset_type = Tpetra::Experimental::StencilOffset;
-
-std::vector<GO> globalColumns(const graph_type& graph, const LO row) {
-  graph_type::local_inds_host_view_type columns;
-  graph.getLocalRowView(row, columns);
-  std::vector<GO> result(columns.size());
-  for (size_t i = 0; i < result.size(); ++i)
-    result[i] = graph.getColMap()->getGlobalElement(columns[i]);
-  std::sort(result.begin(), result.end());
-  return result;
-}
-
-void compareGraphs(const graph_type& actual, const graph_type& expected) {
-  if (!actual.getRowMap()->isSameAs(*expected.getRowMap()) ||
-      actual.getGlobalNumEntries() != expected.getGlobalNumEntries() ||
-      actual.getLocalNumEntries() != expected.getLocalNumEntries())
-    throw std::runtime_error("Graph maps or entry counts differ");
-  for (size_t row = 0; row < actual.getLocalNumRows(); ++row)
-    if (globalColumns(actual, static_cast<LO>(row)) !=
-        globalColumns(expected, static_cast<LO>(row)))
-      throw std::runtime_error("Columns differ in local row " +
-                               std::to_string(row));
-}
 
 int run(int argc, char* argv[],
         const Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
@@ -66,8 +36,7 @@ int run(int argc, char* argv[],
   int ny = 120;
   int nz = 120;
   std::string watchrProblemName =
-      "Galeri scalar 7-point stencil " +
-      std::to_string(comm->getSize()) + " ranks";
+      "Galeri scalar 7-point stencil Galeri implementation";
 
   Teuchos::CommandLineProcessor clp(false);
   clp.setOption("nx", &nx, "global number of grid points in x");
@@ -76,8 +45,8 @@ int run(int argc, char* argv[],
   clp.setOption("watchr-problem-name", &watchrProblemName,
                 "problem name for Watchr plot headers");
   clp.setDocString(
-      "Compare Galeri full matrix construction with Tpetra construction of "
-      "a scalar three-dimensional seven-point stencil graph.");
+      "Measure Galeri construction of a scalar three-dimensional "
+      "seven-point stencil matrix.");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
@@ -102,44 +71,31 @@ int run(int argc, char* argv[],
       scalar_type, LO, GO, map_type, matrix_type, vector_type>(
       "Laplace3D", rowMap, parameters);
 
-  Teuchos::Array<LO> localDimensions{
-      parameters.get<LO>("lnx"), parameters.get<LO>("lny"),
-      parameters.get<LO>("lnz")};
-  const Teuchos::Array<LO>& constLocalDimensions = localDimensions;
-  const Teuchos::Array<offset_type> offsets{
-      {0, 0, 0}, {-1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}};
-
   const std::string rootTimerName =
       "Galeri CreateCrsGraphFromStencil performance";
   auto stackedTimer =
       Teuchos::rcp(new Teuchos::StackedTimer(rootTimerName.c_str()));
   Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
 
-  Teuchos::RCP<matrix_type> referenceMatrix;
+  Teuchos::RCP<matrix_type> matrix;
   comm->barrier();
   Kokkos::fence();
   {
     Teuchos::TimeMonitor timer(*Teuchos::TimeMonitor::getNewTimer(
         "Galeri: full matrix construction"));
-    referenceMatrix = problem->BuildMatrix();
-    Kokkos::fence();
-  }
-
-  Teuchos::RCP<const graph_type> stencilGraph;
-  comm->barrier();
-  Kokkos::fence();
-  {
-    Teuchos::TimeMonitor timer(*Teuchos::TimeMonitor::getNewTimer(
-        "Tpetra: stencil graph construction"));
-    stencilGraph = Tpetra::Experimental::createCrsGraphFromStencil(
-        rowMap, constLocalDimensions(), offsets(), 1,
-        Tpetra::Experimental::StencilNumbering::globalLexicographic, true);
+    matrix = problem->BuildMatrix();
     Kokkos::fence();
   }
 
   stackedTimer->stop(rootTimerName.c_str());
 
-  compareGraphs(*stencilGraph, *referenceMatrix->getCrsGraph());
+  const Tpetra::global_size_t expectedRows =
+      static_cast<Tpetra::global_size_t>(nx) *
+      static_cast<Tpetra::global_size_t>(ny) *
+      static_cast<Tpetra::global_size_t>(nz);
+  if (matrix.is_null() || !matrix->isFillComplete() ||
+      matrix->getGlobalNumRows() != expectedRows)
+    throw std::runtime_error("Galeri did not construct the expected matrix");
 
   Teuchos::StackedTimer::OutputOptions options;
   options.output_fraction   = options.output_histogram =

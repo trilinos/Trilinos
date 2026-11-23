@@ -37,15 +37,33 @@ IF(${PACKAGE_NAME}_ENABLE_Xpetra)
   ENDFOREACH()
 
   TRIBITS_ADD_EXECUTABLE(
-    CreateCrsGraphFromStencilPerformance
-    SOURCES CreateCrsGraphFromStencilPerformance.cpp
+    CreateCrsGraphFromStencilGaleriPerformance
+    SOURCES CreateCrsGraphFromStencilGaleriPerformance.cpp
     COMM mpi
     CATEGORIES BASIC PERFORMANCE
   )
 
   TRIBITS_ADD_TEST(
-    CreateCrsGraphFromStencilPerformance
-    NAME Scalar7Point_Performance
+    CreateCrsGraphFromStencilGaleriPerformance
+    NAME Galeri_Scalar7Point_Performance
+    ARGS "--nx=120 --ny=120 --nz=120"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    CreateCrsGraphFromStencilTpetraPerformance
+    SOURCES CreateCrsGraphFromStencilTpetraPerformance.cpp
+    COMM mpi
+    CATEGORIES BASIC PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    CreateCrsGraphFromStencilTpetraPerformance
+    NAME Tpetra_Scalar7Point_Performance
     ARGS "--nx=120 --ny=120 --nz=120"
     COMM mpi
     NUM_MPI_PROCS 4
