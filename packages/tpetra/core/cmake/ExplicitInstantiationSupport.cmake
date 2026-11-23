@@ -1,5 +1,7 @@
 MESSAGE(STATUS "${PACKAGE_NAME}: Processing ETI / test support")
 
+INCLUDE(TribitsETISupport)
+
 # This CMake module generates the following header file, which gets
 # written to the build directory (like other header files that CMake
 # generates).  The file contains macros that do instantiation over a
@@ -214,3 +216,8 @@ CONFIGURE_FILE(
   ${${PACKAGE_NAME}_ETI_FILE_PATH}
   )
 add_custom_target(Tpetra_ETI_generated DEPENDS ${${PACKAGE_NAME}_ETI_FILE_PATH})
+
+############################################################
+# Add variables to ${Package_NAME}Config.cmake
+############################################################
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_LIBRARYSET)
