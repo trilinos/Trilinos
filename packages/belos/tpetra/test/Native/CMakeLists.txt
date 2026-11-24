@@ -8,6 +8,13 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_Native_current_solution_provider_types
+  SOURCES current_solution_provider_types.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
 TRIBITS_ADD_TEST(
   Tpetra_Native_solvers_diagonal_matrix
   NAME Tpetra_Native_CG_diagonal_matrix

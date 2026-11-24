@@ -44,6 +44,7 @@ APPEND_SET(HEADERS
   BelosCGIter.hpp
   BelosCGSingleRedIter.hpp
   BelosConfigDefs.hpp
+  BelosCurrentSolutionProvider.hpp
   BelosDenseMatTester.hpp
   BelosDenseMatTraits.hpp
   BelosDenseSolver.hpp

@@ -73,6 +73,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_PseudoBlockGMRES_OneStepRightPrec_test
+  SOURCES test_pseudo_gmres_one_step_right_prec.cpp
+  ARGS "--verbose"
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
 BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
   Tpetra_HybridGMRES_hb_test
   SOURCES test_hybrid_gmres_hb.cpp
