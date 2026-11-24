@@ -1,0 +1,61 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Kokkos Kernels
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Luc
+    family-names: Berger-Vergiat
+    affiliation: Sandia National Laboratories
+    email: lberge@sandia.gov
+    orcid: 'https://orcid.org/0000-0001-5550-3527'
+  - given-names: Yuuichi
+    family-names: Asahi
+    affiliation: CEA
+    orcid: 'https://orcid.org/0000-0002-9997-1274'
+  - given-names: Vinh
+    family-names: Dang
+    affiliation: Sandia National Laboratories
+    orcid: 'https://orcid.org/0000-0002-4958-6159'
+  - given-names: Nathan
+    family-names: Ellingwood
+    affiliation: Sandia National Laboratories
+    orcid: 'https://orcid.org/0000-0002-7622-9667'
+  - given-names: James
+    family-names: Foucar
+    affiliation: Sandia National Laboratories
+    orcid: 'https://orcid.org/0000-0003-2036-8032'
+  - given-names: Brian
+    family-names: Kelley
+    affiliation: Sandia National Laboratories
+    orcid: 'https://orcid.org/0000-0003-3607-360X'
+  - given-names: Ichitaro
+    family-names: Yamazaki
+    affiliation: Sandia National Laboratories
+    orcid: 'https://orcid.org/0009-0003-7248-573X'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.17641723
+    description: The concept DOI of Kokkos Kernels on zenodo
+repository-code: 'https://github.com/kokkos/kokkos-kernels'
+url: 'https://kokkos.org'
+abstract: >-
+  Kokkos Kernels implements local computational kernels for
+  linear algebra and graph operations, using the Kokkos
+  shared-memory parallel programming model. "Local" means
+  not using MPI, or running within a single MPI process
+  without knowing about MPI. "Computational kernels" are
+  coarse-grained operations, consisting of substantial work 
+  suitable for on-node parallel execution using Kokkos. Kokkos
+  Kernels can be the building block of a parallel linear
+  algebra library that uses MPI and threads for parallelism,
+  or it can be used stand-alone in your application.
+keywords:
+  - Performance portability
+  - High Performance Computing
+  - Mathematics Library
+license-url: 'https://github.com/kokkos/kokkos-kernels/blob/develop/LICENSE'

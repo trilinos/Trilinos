@@ -13,12 +13,12 @@ void impl_test_asum(int N) {
   using AT      = KokkosKernels::ArithTraits<ScalarA>;
   using MAT     = KokkosKernels::ArithTraits<typename AT::mag_type>;
 
-  view_stride_adapter<ViewTypeA> a("A", N);
+  TestUtils::view_stride_adapter<ViewTypeA> a("A", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   ScalarA randStart, randEnd;
-  Test::getRandomBounds(10.0, randStart, randEnd);
+  TestUtils::getRandomBounds(10.0, randStart, randEnd);
   Kokkos::fill_random(a.d_view, rand_pool, randStart, randEnd);
 
   Kokkos::deep_copy(a.h_base, a.d_base);

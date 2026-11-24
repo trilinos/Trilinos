@@ -3,6 +3,7 @@
 #ifndef TEST_BATCHED_DENSE_HELPER_HPP
 #define TEST_BATCHED_DENSE_HELPER_HPP
 
+#include <concepts>
 #include "KokkosBatched_Util.hpp"
 
 namespace KokkosBatched {
@@ -358,6 +359,201 @@ void dense_to_banded(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
         // Do not use the element from the dense matrix if it is outside the band
         auto row_in_banded           = kl + ku + i1 - i2;
         h_out(i0, row_in_banded, i2) = h_in(i0, i1, i2);
+      }
+    }
+  }
+  Kokkos::deep_copy(out, h_out);
+}
+
+/// \brief Converts an nxn dense matrix to LAPACK packed storage format.
+/// Takes a dense matrix in conventional storage and converts it to a packed storage.
+/// Uplo: Upper
+///   AP = [A[0,0],
+///         A[0,1], A[1,1],
+///         A[0,2], A[1,2], A[2,2],
+///         ...]
+///
+/// UPLO=Lower
+///   AP = [A[0,0], A[1,0], A[2,0], ...,
+///         A[1,1], A[2,1], ...,
+///         ...]
+///
+/// \tparam UploType: Type indicating whether the matrix is upper or lower triangular
+/// \tparam InViewType: Input type for the matrix, needs to be a 3D view
+/// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
+///
+/// \param[in] in: Input batched dense matrix, a rank 3 view
+/// \param[out] out: Output batched packed matrix, a rank 2 view
+///
+template <typename UploType, typename InViewType, typename OutViewType>
+void dense_to_packed(InViewType& in, OutViewType& out) {
+  static_assert(InViewType::rank() == 3, "KokkosBatched::dense_to_packed: InViewType must have rank 3.");
+  static_assert(OutViewType::rank() == 2, "KokkosBatched::dense_to_packed: OutViewType must have rank 2.");
+  auto h_in   = Kokkos::create_mirror_view(in);
+  auto h_out  = Kokkos::create_mirror_view(out);
+  const int N = in.extent(0), BlkSize = in.extent(1);
+
+  Kokkos::deep_copy(h_in, in);
+  assert(in.extent(0) == out.extent(0));
+  assert(in.extent(1) == in.extent(2));
+  assert(out.extent_int(1) == (BlkSize * (BlkSize + 1)) / 2);
+  if constexpr (std::same_as<UploType, KokkosBatched::Uplo::Upper>) {
+    for (int i0 = 0; i0 < N; i0++) {
+      int k = 0;
+      for (int i1 = 0; i1 < BlkSize; i1++) {
+        for (int i2 = 0; i2 < i1 + 1; i2++) {
+          h_out(i0, k) = h_in(i0, i2, i1);
+          k++;
+        }
+      }
+    }
+  } else {
+    for (int i0 = 0; i0 < N; i0++) {
+      int k = 0;
+      for (int i1 = 0; i1 < BlkSize; i1++) {
+        for (int i2 = i1; i2 < BlkSize; i2++) {
+          h_out(i0, k) = h_in(i0, i2, i1);
+          k++;
+        }
+      }
+    }
+  }
+  Kokkos::deep_copy(out, h_out);
+}
+
+/// \brief Construct a symmetric matrix from a dense matrix in conventional storage.
+///
+/// \tparam UploType: Type indicating whether the matrix is upper or lower triangular
+/// \tparam ArgTrans: Type indicating whether the matrix should be transposed during conversion
+/// \tparam InViewType: Input type for the matrix, needs to be a 3D view
+/// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
+///
+/// \param[in] in: Input batched dense matrix, a rank 3 view
+/// \param[out] out: Output batched packed matrix, a rank 3 view
+///
+template <typename UploType, typename ArgTrans, typename InViewType, typename OutViewType>
+void dense_to_symmetric(InViewType& in, OutViewType& out) {
+  using value_type = typename InViewType::non_const_value_type;
+  static_assert(InViewType::rank() == 3, "KokkosBatched::dense_to_symmetric: InViewType must have rank 3.");
+  static_assert(OutViewType::rank() == 3, "KokkosBatched::dense_to_symmetric: OutViewType must have rank 3.");
+  auto h_in   = Kokkos::create_mirror_view(in);
+  auto h_out  = Kokkos::create_mirror_view(out);
+  const int N = in.extent(0), BlkSize = in.extent(1);
+
+  for (std::size_t i = 0; i < InViewType::rank(); i++) {
+    assert(out.extent(i) == in.extent(i));
+  }
+  assert(in.extent(1) == in.extent(2));
+
+  Kokkos::deep_copy(h_in, in);
+  if constexpr (std::same_as<UploType, KokkosBatched::Uplo::Upper>) {
+    for (int i0 = 0; i0 < N; i0++) {
+      for (int i1 = 0; i1 < BlkSize; i1++) {
+        for (int i2 = 0; i2 < i1 + 1; i2++) {
+          h_out(i0, i2, i1) = h_in(i0, i2, i1);
+          h_out(i0, i1, i2) = h_in(i0, i2, i1);
+          if (std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>) {
+            h_out(i0, i1, i2) = KokkosKernels::ArithTraits<value_type>::conj(h_out(i0, i1, i2));
+          }
+        }
+      }
+    }
+  } else {
+    for (int i0 = 0; i0 < N; i0++) {
+      for (int i1 = 0; i1 < BlkSize; i1++) {
+        for (int i2 = i1; i2 < BlkSize; i2++) {
+          h_out(i0, i2, i1) = h_in(i0, i2, i1);
+          h_out(i0, i1, i2) = h_in(i0, i2, i1);
+          if (std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>) {
+            h_out(i0, i1, i2) = KokkosKernels::ArithTraits<value_type>::conj(h_out(i0, i1, i2));
+          }
+        }
+      }
+    }
+  }
+
+  if (std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>) {
+    // A Hermitian matrix has real diagonal elements.
+    for (int i0 = 0; i0 < N; i0++) {
+      for (int i1 = 0; i1 < BlkSize; i1++) {
+        h_out(i0, i1, i1) = KokkosKernels::ArithTraits<value_type>::real(h_out(i0, i1, i1));
+      }
+    }
+  }
+  Kokkos::deep_copy(out, h_out);
+}
+
+/// \brief Converts a packed storage format matrix to an nxn dense matrix.
+/// Takes a matrix in LAPACK packed storage format and converts it to conventional dense storage.
+/// Uplo: Upper
+///   AP = [A[0,0],
+///         A[0,1], A[1,1],
+///         A[0,2], A[1,2], A[2,2],
+///         ...]
+///
+/// UPLO=Lower
+///   AP = [A[0,0], A[1,0], A[2,0], ...,
+///         A[1,1], A[2,1], ...,
+///         ...]
+///
+/// \tparam UploType: Type indicating whether the matrix is upper or lower triangular
+/// \tparam ArgTrans: Type indicating whether the matrix should be transposed during conversion
+/// \tparam InViewType: Input type for the matrix, needs to be a 2D view
+/// \tparam OutViewType: Output type for the matrix, needs to be a 3D view (batched dense)
+///
+/// \param[in] in: Input batched packed matrix, a rank 2 view
+/// \param[out] out: Output batched dense matrix, a rank 3 view
+///
+template <typename UploType, typename ArgTrans, typename InViewType, typename OutViewType>
+void packed_to_dense(InViewType& in, OutViewType& out) {
+  static_assert(InViewType::rank() == 2, "KokkosBatched::packed_to_dense: InViewType must have rank 2.");
+  static_assert(OutViewType::rank() == 3, "KokkosBatched::packed_to_dense: OutViewType must have rank 3.");
+  using value_type = typename InViewType::non_const_value_type;
+
+  auto h_in   = Kokkos::create_mirror_view(in);
+  auto h_out  = Kokkos::create_mirror_view(out);
+  const int N = out.extent(0), BlkSize = out.extent(1);
+
+  Kokkos::deep_copy(h_in, in);
+  assert(in.extent(0) == out.extent(0));
+  assert(in.extent_int(1) == (BlkSize * (BlkSize + 1)) / 2);
+  assert(out.extent(1) == out.extent(2));
+
+  if constexpr (std::same_as<UploType, KokkosBatched::Uplo::Upper>) {
+    for (int i0 = 0; i0 < N; i0++) {
+      int k = 0;
+      for (int i1 = 0; i1 < BlkSize; i1++) {
+        for (int i2 = 0; i2 < i1 + 1; i2++) {
+          h_out(i0, i2, i1) = h_in(i0, k);
+
+          if (i1 == i2) {
+            h_out(i0, i1, i2) = h_in(i0, k);
+          } else {
+            h_out(i0, i1, i2) = h_in(i0, k);
+            if (std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>) {
+              h_out(i0, i1, i2) = KokkosKernels::ArithTraits<value_type>::conj(h_out(i0, i1, i2));
+            }
+          }
+          k++;
+        }
+      }
+    }
+  } else {
+    for (int i0 = 0; i0 < N; i0++) {
+      int k = 0;
+      for (int i1 = 0; i1 < BlkSize; i1++) {
+        for (int i2 = i1; i2 < BlkSize; i2++) {
+          h_out(i0, i2, i1) = h_in(i0, k);
+          if (i1 == i2) {
+            h_out(i0, i1, i2) = h_in(i0, k);
+          } else {
+            h_out(i0, i1, i2) = h_in(i0, k);
+            if (std::same_as<ArgTrans, KokkosBatched::Trans::ConjTranspose>) {
+              h_out(i0, i1, i2) = KokkosKernels::ArithTraits<value_type>::conj(h_out(i0, i1, i2));
+            }
+          }
+          k++;
+        }
       }
     }
   }

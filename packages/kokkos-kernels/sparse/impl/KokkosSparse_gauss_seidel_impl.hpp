@@ -826,8 +826,7 @@ class PointGaussSeidel {
     timer.reset();
 #endif
 
-    KokkosKernels::Impl::inclusive_parallel_prefix_sum<row_lno_persistent_work_view_t, MyExecSpace>(
-        my_exec_space, num_rows + 1, permuted_xadj);
+    KokkosKernels::inclusive_parallel_prefix_sum(my_exec_space, permuted_xadj);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
     my_exec_space.fence();
@@ -1313,8 +1312,7 @@ class PointGaussSeidel {
           my_exec_space, num_rows, block_size, old_to_new_map, y_rhs_input_vec, PermutedYvector_);
     }
     if (init_zero_x_vector) {
-      KokkosKernels::Impl::zero_vector<MyExecSpace, scalar_persistent_work_view2d_t>(
-          my_exec_space, num_cols * block_size, PermutedXvector_);
+      Kokkos::deep_copy(my_exec_space, PermutedXvector_, nnz_scalar_t(0));
     } else {
       KokkosKernels::Impl::permute_block_vector<x_value_array_type, scalar_persistent_work_view2d_t,
                                                 nnz_lno_persistent_work_view_t, MyExecSpace>(
@@ -1411,8 +1409,7 @@ class PointGaussSeidel {
           my_exec_space, num_rows, old_to_new_map, y_rhs_input_vec, PermutedYvector_);
     }
     if (init_zero_x_vector) {
-      KokkosKernels::Impl::zero_vector<MyExecSpace, scalar_persistent_work_view2d_t>(my_exec_space, num_cols,
-                                                                                     PermutedXvector_);
+      Kokkos::deep_copy(my_exec_space, PermutedXvector_, nnz_scalar_t(0));
     } else {
       KokkosKernels::Impl::permute_vector<x_value_array_type, scalar_persistent_work_view2d_t,
                                           nnz_lno_persistent_work_view_t, MyExecSpace>(

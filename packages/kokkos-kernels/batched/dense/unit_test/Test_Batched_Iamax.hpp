@@ -44,7 +44,7 @@ struct Functor_BatchedIamax {
                               : std::is_same_v<ArgMode, KokkosBatched::Mode::Team>
                                   ? "KokkosBatched::Test::TeamIamax"
                                   : "KokkosBatched::Test::TeamVectorIamax";
-    std::string name_value_type = Test::value_type_name<value_type>();
+    std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name            = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = m_x.extent_int(0);

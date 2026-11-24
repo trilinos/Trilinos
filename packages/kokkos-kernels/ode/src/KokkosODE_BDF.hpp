@@ -144,15 +144,13 @@ struct BDF {
 /// \param temp2 [in]: vectors for temporary storage
 template <class ode_type, class mat_type, class vec_type, class scalar_type>
 KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, const scalar_type t_end,
-                              const scalar_type initial_step, const scalar_type max_step, const vec_type& y0,
+                              const scalar_type initial_step, scalar_type max_step, const vec_type& y0,
                               const vec_type& y_new, mat_type& temp, mat_type& temp2) {
   using KAT = KokkosKernels::ArithTraits<scalar_type>;
 
   // This needs to go away and be pulled out of temp instead...
   auto rhs    = Kokkos::subview(temp, Kokkos::ALL(), 0);
   auto update = Kokkos::subview(temp, Kokkos::ALL(), 1);
-  // vec_type rhs("rhs", ode.neqs), update("update", ode.neqs);
-  (void)max_step;
 
   int order = 1, num_equal_steps = 0;
   constexpr scalar_type min_factor = 0.2;
@@ -171,6 +169,11 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
     KokkosODE::Impl::initial_step_size(ode, order, t_start, atol, rtol, y0, rhs, temp, dt);
   }
 
+  // Check if we need set the maximum step
+  if (max_step == KAT::zero()) {
+    max_step = t_end - t_start;
+  }
+
   // Initialize D(:, 0) = y0 and D(:, 1) = dt*rhs
   auto D = Kokkos::subview(temp, Kokkos::ALL(), Kokkos::pair<int, int>(2, 10));
   for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
@@ -182,13 +185,12 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
   // Now we loop over the time interval [t_start, t_end]
   // and solve our ODE.
   while (t < t_end) {
-    KokkosODE::Impl::BDFStep(ode, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, min_factor, y0,
-                             y_new, rhs, update, temp, temp2);
+    KokkosODE::Impl::BDFStep(ode, t, dt, t_end, max_step, order, num_equal_steps, max_newton_iters, atol, rtol,
+                             min_factor, y0, y_new, rhs, update, temp, temp2);
 
     for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
       y0(eqIdx) = y_new(eqIdx);
     }
-    // printf("t=%f, dt=%f, y={%f, %f, %f}\n", t, dt, y0(0), y0(1), y0(2));
   }
 }  // BDFSolve
 
