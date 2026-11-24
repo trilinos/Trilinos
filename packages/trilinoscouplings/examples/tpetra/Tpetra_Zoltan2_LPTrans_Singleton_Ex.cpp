@@ -12,12 +12,8 @@
 // a matrix and a vector among different MPI nodes. The matrix is formed,
 // on purpose, in an unbalanced way.
 //
-// Originally, this example used EpetraExt + Isorropia for rebalance. It
-// was a modified version of the matrix_1.cpp example in Isorropia.
-//
-// This example now uses Tpetra + Zoltan2, combining some aspects of the
-// original example using Isorropia with aspects from example/graph/graph.cpp
-// in Zoltan2.
+// This example now uses Tpetra + Zoltan2 for rebalance, combining aspects
+// of Zoltan2's graph example with the original local matrix setup.
 //--------------------------------------------------------------------
 
 #include <Tpetra_Core.hpp>
@@ -230,4 +226,3 @@ int main(int argc, char** argv) {
 
   return 0;
 }
-
