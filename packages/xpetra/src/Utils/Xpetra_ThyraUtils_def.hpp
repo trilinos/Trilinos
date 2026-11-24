@@ -528,7 +528,7 @@ Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     thyraOp = Thyra::createConstLinearOp(tpOperator);
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraOp));
   } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to Tpetra::CrsMatrix failed. Assume matrix should be Epetra then. No Epetra available");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to Tpetra::CrsMatrix failed. This path requires a Tpetra-backed matrix.");
   }
   return thyraOp;
 }
@@ -556,7 +556,7 @@ Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraOp));
   } else {
     // cast to TpetraCrsMatrix failed
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to TpetraCrsMatrix failed. Guess, matrix should be Epetra then, but no Epetra available.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to TpetraCrsMatrix failed. This path requires a Tpetra-backed matrix.");
   }
   return thyraOp;
 }
@@ -617,7 +617,7 @@ Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     return blockMat;
   } else {
     // tpetraMat == Teuchos::null
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to TpetraCrsMatrix failed. Guess, matrix should be Epetra then, but no Epetra available.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to TpetraCrsMatrix failed. This path requires a Tpetra-backed matrix.");
     TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 }
