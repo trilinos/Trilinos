@@ -92,7 +92,6 @@ public:
 
 #ifdef HAVE_ZOLTAN2_SCOTCH
 
-namespace Zoltan2 {
 
 // stdint.h for int64_t in scotch header
 #include <stdint.h>
@@ -126,6 +125,7 @@ extern "C" {
 #endif  // HAVE_SCOTCH_GETMEMORYMAX
 #endif  // SHOW_ZOLTAN2_SCOTCH_MEMORY
 
+namespace Zoltan2 {
 template <typename Adapter>
 class AlgPTScotch : public Algorithm<Adapter>
 {
