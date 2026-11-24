@@ -278,6 +278,12 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
         useNative = useNative || (Conjugate[0] == mode[0]);
+        // cusparseSpMM (CUSPARSE_SPMM_ALG_DEFAULT, i.e. CSR_ALG1) reads past the end of the
+        // dense input when A has a single column and x has more than one column: it loads a
+        // nonexistent second row of x, which for the last column of x lies outside the
+        // allocation.  Whatever is there leaks into y, e.g. as NaN.  Observed with cuSPARSE
+        // 12.3.1 (CUDA 12.4); the transposed modes are not affected.
+        useNative = useNative || (mode[0] == NoTranspose[0] && A.numCols() == 1);
       }
       // cuSPARSE 12 requires that the output (y) vector is 16-byte aligned for
       // all scalar types
