@@ -153,6 +153,9 @@ namespace NOX {
       /// Dangerous power user function for LOCA Householder bordered algorithm. This is the Matrix M that is used to initialize a stratimikos preconditioner. NOTE: this sets the losb_ object used to update prec_!
       void setPreconditionerMatrix(const Teuchos::RCP<const ::Thyra::DefaultLinearOpSource<double>>& op);
 
+      Teuchos::RCP<const ::Thyra::DefaultLinearOpSource<double> >
+      getPreconditionerMatrix() const;
+
       /** @name "Compute" functions. */
       //@{
 

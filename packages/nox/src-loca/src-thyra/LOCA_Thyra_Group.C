@@ -316,8 +316,8 @@ void
 LOCA::Thyra::Group::postProcessContinuationStep(
                  LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
-  // Mimic
-  //     LOCA::Epetra::ModelEvaluatorInterface::postProcessContinuationStep.
+  // Mimic the continuation-step response handling used by the legacy
+  // model-evaluator integration.
   // Previously, response functions were not evaluated after each LOCA step. I
   // had initially tried to fix this problem using
   //     Piro::LOCASolver::evalConvergedModel.
