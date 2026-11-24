@@ -229,6 +229,7 @@ void run_par_ilut_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_
   }
 
   for (auto _ : state) {
+    state.PauseTiming();
     if (verbosity > 1) {
       std::cout << "Running " << name << " with " << num_iters << " iters" << std::endl;
     }
@@ -255,7 +256,6 @@ void run_par_ilut_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_
     par_ilut_numeric(&kh, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
                      U_values);
     Kokkos::fence();
-    state.PauseTiming();
 
     // Check worked
     num_iters = par_ilut_handle->get_num_iters();
@@ -341,14 +341,12 @@ void run_par_ilut_test_ginkgo(benchmark::State& state, kkhandle_t& kh, sp_matrix
         std::cout << "Running " << name << " with " << num_iters << " iters" << std::endl;
       }
 
-      state.ResumeTiming();
       auto fact = gko::factorization::ParIlut<scalar_t, lno_t>::build()
                       .with_fill_in_limit(par_ilut_handle->get_fill_in_limit())
                       .with_approximate_select(false)
                       .with_iterations(num_iters)
                       .on(exec)
                       ->generate(a_mtx);
-      state.PauseTiming();
 
       // Store for later use
       l_factor = fact->get_l_factor();
@@ -412,6 +410,7 @@ void run_spiluk_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_t&
   }
 
   for (auto _ : state) {
+    state.PauseTiming();
     if (verbosity > 1) {
       std::cout << "Running " << name << std::endl;
     }
@@ -433,7 +432,9 @@ void run_spiluk_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_t&
     }
     KokkosSparse::spiluk_symbolic(&kh, fill_lev, A_row_map, A_entries, L_row_map, L_entries, U_row_map, U_entries);
     Kokkos::fence();
-    state.PauseTiming();
+    if (measure_symbolic) {
+      state.PauseTiming();
+    }
 
     const size_type_t nnzL = spiluk_handle->get_nnzL();
     const size_type_t nnzU = spiluk_handle->get_nnzU();
@@ -448,7 +449,8 @@ void run_spiluk_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_t&
       KokkosSparse::spiluk_numeric(&kh, fill_lev, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values,
                                    U_row_map, U_entries, U_values);
       Kokkos::fence();
-      state.PauseTiming();
+    } else {
+      state.ResumeTiming();
     }
 
     if (verbosity > 1) {

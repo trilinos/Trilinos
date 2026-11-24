@@ -25,63 +25,43 @@ inline void scal_print_specialization() {
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \
-  template <class ExecSpace>                                                                                  \
-  struct Scal<ExecSpace,                                                                                      \
-              Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                         \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                         \
-              SCALAR_TYPE,                                                                                    \
-              Kokkos::View<const SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                   \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                         \
-              1, true, ETI_SPEC_AVAIL> {                                                                      \
-    typedef Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                           \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                            \
-        RV;                                                                                                   \
-    typedef SCALAR_TYPE AS;                                                                                   \
-    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                     \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                            \
-        XV;                                                                                                   \
-    typedef typename XV::size_type size_type;                                                                 \
-                                                                                                              \
-    static void scal(const ExecSpace& space, const RV& R, const AS& alpha, const XV& X) {                     \
-      Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_BLAS," #SCALAR_TYPE "]");                           \
-      const size_type numElems = X.extent(0);                                                                 \
-      if ((numElems < static_cast<size_type>(INT_MAX)) && (R.data() == X.data())) {                           \
-        scal_print_specialization<RV, AS, XV>();                                                              \
-        int N                          = numElems;                                                            \
-        int one                        = 1;                                                                   \
-        const BASE_SCALAR_TYPE alpha_b = static_cast<BASE_SCALAR_TYPE>(alpha);                                \
-        HostBlas<BASE_SCALAR_TYPE>::scal(N, alpha_b, reinterpret_cast<BASE_SCALAR_TYPE*>(R.data()), one);     \
-      } else {                                                                                                \
-        Scal<ExecSpace, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R, alpha, X);                      \
-      }                                                                                                       \
-      Kokkos::Profiling::popRegion();                                                                         \
-    }                                                                                                         \
+#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(SCALAR_TYPE, BASE_SCALAR_TYPE)                                           \
+  template <typename ExecSpace, bool ETI_SPEC_AVAIL>                                                                  \
+    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                     \
+  struct Scal<                                                                                                        \
+      ExecSpace, Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+      SCALAR_TYPE,                                                                                                    \
+      Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1,   \
+      true, ETI_SPEC_AVAIL> {                                                                                         \
+    typedef Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV;   \
+    typedef SCALAR_TYPE AS;                                                                                           \
+    typedef Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+        XV;                                                                                                           \
+    typedef typename XV::size_type size_type;                                                                         \
+                                                                                                                      \
+    static void scal(const ExecSpace& space, const RV& R, const AS& alpha, const XV& X) {                             \
+      Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_BLAS," #SCALAR_TYPE "]");                                   \
+      const size_type numElems = X.extent(0);                                                                         \
+      if ((numElems < static_cast<size_type>(INT_MAX)) && (R.data() == X.data())) {                                   \
+        scal_print_specialization<RV, AS, XV>();                                                                      \
+        int N                          = numElems;                                                                    \
+        int one                        = 1;                                                                           \
+        const BASE_SCALAR_TYPE alpha_b = static_cast<BASE_SCALAR_TYPE>(alpha);                                        \
+        HostBlas<BASE_SCALAR_TYPE>::scal(N, alpha_b, reinterpret_cast<BASE_SCALAR_TYPE*>(R.data()), one);             \
+      } else {                                                                                                        \
+        Scal<ExecSpace, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R, alpha, X);                              \
+      }                                                                                                               \
+      Kokkos::Profiling::popRegion();                                                                                 \
+    }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(double, double, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(double, double)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(float, float, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(float, float)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, std::complex<double>, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<double>, std::complex<double>)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
-
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
-
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
-
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
-
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, true)
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_BLAS(Kokkos::complex<float>, std::complex<float>)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -95,81 +75,47 @@ KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_BLAS(Kokkos::LayoutLeft, Kokkos::HostSpace, fals
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN, LAYOUT, MEMSPACE,         \
-                                               ETI_SPEC_AVAIL)                                                     \
-  template <class ExecSpace>                                                                                       \
-  struct Scal<ExecSpace,                                                                                           \
-              Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                              \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                              \
-              SCALAR_TYPE,                                                                                         \
-              Kokkos::View<const SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                        \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                              \
-              1, true, ETI_SPEC_AVAIL> {                                                                           \
-    typedef Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                                \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                 \
-        RV;                                                                                                        \
-    typedef SCALAR_TYPE AS;                                                                                        \
-    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                          \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                 \
-        XV;                                                                                                        \
-    typedef typename XV::size_type size_type;                                                                      \
-                                                                                                                   \
-    static void scal(const ExecSpace& space, const RV& R, const AS& alpha, const XV& X) {                          \
-      Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_CUBLAS," #SCALAR_TYPE "]");                              \
-      const size_type numElems = X.extent(0);                                                                      \
-      if ((numElems < static_cast<size_type>(INT_MAX)) && (R.data() == X.data())) {                                \
-        scal_print_specialization<RV, AS, XV>();                                                                   \
-        const int N                            = static_cast<int>(numElems);                                       \
-        constexpr int one                      = 1;                                                                \
-        KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                 \
-        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                          \
-        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(CUBLAS_FN(s.handle, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha), \
-                                                   reinterpret_cast<CUDA_SCALAR_TYPE*>(R.data()), one));           \
-        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                         \
-      } else {                                                                                                     \
-        Scal<ExecSpace, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R, alpha, X);                           \
-      }                                                                                                            \
-      Kokkos::Profiling::popRegion();                                                                              \
-    }                                                                                                              \
+#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(SCALAR_TYPE, CUDA_SCALAR_TYPE, CUBLAS_FN)                               \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
+  struct Scal<                                                                                                         \
+      Kokkos::Cuda,                                                                                                    \
+      Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
+      SCALAR_TYPE,                                                                                                     \
+      Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, \
+      true, ETI_SPEC_AVAIL> {                                                                                          \
+    typedef Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
+    typedef SCALAR_TYPE AS;                                                                                            \
+    typedef Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::Cuda,                                         \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                     \
+        XV;                                                                                                            \
+    typedef typename XV::size_type size_type;                                                                          \
+                                                                                                                       \
+    static void scal(const Kokkos::Cuda& space, const RV& R, const AS& alpha, const XV& X) {                           \
+      Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_CUBLAS," #SCALAR_TYPE "]");                                  \
+      const size_type numElems = X.extent(0);                                                                          \
+      if ((numElems < static_cast<size_type>(INT_MAX)) && (R.data() == X.data())) {                                    \
+        scal_print_specialization<RV, AS, XV>();                                                                       \
+        const int N                            = static_cast<int>(numElems);                                           \
+        constexpr int one                      = 1;                                                                    \
+        KokkosBlas::Impl::CudaBlasSingleton& s = KokkosBlas::Impl::CudaBlasSingleton::singleton();                     \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, space.cuda_stream()));                              \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(CUBLAS_FN(s.handle, N, reinterpret_cast<const CUDA_SCALAR_TYPE*>(&alpha),     \
+                                                   reinterpret_cast<CUDA_SCALAR_TYPE*>(R.data()), one));               \
+        KOKKOSBLAS_IMPL_CUBLAS_SAFE_CALL(cublasSetStream(s.handle, NULL));                                             \
+      } else {                                                                                                         \
+        Scal<Kokkos::Cuda, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R, alpha, X);                            \
+      }                                                                                                                \
+      Kokkos::Profiling::popRegion();                                                                                  \
+    }                                                                                                                  \
   };
 
-#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(double, double, cublasDscal, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(double, double, cublasDscal)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(float, float, cublasSscal, LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(float, float, cublasSscal)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)                                  \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZscal, LAYOUT, MEMSPACE, \
-                                         ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<double>, cuDoubleComplex, cublasZscal)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(LAYOUT, MEMSPACE, ETI_SPEC_AVAIL)                           \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCscal, LAYOUT, MEMSPACE, \
-                                         ETI_SPEC_AVAIL)
-
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
-
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
-
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
-
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
-
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
-
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
-
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
-
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCscal)
 
 }  // namespace Impl
 }  // namespace KokkosBlas
@@ -183,74 +129,51 @@ KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS(Kokkos::LayoutLeft, Kokkos::CudaUVMSpace,
 namespace KokkosBlas {
 namespace Impl {
 
-#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN, LAYOUT, EXECSPACE, \
-                                                MEMSPACE, ETI_SPEC_AVAIL)                                        \
-  template <>                                                                                                    \
-  struct Scal<EXECSPACE,                                                                                         \
-              Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                            \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                            \
-              SCALAR_TYPE,                                                                                       \
-              Kokkos::View<const SCALAR_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                      \
-                           Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                            \
-              1, true, ETI_SPEC_AVAIL> {                                                                         \
-    using execution_space = EXECSPACE;                                                                           \
-    typedef Kokkos::View<SCALAR_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                              \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                               \
-        RV;                                                                                                      \
-    typedef SCALAR_TYPE AS;                                                                                      \
-    typedef Kokkos::View<const SCALAR_TYPE*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,                        \
-                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                               \
-        XV;                                                                                                      \
-    typedef typename XV::size_type size_type;                                                                    \
-                                                                                                                 \
-    static void scal(const execution_space& space, const RV& R, const AS& alpha, const XV& X) {                  \
-      Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_ROCBLAS," #SCALAR_TYPE "]");                           \
-      const size_type numElems = X.extent(0);                                                                    \
-      if ((numElems < static_cast<size_type>(INT_MAX)) && (R.data() == X.data())) {                              \
-        scal_print_specialization<RV, AS, XV>();                                                                 \
-        const int N                           = static_cast<int>(numElems);                                      \
-        constexpr int one                     = 1;                                                               \
-        KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                 \
-        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                     \
-        rocblas_pointer_mode pointer_mode;                                                                       \
-        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(s.handle, &pointer_mode));                    \
-        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host));        \
-        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(ROCBLAS_FN(s.handle, N,                                                \
-                                                     reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(&alpha),       \
-                                                     reinterpret_cast<ROCBLAS_SCALAR_TYPE*>(R.data()), one));    \
-        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, pointer_mode));                     \
-      } else {                                                                                                   \
-        Scal<EXECSPACE, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R, alpha, X);                         \
-      }                                                                                                          \
-      Kokkos::Profiling::popRegion();                                                                            \
-    }                                                                                                            \
+#define KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(SCALAR_TYPE, ROCBLAS_SCALAR_TYPE, ROCBLAS_FN)                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
+  struct Scal<                                                                                                        \
+      Kokkos::HIP,                                                                                                    \
+      Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,          \
+      SCALAR_TYPE,                                                                                                    \
+      Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1, \
+      true, ETI_SPEC_AVAIL> {                                                                                         \
+    typedef Kokkos::View<SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
+    typedef SCALAR_TYPE AS;                                                                                           \
+    typedef Kokkos::View<const SCALAR_TYPE*, Kokkos::LayoutLeft, Kokkos::HIP,                                         \
+                         Kokkos::MemoryTraits<Kokkos::Unmanaged> >                                                    \
+        XV;                                                                                                           \
+    typedef typename XV::size_type size_type;                                                                         \
+                                                                                                                      \
+    static void scal(const Kokkos::HIP& space, const RV& R, const AS& alpha, const XV& X) {                           \
+      Kokkos::Profiling::pushRegion("KokkosBlas::scal[TPL_ROCBLAS," #SCALAR_TYPE "]");                                \
+      const size_type numElems = X.extent(0);                                                                         \
+      if ((numElems < static_cast<size_type>(INT_MAX)) && (R.data() == X.data())) {                                   \
+        scal_print_specialization<RV, AS, XV>();                                                                      \
+        const int N                           = static_cast<int>(numElems);                                           \
+        constexpr int one                     = 1;                                                                    \
+        KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();                      \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_stream(s.handle, space.hip_stream()));                          \
+        rocblas_pointer_mode pointer_mode;                                                                            \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_get_pointer_mode(s.handle, &pointer_mode));                         \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, rocblas_pointer_mode_host));             \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(ROCBLAS_FN(s.handle, N,                                                     \
+                                                     reinterpret_cast<const ROCBLAS_SCALAR_TYPE*>(&alpha),            \
+                                                     reinterpret_cast<ROCBLAS_SCALAR_TYPE*>(R.data()), one));         \
+        KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(rocblas_set_pointer_mode(s.handle, pointer_mode));                          \
+      } else {                                                                                                        \
+        Scal<Kokkos::HIP, RV, AS, XV, 1, false, ETI_SPEC_AVAIL>::scal(space, R, alpha, X);                            \
+      }                                                                                                               \
+      Kokkos::Profiling::popRegion();                                                                                 \
+    }                                                                                                                 \
   };
 
-#define KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_dscal, LAYOUT, EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(double, double, rocblas_dscal)
 
-#define KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL) \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sscal, LAYOUT, EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(float, float, rocblas_sscal)
 
-#define KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)                      \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zscal, LAYOUT, \
-                                          EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<double>, rocblas_double_complex, rocblas_zscal)
 
-#define KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(LAYOUT, EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)                    \
-  KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cscal, LAYOUT, \
-                                          EXECSPACE, MEMSPACE, ETI_SPEC_AVAIL)
-
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, true)
-KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, false)
-
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, true)
-KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, false)
-
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, true)
-KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, false)
-
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, true)
-KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpace, false)
+KOKKOSBLAS1_XSCAL_TPL_SPEC_DECL_ROCBLAS(Kokkos::complex<float>, rocblas_float_complex, rocblas_cscal)
 
 }  // namespace Impl
 }  // namespace KokkosBlas

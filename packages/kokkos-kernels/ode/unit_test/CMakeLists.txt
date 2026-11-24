@@ -51,11 +51,7 @@ if(KOKKOS_ENABLE_SYCL)
     COMPONENTS ode)
 endif()
 
-if(KOKKOS_ENABLE_OPENMPTARGET)
-  # kokkoskernels_add_unit_test(ode_openmptarget
-  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_ODE.cpp
-  #   COMPONENTS ode)
-endif()
+
 
 #####################
 #                   #

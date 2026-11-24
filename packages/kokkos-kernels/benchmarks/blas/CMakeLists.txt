@@ -20,7 +20,6 @@ kokkoskernels_add_benchmark(
     KokkosBlas1_nrminf_mv_benchmark.cpp
     KokkosBlas1_nrm1_mv_benchmark.cpp
     KokkosBlas1_nrm2_mv_benchmark.cpp
-    KokkosBlas1_team_dot_benchmark.cpp
     BenchmarkMain.cpp)
 
 kokkoskernels_add_benchmark(Blas2_gemv_Benchmark SOURCES KokkosBlas2_gemv_benchmark.cpp)
