@@ -37,19 +37,6 @@
 #include "Teuchos_FancyOStream.hpp"
 
 
-/** \example BlockDavidson/BlockDavidsonEpetraEx.cpp
-    This is an example of how to use the Anasazi::BlockDavidsonSolMgr solver manager to solve a standard eigenvalue problem, using Epetra data structures.
-*/
-
-/** \example BlockDavidson/BlockDavidsonEpetraExGen.cpp
-    This is an example of how to use the Anasazi::BlockDavidsonSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures.
-*/
-
-/** \example BlockDavidson/BlockDavidsonEpetraExGenPrecIfpack.cpp
-    This is an example of how to use the Anasazi::BlockDavidsonSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data structures and exploiting a incomplete Cholesky preconditioner from IFPACK.
-*/
-
-
 namespace Anasazi {
 
 

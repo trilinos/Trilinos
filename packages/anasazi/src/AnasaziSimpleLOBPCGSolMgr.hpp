@@ -36,14 +36,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
-/// \example LOBPCGEpetraExSimple.cpp
-/// \brief Use "Simple LOBPCG" with Epetra test problem (computed here).
-///
-/// This example computes the eigenvalues of largest magnitude of an
-/// eigenvalue problem $A x = \lambda x$, using Anasazi's "simple"
-/// implementation of the LOBPCG method, with Epetra linear algebra.
-/// It constructs the test problem within the example itself.
-
 /*! \class Anasazi::SimpleLOBPCGSolMgr
   \brief The Anasazi::SimpleLOBPCGSolMgr provides a simple solver
   manager over the LOBPCG eigensolver.

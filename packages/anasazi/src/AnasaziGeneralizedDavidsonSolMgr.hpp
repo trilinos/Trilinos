@@ -33,9 +33,6 @@
 
 using Teuchos::RCP;
 
-/** \example GeneralizedDavidson/GeneralizedDavidsonEpetraExFileIfpack.cpp
-    This is an example of how to use the Anasazi::GeneralizedDavidsonSolMgr solver manager, using Epetra data structures and an Ifpack preconditioner.  */
-
 namespace Anasazi {
 
 /*!
@@ -550,4 +547,3 @@ void GeneralizedDavidsonSolMgr<ScalarType,MV,OP>::getRestartState(
 } // namespace Anasazi
 
 #endif // ANASAZI_GENERALIZED_DAVIDSON_SOLMGR_HPP
-

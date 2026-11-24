@@ -7,7 +7,7 @@
 
 Anasazi is an extensible and interoperable framework for large-scale eigenvalue algorithms. The motivation for this framework is to provide a generic interface to a collection of algorithms for solving large-scale eigenvalue problems. Anasazi is interoperable because both the matrix and vectors (defining the eigenspace) are considered to be opaque objects—only knowledge of the matrix and vectors via elementary operations is necessary. One of the goals of Anasazi is to allow the user the flexibility to specify the data representation for the matrix and vectors and so leverage any existing software investment.
 
-An implementation of Anasazi is accomplished via the use of interfaces. Current interfaces available include Epetra and Tpetra. This means any libraries that understand Epetra and Tpetra matrices and vectors (such as AztecOO and Belos) may also be used in conjunction with Anasazi.
+An implementation of Anasazi is accomplished via the use of interfaces. Current interfaces available include Thyra and Tpetra. This means any libraries that understand those matrices and vectors (such as Belos) may also be used in conjunction with Anasazi.
 
 <span style="text-decoration: underline;">**Capabilities**</span>
 
@@ -135,37 +135,13 @@ AnasaziOperator.hpp
 	(multivec/matrix/operator virtual interfaces)	
 	These files define the virtual interfaces that AnasaziBlockArnoldi rely on.  These
 	interfaces must be filled out by the user to describe the underlying vector spaces.
-	Two interfaces are provided at this time for Epetra and LOCA (see below).
 
 AnasaziEigenproblem.hpp
 	This is an interface to standard/generalized eigenproblems.  It holds the information
 	about the eigenproblem, eigenvalues/eigenvectors, symmetry of the problem, and is responsible
 	for applying the operator in the eigensolver. 
 
-AnasaziPetraInterface.hpp
-	This interface allows AnasaziBlockArnoldi to operate on Epetra multivecs and
-	apply Epetra matrices.  An example is provided for this interface:  
-	BlockArnoldiPetraEx.cpp	
-
 AnasaziLOCAInterface.hpp
-	This interface allows AnasaziBlockArnoldi to operate on a vector of NOX abstract
-	vectors and use the NOX abstract group to apply the inverse Jacobian function.
-	
+        This interface allows AnasaziBlockArnoldi to operate on a vector of NOX abstract
+        vectors and use the NOX abstract group to apply the inverse Jacobian function.
 
-Examples (found in anasazi/example):
------------------------------
-BlockArnoldiPetraEx.cpp
-	This example computes the eigenvalues of a discretized 2D convection-diffusion
-	equation.  It shows the construction of an Epetra matrix and initialization of 
-	an AnasaziMatrix and AnasaziMultiVec.  This example also demonstrates how the 
-	solver can be iterated or solved and how to extract information from the solver.
-BlockArnoldiPetraExGen.cpp
-	This example computes the eigenvalues of a 1D Laplacian discretized by linear
-	finite elements.  This creates a generalized eigenvalue problem for Anasazi to
-	solve.  It shows the construction of an Epetra matrix and initialize of an
-	AnasaziMatrix and AnasaziMultiVec.  It also shows the BelosEpetraOperator can
-	be used for the inner iteration within Anasazi.
-BlockArnoldiPetraExHb.cpp
-	This example computes the eigenvalues of a Harwell-Boeing matrix which is given
-	as input.  This matrix is converted into an Epetra Matrix, then used with the
-	Anasazi-Epetra interface.

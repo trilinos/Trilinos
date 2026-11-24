@@ -19,16 +19,16 @@ Because %Anasazi implements block eigensolvers, the underlying
 primitive is a collection of column vectors (a multivector) instead of
 a single column vector. The purpose of Anasazi::MultiVecTraits is to
 provide an interface for performing multivector operations (e.g.,
-multivector \c AXPY).  An example illustrating the manipulation of an
-Epetra_MultiVector using Anasazi::MultiVecTraits follows:
+multivector \c AXPY).  An example illustrating the manipulation of a multivector using
+Anasazi::MultiVecTraits follows:
 
 \code
-// build some Epetra_MultiVector objects...
-Epetra_MultiVector A(...), B(...), C(...);
+// build some multivector objects...
+MV A(...), B(...), C(...);
 // ...and a Teuchos::SerialDenseMatrix
 Teuchos::SerialDenseMatrix<int,double> D(...);
 
-typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
+typedef Anasazi::MultiVecTraits<double, MV> MVT;
 
 // perform C <- 1.0*A + 0.5*B;
 MVT::MvAddMv(1.0, A, 0.5, B, C);
@@ -52,13 +52,13 @@ ability to apply an operator of type \c OP to a multivector of type
 performed as follows:
 
 \code
-// build some Epetra_MultiVector objects...
-Epetra_MultiVector A(...), B(...);
-// ...and an Epetra operator
-Epetra_Operator Op(...);
+// build some multivector objects...
+MV A(...), B(...);
+// ...and an operator
+OP Op(...);
 
 // apply the operation B <- Op*A
-typedef Anasazi::OperatorTraits<double, Epetra_MultiVector, Epetra_Operator> OPT;
+typedef Anasazi::OperatorTraits<double, MV, OP> OPT;
 OPT::Apply(Op,A,B);
 \endcode
 
@@ -71,13 +71,9 @@ for the solution of eigenvalue problems.
 
 Calling methods of MultiVecTraits<ScalarType,MV> requires that a
 specialization of MultiVecTraits has been implemented for classes
-<tt>ScalarType</tt> and \c MV. In the case of Epetra_MultiVector and
-Epetra_Operator (which are both defined on the field of doubles), this
-specialization is provided by the %Anasazi adapters to
-Epetra. Specializations of these traits classes provided by %Anasazi
-are:
+<tt>ScalarType</tt> and \c MV. Specializations of these traits classes
+provided by %Anasazi are:
 
-  - Epetra_MultiVector and Epetra_Operator (with scalar type \c double)
   - Thyra::MultiVectorBase and Thyra::LinearOpBase (with arbitrary
     scalar type).  This allows %Anasazi to be used with any classes
     that implement the abstract interfaces provided by the Thyra
