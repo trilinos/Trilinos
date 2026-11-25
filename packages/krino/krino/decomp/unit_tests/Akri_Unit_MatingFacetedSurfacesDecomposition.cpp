@@ -21,14 +21,17 @@
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_CDMesh.hpp>
 #include <Akri_LevelSetPolicy.hpp>
+#include <Akri_MeshBlockSkinSurface.hpp>
 #include <Akri_MeshDiagnostics.hpp>
 #include <Akri_MeshFacetedSurface.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_MeshQuality.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_QualityMetric.hpp>
+#include <Akri_ScopedTestFile.hpp>
 #include <Akri_UnitMeshUtils.hpp>
 #include <Akri_Unit_MatingFacetedSurfaces.hpp>
+#include <Akri_Unit_MultiBlockMesh.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -222,6 +225,35 @@ MatingDecompositionMeasures decompose_halves_of_rectangle(const Edge_Degeneracy_
   return decomposition.decompose_and_measure({halves[0].get(), halves[1].get()});
 }
 
+// The halves of the cuboid as two hexes, block_1 the bottom half and block_2 the top, sharing the middle face.
+MultiBlockMesh hex_halves_of_cuboid(const Cuboid & cuboid, const stk::ParallelMachine comm)
+{
+  std::vector<stk::math::Vector3d> nodeLocs;
+  for (unsigned i = 0; i < 4; ++i)
+    nodeLocs.push_back(cuboid.vertex_location(i));
+  for (unsigned i = 0; i < 4; ++i)
+    nodeLocs.push_back(0.5 * (cuboid.vertex_location(i) + cuboid.vertex_location(4 + i)));
+  for (unsigned i = 0; i < 4; ++i)
+    nodeLocs.push_back(cuboid.vertex_location(4 + i));
+  return MultiBlockMesh(stk::topology::HEXAHEDRON_8, nodeLocs, {{1, 2, 3, 4, 5, 6, 7, 8}, {5, 6, 7, 8, 9, 10, 11, 12}}, comm);
+}
+
+// The halves of the cuboid as the skins of the two hex blocks of a mesh file, with sharp features at 135
+// degrees.
+MatingDecompositionMeasures decompose_block_skin_halves_of_cuboid(const Edge_Degeneracy_Handling edgeDegeneracyHandling)
+{
+  const ScopedTestFile file("MatingHalvesOfRotatedCuboidBlocks.e");
+  write_mesh_file_on_processor_0(file.name(),
+      [](const stk::ParallelMachine comm) { return hex_halves_of_cuboid(matingCuboid, comm); });
+  const auto meshFile = get_block_skin_mesh_file(MPI_COMM_WORLD, file.name());
+  MeshBlockSkinSurface bottom(3, meshFile, {"block_1"}, 1);
+  MeshBlockSkinSurface top(3, meshFile, {"block_2"}, 1);
+  for (auto * half : {&bottom, &top})
+    half->set_sharp_feature_angle(135.);
+  MatingSurfacesDecomposition decomposition(matingDomain, 0.2, 2, edgeDegeneracyHandling);
+  return decomposition.decompose_and_measure({&bottom, &top});
+}
+
 // After decomposing the mesh for the halves, whether it would be decomposed again for them unchanged.
 bool does_decomposition_of_halves_need_update(const bool is2D, const Edge_Degeneracy_Handling edgeDegeneracyHandling)
 {
@@ -245,6 +277,18 @@ bool does_decomposition_of_halves_need_update(const bool is2D, const Edge_Degene
 TEST(MatingFacetedSurfacesDecomposition, halvesOfRotatedCuboid_snapping_exactVolumesAndAreas)
 {
   expect_halves_of_cuboid(decompose_halves_of_cuboid(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE, true), 1.e-10);
+}
+
+// The same, with the halves read as the skins of two hex blocks of a mesh file (mesh_block_skin), which
+// share the middle face.
+TEST(MatingFacetedSurfacesDecomposition, halvesOfRotatedCuboidAsBlockSkinsOfMeshFile_snapping_exactVolumesAndAreas)
+{
+  expect_halves_of_cuboid(decompose_block_skin_halves_of_cuboid(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE), 1.e-10);
+}
+
+TEST(MatingFacetedSurfacesDecomposition, halvesOfRotatedCuboidAsBlockSkinsOfMeshFile_cuttingOnly_volumesAndAreasAsForOneSurface)
+{
+  expect_halves_of_cuboid(decompose_block_skin_halves_of_cuboid(SNAP_TO_NODE), 1.e-5);
 }
 
 // The same, with the middle face split along different diagonals by the two halves: the surfaces

@@ -65,7 +65,7 @@ static PhaseVec create_named_phases_for_levelset_per_phase(const unsigned numLev
   {
     PhaseTag tag;
     tag.add(Surface_Identifier(ls), -1);
-    namedPhases.push_back(NamedPhase("P" + std::to_string(ls), tag));
+    namedPhases.push_back(NamedPhase('P' + std::to_string(ls), tag));
   }
   return namedPhases;
 }

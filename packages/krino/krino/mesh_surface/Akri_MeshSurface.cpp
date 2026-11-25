@@ -28,6 +28,24 @@ std::unique_ptr<MeshSurface> build_mesh_surface(const stk::mesh::MetaData & meta
   return std::make_unique<MeshSurface>(meta, coordsField, surfaceSelector, sign);
 }
 
+std::unique_ptr<MeshSurface> build_skin_mesh_surface(const stk::mesh::MetaData & meta,
+    const stk::mesh::Field<double> & coordsField,
+    const stk::mesh::PartVector & skinnedBlocks,
+    const int sign)
+{
+  STK_ThrowRequireMsg(!skinnedBlocks.empty(), "The skin of a mesh surface needs at least one block.");
+  return std::make_unique<MeshSurface>(meta, coordsField, stk::mesh::selectUnion(skinnedBlocks), sign, skinnedBlocks);
+}
+
+bool are_sides_between_two_of_blocks(const stk::mesh::Bucket & sideBucket, const stk::mesh::PartVector & blocks)
+{
+  unsigned numBlocksOfSides = 0;
+  for (const auto * block : blocks)
+    if (sideBucket.member(*block) && ++numBlocksOfSides == 2)
+      return true;
+  return false;
+}
+
 static stk::ParallelMachine get_parallel_comm(const stk::mesh::MetaData & meta)
 {
   return meta.has_mesh() ? meta.mesh_bulk_data().parallel() : stk::EnvData::parallel_comm();
@@ -36,13 +54,15 @@ static stk::ParallelMachine get_parallel_comm(const stk::mesh::MetaData & meta)
 MeshSurface::MeshSurface(const stk::mesh::MetaData & meta,
     const stk::mesh::Field<double> & coordsField,
     const stk::mesh::Selector & surfaceSelector,
-    const int sign)
+    const int sign,
+    const stk::mesh::PartVector & skinnedBlocks)
     : MeshFacetedSurface(
           get_parallel_comm(meta), meta.spatial_dimension(), true, FacetMeshOptions{}, true),
       myMeta(meta),
       myCoordsField(coordsField),
       mySurfaceSelector(surfaceSelector),
-      mySign(sign)
+      mySign(sign),
+      mySkinnedBlocks(skinnedBlocks)
 {
 }
 
@@ -102,11 +122,15 @@ public:
       const stk::mesh::Selector & volumeSelector, const stk::mesh::Selector & sideSelector)
   {
     for (auto * bucket : myMesh.get_buckets(myMesh.mesh_meta_data().side_rank(), sideSelector))
-    {
-      const stk::topology sideTopology = bucket->topology();
-      for (auto side : *bucket)
-        add_side_facet(volumeSelector, sideTopology, side);
-    }
+      add_side_facets_of_bucket(volumeSelector, *bucket);
+  }
+
+  void add_skin_side_facets(const stk::mesh::PartVector & blocks, const stk::mesh::Selector & ownedSideSelector)
+  {
+    const stk::mesh::Selector blocksSelector = stk::mesh::selectUnion(blocks);
+    for (auto * bucket : myMesh.get_buckets(myMesh.mesh_meta_data().side_rank(), ownedSideSelector & blocksSelector))
+      if (!are_sides_between_two_of_blocks(*bucket, blocks))
+        add_side_facets_of_bucket(blocksSelector, *bucket);
   }
 
   const std::vector<stk::mesh::Entity> & used_nodes()
@@ -121,6 +145,13 @@ public:
   }
 
 private:
+  void add_side_facets_of_bucket(const stk::mesh::Selector & volumeSelector, const stk::mesh::Bucket & bucket)
+  {
+    const stk::topology sideTopology = bucket.topology();
+    for (auto side : bucket)
+      add_side_facet(volumeSelector, sideTopology, side);
+  }
+
   void add_side_facet(const stk::mesh::Selector & volumeSelector,
       const stk::topology sideTopology,
       const stk::mesh::Entity side)
@@ -245,6 +276,22 @@ private:
 
 } // namespace
 
+void append_skin_facets(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Field<double> & coordsField,
+    const stk::mesh::PartVector & skinnedBlocks,
+    const stk::mesh::Selector & ownedSideSelector,
+    const int sign,
+    FacetMesh::VertexIdsAndCoords & vertexIdsAndCoords,
+    FacetMesh::FacetVertexIds & facetVertexIds)
+{
+  const auto coordsData = coordsField.data();
+  SideFacetAppender appender(mesh, coordsData, sign, vertexIdsAndCoords, facetVertexIds);
+  appender.add_skin_side_facets(skinnedBlocks, ownedSideSelector);
+  // The centroids are already in vertexIdsAndCoords; add the nodes.
+  for (auto node : appender.used_nodes())
+    vertexIdsAndCoords.emplace_back(mesh.identifier(node), appender.node_coordinates(node));
+}
+
 void MeshSurface::build_local_facets(const std::vector<BoundingBox> & /*procQueryBboxes*/,
     VertexIdsAndCoords & vertexIdsAndCoords,
     FacetVertexIds & facetVertexIds)
@@ -254,6 +301,13 @@ void MeshSurface::build_local_facets(const std::vector<BoundingBox> & /*procQuer
       (NULL != myMeta.get_part("ACTIVE_CONTEXT_BIT")) ?
       (*myMeta.get_part("ACTIVE_CONTEXT_BIT") & myMeta.locally_owned_part()) :
       stk::mesh::Selector(myMeta.locally_owned_part());
+
+  if (!mySkinnedBlocks.empty())
+  {
+    krinolog << "Building facets for the skin of " << stk::mesh::selectUnion(mySkinnedBlocks) << stk::diag::dendl;
+    append_skin_facets(mesh, myCoordsField, mySkinnedBlocks, active_locally_owned_selector, mySign, vertexIdsAndCoords, facetVertexIds);
+    return;
+  }
 
   const auto coordsData = myCoordsField.data();
   SideFacetAppender appender(mesh, coordsData, mySign, vertexIdsAndCoords, facetVertexIds);

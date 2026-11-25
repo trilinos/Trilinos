@@ -1079,6 +1079,31 @@ static bool element_has_crossings_not_shown_by_node_signs(const stk::mesh::BulkD
       element_has_sharp_feature_points(topology, elemNodeCoords, surface, edgeCrossingTol);
 }
 
+// Whether the element reaches the other side of the surface from elementSign, the side its nodes off the
+// surface are on, between two of its nodes on the surface: the nodes with sign 0, which snapping captured
+// on it (their node domains, not their distances, put them there).  The midpoint of the edge joining them is
+// strictly on the other side, as where the edge cuts across a convex edge of the surface, though no sign
+// changes at its ends.
+static bool does_element_reach_other_side_between_its_nodes_on_surface(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    const stk::mesh::Entity element,
+    const NodeToSignsMap & nodesToSigns,
+    const unsigned surfIndex,
+    const Surface & surface,
+    const int elementSign)
+{
+  const int dim = mesh.mesh_meta_data().spatial_dimension();
+  std::vector<stk::math::Vector3d> nodesOnSurface;
+  for (auto node : element_vertex_nodes(mesh, element))
+    if (0 == nodesToSigns.at(node)[surfIndex])
+      nodesOnSurface.push_back(get_vector_field(mesh, coordsField, node, dim));
+  for (size_t i = 0; i < nodesOnSurface.size(); ++i)
+    for (size_t j = i + 1; j < nodesOnSurface.size(); ++j)
+      if (elementSign * surface.point_signed_distance(0.5 * (nodesOnSurface[i] + nodesOnSurface[j])) < 0.)
+        return true;
+  return false;
+}
+
 std::unique_ptr<ElementCutter> AnalyticSurfaceInterfaceGeometry::build_element_cutter(const stk::mesh::BulkData & mesh,
   stk::mesh::Entity element,
   const std::function<bool(const std::array<unsigned,4> &)> & /*intersectingPlanesDiagonalPicker*/) const
@@ -1089,8 +1114,9 @@ std::unique_ptr<ElementCutter> AnalyticSurfaceInterfaceGeometry::build_element_c
       mesh, element, mySurfaceElementSelectors, myNodesToSigns);
   for (size_t i = 0; i < elementSigns.size(); ++i)
     if ((elementSigns[i] == -1 || elementSigns[i] == 1) &&
-        element_has_crossings_not_shown_by_node_signs(
-            mesh, coordsField, element, *mySurfaces[i], myEdgeCrossingTol))
+        (element_has_crossings_not_shown_by_node_signs(mesh, coordsField, element, *mySurfaces[i], myEdgeCrossingTol) ||
+            does_element_reach_other_side_between_its_nodes_on_surface(
+                mesh, coordsField, element, myNodesToSigns, i, *mySurfaces[i], elementSigns[i])))
       elementSigns[i] = 0;
   cutter.reset( new SurfaceElementCutter(mesh, coordsField, element, mySurfaces, elementSigns, myMightHaveInteriorOrFaceCrossings, myEdgeCrossingTol) );
   return cutter;

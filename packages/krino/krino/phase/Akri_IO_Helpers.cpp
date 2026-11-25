@@ -103,7 +103,7 @@ std::string get_ioss_topology_name(const stk::topology topology)
 bool is_sideblock_split_by_topology(const std::string & sideblockName, const stk::topology blockTopology)
 {
   // Ideally this would not need string comparisons.
-  return sideblockName.find("_" + get_ioss_topology_name(blockTopology) + "_") != std::string::npos;
+  return sideblockName.find('_' + get_ioss_topology_name(blockTopology) + '_') != std::string::npos;
 }
 
 std::string generate_ioss_sideblock_name(const std::string & baseName,

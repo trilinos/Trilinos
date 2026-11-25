@@ -26,11 +26,6 @@ struct InterfacePartLess
   {
     return lhs.get_key() < rhs;
   }
-
-  bool operator()(const InterfaceKey & lhs, const krino::InterfacePart & rhs) const
-  {
-    return lhs < rhs.get_key();
-  }
 };
 
 using ConformingPartKey = std::pair<unsigned, PhaseTag>;
@@ -61,14 +56,6 @@ struct ConformingPartLess
       return lhs.get_nonconforming_part() < rhs.first;
 
     return lhs.get_phase() < rhs.second;
-  }
-
-  bool operator()(const ConformingPartKey & lhs, const ConformingPart & rhs) const
-  {
-    if (lhs.first != rhs.get_nonconforming_part())
-      return lhs.first < rhs.get_nonconforming_part();
-
-    return lhs.second < rhs.get_phase();
   }
 
   bool operator()(const ConformingPart & lhs, const unsigned rhsNonconformingPart) const
@@ -134,9 +121,11 @@ unsigned PhasePartInfo::get_original_part(const unsigned partOrd) const
     return myNonconformingParts[phasePartEntry.get_index()].get_original_part();
   case PhasePartEntry::INTERFACE_SUPERSET_PART:
     STK_ThrowErrorMsg("Bad interface superset part passed to get_original_part = " << partOrd);
+    break;
   default:
     return get_nonconforming_part_info(get_nonconforming_part(partOrd)).get_original_part();
   }
+  return 0; // unreachable; STK_ThrowErrorMsg does not return
 }
 
 unsigned PhasePartInfo::get_nonconforming_part(const unsigned partOrd) const
@@ -155,6 +144,7 @@ unsigned PhasePartInfo::get_nonconforming_part(const unsigned partOrd) const
     return get_nonconforming_part(myInterfaceParts[phasePartEntry.get_index()].get_touching_part());
   case PhasePartEntry::INTERFACE_SUPERSET_PART:
     STK_ThrowErrorMsg("Bad interface superset part passed to get_nonconforming_part = " << partOrd);
+    break;
   default:
     STK_ThrowErrorMsg("Bad part passed to get_nonconforming_part = " << partOrd);
   }

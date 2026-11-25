@@ -12,6 +12,7 @@
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_FacetFileReader.hpp>
 #include <Akri_FacetFileSurface.hpp>
+#include <Akri_MeshBlockSkinSurface.hpp>
 #include <Akri_MeshSurface.hpp>
 #include <Akri_Parser.hpp>
 #include <Akri_Transformation.hpp>
@@ -479,6 +480,55 @@ static std::shared_ptr<Surface> parse_facets(const Parser::Node & ic_node)
   return surface;
 }
 
+// The names of the blocks of a mesh_block_skin: one, as block, or a list, as blocks.
+static std::vector<std::string> parse_mesh_block_skin_block_names(const Parser::Node & skinNode)
+{
+  std::vector<std::string> blockNames;
+  std::string blockName;
+  const bool hasBlock = skinNode.get_if_present("block", blockName);
+  if (hasBlock)
+    blockNames.push_back(blockName);
+  std::vector<std::string> listedBlockNames;
+  if (skinNode.get_if_present("blocks", listedBlockNames))
+  {
+    if (hasBlock)
+      stk::RuntimeDoomedAdHoc() << "mesh_block_skin takes either block or blocks, not both.\n";
+    blockNames = listedBlockNames;
+  }
+  if (blockNames.empty())
+    stk::RuntimeDoomedAdHoc() << "mesh_block_skin needs a block, or a list of blocks.\n";
+  return blockNames;
+}
+
+// The skin of blocks of an Exodus mesh file (see MeshBlockSkinSurface): filename, block or blocks, sign
+// and the sharp feature options.  The file is read when the surface is first prepared.
+static std::shared_ptr<Surface> parse_mesh_block_skin(const Parser::Node & skinNode, const stk::mesh::MetaData & meta)
+{
+  const auto oldDoomedCount = stk::get_doomed_count();
+
+  std::string filename;
+  if (!skinNode.get_if_present("filename", filename))
+    stk::RuntimeDoomedAdHoc() << "Missing filename for mesh_block_skin.\n";
+
+  const std::vector<std::string> blockNames = parse_mesh_block_skin_block_names(skinNode);
+
+  double sign = 1.0;
+  if (skinNode.get_if_present("sign", sign))
+    validate_sign(sign, "mesh_block_skin");
+
+  const SharpFeatureOptions sharpFeatureOptions = parse_sharp_feature_options(skinNode, "mesh_block_skin");
+
+  if (had_new_parse_error(oldDoomedCount))
+    return nullptr;
+
+  auto surface = std::make_shared<MeshBlockSkinSurface>(meta.spatial_dimension(),
+      get_block_skin_mesh_file(stk::EnvData::parallel_comm(), filename),
+      blockNames,
+      int(sign));
+  set_sharp_feature_options(*surface, sharpFeatureOptions);
+  return surface;
+}
+
 std::shared_ptr<MeshSurface>
 parse_mesh_surface(const Parser::Node & ic_node, const stk::mesh::MetaData & meta)
 {
@@ -738,6 +788,12 @@ std::shared_ptr<Surface> Surface_Parser::parse(const Parser::Node & parserNode,
   if (surfaceNode)
   {
     return with_motion_if_present(parse_facets(surfaceNode), surfaceNode, "facets");
+  }
+
+  surfaceNode = parserNode.get_options_if_present("mesh_block_skin");
+  if (surfaceNode)
+  {
+    return with_motion_if_present(parse_mesh_block_skin(surfaceNode, meta), surfaceNode, "mesh_block_skin");
   }
 
   surfaceNode = parserNode.get_options_if_present("implicit_neural_representation");

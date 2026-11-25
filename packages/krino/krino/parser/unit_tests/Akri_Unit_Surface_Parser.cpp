@@ -10,6 +10,7 @@
 #include <Akri_Surface_Parser.hpp>
 
 #include <Akri_FacetFileSurface.hpp>
+#include <Akri_MeshBlockSkinSurface.hpp>
 
 #include <Akri_AnalyticSurf.hpp>
 #include <Akri_BoundingBox.hpp>
@@ -709,6 +710,34 @@ TEST_F(SurfaceParserTest, FacetsOfEveryFormatAreConnected)
         parse_surface("facets:\n  filename: dummy.file\n  format: " + format + "\n");
     EXPECT_NE(nullptr, std::dynamic_pointer_cast<FacetFileSurface>(surface)) << format;
     EXPECT_EQ(stk::get_doomed_count(), oldDoomedCount) << format;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// mesh_block_skin
+// -----------------------------------------------------------------------------
+
+// The file is read when the surface is first prepared, so it need not exist to parse.
+TEST_F(SurfaceParserTest, MeshBlockSkinWithBlockOrBlocks_isAMeshBlockSkinSurface)
+{
+  for (const std::string blocks : {"  block: block_1\n", "  blocks: [block_1, block_2]\n"})
+  {
+    auto surface = parse_and_cast<MeshBlockSkinSurface>(
+        "mesh_block_skin:\n  filename: parts.g\n" + blocks + "  sign: -1\n  sharp_feature_angle: 135\n");
+    EXPECT_NE(nullptr, surface) << blocks;
+  }
+}
+
+TEST_F(SurfaceParserTest, MeshBlockSkinWithoutFilenameOrBlocks_returnsNullAndDooms)
+{
+  for (const std::string yaml : {"mesh_block_skin:\n  block: block_1\n",
+           "mesh_block_skin:\n  filename: parts.g\n",
+           "mesh_block_skin:\n  filename: parts.g\n  block: block_1\n  blocks: [block_2]\n",
+           "mesh_block_skin:\n  filename: parts.g\n  block: block_1\n  sign: 2\n"})
+  {
+    const unsigned oldDoomedCount = stk::get_doomed_count();
+    EXPECT_EQ(nullptr, parse_surface(yaml)) << yaml;
+    EXPECT_GT(stk::get_doomed_count(), oldDoomedCount) << yaml;
   }
 }
 
