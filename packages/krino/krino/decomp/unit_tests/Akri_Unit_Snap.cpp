@@ -112,181 +112,6 @@ TEST_F(RegularTriWithSides, triMeshWithOneSidesetOnTwoSides_attemptSnapToIntPoin
 }
 
 template <typename MESHSPEC>
-class SharpFeatureFixture : public StkMeshFixture<MESHSPEC::TOPOLOGY>
-{
-protected:
-  using StkMeshFixture<MESHSPEC::TOPOLOGY>::mMesh;
-
-  void find_sharp_features()
-  {
-    mySharpFeatureInfo.find_sharp_features(mMesh, mMesh.mesh_meta_data().coordinate_field(), mMesh.mesh_meta_data().universal_part(), myCosFeatureAngle);
-  }
-
-  void build_mesh_and_find_sharp_features()
-  {
-    this->build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
-    find_sharp_features();
-  }
-
-  void test_is_node_pinned(const stk::mesh::Entity node, const bool goldIsNodePinned)
-  {
-    const SharpFeatureConstraint * constraint = mySharpFeatureInfo.get_constraint(node);
-    if (goldIsNodePinned)
-    {
-      EXPECT_TRUE(constraint != nullptr && constraint->is_pinned());
-    }
-    else
-    {
-      EXPECT_TRUE(constraint == nullptr || !constraint->is_pinned());
-    }
-  }
-
-  bool is_node_in_assigned_nodes_for_indices(const stk::mesh::BulkData & /*mesh*/, const stk::mesh::Entity node, const std::vector<unsigned> & nodeIndices)
-  {
-    for (auto nodeIndex : nodeIndices)
-      if (this->get_assigned_node_for_index(nodeIndex) == node)
-        return true;
-    return false;
-  }
-
-  void test_are_nodes_pinned(const std::vector<unsigned> & goldPinnedNodeIndices)
-  {
-    std::vector<stk::mesh::Entity> ownedNodes;
-    stk::mesh::get_selected_entities( mMesh.mesh_meta_data().locally_owned_part(), mMesh.buckets( stk::topology::NODE_RANK ), ownedNodes );
-
-    for (auto && node : ownedNodes)
-    {
-      const bool goldIsNodePinned = is_node_in_assigned_nodes_for_indices(mMesh, node, goldPinnedNodeIndices);
-      test_is_node_pinned(node, goldIsNodePinned);
-    }
-  }
-
-  void test_is_node_constrained_on_edge(const unsigned sharpEdgeNodeIndex, const std::array<unsigned,2> & goldSharpEdgeNodeNbrIndices)
-  {
-    stk::mesh::Entity sharpEdgeNode = this->get_assigned_node_for_index(sharpEdgeNodeIndex);
-    if (mMesh.is_valid(sharpEdgeNode) && mMesh.parallel_owner_rank(sharpEdgeNode) == mMesh.parallel_rank())
-    {
-      const SharpFeatureConstraint * constraint = mySharpFeatureInfo.get_constraint(sharpEdgeNode);
-      ASSERT_TRUE(constraint != nullptr && constraint->is_constrained_on_edge());
-      const std::array<stk::mesh::Entity,2> sharpEdgeNodes = constraint->get_sharp_edge_nodes();
-      for (auto goldSharpEdgeNodeNbrIndex : goldSharpEdgeNodeNbrIndices)
-      {
-        stk::mesh::Entity goldSharpEdgeNodeNbr = this->get_assigned_node_for_index(goldSharpEdgeNodeNbrIndex);
-        EXPECT_TRUE(sharpEdgeNodes[0] == goldSharpEdgeNodeNbr || sharpEdgeNodes[1] == goldSharpEdgeNodeNbr);
-      }
-    }
-  }
-
-  void test_are_all_nodes_pinned()
-  {
-    std::vector<stk::mesh::Entity> ownedNodes;
-    stk::mesh::get_selected_entities( mMesh.mesh_meta_data().locally_owned_part(), mMesh.buckets( stk::topology::NODE_RANK ), ownedNodes );
-
-    for (auto && node : ownedNodes)
-      test_is_node_pinned(node, true);
-  }
-
-  MESHSPEC meshSpec;
-  double myCosFeatureAngle{std::cos(M_PI/180.*135.0)};
-  SharpFeatureInfo mySharpFeatureInfo;
-};
-
-typedef SharpFeatureFixture<RegularTet> SharpFeatureRegularTetFixture;
-
-TEST_F(SharpFeatureRegularTetFixture, meshWithAllNodesOnCorners_allNodesArePinned)
-{
-  if(stk::parallel_machine_size(mComm) == 1)
-  {
-    build_mesh_and_find_sharp_features();
-
-    test_are_all_nodes_pinned();
-  }
-}
-
-typedef SharpFeatureFixture<RightTet> SharpFeatureRightTetFixture;
-
-TEST_F(SharpFeatureRightTetFixture, meshWithAllNodesOnCorners_allNodesArePinned)
-{
-  if(stk::parallel_machine_size(mComm) == 1)
-  {
-    build_mesh_and_find_sharp_features();
-
-    test_are_all_nodes_pinned();
-  }
-}
-
-typedef SharpFeatureFixture<RegularTri> SharpFeatureRegularTriFixture;
-
-TEST_F(SharpFeatureRegularTriFixture, meshWithAllNodesOnCorners_allNodesArePinned)
-{
-  if(stk::parallel_machine_size(mComm) == 1)
-  {
-    build_mesh_and_find_sharp_features();
-
-    test_are_all_nodes_pinned();
-  }
-}
-
-typedef SharpFeatureFixture<Tri306090> SharpFeatureTri306090Fixture;
-
-TEST_F(SharpFeatureTri306090Fixture, meshWithAllNodesOnCorners_allNodesArePinned)
-{
-  if(stk::parallel_machine_size(mComm) == 1)
-  {
-    build_mesh_and_find_sharp_features();
-
-    test_are_all_nodes_pinned();
-  }
-}
-
-typedef SharpFeatureFixture<TwoTri306090> SharpFeatureTwoTri306090Fixture;
-
-TEST_F(SharpFeatureTwoTri306090Fixture, meshWithCornerNodesAndUnconstrainedNode_constraintsAreCorrect)
-{
-  if(stk::parallel_machine_size(mComm) <= 2)
-  {
-    this->build_mesh_from_spec(meshSpec);
-
-    find_sharp_features();
-
-    const std::vector<unsigned> goldPinnedNodeIndices{1,2,3};
-    test_are_nodes_pinned(goldPinnedNodeIndices);
-  }
-}
-
-typedef SharpFeatureFixture<FourRightTets> SharpFeatureFourRightTetsFixture;
-
-TEST_F(SharpFeatureFourRightTetsFixture, meshWithCornerNodesAndUnconstrainedNode_constraintsAreCorrect)
-{
-  if(stk::parallel_machine_size(mComm) <= 4)
-  {
-    this->build_mesh_from_spec(meshSpec, {{2, {0,0,1,1}}, {3, {0,1,2,2}}});
-
-    find_sharp_features();
-
-    const std::vector<unsigned> goldPinnedNodeIndices{1,2,3,4,5};
-    test_are_nodes_pinned(goldPinnedNodeIndices);
-  }
-}
-
-typedef SharpFeatureFixture<TwoRightTets> SharpFeatureTwoRightTetsFixture;
-
-TEST_F(SharpFeatureTwoRightTetsFixture, meshWithCornerNodesAndEdgeNode_constraintsAreCorrect)
-{
-  if(stk::parallel_machine_size(mComm) <= 2)
-  {
-    this->build_mesh_from_spec(meshSpec);
-
-    find_sharp_features();
-
-    const std::vector<unsigned> goldPinnedNodeIndices{1,2,3,4};
-    test_are_nodes_pinned(goldPinnedNodeIndices);
-
-    test_is_node_constrained_on_edge(0, {{1,3}});
-  }
-}
-
-template <typename MESHSPEC>
 class VolumePreservingSnappingLimiterFixture : public StkMeshFixture<MESHSPEC::TOPOLOGY>
 {
 protected:
@@ -408,7 +233,14 @@ protected:
     FieldRef coordsField = mMesh.mesh_meta_data().coordinate_field();
     const double minIntPtWeightForEstimatingCutQuality = 1.e-6;
     const bool globalIDsAreParallelConsistent = true;
-    const auto domainsToNodesToQuality = determine_quality_per_node_per_domain(mMesh, mMesh.mesh_meta_data().universal_part(), coordsField, intersectionPoints, nodeToIntPtIndicesAndWhichSnapsAllowed, qualityMetric, minIntPtWeightForEstimatingCutQuality, globalIDsAreParallelConsistent);
+    const CutQualityEstimator cutQualityEstimator(mMesh,
+        mMesh.mesh_meta_data().universal_part(),
+        coordsField,
+        qualityMetric,
+        minIntPtWeightForEstimatingCutQuality,
+        globalIDsAreParallelConsistent);
+    const auto domainsToNodesToQuality = cutQualityEstimator.estimate_quality_per_node_per_domain(
+        intersectionPoints, nodeToIntPtIndicesAndWhichSnapsAllowed);
 
     STK_ThrowRequire(1u == domainsToNodesToQuality.size());
     return domainsToNodesToQuality.begin()->second.at(nodeId);
@@ -425,7 +257,7 @@ protected:
   std::vector<size_t> get_allowed_snap_indices(const std::vector<IntersectionPoint> & intersectionPoints, const stk::mesh::Entity snapNode)
   {
     const SharpFeatureInfo * sharpFeatureInfo = nullptr;
-    const auto nodeToIntPtIndicesAndWhichSnapsAllowed = get_node_to_intersection_point_indices_and_which_snaps_allowed(mMesh, sharpFeatureInfo, maxSnapForEdges, intersectionPoints);
+    const auto nodeToIntPtIndicesAndWhichSnapsAllowed = get_node_to_intersection_point_indices_and_which_snaps_allowed(mMesh, sharpFeatureInfo, maxSnapForEdges, minWeightAtNode, intersectionPoints);
 
     const FieldRef coordsField = mMesh.mesh_meta_data().coordinate_field();
     const double minQualityThatIsForSureNotInverted = 0.;
@@ -495,6 +327,7 @@ protected:
   }
 
   double maxSnapForEdges{1.0};
+  double minWeightAtNode{0.0};
   const ScaledJacobianQualityMetric qualityMetric;
 };
 
@@ -533,5 +366,94 @@ TEST_F(SnapTrisFixture, becauseOfSnapLimit_onlySnapAllowedIsNearbyOne)
   const std::vector<double> nodeLSValues = {1.0, -1.e-1, -1.e2, -1.e-1, 1., 1., -1.e-1};
   const std::vector<unsigned> goldValidSnapEdgeNodeIndices{2};
   build_mesh_and_test_valid_edge_snaps_for_given_level_set(0, goldValidSnapEdgeNodeIndices, nodeLSValues);
+}
+
+// A node may snap only to the points in its sector, where its weight exceeds (1-maxEdgeSnap)/maxEdgeSnap
+// times the weight of every other node of the point.  With maxEdgeSnap 0.5, node 0 may snap to a point
+// in the triangle where its weight is the largest, even where it would move more than half way to the
+// opposite edge, but not to the others.
+TEST_F(SnapTrisFixture, pointInsideTri_snapAllowedOnlyInSectorOfNode)
+{
+  if (stk::parallel_machine_size(mComm) == 1)
+  {
+    PatchOfRegularTrisAroundNode meshSpec;
+    build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
+
+    const std::vector<stk::mesh::Entity> triNodes{get_assigned_node_for_index(0),
+        get_assigned_node_for_index(1),
+        get_assigned_node_for_index(2)};
+    const std::vector<IntersectionPoint> intersectionPoints{
+        IntersectionPoint(true, triNodes, {0.04, 0.48, 0.48}, {0}),
+        IntersectionPoint(true, triNodes, {0.3, 0.35, 0.35}, {0}),
+        IntersectionPoint(true, triNodes, {0.4, 0.3, 0.3}, {0})};
+
+    const std::vector<std::pair<size_t, bool>> allAllowed{{0, true}, {1, true}, {2, true}};
+    EXPECT_EQ(allAllowed,
+        get_node_to_intersection_point_indices_and_which_snaps_allowed(
+            mMesh, nullptr, 1.0, 0.0, intersectionPoints)
+            .at(triNodes[0]));
+
+    const std::vector<std::pair<size_t, bool>> onlyThirdAllowed{{0, false}, {1, false}, {2, true}};
+    EXPECT_EQ(onlyThirdAllowed,
+        get_node_to_intersection_point_indices_and_which_snaps_allowed(
+            mMesh, nullptr, 0.5, 0.0, intersectionPoints)
+            .at(triNodes[0]));
+  }
+}
+
+// Whatever the sector, a node may not snap to a point where its weight is at most the minimum weight
+// (the edge tolerance): the point is within the tolerance of the opposite edge.
+TEST_F(SnapTrisFixture, pointInsideTri_snapAllowedOnlyAboveMinimumWeightAtNode)
+{
+  if (stk::parallel_machine_size(mComm) == 1)
+  {
+    PatchOfRegularTrisAroundNode meshSpec;
+    build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
+
+    const std::vector<stk::mesh::Entity> triNodes{get_assigned_node_for_index(0),
+        get_assigned_node_for_index(1),
+        get_assigned_node_for_index(2)};
+    const std::vector<IntersectionPoint> intersectionPoints{
+        IntersectionPoint(true, triNodes, {0.04, 0.48, 0.48}, {0}),
+        IntersectionPoint(true, triNodes, {0.4, 0.3, 0.3}, {0})};
+
+    const std::vector<std::pair<size_t, bool>> onlySecondAllowed{{0, false}, {1, true}};
+    EXPECT_EQ(onlySecondAllowed,
+        get_node_to_intersection_point_indices_and_which_snaps_allowed(
+            mMesh, nullptr, 1.0, 0.05, intersectionPoints)
+            .at(triNodes[0]));
+    EXPECT_EQ(onlySecondAllowed,
+        get_node_to_intersection_point_indices_and_which_snaps_allowed(
+            mMesh, nullptr, 0.5, 0.05, intersectionPoints)
+            .at(triNodes[0]));
+  }
+}
+
+// The sectors change continuously as a point moves off an edge: the interior node 0 may snap to a
+// point just inside the triangle, beside a point on its edge 0-1, exactly when it may snap to that
+// point.
+TEST_F(SnapTrisFixture, pointBesideEdgeOfTri_sameSnapsAllowedAsOnEdge)
+{
+  if (stk::parallel_machine_size(mComm) == 1)
+  {
+    PatchOfRegularTrisAroundNode meshSpec;
+    build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
+
+    const std::vector<stk::mesh::Entity> triNodes{get_assigned_node_for_index(0),
+        get_assigned_node_for_index(1),
+        get_assigned_node_for_index(2)};
+    const std::vector<stk::mesh::Entity> edgeNodes{triNodes[0], triNodes[1]};
+    const std::vector<IntersectionPoint> intersectionPoints{
+        IntersectionPoint(true, edgeNodes, {0.55, 0.45}, {0}),
+        IntersectionPoint(true, triNodes, {0.55, 0.45 - 1.e-12, 1.e-12}, {0}),
+        IntersectionPoint(true, edgeNodes, {0.45, 0.55}, {0}),
+        IntersectionPoint(true, triNodes, {0.45, 0.55 - 1.e-12, 1.e-12}, {0})};
+
+    const std::vector<std::pair<size_t, bool>> onlyFirstPairAllowed{{0, true}, {1, true}, {2, false}, {3, false}};
+    EXPECT_EQ(onlyFirstPairAllowed,
+        get_node_to_intersection_point_indices_and_which_snaps_allowed(
+            mMesh, nullptr, 0.5, 0.0, intersectionPoints)
+            .at(triNodes[0]));
+  }
 }
 }

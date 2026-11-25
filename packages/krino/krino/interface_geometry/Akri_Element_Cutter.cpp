@@ -6,16 +6,20 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <algorithm>
+#include <map>
+
 #include <Akri_CDFEM_Parent_Edge.hpp>
 #include <Akri_CDFEM_Parent_Edges.hpp>
+#include <Akri_CubitJournal.hpp>
 #include <Akri_Cutting_Surface.hpp>
 #include <Akri_DiagWriter.hpp>
-#include <stk_util/util/ReportHandler.hpp>
 #include <Akri_Element_Cutter.hpp>
 #include <Akri_Element_Intersections.hpp>
 #include <Akri_Intersection_Points.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Plane_Intersections.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace krino {
 
@@ -83,44 +87,32 @@ void fill_tetrahedron_interior_surface_intersection_points(const Cutting_Surface
     intersections.emplace_back(intersectionPoint, sortedDomains);
 }
 
-std::string visualize_element(const ParametricElement & parametricElem, std::array<int,4> & usedGeomIds)
+std::string Element_Cutter::visualize_cutting_surfaces(const ParametricElement & parametricElem, const InterfaceToSurface & cuttingSurfaces)
 {
   const stk::topology topology = parametricElem.get_topology();
   const double * elemNodeParamCoords = parametricElem.nodal_parametric_coordinates();
-
-  const unsigned numNodes = topology.num_nodes();
   const int dim = topology.dimension();
+  std::vector<stk::math::Vector3d> elementCoords;
+  for (unsigned n=0; n<topology.num_nodes(); ++n)
+    elementCoords.emplace_back(&elemNodeParamCoords[n*dim], dim);
 
-  std::ostringstream os;
-  for (unsigned n=0; n<numNodes; ++n)
-  {
-    stk::math::Vector3d nodeCoord(&elemNodeParamCoords[n*dim],dim);
-    os << "Create vertex " << nodeCoord[0] << " " << nodeCoord[1] << " " << nodeCoord[2] << std::endl;
-    usedGeomIds[0]++;
-    os << "Create node " << usedGeomIds[0] << " vertex " << usedGeomIds[0] << std::endl;
-  }
-  const int nodeIds = usedGeomIds[0]-numNodes+1;
-  if (numNodes == 3)
-    os << "Create tri node " << nodeIds << " " << nodeIds+1 << " " << nodeIds+2 << std::endl;
+  CubitJournal journal("cutting surfaces of a " + std::string(topology.name()) + " in parametric coordinates");
+  journal.set_group("element", "grey");
+  if (elementCoords.size() == 4)
+    journal.add_tet({{elementCoords[0], elementCoords[1], elementCoords[2], elementCoords[3]}});
   else
-    os << "Create tet node " << nodeIds << " " << nodeIds+1 << " " << nodeIds+2 << " " << nodeIds+3 << std::endl;
-  return os.str();
-}
+    journal.add_tri({{elementCoords[0], elementCoords[1], elementCoords[2]}});
 
-std::string Element_Cutter::visualize_cutting_surfaces(const ParametricElement & parametricElem, const InterfaceToSurface & cuttingSurfaces)
-{
-  std::array<int,4> usedGeomIds{0,0,0,0};
-  std::string viz = visualize_element(parametricElem, usedGeomIds);
-  for (auto && cuttingSurf : cuttingSurfaces)
+  static const std::array<std::string,6> colors{{"red", "blue", "green", "orange", "magenta", "cyan"}};
+  size_t iSurf = 0;
+  for (auto && [interface, cuttingSurf] : cuttingSurfaces)
   {
-    std::ostringstream os;
-    os << cuttingSurf.first;
-    const std::string interfaceDesc = "on interface " + os.str();
-    viz += cuttingSurf.second->print_visualization(usedGeomIds, interfaceDesc);
+    const std::string name = "interface_" + std::to_string(interface.first_ls()) + "_" + std::to_string(interface.second_ls());
+    journal.set_group(name, colors[iSurf++ % colors.size()]);
+    cuttingSurf->add_to_journal(journal, elementCoords);
   }
-  return viz;
+  return journal.str();
 }
-
 
 void Element_Cutter::fill_triangle_interior_intersection_points(const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const
 {
@@ -154,6 +146,67 @@ void Element_Cutter::fill_triangle_interior_intersection_points(const ElementInt
   }
 }
 
+// The points where the sharp edge of two planes, the line where they meet, crosses a triangle face
+// of a tet, before checking that they are real or within the triangle.  With the signed distances
+// d0 and d1 of the nodes of the face from the planes, a point of the face with barycentric
+// coordinates b is on the line where b.d0 = b.d1 = 0.  Generically that is one point, solved
+// directly (well conditioned however the planes meet the face).  If d0 and d1 are proportional, to
+// roundoff, the line lies in the plane of the face (as where the face lies in one of the planes, or
+// has two nodes on the line): it crosses the face where it crosses the edges of the face, where the
+// larger of d0 and d1 changes sign (or at a node where it is zero).  If the line is parallel to the
+// face, off it, there is no point.
+static void
+fill_sharp_edge_crossings_of_triangle(const std::array<stk::math::Vector3d, 3> & faceNodes,
+    const stk::math::Plane3d & plane0,
+    const stk::math::Plane3d & plane1,
+    std::vector<stk::math::Vector3d> & points)
+{
+  points.clear();
+  constexpr double tol = 1.e-10;
+  // Parallel planes (or the same plane, as of interfaces with level sets that are multiples of each
+  // other) meet in no line: there is no sharp edge.
+  if (Cross(plane0.normal(), plane1.normal()).length() <=
+      tol * plane0.normal().length() * plane1.normal().length())
+    return;
+  stk::math::Vector3d d0, d1;
+  for (int i = 0; i < 3; ++i)
+  {
+    d0[i] = plane0.signed_distance(faceNodes[i]);
+    d1[i] = plane1.signed_distance(faceNodes[i]);
+  }
+  // Proportional relative to the larger of d0 and d1, so that a face lying in one plane, with that
+  // plane's distances only roundoff, is found in the plane of the line.
+  const stk::math::Vector3d dCross = Cross(d0, d1);
+  const double dMax = std::max(d0.length(), d1.length());
+  const double scale = std::max(dMax * dMax, tol);
+  if (dCross.length() <= tol * scale)
+  {
+    const stk::math::Vector3d & d = (d0.length() >= d1.length()) ? d0 : d1;
+    const double zeroTol = tol * std::max(d.length(), 1.);
+    if (d.length() <= tol) return; // the face lies in both planes
+    for (int i = 0; i < 3; ++i)
+    {
+      if (std::abs(d[i]) <= zeroTol)
+      {
+        points.push_back(faceNodes[i]);
+        continue;
+      }
+      const int j = (i + 1) % 3;
+      if (std::abs(d[j]) > zeroTol && (d[i] < 0.) != (d[j] < 0.))
+      {
+        const double position = d[i] / (d[i] - d[j]);
+        points.push_back((1. - position) * faceNodes[i] + position * faceNodes[j]);
+      }
+    }
+    return;
+  }
+  // b = dCross / (sum of dCross): b.d0 = b.d1 = 0 and b sums to 1.
+  const double sum = dCross[0] + dCross[1] + dCross[2];
+  if (std::abs(sum) <= tol * dCross.length()) return; // the line is parallel to the face, off it
+  const stk::math::Vector3d bary = dCross / sum;
+  points.push_back(bary[0] * faceNodes[0] + bary[1] * faceNodes[1] + bary[2] * faceNodes[2]);
+}
+
 void Element_Cutter::append_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes,
     const InterfaceID & interface1,
     const InterfaceID & interface2,
@@ -165,17 +218,18 @@ void Element_Cutter::append_tetrahedron_face_interior_intersections(const std::a
   if (sorted_domains_form_triple_point(is_one_ls_per_phase(), sortedDomains) &&
       intersectionPointFilter(sortedDomains))
   {
-    const stk::math::Plane3d facePlane{faceNodes[0], faceNodes[1], faceNodes[2]};
-    stk::math::Vector3d intersectionPoint;
-
     const stk::math::Plane3d & plane0 = cutting_surfaces.at(interface1)->get_plane();
     const stk::math::Plane3d & plane1 = cutting_surfaces.at(interface2)->get_plane();
-    if (find_intersection_of_three_planes(plane0, plane1, facePlane, intersectionPoint) &&
-        intersection_point_is_real(intersectionPoint, sortedDomains))
+    std::vector<stk::math::Vector3d> crossings;
+    fill_sharp_edge_crossings_of_triangle(faceNodes, plane0, plane1, crossings);
+    for (auto && intersectionPoint : crossings)
     {
-      const stk::math::Vector3d faceCoords = triangle_parametric_coordinates_of_projected_point(faceNodes, intersectionPoint);
-      if (within_tri_bounds(faceCoords))
-        intersections.emplace_back(faceCoords, sortedDomains);
+      if (intersection_point_is_real(intersectionPoint, sortedDomains))
+      {
+        const stk::math::Vector3d faceCoords =
+            triangle_parametric_coordinates_of_projected_point(faceNodes, intersectionPoint);
+        if (within_tri_bounds(faceCoords)) intersections.emplace_back(faceCoords, sortedDomains);
+      }
     }
   }
 }
@@ -836,7 +890,6 @@ static void add_interfaces_that_have_uncaptured_intersection_within_sides_of_tet
     const InterfaceToSurface & allSurfaces,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings)
 {
-  stk::math::Vector3d intersectionPoint;
   std::vector<int> sortedDomains;
   constexpr bool oneLSPerPhase(true);
 
@@ -858,14 +911,23 @@ static void add_interfaces_that_have_uncaptured_intersection_within_sides_of_tet
           {
             topology.face_node_ordinals(iFace, faceNodes);
             const std::array<stk::math::Vector3d,3> faceNodeCoords{elemNodesCoords[faceNodes[0]], elemNodesCoords[faceNodes[1]], elemNodesCoords[faceNodes[2]]};
-            const stk::math::Plane3d facePlane{elemNodesCoords[faceNodes[0]], elemNodesCoords[faceNodes[1]], elemNodesCoords[faceNodes[2]]};
-            if (!intersection_is_already_captured(nodesSnappedDomains, faceNodes, sortedDomains) &&
-                find_intersection_of_three_planes(facePlane, surface1.second->get_plane(), surface2.second->get_plane(), intersectionPoint) &&
-                intersection_point_is_real(intersectionPoint, allSurfaces, sortedDomains))
+            if (intersection_is_already_captured(nodesSnappedDomains, faceNodes, sortedDomains))
+              continue;
+            std::vector<stk::math::Vector3d> crossings;
+            fill_sharp_edge_crossings_of_triangle(faceNodeCoords,
+                surface1.second->get_plane(),
+                surface2.second->get_plane(),
+                crossings);
+            for (auto && crossing : crossings)
             {
-              const stk::math::Vector3d faceCoords = triangle_parametric_coordinates_of_projected_point(faceNodeCoords, intersectionPoint);
-              if (within_tri_bounds(faceCoords))
-                add_triple_point_interfaces(oneLSPerPhase, sortedDomains, interfacesWithUncapturedCrossings);
+              if (intersection_point_is_real(crossing, allSurfaces, sortedDomains))
+              {
+                const stk::math::Vector3d faceCoords =
+                    triangle_parametric_coordinates_of_projected_point(faceNodeCoords, crossing);
+                if (within_tri_bounds(faceCoords))
+                  add_triple_point_interfaces(
+                      oneLSPerPhase, sortedDomains, interfacesWithUncapturedCrossings);
+              }
             }
           }
         }
@@ -1019,6 +1081,35 @@ One_LS_Per_Phase_Cutter::have_crossing(const InterfaceID interface, const std::a
   return false;
 }
 
+// The phase that is on the wrong side of the fewest surfaces, then by the least distance (on its
+// surface's plane) to the surface it is farthest on the wrong side of, then the least: where the
+// surfaces, fit to crossings moved onto nodes within the edge tolerance, no longer meet at their
+// sharp edges, near those edges there can be points where no phase is on the right side of every
+// surface (the comparisons form a cycle).
+static int least_violated_phase_at_location(
+    const stk::math::Vector3d & location, const InterfaceToSurface & surfaces)
+{
+  std::map<int, std::pair<int, double>> phaseViolations;
+  for (auto && [interface, surface] : surfaces)
+  {
+    phaseViolations.emplace(interface.first_ls(), std::make_pair(0, 0.));
+    phaseViolations.emplace(interface.second_ls(), std::make_pair(0, 0.));
+  }
+  for (auto && [interface, surface] : surfaces)
+  {
+    const int sign = surface->sign_at_position(location);
+    const int fromPhase = (sign < 0) ? interface.second_ls() : interface.first_ls();
+    auto & [numViolations, maxDistance] = phaseViolations[fromPhase];
+    ++numViolations;
+    maxDistance = std::max(maxDistance, std::abs(surface->get_plane().signed_distance(location)));
+  }
+  STK_ThrowRequire(!phaseViolations.empty());
+  return std::min_element(phaseViolations.begin(),
+      phaseViolations.end(),
+      [](const auto & a, const auto & b) { return a.second < b.second; })
+      ->first;
+}
+
 int One_LS_Per_Phase_Cutter::get_ls_per_interface_phase_at_location(const stk::math::Vector3d & pCoords) const
 {
   std::set<int> optimalPhases = determine_optimal_phases_at_location(pCoords, cutting_surfaces);
@@ -1027,14 +1118,23 @@ int One_LS_Per_Phase_Cutter::get_ls_per_interface_phase_at_location(const stk::m
     // Not sure how this happens for sure.
     optimalPhases = determine_optimal_phases_at_location(pCoords, all_cutting_surfaces);
   }
+  if (optimalPhases.empty()) return least_violated_phase_at_location(pCoords, cutting_surfaces);
   STK_ThrowRequireMsg(optimalPhases.size()==1, "Unexpected phase configuration with " << optimalPhases.size() << " optimal phases when evaluated phase at " << pCoords << "\n" << visualize());
   return *optimalPhases.begin();
+}
+
+bool Element_Cutter::interface_crossing_is_real(
+    const InterfaceID interface, const stk::math::Vector3d & pCoords) const
+{
+  std::vector<int> sortedDomains{interface.first_ls(), interface.second_ls()};
+  stk::util::sort_and_unique(sortedDomains);
+  return intersection_point_is_real(pCoords, sortedDomains);
 }
 
 bool One_LS_Per_Phase_Cutter::intersection_point_is_real(const stk::math::Vector3d & intersectionPoint,
     const std::vector<int> & sortedDomains) const
 {
-  return krino::intersection_point_is_real(intersectionPoint, all_cutting_surfaces, sortedDomains);
+  return krino::intersection_point_is_real(intersectionPoint, cutting_surfaces, sortedDomains);
 }
 
 One_LS_Per_Phase_Cutter::One_LS_Per_Phase_Cutter(const ParametricElement & parametricElem,

@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 
 #include <Akri_AnalyticSurf.hpp>
+#include <Akri_CSG_Surface.hpp>
 #include <Akri_CSG_Tree.hpp>
 
 namespace krino {
@@ -45,6 +46,14 @@ TEST(CSGTreeTest, RequireRootThrowsForEmptyTree)
 // -----------------------------------------------------------------------------
 // Construction from Surface
 // -----------------------------------------------------------------------------
+
+// A CSG surface changes with time if any of its surfaces does.
+TEST(CSGTreeTest, csgSurface_changesWithTimeIfASurfaceDoes)
+{
+  auto sphere = std::make_shared<Sphere>(stk::math::Vector3d::ZERO, 1.);
+  EXPECT_FALSE(CSG_Surface(CSGTree::unite(sphere, std::make_shared<LevelSet_String_Function>("x - 0.5"))).changes_with_time());
+  EXPECT_TRUE(CSG_Surface(CSGTree::unite(sphere, std::make_shared<LevelSet_String_Function>("x - t"))).changes_with_time());
+}
 
 TEST(CSGTreeTest, ConstructFromSurfaceCreatesLeafNode)
 {

@@ -9,7 +9,6 @@
 #include <Akri_Facet.hpp>
 #include <Akri_BoundingBox.hpp>
 #include <Akri_IntersectionUtils.hpp>
-#include <Akri_Transformation.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 
 
@@ -137,19 +136,6 @@ std::ostream & Facet3d::put( std::ostream & os ) const
   << " facet area = " << facet_area() << std::endl;
 
   return os ;
-}
-
-void Facet3d::apply_transformation(const Transformation & transformation)
-{
-  transformation.apply(myCoords[0]);
-  transformation.apply(myCoords[1]);
-  transformation.apply(myCoords[2]);
-}
-
-void Facet2d::apply_transformation(const Transformation & transformation)
-{
-  transformation.apply(myCoords[0]);
-  transformation.apply(myCoords[1]);
 }
 
 std::ostream & Facet2d::put( std::ostream & os ) const

@@ -530,14 +530,15 @@ ContourElement::dump_subelement_details() const
     }
   }
 
-void
-ContourElement::build_subelement_facets( FacetedSurfaceBase & facets )
-{
-  if (my_sign == 0)
+  void ContourElement::build_subelement_facets(FacetAppender & facets)
   {
-    STK_ThrowErrorMsgIf(!my_base_subelement, "\ncompute_subelement_decomposition(...) must be called prior to calling build_subelement_facets().");
-    my_base_subelement->build_facets( facets );
-  }
+    if (my_sign == 0)
+    {
+      STK_ThrowErrorMsgIf(!my_base_subelement,
+          "\ncompute_subelement_decomposition(...) must be called prior to calling "
+          "build_subelement_facets().");
+      my_base_subelement->build_facets(facets);
+    }
 }
 
 int

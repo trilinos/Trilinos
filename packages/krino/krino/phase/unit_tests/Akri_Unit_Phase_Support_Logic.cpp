@@ -23,13 +23,13 @@
 namespace krino {
 
 namespace {
-Surface_Identifier ls(const unsigned id) { return Surface_Identifier(id); }
+Surface_Identifier surface_id(const unsigned id) { return Surface_Identifier(id); }
 
 NamedPhase make_named_phase(const std::string & name, const std::vector<std::pair<unsigned,int>> & sides)
 {
   PhaseTag tag;
   for (auto && side : sides)
-    tag.add(ls(side.first), side.second);
+    tag.add(surface_id(side.first), side.second);
   return NamedPhase(name, tag);
 }
 }
@@ -48,7 +48,7 @@ TEST(Get_Indices_Of_Phases_That_Depend_On_Surface, OneLevelSetPerPhase_ReturnsAl
   phases.push_back(make_named_phase("LS3", {{2,-1}}));
 
   const std::vector<unsigned> indices =
-      get_indices_of_phases_that_depend_on_surface(true, phases, ls(0));
+      get_indices_of_phases_that_depend_on_surface(true, phases, surface_id(0));
 
   EXPECT_EQ((std::vector<unsigned>{0u, 1u, 2u}), indices);
 }
@@ -61,9 +61,9 @@ TEST(Get_Indices_Of_Phases_That_Depend_On_Surface, OneLevelSetPerPhase_IgnoresSu
   phases.push_back(make_named_phase("LS2", {{1,-1}}));
 
   const std::vector<unsigned> forLs0 =
-      get_indices_of_phases_that_depend_on_surface(true, phases, ls(0));
+      get_indices_of_phases_that_depend_on_surface(true, phases, surface_id(0));
   const std::vector<unsigned> forUnrelated =
-      get_indices_of_phases_that_depend_on_surface(true, phases, ls(99));
+      get_indices_of_phases_that_depend_on_surface(true, phases, surface_id(99));
 
   EXPECT_EQ((std::vector<unsigned>{0u, 1u}), forLs0);
   EXPECT_EQ(forLs0, forUnrelated);
@@ -78,7 +78,7 @@ TEST(Get_Indices_Of_Phases_That_Depend_On_Surface, ExplicitDependence_MatchesEit
   phases.push_back(make_named_phase("C", {{1,-1}}));   // depends on surface 1 only
 
   const std::vector<unsigned> indices =
-      get_indices_of_phases_that_depend_on_surface(false, phases, ls(0));
+      get_indices_of_phases_that_depend_on_surface(false, phases, surface_id(0));
 
   EXPECT_EQ((std::vector<unsigned>{0u, 1u}), indices);
 }
@@ -90,7 +90,7 @@ TEST(Get_Indices_Of_Phases_That_Depend_On_Surface, ExplicitDependence_NoneDepend
   phases.push_back(make_named_phase("B", {{1,+1}}));
 
   const std::vector<unsigned> indices =
-      get_indices_of_phases_that_depend_on_surface(false, phases, ls(2));
+      get_indices_of_phases_that_depend_on_surface(false, phases, surface_id(2));
 
   EXPECT_TRUE(indices.empty());
 }
@@ -103,9 +103,9 @@ TEST(Get_Indices_Of_Phases_That_Depend_On_Surface, ExplicitDependence_MultiSided
   phases.push_back(make_named_phase("B", {{2,-1},{3,+1}}));
 
   const std::vector<unsigned> forLs1 =
-      get_indices_of_phases_that_depend_on_surface(false, phases, ls(1));
+      get_indices_of_phases_that_depend_on_surface(false, phases, surface_id(1));
   const std::vector<unsigned> forLs3 =
-      get_indices_of_phases_that_depend_on_surface(false, phases, ls(3));
+      get_indices_of_phases_that_depend_on_surface(false, phases, surface_id(3));
 
   EXPECT_EQ((std::vector<unsigned>{0u}), forLs1);
   EXPECT_EQ((std::vector<unsigned>{1u}), forLs3);

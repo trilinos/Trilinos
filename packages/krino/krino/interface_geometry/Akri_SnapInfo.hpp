@@ -56,15 +56,33 @@ public:
     int get_snap_rank() const { return mSnapRank; }
     const std::vector<ExclusionIdentifierType> &get_conflicting_ids() const { return mGlobalIdsOfSnapNodeElems; }
 
+    // For predictable snap selection: the distance the node moves and, for an edge intersection
+    // point, the rate at which that distance grows for a uniform increase of the level set.
+    double get_snap_distance() const { return (mSnapLocation - mNodeLocation).length(); }
+    double get_snap_distance_rate() const { return mSnapDistanceRate; }
+    // The unit direction the node moves for a uniform increase of the level set (for an edge
+    // intersection point, toward its other node), used to break ties between snaps at the node.
+    const stk::math::Vector3d & get_snap_direction() const { return mSnapDirection; }
+    void
+    set_snap_distance_rate_and_direction(const double rate, const stk::math::Vector3d & direction)
+    {
+      mSnapDistanceRate = rate;
+      mSnapDirection = direction;
+    }
+
     class Comparator
     {
     public:
-        Comparator(const QualityMetric &qualityMetric) : mQualityMetric{qualityMetric}{}
+      Comparator(const QualityMetric & qualityMetric, const bool isPredictable = false)
+          : mQualityMetric{qualityMetric}, mIsPredictable{isPredictable}
+      {
+      }
         bool is_first_higher_priority_than_second(const SnapInfo& tetSnapInfoA,const SnapInfo& tetSnapInfoB) const;
         bool does_first_win_priority_tie_with_second(const SnapInfo& tetSnapInfoA,const SnapInfo& tetSnapInfoB) const;
 
     private:
         const QualityMetric &mQualityMetric;
+        bool mIsPredictable;
     };
 
 private:
@@ -76,6 +94,8 @@ private:
     stk::math::Vector3d mNodeLocation{};
     stk::math::Vector3d mSnapLocation{};
     int mSnapRank;
+    double mSnapDistanceRate{0.};
+    stk::math::Vector3d mSnapDirection{stk::math::Vector3d::ZERO};
 };
 
 std::ostream & operator<<(std::ostream & os, const SnapInfo& snapInfo);

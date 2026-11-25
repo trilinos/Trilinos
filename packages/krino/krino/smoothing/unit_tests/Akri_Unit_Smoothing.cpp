@@ -11,13 +11,11 @@
 #include <Akri_Objective_MeanRatioAboutNode.hpp>
 #include <Akri_QualityMetric.hpp>
 #include <Akri_SmoothMesh.hpp>
+#include <Akri_SmoothMeshRespectingMeshBasedGeometry.hpp>
 #include <Akri_SmoothNode.hpp>
 #include <Akri_LogRedirecter.hpp>
 #include <Akri_Objective_KinematicMesh.hpp>
-#include <Akri_ModifiedNeoHookeanModel.hpp>
-#include <Akri_Objective_KinematicModel.hpp>
-#include <Akri_SethHillModel.hpp>
-#include <Akri_SizeShapeModel.hpp>
+#include <Akri_KinematicObjectives.hpp>
 #include <Akri_UnitTestUtils.hpp>
 #include <Akri_KinematicMeshUtils.hpp>
 #include <Akri_SethHillConfig.hpp>
@@ -152,11 +150,18 @@ public:
 protected:
   MESHSPEC meshSpec;
   MeanRatioNormObjective meanRatioObj;
-  KinematicModelObjective<SizeShapeModel> sizeShapeObj;
-  KinematicModelObjective<ModifiedNeoHookeanModel> modNeoHookean;
+  std::shared_ptr<KinematicElementObjective> sizeShapeObjPtr{make_size_shape_objective()};
+  const KinematicElementObjective & sizeShapeObj{*sizeShapeObjPtr};
+  std::shared_ptr<KinematicElementObjective> modNeoHookeanPtr{
+      make_modified_neo_hookean_objective()};
+  const KinematicElementObjective & modNeoHookean{*modNeoHookeanPtr};
   SethHillParams sethHillParams{1.0, 1.0, 2, 2};
-  KinematicModelObjective<SethHillModel> sethHillObj{SethHillModel(sethHillParams)};
-  KinematicModelObjective<SimplifiedSethHillModel> simplifiedSethHillObj;
+  std::shared_ptr<KinematicElementObjective> sethHillObjPtr{
+      make_seth_hill_objective(sethHillParams)};
+  const KinematicElementObjective & sethHillObj{*sethHillObjPtr};
+  std::shared_ptr<KinematicElementObjective> simplifiedSethHillObjPtr{
+      make_simplified_seth_hill_objective()};
+  const KinematicElementObjective & simplifiedSethHillObj{*simplifiedSethHillObjPtr};
   stk::mesh::Field<double> * myNodalMetricField{nullptr};
 };
 
@@ -255,6 +260,38 @@ TEST_F(CubeOf12TetsSmoothing, perturbedNode_smoothNodeUsingQuality_restoreOrigin
     test_smoothing_of_center_node(optimize_node_location_using_krino_lbfgs);
     test_smoothing_of_center_node(optimize_node_location_using_krino_steepest_descent);
     test_smoothing_of_center_node(optimize_node_location_using_ROL_lbfgs);
+  }
+}
+
+TEST_F(CubeOf12TetsSmoothing, boundaryNodeSelector_selectsTheNodesOnTheBoundaryButNotTheCenterNode)
+{
+  if(is_valid_proc_size_for_test())
+  {
+    const stk::mesh::Selector boundaryNodeSelector = select_nodes_on_any_boundary(mMesh.mesh_meta_data());
+    for (unsigned i = 0; i < centerNodeIndex; ++i)
+      if (is_node_present_on_proc(i))
+      {
+        EXPECT_TRUE(boundaryNodeSelector(mMesh.bucket(get_assigned_node_for_index(i))));
+      }
+    EXPECT_FALSE(boundaryNodeSelector(mMesh.bucket(get_center_node())));
+  }
+}
+
+TEST_F(CubeOf12TetsSmoothing, perturbedNode_smoothKeepingBoundaryNodesFixed_restoreOriginalTetsAndKeepBoundary)
+{
+  if(is_valid_proc_size_for_test())
+  {
+    displace_center_node(stk::math::Vector3d(0.3,-0.3,0.3));
+    std::vector<std::pair<stk::mesh::Entity, stk::math::Vector3d>> boundaryNodeLocations;
+    for (unsigned i = 0; i < centerNodeIndex; ++i)
+      if (is_node_present_on_proc(i))
+        boundaryNodeLocations.emplace_back(get_assigned_node_for_index(i), get_node_location(mMesh, get_assigned_node_for_index(i)));
+
+    EXPECT_TRUE(smooth_mesh_keeping_boundary_nodes_fixed(mMesh, get_coordinates_field(), get_aux_meta().active_part()));
+
+    expect_near_absolute(get_center_node_location(), get_original_center_node_location(), get_location_tolerance());
+    for (auto && [node, location] : boundaryNodeLocations)
+      EXPECT_EQ(location, get_node_location(mMesh, node));
   }
 }
 
@@ -927,6 +964,190 @@ TEST_F(SquareOf8TrisSmoothing, perturbedNodes_meshSmoothing_restoreOriginalTris)
       std::cout << log.get_log() << std::endl;
 }
 
+// MeshObjectiveBase::get_node_coordinates reads a node's coordinates from the optimizer vector: the
+// coordinates field when gathered from it, and otherwise whatever the vector holds.
+template <class FIXTURE> void test_get_node_coordinates_from_optimizer_vector(FIXTURE & fixture)
+{
+  const stk::mesh::BulkData & mesh = fixture.get_mesh();
+  const CoordinatesFieldRef coordsField = fixture.get_coordinates_field();
+  const unsigned dim = coordsField.dim();
+  const MeanRatioNormObjective meanRatioObj;
+  const MeshObjective meshObj(
+      mesh, coordsField, fixture.get_aux_meta().active_part(), meanRatioObj);
+  const auto & nodes = meshObj.get_nodes();
+
+  DistributedVector x = gather_node_coordinates(mesh, coordsField, nodes);
+  for (size_t n = 0; n < nodes.size(); ++n)
+    expect_near_absolute(
+        get_node_location(mesh, nodes[n]), meshObj.get_node_coordinates(x, nodes[n]), 0.);
+
+  // A distinct offset per node shows the coordinates come from x, not the mesh.
+  const stk::math::Vector3d offsetPerIndex(1., 2., 3.);
+  for (size_t n = 0; n < nodes.size(); ++n)
+    for (unsigned d = 0; d < dim; ++d)
+      x[dim * n + d] += n * offsetPerIndex[d];
+  for (size_t n = 0; n < nodes.size(); ++n)
+  {
+    stk::math::Vector3d expected = get_node_location(mesh, nodes[n]);
+    for (unsigned d = 0; d < dim; ++d)
+      expected[d] += n * offsetPerIndex[d];
+    expect_near_absolute(expected, meshObj.get_node_coordinates(x, nodes[n]), 0.);
+  }
+
+  DistributedVector tooShort(x.comm(), x.size() - 1, x.local_size() - 1, 0.);
+  if (nodes.size() > 0)
+  {
+    EXPECT_ANY_THROW(meshObj.get_node_coordinates(tooShort, nodes[0]));
+  }
+}
+
+// An objective over no elements has no nodes, so every node of the mesh is not one of its nodes.
+template <class FIXTURE>
+void test_get_node_coordinates_throws_for_node_not_in_objective(FIXTURE & fixture)
+{
+  const stk::mesh::BulkData & mesh = fixture.get_mesh();
+  const MeanRatioNormObjective meanRatioObj;
+  const stk::mesh::Selector noElements;
+  const MeshObjective meshObj(mesh, fixture.get_coordinates_field(), noElements, meanRatioObj);
+  ASSERT_EQ(0u, meshObj.get_nodes().size());
+
+  const DistributedVector x;
+  for (auto * bucketPtr :
+      mesh.get_buckets(stk::topology::NODE_RANK, mesh.mesh_meta_data().locally_owned_part()))
+    for (auto node : *bucketPtr)
+      EXPECT_ANY_THROW(meshObj.get_node_coordinates(x, node));
+}
+
+TEST_F(SquareOf8TrisSmoothing, getNodeCoordinates_readsOptimizerVector)
+{
+  if (is_valid_proc_size_for_test()) test_get_node_coordinates_from_optimizer_vector(*this);
+}
+
+TEST_F(CubeOf24TetsSmoothing, getNodeCoordinates_readsOptimizerVector)
+{
+  if (is_valid_proc_size_for_test()) test_get_node_coordinates_from_optimizer_vector(*this);
+}
+
+TEST_F(SquareOf8TrisSmoothing, getNodeCoordinates_throwsForNodeNotInObjective)
+{
+  if (is_valid_proc_size_for_test())
+    test_get_node_coordinates_throws_for_node_not_in_objective(*this);
+}
+
+TEST_F(CubeOf24TetsSmoothing, getNodeCoordinates_throwsForNodeNotInObjective)
+{
+  if (is_valid_proc_size_for_test())
+    test_get_node_coordinates_throws_for_node_not_in_objective(*this);
+}
+
+// MeshObjectiveBase::is_update_rejected is false without a rejector, and otherwise returns the
+// rejector's answer, calling it once per query.  Setting an empty rejector removes it.
+template <class FIXTURE> void test_is_update_rejected_uses_rejector(FIXTURE & fixture)
+{
+  const MeanRatioNormObjective meanRatioObj;
+  MeshObjective meshObj(
+      fixture.get_mesh(), fixture.get_coordinates_field(), fixture.get_aux_meta().active_part(), meanRatioObj);
+
+  EXPECT_FALSE(meshObj.is_update_rejected());
+
+  unsigned numCalls = 0;
+  bool doReject = true;
+  meshObj.set_is_solution_update_rejected([&]() { ++numCalls; return doReject; });
+  EXPECT_TRUE(meshObj.is_update_rejected());
+  EXPECT_EQ(1u, numCalls);
+
+  doReject = false;
+  EXPECT_FALSE(meshObj.is_update_rejected());
+  EXPECT_EQ(2u, numCalls);
+
+  meshObj.set_is_solution_update_rejected(SolutionRejector());
+  EXPECT_FALSE(meshObj.is_update_rejected());
+  EXPECT_EQ(2u, numCalls);
+}
+
+TEST_F(SquareOf8TrisSmoothing, isUpdateRejected_falseWhenNotSetOtherwiseFromRejector)
+{
+  if (is_valid_proc_size_for_test()) test_is_update_rejected_uses_rejector(*this);
+}
+
+TEST_F(CubeOf24TetsSmoothing, isUpdateRejected_falseWhenNotSetOtherwiseFromRejector)
+{
+  if (is_valid_proc_size_for_test()) test_is_update_rejected_uses_rejector(*this);
+}
+
+TEST_F(SquareOf8TrisSmoothing, rejectorRejectsEveryUpdate_meshSmoothing_nodesUnmoved)
+{
+  if (!is_valid_proc_size_for_test()) return;
+  LogRedirecter log;
+
+  const unsigned maxIter = 5;
+  const OptimizerFunction krinoLbfgs = build_lbgfs_optimizer_with_parameters<OptimizerFunction>(
+      OptimizationDefaults::stepTol, OptimizationDefaults::gradTol, OptimizationDefaults::objectiveScale, maxIter);
+  const OptimizerFunction krinoSteepestDescent = build_steepest_descent_optimizer_with_parameters<OptimizerFunction>(
+      OptimizationDefaults::stepTol, OptimizationDefaults::gradTol, OptimizationDefaults::objectiveScale, maxIter);
+
+  for (const auto & optimizer : {krinoLbfgs, krinoSteepestDescent})
+  {
+    displace_side_and_center_nodes(face_and_side_node_displacements_with_magnitude(0.8));
+
+    std::vector<std::pair<stk::mesh::Entity, stk::math::Vector3d>> nodeLocsBefore;
+    for (int i = 0; i < 9; ++i)
+    {
+      const stk::mesh::Entity node = get_assigned_node_for_index(i);
+      if (mMesh.is_valid(node))
+        nodeLocsBefore.emplace_back(node, get_node_location(mMesh, node));
+    }
+
+    MeshObjective smoothingObj(get_mesh(), get_coordinates_field(), get_aux_meta().active_part(), meanRatioObj);
+    smoothingObj.set_gradient_filter(mGradientFilter);
+    unsigned numCalls = 0;
+    smoothingObj.set_is_solution_update_rejected([&]() { ++numCalls; return true; });
+
+    smooth_mesh_by_optimization(get_mesh(), get_coordinates_field(), optimizer, smoothingObj);
+
+    EXPECT_EQ(maxIter, numCalls);
+    for (const auto & [node, locBefore] : nodeLocsBefore)
+      expect_near_absolute(locBefore, get_node_location(mMesh, node), 0.);
+  }
+}
+
+TEST_F(SquareOf8TrisSmoothing, rejectorRejectsFirstUpdates_meshSmoothing_restoreOriginalTris)
+{
+  if (!is_valid_proc_size_for_test()) return;
+  LogRedirecter log;
+
+  const unsigned numToReject = 3;
+  for (const auto & [optimizer, probDesc] :
+      {std::pair<OptimizerFunction, std::string>{optimize_mesh_using_krino_lbfgs, "Krino L-BFGS with rejected updates"},
+       std::pair<OptimizerFunction, std::string>{optimize_mesh_using_krino_steepest_descent, "Krino steepest descent with rejected updates"}})
+  {
+    displace_side_and_center_nodes(face_and_side_node_displacements_with_magnitude(0.8));
+
+    MeshObjective smoothingObj(get_mesh(), get_coordinates_field(), get_aux_meta().active_part(), meanRatioObj);
+    unsigned numCalls = 0;
+    smoothingObj.set_is_solution_update_rejected([&]() { return ++numCalls <= numToReject; });
+
+    test_mesh_smoothing(optimizer, smoothingObj, probDesc);
+    EXPECT_GT(numCalls, numToReject) << probDesc;
+  }
+}
+
+TEST_F(SquareOf8TrisSmoothing, rejectorNotSet_meshSmoothing_restoreOriginalTris)
+{
+  if (!is_valid_proc_size_for_test()) return;
+  LogRedirecter log;
+
+  for (const auto & [optimizer, probDesc] :
+      {std::pair<OptimizerFunction, std::string>{optimize_mesh_using_krino_lbfgs, "Krino L-BFGS without a rejector"},
+       std::pair<OptimizerFunction, std::string>{optimize_mesh_using_krino_steepest_descent, "Krino steepest descent without a rejector"}})
+  {
+    displace_side_and_center_nodes(face_and_side_node_displacements_with_magnitude(0.8));
+
+    MeshObjective smoothingObj(get_mesh(), get_coordinates_field(), get_aux_meta().active_part(), meanRatioObj);
+    test_mesh_smoothing(optimizer, smoothingObj, probDesc);
+  }
+}
+
 class RightTriOnCircleSmoothing : public SmoothingFixture<RightTri>
 {
 public:
@@ -1227,7 +1448,8 @@ public:
 protected:
   MESHSPEC meshSpec;
   stk::mesh::Field<double> * myMetricField{nullptr};
-  KinematicModelObjective<ModifiedNeoHookeanModel> elemObj;
+  std::shared_ptr<KinematicElementObjective> elemObjPtr{make_modified_neo_hookean_objective()};
+  const KinematicElementObjective & elemObj{*elemObjPtr};
 };
 
 template <unsigned DIM>

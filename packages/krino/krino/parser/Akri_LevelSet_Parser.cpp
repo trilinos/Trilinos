@@ -254,6 +254,15 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
         ls.get_IC_alg().set_simple_union();
       }
 
+      // A level set from surfaces that change with time, by a motion or an expression of t, is
+      // initialized from them again at each step.
+      if (ls.get_IC_alg().get_initialization_surface().changes_with_time())
+      {
+        if (!ls.get_interface_velocity().empty())
+          stk::RuntimeDoomedAdHoc() << "Level set " << ls_name << " has both an interface_velocity and an initial surface that changes with time (with a motion or using t).\n";
+        ls.set_reinitialize_every_step();
+      }
+
       register_blocks_for_level_set(surfaceManager, phaseSupport, ls);
     }
   }

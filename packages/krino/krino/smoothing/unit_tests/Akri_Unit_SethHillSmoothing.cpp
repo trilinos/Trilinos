@@ -74,8 +74,7 @@
 #include <vector>
 
 #include <Akri_KinematicMeshUtils.hpp>
-#include <Akri_Objective_KinematicModel.hpp>
-#include <Akri_SethHillModel.hpp>
+#include <Akri_KinematicObjectives.hpp>
 #include <Akri_Smoothing_Utils.hpp>
 #include <Akri_SethHillConfig.hpp>
 #include <Akri_NormaOptimize.hpp>
@@ -273,8 +272,10 @@ TEST_F(SethHillSmoother, smoothAwfulCubeUsingSethHill)
     std::cout << "Output mesh: " << cfg.outputMeshFile << std::endl;
   }
 
-  KinematicModelObjective<SethHillModel> elemSmoothingObj{SethHillModel(cfg.params)};
-  KinematicIsotropicMeshObjective meshSmoothingObj(mesh, coordsField, elemSelector, elemSmoothingObj);
+  const std::shared_ptr<KinematicElementObjective> elemSmoothingObj =
+      make_seth_hill_objective(cfg.params);
+  KinematicIsotropicMeshObjective meshSmoothingObj(
+      mesh, coordsField, elemSelector, *elemSmoothingObj);
   meshSmoothingObj.set_element_ref_sizes(compute_element_ref_sizes_from_reference(mesh, coordsField, meshSmoothingObj.get_owned_elements(), cfg.smoothReference));
 
   // Constrain boundary nodes (normal direction only, per Norma.jl convention)

@@ -2,7 +2,7 @@
 #include <Akri_ContourElement.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_ParametricElementLibrary.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_MeshFacetedSurface.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Selector.hpp>
@@ -36,7 +36,7 @@ void ClosestPointRedistance::build_facets_for_elements(const stk::mesh::BulkData
     const FieldRef distance,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const double elementLengthScale,
-    FacetedSurfaceBase & facets)
+    FacetAppender & facets)
 {
   facets.clear();
 
@@ -63,7 +63,7 @@ void ClosestPointRedistance::build_facets_for_selected_elements(const stk::mesh:
     const FieldRef distance,
     const stk::mesh::Selector & activeElementSelector,
     const double elementLengthScale,
-    FacetedSurfaceBase & facets)
+    FacetAppender & facets)
 {
   const stk::mesh::Selector contourSelector = elements_to_contour_and_redistance(mesh, activeElementSelector, distance);
   std::vector<stk::mesh::Entity> elems;
@@ -72,19 +72,14 @@ void ClosestPointRedistance::build_facets_for_selected_elements(const stk::mesh:
   build_facets_for_elements(mesh, coordinates, distance, elems, elementLengthScale, facets);
 }
 
-void ClosestPointRedistance::build_isosurface_facets(const stk::mesh::Selector & activeElementSelector, const double elementLengthScale, FacetedSurfaceBase & facets) const
+void ClosestPointRedistance::build_isosurface_facets(
+    const stk::mesh::Selector & activeElementSelector,
+    const double elementLengthScale,
+    FacetAppender & facets) const
 {
   stk::diag::TimeBlock timer__(myTimer);
 
   build_facets_for_selected_elements(myMesh, myCoordinates, myDistance, activeElementSelector, elementLengthScale, facets);
-}
-
-void ClosestPointRedistance::redistance(const stk::mesh::Selector & activeElementSelector, const double elementLengthScale, const double narrowBandDistance, const bool doEnforceSignAwayFromInterface) const
-{
-  std::unique_ptr<FacetedSurfaceBase> facets = FacetedSurfaceBase::build(myMesh.mesh_meta_data().spatial_dimension());
-  build_isosurface_facets(activeElementSelector, elementLengthScale, *facets);
-
-  redistance_using_facets(activeElementSelector, *facets, narrowBandDistance, doEnforceSignAwayFromInterface, elementLengthScale);
 }
 
 static double get_sign_change_tolerance(const double doEnforceSignAwayFromInterface, const double elementLengthScale)
@@ -101,8 +96,9 @@ static double get_sign_change_tolerance(const double doEnforceSignAwayFromInterf
   return signChangeTol;
 }
 
-void ClosestPointRedistance::redistance_using_facets(const stk::mesh::Selector & activeElementSelector,
-    FacetedSurfaceBase & facets,
+void ClosestPointRedistance::redistance_using_facets(
+    const stk::mesh::Selector & activeElementSelector,
+    MeshFacetedSurface & facets,
     const double narrowBandDistance,
     const bool doEnforceSignAwayFromInterface,
     const double elementLengthScale) const
@@ -112,12 +108,16 @@ void ClosestPointRedistance::redistance_using_facets(const stk::mesh::Selector &
   const stk::mesh::Selector redistanceSelector = elements_to_contour_and_redistance(myMesh, activeElementSelector, myDistance);
   const BoundingBox nodeBBox = compute_nodal_bbox(myMesh, redistanceSelector, myCoordinates);
 
-  facets.prepare_to_compute(nodeBBox, narrowBandDistance);
+  facets.prepare_to_compute(0., nodeBBox, narrowBandDistance);
 
   redistance_selected_element_nodes_using_prepared_facets(activeElementSelector, facets, narrowBandDistance, doEnforceSignAwayFromInterface, elementLengthScale);
 }
 
-static double facet_signed_distance(const FacetedSurfaceBase & facets, const stk::math::Vector3d & x, const int previousSign, const double narrowBandSize, const bool doEnforceSign)
+static double facet_signed_distance(const MeshFacetedSurface & facets,
+    const stk::math::Vector3d & x,
+    const int previousSign,
+    const double narrowBandSize,
+    const bool doEnforceSign)
 {
   if (doEnforceSign)
   {
@@ -126,7 +126,7 @@ static double facet_signed_distance(const FacetedSurfaceBase & facets, const stk
   return facets.possibly_truncated_point_signed_distance(x, narrowBandSize, previousSign*narrowBandSize);
 }
 
-static void redistance_node_using_facets(const FacetedSurfaceBase & facets,
+static void redistance_node_using_facets(const MeshFacetedSurface & facets,
     const stk::math::Vector3d & nodeCoords,
     const double narrowBandDistance,
     const bool doEnforceSignAwayFromInterface,
@@ -139,7 +139,7 @@ static void redistance_node_using_facets(const FacetedSurfaceBase & facets,
   nodeDist = facet_signed_distance(facets, nodeCoords, previousSign, narrowBandDistance, doEnforceSign);
 }
 
-void ClosestPointRedistance::redistance_given_nodes_using_facets(FacetedSurfaceBase & facets,
+void ClosestPointRedistance::redistance_given_nodes_using_facets(MeshFacetedSurface & facets,
     const std::vector<stk::mesh::Entity> & nodesToRedistance,
     const double narrowBandDistance,
     const bool doEnforceSignAwayFromInterface,
@@ -151,7 +151,7 @@ void ClosestPointRedistance::redistance_given_nodes_using_facets(FacetedSurfaceB
   const BoundingBox nodeBbox = compute_nodal_bbox(myMesh, myCoordinates, nodesToRedistance );
   const double signChangeTol = get_sign_change_tolerance(doEnforceSignAwayFromInterface, elementLengthScale);
 
-  facets.prepare_to_compute(nodeBbox, narrowBandDistance);
+  facets.prepare_to_compute(0., nodeBbox, narrowBandDistance);
 
   for ( auto && node : nodesToRedistance )
   {
@@ -161,8 +161,9 @@ void ClosestPointRedistance::redistance_given_nodes_using_facets(FacetedSurfaceB
   }
 }
 
-void ClosestPointRedistance::redistance_selected_element_nodes_using_prepared_facets(const stk::mesh::Selector & activeElementSelector,
-    const FacetedSurfaceBase & facets,
+void ClosestPointRedistance::redistance_selected_element_nodes_using_prepared_facets(
+    const stk::mesh::Selector & activeElementSelector,
+    const MeshFacetedSurface & facets,
     const double narrowBandDistance,
     const bool doEnforceSignAwayFromInterface,
     const double elementLengthScale) const

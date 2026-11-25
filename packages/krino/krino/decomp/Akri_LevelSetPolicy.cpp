@@ -65,7 +65,7 @@ static PhaseVec create_named_phases_for_levelset_per_phase(const unsigned numLev
   {
     PhaseTag tag;
     tag.add(Surface_Identifier(ls), -1);
-    namedPhases.push_back(NamedPhase("P" + std::to_string(ls), tag));
+    namedPhases.push_back(NamedPhase('P' + std::to_string(ls), tag));
   }
   return namedPhases;
 }
@@ -126,6 +126,34 @@ std::vector<LS_Field> LSPerPhasePolicy::setup_levelsets_on_blocks(stk::mesh::Met
   return lsFields;
 }
 
+PhaseTag LSPerBoundingSurfacePolicy::elsewhere_phase_tag(const unsigned numSurfaces)
+{
+  PhaseTag tag;
+  for (unsigned surface = 0; surface < numSurfaces; ++surface)
+    tag.add(Surface_Identifier(surface), 1);
+  return tag;
+}
+
+std::vector<LS_Field> LSPerBoundingSurfacePolicy::setup_levelsets_on_all_blocks(stk::mesh::MetaData & meta, const unsigned numSurfaces)
+{
+  const auto allBlocks = get_all_block_parts(meta);
+  STK_ThrowRequireMsg(!allBlocks.empty(), "Must create blocks before calling LSPerBoundingSurfacePolicy::setup_levelsets_on_all_blocks\n");
+  const std::vector<LS_Field> lsFields = declare_levelset_fields_and_add_as_interpolation_fields(meta, numSurfaces);
+
+  PhaseVec namedPhases;
+  for (unsigned surface = 0; surface < numSurfaces; ++surface)
+  {
+    PhaseTag tag;
+    tag.add(Surface_Identifier(surface), -1);
+    namedPhases.push_back(NamedPhase("P" + std::to_string(surface), tag));
+  }
+  namedPhases.push_back(NamedPhase("elsewhere", elsewhere_phase_tag(numSurfaces)));
+
+  Block_Surface_Connectivity blockSurfaceInfo(meta);
+  setup_phase_support_and_optionally_register_levelset_fields(meta, lsFields, namedPhases, allBlocks, blockSurfaceInfo, false, true);
+  return lsFields;
+}
+
 static PhaseVec create_named_phases_for_levelset_per_interface(const unsigned numLevelSets)
 {
   PhaseVec namedPhases;
@@ -152,15 +180,21 @@ static PhaseVec create_named_phases_with_void_phase_for_any_negative_levelset(co
   const unsigned numPhases = 1 << numLevelSets;
   for (unsigned phase = 0; phase < numPhases; ++phase)
   {
-    std::string phaseName;
+    std::string signs;
+    bool anyLsIsNeg = false;
     PhaseTag tag;
     for (unsigned ls = 0; ls < numLevelSets; ++ls)
     {
       const bool lsIsNeg = (phase >> ls) % 2 == 0;
       const int lsSign = lsIsNeg ? -1 : 1;
       tag.add(Surface_Identifier(ls), lsSign);
-      phaseName = (lsIsNeg ? "void" : "");
+      signs += (lsIsNeg ? "-" : "+");
+      anyLsIsNeg = anyLsIsNeg || lsIsNeg;
     }
+    // Phases with the same name must have the same signs, so with several level sets each void
+    // phase is named by its signs.
+    const std::string phaseName =
+        !anyLsIsNeg ? "" : ((numLevelSets == 1) ? "void" : "void_" + signs);
     namedPhases.push_back(NamedPhase(phaseName, tag));
   }
   return namedPhases;

@@ -6,10 +6,49 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <limits>
+#include <math.h>
+
+#include <Akri_AnalyticSurf.hpp>
+#include <Akri_AuxMetaData.hpp>
+#include <Akri_CDFEM_Parent_Edges.hpp>
 #include <Akri_CDMesh.hpp>
+#include <Akri_CubitJournal.hpp>
+#include <Akri_Surface_Manager.hpp>
+#include <Akri_CDMesh_Debug.hpp>
+#include <Akri_CDMesh_Refinement.hpp>
+#include <Akri_CDMesh_Utils.hpp>
+#include <Akri_ChildNodeCreator.hpp>
+#include <Akri_ChildNodeStencil.hpp>
+#include <Akri_ConformingPhaseParts.hpp>
+#include <Akri_DecompositionHasChanged.hpp>
+#include <Akri_DiagWriter.hpp>
+#include <Akri_Element.hpp>
+#include <Akri_Facet.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_InterfaceGeometry.hpp>
-
+#include <Akri_Intersection_Points.hpp>
+#include <Akri_MeshDiagnostics.hpp>
+#include <Akri_MeshHelpers.hpp>
+#include <Akri_MeshQuality.hpp>
+#include <Akri_ParallelErrorMessage.hpp>
+#include <Akri_ParametricElementLibrary.hpp>
+#include <Akri_Phase_Support.hpp>
+#include <Akri_ProlongationData.hpp>
+#include <Akri_QualityMetric.hpp>
+#include <Akri_RefinementDrivers.hpp>
+#include <Akri_RefinementManager.hpp>
+#include <Akri_RefinementSupport.hpp>
+#include <Akri_ReportHandler.hpp>
+#include <Akri_SmallClusterCleanup.hpp>
+#include <Akri_Snap.hpp>
+#include <Akri_SnapToNode.hpp>
+#include <Akri_SubElement.hpp>
+#include <Akri_SubElementChildNodeAncestry.hpp>
+#include <Akri_SubElementNodeAncestry.hpp>
+#include <Akri_Surface_Identifier.hpp>
+#include <stk_io/IossBridge.hpp>
+#include <stk_math/StkVector.hpp>
 #include <stk_mesh/base/CommunicateMeshTypes.hpp>
 #include <stk_mesh/base/DestroyElements.hpp>
 #include <stk_mesh/base/EntityLess.hpp>
@@ -18,50 +57,12 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_mesh/base/SideSetUtil.hpp>
-#include <stk_io/IossBridge.hpp>
-#include <stk_util/environment/LogWithTimeAndMemory.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp> // Needed for all_reduce_max
-#include <stk_util/parallel/CommSparse.hpp>
-
-#include <Akri_RefinementDrivers.hpp>
-#include <Akri_ChildNodeCreator.hpp>
-#include <Akri_ProlongationData.hpp>
-#include <Akri_AuxMetaData.hpp>
-#include <Akri_ParametricElementLibrary.hpp>
-#include <Akri_Element.hpp>
-#include <Akri_Facet.hpp>
-#include <Akri_Phase_Support.hpp>
-#include <Akri_AnalyticSurf.hpp>
-#include <Akri_CDFEM_Parent_Edges.hpp>
-#include <Akri_CDMesh_Debug.hpp>
-#include <Akri_CDMesh_Refinement.hpp>
-#include <Akri_CDMesh_Utils.hpp>
-#include <Akri_ChildNodeStencil.hpp>
-#include <Akri_ConformingPhaseParts.hpp>
-#include <Akri_ReportHandler.hpp>
-#include <Akri_SubElement.hpp>
-#include <Akri_SubElementNodeAncestry.hpp>
-#include <Akri_DecompositionHasChanged.hpp>
-#include <Akri_MeshDiagnostics.hpp>
-#include <Akri_MeshHelpers.hpp>
-#include <Akri_DiagWriter.hpp>
-#include <Akri_MeshQuality.hpp>
-#include <Akri_QualityMetric.hpp>
-#include <Akri_Snap.hpp>
-#include <Akri_SnapToNode.hpp>
-#include <Akri_SubElementChildNodeAncestry.hpp>
-#include <Akri_Surface_Identifier.hpp>
-#include <stk_math/StkVector.hpp>
-
-#include <math.h>
 #include <stk_mesh/base/SidesetUpdater.hpp>
+#include <stk_util/environment/LogWithTimeAndMemory.hpp>
+#include <stk_util/environment/RuntimeWarning.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp> // Needed for all_reduce_max
 #include <stk_util/parallel/ParallelReduceBool.hpp>
-#include <limits>
-
-#include <Akri_RefinementSupport.hpp>
-#include <Akri_ParallelErrorMessage.hpp>
-#include <Akri_RefinementManager.hpp>
-#include <Akri_SmallClusterCleanup.hpp>
 namespace krino{
 
 CDMesh & CDMesh::get_decomposed_mesh(stk::mesh::BulkData & mesh)
@@ -299,13 +300,20 @@ static void apply_snapping_to_children_of_snapped_nodes(const std::vector<ChildN
         interpolate_nodal_field(field, childNodeStencil.childNode, childNodeStencil.parentNodes, childNodeStencil.parentWeights);
 }
 
-static void undo_previous_snaps_without_interpolation(const stk::mesh::BulkData & mesh, const FieldRef coordsField, FieldRef cdfemSnapField)
+static void undo_snaps_without_interpolation(
+    const stk::mesh::BulkData & mesh, const FieldRef coordsField, const FieldRef snapDisplacements)
 {
-  FieldRef oldSnapDisplacements = cdfemSnapField.field_state(stk::mesh::StateOld);
-  stk::mesh::field_axpby(-1.0, oldSnapDisplacements, +1.0, coordsField);
+  stk::mesh::field_axpby(-1.0, snapDisplacements, +1.0, coordsField);
   FieldRef modelCoords(mesh.mesh_meta_data().coordinate_field());
   if (modelCoords != coordsField)
-    stk::mesh::field_axpby(-1.0, oldSnapDisplacements, +1.0, modelCoords);
+    stk::mesh::field_axpby(-1.0, snapDisplacements, +1.0, modelCoords);
+}
+
+static void undo_previous_snaps_without_interpolation(
+    const stk::mesh::BulkData & mesh, const FieldRef coordsField, FieldRef cdfemSnapField)
+{
+  undo_snaps_without_interpolation(
+      mesh, coordsField, cdfemSnapField.field_state(stk::mesh::StateOld));
 }
 
 void CDMesh::prepare_for_resnapping(const stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry)
@@ -336,21 +344,30 @@ void CDMesh::prepare_for_resnapping(const stk::mesh::BulkData & mesh, const Inte
   }
 }
 
-static void straighten_quadratic_edge(const stk::mesh::BulkData & /*mesh*/, const stk::mesh::FieldBase & coordsField, const unsigned dim, const std::array<stk::mesh::Entity,3> & edgeNodes)
+// The mid-side node of the edge gets the average of its vertices' values of each field, as on a
+// linear edge.
+static void linearize_quadratic_edge(const FieldSet & fields, const std::array<stk::mesh::Entity,3> & edgeNodes)
 {
-  const krino::FieldRef coordsFieldRef(coordsField);
-  auto coordsData = coordsFieldRef.data<double>();
-  auto coordsDataRW = coordsFieldRef.data<double, stk::mesh::ReadWrite>();
-  auto coords0 = coordsData.entity_values(edgeNodes[0]);
-  auto coords1 = coordsData.entity_values(edgeNodes[1]);
-  auto coordsMid = coordsDataRW.entity_values(edgeNodes[2]);
-  for (unsigned d=0; d<dim; ++d)
-    coordsMid(stk::mesh::ComponentIdx(d)) = 0.5*(coords0(stk::mesh::ComponentIdx(d))+coords1(stk::mesh::ComponentIdx(d)));
+  for (auto && field : fields)
+  {
+    if (!field.type_is<double>())
+      continue;
+    const unsigned numComponents = field.length(edgeNodes[2]);
+    if (numComponents == 0 || field.length(edgeNodes[0]) != numComponents || field.length(edgeNodes[1]) != numComponents)
+      continue;
+    auto fieldData = field.data<double, stk::mesh::ReadWrite>();
+    auto value0 = fieldData.entity_values(edgeNodes[0]);
+    auto value1 = fieldData.entity_values(edgeNodes[1]);
+    auto valueMid = fieldData.entity_values(edgeNodes[2]);
+    for (unsigned i=0; i<numComponents; ++i)
+      valueMid(stk::mesh::ComponentIdx(i)) = 0.5*(value0(stk::mesh::ComponentIdx(i))+value1(stk::mesh::ComponentIdx(i)));
+  }
 }
 
-static void straighten_quadratic_edges_with_snapped_vertex_nodes(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elemSelector, const NodeToCapturedDomainsMap & nodesToCapturedDomains)
+// Snapping treats quadratic elements as the linear elements of their vertices, so the edges of the
+// vertices it moves are made linear: straight, with each snapped field linear along them.
+static void linearize_quadratic_edges_with_snapped_vertex_nodes(const stk::mesh::BulkData & mesh, const FieldSet & snapFields, const stk::mesh::Selector & elemSelector, const NodeToCapturedDomainsMap & nodesToCapturedDomains)
 {
-  const unsigned dim = mesh.mesh_meta_data().spatial_dimension();
   std::array<stk::mesh::Entity,3> edgeNodes;
   std::vector<stk::mesh::Entity> edgeParentNodes;
   for ( auto * bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, elemSelector) )
@@ -367,7 +384,7 @@ static void straighten_quadratic_edges_with_snapped_vertex_nodes(const stk::mesh
           edgeParentNodes = {edgeNodes[0], edgeNodes[1]};
           if (any_node_was_snapped(edgeParentNodes, nodesToCapturedDomains))
           {
-            straighten_quadratic_edge(mesh, coordsField, dim, edgeNodes);
+            linearize_quadratic_edge(snapFields, edgeNodes);
           }
         }
       }
@@ -392,7 +409,9 @@ void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry
     fill_child_node_stencils_for_all_interfaces(stk_bulk(), get_child_edge_node_part(), get_parent_node_ids_field(), get_parent_node_weights_field(), childNodeStencils);
 
   const double minIntPtWeightForEstimatingCutQuality = get_snapper().get_edge_tolerance();
-  const double maxEdgeSnap = std::min(1.-get_snapper().get_edge_tolerance(), my_cdfem_support.get_max_edge_snap()); // Dont want to make a snap that would create an edge smaller than edge tol
+  // No snap moves a node to within the edge tolerance of the entity of the other nodes of its point
+  // (an edge, a face or an element), which would make an edge smaller than the tolerance.
+  const double minWeightAtNodeForSnapping = get_snapper().get_edge_tolerance();
 
   const stk::mesh::Selector decomposedParentElementSelector = get_decomposed_cdfem_parent_element_selector(get_active_part(), my_cdfem_support, my_phase_support);
   const stk::mesh::Selector potentialParentElementSelector = get_potential_cdfem_parent_element_selector(get_active_part(), my_cdfem_support);
@@ -405,12 +424,11 @@ void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry
       my_cdfem_support.get_global_ids_are_parallel_consistent(),
       my_cdfem_support.get_snapping_sharp_feature_angle_in_degrees(),
       minIntPtWeightForEstimatingCutQuality,
-      maxEdgeSnap);
+      my_cdfem_support.get_max_edge_snap(),
+      minWeightAtNodeForSnapping,
+      my_cdfem_support.get_snap_selection());
 
-  if (cdfemSnapField.valid())
-  {
-    straighten_quadratic_edges_with_snapped_vertex_nodes(stk_bulk(), my_cdfem_support.get_coords_field(), potentialParentElementSelector, nodesToCapturedDomains);
-  }
+  linearize_quadratic_edges_with_snapped_vertex_nodes(stk_bulk(), snapFields, potentialParentElementSelector, nodesToCapturedDomains);
 
   if (cdfemSnapField.valid())
   {
@@ -579,7 +597,7 @@ CDMesh::modify_mesh()
     batch_create_sides(stk_bulk(), side_requests);
 
     stk::mesh::toggle_sideset_updaters(stk_bulk(), true);
-    if (mesh_has_selected_higher_order_elements(stk_bulk(), my_phase_support.get_all_decomposed_blocks_selector()))
+    if (my_phase_support.has_quadratic_decomposed_blocks())
       activate_selected_entities_touching_active_elements(stk_bulk(), stk::topology::NODE_RANK, stk_meta().universal_part(), aux_meta().active_part());
     update_element_side_parts();
 
@@ -783,7 +801,7 @@ CDMesh::rebuild_from_restart_mesh(stk::mesh::BulkData & mesh)
   cdmesh.generate_nonconformal_elements();
   cdmesh.restore_subelements();
 
-  if (mesh_has_selected_higher_order_elements(mesh, mesh.mesh_meta_data().universal_part()))
+  if (mesh_has_quadratic_element_parts(mesh.mesh_meta_data()))
     activate_selected_entities_touching_active_elements(cdmesh.stk_bulk(), stk::topology::NODE_RANK, cdmesh.stk_meta().universal_part(), cdmesh.aux_meta().active_part());
   cdmesh.update_element_side_parts(); // rebuild conformal side parts
 
@@ -1067,6 +1085,37 @@ static void fill_nodes_of_elements_with_subelements_or_changed_phase(const stk::
   }
 }
 
+// A mid-side node of a quadratic element whose edge's vertices are both stashed may be prolonged
+// from the element (SubElementMidSideNode::is_mesh_node_that_needs_to_be_prolonged), also when the
+// element has no subelements and its phase is unchanged, as when snapping moves both vertices onto
+// the interface: the element needs all its nodes stashed.  The elements are found from the nodes
+// stashed before, so that the nodes added do not add more elements.
+static bool add_nodes_of_quadratic_elements_with_an_edge_between_stashed_vertices(
+    const std::vector<std::unique_ptr<Mesh_Element>> & meshElements,
+    std::set<stk::mesh::Entity> & nodesOfElements)
+{
+  std::vector<stk::mesh::Entity> nodesToAdd;
+  for (auto && element : meshElements)
+  {
+    const stk::topology topology = element->coord_topology();
+    if (topology == topology.base()) continue;
+    const NodeVec & elemNodes = element->get_nodes();
+    for (unsigned iEdge = 0; iEdge < topology.num_edges(); ++iEdge)
+    {
+      const unsigned * edgeNodeOrdinals = get_edge_node_ordinals(topology, iEdge);
+      if (nodesOfElements.count(elemNodes[edgeNodeOrdinals[0]]->entity()) &&
+          nodesOfElements.count(elemNodes[edgeNodeOrdinals[1]]->entity()))
+      {
+        for (auto && node : elemNodes)
+          nodesToAdd.push_back(node->entity());
+        break;
+      }
+    }
+  }
+  nodesOfElements.insert(nodesToAdd.begin(), nodesToAdd.end());
+  return !nodesToAdd.empty();
+}
+
 static std::set<stk::mesh::Entity> get_nodes_of_elements_with_subelements_or_have_changed_phase(const stk::mesh::BulkData & mesh,
     const Phase_Support & phaseSupport,
     const std::vector<std::unique_ptr<Mesh_Element>> & meshElements,
@@ -1076,6 +1125,14 @@ static std::set<stk::mesh::Entity> get_nodes_of_elements_with_subelements_or_hav
   fill_nodes_of_elements_with_subelements_or_changed_phase(mesh, phaseSupport, meshElements, includeNodesOfElementsWithChangedPhase, nodesOfElements);
 
   communicate_shared_nodes_to_sharing_procs(mesh, nodesOfElements);
+
+  // The decomposed blocks are the same on every processor, so that all skip this when they are
+  // linear.
+  if (phaseSupport.has_quadratic_decomposed_blocks() &&
+      stk::is_true_on_any_proc(mesh.parallel(),
+          add_nodes_of_quadratic_elements_with_an_edge_between_stashed_vertices(
+              meshElements, nodesOfElements)))
+    communicate_shared_nodes_to_sharing_procs(mesh, nodesOfElements);
 
   return nodesOfElements;
 }
@@ -1760,9 +1817,60 @@ CDMesh::cut_sharp_features(const InterfaceGeometry & interfaceGeometry)
   if (!interfaceGeometry.might_have_interior_or_face_intersections())
     return;
 
+  // Tets, and tris in 2D, are cut by rank (Mesh_Element::is_cut_by_rank): corners, then in 3D the
+  // crossings of sharp edges not captured by the corners, with every element given the points on
+  // its faces, edges and nodes; then the sharp-edge segments inside each tet are made edges of its
+  // leaves by swaps, where they can be; then the multiple edge crossings of the leaf edges are cut,
+  // shared the same way.  Other topologies are cut at their interior and face points, and their
+  // multiple edge crossings, element by element as before.
+  // With the sharp features captured only during snapping, only the multiple edge crossings are cut.
+  if (my_cdfem_support.capture_sharp_features_only_during_snapping())
+  {
+    cut_multiple_edge_crossings_of_elements();
+    return;
+  }
+
   for (auto && elem : elements)
   {
-    elem->cut_interior_intersection_points(aux_meta().parametric_element_library(), *this);
+    if (!elem->is_cut_by_rank())
+      elem->cut_interior_intersection_points(aux_meta().parametric_element_library(), *this);
+  }
+  const int spatialDim = my_spatial_dim;
+  cut_sharp_feature_points(spatialDim);
+  if (spatialDim == 3)
+  {
+    // The crossings of the sharp edges are cut and their segments recovered by swaps, in rounds:
+    // the cuts and swaps make new leaf faces, which a sharp edge can cross where no crossing was
+    // found before (inside the face, or where it crosses an edge of a face in its plane).  A round
+    // whose cuts make no new node (each point at a node with its domains, to within the edge
+    // tolerance) makes no new leaf faces, so the rounds end; the cap is only a safeguard.
+    constexpr int maxNumRounds = 10;
+    bool madeNewNodes = true;
+    for (int round = 0; round < maxNumRounds && madeNewNodes; ++round)
+    {
+      madeNewNodes = cut_sharp_feature_points(2);
+      for (auto && elem : elements)
+        elem->recover_sharp_edges_in_tet_by_swaps(*this);
+    }
+    if (madeNewNodes && 0 == stk_bulk().parallel_rank())
+      stk::RuntimeWarningAdHoc() << "Sharp-edge crossings may remain after " << maxNumRounds
+                                 << " rounds of cutting them." << std::endl;
+  }
+  else
+  {
+    for (auto && elem : elements)
+      elem->recover_sharp_edges_in_tet_by_swaps(*this);
+  }
+
+  cut_multiple_edge_crossings_of_elements();
+}
+
+void CDMesh::cut_multiple_edge_crossings_of_elements()
+{
+  cut_multiple_edge_crossings_in_rounds();
+  for (auto && elem : elements)
+  {
+    if (!elem->is_cut_by_rank()) elem->cut_multiple_edge_crossings(*this);
   }
 }
 
@@ -1822,11 +1930,26 @@ void
 CDMesh::decompose(const InterfaceGeometry & interfaceGeometry)
 { /* %TRACE[ON]% */ Trace trace__("krino::Mesh::decompose(void)"); /* %TRACE% */
 
-  if (my_cdfem_support.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-    cut_sharp_features(interfaceGeometry);
+  if (my_cdfem_support.cut_sharp_features_before_surfaces()) cut_sharp_features(interfaceGeometry);
+
+  // With the sharp features cut first (where three or more phases meet), every leaf of an element
+  // with more than one cutting surface starts with the signs of the interfaces that cross it, so
+  // that an interface's plane cuts only the leaves it crosses.  Elsewhere the plane is no interface
+  // (another phase is smallest there): its fake crossings of the leaf edges, some within a sliver
+  // of a node, are not cut.  Without the sharp features cut first (or with them captured only
+  // during snapping), a leaf can be crossed by an interface only beyond its uncaptured sharp
+  // features, so every leaf is cut by every plane that crosses it, fake crossings too.
+  if (my_cdfem_support.cuts_sharp_features())
+  {
+    for (auto && elem : elements)
+      if (elem->have_interface() && elem->get_cutter() &&
+          elem->get_cutter()->might_have_interior_or_face_intersections())
+        elem->reset_leaf_interface_signs();
+  }
 
   const std::vector<Surface_Identifier> & surfaceIDs = interfaceGeometry.get_surface_identifiers();
 
+  myNumFakeCrossingsCut = 0;
   // TODO: N^2 in number of phases
   for (auto && interface : active_interface_ids(surfaceIDs))
   {
@@ -1834,6 +1957,20 @@ CDMesh::decompose(const InterfaceGeometry & interfaceGeometry)
     decompose_edges(interface);
     determine_node_scores(interface);
     handle_hanging_children(interface);
+  }
+  // With the sharp features cut first, the leaves' interface signs should keep the planes from
+  // cutting where they are no interface; without, every plane crossing a leaf cuts it, fake
+  // crossings too.
+  stk::all_reduce_sum(
+      stk_bulk().parallel(), &myNumFakeCrossingsCut, &myGlobalNumFakeCrossingsCut, 1);
+  if (my_cdfem_support.cuts_sharp_features())
+  {
+    if (myGlobalNumFakeCrossingsCut > 0 && 0 == stk_bulk().parallel_rank())
+      stk::RuntimeWarningAdHoc() << "Cut " << myGlobalNumFakeCrossingsCut
+                                 << " leaf edges where an interface's plane crosses them but "
+                                    "another phase is smallest (fake crossings), with the sharp "
+                                    "features cut first."
+                                 << std::endl;
   }
   for (auto && elem : elements)
   {
@@ -1852,6 +1989,146 @@ CDMesh::decompose(const InterfaceGeometry & interfaceGeometry)
     if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "\n";
   }
   if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << stk::diag::dendl;
+}
+
+bool CDMesh::cut_sharp_feature_points(const int codimension)
+{
+  const int spatialDim = my_spatial_dim;
+  STK_ThrowRequire(codimension == spatialDim || (spatialDim == 3 && codimension == 2));
+  std::vector<IntersectionPoint> foundPoints;
+  for (auto && elem : elements)
+  {
+    if (!elem->is_cut_by_rank()) continue;
+    const std::vector<IntersectionPoint> elemPoints = (codimension == spatialDim) ?
+        elem->get_corner_intersection_points(*this) :
+        elem->get_edge_intersection_points(*this);
+    foundPoints.insert(foundPoints.end(), elemPoints.begin(), elemPoints.end());
+  }
+  // Points of one feature found more than once, as a sharp edge's crossings of two faces of a tet
+  // near their shared edge, each reduced onto that edge, are within the edge tolerance of each
+  // other on the same entity: they are one point.
+  const size_t numNodesBefore = nodes.size();
+  share_and_insert_intersection_points(foundPoints, get_snapper().get_edge_tolerance());
+  return stk::is_true_on_any_proc(stk_bulk().parallel(), nodes.size() != numNodesBefore);
+}
+
+void CDMesh::cut_multiple_edge_crossings_in_rounds()
+{
+  // Each round's cuts can make leaf edges with crossings of their own, as a chord of a curved
+  // surface; the at-end tolerance stops these chains, and the cap is only a safeguard.
+  constexpr int maxNumRounds = 100;
+  for (int round = 0; round < maxNumRounds; ++round)
+  {
+    std::vector<IntersectionPoint> foundPoints;
+    for (auto && elem : elements)
+    {
+      const std::vector<IntersectionPoint> elemPoints =
+          elem->get_multiple_edge_crossing_points(*this);
+      foundPoints.insert(foundPoints.end(), elemPoints.begin(), elemPoints.end());
+    }
+    const size_t localNumPoints = foundPoints.size();
+    size_t globalNumPoints = 0;
+    stk::all_reduce_sum(stk_bulk().parallel(), &localNumPoints, &globalNumPoints, 1);
+    if (0 == globalNumPoints) return;
+    // A multiple edge crossing is a repeat only to roundoff, so that none is moved off its leaf
+    // edge.
+    constexpr double roundoffTol = 1.e-12;
+    share_and_insert_intersection_points(foundPoints, roundoffTol);
+  }
+  if (0 == stk_bulk().parallel_rank())
+    stk::RuntimeWarningAdHoc() << "Multiple edge crossings remain after " << maxNumRounds
+                               << " rounds of cutting them.";
+}
+
+void CDMesh::share_and_insert_intersection_points(
+    const std::vector<IntersectionPoint> & foundPoints, const double repeatTol)
+{
+  const stk::mesh::BulkData & mesh = stk_bulk();
+  const size_t spatialDim = mesh.mesh_meta_data().spatial_dimension();
+
+  std::unordered_map<const Mesh_Element *, std::vector<IntersectionPoint>> pointsOfElements;
+  std::vector<stk::mesh::Entity> elemsWithNodes;
+  auto give_to_elements_with_its_nodes = [&](const IntersectionPoint & point)
+  {
+    stk::mesh::get_entities_through_relations(
+        mesh, point.get_nodes(), stk::topology::ELEMENT_RANK, elemsWithNodes);
+    for (auto elemWithNodes : elemsWithNodes)
+    {
+      const Mesh_Element * elem = find_mesh_element(mesh.identifier(elemWithNodes));
+      if (nullptr != elem && elem->is_cut_by_rank()) pointsOfElements[elem].push_back(point);
+    }
+  };
+
+  for (auto & point : foundPoints)
+    give_to_elements_with_its_nodes(point);
+
+  if (mesh.parallel_size() > 1)
+  {
+    std::vector<stk::mesh::EntityKey> nodeKeys;
+    std::vector<int> sharingProcs;
+    stk::CommSparse commSparse(mesh.parallel());
+    stk::pack_and_communicate(commSparse,
+        [&]()
+        {
+          for (auto & point : foundPoints)
+          {
+            // A point inside an element (with more nodes than the spatial dimension in its
+            // stencil) is only in that element.
+            if (point.get_nodes().size() > spatialDim) continue;
+            nodeKeys.clear();
+            for (auto node : point.get_nodes())
+              nodeKeys.push_back(mesh.entity_key(node));
+            mesh.shared_procs_intersection(nodeKeys, sharingProcs);
+            for (int proc : sharingProcs)
+            {
+              if (proc == mesh.parallel_rank()) continue;
+              stk::CommBuffer & buffer = commSparse.send_buffer(proc);
+              buffer.pack(point.get_nodes().size());
+              for (size_t i = 0; i < point.get_nodes().size(); ++i)
+              {
+                buffer.pack(mesh.identifier(point.get_nodes()[i]));
+                buffer.pack(point.get_weights()[i]);
+              }
+              buffer.pack(point.get_sorted_domains().size());
+              for (int domain : point.get_sorted_domains())
+                buffer.pack(domain);
+            }
+          }
+        });
+
+    stk::unpack_communications(commSparse,
+        [&](int proc)
+        {
+          stk::CommBuffer & buffer = commSparse.recv_buffer(proc);
+          while (buffer.remaining())
+          {
+            size_t numNodes = 0;
+            buffer.unpack(numNodes);
+            std::vector<stk::mesh::Entity> pointNodes(numNodes);
+            std::vector<double> weights(numNodes);
+            for (size_t i = 0; i < numNodes; ++i)
+            {
+              stk::mesh::EntityId nodeId = 0;
+              buffer.unpack(nodeId);
+              pointNodes[i] = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
+              buffer.unpack(weights[i]);
+            }
+            size_t numDomains = 0;
+            buffer.unpack(numDomains);
+            std::vector<int> domains(numDomains);
+            for (auto & domain : domains)
+              buffer.unpack(domain);
+            give_to_elements_with_its_nodes(IntersectionPoint(false, pointNodes, weights, domains));
+          }
+        });
+  }
+
+  for (auto && elem : elements)
+  {
+    auto iter = pointsOfElements.find(elem.get());
+    if (iter != pointsOfElements.end())
+      elem->insert_intersection_points(*this, iter->second, repeatTol);
+  }
 }
 
 void
@@ -3390,12 +3667,22 @@ CDMesh::reset_mesh_to_original_undecomposed_state(stk::mesh::BulkData & mesh)
 
   mesh.batch_change_entity_parts(batchEntities, batchAddParts, batchRemoveParts);
 
+  // Decomposition makes the mid-side nodes of quadratic parent elements inactive when no active
+  // element uses them; with the parent elements active again, so are their nodes.
+  if (mesh_has_quadratic_element_parts(mesh.mesh_meta_data()))
+    activate_selected_entities_touching_active_elements(mesh, stk::topology::NODE_RANK, mesh.mesh_meta_data().universal_part(), AuxMetaData::get(mesh.mesh_meta_data()).active_part());
+
   FieldRef cdfemSnapField = cdfemSupport.get_cdfem_snap_displacements_field();
 
   if (cdfemSnapField.valid())
   {
-      undo_previous_snaps_without_interpolation(mesh, cdfemSupport.get_coords_field(), cdfemSnapField);
-      stk::mesh::field_fill(0., cdfemSnapField);
+    // The latest decomposition stores its snap in the new state of the snap displacements (the old
+    // state holds it only after the field states are rotated), so that is what is undone here.
+    undo_snaps_without_interpolation(
+        mesh, cdfemSupport.get_coords_field(), cdfemSnapField.field_state(stk::mesh::StateNew));
+    for (unsigned state = 0; state < cdfemSnapField.number_of_states(); ++state)
+      stk::mesh::field_fill(
+          0., cdfemSnapField.field_state(static_cast<stk::mesh::FieldState>(state)));
   }
 
   if (has_decomposed_mesh(mesh))
@@ -3653,6 +3940,70 @@ CDMesh::print_conformal_volumes_and_surface_areas() const
   print_volume_or_surface_area(stk_bulk(), stk_meta().side_rank(), get_active_part(), interfacial_conformal_parts);
   if ( krinolog.shouldPrint(LOG_PARTS) )
     print_volume_or_surface_area(stk_bulk(), stk_meta().side_rank(), get_active_part(), side_conformal_parts);
+}
+
+void CDMesh::write_elements_journal(const std::string & fileBaseName,
+    const std::vector<stk::mesh::EntityId> & elementIds,
+    const InterfaceGeometry & interfaceGeometry,
+    const double sliverMeanRatio) const
+{
+  const stk::mesh::BulkData & mesh = stk_bulk();
+  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const int rank = mesh.parallel_rank();
+
+  // A leaf is named by the block krino puts it in, as in the output mesh.
+  std::vector<PhaseTag> unnamedPhases;
+  const stk::mesh::Part * elementPart = nullptr;
+  auto phase_name = [&](const PhaseTag & phase) -> std::string
+  {
+    const stk::mesh::Part * phasePart = elementPart ?
+        my_phase_support.find_conforming_part_if_decomposed_by_phase(*elementPart, phase) : nullptr;
+    if (phasePart) return phasePart->name();
+    auto iter = std::find(unnamedPhases.begin(), unnamedPhases.end(), phase);
+    if (iter == unnamedPhases.end())
+      iter = unnamedPhases.insert(unnamedPhases.end(), phase);
+    return "phase_" + std::to_string(std::distance(unnamedPhases.begin(), iter));
+  };
+  const Surface_Manager * surfaceManager = meta.get_attribute<Surface_Manager>();
+  auto surface_name = [&](const Surface_Identifier surfaceIdentifier) -> std::string
+  {
+    try
+    {
+      if (surfaceManager) return "surface_" + surfaceManager->get_name(surfaceIdentifier);
+    }
+    catch (const std::out_of_range &)
+    {
+    }
+    return "surface_" + std::to_string(surfaceIdentifier.get());
+  };
+
+  CubitJournal journal("elements of the decomposition on processor " + std::to_string(rank), 1000*rank+1);
+  bool haveElement = false;
+  for (const stk::mesh::EntityId elementId : elementIds)
+  {
+    const stk::mesh::Entity elementEntity = mesh.get_entity(stk::topology::ELEMENT_RANK, elementId);
+    if (!mesh.is_valid(elementEntity) || !mesh.bucket(elementEntity).owned()) continue;
+    const Mesh_Element * elem = find_mesh_element(elementId);
+    if (nullptr == elem) continue;
+    haveElement = true;
+
+    elementPart = &find_element_part(mesh, elementEntity);
+    elem->add_to_journal(journal, phase_name, sliverMeanRatio);
+
+    BoundingBox region;
+    double maxEdgeLength = 0.;
+    const NodeVec parentNodes = elem->vertex_nodes();
+    for (size_t i=0; i<parentNodes.size(); ++i)
+    {
+      region.accommodate(parentNodes[i]->coordinates());
+      for (size_t j=0; j<i; ++j)
+        maxEdgeLength = std::max(maxEdgeLength, (parentNodes[i]->coordinates()-parentNodes[j]->coordinates()).length());
+    }
+    region.pad(0.5*maxEdgeLength);
+    interfaceGeometry.add_surfaces_to_journal(journal, region, surface_name);
+  }
+  if (haveElement)
+    journal.write(fileBaseName + "." + std::to_string(rank) + ".jou");
 }
 
 void

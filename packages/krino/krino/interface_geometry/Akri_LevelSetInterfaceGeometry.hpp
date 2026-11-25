@@ -53,6 +53,11 @@ public:
   virtual std::pair<int, double> interface_edge_crossing_sign_and_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override;
   virtual int get_starting_phase_for_cutting_surfaces() const override
     { return myElementInterfaceCutter->get_starting_phase_for_cutting_surfaces(); }
+    virtual bool interface_crossing_is_real(
+        const InterfaceID & interface, const stk::math::Vector3d & pCoords) const override
+    {
+      return myElementInterfaceCutter->interface_crossing_is_real(interface, pCoords);
+    }
 
   bool have_crossing(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
     { return myElementInterfaceCutter->have_crossing(interface, edgeNodeCoords); }
@@ -128,21 +133,29 @@ public:
 
   virtual PhaseTag get_starting_phase(const ElementCutter * cutter) const override;
 
+  virtual void set_intersect_quadratic_elements_as_linear(const bool flag) const override { myIntersectQuadraticElementsAsLinear = flag; }
+
   const std::vector<Surface_Identifier> & get_surface_identifiers() const override { return mySurfaceIdentifiers; }
   static std::vector<stk::mesh::Entity> get_active_elements_that_may_be_cut_by_levelsets(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const std::vector<LS_Field> & LSFields);
   static void fill_active_elements_that_intersect_levelset_interval(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const LS_Field & lsField, const std::array<double,2> loAndHi, std::vector<stk::mesh::Entity> & elementsThaIntersectInterval);
 
   virtual stk::math::Vector3d compute_interface_normal(const stk::mesh::BulkData & mesh, const Surface_Identifier surfaceIdentifier, const stk::mesh::Entity element) const override;
   FieldRef get_coordinates_field(const stk::mesh::BulkData & mesh) const;
+  virtual stk::math::Vector3d edge_intersection_point_velocity(const stk::mesh::BulkData & mesh,
+      const stk::mesh::Entity node0,
+      const stk::mesh::Entity node1) const override;
 
 private:
   void set_parent_element_selector();
   bool have_enough_levelsets_to_have_interior_intersections_or_multiple_crossings() const;
-    void build_parent_edges_for_mesh(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
+  // While quadratic elements are intersected as linear ones
+  // (set_intersect_quadratic_elements_as_linear), the parent edges leave out the mid-side nodes of
+  // quadratic elements, so that those edges are linear between their vertices; any other child
+  // nodes on an edge (of refinement or of an earlier decomposition) are kept, as always.
+  void build_parent_edges_for_mesh(const stk::mesh::BulkData & mesh) const;
   void build_parent_edges_for_elements(const stk::mesh::BulkData & mesh,
-    const std::vector<stk::mesh::Entity> & elementsToIntersect,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
+      const std::vector<stk::mesh::Entity> & elementsToIntersect) const;
+  void build_parents_to_child_map(const stk::mesh::BulkData & mesh) const;
   const LS_Field & get_ls_field_with_identifier(const Surface_Identifier surfaceIdentifier) const;
   const stk::mesh::Part & myActivePart;
   ParametricElementLibrary & myParametricElemLib;
@@ -154,6 +167,7 @@ private:
   mutable ParentEdgeMap myParentEdges;
   mutable ParentsToChildMapper myParentsToChildMapper;
   mutable ElementToDomainMap myUncutElementPhases;
+  mutable bool myIntersectQuadraticElementsAsLinear{false};
 };
 
 }

@@ -4,10 +4,12 @@
 #include <Akri_MeshHelpers.hpp>
 
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_util/environment/EnvData.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <Akri_AnalyticSurfaceInterfaceGeometry.hpp>
 #include <Akri_CDFEM_Parent_Edges.hpp>
 #include <Akri_ContourElement.hpp>
+#include <Akri_FacetCoordinates.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_LevelSet.hpp>
 
@@ -24,7 +26,8 @@ LevelSetSurfaceInterfaceGeometry::LevelSetSurfaceInterfaceGeometry(const int dim
   for (auto && lsField : myLSFields)
   {
     mySurfaceIdentifiers.push_back(lsField.identifier);
-    myLSSurfaces.emplace_back(FacetedSurfaceBase::build(dim));
+    myLSSurfaces.emplace_back(std::make_unique<MeshFacetedSurface>(
+        stk::EnvData::parallel_comm(), dim, std::vector<stk::math::Vector3d>{}));
   }
 
   const std::vector<stk::mesh::Selector> levelsetElementSelectors = get_levelset_element_selectors();
@@ -165,17 +168,13 @@ void LevelSetSurfaceInterfaceGeometry::build_levelset_facets(const stk::mesh::Bu
     const stk::mesh::Selector elemFieldSelector = ownedElementSelector & levelsetElementSelectors[i];
     stk::mesh::get_selected_entities( elemFieldSelector, mesh.buckets(stk::topology::ELEMENT_RANK), elementsToIntersect, false );
 
+    FacetCoordinates facets(mesh.mesh_meta_data().spatial_dimension());
     if (myLSFields[i].ptr && myLSFields[i].ptr->is_transient())
-    {
-      if (2 == mesh.mesh_meta_data().spatial_dimension())
-        myLSSurfaces[i]->get_facets_2d() = myLSFields[i].ptr->get_facets().get_facets_2d();
-      else
-        myLSSurfaces[i]->get_facets_3d() = myLSFields[i].ptr->get_facets().get_facets_3d();
-    }
+      facets = myLSFields[i].ptr->get_facets().owned_facet_coordinates();
     else
-    {
-      ClosestPointRedistance::build_facets_for_elements(mesh, coordsField, myLSFields[i].isovar, elementsToIntersect, avgEdgeLength, *myLSSurfaces[i]);
-    }
+      ClosestPointRedistance::build_facets_for_elements(
+          mesh, coordsField, myLSFields[i].isovar, elementsToIntersect, avgEdgeLength, facets);
+    myLSSurfaces[i]->set_facets(facets);
   }
 }
 

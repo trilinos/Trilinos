@@ -15,16 +15,6 @@ namespace krino {
 
 static constexpr double farDistance = std::numeric_limits<double>::max();
 
-void write_cubit_tet(const std::array<stk::math::Vector3d,4> & coords)
-{
-  for (auto && x : coords)
-    std::cout << "create vertex " << x[0] << " " << x[1] << " " << x[2] << std::endl;
-  int nodeId = 1;
-  for (int i=0; i<4; ++i)
-    std::cout << "create node vertex " << i+nodeId << std::endl;
-  std::cout << "create tet node " << nodeId << " " << nodeId+1 << " " << nodeId+2 << " " << nodeId+3 << std::endl;
-}
-
 void expect_triangle_eikonal_solution(const std::array<stk::math::Vector3d,3> & x, const std::array<double,2> & d, const double speed, const double gold, const double far = farDistance)
 {
   const int sign = 1;
@@ -125,8 +115,6 @@ TEST(Eikonal_Calc, whenDecreasingInputNbrValues_resultingDistanceDecreases)
     { 0.1419055462, -0.5553394556,  0.1665592194},
     {-0.1894032955, -0.4612201452, -0.4812267423}
   }};
-
-  write_cubit_tet(coords);
 
   const std::array<double,3> distanceCase1 {{0.56866, 0.00317126,  0.24237}};
   const std::array<double,3> distanceCase2 {{0.56866, 0.00000000,  0.24237}};

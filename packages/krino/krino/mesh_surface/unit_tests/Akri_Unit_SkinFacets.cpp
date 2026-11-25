@@ -3,7 +3,7 @@
 #include <Akri_WindingNumber.hpp>
 #include <Akri_Facet.hpp>
 #include <Akri_SearchTree.hpp>
-#include <Akri_MeshSurface.hpp>
+#include <Akri_FacetFileReader.hpp>
 #include <Akri_OutputUtils.hpp>
 #include <stk_util/environment/EnvData.hpp>
 
@@ -122,16 +122,22 @@ TEST(skin_facets,demo)
   if (1 != stk::EnvData::parallel_size() || !does_file_exist(inputStlFilename))
     return;
 
-  stk::math::Vector3d scaleVec{1., 1., 1.};
-  STLSurface surf(sierra::Diag::sierraTimer(), inputStlFilename, 1, scaleVec);
-
   using FACET = Facet3d;
 
-  BoundingBox surfBBox = surf.get_bounding_box();
+  // The facets of the file, each with its own vertices (serial).
+  std::unique_ptr<FacetFileReader> reader =
+      create_facet_file_reader("STL", inputStlFilename, 1, stk::math::Vector3d(1., 1., 1.));
+  std::vector<stk::math::Vector3d> coords;
+  std::vector<stk::mesh::EntityId> ids;
+  reader->read_vertices(coords, ids);
+  std::vector<FACET> localFacets;
+  localFacets.reserve(reader->num_facets());
+  for (size_t f = 0; f < reader->num_facets(); ++f)
+  {
+    const std::array<size_t, 3> facet = reader->read_facet();
+    localFacets.emplace_back(coords[facet[0]], coords[facet[1]], coords[facet[2]]);
+  }
 
-  surf.build_local_facets(surfBBox);
-
-  const std::vector<FACET> & localFacets = surf.get_facets();
   const double facetSize = compute_facet_size(localFacets);
   std::cout << "Facet size " << facetSize << std::endl;
 
@@ -139,13 +145,15 @@ TEST(skin_facets,demo)
 
   const double defeatureSize = facetSize;
 
-  std::vector<const FACET *> windingNumberFacets = prune_interior_facets(allFacets, surf.get_facets(), defeatureSize, 0.5);
+  std::vector<const FACET *> windingNumberFacets =
+      prune_interior_facets(allFacets, localFacets, defeatureSize, 0.5);
   write_stl("skin.stl", windingNumberFacets);
 
   const bool computeTighterSkinFacets = false;
   if (computeTighterSkinFacets)
   {
-    std::vector<const FACET *> retainedFacets = keep_boundary_facets(windingNumberFacets, surf.get_facets(), defeatureSize);
+    std::vector<const FACET *> retainedFacets =
+        keep_boundary_facets(windingNumberFacets, localFacets, defeatureSize);
 
     write_stl("tighterSkin.stl", retainedFacets);
   }

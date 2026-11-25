@@ -50,11 +50,12 @@ size_t CSG_Surface::storage_size() const
   return tot_size;
 }
 
-void CSG_Surface::set_transformation(Transformation * trans)
+bool CSG_Surface::changes_with_time() const
 {
-  Surface::set_transformation(trans);
-  for (auto && subsurf : myAllSurfaces)
-    subsurf->set_transformation(trans);
+  for (auto && surf : myAllSurfaces)
+    if (surf->changes_with_time())
+      return true;
+  return false;
 }
 
 bool CSG_Surface::empty() const

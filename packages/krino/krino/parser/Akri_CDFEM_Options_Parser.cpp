@@ -119,6 +119,22 @@ CDFEM_Options_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaDat
       }
     }
 
+    bool cutSharpFeaturesBeforeSurfaces = false;
+    if (cdfem_node.get_if_present(
+            "cut_sharp_features_before_surfaces", cutSharpFeaturesBeforeSurfaces))
+      cdfem_support.set_cut_sharp_features_before_surfaces(cutSharpFeaturesBeforeSurfaces);
+
+    bool captureSharpFeaturesOnlyDuringSnapping = false;
+    if (cdfem_node.get_if_present(
+            "capture_sharp_features_only_during_snapping", captureSharpFeaturesOnlyDuringSnapping))
+    {
+      if (captureSharpFeaturesOnlyDuringSnapping && !cdfem_support.cut_sharp_features_before_surfaces())
+        stk::RuntimeDoomedAdHoc() << "capture_sharp_features_only_during_snapping cannot be combined with "
+                                     "cut_sharp_features_before_surfaces: false: "
+                                  << cdfem_node.info();
+      cdfem_support.set_capture_sharp_features_only_during_snapping(captureSharpFeaturesOnlyDuringSnapping);
+    }
+
     bool myFlagUseFacetsInsteadOfLevelSets = false;
     cdfem_node.get_if_present("use_facets_to_perform_decomposition", myFlagUseFacetsInsteadOfLevelSets);
     cdfem_support.set_use_facets_instead_of_levelset_fields( myFlagUseFacetsInsteadOfLevelSets );

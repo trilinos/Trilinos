@@ -18,6 +18,8 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace io { class StkMeshIoBroker; } }
+#include <Akri_InitialMeshSmoothing.hpp>
+
 namespace krino { class MeshInterface; }
 namespace krino { class RegionForwarder; }
 namespace krino { class ResultsOutputOptions; }
@@ -56,11 +58,14 @@ public:
   void process_output();
   ResultsOutputOptions * get_results_options() { return my_results_options.get(); }
   void mesh_topology_has_changed() { myIsOutputFileCreatedAndCurrent = false; }
+  // How to smooth the initial mesh, after any initial refinement and conforming decomposition.
+  void set_initial_mesh_smoothing(const InitialMeshSmoothing & smoothing) { myInitialMeshSmoothing = smoothing; }
   PostProcessors & get_postprocessors() { return myPostProcessors; }
 
 private:
   void process_surface_output();
   void process_volume_output();
+  void smooth_initial_mesh(stk::mesh::BulkData & mesh);
 
   Simulation & my_simulation;
   PostProcessors myPostProcessors;
@@ -79,6 +84,7 @@ private:
   int myOutputFileNumRevisions{0};
   size_t myInterfaceFacetsFileIndex{0};
   bool myIsOutputFileCreatedAndCurrent{false};
+  InitialMeshSmoothing myInitialMeshSmoothing;
 };
 
 } // namespace krino

@@ -52,6 +52,10 @@ public:
   virtual std::string visualize() const { return visualize_cutting_surfaces(myParametricElem, cutting_surfaces); }
 
   int get_starting_phase_for_cutting_surfaces() const;
+  // Whether the interface is where its plane crosses at these parametric coordinates (see
+  // ElementCutter::interface_crossing_is_real).
+  bool interface_crossing_is_real(
+      const InterfaceID interface, const stk::math::Vector3d & pCoords) const;
 
   struct Edge_Crossing {
     Edge_Crossing(unsigned e, double p, int s) : edge(e), pos(p), sign(s) {}
@@ -110,6 +114,10 @@ public:
   virtual std::string visualize() const override { return visualize_cutting_surfaces(myParametricElem, all_cutting_surfaces); }
 
 private:
+  // Whether no phase is smaller at the point than its domains, judged by the surfaces that cut the
+  // element (cutting_surfaces), not by all_cutting_surfaces: a phase without a cutting surface (one
+  // inside the element that reaches none of its sides) is not cut, so its being smaller does not
+  // make the corners and crossings of the surfaces that are cut fake.
   virtual bool intersection_point_is_real(const stk::math::Vector3d & intersection, const std::vector<int> & sortedDomains) const override;
   static std::vector<Edge_Crossing> build_cut_edges(const InterfaceID & interface,
     const std::vector<const CDFEM_Parent_Edge *> & parentEdges,

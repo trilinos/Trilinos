@@ -9,7 +9,7 @@
 #include <Akri_ContourTri.hpp>
 
 #include <stk_math/StkVector.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetAppender.hpp>
 #include <Akri_AdaptiveContourUtils.hpp>
 #include <Akri_ContourUtils.hpp>
 #include <Akri_DiagWriter.hpp>
@@ -61,9 +61,9 @@ unsigned ContourTri::get_permuted_case_id(const unsigned caseId)
   return permutedCaseIds[caseId];
 }
 
-void ContourTri::append_facets_for_tri3(const std::array<stk::math::Vector3d,3> & coords,
-  const std::array<double,3> & dist,
-  FacetedSurfaceBase & facets)
+void ContourTri::append_facets_for_tri3(const std::array<stk::math::Vector3d, 3> & coords,
+    const std::array<double, 3> & dist,
+    FacetAppender & facets)
 {
   const int caseId = compute_case_id({{compute_node_sign(dist[0]), compute_node_sign(dist[1]), compute_node_sign(dist[2])}});
 
@@ -115,9 +115,10 @@ void ContourTri::append_facets_for_tri3(const std::array<stk::math::Vector3d,3> 
   }
 }
 
-void ContourTri::append_facets_for_tri3_with_tri6_distance(const std::array<stk::math::Vector3d,3> & coords,
-  const std::array<double,6> & tri6Dist,
-  FacetedSurfaceBase & facets)
+void ContourTri::append_facets_for_tri3_with_tri6_distance(
+    const std::array<stk::math::Vector3d, 3> & coords,
+    const std::array<double, 6> & tri6Dist,
+    FacetAppender & facets)
 {
   const int caseId = compute_case_id({{compute_node_sign(tri6Dist[0]), compute_node_sign(tri6Dist[1]), compute_node_sign(tri6Dist[2])}});
 

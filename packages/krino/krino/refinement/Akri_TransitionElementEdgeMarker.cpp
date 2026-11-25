@@ -161,7 +161,9 @@ void TransitionElementEdgeMarker::mark_unrefined_edges_of_partially_refined_pare
     NodeRefiner & nodeRefiner,
     bool & wasAnyEdgeMarked) const
 {
-  const std::vector<stk::mesh::Entity> refinedEdgeNodes = EdgeMarkerUtils::get_child_nodes_that_are_not_parent_nodes(myMesh, parentElem, childTransitionElements);
+  const std::vector<stk::mesh::Entity> refinedEdgeNodes =
+      EdgeMarkerUtils::get_child_vertex_nodes_that_are_not_parent_vertex_nodes(
+          myMesh, parentElem, childTransitionElements);
   const std::vector<Edge> refinedEdges = get_parent_edges_for_given_refined_edge_nodes(refinedEdgeNodes);
   fill_entity_edges(myMesh, parentElem, elemEdgesWorkspace);
   for (auto && elemEdge : elemEdgesWorkspace)
@@ -221,7 +223,7 @@ bool does_child_element_have_marked_edge_that_is_not_parent_edge(const stk::mesh
 
 bool does_any_child_element_have_marked_edge_that_is_not_parent_edge(const stk::mesh::BulkData & mesh, const stk::mesh::Entity parentElem, const std::vector<stk::mesh::Entity> & childElems, const NodeRefiner & nodeRefiner)
 {
-  const StkMeshEntities parentNodes {mesh.begin_nodes(parentElem), mesh.end_nodes(parentElem)};
+  const StkMeshEntities parentNodes = EdgeMarkerUtils::get_vertex_nodes(mesh, parentElem);
   for(const auto & childElem : childElems)
     if(does_child_element_have_marked_edge_that_is_not_parent_edge(mesh, parentNodes, childElem, nodeRefiner))
       return true;
@@ -329,13 +331,28 @@ bool TransitionElementEdgeMarker::child_elements_are_all_leaves_and_are_transiti
   return false;
 }
 
+static bool is_edge_of_element(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Entity elem,
+    const std::array<stk::mesh::Entity, 2> & edgeNodes)
+{
+  const StkMeshEntities elemVertexNodes = EdgeMarkerUtils::get_vertex_nodes(mesh, elem);
+  return EdgeMarkerUtils::node_is_parent_node(elemVertexNodes, edgeNodes[0]) &&
+      EdgeMarkerUtils::node_is_parent_node(elemVertexNodes, edgeNodes[1]);
+}
+
 bool TransitionElementEdgeMarker::can_edge_node_be_unrefined_based_on_locally_owned_elements(const stk::mesh::Entity refinedNode,
     std::vector<stk::mesh::Entity> & workParentEdgeElements,
     std::vector<stk::mesh::Entity> & workChildElements) const
 {
-  // Fast, but only partial check.  If any element using this node is not a leaf child, then the node must be kept.
-  for (auto && elem : StkMeshEntities{myMesh.begin_elements(refinedNode), myMesh.end_elements(refinedNode)})
-    if (myRefinement.is_parent(elem))
+  // Fast, but only partial check.  If any element using this node as a vertex is a parent, then the
+  // node must be kept.  A quadratic parent of the refined edge has it as a mid-edge node instead,
+  // and is checked below.
+  const stk::mesh::Entity * nodeElems = myMesh.begin_elements(refinedNode);
+  const stk::mesh::ConnectivityOrdinal * nodeElemOrdinals =
+      myMesh.begin_element_ordinals(refinedNode);
+  for (unsigned iElem = 0; iElem < myMesh.num_elements(refinedNode); ++iElem)
+    if (nodeElemOrdinals[iElem] < myMesh.bucket(nodeElems[iElem]).topology().num_vertices() &&
+        myRefinement.is_parent(nodeElems[iElem]))
       return false;
 
   const auto edgeNodeParents = myRefinement.get_edge_parent_nodes(refinedNode);
@@ -344,8 +361,10 @@ bool TransitionElementEdgeMarker::can_edge_node_be_unrefined_based_on_locally_ow
   for (auto && parentEdgeElem : workParentEdgeElements)
   {
     // Only examines locally owned elements so that any return value of false is sure to be correct.
-    // Subsequent communication is then needed to make sure the final determination is parallel consistent.
-    if (myMesh.bucket(parentEdgeElem).owned())
+    // Subsequent communication is then needed to make sure the final determination is parallel
+    // consistent.  Skips quadratic ancestors that have an edge node as a mid-edge node.
+    if (myMesh.bucket(parentEdgeElem).owned() &&
+        is_edge_of_element(myMesh, parentEdgeElem, edgeNodeParents))
     {
       myRefinement.fill_children(parentEdgeElem, workChildElements);
       if (!child_elements_are_all_leaves_and_are_transition_elements_or_marked_for_unrefinement(parentEdgeElem, workChildElements))
@@ -413,7 +432,9 @@ bool TransitionElementEdgeMarker::is_parent_element_modified_by_unrefinement(con
   if (EdgeMarkerUtils::is_any_child_invalid_or_a_parent(myMesh, myRefinement, childElements))
     return false;
 
-  const std::vector<stk::mesh::Entity> refinedEdgeNodes = EdgeMarkerUtils::get_child_nodes_that_are_not_parent_nodes(myMesh, myRefinement, parentElem);
+  const std::vector<stk::mesh::Entity> refinedEdgeNodes =
+      EdgeMarkerUtils::get_child_vertex_nodes_that_are_not_parent_vertex_nodes(
+          myMesh, myRefinement, parentElem);
 
   const bool isParentModifiedByUnrefinement = is_any_in_second_vec_in_first_sorted_vec(sortedOwnedOrSharedNodesToBeRemovedByUnrefinement, refinedEdgeNodes);
 

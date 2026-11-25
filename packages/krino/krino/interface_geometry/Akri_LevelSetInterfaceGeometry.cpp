@@ -72,17 +72,6 @@ std::unique_ptr<Element_Cutter> create_element_cutter_with_error_handling(Parame
   return cutter;
 }
 
-static stk::math::Vector3d get_centroid(const std::vector<stk::math::Vector3d> & elemNodesCoords)
-{
-  stk::math::Vector3d centroid = stk::math::Vector3d::ZERO;
-  for(auto && nodeCoords : elemNodesCoords)
-  {
-    centroid += nodeCoords;
-  }
-  centroid *= 1./elemNodesCoords.size();
-  return centroid;
-}
-
 LevelSetElementCutter::LevelSetElementCutter(ParametricElementLibrary & parametricElemLibrary,
     const stk::mesh::BulkData & mesh,
     stk::mesh::Entity element,
@@ -96,7 +85,7 @@ LevelSetElementCutter::LevelSetElementCutter(ParametricElementLibrary & parametr
 
 int LevelSetElementCutter::interface_sign_for_uncrossed_element(const InterfaceID interface, const std::vector<stk::math::Vector3d> & elemNodesCoords) const
 {
-  return myElementInterfaceCutter->sign_at_position(interface, get_centroid(elemNodesCoords));
+  return myElementInterfaceCutter->sign_at_position(interface, compute_element_centroid(elemNodesCoords));
 }
 
 std::pair<int, double> LevelSetElementCutter::interface_edge_crossing_sign_and_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const
@@ -321,7 +310,7 @@ LevelSetElementCutter::get_interface_signs_based_on_crossings(const std::vector<
   std::vector<int> interfaceSigns(allInterfaces.size(), 0);
 
   const auto intersectingInterfaces = get_sorted_cutting_interfaces_with_uncaptured_intersections(*this, elemNodesCoords, elemNodesSnappedDomains);
-  const stk::math::Vector3d centroid = get_centroid(elemNodesCoords);
+  const stk::math::Vector3d centroid = compute_element_centroid(elemNodesCoords);
 
   const bool oneLSPerPhase = myElementInterfaceCutter->is_one_ls_per_phase();
   if (oneLSPerPhase)
@@ -505,6 +494,8 @@ static bool determine_if_mesh_has_higher_order_midside_nodes_with_level_set_loca
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields)
 {
+  if (!phaseSupport.has_quadratic_decomposed_blocks()) return false;
+
   // Assume we can check parametric element on one bucket and get the right answer
 
   for ( auto && bucket_ptr : mesh.get_buckets(stk::topology::ELEMENT_RANK, phaseSupport.get_all_decomposed_blocks_selector()) )
@@ -572,29 +563,33 @@ void LevelSetInterfaceGeometry::set_parent_element_selector()
     get_active_and_any_levelset_selector(myActivePart, myLSFields);
 }
 
-void LevelSetInterfaceGeometry::build_parent_edges_for_mesh(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
+void LevelSetInterfaceGeometry::build_parents_to_child_map(const stk::mesh::BulkData & mesh) const
 {
-  const bool addHigherOrderMidSideNodes = determine_if_mesh_has_higher_order_midside_nodes_with_level_set_locally(myParametricElemLib, mesh, myPhaseSupport, myLSFields);
+  const bool addHigherOrderMidSideNodes = !myIntersectQuadraticElementsAsLinear &&
+      determine_if_mesh_has_higher_order_midside_nodes_with_level_set_locally(
+          myParametricElemLib, mesh, myPhaseSupport, myLSFields);
   myParentsToChildMapper.build_map(mesh, myActivePart, myCdfemSupport, addHigherOrderMidSideNodes);
+}
+
+void LevelSetInterfaceGeometry::build_parent_edges_for_mesh(const stk::mesh::BulkData & mesh) const
+{
+  build_parents_to_child_map(mesh);
   const bool shouldLinearizeEdges = false;
   myParentEdges = build_parent_edges(mesh, myParentsToChildMapper, shouldLinearizeEdges, myParentElementSelector, myPhaseSupport, myLSFields);
 }
 
 void LevelSetInterfaceGeometry::build_parent_edges_for_elements(const stk::mesh::BulkData & mesh,
-    const std::vector<stk::mesh::Entity> & elementsToIntersect,
-    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
+    const std::vector<stk::mesh::Entity> & elementsToIntersect) const
 {
-  const bool addHigherOrderMidSideNodes = determine_if_mesh_has_higher_order_midside_nodes_with_level_set_locally(myParametricElemLib, mesh, myPhaseSupport, myLSFields);
-  myParentsToChildMapper.build_map(mesh, myActivePart, myCdfemSupport, addHigherOrderMidSideNodes);
+  build_parents_to_child_map(mesh);
   const bool shouldLinearizeEdges = false;
   myParentEdges = build_parent_edges_using_elements(mesh, myParentsToChildMapper, shouldLinearizeEdges, elementsToIntersect, myParentElementSelector, myPhaseSupport, myLSFields);
 }
 
 void LevelSetInterfaceGeometry::prepare_to_decompose_elements(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
 {
-  build_parent_edges_for_mesh(mesh, nodesToCapturedDomains);
+  build_parent_edges_for_mesh(mesh);
 }
 
 void LevelSetInterfaceGeometry::prepare_to_intersect_elements(const stk::mesh::BulkData & mesh) const
@@ -604,16 +599,16 @@ void LevelSetInterfaceGeometry::prepare_to_intersect_elements(const stk::mesh::B
 }
 
 void LevelSetInterfaceGeometry::prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
 {
-  build_parent_edges_for_mesh(mesh, nodesToCapturedDomains);
+  build_parent_edges_for_mesh(mesh);
 }
 
 void LevelSetInterfaceGeometry::prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
 {
-  build_parent_edges_for_elements(mesh, elementsToIntersect, nodesToCapturedDomains);
+  build_parent_edges_for_elements(mesh, elementsToIntersect);
 }
 
 static double compute_edge_length(const stk::mesh::BulkData & mesh, const std::array<stk::mesh::Entity,2> & edgeNodes)
@@ -1056,7 +1051,7 @@ static bool will_have_uncaptured_edge_intersection_after_snapping(const Element_
 
 static int get_domain_of_element_if_it_will_be_uncut_after_snapping(ParametricElementLibrary & parametricElemLibrary,
     const stk::mesh::BulkData & mesh,
-    const ParentsToChildMapper parentsToChildMapper,
+    const ParentsToChildMapper & parentsToChildMapper,
     const stk::mesh::Selector & parentElementSelector,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields,
@@ -1117,7 +1112,7 @@ static int get_sign_of_uncrossed_edges(const InterfaceID interface, const std::v
 
 static int get_sign_of_element_if_it_will_be_uncut_after_snapping(ParametricElementLibrary & parametricElemLibrary,
     const stk::mesh::BulkData & mesh,
-    const ParentsToChildMapper parentsToChildMapper,
+    const ParentsToChildMapper & parentsToChildMapper,
     const stk::mesh::Selector & parentElementSelector,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields,
@@ -1153,7 +1148,7 @@ static int get_sign_of_element_if_it_will_be_uncut_after_snapping(ParametricElem
 
 static void set_domains_for_element_if_it_will_be_uncut_after_snapping(ParametricElementLibrary & parametricElemLibrary,
     const stk::mesh::BulkData & mesh,
-    const ParentsToChildMapper parentsToChildMapper,
+    const ParentsToChildMapper & parentsToChildMapper,
     const stk::mesh::Selector & parentElementSelector,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields,
@@ -1188,7 +1183,7 @@ static void set_domains_for_element_if_it_will_be_uncut_after_snapping(Parametri
 
 static void set_sign_for_element_if_it_will_be_uncut_after_snapping(ParametricElementLibrary & parametricElemLibrary,
     const stk::mesh::BulkData & mesh,
-    const ParentsToChildMapper parentsToChildMapper,
+    const ParentsToChildMapper & parentsToChildMapper,
     const stk::mesh::Selector & parentElementSelector,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields,
@@ -1246,6 +1241,22 @@ void LevelSetInterfaceGeometry::store_phase_for_elements_that_will_be_uncut_afte
       }
     }
   }
+}
+
+stk::math::Vector3d
+LevelSetInterfaceGeometry::edge_intersection_point_velocity(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Entity node0,
+    const stk::mesh::Entity node1) const
+{
+  if (myLSFields.size() != 1) return stk::math::Vector3d::ZERO;
+  auto lsData = myLSFields[0].isovar.data<double>();
+  const double lsDiff = lsData.entity_values(node0)() - lsData.entity_values(node1)();
+  if (lsDiff == 0.) return stk::math::Vector3d::ZERO;
+  const FieldRef coordsField = get_coordinates_field(mesh);
+  const unsigned dim = mesh.mesh_meta_data().spatial_dimension();
+  return (get_vector_field(mesh, coordsField, node1, dim) -
+             get_vector_field(mesh, coordsField, node0, dim)) /
+      lsDiff;
 }
 
 FieldRef LevelSetInterfaceGeometry::get_coordinates_field(const stk::mesh::BulkData & mesh) const

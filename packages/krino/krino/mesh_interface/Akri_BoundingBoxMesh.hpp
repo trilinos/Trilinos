@@ -97,7 +97,24 @@ public:
   void get_node_x_y_z( stk::mesh::EntityId entity_id, size_t &ix , size_t &iy , size_t &iz ) const;
   void set_mesh_structure_type(BoundingBoxMeshStructureType type) { myMeshStructureType = type; }
   bool has_flat_boundaries() const { return CUBIC_BOUNDING_BOX_MESH == myMeshStructureType || FLAT_WALLED_BCC_BOUNDING_BOX_MESH == myMeshStructureType || FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH == myMeshStructureType; }
+  // Number the nodes and elements in reverse (id -> maximum id + 1 - id), so that every ordering by
+  // id is reversed while the mesh, and its decomposition across processors, stay the same.  For
+  // testing that results do not depend on the ids.  Set before populate_mesh().  The static
+  // get_node_x_y_z takes the unreversed ids.
+  void set_reverse_entity_ids(const bool reverse) { myReverseEntityIds = reverse; }
+  // Decompose the mesh across processors differently: in slabs along x (rows in y for a triangular
+  // lattice) instead of by coordinate bisection, given to the processors in reverse order, so that
+  // the processors' parts, and which processor owns each shared node, differ.  For testing that
+  // results do not depend on the decomposition.  Set before populate_mesh().
+  void set_alternate_processor_decomposition(const bool alternate) { myAlternateProcessorDecomposition = alternate; }
+  // Whether populate_mesh puts the sides of the flat walls in the sidesets Xminus, Xplus, ... (by default
+  // it does).  Without, the walls' sides are only in the exposed-boundary part, so that the walls are in
+  // one surface; the sidesets are still declared, empty.  Set before populate_mesh().
+  void set_create_domain_sidesets(const bool createDomainSidesets) { myCreateDomainSidesets = createDomainSidesets; }
 private:
+  // The id in the mesh of a node or element with the given (unreversed) id, and vice versa.
+  stk::mesh::EntityId mesh_node_id(const stk::mesh::EntityId nodeId) const { return myReverseEntityIds ? myMaxNodeId + 1 - nodeId : nodeId; }
+  stk::mesh::EntityId mesh_element_id(const stk::mesh::EntityId elemId) const { return myReverseEntityIds ? myMaxElementId + 1 - elemId : elemId; }
   static BoundingBoxMeshStructureType default_structure_type_for_topology(const stk::topology elementTopology);
   void declare_domain_side_parts(const stk::mesh::Part & blockPart);
   void require_has_flat_boundaries() const;
@@ -106,7 +123,21 @@ private:
   void populate_cell_based_mesh();
   void setup_cell_node( size_t ix , size_t iy , size_t iz );
   void setup_BCC_node( size_t ix , size_t iy , size_t iz, int dx, int dy, int dz );
-  void build_face_tets( size_t cell_id, size_t ix , size_t iy , size_t iz, int iface, const std::vector<stk::mesh::EntityId> & cell_node_ids );
+  void build_face_tets( size_t cell_id, size_t ix , size_t iy , size_t iz, int iface, const std::vector<stk::mesh::EntityId> & cell_node_ids,
+      const std::vector<std::array<size_t,3>> & cell_node_lattice_indices );
+  bool is_quadratic() const { return m_element_topology != m_element_topology.base(); }
+  // The mid-edge nodes of quadratic elements: each vertex has an integer index on a doubled lattice,
+  // from 0 to maxVertexLatticeIndex in each direction, and the mid-edge node of an edge gets the id
+  // of the sum of its vertices' indices (its midpoint on a lattice 4 times finer), after the
+  // vertex ids.  No two edges of these meshes have the same midpoint, so the ids are unique, and
+  // they are the same however the mesh is decomposed.
+  void set_mid_edge_node_lattice(const std::array<size_t,3> & maxVertexLatticeIndex, const stk::mesh::EntityId maxVertexId);
+  stk::mesh::EntityId get_mid_edge_node_id(const std::array<size_t,3> & vertex0LatticeIndex, const std::array<size_t,3> & vertex1LatticeIndex) const;
+  // The element, with its mid-edge nodes if it is quadratic.
+  void declare_element_with_mid_edge_nodes(const stk::mesh::EntityId elemId,
+      const std::vector<stk::mesh::EntityId> & vertexIds,
+      const std::vector<std::array<size_t,3>> & vertexLatticeIndices);
+  void set_mid_edge_node_coordinates();
   stk::mesh::EntityId get_node_id(const size_t ix, const size_t iy, const size_t iz ) const
   {
     const size_t node_id_start = 1;
@@ -148,8 +179,15 @@ private:
   const stk::topology m_element_topology;
   BoundingBoxMeshStructureType myMeshStructureType{CUBIC_BOUNDING_BOX_MESH};
   size_t m_nx, m_ny, m_nz;
+  std::array<size_t,3> myMidEdgeNodeLatticeSize{{0,0,0}};
+  stk::mesh::EntityId myFirstMidEdgeNodeId{0};
+  bool myReverseEntityIds{false};
+  bool myAlternateProcessorDecomposition{false};
+  stk::mesh::EntityId myMaxNodeId{0};
+  stk::mesh::EntityId myMaxElementId{0};
   BoundingBoxType m_mesh_bbox;
   std::vector<stk::mesh::Part*> mySideParts;
+  bool myCreateDomainSidesets{true};
 };
 
 } // namespace krino

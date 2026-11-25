@@ -14,7 +14,7 @@
 #include <stk_math/StkVector.hpp>
 
 namespace krino {
-class FacetedSurfaceBase;
+class FacetAppender;
 
 class ContourTri
 {
@@ -25,12 +25,13 @@ public:
   static unsigned get_permuted_case_id(const unsigned caseId);
   static unsigned compute_case_id(const std::array<int,3> & nodeSigns);
 
-  static void append_facets_for_tri3(const std::array<stk::math::Vector3d,3> & coords,
-    const std::array<double,3> & dist,
-    FacetedSurfaceBase & facets);
-  static void append_facets_for_tri3_with_tri6_distance(const std::array<stk::math::Vector3d,3> & coords,
-    const std::array<double,6> & tri6Dist,
-    FacetedSurfaceBase & facets);
+  static void append_facets_for_tri3(const std::array<stk::math::Vector3d, 3> & coords,
+      const std::array<double, 3> & dist,
+      FacetAppender & facets);
+  static void
+  append_facets_for_tri3_with_tri6_distance(const std::array<stk::math::Vector3d, 3> & coords,
+      const std::array<double, 6> & tri6Dist,
+      FacetAppender & facets);
 };
 
 }

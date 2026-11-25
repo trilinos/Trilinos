@@ -6,26 +6,41 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <Akri_Element.hpp>
-#include <Akri_FieldRef.hpp>
+#include <functional>
+#include <sstream>
+#include <algorithm>
+#include <array>
+#include <iterator>
+#include <map>
+#include <optional>
+#include <math.h>
+#include <set>
+
+#include <Akri_AuxMetaData.hpp>
 #include <Akri_CDMesh.hpp>
-#include <Akri_SubElement.hpp>
-#include <Akri_SubElementNodeAncestry.hpp>
+#include <Akri_CubitJournal.hpp>
 #include <Akri_DiagWriter.hpp>
-#include <Akri_Element_Intersections.hpp>
+#include <Akri_Element.hpp>
 #include <Akri_ElementCutterUtils.hpp>
+#include <Akri_Element_Intersections.hpp>
+#include <Akri_FieldRef.hpp>
 #include <Akri_InterfaceGeometry.hpp>
 #include <Akri_Intersection_Points.hpp>
-#include <Akri_PhaseTagRegistry.hpp>
-#include <Akri_ParametricElementLibrary.hpp>
-#include <Akri_AuxMetaData.hpp>
 #include <Akri_MathUtil.hpp>
+#include <Akri_MeshHelpers.hpp>
+#include <Akri_MultipleEdgeCrossings.hpp>
+#include <Akri_ParametricElementLibrary.hpp>
+#include <Akri_PhaseTagRegistry.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_ProlongationData.hpp>
 #include <Akri_QualityMetric.hpp>
-#include <Akri_MeshHelpers.hpp>
+#include <Akri_SharpEdgeRecoveryBySwaps.hpp>
+#include <Akri_SharpFeatureIntersectionPoints.hpp>
+#include <Akri_SharpFeatureLeafUtils.hpp>
+#include <Akri_SubElement.hpp>
+#include <Akri_SubElementNodeAncestry.hpp>
+#include <Akri_SubElementNodeOrder.hpp>
 #include <stk_math/StkVector.hpp>
-#include <math.h>
 
 namespace krino{
 
@@ -243,6 +258,52 @@ ElementObj::compute_local_coords_from_owner_coordinates(const Mesh_Element * own
 void ElementObj::add_subelement(std::unique_ptr<SubElement> subelem)
 {
   my_subelements.emplace_back(std::move(subelem));
+}
+
+bool ElementObj::fill_path_to_leaf(const SubElement * leaf, std::vector<ElementObj *> & path)
+{
+  path.push_back(this);
+  for (auto && subelem : my_subelements)
+    if (subelem.get() == leaf || subelem->fill_path_to_leaf(leaf, path)) return true;
+  path.pop_back();
+  return false;
+}
+
+void ElementObj::remove_leaf_subelements(const std::set<const SubElement *> & leaves)
+{
+  std::set<const SubElement *> emptied;
+  for (auto && subelem : my_subelements)
+  {
+    if (leaves.count(subelem.get()) != 0 || !subelem->have_subelements()) continue;
+    subelem->remove_leaf_subelements(leaves);
+    if (!subelem->have_subelements()) emptied.insert(subelem.get());
+  }
+  std::erase_if(my_subelements,
+      [&](const std::unique_ptr<SubElement> & subelem)
+      { return leaves.count(subelem.get()) != 0 || emptied.count(subelem.get()) != 0; });
+}
+
+void ElementObj::replace_leaf_subelements(const std::vector<const SubElement *> & oldLeaves,
+    std::vector<std::unique_ptr<SubElement>> newLeaves)
+{
+  STK_ThrowRequire(!oldLeaves.empty());
+  std::vector<ElementObj *> commonPath;
+  for (auto * leaf : oldLeaves)
+  {
+    std::vector<ElementObj *> path;
+    STK_ThrowRequireMsg(fill_path_to_leaf(leaf, path), "Leaf to replace is not below the element.");
+    if (commonPath.empty())
+      commonPath = path;
+    else
+      commonPath.erase(
+          std::mismatch(commonPath.begin(), commonPath.end(), path.begin(), path.end()).first,
+          commonPath.end());
+  }
+  ElementObj * ancestor = commonPath.back();
+  ancestor->remove_leaf_subelements(
+      std::set<const SubElement *>(oldLeaves.begin(), oldLeaves.end()));
+  for (auto && leaf : newLeaves)
+    ancestor->add_subelement(std::move(leaf));
 }
 
 void ElementObj::get_subelements( std::vector<const SubElement *> & subelems ) const
@@ -545,6 +606,74 @@ Mesh_Element::coordinates( const stk::math::Vector3d & p_coords ) const
   return coords;
 }
 
+static double mean_ratio_of_simplex_for_journal(const std::vector<stk::math::Vector3d> & coords)
+{
+  return (coords.size() == 4) ? MeanRatioQualityMetric::tet_mean_ratio(coords) : MeanRatioQualityMetric::tri2d_mean_ratio(coords);
+}
+
+static void add_simplex_to_journal(CubitJournal & journal, const std::vector<stk::math::Vector3d> & coords)
+{
+  if (coords.size() == 4)
+    journal.add_tet({{coords[0], coords[1], coords[2], coords[3]}});
+  else
+    journal.add_tri({{coords[0], coords[1], coords[2]}});
+}
+
+void Mesh_Element::add_to_journal(CubitJournal & journal,
+    const std::function<std::string(const PhaseTag &)> & phaseName,
+    const double sliverMeanRatio) const
+{
+  const std::string prefix = "element_" + std::to_string(entityId());
+  const NodeVec parentNodes = vertex_nodes();
+  const size_t numVertices = parentNodes.size();
+  auto vertex_coordinates = [numVertices](const NodeVec & nodes)
+  {
+    std::vector<stk::math::Vector3d> coords;
+    for (size_t i=0; i<numVertices; ++i)
+      coords.push_back(nodes[i]->coordinates());
+    return coords;
+  };
+
+  journal.set_group(prefix + "_parent", "grey");
+  std::ostringstream parentComment;
+  parentComment << "Element " << entityId() << " with nodes";
+  for (auto * node : parentNodes)
+    parentComment << " " << node->entityId();
+  journal.add_comment(parentComment.str());
+  add_simplex_to_journal(journal, vertex_coordinates(parentNodes));
+
+  std::vector<const ElementObj *> leaves;
+  std::vector<const SubElement *> subelements;
+  get_subelements(subelements);
+  leaves.assign(subelements.begin(), subelements.end());
+  if (leaves.empty())
+    leaves.push_back(this);
+
+  static const std::array<std::string,6> phaseColors{{"blue", "green", "cyan", "yellow", "orange", "purple"}};
+  std::vector<std::string> phaseGroups;
+  for (auto * leaf : leaves)
+  {
+    const std::vector<stk::math::Vector3d> coords = vertex_coordinates(leaf->get_nodes());
+    const double meanRatio = mean_ratio_of_simplex_for_journal(coords);
+    if (meanRatio < sliverMeanRatio)
+    {
+      journal.set_group(prefix + "_slivers", "red");
+    }
+    else
+    {
+      const std::string group = prefix + "_" + phaseName(leaf->get_phase());
+      auto iter = std::find(phaseGroups.begin(), phaseGroups.end(), group);
+      if (iter == phaseGroups.end())
+        iter = phaseGroups.insert(phaseGroups.end(), group);
+      journal.set_group(group, phaseColors[std::distance(phaseGroups.begin(), iter) % phaseColors.size()]);
+    }
+    std::ostringstream leafComment;
+    leafComment << "leaf with mean ratio " << meanRatio << ", phase " << leaf->get_phase();
+    journal.add_comment(leafComment.str());
+    add_simplex_to_journal(journal, coords);
+  }
+}
+
 std::string Mesh_Element::visualize(const CDMesh & mesh) const
 {
   std::ostringstream os;
@@ -592,6 +721,16 @@ Mesh_Element::interface_edge_crossing_sign_and_position(const InterfaceID interf
   STK_ThrowRequire(get_cutter());
   std::array<stk::math::Vector3d,2> edgeNodeCoords{node1->owner_coords(this), node2->owner_coords(this)};
   return get_cutter()->interface_edge_crossing_sign_and_position(interface, edgeNodeCoords);
+}
+
+void Mesh_Element::fill_multiple_edge_crossing_positions(const InterfaceID interface,
+    const SubElementNode * node1,
+    const SubElementNode * node2,
+    std::vector<double> & positions) const
+{
+  STK_ThrowRequire(get_cutter());
+  get_cutter()->fill_multiple_edge_crossing_positions(
+      interface, {{node1->coordinates(), node2->coordinates()}}, positions);
 }
 
 bool
@@ -743,12 +882,488 @@ Mesh_Element::cut_interior_intersection_points(ParametricElementLibrary & parame
   }
 }
 
+void Mesh_Element::cut_multiple_edge_crossings(CDMesh & mesh)
+{
+  if (!have_interface() || !get_cutter()) return;
+
+  // Split the leaves one crossing at a time, until no leaf edge has a crossing that its end signs
+  // do not show: a second crossing of an edge is then on the edge between the first and its end.
+  for (bool cutThisPass = true; cutThisPass;)
+  {
+    cutThisPass = false;
+    std::vector<SubElement *> leafSubElements;
+    get_subelements(leafSubElements);
+    for (auto * leafSubElement : leafSubElements)
+      cutThisPass |= leafSubElement->cut_first_multiple_edge_crossing(mesh);
+  }
+}
+
 void
 Mesh_Element::create_cutter(const CDMesh & mesh, const InterfaceGeometry & interfaceGeometry)
 { /* %TRACE% */  /* %TRACE% */
   const auto intersectingPlanesDiagonalPicker = get_diagonal_picker();
   myCutter = interfaceGeometry.build_element_cutter(mesh.stk_bulk(), entity(), intersectingPlanesDiagonalPicker);
   myCuttingInterfaces = myCutter->get_sorted_cutting_interfaces();
+}
+
+void Mesh_Element::split_leaves_at_node(const NodeVec & entityNodes, const SubElementNode * node)
+{
+  std::vector<SubElement *> leaves;
+  get_subelements(leaves);
+  for (auto * leaf : leaves)
+  {
+    const NodeVec & leafNodes = leaf->get_nodes();
+    std::vector<int> entityNodeOrdinals;
+    for (auto * entityNode : entityNodes)
+    {
+      const auto iter = std::find(leafNodes.begin(), leafNodes.end(), entityNode);
+      if (iter == leafNodes.end()) break;
+      entityNodeOrdinals.push_back(std::distance(leafNodes.begin(), iter));
+    }
+    if (entityNodeOrdinals.size() != entityNodes.size()) continue;
+
+    if (entityNodes.size() == leafNodes.size())
+    {
+      leaf->split_interior_at_node(node);
+    }
+    else if (entityNodes.size() == 3)
+    {
+      const int oppositeNode =
+          6 - entityNodeOrdinals[0] - entityNodeOrdinals[1] - entityNodeOrdinals[2];
+      leaf->split_face_at_node(oppositeNode, node);
+    }
+    else
+    {
+      STK_ThrowRequire(entityNodes.size() == 2);
+      leaf->bisect_edge(entityNodeOrdinals[0], entityNodeOrdinals[1], node);
+    }
+  }
+}
+
+void Mesh_Element::insert_intersection_point(CDMesh & mesh, const IntersectionPoint & reducedPoint)
+{
+  STK_ThrowRequire(is_cut_by_rank());
+
+  // Without subelements, the element itself is the leaf the point is in.
+  const stk::math::Vector3d ownerCoords =
+      get_intersection_point_parametric_coordinates(reducedPoint);
+  const ElementObj * containingElem = nullptr;
+  stk::math::Vector3d leafPCoords;
+  find_child_coordinates_at_owner_coordinates(ownerCoords, containingElem, leafPCoords);
+  STK_ThrowRequire(containingElem);
+
+  // The tolerance was applied on this element, when the point was reduced: on the leaf, a weight is
+  // zero only to roundoff.
+  constexpr double onLeafEntityTol = 1.e-10;
+  // The leaves are linear, as is the element itself without them, on its vertices (the first nodes
+  // of a quadratic element).
+  const NodeVec leafNodes = (containingElem == this) ? vertex_nodes() : containingElem->get_nodes();
+  const int numLeafNodes = leafNodes.size();
+  STK_ThrowRequire(numLeafNodes <= 4);
+  std::vector<int> entityOrdinals;
+  std::vector<double> entityWeights;
+  fill_entity_of_weights_above_tolerance(simplex_weights_at_parametric_coordinates(leafPCoords, numLeafNodes),
+      onLeafEntityTol,
+      entityOrdinals,
+      entityWeights);
+  STK_ThrowRequire(!entityOrdinals.empty());
+  NodeVec entityNodes;
+  for (const int ordinal : entityOrdinals)
+    entityNodes.push_back(leafNodes[ordinal]);
+
+  const SubElementNode * node = nullptr;
+  if (entityNodes.size() == 1)
+    node = entityNodes[0];
+  else if (entityNodes.size() == 2)
+    node = mesh.create_edge_node(this, entityNodes[0], entityNodes[1], entityWeights[1]);
+  else
+    node = mesh.create_child_internal_or_face_node(this, entityNodes, entityWeights);
+  node->add_node_domains_counting_repeats(reducedPoint.get_sorted_domains());
+
+  if (entityNodes.size() > 1)
+  {
+    if (!have_subelements()) create_base_subelement();
+    split_leaves_at_node(entityNodes, node);
+  }
+}
+
+void Mesh_Element::reset_leaf_interface_signs()
+{
+  if (!get_cutter()) return;
+  std::vector<SubElement *> leaves;
+  get_subelements(leaves);
+  for (auto * leaf : leaves)
+    leaf->set_interface_signs(get_interface_signs_based_on_crossings(leaf->get_nodes()));
+}
+
+std::vector<stk::mesh::Entity> Mesh_Element::vertex_entities(const stk::mesh::BulkData & mesh) const
+{
+  const stk::mesh::Entity * elemNodes = mesh.begin_nodes(entity());
+  return std::vector<stk::mesh::Entity>(elemNodes, elemNodes + vertex_topology().num_nodes());
+}
+
+std::vector<NodeVec> Mesh_Element::leaf_node_lists() const
+{
+  if (!have_subelements()) return {vertex_nodes()};
+  std::vector<const SubElement *> leaves;
+  get_subelements(leaves);
+  std::vector<NodeVec> leavesNodes;
+  for (auto * leaf : leaves)
+    leavesNodes.push_back(leaf->get_nodes());
+  return leavesNodes;
+}
+
+std::vector<IntersectionPoint>
+Mesh_Element::get_corner_intersection_points(const CDMesh & mesh) const
+{
+  if (!have_interface() || !get_cutter() ||
+      !get_cutter()->might_have_interior_or_face_intersections())
+    return {};
+
+  const stk::mesh::BulkData & stkMesh = mesh.stk_bulk();
+  const ParametricElement & parametricElement =
+      get_parametric_elem_library().get_parametric_element(vertex_topology());
+  const std::vector<stk::mesh::Entity> elementNodes = vertex_entities(stkMesh);
+  std::vector<IntersectionPoint> interiorPoints;
+  append_intersection_points_from_element_interior(parametricElement,
+      elementNodes,
+      *myCutter,
+      keep_all_intersection_points_filter(),
+      interiorPoints);
+
+  // The corners are the points of codimension equal to the spatial dimension: the corners of the
+  // surfaces in 3D; in 2D, also the points where three phases meet.  A corner is not dropped for
+  // the domains of the nodes near it, as an edge crossing is: another corner of the same surface
+  // has the same domains.  A corner at a node is captured by it when inserted.
+  const int cornerCodimension = stkMesh.mesh_meta_data().spatial_dimension();
+  return reduced_intersection_points_of_codimension(
+      stkMesh, interiorPoints, cornerCodimension, mesh.get_snapper().get_edge_tolerance());
+}
+
+std::vector<ElementIntersection>
+Mesh_Element::get_uncaptured_sharp_edge_crossings_of_tet_face(const NodeVec & faceNodes, const double edgeTol) const
+{
+  constexpr int sharpEdgeCodimension = 2;
+  const ElementIntersectionPointFilter keepAll = [](const std::vector<int> &) { return true; };
+  const std::array<stk::math::Vector3d, 3> faceNodeOwnerCoords{{faceNodes[0]->owner_coords(this),
+      faceNodes[1]->owner_coords(this),
+      faceNodes[2]->owner_coords(this)}};
+  const std::array<const std::vector<int> *, 3> faceNodesDomains{{&faceNodes[0]->get_sorted_node_domains(),
+      &faceNodes[1]->get_sorted_node_domains(),
+      &faceNodes[2]->get_sorted_node_domains()}};
+  std::vector<ElementIntersection> faceIntersections;
+  get_cutter()->fill_tetrahedron_face_interior_intersections(
+      faceNodeOwnerCoords, keepAll, faceIntersections);
+  std::erase_if(faceIntersections,
+      [&](const ElementIntersection & faceIntersection)
+      {
+        return sharpEdgeCodimension != sharp_feature_codimension(faceIntersection.sortedDomains) ||
+            tet_face_point_is_captured(faceNodesDomains,
+                faceIntersection.parametricCoords,
+                faceIntersection.sortedDomains,
+                edgeTol);
+      });
+  return faceIntersections;
+}
+
+std::vector<IntersectionPoint> Mesh_Element::sharp_edge_crossing_points_of_leaf_faces(
+    const std::vector<NodeVec> & leavesNodes,
+    const std::vector<stk::mesh::Entity> & elementNodes,
+    const double edgeTol) const
+{
+  std::vector<IntersectionPoint> crossings;
+  for (const auto & face : unique_faces_of_tets(leavesNodes))
+  {
+    const NodeVec faceNodes(face.nodes.begin(), face.nodes.end());
+    const std::array<stk::math::Vector3d, 3> faceNodeOwnerCoords{
+        {faceNodes[0]->owner_coords(this), faceNodes[1]->owner_coords(this), faceNodes[2]->owner_coords(this)}};
+    for (auto & faceIntersection : get_uncaptured_sharp_edge_crossings_of_tet_face(faceNodes, edgeTol))
+    {
+      const stk::math::Vector3d & faceCoords = faceIntersection.parametricCoords;
+      const stk::math::Vector3d ownerCoords = (1. - faceCoords[0] - faceCoords[1]) * faceNodeOwnerCoords[0] +
+          faceCoords[0] * faceNodeOwnerCoords[1] + faceCoords[1] * faceNodeOwnerCoords[2];
+      crossings.emplace_back(true,
+          elementNodes,
+          simplex_weights_at_parametric_coordinates(ownerCoords, elementNodes.size()),
+          faceIntersection.sortedDomains);
+    }
+  }
+  return crossings;
+}
+
+std::vector<IntersectionPoint> Mesh_Element::points_of_leaf_nodes_with_domains(const stk::mesh::BulkData & stkMesh,
+    const std::vector<NodeVec> & leavesNodes,
+    const std::vector<stk::mesh::Entity> & elementNodes) const
+{
+  constexpr double roundoffTol = 1.e-12;
+  std::vector<IntersectionPoint> nodesWithDomains;
+  std::set<const SubElementNode *> nodesDone;
+  for (auto & leafNodes : leavesNodes)
+  {
+    for (auto * node : leafNodes)
+    {
+      if (node->get_sorted_node_domains().empty() || !nodesDone.insert(node).second) continue;
+      const stk::math::Vector3d & ownerCoords = node->owner_coords(this);
+      nodesWithDomains.push_back(reduced_intersection_point_in_canonical_form(stkMesh,
+          IntersectionPoint(true,
+              elementNodes,
+              simplex_weights_at_parametric_coordinates(ownerCoords, elementNodes.size()),
+              node->get_sorted_node_domains()),
+          roundoffTol));
+    }
+  }
+  return nodesWithDomains;
+}
+
+std::vector<IntersectionPoint> Mesh_Element::get_edge_intersection_points(const CDMesh & mesh) const
+{
+  if (!have_interface() || !get_cutter() ||
+      !get_cutter()->might_have_interior_or_face_intersections() ||
+      vertex_topology() != stk::topology::TETRAHEDRON_4)
+    return {};
+
+  const stk::mesh::BulkData & stkMesh = mesh.stk_bulk();
+  const std::vector<stk::mesh::Entity> elementNodes = vertex_entities(stkMesh);
+  const double edgeTol = mesh.get_snapper().get_edge_tolerance();
+  constexpr int sharpEdgeCodimension = 2;
+  const std::vector<NodeVec> leavesNodes = leaf_node_lists();
+
+  std::vector<IntersectionPoint> points = reduced_intersection_points_of_codimension(stkMesh,
+      sharp_edge_crossing_points_of_leaf_faces(leavesNodes, elementNodes, edgeTol),
+      sharpEdgeCodimension,
+      edgeTol);
+
+  // A crossing within the edge tolerance of a node of a leaf whose domains capture it is that node,
+  // found again: the sharp edge through the node crosses a leaf face beside it, as in a sliver.
+  // Cutting it would make a node beside the one there, and its reduction onto the entity of the
+  // element it is near would move it off the sharp edge.
+  const std::vector<IntersectionPoint> nodesWithDomains =
+      points_of_leaf_nodes_with_domains(stkMesh, leavesNodes, elementNodes);
+  std::erase_if(points,
+      [&](const IntersectionPoint & point)
+      {
+        return std::any_of(nodesWithDomains.begin(),
+            nodesWithDomains.end(),
+            [&](const IntersectionPoint & node) { return is_captured_by_intersection_point(node, point, edgeTol); });
+      });
+  return points;
+}
+
+// The largest distance between the mesh nodes the edge's nodes come from: the size of the entity of
+// the parent elements that the edge is in, the same in every element with the edge.
+static double
+extent_of_mesh_ancestors_of_edge(const SubElementNode * node0, const SubElementNode * node1)
+{
+  NodeSet ancestors;
+  node0->get_ancestors(ancestors);
+  node1->get_ancestors(ancestors);
+  double extent = 0.;
+  for (auto * ancestor0 : ancestors)
+    for (auto * ancestor1 : ancestors)
+      extent = std::max(extent, (ancestor1->coordinates() - ancestor0->coordinates()).length());
+  return extent;
+}
+
+void Mesh_Element::append_multiple_crossing_points_of_leaf_edge(const SubElementNode * node0,
+    const SubElementNode * node1,
+    const std::vector<stk::mesh::Entity> & elementNodes,
+    const double edgeTol,
+    const bool sharpFeaturesAreCut,
+    std::vector<IntersectionPoint> & crossings) const
+{
+  // The tolerances are fractions of the extent of the edge's mesh ancestors, the same in every
+  // element with the edge.
+  const double extent = extent_of_mesh_ancestors_of_edge(node0, node1);
+  std::vector<int> sortedDomains;
+  std::vector<double> positions;
+  for (auto && interface : get_sorted_cutting_interfaces())
+  {
+    interface.fill_sorted_domains(sortedDomains);
+    if (edge_is_chord_of_interface(node0->get_sorted_node_domains(), node1->get_sorted_node_domains(), sortedDomains))
+      continue;
+    fill_multiple_edge_crossing_positions(interface, node0, node1, positions);
+    if (positions.empty()) continue;
+    const double atEndTol =
+        multiple_crossing_end_tolerance(sharpFeaturesAreCut && get_cutter()->interface_has_sharp_features(interface), edgeTol) * extent;
+    for (const double position : multiple_crossing_positions_to_insert(positions,
+             node0->coordinates(),
+             node1->coordinates(),
+             node0->get_sorted_node_domains(),
+             node1->get_sorted_node_domains(),
+             sortedDomains,
+             edgeTol * extent,
+             atEndTol))
+    {
+      const stk::math::Vector3d ownerCoords =
+          (1. - position) * node0->owner_coords(this) + position * node1->owner_coords(this);
+      crossings.emplace_back(true,
+          elementNodes,
+          simplex_weights_at_parametric_coordinates(ownerCoords, elementNodes.size()),
+          sortedDomains);
+    }
+  }
+}
+
+std::vector<IntersectionPoint>
+Mesh_Element::get_multiple_edge_crossing_points(const CDMesh & mesh) const
+{
+  if (!have_interface() || !get_cutter() || !is_cut_by_rank()) return {};
+
+  const stk::mesh::BulkData & stkMesh = mesh.stk_bulk();
+  const std::vector<stk::mesh::Entity> elementNodes = vertex_entities(stkMesh);
+  const double edgeTol = mesh.get_snapper().get_edge_tolerance();
+  const stk::topology topology = vertex_topology();
+  std::array<unsigned, 2> edgeNodeOrdinals;
+
+  std::set<std::pair<const SubElementNode *, const SubElementNode *>> edgesDone;
+  std::vector<IntersectionPoint> crossings;
+  for (auto & leafNodes : leaf_node_lists())
+  {
+    for (unsigned iEdge = 0; iEdge < topology.num_edges(); ++iEdge)
+    {
+      topology.edge_node_ordinals(iEdge, edgeNodeOrdinals.data());
+      const SubElementNode * node0 = leafNodes[edgeNodeOrdinals[0]];
+      const SubElementNode * node1 = leafNodes[edgeNodeOrdinals[1]];
+      if (edgesDone.insert(std::minmax(node0, node1)).second)
+        append_multiple_crossing_points_of_leaf_edge(
+            node0, node1, elementNodes, edgeTol, mesh.get_cdfem_support().cuts_sharp_features(), crossings);
+    }
+  }
+
+  constexpr int surfaceCrossingCodimension = 1;
+  constexpr double roundoffTol = 1.e-12;
+  return reduced_intersection_points_of_codimension(
+      stkMesh, crossings, surfaceCrossingCodimension, roundoffTol);
+}
+
+void Mesh_Element::insert_intersection_points(
+    CDMesh & mesh, std::vector<IntersectionPoint> points, const double repeatTol)
+{
+  if (points.empty()) return;
+
+  sort_intersection_points_in_canonical_order(mesh.stk_bulk(), points);
+  remove_repeated_intersection_points(points, repeatTol);
+
+  for (auto & point : points)
+    insert_intersection_point(mesh, point);
+}
+
+using TetNodes = std::array<const SubElementNode *, 4>;
+using SortedTriNodes = std::array<const SubElementNode *, 3>;
+
+// The nodes of a face in a canonical order, by ancestry: the same in every leaf with the face and on
+// every processor.  The swaps find a face's crossings with its nodes in this order, so that whether
+// it is crossed does not depend on the order of its nodes in a leaf, even to roundoff: otherwise a
+// swap accepted because its new faces were found uncrossed could find them crossed, and be undone,
+// without end.  That roundoff can change the decomposition, so the order does not depend on the ids
+// where they are not parallel consistent.
+static SortedTriNodes canonical_tri_nodes(const bool globalIdsAreParallelConsistent,
+    const SubElementNode * node0,
+    const SubElementNode * node1,
+    const SubElementNode * node2)
+{
+  SortedTriNodes nodes{{node0, node1, node2}};
+  std::sort(nodes.begin(),
+      nodes.end(),
+      [globalIdsAreParallelConsistent](const SubElementNode * a, const SubElementNode * b)
+      {
+        return less_conditionally_by_coordinates_because_it_impacts_structure(
+            globalIdsAreParallelConsistent, a->get_ancestry(), b->get_ancestry());
+      });
+  return nodes;
+}
+
+// The nodes of a face sorted by id, as a key: only to find the face again.
+static SortedTriNodes tri_nodes_key(
+    const SubElementNode * node0, const SubElementNode * node1, const SubElementNode * node2)
+{
+  SortedTriNodes nodes{{node0, node1, node2}};
+  std::sort(nodes.begin(),
+      nodes.end(),
+      [](const SubElementNode * a, const SubElementNode * b)
+      { return less_by_global_id_because_it_doesnt_impact_structure(a->get_ancestry(), b->get_ancestry()); });
+  return nodes;
+}
+
+// The new leaves take the parent side ids of the old leaves' sides they are on; their interface
+// signs are set after the swaps.
+void Mesh_Element::replace_tet_leaves(
+    const std::vector<const SubElement *> & oldLeaves, const std::vector<TetNodes> & tets)
+{
+  std::map<SortedTriNodes, int> parentSideIds;
+  for (auto * leaf : oldLeaves)
+  {
+    const NodeVec & leafNodes = leaf->get_nodes();
+    for (int iSide = 0; iSide < 4; ++iSide)
+    {
+      const auto & side = tetSideNodeOrdinals[iSide];
+      parentSideIds[tri_nodes_key(leafNodes[side[0]], leafNodes[side[1]], leafNodes[side[2]])] =
+          leaf->parent_side_id(iSide);
+    }
+  }
+
+  std::vector<std::unique_ptr<SubElement>> newLeaves;
+  for (auto & tet : tets)
+  {
+    std::vector<int> sideIds;
+    for (auto & side : tetSideNodeOrdinals)
+    {
+      const auto iter =
+          parentSideIds.find(tri_nodes_key(tet[side[0]], tet[side[1]], tet[side[2]]));
+      sideIds.push_back(iter == parentSideIds.end() ? -1 : iter->second);
+    }
+    newLeaves.push_back(
+        std::make_unique<SubElement_Tet_4>(NodeVec(tet.begin(), tet.end()), sideIds, this));
+  }
+  replace_leaf_subelements(oldLeaves, std::move(newLeaves));
+}
+
+void Mesh_Element::recover_sharp_edges_in_tet_by_swaps(const CDMesh & mesh)
+{
+  if (!have_interface() || !get_cutter() ||
+      !get_cutter()->might_have_interior_or_face_intersections() ||
+      vertex_topology() != stk::topology::TETRAHEDRON_4 || !have_subelements())
+    return;
+
+  const double edgeTol = mesh.get_snapper().get_edge_tolerance();
+  const bool globalIdsAreParallelConsistent = mesh.get_cdfem_support().get_global_ids_are_parallel_consistent();
+  using Recovery = SharpEdgeRecoveryBySwaps<const SubElementNode *>;
+  const Recovery recovery(edgeTol,
+      [](const SubElementNode * node) { return node->coordinates(); },
+      [this](const SubElementNode * node) { return node->owner_coords(this); },
+      [](const SubElementNode * node, const std::vector<int> & sortedDomains)
+      { return node_domains_capture_point_domains(node->get_sorted_node_domains(), sortedDomains); },
+      [globalIdsAreParallelConsistent](
+          const SubElementNode * node0, const SubElementNode * node1, const SubElementNode * node2)
+      { return canonical_tri_nodes(globalIdsAreParallelConsistent, node0, node1, node2); },
+      [this, edgeTol](const Recovery::Face & faceNodes)
+      {
+        std::vector<Recovery::FaceCrossing> crossings;
+        for (auto & crossing :
+            get_uncaptured_sharp_edge_crossings_of_tet_face(NodeVec(faceNodes.begin(), faceNodes.end()), edgeTol))
+          crossings.push_back({crossing.parametricCoords, crossing.sortedDomains});
+        return crossings;
+      });
+
+  // Each swap replaces its leaves in place, as they are found, so that the order of the leaves, and
+  // so of the swaps after it, is as without the class.
+  while (true)
+  {
+    std::vector<SubElement *> leaves;
+    get_subelements(leaves);
+    std::vector<TetNodes> tets;
+    for (auto * leaf : leaves)
+    {
+      const NodeVec & leafNodes = leaf->get_nodes();
+      tets.push_back({{leafNodes[0], leafNodes[1], leafNodes[2], leafNodes[3]}});
+    }
+    const std::optional<Recovery::Swap> swap = recovery.find_swap(tets);
+    if (!swap) break;
+    std::vector<const SubElement *> oldLeaves;
+    for (const size_t iTet : swap->oldTets)
+      oldLeaves.push_back(leaves[iTet]);
+    replace_tet_leaves(oldLeaves, swap->newTets);
+  }
 }
 
 void
@@ -918,10 +1533,12 @@ ElementObj::determine_diagonal_for_internal_quad_of_cut_tet_from_edge_nodes(cons
     SubElementNodeAncestry ancestry2 = n2->get_ancestry();
     SubElementNodeAncestry ancestry3 = n3->get_ancestry();
 
-    SubElementNodeAncestry ancestry02 = std::min(ancestry0, ancestry2);
-    SubElementNodeAncestry ancestry13 = std::min(ancestry1, ancestry3);
+    const auto lessById = [](const SubElementNodeAncestry & a, const SubElementNodeAncestry & b)
+    { return less_by_global_id_because_it_is_requested(a, b); };
+    SubElementNodeAncestry ancestry02 = std::min(ancestry0, ancestry2, lessById);
+    SubElementNodeAncestry ancestry13 = std::min(ancestry1, ancestry3, lessById);
 
-    return (ancestry02 < ancestry13);
+    return lessById(ancestry02, ancestry13);
   }
 
   // Make sure that diagonal can be picked either way and still avoid Steiner point

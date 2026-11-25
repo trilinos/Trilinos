@@ -23,6 +23,7 @@ public:
   void resolve(stk::expreval::VariableMap::iterator & varIt) override;
   double evaluate(const stk::math::Vector3d &coords) const;
   double evaluate(const double time, const stk::math::Vector3d &coord) const;
+  bool uses_time() const { return myDoesUseTime; }
 private:
   void parse(const std::string & expression);
   stk::expreval::Eval myEvaluator;

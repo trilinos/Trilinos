@@ -1,5 +1,6 @@
 #include <Akri_MeshSpecs.hpp>
 #include <Akri_Unit_RefinementFixture.hpp>
+#include <Akri_Unit_RefinementFixture_Edges.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 
 namespace krino {
@@ -65,4 +66,32 @@ TEST_F(UMRRegularHexRefinement, meshAfterEachLevelOfRefineHasCorrectNumElemsAndN
   }
 }
 
+class UMRRegularHexRefinementWithEdges : public WithExplicitEdges<UMRRegularHexRefinement>
+{
+public:
+  UMRRegularHexRefinementWithEdges()
+  {
+    if (is_valid_proc_size_for_test()) create_edges();
+  }
+};
+
+TEST_F(UMRRegularHexRefinementWithEdges,
+    uniformRefinementThenUnrefinement_edgesAttachedToAllActiveElements)
+{
+  if (!is_valid_proc_size_for_test()) return;
+
+  const size_t numOriginalEdges = num_edges_in(mMesh.mesh_meta_data().universal_part());
+  EXPECT_EQ(num_original_edges(), numOriginalEdges);
+
+  // Each original edge is split in two at each level, and the edges are checked after each level.
+  perform_iterations_of_uniform_refinement_with_uniform_marker(1);
+  EXPECT_EQ(numOriginalEdges * (1 + 2), num_edges_in(mMesh.mesh_meta_data().universal_part()));
+  perform_iterations_of_uniform_refinement_with_uniform_marker(1);
+  EXPECT_EQ(numOriginalEdges * (1 + 2 + 4), num_edges_in(mMesh.mesh_meta_data().universal_part()));
+
+  // Marker unrefinement does not support hex face and centroid nodes, so the mesh is fully
+  // unrefined.
+  unrefine_mesh();
+  EXPECT_EQ(numOriginalEdges, num_edges_in(mMesh.mesh_meta_data().universal_part()));
+}
 }

@@ -9,178 +9,86 @@
 #ifndef Akri_MeshSurface_h
 #define Akri_MeshSurface_h
 
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_MeshFacetedSurface.hpp>
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_util/diag/Timer.hpp>
+#include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/Types.hpp>
 
-#include <stk_math/StkVector.hpp>
 #include <memory>
+#include <vector>
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct Entity; } }
 namespace stk { namespace mesh { class MetaData; } }
-namespace stk { namespace mesh { class Selector; } }
 
 namespace krino {
 
-template <class FACET>
-class MeshSurface : public Faceted_Surface<FACET> {
+// The active, locally owned sides of the mesh selected by surfaceSelector as a connected
+// MeshFacetedSurface whose vertices are their nodes, rebuilt from the current coordinates in every
+// prepare_to_compute (so it follows mesh refinement and motion).  The sides of each part of a union
+// selector are oriented by the blocks touching it (see should_side_be_flipped); sign = -1 reverses
+// them.  Triangles and segments are facets; quadratic sides are split at their mid nodes, and
+// quadrilaterals into 2 triangles if planar, otherwise 4 about their centroid.
+//
+// With skinnedBlocks, the surface is instead the skin of those blocks (see build_skin_mesh_surface).
+class MeshSurface : public MeshFacetedSurface
+{
 public:
   MeshSurface(const stk::mesh::MetaData & meta,
-              const stk::mesh::Field<double>& coord_ref,
-              const stk::mesh::Selector & surface_selector,
-              const int sign);
-
-  virtual ~MeshSurface() {}
-  virtual void build_local_facets(const BoundingBox & proc_bbox) override;
+      const stk::mesh::Field<double> & coordsField,
+      const stk::mesh::Selector & surfaceSelector,
+      const int sign,
+      const stk::mesh::PartVector & skinnedBlocks = {});
 
 protected:
-  void add_side_facet(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & volumeSelector, const stk::topology sideTopology, const stk::mesh::Entity side);
-  void add_selected_side_facets(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & volumeSelector, const stk::mesh::Selector & sideSelector);
-  void add_facet2d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1);
-  void add_facet3d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1, unsigned p2);
-  void add_quad3d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1, unsigned p2, unsigned p3);
-  void add_facet2d(const stk::math::Vector3d & p0, const stk::math::Vector3d & p1);
-  void add_facet3d(const stk::math::Vector3d & p0, const stk::math::Vector3d & p1, const stk::math::Vector3d & p2);
-  
+  virtual void build_local_facets(const std::vector<BoundingBox> & procQueryBboxes,
+      VertexIdsAndCoords & vertexIdsAndCoords,
+      FacetVertexIds & facetVertexIds) override;
+
 private:
-  int my_sign;
-  const stk::mesh::MetaData & my_mesh_meta;
-  const stk::mesh::Field<double>& my_coord_ref;
-  const stk::mesh::Selector my_surface_selector;
+  const stk::mesh::MetaData & myMeta;
+  const stk::mesh::Field<double> & myCoordsField;
+  const stk::mesh::Selector mySurfaceSelector;
+  int mySign;
+  stk::mesh::PartVector mySkinnedBlocks;
 };
 
-std::unique_ptr<FacetedSurfaceBase> build_mesh_surface(const stk::mesh::MetaData & meta,
-    const stk::mesh::Field<double>& coordsField,
+// Whether a side's nodes are reversed when making a facet from it, so that facets are oriented
+// consistently with respect to the volume elements selected by volumeSelector (or keep the side's
+// own orientation if volumeSelector is null).  A negative sign reverses the orientation.
+bool should_side_be_flipped(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & volumeSelector,
+    const stk::mesh::Entity side,
+    const int sign);
+
+std::unique_ptr<MeshSurface> build_mesh_surface(const stk::mesh::MetaData & meta,
+    const stk::mesh::Field<double> & coordsField,
     const stk::mesh::Selector & surfaceSelector,
     const int sign);
 
-class Parallel_Facet_File_Reader {
-public:
-  Parallel_Facet_File_Reader(const std::string & in_filename);
+// The skin of the blocks: the sides of their elements that are not between two of them, each facing
+// out of the blocks (sign = -1 reverses them), so that a side between one of the blocks and another
+// block faces out of the one.  The sides must already exist, as made by
+// create_exposed_block_boundary_sides and create_interior_block_boundary_sides.  A side is between
+// two of the blocks if it is in both of their parts, which needs no elements from other processors.
+std::unique_ptr<MeshSurface> build_skin_mesh_surface(const stk::mesh::MetaData & meta,
+    const stk::mesh::Field<double> & coordsField,
+    const stk::mesh::PartVector & skinnedBlocks,
+    const int sign);
 
-  static void get_batch_size(const int local_num_facets, int & batch_size, int & num_batches);
+// Appends the facets of the skin of the blocks (as in build_skin_mesh_surface), from the sides selected
+// by ownedSideSelector, with the vertex ids and coordinates they use.
+void append_skin_facets(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Field<double> & coordsField,
+    const stk::mesh::PartVector & skinnedBlocks,
+    const stk::mesh::Selector & ownedSideSelector,
+    const int sign,
+    FacetMesh::VertexIdsAndCoords & vertexIdsAndCoords,
+    FacetMesh::FacetVertexIds & facetVertexIds);
 
-  std::ifstream & input() { return my_input; }
-  const std::string & filename() const { return my_filename; }
-
-  void open_file();
-  void close_file();
-  void read(const std::string & read_description, const std::function<void(void)> & read_function);
-
-private:
-  std::string my_filename;
-  std::ifstream my_input;
-};
-
-class Faceted_Surface_From_File : public Faceted_Surface<Facet3d> {
-public:
-  Faceted_Surface_From_File(const stk::diag::Timer &parent_timer);
-  virtual ~Faceted_Surface_From_File() {}
-  virtual void build_local_facets(const BoundingBox & proc_bbox) override;
-  virtual BoundingBox get_bounding_box() = 0;
-  void insert_into(BoundingBox & bbox) const override;
-
-protected:
-  virtual void read_file(const std::vector<BoundingBox> & proc_bboxes) = 0;
-private:
-  stk::diag::Timer my_timer;
-  bool my_built_local_facets;
-};
-
-class STLSurface : public Faceted_Surface_From_File {
-public:
-  STLSurface(const stk::diag::Timer &parent_timer,
-      const std::string & filename,
-      const int sign,
-      const stk::math::Vector3d & scale);
-  STLSurface(const std::string & filename,
-      const stk::diag::Timer &parentTimer = sierra::Diag::sierraTimer(),
-      const int sign = 1,
-      const stk::math::Vector3d & scale = stk::math::Vector3d(1.,1.,1.))
-  : STLSurface(parentTimer, filename, sign, scale) {}
-
-  virtual ~STLSurface() {}
-  virtual BoundingBox get_bounding_box() override;
-
-private:
-  virtual void read_file(const std::vector<BoundingBox> & proc_bboxes) override;
-  void read_header();
-  unsigned read_num_binary_facets();
-  unsigned read_ascii_facets(const unsigned max_batch_size);
-  unsigned read_binary_facets(const unsigned maxBatchSize, unsigned & numRemainingInFile);
-  BoundingBox get_ascii_facet_bounding_box();
-  BoundingBox get_binary_facet_bounding_box(const unsigned numFacets);
-
-private:
-  bool my_is_ascii;
-  Parallel_Facet_File_Reader my_reader;
-  int my_dist_sign;
-  stk::math::Vector3d my_scale;
-};
-
-class FACSurface : public Faceted_Surface_From_File {
-public:
-  FACSurface(const stk::diag::Timer &parent_timer,
-      const std::string & filename,
-      const int sign,
-      const stk::math::Vector3d & scale);
-
-  virtual ~FACSurface() {}
-  virtual BoundingBox get_bounding_box() override;
-
-private:
-  virtual void read_file(const std::vector<BoundingBox> & proc_bboxes) override;
-  void read_points(std::vector<stk::math::Vector3d> & points);
-  void read_facets(const int batch_size, const int num_facets, const std::vector<stk::math::Vector3d> & points);
-
-private:
-  Parallel_Facet_File_Reader my_reader;
-  int my_dist_sign;
-  stk::math::Vector3d my_scale;
-};
-
-class PLYSurface : public Faceted_Surface_From_File {
-public:
-  PLYSurface(const stk::diag::Timer &parent_timer,
-      const std::string & filename,
-      const int sign,
-      const stk::math::Vector3d & scale);
-
-  virtual ~PLYSurface() {}
-  virtual BoundingBox get_bounding_box() override;
-
-private:
-  Parallel_Facet_File_Reader my_reader;
-  virtual void read_file(const std::vector<BoundingBox> & proc_bboxes) override;
-  void read_header(int & num_points, int & num_facets);
-  void read_points(const int num_points, std::vector<stk::math::Vector3d> & points);
-  void read_facets(const int batch_size, const std::vector<stk::math::Vector3d> & points);
-
-private:
-  int my_dist_sign;
-  stk::math::Vector3d my_scale;
-};
-
-class EXOSurface : public Faceted_Surface_From_File {
-public:
-  EXOSurface(const stk::diag::Timer &parent_timer,
-      const std::string & filename,
-      const int sign,
-      const stk::math::Vector3d & scale);
-
-  virtual ~EXOSurface() {}
-  virtual BoundingBox get_bounding_box() override;
-
-private:
-  virtual void read_file(const std::vector<BoundingBox> & proc_bboxes) override;
-
-private:
-  std::string my_filename;
-  int my_dist_sign;
-  stk::math::Vector3d my_scale;
-};
+// Whether the sides in the bucket are in the parts of at least two of the blocks.
+bool are_sides_between_two_of_blocks(const stk::mesh::Bucket & sideBucket, const stk::mesh::PartVector & blocks);
 
 } // namespace krino
 

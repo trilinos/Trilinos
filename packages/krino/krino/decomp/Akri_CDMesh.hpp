@@ -32,6 +32,7 @@ namespace krino {
 class SubElement;
 class ElementObj;
 class Mesh_Element;
+class IntersectionPoint;
 class SubElementNode;
 class SubElementMeshNode;
 class ProlongationNodeData;
@@ -102,10 +103,39 @@ public:
   bool triangulate(const InterfaceGeometry & interfaceGeometry); //return value indicates if any changes were made
   void decompose(const InterfaceGeometry & interfaceGeometry);
   void cut_sharp_features(const InterfaceGeometry & interfaceGeometry);
+  // Collective.  Cut the elements cut by rank (Mesh_Element::is_cut_by_rank) at their sharp-feature
+  // points of this codimension (the spatial dimension: corners; 2 in 3D: sharp-edge crossings),
+  // each reduced by the edge tolerance onto the entity it is near
+  // (share_and_insert_intersection_points).  Whether any processor made a new node.
+  bool cut_sharp_feature_points(const int codimension);
+  // Collective.  Cut the elements cut by rank (Mesh_Element::is_cut_by_rank) at the crossings of
+  // their leaf edges that the signs at the ends do not show
+  // (Mesh_Element::get_multiple_edge_crossing_points), in rounds, sharing them as the sharp-feature
+  // points (share_and_insert_intersection_points), until no element has any.
+  void cut_multiple_edge_crossings_in_rounds();
+  // The multiple edge crossings of the elements' leaves: by rank (cut_multiple_edge_crossings_in_rounds)
+  // for tets and tris, element by element for the others.
+  void cut_multiple_edge_crossings_of_elements();
+  // Collective.  Give each intersection point found here (in the stencil of the entity it is on:
+  // a node, an edge, a face, or the inside of an element) to every element cut by rank
+  // (Mesh_Element::is_cut_by_rank: tets, and tris in 2D) that has that entity, here or on another
+  // processor, and insert each element's points in canonical order.  So every element with a face
+  // or edge has all the points on it, and inserts them in the same order: elements sharing it split
+  // it alike, and leave no hanging nodes.  An element's point is a repeat of one before it on the
+  // same entity whose domains contain its own, and whose weights are within repeatTol of its own;
+  // repeats are not inserted.
+  void share_and_insert_intersection_points(
+      const std::vector<IntersectionPoint> & foundPoints, const double repeatTol);
   void snap_nearby_intersections_to_nodes(const InterfaceGeometry & interfaceGeometry, NodeToCapturedDomainsMap & domainsAtNodes);
   void set_phase_of_uncut_elements(const InterfaceGeometry & interfaceGeometry);
 
   int spatial_dim() const { return my_spatial_dim; }
+  // Counts a leaf edge cut where an interface's plane crosses it but another phase is smallest
+  // there.
+  void count_fake_crossing_cut() { ++myNumFakeCrossingsCut; }
+  // The number of such cuts in the last decomposition, on all processors (an edge shared by
+  // processors is counted on each).
+  size_t num_fake_crossings_cut() const { return myGlobalNumFakeCrossingsCut; }
 
   const Phase_Support & get_phase_support() const { return my_phase_support; }
   const CDFEM_Support & get_cdfem_support() const { return my_cdfem_support; }
@@ -194,6 +224,14 @@ public:
   const PartAndFieldCollections & get_prolong_part_and_field_collections() const { return myProlongPartAndFieldCollections; }
 
   void debug_output() const;
+  // For debugging: writes a Cubit journal of the listed elements that this processor owns, with their
+  // leaves and the surfaces near them (Mesh_Element::add_to_journal,
+  // InterfaceGeometry::add_surfaces_to_journal), to <fileBaseName>.<rank>.jou.  Processors that own
+  // none of them write nothing.  Block ids start at 1000*rank+1, so the files can be played together.
+  void write_elements_journal(const std::string & fileBaseName,
+      const std::vector<stk::mesh::EntityId> & elementIds,
+      const InterfaceGeometry & interfaceGeometry,
+      const double sliverMeanRatio = 0.) const;
   void print_conformal_volumes_and_surface_areas() const;
   std::vector<std::unique_ptr<Mesh_Element>> & get_elements() { return elements; }
   const std::vector<std::unique_ptr<Mesh_Element>> & get_elements() const { return elements; }
@@ -298,6 +336,8 @@ private:
   EntityIdPool my_entity_id_pool;
 
   const int my_spatial_dim;
+  size_t myNumFakeCrossingsCut = 0;
+  size_t myGlobalNumFakeCrossingsCut = 0;
   CDFEM_Support & my_cdfem_support;
   Phase_Support & my_phase_support;
   RefinementSupport & myRefinementSupport;

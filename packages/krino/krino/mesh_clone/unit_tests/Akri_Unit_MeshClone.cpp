@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <stk_mesh/base/MeshBuilder.hpp>
@@ -24,6 +25,7 @@
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshClone.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <Akri_Unit_MeshCloneTestUtils.hpp>
 
 namespace krino {
 
@@ -155,4 +157,113 @@ TEST(MeshCloneCoincidentShell, StashWithCoincidentShellOnParallelSplitInterface)
   EXPECT_NO_THROW(MeshClone::stash_or_restore_mesh(mesh, 0));
 }
 
+namespace
+{
+
+class MeshCloneStash : public StkMeshFixture<stk::topology::TETRAHEDRON_4>
+{
+protected:
+  // In one modification cycle, destroys this processor's owned elements of the block, declares the
+  // node newNodeId on processor 0, and moves the nodes this processor has.
+  void modify_mesh(const std::string & blockName, const stk::mesh::EntityId newNodeId)
+  {
+    const stk::mesh::MetaData & meta = mMesh.mesh_meta_data();
+    std::vector<stk::mesh::Entity> elemsToDestroy;
+    stk::mesh::get_selected_entities(*meta.get_part(blockName) & meta.locally_owned_part(),
+        mMesh.buckets(stk::topology::ELEMENT_RANK),
+        elemsToDestroy);
+
+    mMesh.modification_begin();
+    for (auto elem : elemsToDestroy)
+      EXPECT_TRUE(mMesh.destroy_entity(elem));
+    if (mMesh.parallel_rank() == 0) mMesh.declare_node(newNodeId);
+    mMesh.modification_end();
+
+    move_nodes();
+  }
+
+  void move_nodes()
+  {
+    const FieldRef coordsField(mMesh.mesh_meta_data().coordinate_field());
+    for (auto * bucketPtr : mMesh.buckets(stk::topology::NODE_RANK))
+      for (auto node : *bucketPtr)
+        field_data<double>(coordsField.field(), node)[0] += 0.1;
+  }
+
+  bool stash_or_restore(const unsigned stepCount)
+  {
+    return MeshClone::stash_or_restore_mesh(
+        mMesh,
+        stepCount,
+        [&]() { myNotifications.push_back("pre"); },
+        [&]() { myNotifications.push_back("post"); });
+  }
+
+  std::vector<std::string> myNotifications;
+};
+
+} // namespace
+
+TEST_F(MeshCloneStash, restoreAtSameStep_meshEqualsStashedMesh)
+{
+  if (!build_two_block_tet_mesh(*this)) return;
+  const std::unique_ptr<stk::mesh::BulkData> stashed = clone_mesh(mMesh);
+
+  EXPECT_FALSE(stash_or_restore(0));
+  EXPECT_TRUE(MeshClone::exists(mMesh));
+  modify_mesh("block_2", 999);
+
+  EXPECT_TRUE(stash_or_restore(0));
+  EXPECT_EQ((std::vector<std::string>{"pre", "post"}), myNotifications);
+  expect_equal_meshes(*stashed, mMesh);
 }
+
+TEST_F(MeshCloneStash, laterStep_updatesStashThenRestoreGivesUpdatedMesh)
+{
+  if (!build_two_block_tet_mesh(*this)) return;
+
+  stash_or_restore(0);
+  modify_mesh("block_2", 999);
+  const std::unique_ptr<stk::mesh::BulkData> updated = clone_mesh(mMesh);
+
+  EXPECT_FALSE(stash_or_restore(1));
+  EXPECT_TRUE(myNotifications.empty());
+  expect_equal_meshes(*updated, mMesh);
+
+  modify_mesh("block_1", 998);
+  EXPECT_TRUE(stash_or_restore(1));
+  expect_equal_meshes(*updated, mMesh);
+}
+
+// A change of field values alone does not change the mesh's synchronized count, so the mesh is only
+// restored once it is marked out of date.
+TEST_F(MeshCloneStash, fieldOnlyChange_restoredOnlyWhenMarkedOutOfDate)
+{
+  if (!build_two_block_tet_mesh(*this)) return;
+  const std::unique_ptr<stk::mesh::BulkData> stashed = clone_mesh(mMesh);
+
+  stash_or_restore(0);
+  move_nodes();
+  const std::unique_ptr<stk::mesh::BulkData> moved = clone_mesh(mMesh);
+
+  EXPECT_FALSE(stash_or_restore(0));
+  expect_equal_meshes(*moved, mMesh);
+
+  MeshClone::get(mMesh).mark_mesh_as_out_of_date();
+  EXPECT_TRUE(stash_or_restore(0));
+  expect_equal_meshes(*stashed, mMesh);
+}
+
+TEST_F(MeshCloneStash, upToDate_neitherUpdatedNorRestored)
+{
+  if (!build_two_block_tet_mesh(*this)) return;
+  const std::unique_ptr<stk::mesh::BulkData> stashed = clone_mesh(mMesh);
+
+  stash_or_restore(0);
+  EXPECT_FALSE(stash_or_restore(0));
+  EXPECT_FALSE(stash_or_restore(1));
+  EXPECT_TRUE(myNotifications.empty());
+  expect_equal_meshes(*stashed, mMesh);
+}
+
+} // namespace krino

@@ -13,6 +13,8 @@
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_CDMesh.hpp>
 #include <Akri_Facet.hpp>
+#include <Akri_FacetCoordinates.hpp>
+#include <Akri_MeshFacetedSurface.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_NodeToCapturedDomains.hpp>
 #include <Akri_Phase_Support.hpp>
@@ -223,10 +225,17 @@ public:
         {{0,3,2}}, {{0,2,1}},
         {{4,5,6}}, {{4,6,7}}
       }};
+    FacetCoordinates cubeFacets(3);
     for (auto && facetVerts : facetsVerts)
-      myCube.emplace_back_3d( cubeVerts[facetVerts[0]], cubeVerts[facetVerts[1]], cubeVerts[facetVerts[2]] );
+      cubeFacets.emplace_back_3d(
+          cubeVerts[facetVerts[0]], cubeVerts[facetVerts[1]], cubeVerts[facetVerts[2]]);
+    myCube = std::make_unique<MeshFacetedSurface>(MPI_COMM_WORLD, 3, cubeFacets.coordinates());
     this->setup_phase_support_on_block1();
-    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&myCube}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier},
+        {myCube.get()},
+        AuxMetaData::get(this->fixture.meta_data()).active_part(),
+        this->cdfemSupport,
+        Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *myCubeGeometry; }
@@ -237,7 +246,7 @@ protected:
     return domain;
   }
   double get_mesh_size() const { return 1./6.; }
-  Faceted_Surface<Facet3d> myCube;
+  std::unique_ptr<MeshFacetedSurface> myCube;
   std::unique_ptr<AnalyticSurfaceInterfaceGeometry> myCubeGeometry;
 };
 

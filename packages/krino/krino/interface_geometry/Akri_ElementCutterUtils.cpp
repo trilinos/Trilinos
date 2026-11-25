@@ -60,7 +60,7 @@ static void append_intersection_points_from_interior(const ParametricElement & p
   }
 }
 
-static void append_intersection_points_from_element_face(ParametricElementLibrary & parametricElemLibrary,
+void append_intersection_points_from_element_face(ParametricElementLibrary & parametricElemLibrary,
     const ParametricElement & elementParametricElement,
     const std::vector<stk::mesh::Entity> & elementNodes,
     const int iFace,
@@ -68,12 +68,12 @@ static void append_intersection_points_from_element_face(ParametricElementLibrar
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints)
 {
-  // This routine only operates on tetrahedra, whose faces are triangles (3 nodes).
-  // Query the compile-time TET_4 topology directly: it only ever instantiates the
-  // 3-node face path, so it writes exactly 3 ordinals into the array (no allocation)
-  // and avoids the array-bounds warning that the runtime stk::topology overload emits
-  // when instantiated for topologies with larger faces (e.g. HEX_20/HEX_27).
-  STK_ThrowRequire(elementParametricElement.get_topology().face_topology(iFace).num_nodes() == 3u);
+  // The element is a linear tetrahedron: a quadratic one is given as the tetrahedron of its vertices
+  // (see append_intersection_points_from_within_element_and_owned_faces).  Query the compile-time
+  // TET_4 topology directly: it writes exactly 3 ordinals into the array (no allocation) and avoids
+  // the array-bounds warning that the runtime stk::topology overload emits when instantiated for
+  // topologies with larger faces (e.g. HEX_20/HEX_27).
+  STK_ThrowRequire(elementParametricElement.get_topology() == stk::topology::TETRAHEDRON_4);
   std::array<int,3> faceNodeOrdinals;
   stk::topology::topology_type<stk::topology::TET_4>::face_node_ordinals(iFace, faceNodeOrdinals.data());
 
@@ -83,7 +83,7 @@ static void append_intersection_points_from_element_face(ParametricElementLibrar
   std::vector<ElementIntersection> faceIntersections;
   elementCutter.fill_tetrahedron_face_interior_intersections(faceNodeOrdinals, faceIntersectionPointFilter, faceIntersections);
 
-  const ParametricElement & faceParametricElement = parametricElemLibrary.get_parametric_element(elementParametricElement.get_topology().face_topology(iFace));
+  const ParametricElement & faceParametricElement = parametricElemLibrary.get_parametric_element(stk::topology::TRIANGLE_3);
   append_intersection_points_from_interior(faceParametricElement, faceNodes, faceIntersections, intersectionPoints);
 }
 
@@ -114,23 +114,26 @@ void append_intersection_points_from_within_element_and_owned_faces(ParametricEl
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints)
 {
-  stk::topology elementTopology = mesh.bucket(element).topology();
-  const ParametricElement & parametricElement = parametricElemLibrary.get_parametric_element(elementTopology);
+  const stk::topology elementTopology = mesh.bucket(element).topology();
   const std::vector<stk::mesh::Entity> elementNodes(mesh.begin_nodes(element), mesh.end_nodes(element));
 
   if (elementCutter.might_have_interior_or_face_intersections())
   {
-    append_intersection_points_from_element_interior(parametricElement, elementNodes, elementCutter, intersectionPointFilter, intersectionPoints);
+    // The points are on the element's vertices, with linear weights, also for a quadratic element:
+    // the cutter cuts the element of its vertices, as edge points are on the edges between them, and
+    // only vertex nodes are snapped (the edges of a snapped vertex are then straightened).
+    const stk::topology vertexTopology = elementTopology.base();
+    const ParametricElement & vertexParametricElement = parametricElemLibrary.get_parametric_element(vertexTopology);
+    const std::vector<stk::mesh::Entity> vertexNodes(elementNodes.begin(), elementNodes.begin() + vertexTopology.num_nodes());
 
-    const int numFaces = parametricElement.get_topology().num_faces();
-    if (numFaces > 0)
+    append_intersection_points_from_element_interior(vertexParametricElement, vertexNodes, elementCutter, intersectionPointFilter, intersectionPoints);
+
+    const int numFaces = vertexTopology.num_faces();
+    for (int iFace=0; iFace<numFaces; ++iFace)
     {
-      for (int iFace=0; iFace<numFaces; ++iFace)
+      if (element_owns_face(mesh, parentElementSelector, elementTopology, element, elementNodes, iFace))
       {
-        if (element_owns_face(mesh, parentElementSelector, elementTopology, element, elementNodes, iFace))
-        {
-          append_intersection_points_from_element_face(parametricElemLibrary, parametricElement, elementNodes, iFace, elementCutter, intersectionPointFilter, intersectionPoints);
-        }
+        append_intersection_points_from_element_face(parametricElemLibrary, vertexParametricElement, vertexNodes, iFace, elementCutter, intersectionPointFilter, intersectionPoints);
       }
     }
   }
@@ -209,6 +212,17 @@ double get_element_length_scale_squared(const std::vector<IntersectionPoint> & i
     minLenSquared = std::min(edgeLenSq, minLenSquared);
   }
   return minLenSquared;
+}
+
+stk::math::Vector3d compute_element_centroid(const std::vector<stk::math::Vector3d> & elemNodesCoords)
+{
+  stk::math::Vector3d centroid = stk::math::Vector3d::ZERO;
+  for(auto && nodeCoords : elemNodesCoords)
+  {
+    centroid += nodeCoords;
+  }
+  centroid *= 1./elemNodesCoords.size();
+  return centroid;
 }
 
 void append_closest_point_intersections(std::vector<IntersectionPoint> & intersectionPoints,

@@ -13,7 +13,7 @@
 #include <stk_math/StkVector.hpp>
 #include <Akri_MOAB_TetRefiner.hpp>
 #include <Akri_RefinerUtils.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetAppender.hpp>
 #include <stk_topology/topology.hpp>
 
 using krino::ContourTet;
@@ -127,12 +127,13 @@ std::array<double,10> get_child_tet10_distance(const std::array<double,10> & tet
   return subTet10Dist;
 }
 
-void append_facets_for_subtet_of_converged_tet(const std::array<stk::math::Vector3d,10> & tet10Coords,
-  const std::array<double,10> & tet10Dist,
-  const std::array<double,25> & subTetDist,
-  FacetedSurfaceBase & facets,
-  const std::array<int, 4> & subElemVertexIndices,
-  const std::array<int, 6> & subElemMidsideIndices)
+void append_facets_for_subtet_of_converged_tet(
+    const std::array<stk::math::Vector3d, 10> & tet10Coords,
+    const std::array<double, 10> & tet10Dist,
+    const std::array<double, 25> & subTetDist,
+    FacetAppender & facets,
+    const std::array<int, 4> & subElemVertexIndices,
+    const std::array<int, 6> & subElemMidsideIndices)
 {
   const std::array<double,10> subTet10Dist = get_child_tet10_distance(tet10Dist, subTetDist, subElemVertexIndices, subElemMidsideIndices);
   ContourTet::append_facets_for_tet4_with_tet10_distance(subarray(tet10Coords, subElemVertexIndices), subTet10Dist, facets);
@@ -159,14 +160,15 @@ int determine_tet_edge_refinement_case_id(const std::array<double,10> & tet10Dis
   return caseId;
 }
 
-void append_facets_for_refined_subtet_using_interpolated_distance(const std::array<stk::math::Vector3d,10> & tet10Coords,
-  const std::array<stk::math::Vector3d,10> & tet10DepartureCoords,
-  const std::array<double,10> & tet10Dist,
-  const std::array<double,25> & subTetDist,
-  const double lengthScale,
-  FacetedSurfaceBase & facets,
-  const std::array<int, 4> & subElemVertexIndices,
-  const std::array<int, 6> & subElemMidsideIndices)
+void append_facets_for_refined_subtet_using_interpolated_distance(
+    const std::array<stk::math::Vector3d, 10> & tet10Coords,
+    const std::array<stk::math::Vector3d, 10> & tet10DepartureCoords,
+    const std::array<double, 10> & tet10Dist,
+    const std::array<double, 25> & subTetDist,
+    const double lengthScale,
+    FacetAppender & facets,
+    const std::array<int, 4> & subElemVertexIndices,
+    const std::array<int, 6> & subElemMidsideIndices)
 {
   if (!have_possibly_cut_edge(tet10DepartureCoords, tet10Dist, subElemVertexIndices))
     return;
@@ -187,22 +189,23 @@ void append_facets_for_refined_subtet_using_interpolated_distance(const std::arr
   append_facets_for_subtet_of_converged_tet(subTet10Coords, subTet10Dist, subSubTetDist, facets, {{6,7,4,8}}, {{17,10,7,24,18,11}});
 }
 
-void adaptively_append_facets_for_subtet_using_semilagrangian_distance(const std::array<stk::math::Vector3d,10> & parentCoords,
-  const std::array<stk::math::Vector3d,10> & parentDepartureCoords,
-  const std::array<double,10> & parentDistance,
-  const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
-  const double lengthScale,
-  FacetedSurfaceBase & facets,
-  const int currentDepth,
-  const int minDepth,
-  const int maxDepth,
-  const std::array<int, 4> & childElemNodeIndices);
+void adaptively_append_facets_for_subtet_using_semilagrangian_distance(
+    const std::array<stk::math::Vector3d, 10> & parentCoords,
+    const std::array<stk::math::Vector3d, 10> & parentDepartureCoords,
+    const std::array<double, 10> & parentDistance,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+    const double lengthScale,
+    FacetAppender & facets,
+    const int currentDepth,
+    const int minDepth,
+    const int maxDepth,
+    const std::array<int, 4> & childElemNodeIndices);
 
-void append_facets_for_converged_tet10(const std::array<stk::math::Vector3d,10> & coords,
-  const std::array<stk::math::Vector3d,10> & departureCoords,
-  const std::array<double,10> & distance,
-  const double lengthScale,
-  FacetedSurfaceBase & facets)
+void append_facets_for_converged_tet10(const std::array<stk::math::Vector3d, 10> & coords,
+    const std::array<stk::math::Vector3d, 10> & departureCoords,
+    const std::array<double, 10> & distance,
+    const double lengthScale,
+    FacetAppender & facets)
 {
   const std::array<double,10> filteredDistance = apply_tet_snapping_and_clipping(distance, adaptiveContourSnapTol*lengthScale);
   std::array<double,25> subTetDist = interpolate_subtet(filteredDistance);
@@ -217,15 +220,16 @@ void append_facets_for_converged_tet10(const std::array<stk::math::Vector3d,10> 
   append_facets_for_refined_subtet_using_interpolated_distance(coords, departureCoords, filteredDistance, subTetDist, lengthScale, facets, {{6,7,4,8}}, {{17,10,7,24,18,11}});
 }
 
-void adaptively_append_facets_for_tet10_using_semilagrangian_distance(const std::array<stk::math::Vector3d,10> & coords,
-  const std::array<stk::math::Vector3d,10> & departureCoords,
-  const std::array<double,10> & distance,
-  const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
-  const double lengthScale,
-  FacetedSurfaceBase & facets,
-  const int currentDepth,
-  const int minDepth,
-  const int maxDepth)
+void adaptively_append_facets_for_tet10_using_semilagrangian_distance(
+    const std::array<stk::math::Vector3d, 10> & coords,
+    const std::array<stk::math::Vector3d, 10> & departureCoords,
+    const std::array<double, 10> & distance,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+    const double lengthScale,
+    FacetAppender & facets,
+    const int currentDepth,
+    const int minDepth,
+    const int maxDepth)
 {
   const int refinementCaseId = determine_tet_edge_refinement_case_id(distance, lengthScale, currentDepth, minDepth, maxDepth);
 
@@ -244,16 +248,17 @@ void adaptively_append_facets_for_tet10_using_semilagrangian_distance(const std:
   }
 }
 
-void adaptively_append_facets_for_subtet_using_semilagrangian_distance(const std::array<stk::math::Vector3d,10> & parentCoords,
-  const std::array<stk::math::Vector3d,10> & parentDepartureCoords,
-  const std::array<double,10> & parentDistance,
-  const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
-  const double lengthScale,
-  FacetedSurfaceBase & facets,
-  const int currentDepth,
-  const int minDepth,
-  const int maxDepth,
-  const std::array<int, 4> & childElemNodeIndices)
+void adaptively_append_facets_for_subtet_using_semilagrangian_distance(
+    const std::array<stk::math::Vector3d, 10> & parentCoords,
+    const std::array<stk::math::Vector3d, 10> & parentDepartureCoords,
+    const std::array<double, 10> & parentDistance,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+    const double lengthScale,
+    FacetAppender & facets,
+    const int currentDepth,
+    const int minDepth,
+    const int maxDepth,
+    const std::array<int, 4> & childElemNodeIndices)
 {
   if (!have_possibly_cut_edge(parentDepartureCoords, parentDistance, childElemNodeIndices))
     return;
@@ -265,15 +270,16 @@ void adaptively_append_facets_for_subtet_using_semilagrangian_distance(const std
   adaptively_append_facets_for_tet10_using_semilagrangian_distance(tet10Coords, tet10DepartureCoords, tet10Dist, distance_at_point, lengthScale, facets, currentDepth+1, minDepth, maxDepth);
 }
 
-void adaptively_append_facets_for_tet_using_semilagrangian_distance(const std::array<stk::math::Vector3d,4> & coords,
-  const std::array<stk::math::Vector3d,4> & departureCoords,
-  const std::array<double,4> & distance,
-  const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
-  const double lengthScale,
-  FacetedSurfaceBase & facets,
-  const int currentDepth,
-  const int minDepth,
-  const int maxDepth)
+void adaptively_append_facets_for_tet_using_semilagrangian_distance(
+    const std::array<stk::math::Vector3d, 4> & coords,
+    const std::array<stk::math::Vector3d, 4> & departureCoords,
+    const std::array<double, 4> & distance,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+    const double lengthScale,
+    FacetAppender & facets,
+    const int currentDepth,
+    const int minDepth,
+    const int maxDepth)
 {
   if (!have_possibly_cut_edge(departureCoords, distance))
     return;

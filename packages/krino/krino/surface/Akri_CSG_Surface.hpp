@@ -29,11 +29,11 @@ public:
   const std::vector<std::shared_ptr<Surface>> & get_subsurfaces() const { return myAllSurfaces; }
   void set_inside_to_be_positive() { myIsInsideNegative = false; }
   bool is_inside_negative() const { return myIsInsideNegative; }
-  virtual void set_transformation(Transformation * trans) override;
   void insert_into(BoundingBox & bbox) const override;
   bool does_intersect(const BoundingBox & bbox) const override;
   virtual double possibly_truncated_point_signed_distance(const stk::math::Vector3d &x, const double truncationLength, const double farFieldValue) const override;
   virtual bool truncated_distance_may_have_wrong_sign() const override { return my_subsurfaces_might_produce_wrong_sign; }
+  virtual bool changes_with_time() const override;
   void clear();
   bool empty() const;
   double get_signed_narrow_band_size(const double positiveNarrowBand) const { return myIsInsideNegative ? positiveNarrowBand : -positiveNarrowBand; }

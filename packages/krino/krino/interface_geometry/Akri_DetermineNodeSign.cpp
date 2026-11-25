@@ -240,9 +240,13 @@ static void assign_node_signs_from_surface_distance(const stk::mesh::BulkData & 
   if (!nodesToCapturedDomains.empty())
     assign_initial_node_signs_from_snapping(mesh, coordsField, elementSelector, nodesToCapturedDomains, surfIndex, surface, nodesToSign, nodesToAllSigns);
 
+  // A node snapped onto the surface is on it (sign 0): the sign of its distance is only roundoff of
+  // where it was snapped to, which can differ with the order of the snap's stencil nodes, and so with
+  // their ids.
   const unsigned dim = mesh.mesh_meta_data().spatial_dimension();
   for (auto & [node, allSigns] : nodesToAllSigns)
-    if (is_entity_selected(mesh, elementSelector, node))
+    if (is_entity_selected(mesh, elementSelector, node) &&
+        !is_node_snapped_to_level_set(nodesToCapturedDomains, node, surfIndex))
       allSigns[surfIndex] = sign(surface.point_signed_distance(get_vector_field(mesh, coordsField, node, dim)));
 }
 

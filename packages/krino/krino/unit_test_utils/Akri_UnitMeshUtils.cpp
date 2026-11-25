@@ -43,9 +43,18 @@ void populate_bounding_box_mesh_and_activate(BoundingBoxMesh & bboxMesh, const s
   activate_all_entities(mesh, AuxMetaData::get(bboxMesh.meta_data()).active_part());
 }
 
-void generate_and_write_bounding_box_mesh(const stk::topology elemTopology, const stk::math::Vector3d & minCorner, const stk::math::Vector3d & maxCorner, const double meshSize, const std::string & filename)
+void generate_and_write_bounding_box_mesh(const stk::topology elemTopology,
+    const stk::math::Vector3d & minCorner,
+    const stk::math::Vector3d & maxCorner,
+    const double meshSize,
+    const std::string & filename,
+    const bool flatWalledDomainSides)
 {
   BoundingBoxMesh bboxMesh(elemTopology, MPI_COMM_WORLD);
+  if (flatWalledDomainSides)
+    bboxMesh.set_mesh_structure_type((elemTopology.dimension() == 2) ?
+            FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH :
+            FLAT_WALLED_BCC_BOUNDING_BOX_MESH);
   populate_bounding_box_mesh_and_activate(bboxMesh, minCorner, maxCorner, meshSize);
   output_mesh_with_fields(bboxMesh.bulk_data(), AuxMetaData::get(bboxMesh.meta_data()).active_part(), filename, 1, 0.0);
 }

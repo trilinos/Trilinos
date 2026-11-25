@@ -56,12 +56,25 @@ void MeshObjectiveBase::project_solution(DistributedVector & x) const
   apply_projection(mySpatialDim, mySolutionProjector, myNodes, x);
 }
 
+stk::math::Vector3d MeshObjectiveBase::get_node_coordinates(
+    const DistributedVector & x, const stk::mesh::Entity node) const
+{
+  STK_ThrowRequireMsg(x.size() == size_t(mySpatialDim) * myNodes.size(),
+      "The vector has " << x.size() << " values, but the mesh objective has " << myNodes.size()
+                        << " nodes of dimension " << mySpatialDim << ".");
+  const unsigned index = get_index_of_node_in_sorted_owned_or_shared_nodes(myMesh, myNodes, node);
+  STK_ThrowRequireMsg(index < myNodes.size() && myNodes[index] == node,
+      "Node " << myMesh.identifier(node) << " is not a node of the mesh objective.");
+  return stk::math::Vector3d(&x[size_t(mySpatialDim) * index], mySpatialDim);
+}
+
 void MeshObjectiveBase::setup_nodes_and_elements(const stk::mesh::Selector & elementSelector)
 {
-  myNodes = get_sorted_owned_nodes_and_unowned_shared_nodes(myMesh, elementSelector);
+  myNodes = get_sorted_owned_and_unowned_shared_vertex_nodes(myMesh, elementSelector);
 
   const stk::mesh::Selector ownedElementSelector = elementSelector & myMesh.mesh_meta_data().locally_owned_part();
   stk::mesh::get_entities(myMesh, stk::topology::ELEMENT_RANK, ownedElementSelector, myOwnedElems);
+  stk::mesh::get_entities(myMesh, stk::topology::ELEMENT_RANK, elementSelector, myLocalElems);
 
   myMeshElemNodeIndices.build_for_mesh(myMesh, myOwnedElems, myNodes);
 }
@@ -103,6 +116,11 @@ void MeshObjectiveBase::fill_gradient(
 
   communicate_gradient(myMesh, myNodes, g);
   apply_gradient_filter(mySpatialDim, myGradientFilter, myNodes, x, g);
+}
+
+bool MeshObjectiveBase::is_update_rejected() const
+{
+    return mySolutionRejector && mySolutionRejector();
 }
 
 double MeshObjective::compute_element_objective(

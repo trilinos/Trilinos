@@ -4,6 +4,7 @@
 #include <Akri_StkMeshFixture.hpp>
 #include <random>
 #include <stk_mesh/base/FieldBLAS.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/diag/Timer.hpp>
@@ -99,10 +100,15 @@ public:
       myEdgeBasedEdgeMarker.mark_edge_for_refinement(edge);
   }
 
+  // Called after each adaptation by the fixture, for fixtures that check more of the mesh.
+  virtual void check_mesh_after_adaptation() {}
+
   bool do_refinement()
   {
     const TransitionElementEdgeMarker edgeMarker(mMesh, myRefinement, myElementMarkerField.name());
-    return myRefinement.do_refinement(edgeMarker);
+    const bool didMakeAnyChanges = myRefinement.do_refinement(edgeMarker);
+    check_mesh_after_adaptation();
+    return didMakeAnyChanges;
   }
 
    bool do_edge_refinement()
@@ -128,6 +134,7 @@ public:
     myTimer.start();
     myRefinement.do_uniform_refinement(numIterationsOfUMR);
     myTimer.stop();
+    check_mesh_after_adaptation();
     const size_t numElems = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
     if (0 == stk::parallel_machine_rank(mComm))
       std::cout << "After " << numIterationsOfUMR << " levels of uniform refinement, there are " << numElems << " elements, time = " << myTimer.getMetric<stk::diag::CPUTime>().getLap() << std::endl;
@@ -409,6 +416,7 @@ public:
   void unrefine_mesh()
   {
     myRefinement.fully_unrefine_mesh();
+    check_mesh_after_adaptation();
   }
   std::vector<stk::mesh::Entity> get_children(const stk::mesh::Entity elem)
   {
@@ -432,6 +440,52 @@ public:
   void mark_all_elements_for_refinement()
   {
     set_refinement_marker_field(myElementMarkerField, Refinement::RefinementMarker::REFINE);
+  }
+
+  size_t get_global_num_refined_edge_nodes() const
+  {
+    std::vector<size_t> counts;
+    stk::mesh::count_entities(stk::mesh::Selector(myRefinement.refined_edge_node_part()) &
+            mMesh.mesh_meta_data().locally_owned_part(),
+        mMesh,
+        counts);
+    size_t num = counts[stk::topology::NODE_RANK];
+    all_reduce_sum(mMesh.parallel(), num);
+    return num;
+  }
+
+  void test_refinement_of_elements_spanning_x_equal_0_then_unrefinement(
+      const std::vector<size_t> & goldNumElementsByRefinementLevel,
+      const std::vector<size_t> & goldNumElementsByUnrefinementLevel)
+  {
+    for (size_t i = 0; i < goldNumElementsByRefinementLevel.size(); ++i)
+    {
+      mark_elements_spanning_x_equal_0();
+      refine_marked_elements();
+
+      const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
+      EXPECT_EQ(goldNumElementsByRefinementLevel[i], numElements);
+
+      if (0 == stk::parallel_machine_rank(mComm))
+        std::cout << "Refinement Level " << i + 1 << ", num elements = " << numElements
+                  << std::endl;
+    }
+
+    for (size_t i = 0; i < goldNumElementsByUnrefinementLevel.size(); ++i)
+    {
+      mark_all_elements_for_unrefinement();
+      refine_marked_elements();
+
+      const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
+      EXPECT_EQ(goldNumElementsByUnrefinementLevel[i], numElements);
+
+      if (0 == stk::parallel_machine_rank(mComm))
+        std::cout << "Unrefinement Level " << i + 1 << ", num elements = " << numElements
+                  << std::endl;
+    }
+
+    // Mid-edge nodes that survive unrefinement are no longer refined edge nodes.
+    EXPECT_EQ(0u, get_global_num_refined_edge_nodes());
   }
 
   void test_refinement_of_transition_element_leads_to_refinement_of_parent(const int indexOfCenterElement)
@@ -493,6 +547,28 @@ public:
       const double quality = compute_mesh_quality();
       EXPECT_NEAR(quality, goldQuality, 0.02);
     }
+  }
+
+  // On processor 0, the ids of an owned element that is both a child and a parent, followed by its
+  // children (empty elsewhere and if there is none).
+  std::vector<stk::mesh::EntityId>
+  get_ids_of_owned_child_that_is_a_parent_and_its_children_on_proc_0() const
+  {
+    std::vector<stk::mesh::EntityId> ids;
+    if (0 != mMesh.parallel_rank()) return ids;
+    const stk::mesh::Selector selector = mMesh.mesh_meta_data().locally_owned_part() &
+        myRefinement.child_part() & myRefinement.parent_part();
+    for (auto * bucketPtr : mMesh.get_buckets(stk::topology::ELEMENT_RANK, selector))
+    {
+      for (auto elem : *bucketPtr)
+      {
+        ids.push_back(mMesh.identifier(elem));
+        for (auto child : myRefinement.get_children(elem))
+          ids.push_back(mMesh.identifier(child));
+        return ids;
+      }
+    }
+    return ids;
   }
 
   void move_owned_elements_with_given_ids_and_owned_attached_entities_to_processor(const std::vector<stk::mesh::EntityId> & elemIds, const int proc)

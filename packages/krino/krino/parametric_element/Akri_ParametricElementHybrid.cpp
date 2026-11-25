@@ -22,7 +22,7 @@
 
 namespace krino {
 
-static std::unique_ptr<Basis> get_basis_for_topology(stk::topology t)
+static std::unique_ptr<Basis> get_hybrid_basis_for_topology(stk::topology t)
 {
   switch(t())
   {
@@ -53,7 +53,7 @@ static std::unique_ptr<Basis> get_basis_for_topology(stk::topology t)
   case stk::topology::WEDGE_6:
       return std::make_unique<Basis_WEDGE_6>();
   default:
-      throw std::runtime_error("Element topology not found in get_basis_for_topology(): " + t.name());
+      throw std::runtime_error("Element topology not found in get_hybrid_basis_for_topology(): " + t.name());
   }
 }
 
@@ -81,7 +81,7 @@ static stk::topology working_topology(const stk::topology topology)
 ParametricElementHybrid::ParametricElementHybrid(stk::topology topology)
 : m_topology(working_topology(topology))
 {
-  m_Basis = get_basis_for_topology(m_topology);
+  m_Basis = get_hybrid_basis_for_topology(m_topology);
   using PointType = double;
   using WeightType = double;
   using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;

@@ -14,7 +14,7 @@
 #include <stk_util/util/ReportHandler.hpp>
 
 #include <stk_math/StkVector.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetAppender.hpp>
 #include <stk_topology/topology.hpp>
 
 using krino::ContourTri;
@@ -98,12 +98,13 @@ std::array<double,6> get_child_tri6_distance(const std::array<double,6> & tri6Di
   return subTri6Dist;
 }
 
-void append_facets_for_subtri_of_converged_tri(const std::array<stk::math::Vector3d,6> & tri6Coords,
-  const std::array<double,6> & tri6Dist,
-  const std::array<double,9> & subTriDist,
-  FacetedSurfaceBase & facets,
-  const std::array<int, 3> & subElemVertexIndices,
-  const std::array<int, 3> & subElemMidsideIndices)
+void append_facets_for_subtri_of_converged_tri(
+    const std::array<stk::math::Vector3d, 6> & tri6Coords,
+    const std::array<double, 6> & tri6Dist,
+    const std::array<double, 9> & subTriDist,
+    FacetAppender & facets,
+    const std::array<int, 3> & subElemVertexIndices,
+    const std::array<int, 3> & subElemMidsideIndices)
 {
   const std::array<double,6> subTri6Dist = get_child_tri6_distance(tri6Dist, subTriDist, subElemVertexIndices, subElemMidsideIndices);
   ContourTri::append_facets_for_tri3_with_tri6_distance(subarray(tri6Coords, subElemVertexIndices), subTri6Dist, facets);
@@ -127,14 +128,15 @@ int determine_tri_edge_refinement_case_id(const std::array<double,6> & tri6Dist,
   return caseId;
 }
 
-void append_facets_for_refined_subtri_using_interpolated_distance(const std::array<stk::math::Vector3d,6> & tri6Coords,
-  const std::array<stk::math::Vector3d,6> & tri6DepartureCoords,
-  const std::array<double,6> & tri6Dist,
-  const std::array<double,9> & subTriDist,
-  const double lengthScale,
-  FacetedSurfaceBase & facets,
-  const std::array<int, 3> & subElemVertexIndices,
-  const std::array<int, 3> & subElemMidsideIndices)
+void append_facets_for_refined_subtri_using_interpolated_distance(
+    const std::array<stk::math::Vector3d, 6> & tri6Coords,
+    const std::array<stk::math::Vector3d, 6> & tri6DepartureCoords,
+    const std::array<double, 6> & tri6Dist,
+    const std::array<double, 9> & subTriDist,
+    const double lengthScale,
+    FacetAppender & facets,
+    const std::array<int, 3> & subElemVertexIndices,
+    const std::array<int, 3> & subElemMidsideIndices)
 {
   if (!have_possibly_cut_edge(tri6DepartureCoords, tri6Dist, subElemVertexIndices))
     return;
@@ -151,11 +153,11 @@ void append_facets_for_refined_subtri_using_interpolated_distance(const std::arr
   append_facets_for_subtri_of_converged_tri(subTri6Coords, subTri6Dist, subSubTriDist, facets, {{3,4,5}}, {{8,6,7}});
 }
 
-void append_facets_for_converged_tri6(const std::array<stk::math::Vector3d,6> & coords,
-  const std::array<stk::math::Vector3d,6> & departureCoords,
-  const std::array<double,6> & distance,
-  const double lengthScale,
-  FacetedSurfaceBase & facets)
+void append_facets_for_converged_tri6(const std::array<stk::math::Vector3d, 6> & coords,
+    const std::array<stk::math::Vector3d, 6> & departureCoords,
+    const std::array<double, 6> & distance,
+    const double lengthScale,
+    FacetAppender & facets)
 {
   const std::array<double,6> filteredDistance = apply_tri_snapping_and_clipping(distance, adaptiveContourSnapTol*lengthScale);
   std::array<double,9> subTriDist = interpolate_subtri(filteredDistance);
@@ -166,26 +168,28 @@ void append_facets_for_converged_tri6(const std::array<stk::math::Vector3d,6> & 
   append_facets_for_refined_subtri_using_interpolated_distance(coords, departureCoords, filteredDistance, subTriDist, lengthScale, facets, {{3,4,5}}, {{8,6,7}});
 }
 
-void adaptively_append_facets_for_subtri_using_semilagrangian_distance(const std::array<stk::math::Vector3d,6> & parentCoords,
-  const std::array<stk::math::Vector3d,6> & parentDepartureCoords,
-  const std::array<double,6> & parentDistance,
-  const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
-  const double lengthScale,
-  FacetedSurfaceBase & facets,
-  const int currentDepth,
-  const int minDepth,
-  const int maxDepth,
-  const std::array<int, 3> & childElemNodeIndices);
+void adaptively_append_facets_for_subtri_using_semilagrangian_distance(
+    const std::array<stk::math::Vector3d, 6> & parentCoords,
+    const std::array<stk::math::Vector3d, 6> & parentDepartureCoords,
+    const std::array<double, 6> & parentDistance,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+    const double lengthScale,
+    FacetAppender & facets,
+    const int currentDepth,
+    const int minDepth,
+    const int maxDepth,
+    const std::array<int, 3> & childElemNodeIndices);
 
-void adaptively_append_facets_for_tri6_using_semilagrangian_distance(const std::array<stk::math::Vector3d,6> & coords,
-  const std::array<stk::math::Vector3d,6> & departureCoords,
-  const std::array<double,6> & distance,
-  const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
-  const double lengthScale,
-  FacetedSurfaceBase & facets,
-  const int currentDepth,
-  const int minDepth,
-  const int maxDepth)
+void adaptively_append_facets_for_tri6_using_semilagrangian_distance(
+    const std::array<stk::math::Vector3d, 6> & coords,
+    const std::array<stk::math::Vector3d, 6> & departureCoords,
+    const std::array<double, 6> & distance,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+    const double lengthScale,
+    FacetAppender & facets,
+    const int currentDepth,
+    const int minDepth,
+    const int maxDepth)
 {
   const int refinementCaseId = determine_tri_edge_refinement_case_id(distance, lengthScale, currentDepth, minDepth, maxDepth);
 
@@ -255,16 +259,17 @@ void adaptively_append_facets_for_tri6_using_semilagrangian_distance(const std::
   }
 }
 
-void adaptively_append_facets_for_subtri_using_semilagrangian_distance(const std::array<stk::math::Vector3d,6> & parentCoords,
-  const std::array<stk::math::Vector3d,6> & parentDepartureCoords,
-  const std::array<double,6> & parentDistance,
-  const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
-  const double lengthScale,
-  FacetedSurfaceBase & facets,
-  const int currentDepth,
-  const int minDepth,
-  const int maxDepth,
-  const std::array<int, 3> & childElemNodeIndices)
+void adaptively_append_facets_for_subtri_using_semilagrangian_distance(
+    const std::array<stk::math::Vector3d, 6> & parentCoords,
+    const std::array<stk::math::Vector3d, 6> & parentDepartureCoords,
+    const std::array<double, 6> & parentDistance,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+    const double lengthScale,
+    FacetAppender & facets,
+    const int currentDepth,
+    const int minDepth,
+    const int maxDepth,
+    const std::array<int, 3> & childElemNodeIndices)
 {
   if (!have_possibly_cut_edge(parentDepartureCoords, parentDistance, childElemNodeIndices))
     return;
@@ -276,15 +281,16 @@ void adaptively_append_facets_for_subtri_using_semilagrangian_distance(const std
   adaptively_append_facets_for_tri6_using_semilagrangian_distance(tri6Coords, tri6DepartureCoords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth+1, minDepth, maxDepth);
 }
 
-void adaptively_append_facets_for_tri_using_semilagrangian_distance(const std::array<stk::math::Vector3d,3> & coords,
-  const std::array<stk::math::Vector3d,3> & departureCoords,
-  const std::array<double,3> & distance,
-  const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
-  const double lengthScale,
-  FacetedSurfaceBase & facets,
-  const int currentDepth,
-  const int minDepth,
-  const int maxDepth)
+void adaptively_append_facets_for_tri_using_semilagrangian_distance(
+    const std::array<stk::math::Vector3d, 3> & coords,
+    const std::array<stk::math::Vector3d, 3> & departureCoords,
+    const std::array<double, 3> & distance,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+    const double lengthScale,
+    FacetAppender & facets,
+    const int currentDepth,
+    const int minDepth,
+    const int maxDepth)
 {
   if (!have_possibly_cut_edge(departureCoords, distance))
     return;

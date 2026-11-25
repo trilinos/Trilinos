@@ -3,7 +3,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <Akri_AnalyticSurfaceInterfaceGeometry.hpp>
 #include <Akri_Surface.hpp>
-#include <Akri_Faceted_Surface.hpp>
+#include <Akri_MeshFacetedSurface.hpp>
 #include <Akri_LS_Field.hpp>
 #include <Akri_Phase_Support.hpp>
 
@@ -46,7 +46,7 @@ private:
 
   std::vector<LS_Field> myLSFields;
   std::vector<Surface_Identifier> mySurfaceIdentifiers;
-  mutable std::vector<std::unique_ptr<FacetedSurfaceBase>> myLSSurfaces;
+  mutable std::vector<std::unique_ptr<MeshFacetedSurface>> myLSSurfaces;
   mutable size_t myLastMeshSyncCount{0};
   mutable bool myDoUpdateFacetsWhenMeshChanges{true};
 };

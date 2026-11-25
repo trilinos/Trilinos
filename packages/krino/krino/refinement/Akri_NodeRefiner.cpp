@@ -45,6 +45,8 @@ static void create_refined_edge_or_midedge_nodes(stk::mesh::BulkData & mesh,
   childNodeRequests.reserve(numEdgesNeedingChildNode);
   for (auto && edgeToChildNodes : edgesToChildNodes)
   {
+    // Edges from an earlier round of the same adaptation already have their nodes.
+    if (mesh.is_valid(edgeToChildNodes.second)) continue;
     edgesParentNodes.emplace_back(get_edge_nodes(edgeToChildNodes.first));
     std::array<stk::mesh::Entity,2> & edgeParentNodes = edgesParentNodes.back();
     childNodeRequests.emplace_back(std::vector<stk::mesh::Entity*>{&(edgeParentNodes[0]), &(edgeParentNodes[1])}, &(edgeToChildNodes.second));

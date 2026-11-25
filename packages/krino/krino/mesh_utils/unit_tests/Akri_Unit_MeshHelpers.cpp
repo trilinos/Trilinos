@@ -15,6 +15,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Unit_MeshHelpers.hpp>
@@ -227,4 +228,137 @@ TEST(MeshHelpers, NotCoincidentActiveDegenerateVolumeElements)
   EXPECT_TRUE(ok);
 }
 
+TEST(MeshHelpers, EdgeAttachedToOnlyOneOfTheElementsThatHaveIt_failsFullConnectivityCheckOnly)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(pm) != 1) return;
+
+  // Two tets share the face 1-2-3.  The edge 1-2 is an edge of both, but is attached only to
+  // element 1.
+  std::unique_ptr<stk::mesh::BulkData> meshPtr =
+      stk::mesh::MeshBuilder(pm).set_spatial_dimension(3).create();
+  stk::mesh::BulkData & mesh = *meshPtr;
+  stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+
+  stk::mesh::Part & block_1 =
+      meta.declare_part_with_topology("block_1", stk::topology::TETRAHEDRON_4);
+  stk::mesh::Part & edge_part = meta.declare_part_with_topology("edge_part", stk::topology::LINE_2);
+  meta.commit();
+
+  const std::vector<stk::mesh::EntityIdVector> elem_nodes{{1, 2, 3, 4}, {1, 3, 2, 5}};
+  const std::vector<int> elem_procs{0, 0};
+  std::vector<stk::mesh::PartVector> elem_parts{{&block_1}, {&block_1}};
+  build_mesh(mesh, elem_nodes, elem_procs, elem_parts);
+
+  stk::mesh::Entity element1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
+  mesh.modification_begin();
+  stk::mesh::Entity edge = mesh.declare_edge(1, stk::mesh::PartVector{&edge_part});
+  mesh.declare_relation(edge, mesh.get_entity(stk::topology::NODE_RANK, 1), 0);
+  mesh.declare_relation(edge, mesh.get_entity(stk::topology::NODE_RANK, 2), 1);
+  attach_entity_to_element(mesh, edge, element1);
+  mesh.modification_end();
+
+  EXPECT_FALSE(check_face_and_edge_relations(mesh, true));
+  EXPECT_TRUE(check_face_and_edge_relations(mesh, false));
+
+  // Attached to element 1 with the wrong ordinal: incorrect even if not fully connected.
+  const auto [edgeOrdinal, edgePermutation] =
+      determine_ordinal_and_permutation(mesh, element1, edge);
+  const stk::mesh::ConnectivityOrdinal wrongEdgeOrdinal = (edgeOrdinal + 1) % 6;
+  mesh.modification_begin();
+  mesh.destroy_relation(element1, edge, edgeOrdinal);
+  mesh.declare_relation(element1, edge, wrongEdgeOrdinal, edgePermutation);
+  mesh.modification_end();
+
+  EXPECT_FALSE(check_face_and_edge_relations(mesh, false));
+
+  // Not attached to any element.
+  mesh.modification_begin();
+  mesh.destroy_relation(element1, edge, wrongEdgeOrdinal);
+  mesh.modification_end();
+
+  EXPECT_FALSE(check_face_and_edge_relations(mesh, false));
+}
+
+TEST(MeshHelpers,
+    SharedSideOwnedByProcWithoutItsElements_withoutAura_ownershipFixedToProcWithElement)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(pm) != 2) return;
+
+  /*  Mesh: elements 1, 3, 4 on P0 and element 2 on P1.  Elements 1 and 2 share the side 2-5, owned
+   *  by P0.  Then element 1 moves to P1, so P0 owns the side but none of its elements, while
+   *  elements 3 and 4 keep its nodes on P0.
+   *    9--10
+   *    | 4 |
+   *    4---5---6
+   *    | 1 | 2 |
+   *    1---2---3
+   *    | 3 |
+   *    7---8
+   */
+  std::unique_ptr<stk::mesh::BulkData> meshPtr =
+      stk::mesh::MeshBuilder(pm)
+          .set_spatial_dimension(2)
+          .set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA)
+          .create();
+  stk::mesh::BulkData & mesh = *meshPtr;
+  stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  stk::mesh::Part & block_1 = meta.declare_part_with_topology("block_1", stk::topology::QUAD_4_2D);
+  stk::mesh::Part & surface_1 = meta.declare_part_with_topology("surface_1", stk::topology::LINE_2);
+  meta.commit();
+
+  const std::vector<stk::mesh::EntityIdVector> elem_nodes{
+      {1, 2, 5, 4}, {2, 3, 6, 5}, {7, 8, 2, 1}, {4, 5, 10, 9}};
+  const std::vector<int> elem_procs{0, 1, 0, 0};
+  std::vector<stk::mesh::PartVector> elem_parts(4, {&block_1});
+  build_mesh(mesh, elem_nodes, elem_procs, elem_parts);
+
+  const std::vector<stk::mesh::Entity> sideNodes{
+      mesh.get_entity(stk::topology::NODE_RANK, 2), mesh.get_entity(stk::topology::NODE_RANK, 5)};
+  mesh.initialize_face_adjacent_element_graph();
+  mesh.modification_begin();
+  for (stk::mesh::EntityId elemId : {1, 2})
+  {
+    const stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, elemId);
+    if (mesh.is_valid(elem) && mesh.bucket(elem).owned())
+    {
+      const unsigned sideOrdinal = stk::mesh::get_entity_subcell_id(
+          mesh, elem, meta.side_rank(), surface_1.topology(), sideNodes);
+      mesh.declare_element_side(elem, sideOrdinal, stk::mesh::ConstPartVector{&surface_1});
+    }
+  }
+  mesh.modification_end();
+
+  // Whether the one side is owned by the given processor wherever it is (a processor without any of
+  // its elements can drop it).  Collective, so that a failure returns from the test on every
+  // processor.
+  auto is_side_owned_by_on_all_procs = [&](const int owner)
+  {
+    std::vector<stk::mesh::Entity> sides;
+    stk::mesh::get_entities(mesh, meta.side_rank(), sides);
+    const bool isOwnedByOwnerHere = sides.size() <= 1 &&
+        (sides.empty() || mesh.parallel_owner_rank(sides[0]) == owner) &&
+        (mesh.parallel_rank() != owner || sides.size() == 1);
+    return stk::is_true_on_all_procs(pm, isOwnedByOwnerHere);
+  };
+
+  ASSERT_TRUE(is_side_owned_by_on_all_procs(0));
+  EXPECT_TRUE(check_face_and_edge_ownership(mesh));
+
+  std::vector<stk::mesh::EntityProc> elemsToMove;
+  const stk::mesh::Entity element1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 1);
+  if (mesh.is_valid(element1) && mesh.bucket(element1).owned())
+    elemsToMove.emplace_back(element1, 1);
+  mesh.change_entity_owner(elemsToMove);
+
+  ASSERT_TRUE(is_side_owned_by_on_all_procs(0));
+  EXPECT_FALSE(check_face_and_edge_ownership(mesh));
+
+  EXPECT_TRUE(fix_face_and_edge_ownership(mesh));
+
+  ASSERT_TRUE(is_side_owned_by_on_all_procs(1));
+  EXPECT_TRUE(check_face_and_edge_ownership(mesh));
+  EXPECT_FALSE(fix_face_and_edge_ownership(mesh));
+}
 }

@@ -71,19 +71,28 @@ static void keep_child_nodes_that_are_not_parent_nodes(const StkMeshEntities & p
   childNodesThatAreNotParentNodes.resize(numKeep);
 }
 
-std::vector<stk::mesh::Entity> get_child_nodes_that_are_not_parent_nodes(const stk::mesh::BulkData & mesh,
+StkMeshEntities get_vertex_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity elem)
+{
+  const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
+  return StkMeshEntities{elemNodes, elemNodes + mesh.bucket(elem).topology().num_vertices()};
+}
+
+// For quadratic elements, the refined edge nodes are the parent's mid-edge nodes, which are
+// vertices of the children, so only vertex nodes are compared.
+std::vector<stk::mesh::Entity>
+get_child_vertex_nodes_that_are_not_parent_vertex_nodes(const stk::mesh::BulkData & mesh,
     const stk::mesh::Entity parentElem,
     const std::vector<stk::mesh::Entity> & childElems)
 {
   std::vector<stk::mesh::Entity> childNodesThatAreNotParentNodes;
   if (!childElems.empty())
   {
-    const StkMeshEntities parentNodes {mesh.begin_nodes(parentElem), mesh.end_nodes(parentElem)};
+    const StkMeshEntities parentNodes = get_vertex_nodes(mesh, parentElem);
     childNodesThatAreNotParentNodes.reserve(parentNodes.size()*childElems.size());
     for (auto && childElem : childElems)
     {
       STK_ThrowAssertMsg(mesh.is_valid(childElem), "All child elements must by valid.  Should this element really be considered for adaptation?");
-      StkMeshEntities childNodes{mesh.begin_nodes(childElem), mesh.end_nodes(childElem)};
+      const StkMeshEntities childNodes = get_vertex_nodes(mesh, childElem);
       childNodesThatAreNotParentNodes.insert(childNodesThatAreNotParentNodes.end(), childNodes.begin(), childNodes.end());
     }
     stk::util::sort_and_unique(childNodesThatAreNotParentNodes);
@@ -93,12 +102,13 @@ std::vector<stk::mesh::Entity> get_child_nodes_that_are_not_parent_nodes(const s
   return childNodesThatAreNotParentNodes;
 }
 
-std::vector<stk::mesh::Entity> get_child_nodes_that_are_not_parent_nodes(const stk::mesh::BulkData & mesh,
+std::vector<stk::mesh::Entity>
+get_child_vertex_nodes_that_are_not_parent_vertex_nodes(const stk::mesh::BulkData & mesh,
     const Refinement & refinement,
     const stk::mesh::Entity parentElem)
 {
   const std::vector<stk::mesh::Entity> childElems = refinement.get_children(parentElem);
-  return get_child_nodes_that_are_not_parent_nodes(mesh, parentElem, childElems);
+  return get_child_vertex_nodes_that_are_not_parent_vertex_nodes(mesh, parentElem, childElems);
 }
 
 static std::vector<std::array<stk::mesh::EntityId,2>>
@@ -128,7 +138,8 @@ static void fill_in_existing_refined_edge_nodes_and_caseIds(const stk::mesh::Bul
 
   if (refinement.is_parent(elem))
   {
-    const std::vector<stk::mesh::Entity> refinedEdgeNodes = get_child_nodes_that_are_not_parent_nodes(mesh, refinement, elem);
+    const std::vector<stk::mesh::Entity> refinedEdgeNodes =
+        get_child_vertex_nodes_that_are_not_parent_vertex_nodes(mesh, refinement, elem);
     const std::vector<std::array<stk::mesh::EntityId,2>> refinedEdgeParentNodeIds = get_parent_edge_node_ids_for_given_refined_edge_nodes(refinement, refinedEdgeNodes);
 
     const stk::mesh::Entity * entityNodes = mesh.begin_nodes(elem);
@@ -242,7 +253,8 @@ void fill_unrefinement_caseIds_and_refined_edge_nodes_if_changed(const stk::mesh
   elemEdgeChildNodes.clear();
   if (isElemCandidateForUnrefinement)
   {
-    const std::vector<stk::mesh::Entity> refinedEdgeNodes = get_child_nodes_that_are_not_parent_nodes(mesh, refinement, elem);
+    const std::vector<stk::mesh::Entity> refinedEdgeNodes =
+        get_child_vertex_nodes_that_are_not_parent_vertex_nodes(mesh, refinement, elem);
     const std::vector<stk::mesh::Entity> & sortedOwnedOrSharedNodesToBeRemovedByUnrefinement = nodeRefiner.get_sorted_edge_nodes_that_will_be_removed_by_unrefinement();
     std::vector<bool> areEdgeNodesBeingUnrefined;
     bool areAnyEdgeNodesBeingUnrefined = false;

@@ -11,7 +11,6 @@
 #include <ROL_Stream.hpp>
 #include <stk_math/StkVector.hpp>
 #include <stk_util/util/ReportHandler.hpp>
-#include <Teuchos_DefaultMpiComm.hpp>
 #include <algorithm>
 #include <functional>
 #include <iostream>

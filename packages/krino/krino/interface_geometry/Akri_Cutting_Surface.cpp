@@ -7,6 +7,7 @@
 // license that can be found in the LICENSE file.
 
 #include <Akri_Cutting_Surface.hpp>
+#include <Akri_CubitJournal.hpp>
 #include <Akri_DiagWriter.hpp>
 
 #include <math.h>
@@ -140,30 +141,30 @@ std::string Intersecting_Planes_Cutting_Surface::print() const
   return os.str();
 }
 
-std::string print_plane_visualization(const stk::math::Plane3d & plane, std::array<int,4> & geomIds, const std::string & description)
+static std::vector<stk::math::Vector3d> section_of_simplex_by_plane(const stk::math::Plane3d & plane, const std::vector<stk::math::Vector3d> & elementCoords)
 {
-  std::ostringstream os;
-  const stk::math::Vector3d x0 = plane.constant() * plane.normal();
-  const stk::math::Vector3d x1 = x0 + plane.normal();
-  os << "Create vertex " << x0[0] << " " << x0[1] << " " << x0[2] << std::endl;
-  os << "Create vertex " << x1[0] << " " << x1[1] << " " << x1[2] << std::endl;
-  os << "Create curve vertex " << ++geomIds[0] << " " << ++geomIds[0] << std::endl;
-  os << "Create planar surface curve " << ++geomIds[1] << " distance 0. # Plane " << ++geomIds[2] << ": " << description << std::endl;
-  geomIds[0] += 4; // 4 vertices created for plane
-  geomIds[1] += 4; // 4 curves created for plane
-  return os.str();
+  if (elementCoords.size() == 4)
+    return section_of_tet_by_plane(plane, {{elementCoords[0], elementCoords[1], elementCoords[2], elementCoords[3]}});
+  STK_ThrowRequireMsg(elementCoords.size() == 3, "Cutting surfaces are only drawn in tets and tris.");
+  return section_of_tri_by_plane(plane, {{elementCoords[0], elementCoords[1], elementCoords[2]}});
 }
 
-std::string Plane_Cutting_Surface::print_visualization(std::array<int,4> & geomIds, const std::string & description) const
+void Plane_Cutting_Surface::add_to_journal(CubitJournal & journal, const std::vector<stk::math::Vector3d> & elementCoords) const
 {
-  return print_plane_visualization(my_plane, geomIds, description);
+  journal.add_comment(print());
+  journal.add_section(section_of_simplex_by_plane(my_plane, elementCoords));
 }
 
-std::string Intersecting_Planes_Cutting_Surface::print_visualization(std::array<int,4> & geomIds, const std::string & description) const
+void Intersecting_Planes_Cutting_Surface::add_to_journal(CubitJournal & journal, const std::vector<stk::math::Vector3d> & elementCoords) const
 {
-  const std::string viz0 = print_plane_visualization(my_plane0, geomIds, description+", plane 1/2");
-  const std::string viz1 = print_plane_visualization(my_plane1, geomIds, description+", plane 2/2");
-  return viz0 + viz1;
+  // Each plane is part of the surface where it is on the positive side of the other plane with a
+  // positive dihedral, or on the negative side without (as in on_surface).
+  const double side = my_positive_dihedral ? 1. : -1.;
+  const stk::math::Plane3d sideOfPlane0(side*my_plane0.normal(), my_plane0.constant()*my_plane0.normal());
+  const stk::math::Plane3d sideOfPlane1(side*my_plane1.normal(), my_plane1.constant()*my_plane1.normal());
+  journal.add_comment(print());
+  journal.add_section(clip_section_to_positive_side_of_plane(section_of_simplex_by_plane(my_plane0, elementCoords), sideOfPlane1));
+  journal.add_section(clip_section_to_positive_side_of_plane(section_of_simplex_by_plane(my_plane1, elementCoords), sideOfPlane0));
 }
 
 } // namespace krino

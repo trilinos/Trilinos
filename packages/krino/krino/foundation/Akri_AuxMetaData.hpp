@@ -195,6 +195,9 @@ private:
   std::function<stk::mesh::Selector( const stk::mesh::FieldBase & field, const stk::mesh::EntityRank target_rank )> fn_selectField;
   std::function<bool(stk::mesh::Entity node0, stk::mesh::Entity node1)> fn_is_cell_edge;
   std::vector<stk::mesh::Part *> myRestartOnlyIOParts;
+  // The largest part id of this mesh, once assign_part_id has been called: the ids are per mesh, so
+  // that each mesh made in a process numbers the same parts the same way.
+  int64_t myMaxPartId{stk::mesh::Part::INVALID_ID};
   mutable FieldRef my_current_coordinates;
   mutable std::unique_ptr<ParametricElementLibrary> myParametricElementLibrary;
 };

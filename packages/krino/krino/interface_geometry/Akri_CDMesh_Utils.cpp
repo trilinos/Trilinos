@@ -50,6 +50,20 @@ bool is_part_to_check_for_snapping_compatibility(const Phase_Support & phaseSupp
     (&part == &exposedBoundaryPart || stk::io::is_part_io_part(part) || phaseSupport.is_nonconformal(part));
 }
 
+stk::mesh::Selector get_snapping_compatibility_side_selector(const stk::mesh::BulkData & mesh)
+{
+  const AuxMetaData & auxMeta = AuxMetaData::get(mesh.mesh_meta_data());
+  const Phase_Support & phaseSupport = Phase_Support::get(mesh.mesh_meta_data());
+  const stk::mesh::EntityRank sideRank = mesh.mesh_meta_data().side_rank();
+
+  stk::mesh::PartVector sideParts;
+  for (auto && part : mesh.mesh_meta_data().get_parts())
+    if (is_part_to_check_for_snapping_compatibility(phaseSupport, auxMeta, sideRank, *part))
+      sideParts.push_back(part);
+
+  return stk::mesh::selectUnion(sideParts);
+}
+
 static stk::mesh::PartVector get_nonconformal_parts_to_check(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, const stk::mesh::EntityRank targetRank, const std::vector<stk::mesh::Entity> & targetEntities)
 {
   stk::mesh::PartVector partsToCheck;
@@ -148,10 +162,42 @@ PhaseTag determine_phase_for_entity(const stk::mesh::BulkData & mesh, stk::mesh:
   return phase;
 }
 
+// From the node's parts, which are the same on every processor that has it.
+static bool is_node_on_interface_part_spanning_domain_boundary(const stk::mesh::BulkData & mesh,
+    const Phase_Support & phaseSupport,
+    const stk::mesh::Entity node,
+    const Surface_Identifier domainSurfaceID)
+{
+  for (auto * part : mesh.bucket(node).supersets())
+    if (phaseSupport.is_interface_between_two_phases(*part) &&
+        phaseSupport.does_interface_span_domain_boundary(*part, domainSurfaceID))
+      return true;
+  return false;
+}
+
+static bool are_interfaces_between_phases_of_one_level_set_each(const Phase_Support & phaseSupport,
+    const std::vector<Surface_Identifier> & surfaceIDs)
+{
+  return surfaceIDs.size() > 1 && phaseSupport.has_one_levelset_per_phase();
+}
+
+bool is_node_with_phase_on_interface(const stk::mesh::BulkData & mesh,
+    const Phase_Support & phaseSupport,
+    const std::vector<Surface_Identifier> & surfaceIDs,
+    const stk::mesh::Entity node,
+    const PhaseTag & nodePhase,
+    const InterfaceID & interface)
+{
+  if (phase_matches_interface(phaseSupport.has_one_levelset_per_phase(), surfaceIDs, nodePhase, interface))
+    return true;
+  return !are_interfaces_between_phases_of_one_level_set_each(phaseSupport, surfaceIDs) &&
+      is_node_on_interface_part_spanning_domain_boundary(mesh, phaseSupport, node, surfaceIDs[interface.first_ls()]);
+}
+
 bool node_is_on_interface(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const std::vector<Surface_Identifier> & surfaceIDs, stk::mesh::Entity node, const InterfaceID & interface)
 {
   const PhaseTag nodePhase = determine_phase_for_entity(mesh, node, phaseSupport);
-  return phase_matches_interface(phaseSupport.has_one_levelset_per_phase(), surfaceIDs, nodePhase, interface);
+  return is_node_with_phase_on_interface(mesh, phaseSupport, surfaceIDs, node, nodePhase, interface);
 }
 
 bool nodes_are_on_any_interface(const stk::mesh::BulkData & /*mesh*/, const Phase_Support & phaseSupport, const stk::mesh::Bucket & nodeBucket)

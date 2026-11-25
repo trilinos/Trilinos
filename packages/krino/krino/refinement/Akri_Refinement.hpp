@@ -181,6 +181,10 @@ private:
   void check_leaf_children_have_parents_on_same_proc() const;
   bool locally_have_any_hanging_refined_nodes() const;
   void adapt_elements_and_sides(const EdgeMarkerInterface & edgeMarker, const bool doingRefinement);
+  void refine_and_attach_edges();
+  void attach_existing_edges_to_active_elements();
+  stk::mesh::Entity
+  find_parent_of_missing_edge(const stk::mesh::Entity node0, const stk::mesh::Entity node1) const;
   bool unrefine_elements(const EdgeMarkerInterface & edgeMarker);
   bool refine_elements(const EdgeMarkerInterface & edgeMarker);
   void finalize();
