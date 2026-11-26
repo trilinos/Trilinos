@@ -10,6 +10,7 @@
 #ifndef MUELU_UTILITIESBASE_DEF_HPP
 #define MUELU_UTILITIESBASE_DEF_HPP
 
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
 #include "MueLu_ConfigDefs.hpp"
 
@@ -40,6 +41,8 @@
 
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Behavior.hpp"
+#include "Teuchos_RCPDecl.hpp"
+#include "Teuchos_TestForException.hpp"
 #include "Xpetra_CrsMatrixFactory.hpp"
 
 #include <KokkosKernels_Handle.hpp>
@@ -47,6 +50,15 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_FactoryManager.hpp>
 #include <MueLu_InverseApproximationFactory.hpp>
+#include <stdexcept>
+
+#ifdef HAVE_MUELU_BELOS
+#include <BelosLinearProblem.hpp>
+#include <BelosSolverFactory.hpp>
+#include <BelosXpetraAdapter.hpp>
+#include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#endif
 
 namespace MueLu {
 
@@ -953,8 +965,8 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Scalar
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    PowerMethod(const Matrix& A, bool scaleByDiag,
-                LocalOrdinal niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, typename Teuchos::ScalarTraits<Scalar>::magnitudeType diagonalReplacementTolerance, bool verbose, unsigned int seed) {
+    PowerMethod(const Matrix& A, Teuchos::FancyOStream& out, bool scaleByDiag,
+                LocalOrdinal niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, typename Teuchos::ScalarTraits<Scalar>::magnitudeType diagonalReplacementTolerance, unsigned int seed) {
   TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
                              "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
 
@@ -964,15 +976,15 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     diagInvVec = GetMatrixDiagonalInverse(A, diagonalReplacementTolerance);
   }
 
-  Scalar lambda = PowerMethod(A, diagInvVec, niters, tolerance, verbose, seed);
+  Scalar lambda = PowerMethod(A, diagInvVec, out, niters, tolerance, seed);
   return lambda;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Scalar
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    PowerMethod(const Matrix& A, const RCP<Vector>& diagInvVec,
-                LocalOrdinal niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose, unsigned int seed) {
+    PowerMethod(const Matrix& A, const RCP<Vector>& diagInvVec, Teuchos::FancyOStream& out,
+                LocalOrdinal niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, unsigned int seed) {
   TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
                              "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
 
@@ -1006,16 +1018,116 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       r->update(1.0, *z, -lambda, *q, zero);  // Compute A*q - lambda*q
       r->norm2(norms);
       residual = STS::magnitude(norms[0] / lambda);
-      if (verbose) {
-        std::cout << "Iter = " << iter
-                  << "  Lambda = " << lambda
-                  << "  Residual of A*q - lambda*q = " << residual
-                  << std::endl;
-      }
+      out << "Iter = " << iter
+          << "  Lambda = " << lambda
+          << "  Residual of A*q - lambda*q = " << residual
+          << std::endl;
     }
     if (residual < tolerance)
       break;
   }
+  return lambda;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Scalar
+UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    KrylovMethod(const Matrix& A, const RCP<Vector>& diagInvVec, const std::string& belosMethod, Teuchos::FancyOStream& out,
+                 LocalOrdinal niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, unsigned int seed) {
+  TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
+                             "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
+
+  RCP<Vector> B = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRangeMap(), true);
+  RCP<Vector> X = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getDomainMap(), false);
+  X->setSeed(seed);  // seed random number generator
+  X->randomize(true);
+
+  EnforceInitialCondition(A, *B, *X);
+
+#ifdef HAVE_MUELU_BELOS
+  using MV          = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using OP          = Belos::OperatorT<MV>;
+  auto rcpA         = Teuchos::rcpFromRef(A);
+  auto nonconstA    = Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(rcpA);
+  auto op           = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(nonconstA));
+  auto belosInvDiag = rcp(new Belos::XpetraDiagOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(diagInvVec));
+  auto problem      = rcp(new Belos::LinearProblem<Scalar, MV, OP>());
+  problem->setOperator(op);
+  problem->setRightPrec(belosInvDiag);
+  problem->setLHS(X);
+  problem->setRHS(B);
+  problem->setLabel("Lanczos");
+  TEUCHOS_ASSERT(problem->setProblem());
+
+  auto belosList = rcp(new Teuchos::ParameterList());
+  belosList->set("Timer Label", "Lanczos");
+  belosList->set("Maximum Iterations", niters);
+  belosList->set("Convergence Tolerance", tolerance);
+  belosList->set("Implicit Residual Scaling", "None");
+  belosList->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+  belosList->set("Output Frequency", 1);
+  belosList->set("Output Style", Belos::Brief);
+  belosList->set("Output Stream", out.getOStream());
+
+  if (belosMethod == "Pseudo Block CG")
+    belosList->set("Estimate Condition Number", true);
+  else if (belosMethod == "Block GMRES") {
+    belosList->set("Num Blocks", niters + 1);
+    belosList->set("Estimate Condition Number", true);
+  } else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Cannot compute eigenvalues using Belos method " << belosMethod);
+
+  Belos::SolverFactory<Scalar, MV, OP> solverFactory;
+  auto solver = solverFactory.create(belosMethod, belosList);
+  solver->setProblem(problem);
+
+  solver->solve();
+
+  if (belosMethod == "Pseudo Block CG") {
+    auto cgSolver            = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<Scalar, MV, OP>>(solver);
+    auto eigenvalueEstimates = cgSolver->getEigenEstimates();
+    TEUCHOS_ASSERT(!eigenvalueEstimates.is_null() && eigenvalueEstimates.size() > 0);
+
+    auto lambda = eigenvalueEstimates[0];
+    for (auto ev : eigenvalueEstimates) {
+      if (lambda < ev)
+        lambda = ev;
+    }
+    return lambda;
+  } else if (belosMethod == "Block GMRES") {
+    auto gmresSolver         = Teuchos::rcp_dynamic_cast<Belos::BlockGmresSolMgr<Scalar, MV, OP>>(solver);
+    auto eigenvalueEstimates = gmresSolver->getEigenEstimates();
+    TEUCHOS_ASSERT(!eigenvalueEstimates.is_null() && eigenvalueEstimates.size() > 0);
+
+    auto lambda = std::abs(eigenvalueEstimates[0]);
+    for (auto ev : eigenvalueEstimates) {
+      if (lambda < std::abs(ev))
+        lambda = std::abs(ev);
+    }
+    return lambda;
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Cannot compute eigenvalues using Belos method " << belosMethod);
+  }
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Belos is not available.");
+#endif
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Scalar
+UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    KrylovMethod(const Matrix& A, const std::string& belosMethod, Teuchos::FancyOStream& out, bool scaleByDiag,
+                 LocalOrdinal niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, typename Teuchos::ScalarTraits<Scalar>::magnitudeType diagonalReplacementTolerance, unsigned int seed) {
+  TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
+                             "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
+
+  // power iteration
+  RCP<Vector> diagInvVec;
+  if (scaleByDiag) {
+    diagInvVec = GetMatrixDiagonalInverse(A, diagonalReplacementTolerance);
+  }
+
+  Scalar lambda = KrylovMethod(A, diagInvVec, belosMethod, out, niters, tolerance, seed);
   return lambda;
 }
 

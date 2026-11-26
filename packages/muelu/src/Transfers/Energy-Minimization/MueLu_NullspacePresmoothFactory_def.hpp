@@ -52,7 +52,7 @@ void NullspacePresmoothFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build
     Teuchos::ArrayRCP<SC> D = Utilities::GetMatrixDiagonal_arcp(*A);
 
     SC damping = 4. / 3;
-    damping /= Utilities::PowerMethod(*A, true, (LO)10, 1e-4);
+    damping /= Utilities::PowerMethod(*A, GetOStream(Statistics2), true, (LO)10, 1e-4);
 
     A->apply(*B, *newB, Teuchos::NO_TRANS);
 

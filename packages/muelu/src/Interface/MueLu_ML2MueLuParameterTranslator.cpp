@@ -535,7 +535,6 @@ Teuchos::RCP<Teuchos::ParameterList> ML2MueLuParameterTranslator::SetParameterLi
         pname == "node: y-coordinates" ||
         pname == "node: z-coordinates" ||
         pname == "repartition: partitioner" ||
-        pname == "eigen-analysis: type" ||
         pname == "increasing or decreasing"  // ignored
     )
       hasBeenProcessed = true;

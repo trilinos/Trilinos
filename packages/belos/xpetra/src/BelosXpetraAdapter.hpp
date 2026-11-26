@@ -11,6 +11,7 @@
 #define BELOS_XPETRA_ADAPTER_HPP
 
 #include <BelosXpetraAdapterOperator.hpp>
+#include <BelosXpetraDiagOperator.hpp>
 #include <BelosXpetraAdapterMultiVector.hpp>
 #include <BelosSolverFactory_Xpetra.hpp>
 
