@@ -100,18 +100,33 @@ namespace FROSch {
         // Maps //
         //////////
         if (repeatedMap.is_null()) {
-            FROSCH_DETAILTIMER_START_LEVELID(buildRepeatedMapTime,"BuildRepeatedMap");
-            repeatedMap = BuildRepeatedMap(this->K_->getCrsGraph()); // Todo: Achtung, die UniqueMap könnte unsinnig verteilt sein. Falls es eine repeatedMap gibt, sollte dann die uniqueMap neu gebaut werden können. In diesem Fall, sollte man das aber basierend auf der repeatedNodesMap tun
+            FROSCH_DETAILTIMER_START_LEVELID(buildRepeatedMapTime, "BuildRepeatedMap");
+            if (dofsMaps.is_null()) {
+                repeatedMap = BuildRepeatedMap(this->K_->getCrsGraph());
+            } else {
+                FROSCH_ASSERT(dofsMaps.size() == dofsPerNode, "dofsMaps.size()!=dofsPerNode");
+                FROSCH_ASSERT(dofsMaps.size() > 0, "dofsMaps is empty.");
+                for (UN i = 0; i < dofsMaps.size(); i++) {
+                    FROSCH_ASSERT(!dofsMaps[i].is_null(), "dofsMaps[i].is_null()");
+                }
+                // Assemble one block without changing the matrix global IDs.
+                ArrayRCP<ConstXMapPtrVecPtr> blockDofsMaps(1);
+                blockDofsMaps[0] = dofsMaps;
+                ArrayRCP<UN> blockDofsPerNode(1, dofsPerNode);
+                repeatedMap = AssembleSubdomainMap(1, blockDofsMaps, blockDofsPerNode);
+            }
         }
+
         // Build dofsMaps and repeatedNodesMap
         ConstXMapPtr repeatedNodesMap;
         if (dofsMaps.is_null()) {
-            FROSCH_DETAILTIMER_START_LEVELID(buildDofMapsTime,"BuildDofMaps");
-            if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,dofsMaps)) ret -= 100; // Todo: Rückgabewerte
+            FROSCH_DETAILTIMER_START_LEVELID(buildDofMapsTime, "BuildDofMaps");
+            if (0 > BuildDofMaps(repeatedMap, dofsPerNode, dofOrdering, repeatedNodesMap, dofsMaps))
+                ret -= 100; // Todo: Rückgabewerte
         } else {
-            FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
-            for (UN i=0; i<dofsMaps.size(); i++) {
-                FROSCH_ASSERT(!dofsMaps[i].is_null(),"dofsMaps[i].is_null()");
+            FROSCH_ASSERT(dofsMaps.size() == dofsPerNode, "dofsMaps.size()!=dofsPerNode");
+            for (UN i = 0; i < dofsMaps.size(); i++) {
+                FROSCH_ASSERT(!dofsMaps[i].is_null(), "dofsMaps[i].is_null()");
             }
             if (repeatedNodesMap.is_null()) {
                 repeatedNodesMap = dofsMaps[0];
@@ -135,15 +150,43 @@ namespace FROSch {
         /////////////////////////////////////
         // Determine dirichletBoundaryDofs //
         /////////////////////////////////////
-        if (dirichletBoundaryDofs.is_null()) {
+        const bool boundaryDofsProvided = !dirichletBoundaryDofs.is_null();
+        ParameterListPtr paramList_DirichletBnd;
+        bool detectBoundaryDofs = false;
+        string source;
+        if (not boundaryDofsProvided) {
             FROSCH_DETAILTIMER_START_LEVELID(determineDirichletRowsTime,"Determine Dirichlet Rows");
-            typename ScalarTraits<SC>::magnitudeType tol = this->ParameterList_->get("DirichletBoundary Numerical Tolerance",0.0);
-#ifdef FindOneEntryOnlyRowsGlobal_Matrix
-            dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),repeatedMap, tol);
-#else
-            dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),repeatedMap, tol);
-#endif
+
+            // Extract the parameter list that contains information on how to detect the boundary dofs.
+            {
+                ParameterListPtr paramList_coarseOp;
+                if (this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator") == "IPOUHarmonicCoarseOperator") {
+                    paramList_coarseOp = sublist(this->ParameterList_, "IPOUHarmonicCoarseOperator");
+                } else if (this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator") == "GDSWCoarseOperator") {
+                    paramList_coarseOp = sublist(this->ParameterList_, "GDSWCoarseOperator");
+                } else if (this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator") == "RGDSWCoarseOperator") {
+                    paramList_coarseOp = sublist(this->ParameterList_, "RGDSWCoarseOperator");
+                }
+                paramList_DirichletBnd = sublist(paramList_coarseOp, "Dirichlet boundary rows in global matrix");
+            }
+
+            detectBoundaryDofs = paramList_DirichletBnd->get("Find Dirichlet boundary rows", false);
+            if (detectBoundaryDofs) {
+                source = getDirichletBoundarySource(paramList_DirichletBnd);
+                if (source == "matrix") {
+                    typename ScalarTraits<SC>::magnitudeType tol = getDirichletBoundaryMatrixTolerance(paramList_DirichletBnd);
+                    dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),     repeatedMap, tol);
+                } else if (source == "graph") {
+                    dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(), repeatedMap);
+                } else {
+                    FROSCH_ASSERT(false,"Source type to determine the Dirichlet boundary is unknown." + source);
+                }
+            }
         }
+        Teuchos::Array<long long> boundaryCounts(1, static_cast<long long>(dirichletBoundaryDofs.size()));
+        PrintDirichletBoundaryStatistics(
+                this->MpiComm_, this->LevelID_, paramList_DirichletBnd, source, boundaryDofsProvided,
+                detectBoundaryDofs, boundaryCounts);
 
         ////////////////////////////////////
         // Initialize OverlappingOperator //

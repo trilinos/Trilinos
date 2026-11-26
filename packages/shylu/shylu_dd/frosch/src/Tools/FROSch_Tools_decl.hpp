@@ -276,6 +276,35 @@ namespace FROSch {
     ArrayRCP<RCP<Map<LO,GO,NO> > > BuildSubMaps(RCP<const Map<LO,GO,NO> > &fullMap,
                                                 ArrayRCP<GO> maxSubGIDVec);
 
+    inline string getDirichletBoundarySource(const RCP<ParameterList>& settings);
+
+    inline double getDirichletBoundaryMatrixTolerance(const RCP<ParameterList>& settings);
+
+    /**
+     * @brief Report source of boundary DOF list and per-block DOF counts.
+     * Counts come only from boundary DOF list sizes; their sum includes
+     * duplicates across ranks (due to the "repeated" structure).
+     * No matrix values are examined.
+     *
+     * @param comm Communicator used to compute per-block information across ranks.
+     * @param levelID FROSch level identifier displayed in the report header.
+     * @param settings Parameter list "Dirichlet boundary rows in global matrix"
+     * @param selectedSource If boundary detection enabled and not provided by user,
+     *                       this is "Source" value of the parameter list (unless changed).
+     *                       Leave empty otherwise.
+     * @param provided_by_user Is the boundary DOF list provided by the user
+     * @param enabled Is the boundary detection enabled
+     * @param localCounts Array with size = number of blocks, with the number of boundary DOFs per block
+     */
+    void PrintDirichletBoundaryStatistics(
+            const RCP<const Comm<int>> &comm,
+            unsigned levelID,
+            const RCP<ParameterList> &settings,
+            const string &selectedSource,
+            bool provided_by_user,
+            bool enabled,
+            const Teuchos::Array<long long> &localCounts);
+
     template <class SC,class LO,class GO,class NO>
     ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const Matrix<SC,LO,GO,NO> > matrix,
                                             RCP<const Map<LO,GO,NO> > repeatedMap,

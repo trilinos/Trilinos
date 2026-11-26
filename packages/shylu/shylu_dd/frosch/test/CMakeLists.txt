@@ -13,5 +13,8 @@ ADD_SUBDIRECTORIES(
     Thyra_Xpetra_Elasticity
     Thyra_Xpetra_Laplace
 )
+IF(Amesos2_ENABLE_KLU2)
+    ADD_SUBDIRECTORIES(DirichletBoundaryDetection)
+ENDIF()
 ENDIF()
 

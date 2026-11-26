@@ -1317,43 +1317,149 @@ namespace FROSch {
         return subMaps;
     }
 
+    inline string getDirichletBoundarySource(const RCP<ParameterList>& settings)
+    {
+        // The default setting is encoded here to prevent hardcoding in different locations.
+        return settings->get("Source", "matrix");
+    }
+
+    inline double getDirichletBoundaryMatrixTolerance(const RCP<ParameterList>& settings)
+    {
+        // The default setting is encoded here to prevent hardcoding in different locations.
+        return settings->get("Tolerance for values in matrix", 0.0);
+    }
+
+    inline void PrintDirichletBoundaryStatistics(
+            const RCP<const Comm<int>> &comm,
+            unsigned levelID,
+            const RCP<ParameterList> &settings,
+            const string &selectedSource,
+            bool provided_by_user,
+            bool enabled,
+            const Teuchos::Array<long long> &localCounts)
+    {
+        // Source (like matrix, graph of matrix) that is used to detect Dirichlet boundary dofs
+        string source = provided_by_user ? "caller-provided list" : "none";
+
+        // If FROSch generated the list of Dirichlet boundary dofs, show which criterion is used.
+        string criterion;
+        if (provided_by_user)
+            criterion = "/";
+        else if (!provided_by_user && !enabled)
+            criterion = "automatic boundary DOF detection disabled";
+        else if (!provided_by_user && enabled) {
+            source = "FROSch-generated, based on " + selectedSource;
+            if (selectedSource == "matrix") {
+                const double tol = getDirichletBoundaryMatrixTolerance(settings);
+                if (tol >= 0.0) {
+                    ostringstream text;
+                    text << "exactly one entry with abs(value) > " << tol;
+                    criterion = text.str();
+                } else {
+                    criterion = "exactly one stored entry; values ignored and may be zero";
+                }
+            } else {
+                criterion = "exactly one stored entry; values not examined";
+            }
+        }
+
+        // Determine the number of boundary dofs for each block:
+        // sum over all ranks, minimum over all ranks, maximum over all ranks
+        Teuchos::Array<long long> sums(localCounts.size()), minima(localCounts.size()), maxima(localCounts.size());
+        if ((provided_by_user || enabled) && !localCounts.empty()) {
+            const int num_entries_to_read = static_cast<int>(localCounts.size()); // number of blocks
+            Teuchos::reduceAll(*comm, REDUCE_SUM, num_entries_to_read, localCounts.getRawPtr(), sums.getRawPtr());
+            Teuchos::reduceAll(*comm, REDUCE_MIN, num_entries_to_read, localCounts.getRawPtr(), minima.getRawPtr());
+            Teuchos::reduceAll(*comm, REDUCE_MAX, num_entries_to_read, localCounts.getRawPtr(), maxima.getRawPtr());
+        }
+        if (comm->getRank() != 0)
+            return; // Output is only shown on rank 0
+
+        // Format in a separate stream so caller formatting is preserved.
+        ostringstream out;
+
+        const string indent(FROSCH_OUTPUT_INDENT, ' ');
+        const string rule(89, '-');
+        out << '\n'
+            << indent << rule << '\n'
+            << indent << "| " << left << setw(74) << "> Dirichlet Boundary Detection" << right << setw(8) << "(Level "
+            << setw(2) << levelID << ") |" << '\n'
+            << indent << string(89, '=');
+
+        // Define an anonymous function to print a "row of information".
+        const auto row = [&](const string &label, const string &value) {
+            out << '\n' << indent << "| " << left << setw(37) << label << " | " << setw(45) << value << " |";
+        };
+
+        row("Source of boundary DOF list", source);
+        row("Criterion", criterion);
+        if (provided_by_user || enabled) {
+            row("Counts", "repeated DOFs; sum includes rank duplicates");
+            out << '\n'
+                << indent << rule << '\n'
+                << indent << "| " << left << setw(25) << "Boundary DOFs"
+                << " | " << right << setw(12) << "avg" << " | " << setw(12) << "min"
+                << " | " << setw(12) << "max" << " | " << setw(12) << "sum" << " |" << '\n'
+                << indent << rule;
+            for (int i = 0; i < localCounts.size(); ++i) {
+                out << '\n'
+                    << indent << "| " << left << setw(25) << ("Block " + to_string(i + 1)) << " | " << right << setw(12)
+                    << static_cast<double>(sums[i]) / comm->getSize() << " | " << setw(12) << minima[i] << " | "
+                    << setw(12) << maxima[i] << " | " << setw(12) << sums[i] << " |";
+            }
+        }
+        out << '\n' << indent << rule << endl;
+        cout << out.str();
+    }
+
     template <class SC,class LO,class GO,class NO>
     ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const Matrix<SC,LO,GO,NO> > matrix,
                                             RCP<const Map<LO,GO,NO> > repeatedMap,
                                             typename ScalarTraits<SC>::magnitudeType tol)
     {
+        // Find all rows that contain only a single nonzero value.
+        // Nonzero means: abs(value) < tol.
         FROSCH_DETAILTIMER_START(findOneEntryOnlyRowsGlobalTime,"FindOneEntryOnlyRowsGlobal");
-        RCP<Matrix<SC,LO,GO,NO> > repeatedMatrix = MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap,2*matrix->getGlobalMaxNumRowEntries());
-        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(matrix->getRowMap(),repeatedMap);
+        RCP<Matrix<SC,LO,GO,NO> > repeatedMatrix = MatrixFactory<SC,LO,GO,NO>::Build(
+            repeatedMap, 2*matrix->getGlobalMaxNumRowEntries());
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(
+            matrix->getRowMap(), repeatedMap);
         repeatedMatrix->doImport(*matrix,*scatter,ADD);
 
-        typename ScalarTraits<SC>::magnitudeType zero (0.0);
         ArrayRCP<GO> oneEntryOnlyRows(repeatedMatrix->getLocalNumRows());
-        LO tmp = 0;
-        LO nnz;
-        GO row;
+        LO cntrOneEntryRows = 0;
         for (unsigned i=0; i<repeatedMatrix->getLocalNumRows(); i++) {
-            row = repeatedMap->getGlobalElement(i);
+            const GO row = repeatedMap->getGlobalElement(i);
             ArrayView<const GO> indices;
             ArrayView<const SC> values;
             repeatedMatrix->getGlobalRowView(row,indices,values);
-            nnz = indices.size();
-            if (indices.size()==1) {
-                oneEntryOnlyRows[tmp] = row;
-                tmp++;
-            } else if (tol > zero) {
-                for (LO j=0; j<values.size(); j++) {
-                    if (fabs(values[j])<tol) {
-                        nnz--;
-                    }
+
+            const typename ScalarTraits<SC>::magnitudeType zero (0.0);
+            if (tol >= zero) {
+                LO nnz = 0;
+                for (std::size_t j=0; j<values.size(); j++) {
+
+                    // Make sure std::abs comes from <cmath> (floats), not from <cstdlib> (integers).
+                    // Otherwise, it would silently cast floats to integers.
+                    static_assert(std::is_floating_point_v<decltype(std::abs(values[j]))>);
+
+                    auto mag = std::abs(values[j]);
+                    if (mag > tol) nnz++;
+
+                    if (nnz > 1) break;
                 }
                 if (nnz == 1) {
-                    oneEntryOnlyRows[tmp] = row;
-                    tmp++;
+                    oneEntryOnlyRows[cntrOneEntryRows] = row;
+                    cntrOneEntryRows++;
                 }
+            } else if (indices.size() == 1) {
+                // tol < 0 is equivalent to using the graph of the matrix to count the rows with only one entry.
+                // In that case, values that are stored explicitly as zeros are counted here as nonzeros as well.
+                oneEntryOnlyRows[cntrOneEntryRows] = row;
+                cntrOneEntryRows++;
             }
         }
-        oneEntryOnlyRows.resize(tmp);
+        oneEntryOnlyRows.resize(cntrOneEntryRows);
         return oneEntryOnlyRows;
     }
 

@@ -180,21 +180,63 @@ namespace FROSch {
         return 0;
     }
 
+    template <class SC, class LO, class GO, class NO>
+    typename GDSWCoarseOperator<SC, LO, GO, NO>::GOVecPtr
+    GDSWCoarseOperator<SC, LO, GO, NO>::determineDirichletBoundaryDofs(
+            UN dofsPerNode,
+            const ConstXMapPtrVecPtr &dofsMaps)
+    {
+        FROSCH_DETAILTIMER_START_LEVELID(determineDirichletRowsTime, "Determine Dirichlet Rows");
+        FROSCH_ASSERT(dofsPerNode > 0, "dofsPerNode must be positive.");
+        FROSCH_ASSERT(!dofsMaps.is_null(), "dofsMaps.is_null()");
+        FROSCH_ASSERT(dofsMaps.size() == dofsPerNode, "dofsMaps.size() != dofsPerNode");
+        for (UN j = 0; j < dofsMaps.size(); ++j) {
+            FROSCH_ASSERT(!dofsMaps[j].is_null(), "dofsMaps[j].is_null()");
+        }
+
+        // Check whether the user asked for the detection of the Dirichlet boundary.
+        ParameterListPtr paramList_DirichletBnd =
+                sublist(this->ParameterList_, "Dirichlet boundary rows in global matrix");
+        if (!paramList_DirichletBnd->get("Find Dirichlet boundary rows", false)) {
+            PrintDirichletBoundaryStatistics(this->MpiComm_,this->LevelID_,paramList_DirichletBnd,
+                                             "",false,false,Array<long long>(1,0));
+            return null;
+        }
+
+        // dofsMaps[i] is a repeated map for one component x/y/...
+        // Combine the individual maps from a vector of length n to
+        // a vector of length d*n (for d components).
+        // This does not change the full-system global IDs.
+        // This merge operation is a bijective operation.
+        ConstXMapPtrVecPtr2D blockDofsMaps(1);
+        blockDofsMaps[0] = dofsMaps;
+        UNVecPtr blockDofsPerNode(1, dofsPerNode);
+        ConstXMapPtr repeatedMap = AssembleSubdomainMap(1, blockDofsMaps, blockDofsPerNode);
+
+        GOVecPtr dirichletBoundaryDofs;
+        const string source = getDirichletBoundarySource(paramList_DirichletBnd);
+        if (source == "matrix") {
+            typename ScalarTraits<SC>::magnitudeType tol =
+                    getDirichletBoundaryMatrixTolerance(paramList_DirichletBnd);
+            dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(), repeatedMap, tol);
+        } else if (source == "graph") {
+            dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(), repeatedMap);
+        } else {
+            FROSCH_ASSERT(false, "Source type to determine the Dirichlet boundary is unknown: " + source);
+        }
+        Array<long long> boundaryCounts(1,static_cast<long long>(dirichletBoundaryDofs.size()));
+        PrintDirichletBoundaryStatistics(this->MpiComm_,this->LevelID_,paramList_DirichletBnd,
+                                         source,false,true,boundaryCounts);
+        return dirichletBoundaryDofs;
+    }
+
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
                                                           UN dofsPerNode,
                                                           ConstXMapPtr nodesMap,
                                                           ConstXMapPtrVecPtr dofsMaps)
     {
-/*
-#ifdef FindOneEntryOnlyRowsGlobal_Matrix
-        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),nodesMap);
-#else
-        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),nodesMap);
-#end
- */
-        FROSCH_WARNING("FROSch::GDSWCoarseOperator",this->Verbose_,"We do not have the right map (repeatedMap) to use FindOneEntryOnlyRowsGlobal. A variant that uses the row map could be implemented?! => We use dirichletBoundaryDofs = null for now.");
-        GOVecPtr dirichletBoundaryDofs = null;
+        GOVecPtr dirichletBoundaryDofs = determineDirichletBoundaryDofs(dofsPerNode,dofsMaps);
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs);
 
         return 0;
@@ -220,15 +262,7 @@ namespace FROSch {
                                                           ConstXMapPtrVecPtr dofsMaps,
                                                           ConstXMultiVectorPtr nodeList)
     {
-/*
-#ifdef FindOneEntryOnlyRowsGlobal_Matrix
-        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),nodesMap);
-#else
-        GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),nodesMap);
-#end
- */
-        FROSCH_WARNING("FROSch::GDSWCoarseOperator",this->Verbose_,"We do not have the right map (repeatedMap) to use FindOneEntryOnlyRowsGlobal. A variant that uses the row map could be implemented?! => We use dirichletBoundaryDofs = null for now.");
-        GOVecPtr dirichletBoundaryDofs = null;
+        GOVecPtr dirichletBoundaryDofs = determineDirichletBoundaryDofs(dofsPerNode,dofsMaps);
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,dirichletBoundaryDofs,nodeList);
 
         return 0;

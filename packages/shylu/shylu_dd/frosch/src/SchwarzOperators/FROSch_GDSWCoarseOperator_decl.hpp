@@ -131,6 +131,31 @@ namespace FROSch {
 
     protected:
 
+        /**
+         * @brief Validate component DoF maps and optionally detect Dirichlet DoFs.
+         *
+         * When
+         *    "Find Dirichlet boundary rows" (default false)
+         * is enabled in the
+         *    "Dirichlet boundary rows in global matrix"
+         * sublist, assemble the merged, repeated DoF map from dofsMaps without
+         * changing global IDs.
+         *    "Source"
+         * can be
+         *    "matrix" (default)
+         * or
+         *    "graph";
+         * matrix detection uses
+         *    "Tolerance for values in matrix" (default 0.0).
+         *
+         * @param[in] dofsPerNode Number of components
+         * @param[in] dofsMaps Populated, repeated component map for each
+         *     component. There are dofsPerNode sub-maps.
+         * @return Detected global DoF IDs, or null if detection is disabled.
+         */
+        GOVecPtr determineDirichletBoundaryDofs(UN dofsPerNode,
+                                                const ConstXMapPtrVecPtr& dofsMaps);
+
         int buildCoarseSpace(UN dimension,
                              ConstXMapPtr nodesMap);
 
