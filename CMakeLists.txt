@@ -44,6 +44,9 @@ SET(Trilinos_MUST_FIND_ALL_TPL_LIBS_DEFAULT TRUE)
 # Some CMake and TriBiTS tweaks just for Trilinos
 include(TrilinosTweaks)
 
+# Set some Kokkos options that differ from Kokkos defaults
+include(TrilinosKokkosSettings)
+
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()
 
