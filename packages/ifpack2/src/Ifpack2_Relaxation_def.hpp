@@ -949,7 +949,13 @@ void Relaxation<MatrixType>::computeBlockCrs() {
                                  "Tpetra::BlockCrsMatrix, one or more diagonal block LU factorizations "
                                  "failed on one or more (MPI) processes.");
     }
-    serialGaussSeidel_ = rcp(new SerialGaussSeidel(blockCrsA, blockDiag_, localSmoothingIndices_, DampingFactor_));
+    // Jacobi applies the inverse diagonal blocks on the device. The serial
+    // Gauss-Seidel helper would copy those blocks to host memory.
+    if (PrecType_ == Details::GS || PrecType_ == Details::SGS) {
+      serialGaussSeidel_ = rcp(new SerialGaussSeidel(blockCrsA, blockDiag_, localSmoothingIndices_, DampingFactor_));
+    } else {
+      serialGaussSeidel_ = Teuchos::null;
+    }
   }  // end TimeMonitor scope
 
   ComputeTime_ += (timer->wallTime() - startTime);
