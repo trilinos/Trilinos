@@ -48,4 +48,3 @@ Example
 =======
 
 Will be added later.
-

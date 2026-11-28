@@ -36,7 +36,7 @@ Performs the dot product of two vectors :math:`X` and :math:`Y`.
 2. If ``ArgTrans == KokkosBatched::Trans::ConjTranspose``, this operation is equivalent to the BLAS routine `CDOTC <https://www.netlib.org/blas/cdotc.f>`_ or `ZDOTC <https://www.netlib.org/blas/zdotc.f>`_ for single or double precision for complex vectors.
 
 .. note::
-  
+
   This kernel does not support the BLAS routine `SDSDOT <https://www.netlib.org/blas/sdsdot.f>`_ which returns the single precision dot product of two single precision vectors with dot product accumulated in double precision.
   For `DSDOT <https://www.netlib.org/blas/dsdot.f>`_, provide :math:`X` and :math:`Y` in single precision and provide the output :math:`dot` in double precision.
 
@@ -65,7 +65,7 @@ Type Requirements
 - ``NormViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 0 or 1 containing the output :math:`dot`. dot product is accumulated is accumulated in the type of the elements of ``NormViewType``
 
 .. note::
-  
+
   This kernel supports both vector and matrix operations. When the input views :math:`X` and :math:`Y` are of rank 1, the kernel performs a vector operation (BLAS dot). ``Axis`` must be set to 0 for this case.
   When the input views :math:`X` and :math:`Y` are of rank 2, the kernel performs a vector operation along the specified axis (0 or 1), where each column or row is treated as a separate vector.
   The template argument ``Axis`` to specify the axis to perform the operation is required from 5.2.0.

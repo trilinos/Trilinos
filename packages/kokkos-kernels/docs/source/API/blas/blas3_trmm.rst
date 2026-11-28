@@ -98,7 +98,7 @@ Example
       Kokkos::fill_random(B,rand_pool,Scalar(10));
 
       const Scalar alpha = 1.0;
-   
+
       KokkosBlas::trmm("R","L","T","N",alpha,A,B);
     }
     Kokkos::finalize();

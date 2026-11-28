@@ -43,7 +43,7 @@ cmake \
 $TRILINOS_DIR
 
 
-# Notes: 
+# Notes:
 # Compile using ninja
 # make NP=32
 

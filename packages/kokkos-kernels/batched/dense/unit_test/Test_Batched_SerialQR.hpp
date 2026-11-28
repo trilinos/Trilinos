@@ -122,6 +122,18 @@ struct qrFunctor {
       }
     }
 
+    // Applying Q and Q^H from the right should recover the identity matrix
+    for (int idx = 0; idx < w.extent_int(0); ++idx) {
+      w(idx) = 0.0;
+    }
+    KokkosBatched::SerialApplyQ<Side::Right, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, tau, Q, w);
+    for (int rowIdx = 0; rowIdx < Q.extent_int(0); ++rowIdx) {
+      for (int colIdx = 0; colIdx < Q.extent_int(1); ++colIdx) {
+        const Scalar expected = rowIdx == colIdx ? SC_one : KAT::zero();
+        if (Kokkos::abs(Q(rowIdx, colIdx) - expected) > tol) ++error_lcl;
+      }
+    }
+
     // Apply Q' to B which holds a copy of the orginal A
     // Afterwards B should hold a copy of R and be zero below its diagonal
     for (int idx = 0; idx < w.extent_int(0); ++idx) {
@@ -196,19 +208,19 @@ void test_QR_square() {
   Kokkos::deep_copy(A_h, A);
   auto tau_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, t);
 
-  Test::EXPECT_NEAR_KK_REL(A_h(0, 0), static_cast<Scalar>(-14), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(0, 1), static_cast<Scalar>(-21), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(0, 2), static_cast<Scalar>(14), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(1, 0), static_cast<Scalar>(6. / 26.), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(1, 1), static_cast<Scalar>(-175), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(1, 2), static_cast<Scalar>(70), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(2, 0), static_cast<Scalar>(-4.0 / 26.0), tol);
-  // Test::EXPECT_NEAR_KK_REL(A_h(2, 1),   35.0, tol);      // Analytical expression too painful to compute...
-  Test::EXPECT_NEAR_KK_REL(A_h(2, 2), static_cast<Scalar>(35), tol);
+  EXPECT_NEAR_KK_REL(A_h(0, 0), static_cast<Scalar>(-14), tol);
+  EXPECT_NEAR_KK_REL(A_h(0, 1), static_cast<Scalar>(-21), tol);
+  EXPECT_NEAR_KK_REL(A_h(0, 2), static_cast<Scalar>(14), tol);
+  EXPECT_NEAR_KK_REL(A_h(1, 0), static_cast<Scalar>(6. / 26.), tol);
+  EXPECT_NEAR_KK_REL(A_h(1, 1), static_cast<Scalar>(-175), tol);
+  EXPECT_NEAR_KK_REL(A_h(1, 2), static_cast<Scalar>(70), tol);
+  EXPECT_NEAR_KK_REL(A_h(2, 0), static_cast<Scalar>(-4.0 / 26.0), tol);
+  // EXPECT_NEAR_KK_REL(A_h(2, 1),   35.0, tol);      // Analytical expression too painful to compute...
+  EXPECT_NEAR_KK_REL(A_h(2, 2), static_cast<Scalar>(35), tol);
 
-  Test::EXPECT_NEAR_KK_REL(tau_h(0), static_cast<Scalar>(7. / 13.), tol);
-  // Test::EXPECT_NEAR_KK_REL(tau_h(1), 25. / 32., tol);      // Analytical expression too painful to compute...
-  Test::EXPECT_NEAR_KK_REL(tau_h(2), static_cast<Scalar>(1. / 2.), tol);
+  EXPECT_NEAR_KK_REL(tau_h(0), static_cast<Scalar>(7. / 13.), tol);
+  // EXPECT_NEAR_KK_REL(tau_h(1), 25. / 32., tol);      // Analytical expression too painful to compute...
+  EXPECT_NEAR_KK_REL(tau_h(2), static_cast<Scalar>(1. / 2.), tol);
 
   Kokkos::parallel_for(
       "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
@@ -216,15 +228,15 @@ void test_QR_square() {
       });
   auto B_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, B);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-14), B_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-21), B_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(14), B_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0), B_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-175), B_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(70), B_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0), B_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0), B_h(2, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(35), B_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-14), B_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-21), B_h(0, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(14), B_h(0, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0), B_h(1, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-175), B_h(1, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(70), B_h(1, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0), B_h(2, 0), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0), B_h(2, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(35), B_h(2, 2), tol);
 
   Kokkos::parallel_for(
       "serialFormQ", 1, KOKKOS_LAMBDA(int) {
@@ -233,15 +245,15 @@ void test_QR_square() {
       });
   auto Q_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, Q);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 7.), Q_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(69. / 175.), Q_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-58. / 175.), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-3. / 7.), Q_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-158. / 175.), Q_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(6. / 175.), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(2. / 7.), Q_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 35.), Q_h(2, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-33. / 35.), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 7.), Q_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(69. / 175.), Q_h(0, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-58. / 175.), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-3. / 7.), Q_h(1, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-158. / 175.), Q_h(1, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(6. / 175.), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(2. / 7.), Q_h(2, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 35.), Q_h(2, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-33. / 35.), Q_h(2, 2), tol);
 
   Kokkos::parallel_for(
       "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
@@ -249,16 +261,16 @@ void test_QR_square() {
       });
   Kokkos::deep_copy(Q_h, Q);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.), Q_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.), Q_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.), Q_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.), Q_h(1, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.), Q_h(2, 2), tol);
 
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 1), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 1), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 0), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 1), tol);
 
   Kokkos::deep_copy(Q_h, 0);
   Q_h(0, 0) = 1.0;
@@ -271,15 +283,15 @@ void test_QR_square() {
       });
   Kokkos::deep_copy(Q_h, Q);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 7.), Q_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(69. / 175.), Q_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-58. / 175.), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-3. / 7.), Q_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-158. / 175.), Q_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(6. / 175.), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(2. / 7.), Q_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 35.), Q_h(2, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-33. / 35.), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 7.), Q_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(69. / 175.), Q_h(0, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-58. / 175.), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-3. / 7.), Q_h(1, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-158. / 175.), Q_h(1, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(6. / 175.), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(2. / 7.), Q_h(2, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-6. / 35.), Q_h(2, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-33. / 35.), Q_h(2, 2), tol);
 }
 
 template <class Device, class Scalar, class AlgoTagType>
@@ -329,15 +341,15 @@ void test_QR_rectangular() {
   Kokkos::deep_copy(A_h, A);
   auto tau_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, t);
 
-  Test::EXPECT_NEAR_KK_REL(A_h(0, 0), static_cast<Scalar>(-5.0), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(0, 1), static_cast<Scalar>(-3.0), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(1, 0), static_cast<Scalar>(0.5), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(1, 1), static_cast<Scalar>(5.0), tol);
-  Test::EXPECT_NEAR_KK(A_h(2, 0), static_cast<Scalar>(0.), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(2, 1), static_cast<Scalar>(1. / 3.), tol);
+  EXPECT_NEAR_KK_REL(A_h(0, 0), static_cast<Scalar>(-5.0), tol);
+  EXPECT_NEAR_KK_REL(A_h(0, 1), static_cast<Scalar>(-3.0), tol);
+  EXPECT_NEAR_KK_REL(A_h(1, 0), static_cast<Scalar>(0.5), tol);
+  EXPECT_NEAR_KK_REL(A_h(1, 1), static_cast<Scalar>(5.0), tol);
+  EXPECT_NEAR_KK(A_h(2, 0), static_cast<Scalar>(0.), tol);
+  EXPECT_NEAR_KK_REL(A_h(2, 1), static_cast<Scalar>(1. / 3.), tol);
 
-  Test::EXPECT_NEAR_KK_REL(tau_h(0), static_cast<Scalar>(5. / 8.), tol);
-  Test::EXPECT_NEAR_KK_REL(tau_h(1), static_cast<Scalar>(10. / 18.), tol);
+  EXPECT_NEAR_KK_REL(tau_h(0), static_cast<Scalar>(5. / 8.), tol);
+  EXPECT_NEAR_KK_REL(tau_h(1), static_cast<Scalar>(10. / 18.), tol);
 
   Kokkos::parallel_for(
       "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
@@ -345,12 +357,12 @@ void test_QR_rectangular() {
       });
   auto B_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, B);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-5.0), B_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-3.0), B_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), B_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(5.0), B_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), B_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), B_h(2, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-5.0), B_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-3.0), B_h(0, 1), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), B_h(1, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(5.0), B_h(1, 1), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), B_h(2, 0), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), B_h(2, 1), tol);
 
   Kokkos::parallel_for(
       "serialFormQ", 1, KOKKOS_LAMBDA(int) {
@@ -359,15 +371,15 @@ void test_QR_rectangular() {
       });
   auto Q_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, Q);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(1, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
 
   Kokkos::deep_copy(Q_h, 0.0);
   Q_h(0, 0) = 1.0;
@@ -381,15 +393,15 @@ void test_QR_rectangular() {
       });
   Kokkos::deep_copy(Q_h, Q);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(2, 1), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(1, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(2, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(0, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(2, 1), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
 
   Kokkos::deep_copy(Q_h, 0.0);
   Q_h(0, 0) = 1.0;
@@ -403,15 +415,15 @@ void test_QR_rectangular() {
       });
   Kokkos::deep_copy(Q_h, Q);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(1, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
 
   Kokkos::parallel_for(
       "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
@@ -419,16 +431,16 @@ void test_QR_rectangular() {
       });
   Kokkos::deep_copy(Q_h, Q);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(1, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(2, 2), tol);
 
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 1), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 1), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 0), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 1), tol);
 
   Kokkos::deep_copy(Q_h, 0);
   Q_h(0, 0) = 1.0;
@@ -441,15 +453,15 @@ void test_QR_rectangular() {
       });
   Kokkos::deep_copy(Q_h, Q);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(1, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
 }
 
 template <class Device, class Scalar, class AlgoTagType>
@@ -507,15 +519,15 @@ void test_QR_rectangular_cplx() {
 
   const mag_type norm_y = Kokkos::sqrt(170 * 170 + 68 * 68 + 80 * 80 + 54 * 54) / 18;
 
-  Test::EXPECT_NEAR_KK_REL(A_h(0, 0), Scalar(-6, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(0, 1), Scalar(-22. / 3, 21. / 3), tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(1, 0), Scalar(13, -1) / 30, tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(1, 1), norm_y, tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(2, 0), Scalar(1, 3) / 30, tol);
-  Test::EXPECT_NEAR_KK_REL(A_h(2, 1), Scalar(-80, -54) / Scalar(-170 - 18 * norm_y, 68), tol);
+  EXPECT_NEAR_KK_REL(A_h(0, 0), Scalar(-6, 0), tol);
+  EXPECT_NEAR_KK_REL(A_h(0, 1), Scalar(-22. / 3, 21. / 3), tol);
+  EXPECT_NEAR_KK_REL(A_h(1, 0), Scalar(13, -1) / 30, tol);
+  EXPECT_NEAR_KK_REL(A_h(1, 1), norm_y, tol);
+  EXPECT_NEAR_KK_REL(A_h(2, 0), Scalar(1, 3) / 30, tol);
+  EXPECT_NEAR_KK_REL(A_h(2, 1), Scalar(-80, -54) / Scalar(-170 - 18 * norm_y, 68), tol);
 
-  Test::EXPECT_NEAR_KK_REL(tau_h(0), KAT::one() / Scalar(3. / 2., 1. / 2.), tol);
-  Test::EXPECT_NEAR_KK_REL(tau_h(1), norm_y / (norm_y - Scalar(-170, 68) / 18), tol);
+  EXPECT_NEAR_KK_REL(tau_h(0), KAT::one() / Scalar(3. / 2., 1. / 2.), tol);
+  EXPECT_NEAR_KK_REL(tau_h(1), norm_y / (norm_y - Scalar(-170, 68) / 18), tol);
 
   Kokkos::parallel_for(
       "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
@@ -523,12 +535,12 @@ void test_QR_rectangular_cplx() {
       });
   auto B_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, B);
 
-  Test::EXPECT_NEAR_KK_REL(Scalar(-6, 0), B_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(Scalar(-22, 21) / 3, B_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK(Scalar(0, 0), B_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(Scalar(norm_y, 0), B_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK(Scalar(0, 0), B_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK(Scalar(0, 0), B_h(2, 1), tol);
+  EXPECT_NEAR_KK_REL(Scalar(-6, 0), B_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(Scalar(-22, 21) / 3, B_h(0, 1), tol);
+  EXPECT_NEAR_KK(Scalar(0, 0), B_h(1, 0), tol);
+  EXPECT_NEAR_KK_REL(Scalar(norm_y, 0), B_h(1, 1), tol);
+  EXPECT_NEAR_KK(Scalar(0, 0), B_h(2, 0), tol);
+  EXPECT_NEAR_KK(Scalar(0, 0), B_h(2, 1), tol);
 
   Kokkos::parallel_for(
       "serialFormQ", 1, KOKKOS_LAMBDA(int) {
@@ -537,15 +549,15 @@ void test_QR_rectangular_cplx() {
       });
   auto Q_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, Q);
 
-  Test::EXPECT_NEAR_KK_REL(Scalar(-0.5, -0.5), Q_h(0, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(Scalar(-2.0 / 3.0, -1.0 / 6.0), Q_h(1, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(Scalar(0.0, -1.0 / 6.0), Q_h(2, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(Scalar(-0.5, -0.5), Q_h(0, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK_REL(Scalar(-2.0 / 3.0, -1.0 / 6.0), Q_h(1, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK_REL(Scalar(0.0, -1.0 / 6.0), Q_h(2, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
 
   // Kokkos::deep_copy(Q_h, 0.0);
   // Q_h(0, 0) = 1.0;
@@ -559,15 +571,15 @@ void test_QR_rectangular_cplx() {
   //     });
   // Kokkos::deep_copy(Q_h, Q);
 
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(1, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(2, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(0, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(2, 1), tol);
-  // Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(1, 2), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(1, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(2, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(0, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(2, 1), tol);
+  // EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(1, 2), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
 
   Kokkos::deep_copy(Q_h, 0.0);
   Q_h(0, 0) = 1.0;
@@ -581,15 +593,15 @@ void test_QR_rectangular_cplx() {
       });
   Kokkos::deep_copy(Q_h, Q);
 
-  Test::EXPECT_NEAR_KK_REL(Scalar(-0.5, -0.5), Q_h(0, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(Scalar(-2.0 / 3.0, -1.0 / 6.0), Q_h(1, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK_REL(Scalar(0.0, -1.0 / 6.0), Q_h(2, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(Scalar(-0.5, -0.5), Q_h(0, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK_REL(Scalar(-2.0 / 3.0, -1.0 / 6.0), Q_h(1, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK_REL(Scalar(0.0, -1.0 / 6.0), Q_h(2, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
 
   Kokkos::parallel_for(
       "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
@@ -597,16 +609,16 @@ void test_QR_rectangular_cplx() {
       });
   Kokkos::deep_copy(Q_h, Q);
 
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(0, 0), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(1, 1), tol);
-  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(2, 2), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(0, 0), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(1, 1), tol);
+  EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(2, 2), tol);
 
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 1), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 0), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 2), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
-  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 1), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 1), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 0), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 2), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
+  EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 1), tol);
 
   // Kokkos::deep_copy(Q_h, 0);
   // Q_h(0, 0) = 1.0;
@@ -619,15 +631,15 @@ void test_QR_rectangular_cplx() {
   //     });
   // Kokkos::deep_copy(Q_h, Q);
 
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(1, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
-  // Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
-  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(1, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
+  // EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
+  // EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
 }
 
 template <class Device, class Scalar, class AlgoTagType>
@@ -656,7 +668,7 @@ void test_QR_batch(const int numMat, const int numRows, const int numCols) {
     constexpr double max_val = 1000;
     {
       Scalar randStart, randEnd;
-      Test::getRandomBounds(max_val, randStart, randEnd);
+      TestUtils::getRandomBounds(max_val, randStart, randEnd);
       Kokkos::fill_random(ExecutionSpace{}, As, rand_pool, randStart, randEnd);
     }
     Kokkos::fence();

@@ -23,7 +23,7 @@ Defined in header: :code:`KokkosBatched_Rot.hpp`
     template <typename XViewType, typename YViewType, typename CType, typename SType>
     KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &x, const YViewType &y,
                                              const CType c, const SType s);
-  }; 
+  };
 
 Applies a plane rotation to vectors :math:`x` and :math:`y`:
 

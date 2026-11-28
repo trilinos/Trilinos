@@ -60,12 +60,13 @@
 #endif  // KOKKOS_COMPILER_GNU
 /******* END other helper macros *******/
 
-// define KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS if we are targeting a CUDA
-// architecture with "independent thread scheduling" (Volta70 and up). This
-// requires some extra logic in HashmapAccumulator to avoid data races.
-#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE) || \
-    defined(KOKKOS_ARCH_ADA89) || defined(KOKKOS_ARCH_HOPPER) || defined(KOKKOS_ARCH_BLACKWELL)
-#define KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+// define KOKKOSKERNELS_GPU_INDEPENDENT_THREADS if we are targeting a CUDA
+// architecture with "independent thread scheduling" (Volta70 and up), or a
+// SYCL GPU (e.g. INTEL_PVC). This requires some extra logic in HashmapAccumulator to avoid data races.
+#if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE) ||  \
+    defined(KOKKOS_ARCH_ADA89) || defined(KOKKOS_ARCH_HOPPER) || defined(KOKKOS_ARCH_BLACKWELL) || \
+    defined(KOKKOS_ENABLE_SYCL)
+#define KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
 #endif
 
 #endif  // KOKKOSKERNELS_MACROS_HPP_

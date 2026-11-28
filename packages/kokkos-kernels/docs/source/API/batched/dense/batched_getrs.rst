@@ -14,7 +14,7 @@ Defined in header: :code:`KokkosBatched_Getrs.hpp`
     };
 
 Solves a system of the linear equations :math:`A \cdot X = B` or :math:`A^T \cdot X = B` or :math:`A^H \cdot X = B` with a general n-by-n matrix :math:`A` using :math:`LU` factorization computed by ``Getrf``.
-This operation is equivalent to the LAPACK routine ``SGETRS`` (``CGETRS``) or ``DGETRS`` (``ZGETRS``) for single or double precision for real (complex) matrix. 
+This operation is equivalent to the LAPACK routine ``SGETRS`` (``CGETRS``) or ``DGETRS`` (``ZGETRS``) for single or double precision for real (complex) matrix.
 
 Parameters
 ==========

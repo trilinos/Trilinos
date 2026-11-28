@@ -112,11 +112,11 @@ struct SerialEigenvalueInternal {
 
           /// Step 2: if there exist non-converged eigen values
           if (1 < mdiff) {
-#if 0  /// implicit QR with shift for testing 
+#if 0  /// implicit QR with shift for testing
             {
-              /// Rayleigh quotient shift 
-              const real_type shift = *(H+(mend-1)*hs); 
-              SerialHessenbergQR_WithShiftInternal::invoke(0, mdiff, mdiff, 
+              /// Rayleigh quotient shift
+              const real_type shift = *(H+(mend-1)*hs);
+              SerialHessenbergQR_WithShiftInternal::invoke(0, mdiff, mdiff,
                                                            H+hs*mbeg, hs0, hs1,
                                                            shift);
               real_type *sub2x2 = H+(mend-2)*hs;

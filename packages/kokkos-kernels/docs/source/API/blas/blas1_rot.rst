@@ -10,7 +10,7 @@ Defined in header: :code:`KokkosBlas1_rot.hpp`
     execution_space const& space,
     VectorView const& X, VectorView const& Y,
     MagnitudeView const& c, ScalarView const& s);
-  
+
   template <class VectorView, class MagnitudeView, class ScalarView>
   void rot(
     VectorView const& X, VectorView const& Y,
@@ -57,4 +57,3 @@ It uses :doc:`rotg <blas1_rotg>` to compute the rotation coefficients and :code:
 
 .. literalinclude:: ../../../../example/wiki/blas/KokkosBlas1_wiki_rotg_rot.cpp
   :language: c++
-

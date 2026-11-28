@@ -44,7 +44,7 @@ for line in text:
   #print "==",line
   if parseEntry:
     if line.startswith("//"):
-      doclines += line[2:] 
+      doclines += line[2:]
     else:
       option = line
       parseEntry = False
@@ -74,8 +74,3 @@ for doclines, option in options:
       str_arr.append("  * %s" % maindoc.strip())
       str_arr.append("  * Default: %s" % dflt.strip())
 sys.stdout.write("%s\n" % "\n".join(str_arr))
-
-
-
-
-

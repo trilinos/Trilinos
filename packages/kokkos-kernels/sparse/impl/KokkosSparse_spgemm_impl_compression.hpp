@@ -488,7 +488,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
         result_keys[i] = -1;
         // This is required for Nvidia architectures with "independent thread
         // scheduling"
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
         result_vals[i] = 0;
 #endif
       });
@@ -515,7 +515,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
               // the warp. once the keys are set, some other vector lane might
               // be doing a fetch_or before we set with n_set. Therefore it is
               // necessary to do atomic, and set it with zero as above.
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
               Kokkos::atomic_fetch_or(result_vals + new_hash, n_set);
 #else
                   result_vals[new_hash] = n_set;
@@ -578,7 +578,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
         // new_row_map(row_ind) = rowBeginP + used_hash_sizes[0] +
         // used_hash_sizes[1]; to execute before the below insertion finishes.
         // parallel_for will provide this mechanism.
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, vector_size), [&](nnz_lno_t /*i*/) {
 #endif
           // then for those who failed we insert it again to L2-accumulator.
@@ -586,7 +586,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
             hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
                 n_set_index, n_set, used_hash_sizes + 1, globally_used_hash_count, globally_used_hash_indices);
           }
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
         });
 #endif
       }
@@ -793,7 +793,7 @@ bool KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
       if (KOKKOSKERNELS_VERBOSE) {
         std::cout << "\t\tCompression Count Kernel:" << timer_count.seconds() << std::endl;
       }
-      KokkosKernels::Impl::exclusive_parallel_prefix_sum<out_rowmap_view_t, MyExecSpace>(n + 1, out_row_map);
+      KokkosKernels::exclusive_parallel_prefix_sum(MyExecSpace(), out_row_map);
 
       {
         nnz_lno_t compressed_maxNumRoughZeros = 0;

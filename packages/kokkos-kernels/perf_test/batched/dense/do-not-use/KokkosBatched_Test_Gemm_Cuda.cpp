@@ -150,9 +150,7 @@ void Gemm(const int NN, const int BlkSize) {
   const int N                = NN / VectorLength;
 
   {
-    std::string value_type_name;
-    if (std::is_same<value_type, double>::value) value_type_name = "double";
-    if (std::is_same<value_type, Kokkos::complex<double> >::value) value_type_name = "Kokkos::complex<double>";
+    std::string value_type_name = KokkosKernels::ArithTraits<value_type>::name();
 
     std::cout << "SIMD is defined: datatype " << value_type_name << " a vector length " << VectorLength << "\n";
   }

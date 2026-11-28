@@ -381,7 +381,7 @@ struct HashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ because warps do not go in SIMD fashion
       // anymore. while some thread might insert my_write_index into linked
       // list, another thread in the warp might be reading keys in above loop.
@@ -448,7 +448,7 @@ struct HashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
@@ -557,7 +557,7 @@ struct HashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
@@ -630,7 +630,7 @@ struct HashmapAccumulator {
     } else {
       keys[my_write_index] = key;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
@@ -680,7 +680,7 @@ struct HashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
@@ -731,7 +731,7 @@ struct HashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
@@ -776,7 +776,7 @@ struct HashmapAccumulator {
     } else {
       keys[my_write_index] = key;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above

@@ -14,6 +14,15 @@ iterations) to converge. The par_ilut algorithm will repeat (iterate) until
 max_iters is hit or the improvement in the residual from iter to iter drops
 below a certain threshold.
 
+The handle also offers an optional ``reuse_numeric_pattern`` mode. When enabled,
+and when repeated ``par_ilut_numeric`` calls are made on matrices with the same
+sparsity structure, the implementation may reuse the previously computed sparsity
+pattern of the factors ``L`` and ``U`` and perform only fixed-pattern numeric
+updates on later calls. This can reduce setup cost for repeated factorizations,
+but it changes the behavior relative to a fresh adaptive ``par_ilut_numeric``
+call because the adaptive candidate-generation and filtering stages are skipped
+after the initial pattern has been established. This mode is disabled by default.
+
 This algorithm is described in the paper:
 PARILUT - A New Parallel Threshold ILU Factorization - Anzt, Chow, Dongarra
 
@@ -73,10 +82,15 @@ Defined in header: :code:`KokkosSparse_par_ilut.hpp`
                         LRowMapType& L_rowmap, LEntriesType& L_entries, LValuesType& L_values, URowMapType& U_rowmap,
                         UEntriesType& U_entries, UValuesType& U_values)
 
-Performs the numeric phase (for specific CSRs, not reusable) of the
-par_ilut algorithm (described above). This is a non-blocking
-function. It is expected that par_ilut_symbolic has already been
-called for the provided KernelHandle.
+Performs the numeric phase of the par_ilut algorithm (described above).
+This is a non-blocking function. It is expected that ``par_ilut_symbolic``
+has already been called for the provided ``KernelHandle``.
+
+By default, each call performs a fresh adaptive numeric factorization for the
+provided matrix values. When the handle option ``reuse_numeric_pattern`` is
+enabled, repeated calls on matrices with the same sparsity structure may reuse
+the previously computed factor sparsity pattern and perform fixed-pattern
+numeric updates instead of rebuilding the adaptive pattern.
 
 .. math::
 
@@ -149,6 +163,27 @@ Parameters
                faster but it makes the algorithm non-deterministic.
 :verbose: Print information while executing par_ilut
 
+Additional handle options
+=========================
+
+The following option is configured after handle creation:
+
+:reuse_numeric_pattern: Whether repeated ``par_ilut_numeric`` calls on matrices
+                        with the same sparsity structure may reuse the previously
+                        computed sparsity pattern of the factors ``L`` and ``U``.
+                        When enabled, the first numeric call runs the full adaptive
+                        ``par_ilut`` algorithm and later matching calls may perform
+                        only fixed-pattern numeric updates. This can reduce setup
+                        cost, but may change results relative to a fresh adaptive
+                        ``par_ilut_numeric`` call. The default is ``false``.
+
+This option can be set with:
+
+.. code:: c++
+
+  auto par_ilut_handle = kh.get_par_ilut_handle();
+  par_ilut_handle->set_reuse_numeric_pattern(true);
+
 Example
 =======
 
@@ -202,6 +237,10 @@ Example
        kh.create_par_ilut_handle();
        auto par_ilut_handle = kh.get_par_ilut_handle();
        par_ilut_handle->set_verbose(verbose);
+
+       // Optional: reuse previously computed factor sparsity pattern on repeated
+       // par_ilut_numeric calls with the same matrix graph.
+       par_ilut_handle->set_reuse_numeric_pattern(true);
 
        // Pull out views from CRS
        auto row_map = A.graph.row_map;

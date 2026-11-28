@@ -17,7 +17,7 @@ Computes the matrix :math:`Q` from the QR factorization of matrix :math:`A` usin
 
    Q=H(0)H(1)...H(k-1)
 
-where :math:`A` is, on input, a matrix previously factored using a call to ``geqrf`` and contains :math:`Q` on output and :math:`Tau` stores the associated scaling factors. 
+where :math:`A` is, on input, a matrix previously factored using a call to ``geqrf`` and contains :math:`Q` on output and :math:`Tau` stores the associated scaling factors.
 
 1. Overwrites :math:`A` with the :math:`Q` using the resources of ``space``.
 2. Same as 1. but uses the resources of the default execution space from ``AMatrix::execution_space``.

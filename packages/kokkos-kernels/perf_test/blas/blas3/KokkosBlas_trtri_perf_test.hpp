@@ -114,7 +114,7 @@ static void print_trtri_perf_test_options(options_t) {
 }
 
 /*************************** Internal templated fns **************************/
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 template <class scalar_type, class vta, class device_type>
 void do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
   // Need to take subviews on the device
@@ -156,7 +156,7 @@ void do_trtri_serial_blas(options_t /*options*/, trtri_args_t /*trtri_args*/) {
 #endif  // !KOKKOS_ENABLE_CUDA
 
 // Need to take subviews on the device
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 template <class uplo, class diag>
 void do_trtri_serial_batched_template(options_t options, trtri_args_t trtri_args) {
   uint32_t warm_up_n = options.warm_up_n;
@@ -221,7 +221,7 @@ void do_trtri_serial_batched(options_t options, trtri_args_t trtri_args) {
   return;
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 template <class ExecutionSpace>
 struct parallel_blas_trtri {
   trtri_args_t trtri_args_;
@@ -235,12 +235,11 @@ struct parallel_blas_trtri {
     KokkosLapack::trtri(&trtri_args_.uplo, &trtri_args_.diag, svA);
   }
 };
-#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP &&
-        // !KOKKOS_ENABLE_OPENMPTARGET
+#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP
 
 template <class scalar_type, class vta, class device_type>
 void do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args) {
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -267,12 +266,11 @@ void do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args) {
   trtri_output_csv_row(options, trtri_args, timer.seconds());
 #else
   std::cerr << std::string(__func__)
-            << " disabled since KOKKOS_ENABLE_CUDA, KOKKOS_ENABLE_HIP or "
-               "KOKKOS_ENABLE_OPENMPTARGET is defined."
+            << " disabled since KOKKOS_ENABLE_CUDA or KOKKOS_ENABLE_HIP "
+               "is defined."
             << std::endl;
   trtri_output_csv_row(options, trtri_args, -1);
-#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP &&
-        // !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP
   return;
 }
 

@@ -16,7 +16,6 @@ namespace Impl {
 // performed on very long vectors, so, each dot product is distributed among
 // numDivPerDot teams.
 
-struct TagZero {};    // The init tag for beta=0
 struct TagInit {};    // The init tag for beta!=0 and beta !=1
 struct TagMult {};    // The multiplication tag for transposed A
 struct TagMultCT {};  // The multiplication tag for conjugate-transposed A
@@ -61,8 +60,7 @@ struct DotBasedGEMM {
 
     // Initialize C matrix if beta != 1
     if (beta == CVT::zero()) {
-      Kokkos::MDRangePolicy<TagZero, ExecSpace, Kokkos::Rank<2>> policyInit(space, {0, 0}, {numCrows, numCcols});
-      Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policyInit, *this);
+      Kokkos::deep_copy(space, C, CVT::zero());
     } else if (beta != CVT::one()) {
       Kokkos::MDRangePolicy<TagInit, ExecSpace, Kokkos::Rank<2>> policyInit(space, {0, 0}, {numCrows, numCcols});
       Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policyInit, *this);
@@ -77,9 +75,6 @@ struct DotBasedGEMM {
       Kokkos::parallel_for("Perform Dot Product Based GEMM", policyMult, *this);
     }
   }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const TagZero&, const size_C& rowId, const size_C& colId) const { C(rowId, colId) = CVT::zero(); }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const TagInit&, const size_C& rowId, const size_C& colId) const {

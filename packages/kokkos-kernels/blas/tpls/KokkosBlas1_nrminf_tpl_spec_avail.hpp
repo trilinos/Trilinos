@@ -20,22 +20,21 @@ namespace Impl {
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 // double
-#define KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)                               \
-  template <class ExecSpace>                                                                           \
-  struct nrminf_tpl_spec_avail<                                                                        \
-      ExecSpace,                                                                                       \
-      Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
-                   Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                       \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                          \
-      1> {                                                                                             \
-    enum : bool { value = true };                                                                      \
+#define KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(SCALAR)                                                             \
+  template <typename ExecSpace>                                                                                    \
+    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                  \
+  struct nrminf_tpl_spec_avail<                                                                                    \
+      ExecSpace,                                                                                                   \
+      Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type, Kokkos::LayoutLeft, \
+                   Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                   \
+      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1> {   \
+    enum : bool { value = true };                                                                                  \
   };
 
-KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(double)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(float)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>)
 
 #endif
 

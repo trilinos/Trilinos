@@ -31,24 +31,17 @@ template <class execution_space, class YMV, class AV, class XMV>
 void mult(const execution_space& space, typename YMV::const_value_type& gamma, const YMV& Y,
           typename AV::const_value_type& alpha, const AV& A, const XMV& X) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
-                "KokkosBlas::mult: execution_space must be a valid Kokkos "
-                "execution space.");
-  static_assert(Kokkos::is_view<YMV>::value,
-                "KokkosBlas::mult: "
-                "Y is not a Kokkos::View.");
+                "KokkosBlas::mult: execution_space must be a valid Kokkos execution space.");
+  static_assert(Kokkos::is_view_v<YMV>, "KokkosBlas::mult: Y is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename YMV::memory_space>::accessible,
                 "KokkosBlas::mult: YMV must be accessible from execution_space.");
-  static_assert(Kokkos::is_view<AV>::value,
-                "KokkosBlas::mult: "
-                "A is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<AV>, "KokkosBlas::mult: A is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename AV::memory_space>::accessible,
                 "KokkosBlas::mult: AV must be accessible from execution_space.");
-  static_assert(Kokkos::is_view<XMV>::value,
-                "KokkosBlas::mult: "
-                "X is not a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<XMV>, "KokkosBlas::mult: X is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
                 "KokkosBlas::mult: AV must be accessible from execution_space.");
-  static_assert(std::is_same<typename YMV::value_type, typename YMV::non_const_value_type>::value,
+  static_assert(std::is_same_v<typename YMV::value_type, typename YMV::non_const_value_type>,
                 "KokkosBlas::mult: Y is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
@@ -80,19 +73,16 @@ void mult(const execution_space& space, typename YMV::const_value_type& gamma, c
   using XUnifiedLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XMV, YUnifiedLayout>::array_layout;
 
   // Create unmanaged versions of the input Views.
-  typedef Kokkos::View<typename YMV::non_const_data_type, YUnifiedLayout, typename YMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      YMV_Internal;
-  typedef Kokkos::View<typename AV::const_value_type*, AUnifiedLayout, typename AV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      AV_Internal;
-  typedef Kokkos::View<typename XMV::const_data_type, XUnifiedLayout, typename XMV::device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XMV_Internal;
+  using YMV_Internal = Kokkos::View<typename YMV::non_const_data_type, YUnifiedLayout, execution_space,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using AV_Internal  = Kokkos::View<typename AV::const_value_type*, AUnifiedLayout, execution_space,
+                                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+  using XMV_Internal = Kokkos::View<typename XMV::const_data_type, XUnifiedLayout, execution_space,
+                                    Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
-  YMV_Internal Y_internal = Y;
-  AV_Internal A_internal  = A;
-  XMV_Internal X_internal = X;
+  YMV_Internal Y_internal = KokkosKernels::Impl::unificationCast<YMV_Internal>(Y);
+  AV_Internal A_internal  = KokkosKernels::Impl::unificationCast<AV_Internal>(A);
+  XMV_Internal X_internal = KokkosKernels::Impl::unificationCast<XMV_Internal>(X);
 
   Impl::Mult<execution_space, YMV_Internal, AV_Internal, XMV_Internal>::mult(space, gamma, Y_internal, alpha,
                                                                              A_internal, X_internal);

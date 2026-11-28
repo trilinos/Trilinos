@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
 //@HEADER
 // ************************************************************************
 //
@@ -101,8 +104,8 @@ Result bench_spmv(const Matrix &crs, int nWarmup, int nIters) {
   fill_random(y_init, random_pool, 0.0, 1.0);
 
 #if 0  // SIMPLE CASE, output should be number of non-zeros in each row
-  Kokkos::parallel_for("x", 
-    Kokkos::RangePolicy<exec_space>(0, x.size()), 
+  Kokkos::parallel_for("x",
+    Kokkos::RangePolicy<exec_space>(0, x.size()),
     KOKKOS_LAMBDA(const int &i) {
       x(i) = 1.0;
     }
@@ -242,8 +245,8 @@ Result bench_spmvmv(const Matrix &crs, int nWarmup, int nIters, int k) {
   fill_random(y_init, random_pool, 0.0, 1.0);
 
 #if 0  // SIMPLE CASE, output should be number of non-zeros in each row
-  Kokkos::parallel_for("x", 
-    Kokkos::MDRangePolicy<exec_space, Kokkos::Rank<2>>({0, 0}, {x.extent(0), x.extent(1)}), 
+  Kokkos::parallel_for("x",
+    Kokkos::MDRangePolicy<exec_space, Kokkos::Rank<2>>({0, 0}, {x.extent(0), x.extent(1)}),
     KOKKOS_LAMBDA(const int &i, const int &j) {
       x(i,j) = 1.0;
     }

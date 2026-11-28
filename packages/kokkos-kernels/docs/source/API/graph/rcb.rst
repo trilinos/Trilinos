@@ -7,7 +7,7 @@ Defined in header: :code:`KokkosGraph_RCB.hpp`
 
   template <typename coors_view_type, typename perm_view_type>
   std::vector<typename perm_view_type::value_type> recursive_coordinate_bisection(coors_view_type &coordinates, perm_view_type &perm,
-                                                                                  perm_view_type &reverse_perm, const int &n_levels);						 
+                                                                                  perm_view_type &reverse_perm, const int &n_levels);
 
 Performs the recursive coordinate bisection (RCB) algorithm to partition a graph according to the coordinates of the mesh points.
 
@@ -45,4 +45,3 @@ Example
 =======
 
 Will be added later.
-

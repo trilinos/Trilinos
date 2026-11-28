@@ -54,7 +54,7 @@ Member Types
    * - ordinal_type
      - Type of the indices stored in the matrix, alias for OrdinalType.
 
-   * - row_type 
+   * - row_type
      - Alias for ordinal_type.
 
    * - column_type
@@ -202,4 +202,3 @@ data
   KOKKOS_INLINE_FUNCTION size_type data() const;
 
 Returns the scalar values view.
-
