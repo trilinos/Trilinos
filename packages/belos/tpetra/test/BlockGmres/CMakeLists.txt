@@ -44,6 +44,7 @@ BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
     "--verbose --ortho-type=DGKS"
     "--verbose --ortho-type=ICGS"
     "--verbose --ortho-type=IMGS"
+    "--verbose --ortho-type=ICGS --num-rhs=2 --block-size=2"
   COMM serial mpi
   )
 

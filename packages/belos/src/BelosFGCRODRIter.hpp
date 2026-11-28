@@ -38,6 +38,8 @@ public:
   typedef DenseMatTraits<ScalarType,DM>    DMT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
+  using MDM = typename DMT::MDM;
+  using MDMT = DenseMatTraits<MagnitudeType,MDM>;
 
   FGCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
               const Teuchos::RCP<OutputManager<ScalarType> > &printer,
@@ -112,8 +114,8 @@ public:
 
     if (numBlocks_ != numBlocks) {
       numBlocks_ = numBlocks;
-      cs_.resize(numBlocks_ + 1);
-      sn_.resize(numBlocks_ + 1);
+      cs_ = MDMT::Create( numBlocks_+1, 1, false );
+      sn_ = DMT::Create( numBlocks_+1, 1, false );
       z_ = DMT::Create(numBlocks_ + 1, 1, false);
       R_ = DMT::Create(numBlocks_ + 1, numBlocks_, false);
     }
@@ -130,8 +132,8 @@ private:
   int numBlocks_;
   int recycledBlocks_;
 
-  std::vector<ScalarType> sn_;
-  std::vector<MagnitudeType> cs_;
+  Teuchos::RCP<DM> sn_;
+  Teuchos::RCP<MDM> cs_;
 
   bool initialized_;
   int curDim_, iter_;
@@ -201,8 +203,8 @@ FGCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
   numBlocks_ = nb;
   recycledBlocks_ = rb;
 
-  cs_.resize(numBlocks_ + 1);
-  sn_.resize(numBlocks_ + 1);
+  cs_ = MDMT::Create( numBlocks_+1, 1, false );
+  sn_ = DMT::Create( numBlocks_+1, 1, false );
   z_ = DMT::Create(numBlocks_ + 1, 1, false);
   R_ = DMT::Create(numBlocks_ + 1, numBlocks_, false);
 }
@@ -222,28 +224,11 @@ FGCRODRIter<ScalarType,MV,OP,DM>::getCurrentUpdate() const
   const ScalarType one = SCT::one();
   const ScalarType zero = SCT::zero();
 
-  Teuchos::BLAS<int,ScalarType> blas;
-
   currentUpdate = MVT::Clone(*Z_, 1);
 
   Teuchos::RCP<DM> y = DMT::SubviewCopy(*z_, curDim_, 1);
 
-  DMT::SyncDeviceToHost(*y);
-  DMT::SyncDeviceToHost(*R_);
-
-  blas.TRSM(Teuchos::LEFT_SIDE,
-            Teuchos::UPPER_TRI,
-            Teuchos::NO_TRANS,
-            Teuchos::NON_UNIT_DIAG,
-            curDim_,
-            1,
-            one,
-            DMT::GetConstRawHostPtr(*R_),
-            DMT::GetStride(*R_),
-            DMT::GetRawHostPtr(*y),
-            DMT::GetStride(*y));
-
-  DMT::SyncHostToDevice(*y);
+  DMT::trsm("L", "U", "N", "N", one, *DMT::SubviewConst(*R_, curDim_, curDim_), *y);
 
   // Flexible part: update = Z(:,1:curDim) * y.
   std::vector<int> index(curDim_);
@@ -258,23 +243,7 @@ FGCRODRIter<ScalarType,MV,OP,DM>::getCurrentUpdate() const
   if (U_ != Teuchos::null) {
     Teuchos::RCP<DM> z = DMT::Create(recycledBlocks_, 1);
 
-    DMT::SyncDeviceToHost(*H2_);
-
-    blas.GEMM(Teuchos::NO_TRANS,
-              Teuchos::NO_TRANS,
-              recycledBlocks_,
-              1,
-              curDim_,
-              one,
-              DMT::GetConstRawHostPtr(*B_),
-              DMT::GetStride(*B_),
-              DMT::GetConstRawHostPtr(*y),
-              DMT::GetStride(*y),
-              zero,
-              DMT::GetRawHostPtr(*z),
-              DMT::GetStride(*z));
-
-    DMT::SyncHostToDevice(*z);
+    DMT::Multiply(false, false, one, *DMT::SubviewConst(*B_, recycledBlocks_, curDim_), *y, zero, *z);
 
     MVT::MvTimesMatAddMv(-one, *U_, *z, one, *currentUpdate);
   }
@@ -463,46 +432,12 @@ template<class ScalarType, class MV, class OP, class DM>
 void
 FGCRODRIter<ScalarType,MV,OP,DM>::updateLSQR(int dim)
 {
-  int i;
-  const ScalarType zero = SCT::zero();
-
   int curDim = curDim_;
   if ((dim >= curDim_) && (dim < getMaxSubspaceDim())) {
     curDim = dim;
   }
 
-  Teuchos::BLAS<int, ScalarType> blas;
-
-  DMT::SyncDeviceToHost(*R_);
-  DMT::SyncDeviceToHost(*z_);
-
-  for (i = 0; i < curDim; ++i) {
-    blas.ROT(1,
-             &(DMT::Value(*R_, i, curDim)),
-             1,
-             &(DMT::Value(*R_, i+1, curDim)),
-             1,
-             &cs_[i],
-             &sn_[i]);
-  }
-
-  blas.ROTG(&(DMT::Value(*R_, curDim, curDim)),
-            &(DMT::Value(*R_, curDim+1, curDim)),
-            &cs_[curDim],
-            &sn_[curDim]);
-
-  DMT::Value(*R_, curDim+1, curDim) = zero;
-
-  blas.ROT(1,
-           &(DMT::Value(*z_, curDim, 0)),
-           1,
-           &(DMT::Value(*z_, curDim+1, 0)),
-           1,
-           &cs_[curDim],
-           &sn_[curDim]);
-
-  DMT::SyncHostToDevice(*R_);
-  DMT::SyncHostToDevice(*z_);
+  DMT::updateLSQR(*R_, *z_, cs_, sn_, Teuchos::null, curDim, 1);
 }
 
 } // namespace Belos
