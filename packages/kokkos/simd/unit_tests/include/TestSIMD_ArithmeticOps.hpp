@@ -13,6 +13,8 @@ import kokkos.simd_impl;
 #endif
 #include <SIMDTesting_Utilities.hpp>
 
+namespace {
+
 template <class Abi, class BinaryOp, class T>
 void host_check_arithmetic_op_vector_vector(
     BinaryOp binary_op, Kokkos::Experimental::basic_simd<T, Abi> first_arg,
@@ -117,6 +119,36 @@ void host_check_arithmetic_op_one_loader(
   }
 }
 
+template <typename Abi, typename Loader, typename UnaryOp, typename T>
+void host_check_arithmetic_op_one_loader(
+    UnaryOp unary_op, Kokkos::Experimental::Impl::simd_size_t n,
+    T const* args) {
+  Loader loader;
+  using simd_type = Kokkos::Experimental::basic_simd<T, Abi>;
+  using size_type = Kokkos::Experimental::Impl::simd_size_t;
+
+  constexpr size_type width = simd_type::size();
+  for (size_type i = 0; i < n; i += width) {
+    const size_type nremaining = n - i;
+    const size_type nlanes     = Kokkos::min(nremaining, width);
+
+    simd_type arg;
+    bool const loaded_arg = loader.host_load(args + i, nlanes, arg);
+    if (!loaded_arg) continue;
+
+    T expected_val[width];
+    for (size_type lane = 0; lane < width; ++lane) {
+      expected_val[lane] = T(unary_op.on_host(T(arg[lane])));
+    }
+
+    simd_type expected_result =
+        Kokkos::Experimental::simd_unchecked_load<simd_type>(
+            expected_val, Kokkos::Experimental::simd_flag_default);
+    simd_type const computed_result = unary_op.on_host(arg);
+    host_check_equality(expected_result, computed_result, nlanes);
+  }
+}
+
 template <class Abi, class Op, class... T>
 inline void host_check_arithmetic_op_all_loaders(
     Op op, Kokkos::Experimental::Impl::simd_size_t n, T const*... args) {
@@ -137,6 +169,7 @@ inline void host_check_all_arithmetic_ops(const DataType (&first_args)[n],
                                             second_args);
   host_check_arithmetic_op_all_loaders<Abi>(minus_eq(), n, first_args,
                                             second_args);
+  host_check_arithmetic_op_all_loaders<Abi>(negate(), n, first_args);
   host_check_arithmetic_op_all_loaders<Abi>(multiplies(), n, first_args,
                                             second_args);
   host_check_arithmetic_op_all_loaders<Abi>(multiplies_eq(), n, first_args,
@@ -297,6 +330,36 @@ KOKKOS_INLINE_FUNCTION void device_check_arithmetic_op_one_loader(
   }
 }
 
+template <typename Abi, typename Loader, typename UnaryOp, typename T>
+KOKKOS_INLINE_FUNCTION void device_check_arithmetic_op_one_loader(
+    UnaryOp unary_op, Kokkos::Experimental::Impl::simd_size_t n,
+    T const* args) {
+  Loader loader;
+  using simd_type = Kokkos::Experimental::basic_simd<T, Abi>;
+  using size_type = Kokkos::Experimental::Impl::simd_size_t;
+
+  constexpr size_type width = simd_type::size();
+  for (size_type i = 0; i < n; i += width) {
+    const size_type nremaining = n - i;
+    const size_type nlanes     = Kokkos::min(nremaining, width);
+
+    simd_type arg;
+    bool const loaded_arg = loader.device_load(args + i, nlanes, arg);
+    if (!loaded_arg) continue;
+
+    T expected_val[width];
+    for (size_type lane = 0; lane < width; ++lane) {
+      expected_val[lane] = T(unary_op.on_device(T(arg[lane])));
+    }
+
+    simd_type expected_result =
+        Kokkos::Experimental::simd_unchecked_load<simd_type>(
+            expected_val, Kokkos::Experimental::simd_flag_default);
+    simd_type const computed_result = unary_op.on_device(arg);
+    device_check_equality(expected_result, computed_result, nlanes);
+  }
+}
+
 template <typename Abi, typename Op, typename... T>
 KOKKOS_INLINE_FUNCTION void device_check_arithmetic_op_all_loaders(
     Op op, Kokkos::Experimental::Impl::simd_size_t n, T const*... args) {
@@ -319,6 +382,10 @@ KOKKOS_INLINE_FUNCTION void device_check_all_arithmetic_ops(
                                               second_args);
   device_check_arithmetic_op_all_loaders<Abi>(minus_eq(), n, first_args,
                                               second_args);
+// FIXME_NVHPC NVC++-F-0155-Compiler failed to translate accelerator region
+#ifndef KOKKOS_COMPILER_NVHPC
+  device_check_arithmetic_op_all_loaders<Abi>(negate(), n, first_args);
+#endif
   device_check_arithmetic_op_all_loaders<Abi>(multiplies(), n, first_args,
                                               second_args);
   device_check_arithmetic_op_all_loaders<Abi>(multiplies_eq(), n, first_args,
@@ -378,17 +445,15 @@ KOKKOS_INLINE_FUNCTION void device_check_arithmetic_ops_all_abis(
 class simd_device_arithmetic_ops_functor {
  public:
   KOKKOS_INLINE_FUNCTION void operator()(int) const {
-    device_check_arithmetic_ops_all_abis(
-        Kokkos::Experimental::Impl::device_abi_set());
+    device_check_arithmetic_ops_all_abis(test_device_abi_set());
   }
 };
 
-TEST(simd, host_arithmetic_ops) {
-  host_check_arithmetic_ops_all_abis(
-      Kokkos::Experimental::Impl::host_abi_set());
+TEST(KOKKOS_SIMD_TEST_SUITE, host_arithmetic_ops) {
+  host_check_arithmetic_ops_all_abis(test_host_abi_set());
 }
 
-TEST(simd, device_arithmetic_ops) {
+KOKKOS_SIMD_DEVICE_TEST(KOKKOS_SIMD_TEST_SUITE, device_arithmetic_ops) {
 #if defined(KOKKOS_IMPL_32BIT)
   // FIXME_GCC: Floating point comparisons fail in a 32-bit build
   // See https://github.com/kokkos/kokkos/pull/7912#issuecomment-2747713935
@@ -396,15 +461,10 @@ TEST(simd, device_arithmetic_ops) {
       << "skipping due to a GCC bug associated with the computation of "
          "floating-point values in a 32-bit build.";
 #endif
-#if defined(KOKKOS_ENABLE_OPENACC) && \
-    defined(KOKKOS_COMPILER_CLANG)  // FIXME_CLACC
-  GTEST_SKIP()
-      << "skipping because of a non-deterministic failure reporting: "
-         "Failure to synchronize stream (nil): Error in "
-         "cuStreamSynchronize: an illegal memory access was encountered";
-#endif
   Kokkos::parallel_for(1, simd_device_arithmetic_ops_functor());
   Kokkos::fence();
 }
+
+}  // namespace
 
 #endif

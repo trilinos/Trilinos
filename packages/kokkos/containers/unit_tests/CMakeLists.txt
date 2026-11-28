@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
 kokkos_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 kokkos_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 kokkos_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)
@@ -29,7 +32,6 @@ foreach(Tag Threads;Serial;OpenMP;HPX;Cuda;HIP;SYCL)
       WithoutInitializing
       UnorderedMap
       UnorderedSet
-      ViewCtorPropEmbeddedDim
     )
       # Write to a temporary intermediate file and call configure_file to avoid
       # updating timestamps triggering unnecessary rebuilds on subsequent cmake runs.
@@ -48,11 +50,6 @@ foreach(Tag Threads;Serial;OpenMP;HPX;Cuda;HIP;SYCL)
       list(REMOVE_ITEM UnitTestSources ${dir}/TestCuda_WithoutInitializing.cpp)
     endif()
 
-    if(NOT Kokkos_ENABLE_IMPL_VIEW_LEGACY)
-      list(REMOVE_ITEM UnitTestSources ${dir}/Test${Tag}_ViewCtorPropEmbeddedDim.cpp)
-    else()
-      list(REMOVE_ITEM UnitTestSources ${dir}/Test${Tag}_DynRankView_ViewCustomization.cpp)
-    endif()
     kokkos_add_executable_and_test(ContainersUnitTest_${Tag} SOURCES ${UnitTestSources})
   endif()
 endforeach()
