@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 # scan source files for importing C++20 modules
@@ -100,6 +103,16 @@ if(Kokkos_ENABLE_COMPILE_AS_CMAKE_LANGUAGE AND Kokkos_ENABLE_HIP)
 
   set(KOKKOS_COMPILE_LANGUAGE HIP)
 endif()
+# use lower case here since we haven't parsed options yet
+if(Kokkos_ENABLE_COMPILE_AS_CMAKE_LANGUAGE AND Kokkos_ENABLE_SYCL)
+
+  # Without this as a language for the package we would get a C++ compiler enabled.
+  # but we still need a C++ compiler even if we build all our cpp files as SYCL only
+  # because otherwise the C++ features don't work etc.
+  set(KOKKOS_INTERNAL_EXTRA_COMPILE_LANGUAGE CXX)
+
+  set(KOKKOS_COMPILE_LANGUAGE SYCL)
+endif()
 
 # Always call the project command to define Kokkos_ variables
 # and to make sure that C++ is an enabled language
@@ -140,8 +153,8 @@ elseif(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
 endif()
 
 set(Kokkos_VERSION_MAJOR 5)
-set(Kokkos_VERSION_MINOR 2)
-set(Kokkos_VERSION_PATCH 2)
+set(Kokkos_VERSION_MINOR 3)
+set(Kokkos_VERSION_PATCH 99)
 set(Kokkos_VERSION "${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR}.${Kokkos_VERSION_PATCH}")
 message(STATUS "Kokkos version: ${Kokkos_VERSION}")
 math(EXPR KOKKOS_VERSION "${Kokkos_VERSION_MAJOR} * 10000 + ${Kokkos_VERSION_MINOR} * 100 + ${Kokkos_VERSION_PATCH}")
@@ -187,12 +200,8 @@ endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/kokkos_configure_trilinos.cmake)
 
-if(Kokkos_ENABLE_TESTS)
-  find_package(GTest QUIET)
-endif()
-
 if(Kokkos_ENABLE_BENCHMARKS)
-  find_package(benchmark QUIET 1.8.3)
+  find_package(benchmark QUIET 1.9.5)
 endif()
 
 # Include a set of Kokkos-specific wrapper functions that

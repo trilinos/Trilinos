@@ -118,11 +118,14 @@ inline void add_gpu_context() {
     benchmark::AddCustomContext(prefix + "num_multiprocessors", std::to_string(prop.multiProcessorCount));
     benchmark::AddCustomContext(prefix + "total_global_mem_GiB", std::to_string(prop.totalGlobalMem / (1 << 30)));
     benchmark::AddCustomContext(prefix + "l2_cache_size_MiB", std::to_string(prop.l2CacheSize / (1 << 20)));
-    benchmark::AddCustomContext(prefix + "clock_rate_MHz", std::to_string(prop.clockRate / 1000));
-    benchmark::AddCustomContext(prefix + "memory_clock_rate_MHz", std::to_string(prop.memoryClockRate / 1000));
+    int clockRate_kHz = 0, memClockRate_kHz = 0;
+    cudaDeviceGetAttribute(&clockRate_kHz, cudaDevAttrClockRate, dev);
+    cudaDeviceGetAttribute(&memClockRate_kHz, cudaDevAttrMemoryClockRate, dev);
+    benchmark::AddCustomContext(prefix + "clock_rate_MHz", std::to_string(clockRate_kHz / 1000));
+    benchmark::AddCustomContext(prefix + "memory_clock_rate_MHz", std::to_string(memClockRate_kHz / 1000));
     benchmark::AddCustomContext(prefix + "memory_bus_width_bits", std::to_string(prop.memoryBusWidth));
     // Peak memory bandwidth in GB/s: 2 * memClk(Hz) * busWidth(bits) / 8
-    double peak_bw = 2.0 * (prop.memoryClockRate * 1000.0) * (prop.memoryBusWidth / 8.0) / 1e9;
+    double peak_bw = 2.0 * (memClockRate_kHz * 1000.0) * (prop.memoryBusWidth / 8.0) / 1e9;
     benchmark::AddCustomContext(prefix + "peak_memory_bandwidth_GBs", std::to_string(static_cast<int>(peak_bw + 0.5)));
   }
 #endif

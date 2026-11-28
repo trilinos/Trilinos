@@ -13,7 +13,7 @@ Defined in header: :code:`KokkosBatched_Gbtrs.hpp`
     };
 
 Solves a system of the linear equations :math:`A \cdot X = B` or :math:`A^T \cdot X = B` or :math:`A^H \cdot X = B` with a general n-by-n band matrix :math:`A` using :math:`LU` factorization computed by ``Gbtrf``.
-This operation is equivalent to the LAPACK routine ``SGBTRS`` (``CGBTRS``) or ``DGBTRS`` (``ZGBTRS``) for single or double precision for real (complex) matrix. 
+This operation is equivalent to the LAPACK routine ``SGBTRS`` (``CGBTRS``) or ``DGBTRS`` (``ZGBTRS``) for single or double precision for real (complex) matrix.
 
 Parameters
 ==========

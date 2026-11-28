@@ -8,7 +8,7 @@
 // #include<Test_Common_float128.hpp>
 #include <Test_Common_set_bit_count.hpp>
 #include <Test_Common_Sorting.hpp>
-#include <Test_Common_CudaIndependentThreads.hpp>
+#include <Test_Common_GPUIndependentThreads.hpp>
 #include <Test_Common_IOUtils.hpp>
 #include <Test_Common_Error.hpp>
 #include <Test_Common_Version.hpp>
@@ -16,5 +16,6 @@
 #include <Test_Common_Iota.hpp>
 #include <Test_Common_LowerBound.hpp>
 #include <Test_Common_UpperBound.hpp>
+#include <Test_Common_traits.hpp>
 
 #endif  // TEST_COMMON_HPP

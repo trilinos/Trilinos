@@ -19,7 +19,7 @@ target_link_libraries(myTarget Kokkos::kokkoskernels)
 ````
 There is no checking Kokkos preprocessor, compiler, or linker flags.
 CMake propagates all the necessary flags to your project.
-This means not only is linking to Kokkos Kernels easy, but Kokkos Kernels itself can actually configure compiler and linker flags for *your* 
+This means not only is linking to Kokkos Kernels easy, but Kokkos Kernels itself can actually configure compiler and linker flags for *your*
 project. If building in-tree, there is no `find_package`.
 In fact, you only ever need to link to Kokkos Kernels and not Kokkos!
 Linking to Kokkos Kernels transitively provides Kokkos.
@@ -41,7 +41,7 @@ cmake ${srcdir} \
  -DCMAKE_CXX_COMPILER=g++ \
  -DCMAKE_INSTALL_PREFIX=${my_install_folder} \
  -DKokkosKernels_ENABLE_TPL_BLAS=ON
-```` 
+````
 which, e.g. activates the BLAS dependency.
 The full keyword listing is below.
 
@@ -71,7 +71,7 @@ spack info kokkos-kernels
 
 #### Spack Development
 Spack currently installs packages to a location determined by a unique hash. This hash name is not really "human readable".
-Generally, Spack usage should never really require you to reference the computer-generated unique install folder. 
+Generally, Spack usage should never really require you to reference the computer-generated unique install folder.
 If you must know, you can locate Spack Kokkos installations with:
 ````
 spack find -p kokkos-kernels ...
@@ -81,7 +81,7 @@ where `...` is the unique spec identifying the particular Kokkos configuration a
 A better way to use Spack for doing Kokkos development is the DIY feature of Spack.
 If you wish to develop Kokkos Kernels itself, go to the Kokkos source folder:
 ````
-spack diy -u cmake kokkos-kernels +diy ... 
+spack diy -u cmake kokkos-kernels +diy ...
 ````
 where `...` is a Spack spec identifying the exact Kokkos Kernels configuration.
 This then creates a `spack-build` directory where you can run `make`.

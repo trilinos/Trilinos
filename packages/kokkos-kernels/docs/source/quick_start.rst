@@ -18,7 +18,7 @@ Our releases are available on `GitHub <https://github.com/kokkos/kokkos-kernels/
 Simple Configure, Build and Install
 ===================================
 
-The simplest way to configure Kokkos Kernels is provided below. With this minimal configuration 
+The simplest way to configure Kokkos Kernels is provided below. With this minimal configuration
 
 .. code-block:: shell
 
@@ -42,7 +42,7 @@ On an Apple laptop, after installing Kokkos with Serial and Threads support the 
   -- The project name is: KokkosKernels
   -- Enabled Kokkos devices: THREADS;SERIAL
   -- Found Kokkos version 4.3.1 at /Users/lberge/Research/kokkos_eco/installs/kokkos/lib/cmake/Kokkos
-  
+
   ================================
   Kokkos Kernels version: 4.3.01
   ================================
@@ -53,7 +53,7 @@ On an Apple laptop, after installing Kokkos with Serial and Threads support the 
 
 For more details on how to build Kokkos Kernels, please refer to `Building <building.html>`_ and the `CMake Options <cmake-keywords.html>`_.
 
-  
+
 Getting Help
 ============
 

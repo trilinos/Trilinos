@@ -10,7 +10,7 @@ Defined in header: :code:`KokkosBlas1_rotm.hpp`
     execution_space const& space,
     VectorView const& X, VectorView const& Y,
     ParamView const& param);
-  
+
   template <class VectorView, class ParamView>
   void rotm(
     VectorView const& X, VectorView const& Y,

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
 #These are tribits wrappers only ever called by Kokkos itself
 
 include(CMakeParseArguments)
@@ -7,24 +10,51 @@ include(GNUInstallDirs)
 message(STATUS "The project name is: ${PROJECT_NAME}")
 
 if(Kokkos_ENABLE_TESTS OR Kokkos_INSTALL_TESTING)
-  find_package(GTest QUIET)
-  if(GTest_FOUND)
+  # Probe external GoogleTest for GMock in a subdirectory scope to avoid target conflicts
+  # if GMock is missing.
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/check_gtest ${CMAKE_CURRENT_BINARY_DIR}/check_gtest)
+
+  if(KOKKOS_EXTERNAL_GTEST_USABLE)
+    find_package(GTest 1.14.0 CONFIG QUIET)
     message(STATUS "Found external GoogleTest: ${GTest_DIR} (version \"${GTest_VERSION}\")")
   else()
     message(STATUS "Using bundled GoogleTest version")
     include(FetchContent)
     list(APPEND CMAKE_MESSAGE_INDENT "[googletest] ")
-    FetchContent_Declare(googletest SOURCE_DIR ${Kokkos_SOURCE_DIR}/tpls/gtest)
+    set(INSTALL_GTEST OFF)
+    set(BUILD_GMOCK ON)
+    FetchContent_Declare(googletest SOURCE_DIR ${Kokkos_SOURCE_DIR}/tpls/googletest-1.14.0)
+    # For Windows: Prevent overriding the parent project's compiler/linker settings
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
     list(POP_BACK CMAKE_MESSAGE_INDENT)
 
     # Suppress clang-tidy diagnostics on code that we do not have control over
     if(CMAKE_CXX_CLANG_TIDY)
-      set_target_properties(gtest PROPERTIES CXX_CLANG_TIDY "")
+      set_target_properties(gtest gmock PROPERTIES CXX_CLANG_TIDY "")
     endif()
 
-    # Suppress compiler warnings. TODO use SYSTEM within the FetchContent_Declare call when CMake 3.25 is required
-    set_target_properties(gtest PROPERTIES COMPILE_OPTIONS -w)
+    # Suppress compiler warnings. gtest's own CMake build sets its warning
+    # flags via the legacy COMPILE_FLAGS target property, which is a single
+    # non-transitive string. Clear it so a stale or compiler-unrecognized
+    # flag name (rather than just an enabled diagnostic) cannot turn into a
+    # hard configure/build error, then re-enable warnings suppression via
+    # COMPILE_OPTIONS.
+    # TODO use SYSTEM within the FetchContent_Declare call when CMake 3.25 is required
+    set_target_properties(gtest gmock PROPERTIES COMPILE_FLAGS "" COMPILE_OPTIONS -w)
+
+    # icpx before 2025 crashes in the optimizer compiling gmock with UBSan. Disable it there.
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2025.0.0)
+      target_compile_options(gmock PRIVATE -fno-sanitize=undefined)
+    endif()
+
+    # Kokkos only links GTest::{gtest,gmock}: keep {gtest,gmock}_main out of the default
+    # build so their (unmodified) strict warning flags never get compiled.
+    foreach(main_target gtest_main gmock_main)
+      if(TARGET ${main_target})
+        set_target_properties(${main_target} PROPERTIES EXCLUDE_FROM_ALL ON)
+      endif()
+    endforeach()
   endif()
 endif()
 
@@ -182,17 +212,27 @@ macro(KOKKOS_ADD_TEST_EXECUTABLE ROOT_NAME)
   cmake_parse_arguments(PARSE "" "" "SOURCES" ${ARGN})
   # Don't do anything if the user disabled the test
   if(NOT ${PACKAGE_NAME}_${ROOT_NAME}_DISABLE)
-    kokkos_add_executable(${ROOT_NAME} SOURCES ${PARSE_SOURCES} ${PARSE_UNPARSED_ARGUMENTS} TESTONLYLIBS GTest::gtest)
+    kokkos_add_executable(
+      ${ROOT_NAME}
+      SOURCES
+      ${PARSE_SOURCES}
+      ${PARSE_UNPARSED_ARGUMENTS}
+      TESTONLYLIBS
+      GTest::gtest
+      GTest::gmock
+    )
     set(EXE_NAME ${PACKAGE_NAME}_${ROOT_NAME})
 
     # Suppress compiler warnings when not using an external gtest version.
     # TODO use SYSTEM within the FetchContent_Declare call when CMake 3.25 is required
-    get_target_property(GTEST_INCLUDES GTest::gtest INCLUDE_DIRECTORIES)
-    if(GTEST_INCLUDES)
-      foreach(dir ${GTEST_INCLUDES})
-        target_include_directories(${EXE_NAME} SYSTEM PRIVATE "${dir}")
-      endforeach()
-    endif()
+    foreach(gtest_target GTest::gtest GTest::gmock)
+      get_target_property(GTEST_INCLUDES ${gtest_target} INCLUDE_DIRECTORIES)
+      if(GTEST_INCLUDES)
+        foreach(dir ${GTEST_INCLUDES})
+          target_include_directories(${EXE_NAME} SYSTEM PRIVATE "${dir}")
+        endforeach()
+      endif()
+    endforeach()
   endif()
 endmacro()
 
@@ -263,6 +303,8 @@ function(KOKKOS_SET_LIBRARY_PROPERTIES LIBRARY_NAME)
       set(Kokkos_LANGUAGES "HIP,CXX")
     elseif(Kokkos_ENABLE_CUDA)
       set(Kokkos_LANGUAGES "CUDA,CXX")
+    elseif(Kokkos_ENABLE_SYCL)
+      set(Kokkos_LANGUAGES "SYCL,CXX")
     endif()
   endif()
 
@@ -402,6 +444,11 @@ function(KOKKOS_ADD_LIBRARY LIBRARY_NAME)
       target_sources(
         ${LIBRARY_NAME} PUBLIC FILE_SET ${LIBRARY_NAME}_file_set TYPE CXX_MODULES FILES ${PARSE_MODULE_INTERFACE}
       )
+      # Clang-22 and later only export a reduced Binary Module Interface (BMI) by default
+      # which is problematic for the visibility of template specializations across modules
+      if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 22)
+        target_compile_options(${LIBRARY_NAME} PRIVATE -fno-modules-reduced-bmi)
+      endif()
     endif()
   endif()
 

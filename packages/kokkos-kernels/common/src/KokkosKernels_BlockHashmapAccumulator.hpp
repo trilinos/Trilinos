@@ -213,7 +213,7 @@ struct BlockHashmapAccumulator {
       keys[my_write_index] = key;
       KokkosSparse::Impl::kk_block_set_mul(block_dim, values + my_write_index * block_size, valA, valB);
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
@@ -281,7 +281,7 @@ struct BlockHashmapAccumulator {
       keys[my_write_index] = key;
       KokkosSparse::Impl::kk_block_set_mul(block_dim, values + my_write_index * block_size, valA, valB);
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
@@ -356,7 +356,7 @@ struct BlockHashmapAccumulator {
     } else {
       keys[my_write_index] = key;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
@@ -408,7 +408,7 @@ struct BlockHashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
@@ -461,7 +461,7 @@ struct BlockHashmapAccumulator {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above
@@ -510,7 +510,7 @@ struct BlockHashmapAccumulator {
     } else {
       keys[my_write_index] = key;
 
-#ifdef KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS
+#ifdef KOKKOSKERNELS_GPU_INDEPENDENT_THREADS
       // this is an issue on VOLTA+ and up because warps do not go in SIMD
       // fashion anymore. while some thread might insert my_write_index into
       // linked list, another thread in the warp might be reading keys in above

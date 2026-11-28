@@ -56,12 +56,14 @@ void randomize_matrix_values(const Values &v) {
 }
 
 template <typename crsMat_t>
-void run_spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm algo, crsMat_t A, crsMat_t B, crsMat_t &C) {
-  C = KokkosSparse::spgemm<crsMat_t>(algo, A, false, B, false);
+void run_spgemm_noreuse(KokkosSparse::SPGEMMAlgorithm algo, crsMat_t A, crsMat_t B, crsMat_t &C, bool input_sorted,
+                        bool result_sorted) {
+  C = KokkosSparse::spgemm<crsMat_t>(algo, A, false, B, false, input_sorted, result_sorted);
 }
 
 template <typename crsMat_t, typename device>
-int run_spgemm(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &C, bool testReuse) {
+int run_spgemm(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &C, bool testReuse,
+               bool input_sorted, bool result_sorted) {
   typedef typename crsMat_t::size_type size_type;
   typedef typename crsMat_t::ordinal_type lno_t;
   typedef typename crsMat_t::value_type scalar_t;
@@ -75,7 +77,7 @@ int run_spgemm(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgorithm spgemm_al
   kh.set_team_work_size(16);
   kh.set_dynamic_scheduling(true);
 
-  kh.create_spgemm_handle(spgemm_algorithm);
+  kh.create_spgemm_handle(spgemm_algorithm, input_sorted, result_sorted);
   {
     auto sh = kh.get_spgemm_handle();
 
@@ -112,7 +114,7 @@ int run_spgemm(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgorithm spgemm_al
 
 template <typename crsMat_t, typename device>
 int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgorithm spgemm_algorithm, crsMat_t &result,
-                             bool testReuse) {
+                             bool testReuse, bool input_sorted, bool result_sorted) {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -130,7 +132,7 @@ int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgor
   kh.set_team_work_size(16);
   kh.set_dynamic_scheduling(true);
 
-  kh.create_spgemm_handle(spgemm_algorithm);
+  kh.create_spgemm_handle(spgemm_algorithm, input_sorted, result_sorted);
   {
     auto sh = kh.get_spgemm_handle();
 
@@ -197,14 +199,8 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
   }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
   using namespace Test;
-  // device::execution_space::initialize();
-  // device::execution_space::print_configuration(std::cout);
 
   typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  // typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  // typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-  // typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
-  // typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
   // Generate random compressed sparse row matrix. Randomly generated (non-zero)
   // values are stored in a 1-D (1 rank) array.
@@ -220,7 +216,8 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
   // If this test won't reuse symbolic, we can compute the reference matrix once
   // here
   if (!testReuse) {
-    run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2, false);
+    run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2, /* testReuse */ false, /* input sorted */ true,
+                                 /* result sorted */ true);
   }
 
   std::vector<SPGEMMAlgorithm> algorithms;
@@ -280,12 +277,16 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
     try {
       switch (callMode) {
         case spgemm_reuse_view:
-          res = run_spgemm_old_interface<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
+          res = run_spgemm_old_interface<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse,
+                                                           /* input sorted */ true, /* result sorted */ true);
           break;
         case spgemm_reuse_matrix:
-          res = run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse);
+          res = run_spgemm<crsMat_t, device>(A, B, spgemm_algorithm, output_mat, testReuse, /* input sorted */ true,
+                                             /* result sorted */ true);
           break;
-        case spgemm_noreuse: run_spgemm_noreuse(spgemm_algorithm, A, B, output_mat); break;
+        case spgemm_noreuse:
+          run_spgemm_noreuse(spgemm_algorithm, A, B, output_mat, /* input sorted */ true, /* result sorted */ true);
+          break;
       }
     } catch (const char *message) {
       EXPECT_TRUE(is_expected_to_fail) << algo << ": " << message;
@@ -302,7 +303,8 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
     // If this is testing reuse, the values of A and B changed so
     // the reference matrix must be recomputed
     if (testReuse) {
-      run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2, false);
+      run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, output_mat2, /* reuse */ false, /* input sorted */ true,
+                                   /* result sorted */ true);
     }
 
     // double spgemm_time = timer1.seconds();
@@ -310,17 +312,13 @@ void test_spgemm(lno_t m, lno_t k, lno_t n, size_type nnz, lno_t bandwidth, lno_
     timer1.reset();
     if (!is_expected_to_fail) {
       EXPECT_TRUE((res == 0)) << algo;
-      bool is_identical = is_same_matrix<crsMat_t, device>(output_mat, output_mat2);
+      const bool is_identical = TestUtils::is_same_matrix<crsMat_t, device>(output_mat, output_mat2);
       EXPECT_TRUE(is_identical) << "SpGEMM result incorrect: algo=" << algo << ", callMode=" << int(callMode)
                                 << ", testReuse=" << int(testReuse) << ", m=" << m << ", k=" << k << ", n=" << n
                                 << ", nnz=" << nnz << ", bandwidth=" << bandwidth
                                 << ", row_size_variance=" << row_size_variance;
-      // EXPECT_TRUE( equal) << algo;
     }
-    // std::cout << "algo:" << algo << " spgemm_time:" << spgemm_time << "
-    // output_check_time:" << timer1.seconds() << std::endl;
   }
-  // device::execution_space::finalize();
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
@@ -358,14 +356,17 @@ void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
     KokkosSparse::sort_crs_matrix(B);
   }
   // Call reference impl to get complete product
+  // Note: for both reference C and output C: we're only checking that
+  // the rowmap is correct, so don't care if result is sorted.
   crsMat_t C_reference;
-  Test::run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, C_reference, false);
+  Test::run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, C_reference, /* reuse */ false, /* input sorted */ true,
+                                     /* result sorted */ false);
   // Now call just symbolic, and specifically request that rowptrs be populated
   // Make sure this never depends on C_rowmap being initialized
   rowmap_t C_rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmapC"), m + 1);
   Kokkos::deep_copy(C_rowmap, size_type(123));
   KernelHandle kh;
-  kh.create_spgemm_handle();
+  kh.create_spgemm_handle(KokkosSparse::SPGEMM_DEFAULT, /* input sorted */ true, /* output sorted */ false);
   if (callSymbolicFirst) {
     KokkosSparse::spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
                                   B.graph.entries, false, C_rowmap);
@@ -430,12 +431,14 @@ void test_issue402() {
   KokkosSparse::sort_crs_matrix(A);
   KokkosSparse::sort_crs_matrix(B);
   crsMat_t Cgold;
-  run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, Cgold, false);
+  run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, Cgold, /* reuse */ false, /* input sorted */ true,
+                               /* result sorted */ true);
   crsMat_t C;
   bool success = true;
   std::string errMsg;
   try {
-    int res = run_spgemm<crsMat_t, device>(A, B, SPGEMM_KK_MEMORY, C, false);
+    int res = run_spgemm<crsMat_t, device>(A, B, SPGEMM_KK_MEMORY, C, /* reuse */ false, /* input sorted */ true,
+                                           /* result sorted */ true);
     if (res) throw "run_spgemm returned error code";
   } catch (const char *message) {
     errMsg  = message;
@@ -448,7 +451,7 @@ void test_issue402() {
     success = false;
   }
   EXPECT_TRUE(success) << "SpGEMM still has issue 402 bug! Error message:\n" << errMsg << '\n';
-  bool correctResult = is_same_matrix<crsMat_t, device>(C, Cgold);
+  bool correctResult = TestUtils::is_same_matrix<crsMat_t, device>(C, Cgold);
   EXPECT_TRUE(correctResult) << "SpGEMM still has issue 402 bug; C=AA' is incorrect!\n";
 }
 
@@ -491,6 +494,101 @@ void test_issue1738() {
 #endif
 }
 
+// Test spgemm with explicitly unsorted inputs. Run once while requesting sorted
+// output, and once without.
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void test_spgemm_sortedness() {
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+  {
+    std::cerr << "TEST SKIPPED: See "
+                 "https://github.com/kokkos/kokkos-kernels/issues/1542 for details."
+              << std::endl;
+    return;
+  }
+#endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
+
+  using namespace Test;
+  using crsMat_t       = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using graph_t        = typename crsMat_t::StaticCrsGraphType;
+  using lno_view_t     = typename graph_t::row_map_type::non_const_type;
+  using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
+  using scalar_view_t  = typename crsMat_t::values_type::non_const_type;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
+                                                       typename device::memory_space, typename device::memory_space>;
+  const lno_t m                 = 1000;
+  const lno_t k                 = 500;
+  const lno_t n                 = 1600;
+  size_type nnz                 = 20000;
+  const lno_t bandwidth         = 500;
+  const lno_t row_size_variance = 10;
+
+  // Generate random matrices. This relies on kk_generate_sparse_matrix NOT producing a sorted matrix.
+  crsMat_t A = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, k, nnz, row_size_variance, bandwidth);
+  crsMat_t B = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(k, n, nnz, row_size_variance, bandwidth);
+  randomize_matrix_values(A.values);
+  randomize_matrix_values(B.values);
+
+  // Compute reference C using the serial/debug algorithm.
+  crsMat_t C_reference;
+  run_spgemm<crsMat_t, device>(A, B, SPGEMM_DEBUG, C_reference, /* reuse */ false, /* input sorted */ false,
+                               /* result sorted */ true);
+
+  std::vector<std::string> algorithm_names = {"SPGEMM_DEFAULT", "SPGEMM_KK"};
+  for (auto algo_name : algorithm_names) {
+    SPGEMMAlgorithm algo = KokkosSparse::StringToSPGEMMAlgorithm(algo_name);
+    for (bool resultSorted : {true, false}) {
+      for (bool reuse : {true, false}) {
+        crsMat_t C;
+        if (reuse) {
+          KernelHandle kh;
+          kh.create_spgemm_handle(algo, /* input_sorted */ false, /* result_sorted */ resultSorted);
+
+          const size_t num_rows_A = A.numRows();
+          const size_t num_rows_B = B.numRows();
+          const size_t num_cols_B = B.numCols();
+
+          lno_view_t row_mapC("row_mapC", num_rows_A + 1);
+          lno_nnz_view_t entriesC;
+          scalar_view_t valuesC;
+
+          KokkosSparse::spgemm_symbolic(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map, A.graph.entries,
+                                        false, B.graph.row_map, B.graph.entries, false, row_mapC);
+          size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+          entriesC          = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+          valuesC           = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
+          KokkosSparse::spgemm_numeric(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map, A.graph.entries,
+                                       A.values, false, B.graph.row_map, B.graph.entries, B.values, false, row_mapC,
+                                       entriesC, valuesC);
+          kh.destroy_spgemm_handle();
+          C = crsMat_t("C", num_rows_A, num_cols_B, c_nnz_size, valuesC, row_mapC, entriesC);
+        } else {
+          run_spgemm_noreuse(algo, A, B, C, /* input sorted */ false, /* result sorted */ resultSorted);
+        }
+
+        // If we requested sorted output, verify the output really is sorted.
+        if (resultSorted) {
+          bool sorted = KokkosSparse::Impl::isCrsGraphSorted(C.graph.row_map, C.graph.entries);
+          EXPECT_TRUE(sorted) << "spgemm (" << (reuse ? "reuse" : "non-reuse") << " interface)"
+                              << " produced unsorted output for algo " << algo_name
+                              << " even though sorted output was requested";
+        } else {
+          // Sort C so we can directly compare it to sorted reference
+          KokkosSparse::sort_crs_matrix(C);
+        }
+
+        // Build the result matrix and compare against the reference. is_same_matrix
+        // compares entries directly (it does not sort first), so explicitly sort
+        // C so that the comparison is valid regardless of resultSorted.
+        bool isCorrect = TestUtils::is_same_matrix<crsMat_t, device>(C, C_reference);
+        EXPECT_TRUE(isCorrect) << "spgemm with unsorted inputs produced incorrect result for algo " << algo_name
+                               << ", request sorted outputs = " << (resultSorted ? "true" : "false") << ", "
+                               << (reuse ? "reuse" : "non-reuse") << " interface";
+      }
+    }
+  }
+}
+
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                                   \
   TEST_F(TestCategory, sparse##_##spgemm##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                              \
     test_spgemm<SCALAR, ORDINAL, OFFSET, DEVICE>(10000, 8000, 6000, 8000 * 20, 500, 10, ::Test::spgemm_reuse_matrix); \
@@ -519,6 +617,7 @@ void test_issue1738() {
     test_spgemm_symbolic<SCALAR, ORDINAL, OFFSET, DEVICE>(false, false);                                              \
     test_issue402<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                                 \
     test_issue1738<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                                \
+    test_spgemm_sortedness<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                        \
   }
 
 // test_spgemm<SCALAR,ORDINAL,OFFSET,DEVICE>(50000, 50000 * 30, 100, 10);

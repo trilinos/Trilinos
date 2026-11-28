@@ -133,12 +133,66 @@ function(kokkoskernels_add_executable EXE_NAME)
 
       if(PARSE_TESTONLYLIBS)
         target_link_libraries(${EXE_NAME} PRIVATE Kokkos::kokkoskernels ${PARSE_TESTONLYLIBS})
+        kokkoskernels_apply_test_build_speedups(${EXE_NAME} IS_TEST)
       else()
         target_link_libraries(${EXE_NAME} PRIVATE Kokkos::kokkoskernels)
+        kokkoskernels_apply_test_build_speedups(${EXE_NAME})
       endif()
     endif()
   else()
     message(STATUS "Skipping executable ${EXE_NAME} because not all necessary components enabled")
+  endif()
+endfunction()
+
+# Apply the opt-in build-time speedups (PCH, slim debug info, faster linker)
+# to a test-executable target.  All settings are gated on cache options declared
+# in the top-level CMakeLists.txt and default to no-ops so this function is
+# safe to call on every executable.
+function(kokkoskernels_apply_test_build_speedups TARGET)
+  cmake_parse_arguments(BSU "IS_TEST" "" "" ${ARGN})
+  if(NOT TARGET ${TARGET})
+    return()
+  endif()
+
+  # (2) Faster linker: forward -fuse-ld=<value> to the target's link step.
+  # Uses target_link_options across all supported CMake versions so users can
+  # pass any linker name their compiler understands (e.g. "mold", "lld",
+  # "gold").
+  # if(KokkosKernels_TEST_LINKER)
+  #   target_link_options(${TARGET} PRIVATE
+  #     "-fuse-ld=${KokkosKernels_TEST_LINKER}")
+  # endif()
+
+  # (3) Slim debug info: replace the implicit "-g" (= -g2) with "-g1"
+  # (backtraces only, no locals/types) for the configs that produce debug
+  # info by default (Debug and RelWithDebInfo).  Release / MinSizeRel are
+  # left untouched.
+  if(KokkosKernels_TEST_SLIM_DEBUG_INFO)
+    set(_debug_cfgs "$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>")
+    target_compile_options(${TARGET} PRIVATE
+      "$<${_debug_cfgs}:$<$<COMPILE_LANGUAGE:CXX>:-g1>>")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang" AND
+       NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+      target_compile_options(${TARGET} PRIVATE
+        "$<${_debug_cfgs}:$<$<COMPILE_LANGUAGE:CXX>:-gsplit-dwarf>>")
+    endif()
+  endif()
+
+  # (4) Precompiled headers.  Skipped for Trilinos-driven builds and for the
+  # GPU backends whose compilers (nvcc / hipcc / SYCL) don't reliably support
+  # CMake's PCH machinery.
+  if(KokkosKernels_TEST_ENABLE_PCH
+     AND NOT KOKKOSKERNELS_HAS_TRILINOS
+     AND NOT KOKKOS_ENABLE_CUDA
+     AND NOT KOKKOS_ENABLE_HIP
+     AND NOT KOKKOS_ENABLE_SYCL)
+    set(_pch_headers <Kokkos_Core.hpp> <Kokkos_Random.hpp>)
+    # gtest.h only PCHs cleanly for test executables that actually link gtest;
+    # example executables (which reuse this same helper) do not.
+    if(BSU_IS_TEST)
+      list(APPEND _pch_headers <gtest/gtest.h>)
+    endif()
+    target_precompile_headers(${TARGET} PRIVATE ${_pch_headers})
   endif()
 endfunction()
 
@@ -187,10 +241,9 @@ function(kokkoskernels_add_executable_and_test ROOT_NAME)
         COMM          serial mpi)
     else()
       set(EXE_NAME ${PACKAGE_NAME}_${ROOT_NAME})
-      kokkoskernels_add_executable(${EXE_NAME} SOURCES ${PARSE_SOURCES})
-      if(PARSE_TESTONLYLIBS)
-        target_link_libraries(${EXE_NAME} PRIVATE ${PARSE_TESTONLYLIBS})
-      endif()
+      kokkoskernels_add_executable(${EXE_NAME}
+        SOURCES ${PARSE_SOURCES}
+        TESTONLYLIBS ${PARSE_TESTONLYLIBS})
       kokkoskernels_add_test(NAME ${ROOT_NAME} EXE ${EXE_NAME})
     endif()
   else()

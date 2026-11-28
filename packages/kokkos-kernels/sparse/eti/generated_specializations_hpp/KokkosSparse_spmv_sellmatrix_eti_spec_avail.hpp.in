@@ -6,6 +6,6 @@
 namespace KokkosSparse {
 namespace Impl {
 @SPARSE_SPMV_SELLMATRIX_ETI_AVAIL_BLOCK@
-}  // Impl 
+}  // Impl
 }  // KokkosSparse
 #endif  // KOKKOSSPARSE_SPMV_SELLMATRIX_ETI_SPEC_AVAIL_HPP_

@@ -16,30 +16,12 @@ namespace Test {
 namespace Impl {
 template <class ViewTypeDst, class ViewTypeSrc>
 struct TestAssignability {
-  using mapping_type =
-      Kokkos::Impl::ViewMapping<typename ViewTypeDst::traits,
-                                typename ViewTypeSrc::traits
-#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
-                                ,
-                                typename ViewTypeDst::specialize
-#else
-                                ,
-                                void
-#endif
-                                >;
-
-  template <class MappingType>
-  static void try_assign(
-      ViewTypeDst& dst, ViewTypeSrc& src,
-      std::enable_if_t<MappingType::is_assignable>* = nullptr) {
-    dst = src;
-  }
-
-  template <class MappingType>
-  static void try_assign(
-      ViewTypeDst&, ViewTypeSrc&,
-      std::enable_if_t<!MappingType::is_assignable>* = nullptr) {
-    FAIL() << "TestAssignability::try_assign: Unexpected call path";
+  static void try_assign(ViewTypeDst& dst, ViewTypeSrc& src) {
+    if constexpr (std::is_assignable_v<ViewTypeDst, ViewTypeSrc>) {
+      dst = src;
+    } else {
+      FAIL() << "TestAssignability::try_assign: Unexpected call path";
+    }
   }
 
   template <class... Dimensions>
@@ -52,7 +34,7 @@ struct TestAssignability {
     bool is_assignable = Kokkos::is_assignable(dst, src);
 
     if (sometimes) {
-      try_assign<mapping_type>(dst, src);
+      try_assign(dst, src);
     }
     ASSERT_EQ(always, is_always_assignable)
         << Kokkos::Impl::TypeInfo<ViewTypeSrc>::name() << " to "
@@ -139,6 +121,24 @@ TEST(TEST_CATEGORY, view_is_assignable) {
                           View<int*, left, d_exec>>::test(expected, expected,
                                                           10);
 
+  // not covered by default host and device space pairings
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || \
+    defined(KOKKOS_ENABLE_SYCL)
+  Impl::TestAssignability<View<int*, left, HostSpace>,
+                          View<int*, left, SharedHostPinnedSpace>>::test(true,
+                                                                         true,
+                                                                         10);
+  Impl::TestAssignability<View<int*, left, HostSpace, MemoryRandomAccess>,
+                          View<int*, left, SharedHostPinnedSpace>>::test(true,
+                                                                         true,
+                                                                         10);
+  Impl::TestAssignability<View<int*, left, DefaultMemorySpace>,
+                          View<int*, left, SharedSpace>>::test(true, true, 10);
+  Impl::TestAssignability<
+      View<int*, left, DefaultMemorySpace, MemoryRandomAccess>,
+      View<int*, left, SharedSpace>>::test(true, true, 10);
+#endif
+
   // reference type and const-qualified types
   using SomeViewType = View<int*, left, d_exec>;
   static_assert(is_always_assignable_v<SomeViewType, SomeViewType>);
@@ -150,7 +150,6 @@ TEST(TEST_CATEGORY, view_is_assignable) {
   static_assert(is_always_assignable_v<SomeViewType&, SomeViewType const>);
   static_assert(is_always_assignable_v<SomeViewType&, SomeViewType const&>);
 
-#ifndef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   // Check assignment to const qualified Views is false
   static_assert(!is_always_assignable_v<SomeViewType const, SomeViewType>);
   static_assert(!is_always_assignable_v<SomeViewType const&, SomeViewType>);
@@ -159,7 +158,6 @@ TEST(TEST_CATEGORY, view_is_assignable) {
     const SomeViewType const_view;
     ASSERT_FALSE(Kokkos::is_assignable(const_view, non_const_view));
   }
-#endif
 
   // Rank mismatch: is_always_assignable_v must be false (consteval false case)
   using RankMismatchView1D = View<int*, left, d_exec>;

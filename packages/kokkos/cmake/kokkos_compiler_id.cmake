@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
 kokkos_cfg_depends(COMPILER_ID NONE)
 
 set(KOKKOS_CXX_COMPILER ${CMAKE_CXX_COMPILER})
@@ -143,6 +146,8 @@ if(Kokkos_ENABLE_MULTIPLE_CMAKE_LANGUAGES)
     set(Kokkos_LANGUAGES "HIP,CXX")
   elseif(Kokkos_ENABLE_CUDA)
     set(Kokkos_LANGUAGES "CUDA,CXX")
+  elseif(Kokkos_ENABLE_SYCL)
+    set(Kokkos_LANGUAGES "SYCL,CXX")
   endif()
 endif()
 

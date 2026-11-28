@@ -140,19 +140,27 @@ struct BDF {
 /// \param y0 [in/out]: vector of initial conditions, set to the solution
 /// at the end of the integration
 /// \param y_new [out]: vector of solution at t_end
-/// \param temp [in]: vectors for temporary storage
-/// \param temp2 [in]: vectors for temporary storage
+/// \param temp [in]: temporary storage, at least neqs x (26 + 2*neqs)
+/// \param temp2 [in]: temporary storage, at least 6 x 7
+/// \param rtol [in]: optional, relative tolerance used for error control
+/// and convergence checks during the integration
+/// \param atol [in]: optional, absolute tolerance used for error control
+/// and convergence checks during the integration
+///
+/// \return SUCCESS if the integration reached t_end, MIN_SIZE if a step
+/// could not be completed with dt above the smallest meaningful step
+/// size (y0 and y_new then hold the last accepted solution, at time < t_end).
 template <class ode_type, class mat_type, class vec_type, class scalar_type>
-KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, const scalar_type t_end,
-                              const scalar_type initial_step, const scalar_type max_step, const vec_type& y0,
-                              const vec_type& y_new, mat_type& temp, mat_type& temp2) {
+[[nodiscard]] KOKKOS_FUNCTION ode_solver_status BDFSolve(const ode_type& ode, const scalar_type t_start,
+                                                         const scalar_type t_end, const scalar_type initial_step,
+                                                         scalar_type max_step, const vec_type& y0,
+                                                         const vec_type& y_new, mat_type& temp, mat_type& temp2,
+                                                         scalar_type rtol = 1.0e-3, scalar_type atol = 1.0e-6) {
   using KAT = KokkosKernels::ArithTraits<scalar_type>;
 
   // This needs to go away and be pulled out of temp instead...
   auto rhs    = Kokkos::subview(temp, Kokkos::ALL(), 0);
   auto update = Kokkos::subview(temp, Kokkos::ALL(), 1);
-  // vec_type rhs("rhs", ode.neqs), update("update", ode.neqs);
-  (void)max_step;
 
   int order = 1, num_equal_steps = 0;
   constexpr scalar_type min_factor = 0.2;
@@ -160,7 +168,6 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
   scalar_type t                    = t_start;
 
   constexpr int max_newton_iters = 10;
-  scalar_type atol = 1.0e-6, rtol = 1.0e-3;
 
   // Compute rhs = f(t_start, y0)
   ode.evaluate_function(t_start, 0, y0, rhs);
@@ -169,6 +176,11 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
   // time step size.
   if (initial_step == KAT::zero()) {
     KokkosODE::Impl::initial_step_size(ode, order, t_start, atol, rtol, y0, rhs, temp, dt);
+  }
+
+  // Check if we need set the maximum step
+  if (max_step == KAT::zero()) {
+    max_step = t_end - t_start;
   }
 
   // Initialize D(:, 0) = y0 and D(:, 1) = dt*rhs
@@ -181,15 +193,27 @@ KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, co
 
   // Now we loop over the time interval [t_start, t_end]
   // and solve our ODE.
+  ode_solver_status status = ode_solver_status::SUCCESS;
   while (t < t_end) {
-    KokkosODE::Impl::BDFStep(ode, t, dt, t_end, order, num_equal_steps, max_newton_iters, atol, rtol, min_factor, y0,
-                             y_new, rhs, update, temp, temp2);
+    status = KokkosODE::Impl::BDFStep(ode, t, dt, t_end, max_step, order, num_equal_steps, max_newton_iters, atol, rtol,
+                                      min_factor, y0, y_new, rhs, update, temp, temp2);
+
+    if (status != ode_solver_status::SUCCESS) {
+      // The step failed and t was not advanced: report the failure
+      // instead of retrying forever, and leave y0 and y_new at the
+      // last accepted solution rather than an unconverged iterate.
+      for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
+        y_new(eqIdx) = y0(eqIdx);
+      }
+      break;
+    }
 
     for (int eqIdx = 0; eqIdx < ode.neqs; ++eqIdx) {
       y0(eqIdx) = y_new(eqIdx);
     }
-    // printf("t=%f, dt=%f, y={%f, %f, %f}\n", t, dt, y0(0), y0(1), y0(2));
   }
+
+  return status;
 }  // BDFSolve
 
 }  // namespace Experimental
