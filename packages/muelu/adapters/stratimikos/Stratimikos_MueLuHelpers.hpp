@@ -21,6 +21,10 @@
 #include "Thyra_MueLuTpetraQ2Q1PreconditionerFactory.hpp"
 #endif
 
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA) && defined(HAVE_MUELU_THYRATPETRAADAPTERS) && defined(HAVE_MUELU_TEKO)
+#include "MueLu_TekoMultiPhysBlockPreconditionerFactory.hpp"
+#endif
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -97,6 +101,12 @@ void enableMueLuTpetraQ2Q1(LinearSolverBuilder<Scalar>& builder, const std::stri
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 MUELU_DEPRECATED void enableMueLuTpetraQ2Q1(LinearSolverBuilder<double>& builder, const std::string& stratName = "MueLu") {
   enableMueLuTpetraQ2Q1<double, LocalOrdinal, GlobalOrdinal, Node>(builder, stratName);
+}
+#endif
+
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA) && defined(HAVE_MUELU_THYRATPETRAADAPTERS) && defined(HAVE_MUELU_TEKO)
+inline void registerMueLuTekoMultiPhysBlockAMG(const std::string& tekoName = "Block AMG") {
+  MueLu::registerTekoMultiPhysBlockPreconditionerFactory(tekoName);
 }
 #endif
 

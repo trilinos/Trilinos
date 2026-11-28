@@ -17,6 +17,9 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
+#include <string>
+#include <type_traits>
+
 // Xpetra
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
@@ -43,6 +46,14 @@
 #include <MueLu_TestHelpers.hpp>
 #include <MueLu_MultiPhys.hpp>
 
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA) && defined(HAVE_MUELU_THYRATPETRAADAPTERS) && defined(HAVE_MUELU_TEKO)
+#include <Stratimikos_MueLuHelpers.hpp>
+#include <Teko_InverseLibrary.hpp>
+#include <Teko_TpetraInverseFactoryOperator.hpp>
+#include <Teko_TpetraOperatorWrapper.hpp>
+#include <Xpetra_TpetraOperator.hpp>
+#endif
+
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
@@ -62,6 +73,10 @@ struct MultiPhysTestObjects {
   Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>> auxMatrices;
   Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>>> coords;
   Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>> nullspaces;
+
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
+  Teuchos::RCP<Thyra::DefaultBlockedLinearOp<Scalar>> blockedOperator;
+#endif
 };
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -204,8 +219,9 @@ BuildProblem(const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
   Teuchos::RCP<BlockedCrsMatrix> blockedA =
       Teuchos::rcp(new BlockedCrsMatrix(blockedOperator, Teuchos::null));
 
-  objs.blockedA    = blockedA;
-  objs.monolithicA = blockedA->Merge();
+  objs.blockedA        = blockedA;
+  objs.monolithicA     = blockedA->Merge();
+  objs.blockedOperator = blockedOperator;
 
   // MultiPhys auxiliary data: one auxiliary operator per field
   objs.auxMatrices = Teuchos::ArrayRCP<Teuchos::RCP<Matrix>>(nBlock);
@@ -286,11 +302,146 @@ bool SolveWithMultiPhys(
   itersOut = solver->getNumIters();
   return (retStatus == Belos::Converged && itersOut <= expectedMaxIters);
 }
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA) && defined(HAVE_MUELU_THYRATPETRAADAPTERS) && defined(HAVE_MUELU_TEKO)
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename std::enable_if<std::is_same<Scalar, Teko::ST>::value &&
+                            std::is_same<LocalOrdinal, Teko::LO>::value &&
+                            std::is_same<GlobalOrdinal, Teko::GO>::value &&
+                            std::is_same<Node, Teko::NT>::value,
+                        bool>::type
+SolveWithTekoMultiPhys(
+    const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
+    const Teuchos::RCP<Thyra::DefaultBlockedLinearOp<Scalar>>& blockedOperator,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>& /* auxMatrices */,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>& nullspaces,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>>>& coords,
+    Teuchos::ParameterList& comboList,
+    int expectedMaxIters,
+    int& itersOut) {
+#include <MueLu_UseShortNames.hpp>
+
+  typedef Belos::OperatorT<MultiVector> OP;
+  typedef Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraOp;
+
+  Stratimikos::registerMueLuTekoMultiPhysBlockAMG("Block AMG");
+
+  Teuchos::ParameterList inverseLibraryList;
+  auto& blockAMG = inverseLibraryList.sublist("Teko MultiPhys Block AMG");
+  blockAMG.set("Type", "Block AMG");
+  blockAMG.sublist("AMG Settings") = comboList;
+
+  auto& userData = blockAMG.sublist("user data");
+  for (int block = 0; block < coords.size(); ++block) {
+    userData.set<Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>(
+        "Coordinates" + std::to_string(block), coords[block]);
+    userData.set<Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>(
+        "Nullspace" + std::to_string(block), nullspaces[block]);
+  }
+
+  auto inverseLibrary = Teko::InverseLibrary::buildFromParameterList(inverseLibraryList);
+  auto inverseFactory = inverseLibrary->getInverseFactory("Teko MultiPhys Block AMG");
+
+  Teko::LinearOp thyraBlockedOperator =
+      Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar>>(blockedOperator);
+  auto forwardOperator                   = Teuchos::rcp(new Teko::TpetraHelpers::TpetraOperatorWrapper(thyraBlockedOperator));
+  auto preconditioner                    = Teuchos::rcp(new Teko::TpetraHelpers::InverseFactoryOperator(inverseFactory));
+  Teuchos::RCP<TpetraOp> forwardAsTpetra = forwardOperator;
+  preconditioner->initInverse();
+  preconditioner->buildInverseOperator(forwardAsTpetra);
+
+  Teuchos::RCP<Vector> X = VectorFactory::Build(A->getRowMap());
+  Teuchos::RCP<Vector> B = VectorFactory::Build(A->getRowMap());
+
+  {
+    Utilities::SetRandomSeed(*A->getRowMap()->getComm());
+    X->randomize();
+    A->apply(*X, *B, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
+
+    Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+    B->norm2(norms);
+    B->scale(Teuchos::ScalarTraits<SC>::one() / norms[0]);
+    X->putScalar(Teuchos::ScalarTraits<SC>::zero());
+  }
+
+  Teuchos::RCP<OP> belosOp =
+      Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A));
+  Teuchos::RCP<TpetraOp> tekoPrecAsTpetra = preconditioner;
+  Teuchos::RCP<Operator> tekoPrecAsXpetra =
+      Teuchos::rcp(new Xpetra::TpetraOperator<SC, LO, GO, NO>(tekoPrecAsTpetra));
+  Teuchos::RCP<OP> belosPrecOp =
+      Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(tekoPrecAsXpetra));
+
+  Teuchos::RCP<Belos::LinearProblem<SC, MultiVector, OP>> belosProblem =
+      Teuchos::rcp(new Belos::LinearProblem<SC, MultiVector, OP>(belosOp, X, B));
+
+  belosProblem->setRightPrec(belosPrecOp);
+  bool set = belosProblem->setProblem();
+  if (!set) return false;
+
+  Teuchos::RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
+  belosList->set("Maximum Iterations", 100);
+  belosList->set("Convergence Tolerance", 1e-6);
+  belosList->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+  belosList->set("Output Frequency", 1);
+  belosList->set("Output Style", Belos::Brief);
+  belosList->set("Implicit Residual Scaling", "None");
+
+  Belos::SolverFactory<SC, MultiVector, OP> solverFactory;
+  Teuchos::RCP<Belos::SolverManager<SC, MultiVector, OP>> solver =
+      solverFactory.create("gmres", belosList);
+
+  solver->setProblem(belosProblem);
+  Belos::ReturnType retStatus = solver->solve();
+
+  itersOut = solver->getNumIters();
+  return (retStatus == Belos::Converged && itersOut <= expectedMaxIters);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename std::enable_if<!(std::is_same<Scalar, Teko::ST>::value &&
+                          std::is_same<LocalOrdinal, Teko::LO>::value &&
+                          std::is_same<GlobalOrdinal, Teko::GO>::value &&
+                          std::is_same<Node, Teko::NT>::value),
+                        bool>::type
+SolveWithTekoMultiPhys(
+    const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
+    const Teuchos::RCP<Thyra::DefaultBlockedLinearOp<Scalar>>& /* blockedOperator */,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>& /* auxMatrices */,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>& /* nullspaces */,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>>>& /* coords */,
+    Teuchos::ParameterList& /* comboList */,
+    int /* expectedMaxIters */,
+    int& itersOut) {
+  itersOut = 0;
+  if (A->getRowMap()->getComm()->getRank() == 0)
+    std::cout << "Skipping test: Teko MultiPhys path requires the Teko scalar, ordinal, and node types." << std::endl;
+  return true;
+}
+#else
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool SolveWithTekoMultiPhys(
+    const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
+    const Teuchos::RCP<Thyra::DefaultBlockedLinearOp<Scalar>>& /* blockedOperator */,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>& /* auxMatrices */,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>& /* nullspaces */,
+    const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>>>& /* coords */,
+    Teuchos::ParameterList& /* comboList */,
+    int /* expectedMaxIters */,
+    int& itersOut) {
+  itersOut = 0;
+  if (A->getRowMap()->getComm()->getRank() == 0)
+    std::cout << "Skipping test: Teko, Stratimikos, Thyra, and ThyraTpetraAdapters are required for the Teko MultiPhys path." << std::endl;
+  return true;
+}
+#endif
+#endif
 #endif
 
 enum class SolvePath {
   Monolithic,
-  Blocked
+  Blocked,
+  Teko
 };
 
 SolvePath ParseSolvePath(const std::string& path) {
@@ -298,11 +449,13 @@ SolvePath ParseSolvePath(const std::string& path) {
     return SolvePath::Monolithic;
   if (path == "blocked")
     return SolvePath::Blocked;
+  if (path == "teko")
+    return SolvePath::Teko;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::invalid_argument,
       "Invalid value for --path: \"" << path
-                                     << "\". Valid options are: monolithic, blocked");
+                                     << "\". Valid options are: monolithic, blocked, teko");
 
   return SolvePath::Monolithic;
 }
@@ -343,7 +496,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
     clp.setOption("xml", &mueluXmlFile,
                   "Required: XML file containing MueLu parameters");
     clp.setOption("path", &pathString,
-                  "Solve path to run: monolithic or blocked");
+                  "Solve path to run: monolithic, blocked, or teko");
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parseResult = clp.parse(argc, argv);
     if (parseResult != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL)
@@ -361,19 +514,32 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
     Scalar alpha = Teuchos::as<Scalar>(alpha_in);
     Scalar beta  = Teuchos::as<Scalar>(beta_in);
 
-    auto objs          = BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny, alpha, beta);
+    auto objs    = BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, nx, ny, alpha, beta);
 
 #ifdef HAVE_MUELU_BELOS
-    int iters          = -1;
-    auto matrix        = path == SolvePath::Monolithic ? objs.monolithicA : Teuchos::rcp_dynamic_cast<Matrix>(objs.blockedA);
-    const auto solveOK = SolveWithMultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
-        matrix,
-        objs.auxMatrices,
-        objs.nullspaces,
-        objs.coords,
-        *params,
-        expectedIters,
-        iters);
+    int iters    = -1;
+    auto matrix  = path == SolvePath::Blocked ? Teuchos::rcp_dynamic_cast<Matrix>(objs.blockedA) : objs.monolithicA;
+    bool solveOK = false;
+    if (path == SolvePath::Teko) {
+      solveOK = SolveWithTekoMultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
+          objs.monolithicA,
+          objs.blockedOperator,
+          objs.auxMatrices,
+          objs.nullspaces,
+          objs.coords,
+          *params,
+          expectedIters,
+          iters);
+    } else {
+      solveOK = SolveWithMultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
+          matrix,
+          objs.auxMatrices,
+          objs.nullspaces,
+          objs.coords,
+          *params,
+          expectedIters,
+          iters);
+    }
 
     if (comm->getRank() == 0) {
       std::cout << "Selected solve path: " << pathString << std::endl;
