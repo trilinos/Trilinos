@@ -397,6 +397,22 @@ int main(int argc, char *argv[]) {
                  << " seconds" << std::endl;
       ROL::OED::PrintDesign<RealT>(pda,sampler,"GreedyAdditionDesignD_ex09",".txt");
     }
+    else if (ocType == "E") {
+      parlist->sublist("OED").sublist("Greedy").set("Use Deletion",true);
+      std::clock_t timerD = std::clock();
+      auto ped = ROL::OED::GreedyAlgorithmE<RealT>(model,obs,sampler,theta,M,cost,budget,*parlist,*outStream);
+      *outStream << "  E-optimal greedy deletion design time:      "
+                 << static_cast<RealT>(std::clock()-timerD)/static_cast<RealT>(CLOCKS_PER_SEC)
+                 << " seconds" << std::endl;
+      ROL::OED::PrintDesign<RealT>(ped,sampler,"GreedyDeletionDesignE_ex09",".txt");
+      parlist->sublist("OED").sublist("Greedy").set("Use Deletion",false);
+      std::clock_t timerA = std::clock();
+      auto pea = ROL::OED::GreedyAlgorithmE<RealT>(model,obs,sampler,theta,M,cost,budget,*parlist,*outStream);
+      *outStream << "  E-optimal greedy addition design time:      "
+                 << static_cast<RealT>(std::clock()-timerA)/static_cast<RealT>(CLOCKS_PER_SEC)
+                 << " seconds" << std::endl;
+      ROL::OED::PrintDesign<RealT>(pea,sampler,"GreedyAdditionDesignE_ex09",".txt");
+    }
     else if (ocType == "I") {
       parlist->sublist("OED").sublist("Greedy").set("Use Deletion",true);
       std::clock_t timerD = std::clock();

@@ -1184,7 +1184,7 @@ private:
 public:
   L2BoundConstraint(std::vector<Real> &l, std::vector<Real> &u,
               const ROL::Ptr<BurgersFEM<Real> > &fem, Real scale = 1.0)
-    : x_lo_(l), x_up_(u), scale_(scale), fem_(fem) {
+    : x_lo_(l), x_up_(u), min_diff_(ROL::ROL_INF<Real>()), scale_(scale), fem_(fem) {
     dim_ = x_lo_.size();
     for ( int i = 0; i < dim_; i++ ) {
       if ( i == 0 ) {
@@ -1347,7 +1347,7 @@ private:
 public:
   H1BoundConstraint(std::vector<Real> &l, std::vector<Real> &u,
               const ROL::Ptr<BurgersFEM<Real> > &fem, Real scale = 1.0)
-    : x_lo_(l), x_up_(u), scale_(scale), fem_(fem) {
+    : x_lo_(l), x_up_(u), min_diff_(ROL::ROL_INF<Real>()), scale_(scale), fem_(fem) {
     dim_ = x_lo_.size();
     for ( int i = 0; i < dim_; i++ ) {
       if ( i == 0 ) {
