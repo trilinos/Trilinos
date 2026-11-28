@@ -16,6 +16,7 @@
 #include <MueLu_SubBlockAFactory.hpp>
 #include <MueLu_ReorderBlockAFactory.hpp>
 #include <MueLu_SmootherFactory.hpp>
+#include <MueLu_TrilinosSmoother.hpp>
 #include <MueLu_BlockedGaussSeidelSmoother.hpp>
 #include <MueLu_BlockedJacobiSmoother.hpp>
 #include <MueLu_BraessSarazinSmoother.hpp>
@@ -6939,11 +6940,104 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, Teko_Setup_Apply, Scalar, Loc
     }
   }  // end UseTpetra
 }
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, TekoLevel0_SchwarzLevel1_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+
+  using Teuchos::ParameterList;
+
+  MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+    if (!std::is_same<Scalar, Teko::ST>::value || !std::is_same<LocalOrdinal, Teko::LO>::value) {
+      out << "Skipping Teko test: TekoSmoother is only available for Scalar=Teko::ST, LocalOrdinal=Teko::LO." << std::endl;
+      return;
+    }
+
+    if (!std::is_same<Node, Teko::NT>::value) {
+      out << "Skipping Teko test: TekoSmoother is only available for Node=Teko::NT." << std::endl;
+      return;
+    }
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+    int noBlocks                             = 2;
+    Teuchos::RCP<const BlockedCrsMatrix> bop = CreateBlockDiagonalExampleMatrixThyra<Scalar, LocalOrdinal, GlobalOrdinal, Node, TpetraMap>(noBlocks, *comm);
+    Teuchos::RCP<const Matrix> Aconst        = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
+    Teuchos::RCP<Matrix> A                   = Teuchos::rcp_const_cast<Matrix>(Aconst);
+
+    RCP<MultiVector> exact = MultiVectorFactory::Build(A->getDomainMap(), 1);
+    RCP<MultiVector> rhs   = MultiVectorFactory::Build(A->getRangeMap(), 1);
+    exact->putScalar(Teuchos::ScalarTraits<SC>::one());
+    A->apply(*exact, *rhs, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
+
+    // Level 0 keeps the blocked operator for Teko.
+    Level level0;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level0);
+    level0.Set("A", A);
+
+    RCP<TekoSmoother> tekoPrototype = rcp(new TekoSmoother());
+    tekoPrototype->SetParameter("Inverse Type", Teuchos::ParameterEntry(std::string("TekoDiag")));
+
+    RCP<ParameterList> tekoParams = rcp(new ParameterList());
+    tekoParams->sublist("TekoDiag").set("Type", "Block Jacobi");
+    tekoPrototype->SetTekoParameters(tekoParams);
+
+    RCP<SmootherFactory> tekoSmootherFact = rcp(new SmootherFactory(tekoPrototype));
+
+    level0.Request("PreSmoother", tekoSmootherFact.get());
+    level0.Request("PostSmoother", tekoSmootherFact.get());
+    TEST_NOTHROW(tekoSmootherFact->Build(level0));
+
+    RCP<SmootherBase> tekoSmoother = level0.Get<RCP<SmootherBase> >("PreSmoother", tekoSmootherFact.get());
+    RCP<MultiVector> tekoX         = MultiVectorFactory::Build(A->getDomainMap(), 1);
+    tekoX->putScalar(Teuchos::ScalarTraits<SC>::zero());
+    TEST_NOTHROW(tekoSmoother->Apply(*tekoX, *rhs, true));
+
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+    Teuchos::Array<magnitude_type> tekoResidual = Utilities::ResidualNorm(*A, *tekoX, *rhs);
+    TEUCHOS_TEST_COMPARE(tekoResidual[0], <, 100. * Teuchos::ScalarTraits<Scalar>::eps(), out, success);
+
+    // Level 1 uses a monolithic Ifpack2 Schwarz smoother on a blocked operator.
+    // TrilinosSmoother should infer that the smoother needs a merged matrix.
+    Level level1;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level1);
+    level1.Set("A", A);
+
+    ParameterList schwarzParams;
+    schwarzParams.set("schwarz: overlap level", 0);
+    schwarzParams.set("schwarz: combine mode", "ADD");
+
+    RCP<TrilinosSmoother> schwarzPrototype   = rcp(new TrilinosSmoother("SCHWARZ", schwarzParams));
+    RCP<SmootherFactory> schwarzSmootherFact = rcp(new SmootherFactory(schwarzPrototype));
+
+    level1.Request("PreSmoother", schwarzSmootherFact.get());
+    level1.Request("PostSmoother", schwarzSmootherFact.get());
+    TEST_NOTHROW(schwarzSmootherFact->Build(level1));
+
+    RCP<SmootherBase> schwarzSmoother = level1.Get<RCP<SmootherBase> >("PreSmoother", schwarzSmootherFact.get());
+    RCP<Matrix> mergedA               = bop->Merge();
+    RCP<MultiVector> schwarzExact     = MultiVectorFactory::Build(mergedA->getDomainMap(), 1);
+    RCP<MultiVector> schwarzRhs       = MultiVectorFactory::Build(mergedA->getRangeMap(), 1);
+    schwarzExact->putScalar(Teuchos::ScalarTraits<SC>::one());
+    mergedA->apply(*schwarzExact, *schwarzRhs, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
+
+    RCP<MultiVector> schwarzX = MultiVectorFactory::Build(mergedA->getDomainMap(), 1);
+    schwarzX->putScalar(Teuchos::ScalarTraits<SC>::zero());
+    TEST_NOTHROW(schwarzSmoother->Apply(*schwarzX, *schwarzRhs, true));
+
+    Teuchos::Array<magnitude_type> schwarzNorms(1);
+    schwarzX->norm2(schwarzNorms);
+    TEST_EQUALITY(schwarzNorms[0] == schwarzNorms[0], true);
+    TEUCHOS_TEST_COMPARE(schwarzNorms[0], <, Teuchos::ScalarTraits<magnitude_type>::rmax(), out, success);
+  }  // end UseTpetra
+}
 #endif  // HAVE_MUELU_TEKO
 
 #ifdef HAVE_MUELU_TEKO
-#define MUELU_ETI_GROUP_TEKO(SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, Teko_Setup_Apply, SC, LO, GO, NO)
+#define MUELU_ETI_GROUP_TEKO(SC, LO, GO, NO)                                              \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, Teko_Setup_Apply, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, TekoLevel0_SchwarzLevel1_Setup_Apply, SC, LO, GO, NO)
 #else
 #define MUELU_ETI_GROUP_TEKO(SC, LO, GO, NO)
 #endif
