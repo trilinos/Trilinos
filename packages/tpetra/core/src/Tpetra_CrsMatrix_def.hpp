@@ -4981,6 +4981,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #endif
       if (applyHelper->shouldUseIntRowptrs()) {
     auto A_lcl_int_rowptrs = applyHelper->getIntRowptrMatrix(A_lcl);
+
     KokkosSparse::spmv(
         &applyHelper->handle_int, modeKK,
         impl_scalar_type(alpha), A_lcl_int_rowptrs, X_lcl, impl_scalar_type(beta), Y_lcl);

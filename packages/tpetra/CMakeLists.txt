@@ -152,6 +152,7 @@ GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_SYCL_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_HIP_DEFAULT OFF)
+GLOBAL_SET(HAVE_TPETRA_INST_NEXTSILICON_DEFAULT OFF)
 
 # We already have a separate Tpetra_ENABLE_CUDA option that we defined
 # above, so we don't have to check Kokkos_ENABLE_CUDA here.
@@ -400,12 +401,32 @@ ELSE() # NOT Tpetra_INST_SYCL
   ENDIF()
 ENDIF() # Tpetra_INST_SYCL
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_NEXTSILICON
+  HAVE_TPETRA_INST_NEXTSILICON
+  "Instantiate and/or test Tpetra classes over Node = Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_NEXTSILICON_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_NEXTSILICON_DEFAULT}
+)
+GLOBAL_SET(HAVE_TPETRA_NEXTSILICON ${Tpetra_INST_NEXTSILICON})
+IF(Tpetra_INST_NEXTSILICON)
+  IF(NOT Kokkos_ENABLE_NEXTSILICON)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::Experimental::NextSilicon execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_NEXTSILICON=ON.  If you want to enable instantiation and use of Kokkos::Experimental::NextSilicon in Tpetra, you must enable the Kokkos::Experimental::NextSilicon execution space by setting Kokkos_ENABLE_NEXTSILICON=ON.")
+  ENDIF()
+ELSE() # NOT Tpetra_INST_NEXTSILICON
+  IF(HAVE_TPETRA_DEFAULTNODE_NEXTSILICONWRAPPERNODE)
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode is disabled (since Tpetra_INST_NEXTSILICON=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_NEXTSILICON:BOOL=ON and Tpetra_INST_NEXTSILICON:BOOL=ON.  If you are building with a NEXTSILICON-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable NextSilicon support by default in that case.")
+  ENDIF()
+  IF(Kokkos_ENABLE_NEXTSILICON)
+    MESSAGE(STATUS "NOTE: Kokkos::Experimental::NextSilicon is ON (the CMake option Kokkos_ENABLE_NEXTSILICON is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Experimental::NextSilicon in Tpetra, please also set the CMake option Tpetra_INST_NEXTSILICON:BOOL=ON.  If you use the Kokkos::Experimental::NextSilicon version of Tpetra without doing this, you will get link errors!")
+  ENDIF()
+ENDIF() # Tpetra_INST_NEXTSILICON
+
 ############################################################
 # Shared/Managed Memory Default Allocation
 ############################################################
 # Normally we allocate Tpetra objects to the basic space by default,
 # but some apps might want to allocate memory to the "shared" host/device
-# space. This might be CudaUVMSpace, HIPManagedSpace or SYCLSharedUSMSpace.
+# space. This might be CudaUVMSpace, HIPManagedSpace, SYCLSharedUSMSpace, or NextSiliconSharedSpace.
 # These options allow us to do that sort of thing, changing
 # core/compat/Tpetra_KokkosCompat_ClassicNodeAPI_Wrapper.hpp
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -454,8 +475,9 @@ MESSAGE(STATUS "Determine whether Tpetra will assume that MPI is GPU aware:")
 IF(NOT Tpetra_INST_CUDA
    AND NOT Tpetra_INST_HIP
    AND NOT Tpetra_INST_SYCL
+   AND NOT Tpetra_INST_NEXTSILICON
 )
-  MESSAGE(STATUS "  - Tpetra_INST_CUDA, Tpetra_INST_HIP and Tpetra_INST_SYCL are OFF, so Tpetra will assume that MPI is not GPU aware.")
+  MESSAGE(STATUS "  - Tpetra_INST_CUDA, Tpetra_INST_HIP, Tpetra_INST_SYCL, and Tpetra_INST_NEXTSILICON are OFF, so Tpetra will assume that MPI is not GPU aware.")
   SET(Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
 ELSEIF(NOT TPL_ENABLE_MPI)
   # Even if GPUs is enabled but MPI is not, Teuchos::SerialComm may
@@ -662,6 +684,7 @@ ENDIF()
 IF(NOT Tpetra_INST_CUDA
    AND NOT Tpetra_INST_HIP
    AND NOT Tpetra_INST_SYCL
+   AND NOT Tpetra_INST_NEXTSILICON
    AND Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT
 )
   MESSAGE(FATAL_ERROR "Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT is ON, but GPU is not enabled!")
@@ -723,15 +746,19 @@ ENDIF()
 IF(Tpetra_INST_SYCL)
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosSYCLWrapperNode")
 ENDIF()
+IF(Tpetra_INST_NEXTSILICON)
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode")
+ENDIF()
 
 # Tell users what Nodes are enabled.
 MESSAGE(STATUS "Tpetra execution space availability (ON means available): ")
-MESSAGE(STATUS "  - Serial:  ${HAVE_TPETRA_SERIAL}")
-MESSAGE(STATUS "  - Threads: ${HAVE_TPETRA_PTHREAD}")
-MESSAGE(STATUS "  - OpenMP:  ${HAVE_TPETRA_OPENMP}")
-MESSAGE(STATUS "  - Cuda:    ${HAVE_TPETRA_CUDA}")
-MESSAGE(STATUS "  - HIP:     ${HAVE_TPETRA_HIP}")
-MESSAGE(STATUS "  - SYCL:    ${HAVE_TPETRA_SYCL}")
+MESSAGE(STATUS "  - Serial:      ${HAVE_TPETRA_SERIAL}")
+MESSAGE(STATUS "  - Threads:     ${HAVE_TPETRA_PTHREAD}")
+MESSAGE(STATUS "  - OpenMP:      ${HAVE_TPETRA_OPENMP}")
+MESSAGE(STATUS "  - Cuda:        ${HAVE_TPETRA_CUDA}")
+MESSAGE(STATUS "  - HIP:         ${HAVE_TPETRA_HIP}")
+MESSAGE(STATUS "  - SYCL:        ${HAVE_TPETRA_SYCL}")
+MESSAGE(STATUS "  - NextSilicon: ${HAVE_TPETRA_NEXTSILICON}")
 
 # Fix Github Issue #190 by making sure that users enabled at least one
 # Node type.
@@ -741,10 +768,11 @@ IF(NOT Tpetra_INST_SERIAL
    AND NOT Tpetra_INST_CUDA
    AND NOT Tpetra_INST_HIP
    AND NOT Tpetra_INST_SYCL
+   AND NOT Tpetra_INST_NEXTSILICON
 )
   MESSAGE(
     FATAL_ERROR
-      "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_SYCL, Kokkos_ENABLE_HIP, Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENMP, Kokkos_ENABLE_SERIAL, Kokkos_ENABLE_THREADS, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, Tpetra_INST_HIP, Tpetra_INST_SYCL or Tpetra_INST_CUDA."
+      "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_SYCL, Kokkos_ENABLE_HIP, Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENMP, Kokkos_ENABLE_SERIAL, Kokkos_ENABLE_THREADS, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, Tpetra_INST_HIP, Tpetra_INST_SYCL, Tpetra_INST_CUDA, or Tpetra_INST_NEXTSILICON."
   )
 ENDIF()
 

@@ -88,6 +88,11 @@ namespace panzer {
   struct TpetraNodeIsInstantiated<Tpetra::KokkosCompat::KokkosSYCLWrapperNode>
       : std::true_type {};
 #endif
+#if defined(HAVE_TPETRA_INST_NEXTSILICON) && defined(KOKKOS_ENABLE_NEXTSILICON)
+  template <>
+  struct TpetraNodeIsInstantiated<
+      Tpetra::KokkosCompat::KokkosNextSiliconWrapperNode> : std::true_type {};
+#endif
 
   static_assert(TpetraNodeIsInstantiated<TpetraNodeType>::value,
                 "panzer: the Tpetra node type panzer derives from Phalanx' "
