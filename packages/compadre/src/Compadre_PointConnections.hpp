@@ -97,10 +97,10 @@ struct PointConnections {
         switch (dimension) {
         case 3:
             inside_val += delta_vector.z*delta_vector.z;
-            // no break is intentional
+            [[fallthrough]];
         case 2:
             inside_val += delta_vector.y*delta_vector.y;
-            // no break is intentional
+            [[fallthrough]];
         default:
             break;
         }

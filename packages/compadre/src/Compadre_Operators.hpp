@@ -217,8 +217,13 @@ namespace Compadre {
     enum DenseSolverType : int {
         //! QR+Pivoting factorization performed on P*sqrt(w) matrix
         QR, 
-        //! LU factorization performed on P^T*W*P matrix
-        LU, 
+        //! Cholesky factorization performed on P^T*W*P matrix
+        //! (QR+Pivoting on the augmented system when constraints are present).
+        //! Requires a full rank problem: enough neighbors per target, and a sampling
+        //! operator without a null space over the reconstruction space. Aborts otherwise.
+        CHOL,
+        //! Deprecated alias for CHOL
+        LU [[deprecated("use DenseSolverType::CHOL")]] = CHOL,
     };
 
     //! Problem type, that optionally can handle manifolds

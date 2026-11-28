@@ -38,8 +38,9 @@ void calcPij(const BasisData& data, const member_type& teamMember, double* delta
  */
     const int my_num_neighbors = data._pc._nla.getNumberOfNeighborsDevice(target_index);
     
-    // store precalculated factorials for speedup
-    const double factorial[15] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800, 87178291200};
+    // store precalculated factorials for speedup; indices never exceed poly_order, so this is sized for
+    // orders <= 10 (enforced when orders are set, see GMLS::checkSupportedOrders)
+    static constexpr double factorial[11] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800};
 
     int component = 0;
     if (neighbor_index >= my_num_neighbors) {
@@ -91,7 +92,7 @@ void calcPij(const BasisData& data, const member_type& teamMember, double* delta
                 polynomial_sampling_functional == VaryingManifoldVectorPointSample) &&
                     (reconstruction_space == VectorTaylorPolynomial)) {
 
-        const int dimension_offset = GMLS::getNP(data._poly_order, dimension, reconstruction_space);
+        const int dimension_offset = GMLS::getNP(poly_order, dimension, reconstruction_space);
         double cutoff_p = data._epsilons(target_index);
         const int start_index = specific_order_only ? poly_order : 0; // only compute specified order if requested
 
@@ -865,15 +866,27 @@ void createWeightsAndP(const BasisData& data, const member_type& teamMember, scr
     // storage_size needs to change based on the size of the basis
     int storage_size = GMLS::getNP(polynomial_order, dimension, reconstruction_space);
     storage_size *= data._basis_multiplier;
-    for (int j = 0; j < delta.extent_int(0); ++j) {
-        delta(j) = 0;
-    }
-    for (int j = 0; j < thread_workspace.extent_int(0); ++j) {
-        thread_workspace(j) = 0;
-    }
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,data._pc._nla.getNumberOfNeighborsDevice(target_index)),
-            [&] (const int i) {
+    // the buffers are sized for the largest basis in use (for manifolds, the larger of the main
+    // and curvature bases), so they only need to be at least as large as this basis requires
+    int basis_powers_space_multiplier = (reconstruction_space == BernsteinPolynomial) ? 2 : 1;
+    // only used in assertions, which compile out in Release
+    [[maybe_unused]] auto cmp_size = (polynomial_order+1)*data._global_dimensions*basis_powers_space_multiplier;
+    compadre_kernel_assert_release(delta.extent_int(0) >= storage_size &&
+      "delta allocation smaller than storage_size needed by calcPij");
+    compadre_kernel_assert_release(thread_workspace.extent_int(0) >= cmp_size &&
+      "thread_workspace allocation smaller than needed by calcPij");
+    // delta and thread_workspace must not overlap
+    compadre_kernel_assert_release(delta.data() + delta.extent(0) <= thread_workspace.data()
+            || thread_workspace.data() + thread_workspace.extent(0) <= delta.data());
 
+    // delta and thread_workspace come from uninitialized thread scratch, and the basis evaluate
+    // functions read delta before writing it (delta = w_orig*delta + w_new*value), so zero them
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, delta.extent_int(0)),
+        [&](int j){ delta(j) = 0.0; });
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, thread_workspace.extent_int(0)),
+        [&](int j){ thread_workspace(j) = 0.0; });
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, my_num_neighbors),
+            [&] (const int i) {
         for (int d=0; d<data._sampling_multiplier; ++d) {
             // in 2d case would use distance between SVD coordinates
 
@@ -896,34 +909,20 @@ void createWeightsAndP(const BasisData& data, const member_type& teamMember, scr
 
             // generate weight vector from distances and window sizes
             w(i+my_num_neighbors*d) = GMLS::Wab(r, data._epsilons(target_index), data._weighting_type, data._weighting_p, data._weighting_n);
+            double sq_w = (weight_p) ? Kokkos::sqrt(w(i+my_num_neighbors*d)) : 1.0;
 
             calcPij<BasisData>(data, teamMember, delta.data(), thread_workspace.data(), target_index, i + d*my_num_neighbors, 0 /*alpha*/, dimension, polynomial_order, false /*bool on only specific order*/, V, reconstruction_space, polynomial_sampling_functional);
 
-            if (weight_p) {
-                for (int j = 0; j < storage_size; ++j) {
-                    // no need to convert offsets to global indices because the sum will never be large
-                    P(i+my_num_neighbors*d, j) = delta[j] * std::sqrt(w(i+my_num_neighbors*d));
-                    compadre_kernel_assert_extreme_debug(delta[j]==delta[j] && "NaN in sqrt(W)*P matrix.");
-                }
-
-            } else {
-                for (int j = 0; j < storage_size; ++j) {
-                    // no need to convert offsets to global indices because the sum will never be large
-                    P(i+my_num_neighbors*d, j) = delta[j];
-
-                    compadre_kernel_assert_extreme_debug(delta[j]==delta[j] && "NaN in P matrix.");
-                }
-            }
+            // sq_w is 1 when weight_p is false, so this fills either P*sqrt(W) or P
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, storage_size),
+                    [&] (const int j) {
+                // no need to convert offsets to global indices because the sum will never be large
+                P(i+my_num_neighbors*d, j) = delta[j] * sq_w;
+                compadre_kernel_assert_extreme_debug(delta[j]==delta[j] && "NaN in sqrt(W)*P matrix.");
+            });
         }
     });
     teamMember.team_barrier();
-//    Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
-//        for (int k=0; k<data._pc._nla.getNumberOfNeighborsDevice(target_index); k++) {
-//            for (int l=0; l<_NP; l++) {
-//                printf("%i %i %0.16f\n", k, l, P(k,l) );// << " " << l << " " << R(k,l) << std::endl;
-//            }
-//        }
-//    });
 }
 
 /*! \brief Fills the _P matrix with P*sqrt(w) for use in solving for curvature
@@ -953,12 +952,12 @@ void createWeightsAndPForCurvature(const BasisData& data, const member_type& tea
 
     const int target_index = data._initial_index_for_batch + teamMember.league_rank();
     int storage_size = only_specific_order ? GMLS::getNP(1, dimension)-GMLS::getNP(0, dimension) : GMLS::getNP(data._curvature_poly_order, dimension);
-    for (int j = 0; j < delta.extent_int(0); ++j) {
-        delta(j) = 0;
-    }
-    for (int j = 0; j < thread_workspace.extent_int(0); ++j) {
-        thread_workspace(j) = 0;
-    }
+    // delta and thread_workspace come from uninitialized thread scratch, and the basis evaluate
+    // functions read delta before writing it (delta = w_orig*delta + w_new*value), so zero them
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, delta.extent_int(0)),
+        [&](int j){ delta(j) = 0.0; });
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, thread_workspace.extent_int(0)),
+        [&](int j){ thread_workspace(j) = 0.0; });
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,data._pc._nla.getNumberOfNeighborsDevice(target_index)),
             [&] (const int i) {
 

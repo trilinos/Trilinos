@@ -252,7 +252,7 @@ std::string vec_to_string(const std::vector<T> &vec)
 {
   std::string s = "[";
   for(const T &item : vec)
-    s += " " + std::to_string(item);
+    s += ' ' + std::to_string(item);
   return s + " ]";
 }
 

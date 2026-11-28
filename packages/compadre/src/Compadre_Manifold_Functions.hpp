@@ -19,27 +19,35 @@ namespace Compadre {
             case 45:
                 q1 += (1.0/5040.0)*a_[36]*std::pow(u1, 7)/std::pow(h, 8) + (1.0/720.0)*a_[37]*std::pow(u1, 6)*u2/std::pow(h, 8) + (1.0/240.0)*a_[38]*std::pow(u1, 5)*std::pow(u2, 2)/std::pow(h, 8) + (1.0/144.0)*a_[39]*std::pow(u1, 4)*std::pow(u2, 3)/std::pow(h, 8) + (1.0/144.0)*a_[40]*std::pow(u1, 3)*std::pow(u2, 4)/std::pow(h, 8) + (1.0/240.0)*a_[41]*std::pow(u1, 2)*std::pow(u2, 5)/std::pow(h, 8) + (1.0/720.0)*a_[42]*u1*std::pow(u2, 6)/std::pow(h, 8) + (1.0/5040.0)*a_[43]*std::pow(u2, 7)/std::pow(h, 8);
                 q2 += (1.0/5040.0)*a_[37]*std::pow(u1, 7)/std::pow(h, 8) + (1.0/720.0)*a_[38]*std::pow(u1, 6)*u2/std::pow(h, 8) + (1.0/240.0)*a_[39]*std::pow(u1, 5)*std::pow(u2, 2)/std::pow(h, 8) + (1.0/144.0)*a_[40]*std::pow(u1, 4)*std::pow(u2, 3)/std::pow(h, 8) + (1.0/144.0)*a_[41]*std::pow(u1, 3)*std::pow(u2, 4)/std::pow(h, 8) + (1.0/240.0)*a_[42]*std::pow(u1, 2)*std::pow(u2, 5)/std::pow(h, 8) + (1.0/720.0)*a_[43]*u1*std::pow(u2, 6)/std::pow(h, 8) + (1.0/5040.0)*a_[44]*std::pow(u2, 7)/std::pow(h, 8);
+                [[fallthrough]];
             case 36:
                 q1 += (1.0/720.0)*a_[28]*std::pow(u1, 6)/std::pow(h, 7) + (1.0/120.0)*a_[29]*std::pow(u1, 5)*u2/std::pow(h, 7) + (1.0/48.0)*a_[30]*std::pow(u1, 4)*std::pow(u2, 2)/std::pow(h, 7) + (1.0/36.0)*a_[31]*std::pow(u1, 3)*std::pow(u2, 3)/std::pow(h, 7) + (1.0/48.0)*a_[32]*std::pow(u1, 2)*std::pow(u2, 4)/std::pow(h, 7) + (1.0/120.0)*a_[33]*u1*std::pow(u2, 5)/std::pow(h, 7) + (1.0/720.0)*a_[34]*std::pow(u2, 6)/std::pow(h, 7);
                 q2 += (1.0/720.0)*a_[29]*std::pow(u1, 6)/std::pow(h, 7) + (1.0/120.0)*a_[30]*std::pow(u1, 5)*u2/std::pow(h, 7) + (1.0/48.0)*a_[31]*std::pow(u1, 4)*std::pow(u2, 2)/std::pow(h, 7) + (1.0/36.0)*a_[32]*std::pow(u1, 3)*std::pow(u2, 3)/std::pow(h, 7) + (1.0/48.0)*a_[33]*std::pow(u1, 2)*std::pow(u2, 4)/std::pow(h, 7) + (1.0/120.0)*a_[34]*u1*std::pow(u2, 5)/std::pow(h, 7) + (1.0/720.0)*a_[35]*std::pow(u2, 6)/std::pow(h, 7);
+                [[fallthrough]];
             case 28:
                 q1 += (1.0/120.0)*a_[21]*std::pow(u1, 5)/std::pow(h, 6) + (1.0/24.0)*a_[22]*std::pow(u1, 4)*u2/std::pow(h, 6) + (1.0/12.0)*a_[23]*std::pow(u1, 3)*std::pow(u2, 2)/std::pow(h, 6) + (1.0/12.0)*a_[24]*std::pow(u1, 2)*std::pow(u2, 3)/std::pow(h, 6) + (1.0/24.0)*a_[25]*u1*std::pow(u2, 4)/std::pow(h, 6) + (1.0/120.0)*a_[26]*std::pow(u2, 5)/std::pow(h, 6);
                 q2 += (1.0/120.0)*a_[22]*std::pow(u1, 5)/std::pow(h, 6) + (1.0/24.0)*a_[23]*std::pow(u1, 4)*u2/std::pow(h, 6) + (1.0/12.0)*a_[24]*std::pow(u1, 3)*std::pow(u2, 2)/std::pow(h, 6) + (1.0/12.0)*a_[25]*std::pow(u1, 2)*std::pow(u2, 3)/std::pow(h, 6) + (1.0/24.0)*a_[26]*u1*std::pow(u2, 4)/std::pow(h, 6) + (1.0/120.0)*a_[27]*std::pow(u2, 5)/std::pow(h, 6);
+                [[fallthrough]];
             case 21:
                 q1 += (1.0/24.0)*a_[15]*std::pow(u1, 4)/std::pow(h, 5) + (1.0/6.0)*a_[16]*std::pow(u1, 3)*u2/std::pow(h, 5) + (1.0/4.0)*a_[17]*std::pow(u1, 2)*std::pow(u2, 2)/std::pow(h, 5) + (1.0/6.0)*a_[18]*u1*std::pow(u2, 3)/std::pow(h, 5) + (1.0/24.0)*a_[19]*std::pow(u2, 4)/std::pow(h, 5);
                 q2 += (1.0/24.0)*a_[16]*std::pow(u1, 4)/std::pow(h, 5) + (1.0/6.0)*a_[17]*std::pow(u1, 3)*u2/std::pow(h, 5) + (1.0/4.0)*a_[18]*std::pow(u1, 2)*std::pow(u2, 2)/std::pow(h, 5) + (1.0/6.0)*a_[19]*u1*std::pow(u2, 3)/std::pow(h, 5) + (1.0/24.0)*a_[20]*std::pow(u2, 4)/std::pow(h, 5);
+                [[fallthrough]];
             case 15:
                 q1 += (1.0/6.0)*a_[10]*std::pow(u1, 3)/std::pow(h, 4) + (1.0/2.0)*a_[11]*std::pow(u1, 2)*u2/std::pow(h, 4) + (1.0/2.0)*a_[12]*u1*std::pow(u2, 2)/std::pow(h, 4) + (1.0/6.0)*a_[13]*std::pow(u2, 3)/std::pow(h, 4);
                 q2 += (1.0/6.0)*a_[11]*std::pow(u1, 3)/std::pow(h, 4) + (1.0/2.0)*a_[12]*std::pow(u1, 2)*u2/std::pow(h, 4) + (1.0/2.0)*a_[13]*u1*std::pow(u2, 2)/std::pow(h, 4) + (1.0/6.0)*a_[14]*std::pow(u2, 3)/std::pow(h, 4);
+                [[fallthrough]];
             case 10:
                 q1 += (1.0/2.0)*a_[6]*std::pow(u1, 2)/std::pow(h, 3) + a_[7]*u1*u2/std::pow(h, 3) + (1.0/2.0)*a_[8]*std::pow(u2, 2)/std::pow(h, 3);
                 q2 += (1.0/2.0)*a_[7]*std::pow(u1, 2)/std::pow(h, 3) + a_[8]*u1*u2/std::pow(h, 3) + (1.0/2.0)*a_[9]*std::pow(u2, 2)/std::pow(h, 3);
+                [[fallthrough]];
             case 6:
                 q1 += a_[3]*u1/std::pow(h, 2) + a_[4]*u2/std::pow(h, 2);
                 q2 += a_[4]*u1/std::pow(h, 2) + a_[5]*u2/std::pow(h, 2);
+                [[fallthrough]];
             case 3:
                 q1 += a_[1]/h;
                 q2 += a_[2]/h;
+                [[fallthrough]];
             case 1:
                 break;
             default:
@@ -63,31 +71,38 @@ namespace Compadre {
                 q1 += (1.0/720.0)*a_[36]*std::pow(u1, 6)/std::pow(h, 8) + (1.0/120.0)*a_[37]*std::pow(u1, 5)*u2/std::pow(h, 8) + (1.0/48.0)*a_[38]*std::pow(u1, 4)*std::pow(u2, 2)/std::pow(h, 8) + (1.0/36.0)*a_[39]*std::pow(u1, 3)*std::pow(u2, 3)/std::pow(h, 8) + (1.0/48.0)*a_[40]*std::pow(u1, 2)*std::pow(u2, 4)/std::pow(h, 8) + (1.0/120.0)*a_[41]*u1*std::pow(u2, 5)/std::pow(h, 8) + (1.0/720.0)*a_[42]*std::pow(u2, 6)/std::pow(h, 8);
                 q2 += (1.0/720.0)*a_[38]*std::pow(u1, 6)/std::pow(h, 8) + (1.0/120.0)*a_[39]*std::pow(u1, 5)*u2/std::pow(h, 8) + (1.0/48.0)*a_[40]*std::pow(u1, 4)*std::pow(u2, 2)/std::pow(h, 8) + (1.0/36.0)*a_[41]*std::pow(u1, 3)*std::pow(u2, 3)/std::pow(h, 8) + (1.0/48.0)*a_[42]*std::pow(u1, 2)*std::pow(u2, 4)/std::pow(h, 8) + (1.0/120.0)*a_[43]*u1*std::pow(u2, 5)/std::pow(h, 8) + (1.0/720.0)*a_[44]*std::pow(u2, 6)/std::pow(h, 8);
                 q3 += (1.0/720.0)*a_[37]*std::pow(u1, 6)/std::pow(h, 8) + (1.0/120.0)*a_[38]*std::pow(u1, 5)*u2/std::pow(h, 8) + (1.0/48.0)*a_[39]*std::pow(u1, 4)*std::pow(u2, 2)/std::pow(h, 8) + (1.0/36.0)*a_[40]*std::pow(u1, 3)*std::pow(u2, 3)/std::pow(h, 8) + (1.0/48.0)*a_[41]*std::pow(u1, 2)*std::pow(u2, 4)/std::pow(h, 8) + (1.0/120.0)*a_[42]*u1*std::pow(u2, 5)/std::pow(h, 8) + (1.0/720.0)*a_[43]*std::pow(u2, 6)/std::pow(h, 8);
+                [[fallthrough]];
             case 36:
                 q1 += (1.0/120.0)*a_[28]*std::pow(u1, 5)/std::pow(h, 7) + (1.0/24.0)*a_[29]*std::pow(u1, 4)*u2/std::pow(h, 7) + (1.0/12.0)*a_[30]*std::pow(u1, 3)*std::pow(u2, 2)/std::pow(h, 7) + (1.0/12.0)*a_[31]*std::pow(u1, 2)*std::pow(u2, 3)/std::pow(h, 7) + (1.0/24.0)*a_[32]*u1*std::pow(u2, 4)/std::pow(h, 7) + (1.0/120.0)*a_[33]*std::pow(u2, 5)/std::pow(h, 7);
                 q2 += (1.0/120.0)*a_[30]*std::pow(u1, 5)/std::pow(h, 7) + (1.0/24.0)*a_[31]*std::pow(u1, 4)*u2/std::pow(h, 7) + (1.0/12.0)*a_[32]*std::pow(u1, 3)*std::pow(u2, 2)/std::pow(h, 7) + (1.0/12.0)*a_[33]*std::pow(u1, 2)*std::pow(u2, 3)/std::pow(h, 7) + (1.0/24.0)*a_[34]*u1*std::pow(u2, 4)/std::pow(h, 7) + (1.0/120.0)*a_[35]*std::pow(u2, 5)/std::pow(h, 7);
                 q3 += (1.0/120.0)*a_[29]*std::pow(u1, 5)/std::pow(h, 7) + (1.0/24.0)*a_[30]*std::pow(u1, 4)*u2/std::pow(h, 7) + (1.0/12.0)*a_[31]*std::pow(u1, 3)*std::pow(u2, 2)/std::pow(h, 7) + (1.0/12.0)*a_[32]*std::pow(u1, 2)*std::pow(u2, 3)/std::pow(h, 7) + (1.0/24.0)*a_[33]*u1*std::pow(u2, 4)/std::pow(h, 7) + (1.0/120.0)*a_[34]*std::pow(u2, 5)/std::pow(h, 7);
+                [[fallthrough]];
             case 28:
                 q1 += (1.0/24.0)*a_[21]*std::pow(u1, 4)/std::pow(h, 6) + (1.0/6.0)*a_[22]*std::pow(u1, 3)*u2/std::pow(h, 6) + (1.0/4.0)*a_[23]*std::pow(u1, 2)*std::pow(u2, 2)/std::pow(h, 6) + (1.0/6.0)*a_[24]*u1*std::pow(u2, 3)/std::pow(h, 6) + (1.0/24.0)*a_[25]*std::pow(u2, 4)/std::pow(h, 6);
                 q2 += (1.0/24.0)*a_[23]*std::pow(u1, 4)/std::pow(h, 6) + (1.0/6.0)*a_[24]*std::pow(u1, 3)*u2/std::pow(h, 6) + (1.0/4.0)*a_[25]*std::pow(u1, 2)*std::pow(u2, 2)/std::pow(h, 6) + (1.0/6.0)*a_[26]*u1*std::pow(u2, 3)/std::pow(h, 6) + (1.0/24.0)*a_[27]*std::pow(u2, 4)/std::pow(h, 6);
                 q3 += (1.0/24.0)*a_[22]*std::pow(u1, 4)/std::pow(h, 6) + (1.0/6.0)*a_[23]*std::pow(u1, 3)*u2/std::pow(h, 6) + (1.0/4.0)*a_[24]*std::pow(u1, 2)*std::pow(u2, 2)/std::pow(h, 6) + (1.0/6.0)*a_[25]*u1*std::pow(u2, 3)/std::pow(h, 6) + (1.0/24.0)*a_[26]*std::pow(u2, 4)/std::pow(h, 6);
+                [[fallthrough]];
             case 21:
                 q1 += (1.0/6.0)*a_[15]*std::pow(u1, 3)/std::pow(h, 5) + (1.0/2.0)*a_[16]*std::pow(u1, 2)*u2/std::pow(h, 5) + (1.0/2.0)*a_[17]*u1*std::pow(u2, 2)/std::pow(h, 5) + (1.0/6.0)*a_[18]*std::pow(u2, 3)/std::pow(h, 5);
                 q2 += (1.0/6.0)*a_[17]*std::pow(u1, 3)/std::pow(h, 5) + (1.0/2.0)*a_[18]*std::pow(u1, 2)*u2/std::pow(h, 5) + (1.0/2.0)*a_[19]*u1*std::pow(u2, 2)/std::pow(h, 5) + (1.0/6.0)*a_[20]*std::pow(u2, 3)/std::pow(h, 5);
                 q3 += (1.0/6.0)*a_[16]*std::pow(u1, 3)/std::pow(h, 5) + (1.0/2.0)*a_[17]*std::pow(u1, 2)*u2/std::pow(h, 5) + (1.0/2.0)*a_[18]*u1*std::pow(u2, 2)/std::pow(h, 5) + (1.0/6.0)*a_[19]*std::pow(u2, 3)/std::pow(h, 5);
+                [[fallthrough]];
             case 15:
                 q1 += (1.0/2.0)*a_[10]*std::pow(u1, 2)/std::pow(h, 4) + a_[11]*u1*u2/std::pow(h, 4) + (1.0/2.0)*a_[12]*std::pow(u2, 2)/std::pow(h, 4);
                 q2 += (1.0/2.0)*a_[12]*std::pow(u1, 2)/std::pow(h, 4) + a_[13]*u1*u2/std::pow(h, 4) + (1.0/2.0)*a_[14]*std::pow(u2, 2)/std::pow(h, 4);
                 q3 += (1.0/2.0)*a_[11]*std::pow(u1, 2)/std::pow(h, 4) + a_[12]*u1*u2/std::pow(h, 4) + (1.0/2.0)*a_[13]*std::pow(u2, 2)/std::pow(h, 4);
+                [[fallthrough]];
             case 10:
                 q1 += a_[6]*u1/std::pow(h, 3) + a_[7]*u2/std::pow(h, 3);
                 q2 += a_[8]*u1/std::pow(h, 3) + a_[9]*u2/std::pow(h, 3);
                 q3 += a_[7]*u1/std::pow(h, 3) + a_[8]*u2/std::pow(h, 3);
+                [[fallthrough]];
             case 6:
                 q1 += a_[3]/std::pow(h, 2);
                 q2 += a_[5]/std::pow(h, 2);
                 q3 += a_[4]/std::pow(h, 2);
             // case 3: nothing to do here
+                [[fallthrough]];
             case 1:
                 break;
             default:

@@ -107,6 +107,24 @@ struct GMLSSolutionData {
 
 };
 
+//! Computes the lower triangle (including the diagonal) of C = A^T*A, which is all the Cholesky
+//! solver reads (team_chol_lower_inplace and the lower triangular solves). The thread/vector layout
+//! and summation order match KokkosBatched::TeamVectorGemm (Unblocked), so every lower entry is
+//! bit-for-bit what the full product gives; the upper triangle is not written.
+template <typename MemberType, typename AViewType, typename CViewType>
+KOKKOS_INLINE_FUNCTION
+void lowerTriangleOfTransposeProduct(const MemberType& teamMember, const AViewType& A, const CViewType& C) {
+    const int m = A.extent_int(0);
+    const int n = A.extent_int(1);
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, n), [&] (const int i) {
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, i+1), [&] (const int j) {
+            typename CViewType::non_const_value_type c = 0;
+            for (int p = 0; p < m; ++p) c += A(p,i)*A(p,j);
+            C(i,j) = c;
+        });
+    });
+}
+
 /** @name Functors
  *  Member functions that perform operations on the entire batch
  */
@@ -163,9 +181,9 @@ struct EvaluateStandardTargets {
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.P_target_row_dim_0*_data.P_target_row_dim_1), 
                     _data.P_target_row_dim_0, _data.P_target_row_dim_1);
 
-        scratch_vector_type delta(teamMember.thread_scratch(_data._pm.getThreadScratchLevel(0)), 
+        scratch_vector_type delta(teamMember.thread_scratch(_data._pm.getThreadScratchLevel(0)),
                 _data.this_num_cols);
-        scratch_vector_type thread_workspace(teamMember.thread_scratch(_data._pm.getThreadScratchLevel(0)), 
+        scratch_vector_type thread_workspace(teamMember.thread_scratch(_data._pm.getThreadScratchLevel(0)),
                 _data.thread_workspace_dim);
 
         /*
@@ -419,6 +437,8 @@ struct AssembleStandardPsqrtW {
                 _data.this_num_cols);
         scratch_vector_type thread_workspace(teamMember.thread_scratch(_data._pm.getThreadScratchLevel(0)), 
                 _data.thread_workspace_dim);
+        
+
     
         /*
          *    Assemble P*sqrt(W) and sqrt(w)*Identity
@@ -429,32 +449,47 @@ struct AssembleStandardPsqrtW {
                 _data._poly_order, true /*weight_p*/, NULL /*&V*/, _data._reconstruction_space, 
                 _data._polynomial_sampling_functional);
     
-        if ((_data._constraint_type == ConstraintType::NO_CONSTRAINT) && (_data._dense_solver_type != DenseSolverType::LU)) {
+        if ((_data._constraint_type == ConstraintType::NO_CONSTRAINT) && (_data._dense_solver_type != DenseSolverType::CHOL)) {
             // fill in RHS with Identity * sqrt(weights)
             double * rhs_data = RHS.data();
             Kokkos::parallel_for(Kokkos::TeamVectorRange(teamMember, this_num_rows), [&] (const int i) {
-                rhs_data[i] = std::sqrt(w(i));
+                rhs_data[i] = Kokkos::sqrt(w(i));
             });
         } else {
+            const int m = this_num_rows;        // rows to use
+            const int n = _data.this_num_cols;  // cols to use
+            
+            auto PsqrtW_active = Kokkos::subview(PsqrtW,
+                                                 Kokkos::make_pair(0, m),
+                                                 Kokkos::make_pair(0, n));
+
             // create global memory for matrix M = PsqrtW^T*PsqrtW
             // don't need to cast into device_unmanaged_matrix_left_type since the matrix is symmetric
             device_unmanaged_matrix_right_type M(_data.RHS_data
                     + TO_GLOBAL(local_index)*TO_GLOBAL(_data.RHS_dim_0*_data.RHS_dim_1), 
                         _data.RHS_dim_0, _data.RHS_dim_1);
-            KokkosBatched::TeamVectorGemm<member_type,KokkosBatched::Trans::Transpose,KokkosBatched::Trans::NoTranspose,KokkosBatched::Algo::Gemm::Unblocked>
-    	      ::invoke(teamMember,
-    	    	   1.0,
-    	    	   PsqrtW,
-    	    	   PsqrtW,
-    	    	   0.0,
-    	    	   M);
+            
+            // M is n x n (or larger, but you should pass an n x n view too)
+            auto M_active = Kokkos::subview(M,
+                                            Kokkos::make_pair(0, n),
+                                            Kokkos::make_pair(0, n));
+
+            // Cholesky reads only the lower triangle; constrained problems solve the augmented M with QR
+            // (rank_full = false in generatePolynomialCoefficients), which needs all of it
+            if (_data._constraint_type == ConstraintType::NO_CONSTRAINT) {
+                lowerTriangleOfTransposeProduct(teamMember, PsqrtW_active, M_active);
+            } else {
+                KokkosBatched::TeamVectorGemm<member_type,KokkosBatched::Trans::Transpose,KokkosBatched::Trans::NoTranspose,KokkosBatched::Algo::Gemm::Unblocked>
+                  ::invoke(teamMember, 1.0, PsqrtW_active, PsqrtW_active, 0.0, M_active);
+            }
             teamMember.team_barrier();
-    
+
             // Multiply PsqrtW with sqrt(W) to get PW
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, _data.max_num_rows), [&] (const int i) {
-                for (int j=0; j < _data.this_num_cols; j++) {
-                     PsqrtW(i,j) = PsqrtW(i,j)*std::sqrt(w(i));
-                }
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, this_num_rows), [&](int i) {
+              const double swi = Kokkos::sqrt(w(i));
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, _data.this_num_cols), [&](int j) {
+                PsqrtW(i,j) *= swi;
+              });
             });
             teamMember.team_barrier();
     
@@ -599,7 +634,7 @@ struct AssembleCurvaturePsqrtW {
 
         // CurvaturePsqrtW is sized according to max_num_rows x this_num_cols of which in this case
         // we are only using this_num_neighbors x manifold_NP
-        if (_data._dense_solver_type != DenseSolverType::LU) {
+        if (_data._dense_solver_type != DenseSolverType::CHOL) {
             // fill in RHS with Identity * sqrt(weights)
             double * rhs_data = RHS.data();
             Kokkos::parallel_for(Kokkos::TeamVectorRange(teamMember, this_num_neighbors), [&] (const int i) {
@@ -611,22 +646,23 @@ struct AssembleCurvaturePsqrtW {
             device_unmanaged_matrix_right_type M(_data.RHS_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.RHS_dim_0*_data.RHS_dim_1), 
                     _data.RHS_dim_0, _data.RHS_dim_1);
-            // Assemble matrix M
-            KokkosBatched::TeamVectorGemm<member_type,KokkosBatched::Trans::Transpose,
-                KokkosBatched::Trans::NoTranspose,KokkosBatched::Algo::Gemm::Unblocked>
-              ::invoke(teamMember,
-                   1.0,
-                   CurvaturePsqrtW,
-                   CurvaturePsqrtW,
-                   0.0,
-                   M);
+            // Assemble matrix M from only the active block: the buffers are sized for the batch's
+            // largest neighbor count and the wider of the main and curvature bases, but the
+            // curvature solve uses this_num_neighbors x manifold_NP (the rest of P is zero)
+            auto CurvaturePsqrtW_active = Kokkos::subview(CurvaturePsqrtW,
+                    Kokkos::make_pair(0, this_num_neighbors), Kokkos::make_pair(0, _data.manifold_NP));
+            auto M_active = Kokkos::subview(M,
+                    Kokkos::make_pair(0, _data.manifold_NP), Kokkos::make_pair(0, _data.manifold_NP));
+            // Cholesky reads only the lower triangle
+            lowerTriangleOfTransposeProduct(teamMember, CurvaturePsqrtW_active, M_active);
             teamMember.team_barrier();
 
             // Multiply PsqrtW with sqrt(W) to get PW
             Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, this_num_neighbors), [&] (const int i) {
-                    for (int j=0; j < _data.manifold_NP; j++) {
-                        CurvaturePsqrtW(i, j) = CurvaturePsqrtW(i, j)*std::sqrt(w(i));
-                    }
+                const double swi = Kokkos::sqrt(w(i));
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, _data.manifold_NP), [&] (const int j) {
+                    CurvaturePsqrtW(i, j) *= swi;
+                });
             });
         }
         teamMember.team_barrier();
@@ -962,7 +998,7 @@ struct AssembleManifoldPsqrtW {
                 _data._poly_order, true /* weight with W*/, &T, _data._reconstruction_space, 
                 _data._polynomial_sampling_functional);
 
-        if (_data._dense_solver_type != DenseSolverType::LU) {
+        if (_data._dense_solver_type != DenseSolverType::CHOL) {
             // fill in RHS with Identity * sqrt(weights)
             double * Q_data = Q.data();
             Kokkos::parallel_for(Kokkos::TeamVectorRange(teamMember,this_num_rows), [&] (const int i) {
@@ -975,20 +1011,22 @@ struct AssembleManifoldPsqrtW {
                     + TO_GLOBAL(local_index)*TO_GLOBAL(_data.RHS_dim_0*_data.RHS_dim_1), 
                         _data.RHS_dim_0, _data.RHS_dim_1);
 
-            // Assemble matrix M
-            KokkosBatched::TeamVectorGemm<member_type,KokkosBatched::Trans::Transpose,KokkosBatched::Trans::NoTranspose,KokkosBatched::Algo::Gemm::Unblocked>
-	          ::invoke(teamMember,
-	        	   1.0,
-	        	   PsqrtW,
-	        	   PsqrtW,
-	        	   0.0,
-	        	   M);
+            // Assemble matrix M from only the active block: this target's rows and the main basis
+            // columns, which is all the main solve uses (the rest of P is zero)
+            const int main_num_cols = _data._basis_multiplier*_data._NP;
+            auto PsqrtW_active = Kokkos::subview(PsqrtW,
+                    Kokkos::make_pair(0, this_num_rows), Kokkos::make_pair(0, main_num_cols));
+            auto M_active = Kokkos::subview(M,
+                    Kokkos::make_pair(0, main_num_cols), Kokkos::make_pair(0, main_num_cols));
+            // Cholesky reads only the lower triangle
+            lowerTriangleOfTransposeProduct(teamMember, PsqrtW_active, M_active);
             teamMember.team_barrier();
 
             // Multiply PsqrtW with sqrt(W) to get PW
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, _data.max_num_rows), [&] (const int i) {
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, _data.this_num_cols), [&] (const int j) {
-                    PsqrtW(i, j) = PsqrtW(i, j)*std::sqrt(w(i));
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, this_num_rows), [&] (const int i) {
+                const double swi = Kokkos::sqrt(w(i));
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, main_num_cols), [&] (const int j) {
+                    PsqrtW(i, j) *= swi;
                 });
             });
         }

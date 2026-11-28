@@ -411,29 +411,29 @@ bool all_passed = true;
         }
     
         // check actual function value
-        if(GMLS_value!=GMLS_value || std::abs(actual_value - GMLS_value) > failure_tolerance) {
+        if(GMLS_value!=GMLS_value || !(std::abs(actual_value - GMLS_value) <= failure_tolerance)) {
             all_passed = false;
             std::cout << i << " Failed Actual by: " << std::abs(actual_value - GMLS_value) << std::endl;
         }
     
         // check Laplacian
-        if(std::abs(actual_Laplacian - GMLS_Laplacian) > laplacian_failure_tolerance) {
+        if(!(std::abs(actual_Laplacian - GMLS_Laplacian) <= laplacian_failure_tolerance)) {
             all_passed = false;
             std::cout << i <<" Failed Laplacian by: " << std::abs(actual_Laplacian - GMLS_Laplacian) << std::endl;
         }
     
         // check gradient
-        if(std::abs(actual_Gradient[0] - GMLS_GradX) > failure_tolerance) {
+        if(!(std::abs(actual_Gradient[0] - GMLS_GradX) <= failure_tolerance)) {
             all_passed = false;
             std::cout << i << " Failed GradX by: " << std::abs(actual_Gradient[0] - GMLS_GradX) << std::endl;
             if (dimension>1) {
-                if(std::abs(actual_Gradient[1] - GMLS_GradY) > failure_tolerance) {
+                if(!(std::abs(actual_Gradient[1] - GMLS_GradY) <= failure_tolerance)) {
                     all_passed = false;
                     std::cout << i << " Failed GradY by: " << std::abs(actual_Gradient[1] - GMLS_GradY) << std::endl;
                 }
             }
             if (dimension>2) {
-                if(std::abs(actual_Gradient[2] - GMLS_GradZ) > failure_tolerance) {
+                if(!(std::abs(actual_Gradient[2] - GMLS_GradZ) <= failure_tolerance)) {
                     all_passed = false;
                     std::cout << i << " Failed GradZ by: " << std::abs(actual_Gradient[2] - GMLS_GradZ) << std::endl;
                 }
@@ -441,7 +441,7 @@ bool all_passed = true;
         }
     
         // check divergence
-        if(std::abs(actual_Divergence - GMLS_Divergence) > failure_tolerance) {
+        if(!(std::abs(actual_Divergence - GMLS_Divergence) <= failure_tolerance)) {
             all_passed = false;
             std::cout << i << " Failed Divergence by: " << std::abs(actual_Divergence - GMLS_Divergence) << std::endl;
         }
@@ -453,7 +453,7 @@ bool all_passed = true;
                 tmp_diff += std::abs(actual_Curl[0] - GMLS_CurlX) + std::abs(actual_Curl[1] - GMLS_CurlY);
             if (dimension>2)
                 tmp_diff += std::abs(actual_Curl[2] - GMLS_CurlZ);
-            if(std::abs(tmp_diff) > failure_tolerance) {
+            if(!(std::abs(tmp_diff) <= failure_tolerance)) {
                 all_passed = false;
                 std::cout << i << " Failed Curl by: " << std::abs(tmp_diff) << std::endl;
             }

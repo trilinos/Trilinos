@@ -42,6 +42,13 @@ if (Compadre_EXAMPLES)
     TARGET_LINK_LIBRARIES(UnitTests PRIVATE compadre_gtest)
     ADD_TEST(CompadreGtests UnitTests LABELS "Gtest;UnitTest;unittest;Unit;unit")
 
+    # KokkosParser initializing or joining Kokkos; Kokkos initializes once per process, so each mode is a test
+    add_exe_w_compadre(KokkosParser_Test KokkosParser_Test.cpp)
+    foreach(mode args no_args external)
+      ADD_TEST(NAME KokkosParser_${mode} COMMAND ${CMAKE_CURRENT_BINARY_DIR}/KokkosParser_Test "${mode}" "${KOKKOS_THREADS_ARG}=2")
+      SET_TESTS_PROPERTIES(KokkosParser_${mode} PROPERTIES LABELS "UnitTest;unittest;Unit;unit;kokkos" TIMEOUT 20)
+    endforeach()
+
     # Host views tests for GMLS
     ADD_TEST(NAME GMLS_Host_Dim3_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Host_Test "--p" "4" "--nt" "200" "--d" "3" "${KOKKOS_THREADS_ARG}=2")
     SET_TESTS_PROPERTIES(GMLS_Host_Dim3_QR PROPERTIES LABELS "IntegrationTest;integration;kokkos" TIMEOUT 60)
@@ -66,13 +73,13 @@ if (Compadre_EXAMPLES)
     ADD_TEST(NAME GMLS_Device_Dim3_QR_CardinalCubicBSpline COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Device_Test "--p" "4" "--nt" "200" "--d" "3" "${KOKKOS_THREADS_ARG}=2" "--kernel-type" "cardinalcubicbspline")
     SET_TESTS_PROPERTIES(GMLS_Device_Dim3_QR_CardinalCubicBSpline PROPERTIES LABELS "IntegrationTest;integration;kokkos;bspline" TIMEOUT 10)
 
-    # Device views tests for GMLS - LU solver
-    ADD_TEST(NAME GMLS_Device_Dim3_LU COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Device_Test "--p" "4" "--nt" "200" "--d" "3" "--solver" "LU" "${KOKKOS_THREADS_ARG}=2")
-    SET_TESTS_PROPERTIES(GMLS_Device_Dim3_LU PROPERTIES LABELS "IntegrationTest;integration;kokkos" TIMEOUT 10)
+    # Device views tests for GMLS - Cholesky solver
+    ADD_TEST(NAME GMLS_Device_Dim3_CHOL COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Device_Test "--p" "4" "--nt" "200" "--d" "3" "--solver" "CHOL" "${KOKKOS_THREADS_ARG}=2")
+    SET_TESTS_PROPERTIES(GMLS_Device_Dim3_CHOL PROPERTIES LABELS "IntegrationTest;integration;kokkos" TIMEOUT 10)
 
-    # Device views tests with Neumann BC for GMLS - LU solver
-    ADD_TEST(NAME GMLS_NeumannGradScalar_Dim3_LU COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_NeumannGradScalar_Test "--p" "3" "--nt" "200" "--d" "3" "--solver" "LU" "--constraint" "NEUMANN_GRAD_SCALAR" "${KOKKOS_THREADS_ARG}=2")
-    SET_TESTS_PROPERTIES(GMLS_NeumannGradScalar_Dim3_LU PROPERTIES LABELS "IntegrationTest;integration;kokkos" TIMEOUT 10)
+    # Device views tests with Neumann BC for GMLS - Cholesky solver
+    ADD_TEST(NAME GMLS_NeumannGradScalar_Dim3_CHOL COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_NeumannGradScalar_Test "--p" "3" "--nt" "200" "--d" "3" "--solver" "CHOL" "--constraint" "NEUMANN_GRAD_SCALAR" "${KOKKOS_THREADS_ARG}=2")
+    SET_TESTS_PROPERTIES(GMLS_NeumannGradScalar_Dim3_CHOL PROPERTIES LABELS "IntegrationTest;integration;kokkos" TIMEOUT 10)
 
     # Device views tests with Neumann BC for STAGGERED GMLS
     ADD_TEST(NAME GMLS_StaggeredNeumannGradScalar_Dim3_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered "--p" "3" "--nt" "200" "--d" "3" "${KOKKOS_THREADS_ARG}=2")
@@ -88,9 +95,9 @@ if (Compadre_EXAMPLES)
     ADD_TEST(NAME GMLS_Vector_Dim1_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Vector_Test "--p" "3" "--nt" "20" "--d" "1" "${KOKKOS_THREADS_ARG}=2")
     SET_TESTS_PROPERTIES(GMLS_Vector_Dim1_QR PROPERTIES LABELS "IntegrationTest;integration;kokkos;vector" TIMEOUT 10)
 
-    # Device views tests for GMLS (vector basis) with LU
-    ADD_TEST(NAME GMLS_Vector_Dim3_LU COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Vector_Test "--p" "3" "--nt" "200" "--d" "3" "--solver" "LU" "${KOKKOS_THREADS_ARG}=2")
-    SET_TESTS_PROPERTIES(GMLS_Vector_Dim3_LU PROPERTIES LABELS "IntegrationTest;integration;kokkos;vector" TIMEOUT 10)
+    # Device views tests for GMLS (vector basis) with Cholesky
+    ADD_TEST(NAME GMLS_Vector_Dim3_CHOL COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Vector_Test "--p" "3" "--nt" "200" "--d" "3" "--solver" "CHOL" "${KOKKOS_THREADS_ARG}=2")
+    SET_TESTS_PROPERTIES(GMLS_Vector_Dim3_CHOL PROPERTIES LABELS "IntegrationTest;integration;kokkos;vector" TIMEOUT 10)
 
     # Device views tests for small batch GMLS, reusing GMLS class object
     ADD_TEST(NAME GMLS_SmallBatchReuse_Device_Dim2_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_SmallBatchReuse_Device_Test "--p" "4" "--nt" "200" "--d" "2" "${KOKKOS_THREADS_ARG}=2")
@@ -105,12 +112,12 @@ if (Compadre_EXAMPLES)
 
     # Staggered scheme test for GMLS on non-manifold
     # Note: Using even polynomial order may cause this test to fail
-    ADD_TEST(NAME GMLS_Staggered_Dim3_QR COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Staggered "--p" "3" "--nt" "100" "--d" "3" "${KOKKOS_THREADS_ARG}=4")
+    ADD_TEST(NAME GMLS_Staggered_Dim3_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered "--p" "3" "--nt" "100" "--d" "3" "${KOKKOS_THREADS_ARG}=4")
     SET_TESTS_PROPERTIES(GMLS_Staggered_Dim3_QR PROPERTIES LABELS "IntegrationTest;integration;kokkos;staggered" TIMEOUT 60)
 
     # Staggered scheme test for GMLS on non-manifold
     # Note: Using even polynomial order may cause this test to fail
-    ADD_TEST(NAME GMLS_Staggered_Dim2_QR COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Staggered "--p" "3" "--nt" "200" "--d" "2" "${KOKKOS_THREADS_ARG}=2")
+    ADD_TEST(NAME GMLS_Staggered_Dim2_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Staggered "--p" "3" "--nt" "200" "--d" "2" "${KOKKOS_THREADS_ARG}=2")
     SET_TESTS_PROPERTIES(GMLS_Staggered_Dim2_QR PROPERTIES LABELS "IntegrationTest;integration;kokkos;staggered" TIMEOUT 20)
 
     if (NOT Compadre_DEBUG)
@@ -134,12 +141,12 @@ if (Compadre_EXAMPLES)
       # Divergence-free basis test for GMLS on non-manifold
       ADD_TEST(NAME GMLS_DivergenceFree_Dim3_P3_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "--p" "3" "--nt" "200" "--d" "3" "${KOKKOS_THREADS_ARG}=2")
       SET_TESTS_PROPERTIES(GMLS_DivergenceFree_Dim3_P3_QR PROPERTIES LABELS "IntegrationTest;integration;kokkos;divergencefree;qr;batched" TIMEOUT 60)
-      #ADD_TEST(NAME GMLS_DivergenceFree_Dim3_P2_QR COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "2" "200" "3" "0" "0" "0" "${KOKKOS_THREADS_ARG}=2")
+      #ADD_TEST(NAME GMLS_DivergenceFree_Dim3_P2_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "2" "200" "3" "0" "0" "0" "${KOKKOS_THREADS_ARG}=2")
       #SET_TESTS_PROPERTIES(GMLS_DivergenceFree_Dim3_P2_QR PROPERTIES LABELS "IntegrationTest;integration;kokkos;divergencefree;qr" TIMEOUT 60)
 
       ADD_TEST(NAME GMLS_DivergenceFree_Dim2_P3_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "--p" "3" "--nt" "200" "--d" "2" "${KOKKOS_THREADS_ARG}=2")
       SET_TESTS_PROPERTIES(GMLS_DivergenceFree_Dim2_P3_QR PROPERTIES LABELS "IntegrationTest;integration;kokkos;divergencefree;qr;batched" TIMEOUT 60)
-      #ADD_TEST(NAME GMLS_DivergenceFree_Dim2_P2_QR COMMAND ${CMAKD_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "2" "200" "2" "0" "0" "0" "${KOKKOS_THREADS_ARG}=2")
+      #ADD_TEST(NAME GMLS_DivergenceFree_Dim2_P2_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Divergence_Test "2" "200" "2" "0" "0" "0" "${KOKKOS_THREADS_ARG}=2")
       #SET_TESTS_PROPERTIES(GMLS_DivergenceFree_Dim2_P2_QR PROPERTIES LABELS "IntegrationTest;integration;kokkos;divergencefree;qr" TIMEOUT 60)
     endif()
 
@@ -159,11 +166,33 @@ if (Compadre_EXAMPLES)
               $<TARGET_FILE:GMLS_Manifold_Test>
       )
 
-      # Python driven test of a C++ executable (Python changes command line arguments given to executable) - calling LU solver
-      ADD_TEST(NAME GMLS_Manifold_Refinement_Study_LU COMMAND ${Python_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py" "--porder=3" "--grids=4" "--solver-type=LU")
-      SET_TESTS_PROPERTIES(GMLS_Manifold_Refinement_Study_LU
+      # Python driven test of a C++ executable (Python changes command line arguments given to executable) - calling Cholesky solver
+      ADD_TEST(NAME GMLS_Manifold_Refinement_Study_CHOL COMMAND ${Python_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py" "--porder=3" "--grids=4" "--solver-type=CHOL")
+      SET_TESTS_PROPERTIES(GMLS_Manifold_Refinement_Study_CHOL
           PROPERTIES
             LABELS "ConvergenceTest;convergence;manifold" 
+            TIMEOUT 20
+            REQUIRED_FILES
+              $<TARGET_FILE:GMLS_Manifold_Test>
+      )
+
+      # Python driven test of a C++ executable - curvature order above the main order, so the
+      # curvature basis is larger than the main basis (buffers sized for the larger one) - calling QR solver
+      ADD_TEST(NAME GMLS_Manifold_Refinement_Study_Curvature_Order_QR COMMAND ${Python_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py" "--porder=2" "--curvature-porder=3" "--grids=4" "--solver-type=QR")
+      SET_TESTS_PROPERTIES(GMLS_Manifold_Refinement_Study_Curvature_Order_QR
+          PROPERTIES
+            LABELS "ConvergenceTest;convergence;manifold"
+            TIMEOUT 20
+            REQUIRED_FILES
+              $<TARGET_FILE:GMLS_Manifold_Test>
+      )
+
+      # Python driven test of a C++ executable - curvature order above the main order, so the
+      # curvature basis is larger than the main basis (buffers sized for the larger one) - calling CHOL solver
+      ADD_TEST(NAME GMLS_Manifold_Refinement_Study_Curvature_Order_CHOL COMMAND ${Python_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/GMLS_Manifold.py" "--porder=2" "--curvature-porder=3" "--grids=4" "--solver-type=CHOL")
+      SET_TESTS_PROPERTIES(GMLS_Manifold_Refinement_Study_Curvature_Order_CHOL
+          PROPERTIES
+            LABELS "ConvergenceTest;convergence;manifold"
             TIMEOUT 20
             REQUIRED_FILES
               $<TARGET_FILE:GMLS_Manifold_Test>
@@ -223,6 +252,7 @@ if (Compadre_EXAMPLES)
       FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/../pycompadre/examples/test_pycompadre_manifold.py" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../pycompadre/examples")
       FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/../pycompadre/examples/test_tangent_planes_manifold.py" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../pycompadre/examples")
       FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/../pycompadre/examples/kokkos_test_case.py" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../pycompadre/examples")
+      FILE(COPY "${CMAKE_CURRENT_SOURCE_DIR}/../pycompadre/examples/kokkos_lifetime_tests.py" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../pycompadre/examples")
       CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Python_3D_Convergence.py.in" "${CMAKE_CURRENT_BINARY_DIR}/Python_3D_Convergence.py" @ONLY)
       ADD_TEST(NAME GMLS_Python_Convergence_Test_3d_Point_Reconstruction COMMAND "${Python_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/Python_3D_Convergence.py" "${KOKKOS_THREADS_ARG}=4")
       SET_TESTS_PROPERTIES(GMLS_Python_Convergence_Test_3d_Point_Reconstruction PROPERTIES LABELS "IntegrationTest;integration;python;kokkos" TIMEOUT 10)
@@ -233,8 +263,25 @@ if (Compadre_EXAMPLES)
       endif()
 
       ADD_TEST(NAME PyCOMPADRE_Tests COMMAND "${Python_EXECUTABLE}" "-m" "unittest" "discover" "-s" "${PYTHON_LIBRARY_PREFIX}/pycompadre/examples")
-      SET_TESTS_PROPERTIES(PyCOMPADRE_Tests PROPERTIES ENVIRONMENT PYTHONPATH=${PYTHON_LIBRARY_PREFIX})
-      SET_TESTS_PROPERTIES(PyCOMPADRE_Tests PROPERTIES LABELS "pycompadre" TIMEOUT 30)
+      SET_TESTS_PROPERTIES(PyCOMPADRE_Tests PROPERTIES ENVIRONMENT "PYTHONPATH=${PYTHON_LIBRARY_PREFIX};OMP_NUM_THREADS=4;OMP_PROC_BIND=false;OPENBLAS_NUM_THREADS=1"
+          PROCESSORS 4)
+      if (NOT Compadre_DEBUG)
+        SET_TESTS_PROPERTIES(PyCOMPADRE_Tests PROPERTIES LABELS "pycompadre" TIMEOUT 60)
+      else()
+        SET_TESTS_PROPERTIES(PyCOMPADRE_Tests PROPERTIES LABELS "pycompadre" TIMEOUT 60)
+      endif()
+
+      # pycompadre.KokkosParser in a Python interpreter embedded in a C++ program
+      target_link_libraries(KokkosParser_Test PRIVATE Python::Python)
+      target_compile_definitions(KokkosParser_Test PRIVATE COMPADRE_TEST_EMBEDDED_PYTHON)
+      foreach(mode embedded embedded_external)
+        ADD_TEST(NAME KokkosParser_${mode} COMMAND ${CMAKE_CURRENT_BINARY_DIR}/KokkosParser_Test "${mode}" "${KOKKOS_THREADS_ARG}=2")
+        SET_TESTS_PROPERTIES(KokkosParser_${mode} PROPERTIES ENVIRONMENT PYTHONPATH=${PYTHON_LIBRARY_PREFIX} LABELS "pycompadre" TIMEOUT 30)
+      endforeach()
+
+      # KokkosParser: Kokkos runtime lifetime and arguments (each scenario runs in its own interpreter)
+      ADD_TEST(NAME PyCOMPADRE_Kokkos_Lifetime COMMAND "${Python_EXECUTABLE}" "${PYTHON_LIBRARY_PREFIX}/pycompadre/examples/kokkos_lifetime_tests.py")
+      SET_TESTS_PROPERTIES(PyCOMPADRE_Kokkos_Lifetime PROPERTIES ENVIRONMENT PYTHONPATH=${PYTHON_LIBRARY_PREFIX} LABELS "pycompadre" TIMEOUT 120)
 
     endif()
 

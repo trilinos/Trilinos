@@ -422,23 +422,23 @@ bool all_passed = true;
             trueGradient(actual_Gradient, xval, yval, zval, order, dimension);
     
             // check actual function value
-            if(GMLS_value!=GMLS_value || std::abs(actual_value - GMLS_value) > failure_tolerance) {
+            if(GMLS_value!=GMLS_value || !(std::abs(actual_value - GMLS_value) <= failure_tolerance)) {
                 all_passed = false;
                 std::cout << i << " Failed Actual by: " << std::abs(actual_value - GMLS_value) << " for evaluation site: " << k << std::endl;
             }
     
             // check gradient
-            if(std::abs(actual_Gradient[0] - GMLS_GradX) > failure_tolerance) {
+            if(!(std::abs(actual_Gradient[0] - GMLS_GradX) <= failure_tolerance)) {
                 all_passed = false;
                 std::cout << i << " Failed GradX by: " << std::abs(actual_Gradient[0] - GMLS_GradX) << " for evaluation site: " << k << std::endl;
                 if (dimension>1) {
-                    if(std::abs(actual_Gradient[1] - GMLS_GradY) > failure_tolerance) {
+                    if(!(std::abs(actual_Gradient[1] - GMLS_GradY) <= failure_tolerance)) {
                         all_passed = false;
                         std::cout << i << " Failed GradY by: " << std::abs(actual_Gradient[1] - GMLS_GradY) << " for evaluation site: " << k << std::endl;
                     }
                 }
                 if (dimension>2) {
-                    if(std::abs(actual_Gradient[2] - GMLS_GradZ) > failure_tolerance) {
+                    if(!(std::abs(actual_Gradient[2] - GMLS_GradZ) <= failure_tolerance)) {
                         all_passed = false;
                         std::cout << i << " Failed GradZ by: " << std::abs(actual_Gradient[2] - GMLS_GradZ) << " for evaluation site: " << k << std::endl;
                     }
