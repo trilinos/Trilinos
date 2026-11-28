@@ -60,11 +60,20 @@ void ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, 
       }
     }
 
+    auto penaltyParams = DistanceLaplacian::getMaterialDistancePenaltyParams<magnitudeType>(factory.GetParameterList());
+
+    if (factory.IsPrint(Runtime0) && penaltyParams.type != DistanceLaplacian::MaterialDistancePenalty::None) {
+      factory.GetOStream(Runtime0) << "material distance interface penalty = log-frobenius"
+                                   << ", strength = " << penaltyParams.strength
+                                   << ", floor = " << penaltyParams.floor
+                                   << ", shape weight = " << penaltyParams.shapeWeight << std::endl;
+    }
+
     if (material->getNumVectors() == 1) {
-      auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(A, coords, material);
+      auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(A, coords, material, penaltyParams);
       runDroppingFunctors_on_dlap_inner(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
     } else {
-      auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(A, coords, material);
+      auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(A, coords, material, penaltyParams);
       runDroppingFunctors_on_dlap_inner(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
     }
   }

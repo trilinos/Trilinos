@@ -16,14 +16,47 @@
 #include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_Trsv_Serial_Impl.hpp"
 #include "MueLu_DroppingCommon.hpp"
+#include "MueLu_Exceptions.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 
 namespace MueLu::DistanceLaplacian {
+
+enum class MaterialDistancePenalty {
+  None,
+  LogFrobenius
+};
+
+template <class MagnitudeType>
+struct MaterialDistancePenaltyParams {
+  MaterialDistancePenalty type = MaterialDistancePenalty::None;
+  MagnitudeType strength       = 1.0;
+  MagnitudeType floor          = 0.0;
+  MagnitudeType shapeWeight    = 1.0;
+};
+
+template <class MagnitudeType>
+MaterialDistancePenaltyParams<MagnitudeType> getMaterialDistancePenaltyParams(const Teuchos::ParameterList& pL) {
+  MaterialDistancePenaltyParams<MagnitudeType> params;
+  const std::string penalty = pL.get<std::string>("aggregation: material distance: interface penalty");
+  if (penalty == "none") {
+    params.type = MaterialDistancePenalty::None;
+  } else if (penalty == "log-frobenius") {
+    params.type = MaterialDistancePenalty::LogFrobenius;
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+                               "Unknown value for \"aggregation: material distance: interface penalty\": " << penalty);
+  }
+  params.strength    = pL.get<double>("aggregation: material distance: interface penalty strength");
+  params.floor       = pL.get<double>("aggregation: material distance: interface penalty floor");
+  params.shapeWeight = pL.get<double>("aggregation: material distance: interface penalty shape weight");
+  return params;
+}
 
 /*!
 @class UnweightedDistanceFunctor
@@ -197,6 +230,15 @@ class BlockWeightedDistanceFunctor {
   }
 };
 
+template <class MagnitudeType>
+KOKKOS_INLINE_FUNCTION MagnitudeType applyMaterialDistancePenalty(const MagnitudeType baseDistance2,
+                                                                  const MagnitudeType penalty) {
+  using magATS = KokkosKernels::ArithTraits<MagnitudeType>;
+  if (penalty <= magATS::zero())
+    return baseDistance2 / magATS::epsilon();
+  return baseDistance2 / penalty;
+}
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class ScalarMaterialDistanceFunctor {
  private:
@@ -226,9 +268,13 @@ class ScalarMaterialDistanceFunctor {
   local_material_type material;
   local_material_type ghostedMaterial;
 
+  using penalty_params_type = MaterialDistancePenaltyParams<magnitudeType>;
+  penalty_params_type penaltyParams;
+
  public:
-  ScalarMaterialDistanceFunctor(matrix_type& A, Teuchos::RCP<coords_type>& coords_, Teuchos::RCP<material_type>& material_) {
+  ScalarMaterialDistanceFunctor(matrix_type& A, Teuchos::RCP<coords_type>& coords_, Teuchos::RCP<material_type>& material_, penalty_params_type penaltyParams_ = penalty_params_type()) {
     coordsMV      = coords_;
+    penaltyParams = penaltyParams_;
     materialMV    = material_;
     auto importer = A.getCrsGraph()->getImporter();
     if (!importer.is_null()) {
@@ -268,7 +314,44 @@ class ScalarMaterialDistanceFunctor {
     d_row = d / implATS::magnitude(ghostedMaterial(row, 0));
     d_col = d / implATS::magnitude(ghostedMaterial(col, 0));
 
-    return Kokkos::max(d_row, d_col);
+    const magnitudeType baseDistance2 = Kokkos::max(d_row, d_col);
+    return applyMaterialDistancePenalty(baseDistance2, materialPenalty(row, col));
+  }
+
+ private:
+  KOKKOS_INLINE_FUNCTION
+  magnitudeType materialPenalty(const local_ordinal_type row, const local_ordinal_type col) const {
+    if (penaltyParams.type == MaterialDistancePenalty::None)
+      return magATS::one();
+
+    const magnitudeType rowMaterial = implATS::magnitude(ghostedMaterial(row, 0));
+    const magnitudeType colMaterial = implATS::magnitude(ghostedMaterial(col, 0));
+    const magnitudeType floor       = Kokkos::max(penaltyParams.floor, magATS::epsilon());
+    const magnitudeType ratio       = (rowMaterial + floor) / (colMaterial + floor);
+    const magnitudeType delta       = Kokkos::abs(magATS::log(ratio));
+    const magnitudeType penalty     = magATS::exp(-penaltyParams.strength * delta);
+    return Kokkos::max(penaltyParams.floor, penalty);
+  }
+};
+
+template <class local_ordinal_type, class material_vector_type, class material_matrix_type>
+class TensorCopy {
+ private:
+  material_vector_type material_vector;
+  material_matrix_type material_matrix;
+
+ public:
+  TensorCopy(material_vector_type& material_vector_, material_matrix_type& material_matrix_)
+    : material_vector(material_vector_)
+    , material_matrix(material_matrix_) {}
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()(local_ordinal_type i) const {
+    for (size_t j = 0; j < material_matrix.extent(1); ++j) {
+      for (size_t k = 0; k < material_matrix.extent(2); ++k) {
+        material_matrix(i, j, k) = material_vector(i, j * material_matrix.extent(1) + k);
+      }
+    }
   }
 };
 
@@ -312,8 +395,9 @@ class TensorMaterialDistanceFunctor {
   using material_type      = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using memory_space       = typename local_matrix_type::memory_space;
 
-  using local_material_type = Kokkos::View<impl_scalar_type***, memory_space>;
-  using local_dist_type     = Kokkos::View<impl_scalar_type**, memory_space>;
+  using local_material_type     = Kokkos::View<impl_scalar_type***, memory_space>;
+  using local_raw_material_type = Kokkos::View<impl_scalar_type***, memory_space>;
+  using local_dist_type         = Kokkos::View<impl_scalar_type**, memory_space>;
 
   Teuchos::RCP<coords_type> coordsMV;
   Teuchos::RCP<coords_type> ghostedCoordsMV;
@@ -322,14 +406,19 @@ class TensorMaterialDistanceFunctor {
   local_coords_type ghostedCoords;
 
   local_material_type material;
+  local_raw_material_type rawMaterial;
 
   local_dist_type lcl_dist;
+
+  using penalty_params_type = MaterialDistancePenaltyParams<magnitudeType>;
+  penalty_params_type penaltyParams;
 
   const scalar_type one = ATS::one();
 
  public:
-  TensorMaterialDistanceFunctor(matrix_type& A, Teuchos::RCP<coords_type>& coords_, Teuchos::RCP<material_type>& material_) {
-    coordsMV = coords_;
+  TensorMaterialDistanceFunctor(matrix_type& A, Teuchos::RCP<coords_type>& coords_, Teuchos::RCP<material_type>& material_, penalty_params_type penaltyParams_ = penalty_params_type()) {
+    coordsMV      = coords_;
+    penaltyParams = penaltyParams_;
 
     auto importer = A.getCrsGraph()->getImporter();
     if (!importer.is_null()) {
@@ -357,7 +446,12 @@ class TensorMaterialDistanceFunctor {
       local_ordinal_type dim = std::sqrt(material_->getNumVectors());
       auto lclMaterial       = ghostedMaterial->getLocalViewDevice(Tpetra::Access::ReadOnly);
       material               = local_material_type("material", lclMaterial.extent(0), dim, dim);
-      lcl_dist               = local_dist_type("material", lclMaterial.extent(0), dim);
+      if (penaltyParams.type != MaterialDistancePenalty::None) {
+        rawMaterial = local_raw_material_type("raw material", lclMaterial.extent(0), dim, dim);
+        TensorCopy<local_ordinal_type, typename material_type::dual_view_type::t_dev_const_um, local_raw_material_type> copyFunctor(lclMaterial, rawMaterial);
+        Kokkos::parallel_for("MueLu:TensorMaterialDistanceFunctor::copy", range_type(0, lclMaterial.extent(0)), copyFunctor);
+      }
+      lcl_dist = local_dist_type("material", lclMaterial.extent(0), dim);
       TensorInversion<local_ordinal_type, typename material_type::dual_view_type::t_dev_const_um, local_material_type> functor(lclMaterial, material);
       Kokkos::parallel_for("MueLu:TensorMaterialDistanceFunctor::inversion", range_type(0, lclMaterial.extent(0)), functor);
     }
@@ -405,7 +499,48 @@ class TensorMaterialDistanceFunctor {
       }
     }
 
-    return Kokkos::max(implATS::magnitude(d_row), implATS::magnitude(d_col));
+    const magnitudeType baseDistance2 = Kokkos::max(implATS::magnitude(d_row), implATS::magnitude(d_col));
+    return applyMaterialDistancePenalty(baseDistance2, materialPenalty(row, col));
+  }
+
+ private:
+  KOKKOS_INLINE_FUNCTION
+  magnitudeType materialPenalty(const local_ordinal_type row, const local_ordinal_type col) const {
+    if (penaltyParams.type == MaterialDistancePenalty::None)
+      return magATS::one();
+
+    magnitudeType rowNorm = magATS::zero();
+    magnitudeType colNorm = magATS::zero();
+    for (size_t j = 0; j < rawMaterial.extent(1); ++j) {
+      for (size_t k = 0; k < rawMaterial.extent(2); ++k) {
+        const magnitudeType rowEntry = implATS::magnitude(rawMaterial(row, j, k));
+        const magnitudeType colEntry = implATS::magnitude(rawMaterial(col, j, k));
+        rowNorm += rowEntry * rowEntry;
+        colNorm += colEntry * colEntry;
+      }
+    }
+    rowNorm = Kokkos::sqrt(rowNorm);
+    colNorm = Kokkos::sqrt(colNorm);
+
+    const magnitudeType floor     = Kokkos::max(penaltyParams.floor, magATS::epsilon());
+    const magnitudeType normRatio = (rowNorm + floor) / (colNorm + floor);
+    magnitudeType delta           = Kokkos::abs(magATS::log(normRatio));
+
+    if (penaltyParams.shapeWeight != magATS::zero()) {
+      magnitudeType shapeDelta = magATS::zero();
+      for (size_t j = 0; j < rawMaterial.extent(1); ++j) {
+        for (size_t k = 0; k < rawMaterial.extent(2); ++k) {
+          const impl_scalar_type rowEntry = rawMaterial(row, j, k) / (rowNorm + floor);
+          const impl_scalar_type colEntry = rawMaterial(col, j, k) / (colNorm + floor);
+          const magnitudeType diff        = implATS::magnitude(rowEntry - colEntry);
+          shapeDelta += diff * diff;
+        }
+      }
+      delta += penaltyParams.shapeWeight * Kokkos::sqrt(shapeDelta);
+    }
+
+    const magnitudeType penalty = magATS::exp(-penaltyParams.strength * delta);
+    return Kokkos::max(penaltyParams.floor, penalty);
   }
 };
 
