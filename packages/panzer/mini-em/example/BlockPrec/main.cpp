@@ -50,7 +50,6 @@
 #include "MiniEM_OperatorRequestCallback.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory.hpp"
 #include "MiniEM_HigherOrderMaxwellPreconditionerFactory.hpp"
-#include "MiniEM_FullMaxwellPreconditionerFactory_Augmentation.hpp"
 #include "MiniEM_FullDarcyPreconditionerFactory.hpp"
 #include "MiniEM_Interpolation.hpp"
 #include "MiniEM_helpers.hpp"
@@ -87,7 +86,7 @@ void writeToExodus(double time_stamp,
 using namespace mini_em;
 
 using mini_em::physicsType, mini_em::MAXWELL, mini_em::DARCY;
-using mini_em::solverType, mini_em::AUGMENTATION, mini_em::MUELU, mini_em::CG, mini_em::GMRES;
+using mini_em::solverType, mini_em::MUELU, mini_em::CG, mini_em::GMRES;
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class blockedLinObjFactory>
@@ -127,8 +126,8 @@ int main_(int argc,char * argv[])
     bool matrix_output = false;
     std::string input_file = "maxwell.xml";
     std::string xml = "";
-    solverType solverValues[8] = {AUGMENTATION, MUELU, CG, GMRES, MAXWELL1_RS, MAXWELL1_SA_RS, MAXWELL1_EMIN, DIRECT};
-    const char * solverNames[8] = {"Augmentation", "MueLu", "CG", "GMRES", "Maxwell1-RS", "Maxwell1-SA-RS", "Maxwell1-Emin", "direct"};
+    solverType solverValues[7] = {MUELU, CG, GMRES, MAXWELL1_RS, MAXWELL1_SA_RS, MAXWELL1_EMIN, DIRECT};
+    const char * solverNames[7] = {"MueLu", "CG", "GMRES", "Maxwell1-RS", "Maxwell1-SA-RS", "Maxwell1-Emin", "direct"};
     bool preferTPLs = false;
     bool useBarriers = false;
     bool truncateMueLuHierarchy = false;
@@ -154,7 +153,7 @@ int main_(int argc,char * argv[])
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
     clp.setOption("inputFile",&input_file,"XML file with the problem definitions");
     clp.setOption("solverFile",&xml,"XML file with the solver params");
-    clp.setOption<solverType>("solver",&solver,8,solverValues,solverNames,"Solver that is used");
+    clp.setOption<solverType>("solver",&solver,7,solverValues,solverNames,"Solver that is used");
     clp.setOption("tpl", "no-tpl", &preferTPLs, "Prefer TPL usage over fused kernels");
     clp.setOption("barriers", "no-barriers", &useBarriers, "Use barriers in the solver");
     clp.setOption("truncateMueLuHierarchy", "no-truncateMueLuHierarchy", &truncateMueLuHierarchy, "Truncate the MueLu hierarchy");
@@ -444,10 +443,6 @@ int main_(int argc,char * argv[])
     // add higher-order maxwell preconditioner to teko
     RCP<Teko::Cloneable> cloneHO = rcp(new Teko::AutoClone<mini_em::HigherOrderMaxwellPreconditionerFactory>());
     Teko::PreconditionerFactory::addPreconditionerFactory("Higher Order Maxwell Preconditioner",cloneHO);
-
-    // add augmentation preconditioner to teko
-    RCP<Teko::Cloneable> cloneAug = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory_Augmentation>());
-    Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner: Augmentation",cloneAug);
 
     // add callbacks to request handler. these are for requesting auxiliary operators and for providing
     // coordinate information to MueLu
