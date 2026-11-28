@@ -1,0 +1,26 @@
+<ParameterList name="GeometricOverlappingOperator-Test">
+    <Parameter name="Belos Solver Type"                     type="string" value="GMRES"/>
+    <ParameterList name="Belos List">
+        <Parameter name="Block Size"                        type="int"    value="1"/>
+        <Parameter name="Convergence Tolerance"             type="double" value="1e-8"/>
+        <Parameter name="Maximum Iterations"                type="int"    value="1000"/>
+        <Parameter name="Verbosity"                         type="int"    value="33" />
+        <Parameter name="Output Style"                      type="int"    value="1" />
+        <Parameter name="Output Frequency"                  type="int"    value="10"/>
+        <Parameter name="Explicit Residual Test"            type="bool"   value="false"/>
+    </ParameterList>
+    <ParameterList name="Preconditioner List">
+        <Parameter name="OverlappingOperator Type"          type="string" value="GeometricOverlappingOperator"/>
+        <Parameter name="Dimension"                         type="int"    value="2"/>
+        <Parameter name="Overlap"                           type="int"    value="0"/>
+        <Parameter name="Alpha"                             type="double" value="1.0"/>
+        <ParameterList name="GeometricOverlappingOperator">
+          <Parameter name="Combine Values in Overlap"       type="string" value="Restricted"/>
+          <ParameterList name="Solver">
+            <Parameter name="SolverType"                    type="string" value="Amesos2"/>
+            <Parameter name="Solver"                        type="string" value="KLU"/>
+          </ParameterList>
+        </ParameterList>
+    </ParameterList>
+</ParameterList>
+
