@@ -43,7 +43,7 @@ namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 std::tuple<Teuchos::Array<GlobalOrdinal>, GlobalOrdinal>
-RepartitionUtilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ConstructGIDs(RCP<GOVector> decomposition) {
+RepartitionUtilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ConstructGIDs(RCP<const GOVector> decomposition) {
   ArrayRCP<const GO> decompEntries;
   if (decomposition->getLocalLength() > 0)
     decompEntries = decomposition->getData(0);
