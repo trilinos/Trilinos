@@ -1589,8 +1589,8 @@ namespace panzer_stk {
                    : mesh_(mesh),user_cm_factory_(user_cm_factory){}
 
     template<typename EvalT>
-    void operator()(EvalT t) const {
-      auto factory = user_cm_factory_.getAsObject<EvalT>();
+    void operator()() const {
+      auto factory = user_cm_factory_.get<EvalT>();
       panzer_stk::STKMeshAccessor* mesh_accessor = nullptr;
       mesh_accessor = dynamic_cast<panzer_stk::STKMeshAccessor*>(factory.get());
       if (mesh_accessor) {
@@ -1603,7 +1603,7 @@ namespace panzer_stk {
         if (composite) {
           auto& sub_factories = composite->getFactories();
           for (auto sub_factory : sub_factories) {
-            Sacado::mpl::for_each_no_kokkos<panzer::Traits::EvalTypes>(SetMeshFunctor(mesh_,*sub_factory));
+            PHX::mpl::for_each_type<panzer::Traits::EvalTypes>(SetMeshFunctor(mesh_,*sub_factory));
           }
         }
       }
@@ -1615,7 +1615,7 @@ namespace panzer_stk {
   registerMeshWithClosureModelFactories(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
                                         panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& user_cm_factory)
   {
-    Sacado::mpl::for_each_no_kokkos<panzer::Traits::EvalTypes>(SetMeshFunctor(mesh,user_cm_factory));
+    PHX::mpl::for_each_type<panzer::Traits::EvalTypes>(SetMeshFunctor(mesh,user_cm_factory));
   }
 
   template<typename ScalarT>

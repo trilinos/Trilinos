@@ -195,8 +195,8 @@ namespace panzer {
     input.alpha = 0.0;
     input.beta = 1.0;
 
-    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Residual>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
 
     eLinearOp = Thyra::epetraLinearOp(eGlobal->get_A());
     eVector = Thyra::create_Vector(eGlobal->get_f(),eLinearOp->range());
@@ -328,9 +328,9 @@ namespace panzer {
 
     int flags1 = panzer::AssemblyEngine<panzer::Traits::Residual>::EvaluationFlags::Initialize +panzer::AssemblyEngine<panzer::Traits::Residual>::EvaluationFlags::VolumetricFill;
     int flags2 = panzer::AssemblyEngine<panzer::Traits::Residual>::EvaluationFlags::All - flags1;
-    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input, panzer::AssemblyEngine<panzer::Traits::Residual>::EvaluationFlags(flags1));
-    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input, panzer::AssemblyEngine<panzer::Traits::Residual>::EvaluationFlags(flags2));
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Residual>()->evaluate(input, panzer::AssemblyEngine<panzer::Traits::Residual>::EvaluationFlags(flags1));
+    ae_tm.get<panzer::Traits::Residual>()->evaluate(input, panzer::AssemblyEngine<panzer::Traits::Residual>::EvaluationFlags(flags2));
+    ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
 
     eLinearOp = Thyra::epetraLinearOp(eGlobal->get_A());
     eVector = Thyra::create_Vector(eGlobal->get_f(),eLinearOp->range());
@@ -460,7 +460,7 @@ namespace panzer {
     input.alpha = 0.0;
     input.beta = 1.0;
 
-    Teuchos::RCP<panzer::LinearObjContainer> counter = ae_tm.getAsObject<panzer::Traits::Residual>()->evaluateOnlyDirichletBCs(input);
+    Teuchos::RCP<panzer::LinearObjContainer> counter = ae_tm.get<panzer::Traits::Residual>()->evaluateOnlyDirichletBCs(input);
     TEST_ASSERT(counter!=Teuchos::null);
 
     out << "evaluated" << std::endl;
@@ -609,8 +609,8 @@ namespace panzer {
     input.alpha = 0.0;
     input.beta = 1.0;
 
-    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Residual>()->evaluate(input);
+    ae_tm.get<panzer::Traits::Jacobian>()->evaluate(input);
 
     RCP<panzer::TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> > globalCont
        = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> >(tGlobal);

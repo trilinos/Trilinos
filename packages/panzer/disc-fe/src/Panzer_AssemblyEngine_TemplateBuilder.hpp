@@ -21,7 +21,7 @@
 
 namespace panzer {
 
-  /** \brief Builder functor used with Sacado::mpl::TemplateManager to
+  /** \brief Builder functor used with PHX::TemplateManager to
     * construct one panzer::AssemblyEngine<EvalT> per evaluation type,
     * each sharing the same field manager builder and linear object
     * factory.

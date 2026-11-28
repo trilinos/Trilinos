@@ -16,10 +16,6 @@
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
-// mpl (Meta Programming Library) templates
-#include "Sacado_mpl_vector.hpp"
-#include "Sacado_mpl_find.hpp"
-
 // Scalar types
 #include "Sacado.hpp"
 //#include "Sacado_CacheFad_DFad.hpp"
@@ -27,6 +23,7 @@
 //#include "Sacado_ELRCacheFad_DFad.hpp"
 
 #include "Phalanx_Traits.hpp"
+#include "Phalanx_TypeList.hpp"
 
 // Include User Data Types
 //#include "Phalanx_Allocator_Contiguous.hpp"
@@ -54,7 +51,7 @@ namespace panzer {
    * Phalanx `DAG Manager` and `EvaluationContainer` machinery needs in
    * order to build and run field evaluators for panzer: the scalar
    * types used for each evaluation type (residual, Jacobian, etc.), the
-   * `panzer::Traits::EvalTypes` mpl::vector enumerating those evaluation
+   * `panzer::Traits::EvalTypes` PHX::mpl::type_list enumerating those evaluation
    * types, and the four user-defined data types (`SetupData`, `EvalData`,
    * `PreEvalData`, `PostEvalData`) that Phalanx passes through to
    * `PHX::Evaluator::postRegistrationSetup()`, `evaluateFields()`,
@@ -98,12 +95,12 @@ namespace panzer {
     struct Hessian { typedef HessianType ScalarT;  };
 #endif
 
-    /// Sacado::mpl::vector enumerating all evaluation types supported by this build (Residual, Jacobian, Tangent, and optionally Hessian).
-    typedef Sacado::mpl::vector< Residual
-                               , Jacobian
-                               , Tangent
+    /// PHX::mpl::type_list enumerating all evaluation types supported by this build (Residual, Jacobian, Tangent, and optionally Hessian).
+    typedef PHX::mpl::type_list< Residual
+                                , Jacobian
+                                , Tangent
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-                               , Hessian
+                                , Hessian
 #endif
                                 > EvalTypes;
 
@@ -168,23 +165,23 @@ namespace PHX {
    */
   template<>
   struct eval_scalar_types<panzer::Traits::Residual>
-  { typedef Sacado::mpl::vector<panzer::Traits::RealType,bool> type; };
+  { typedef PHX::mpl::type_list<panzer::Traits::RealType,bool> type; };
 
   /// \brief Declares which scalar types `PHX::MDField`s may hold for the Jacobian evaluation type. \sa eval_scalar_types<panzer::Traits::Residual>
   template<>
   struct eval_scalar_types<panzer::Traits::Jacobian>
-  { typedef Sacado::mpl::vector<panzer::Traits::FadType,panzer::Traits::RealType,bool> type; };
+  { typedef PHX::mpl::type_list<panzer::Traits::FadType,panzer::Traits::RealType,bool> type; };
 
   /// \brief Declares which scalar types `PHX::MDField`s may hold for the Tangent evaluation type. \sa eval_scalar_types<panzer::Traits::Residual>
   template<>
   struct eval_scalar_types<panzer::Traits::Tangent>
-  { typedef Sacado::mpl::vector<panzer::Traits::FadType,panzer::Traits::RealType,bool> type; };
+  { typedef PHX::mpl::type_list<panzer::Traits::FadType,panzer::Traits::RealType,bool> type; };
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
   /// \brief Declares which scalar types `PHX::MDField`s may hold for the Hessian evaluation type. Only defined when built with Hessian support. \sa eval_scalar_types<panzer::Traits::Residual>
   template<>
   struct eval_scalar_types<panzer::Traits::Hessian>
-  { typedef Sacado::mpl::vector<panzer::Traits::HessianType,bool> type; };
+  { typedef PHX::mpl::type_list<panzer::Traits::HessianType,bool> type; };
 #endif
 
 }

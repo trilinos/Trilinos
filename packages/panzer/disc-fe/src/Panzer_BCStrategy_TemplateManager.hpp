@@ -29,9 +29,15 @@ namespace panzer {
     */
   template<typename Traits>
     class BCStrategy_TemplateManager :
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+    public PHX::TemplateManager<typename Traits::EvalTypes,
+                                panzer::BCStrategy,
+                                panzer::BCStrategyBase> {
+#else
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				panzer::BCStrategyBase,
                                 panzer::BCStrategy<_> > {
+#endif
 
   public:
 

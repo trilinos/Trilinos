@@ -31,9 +31,15 @@ namespace panzer {
     */
   template<typename Traits>
   class ClosureModelFactory_TemplateManager :
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+    public PHX::TemplateManager<typename Traits::EvalTypes,
+                                panzer::ClosureModelFactory,
+                                panzer::ClosureModelFactoryBase> {
+#else
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				                        panzer::ClosureModelFactoryBase,
                                 panzer::ClosureModelFactory<_> > {
+#endif
 
   public:
 

@@ -31,9 +31,15 @@ namespace panzer {
     */
   template<typename Traits>
   class ResponseEvaluatorFactory_TemplateManager :
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+    public PHX::TemplateManager<typename Traits::EvalTypes,
+                                panzer::ResponseEvaluatorFactory,
+                                panzer::ResponseEvaluatorFactoryBase> {
+#else
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				panzer::ResponseEvaluatorFactoryBase,
 				panzer::ResponseEvaluatorFactory<_> > {
+#endif
 
   public:
 

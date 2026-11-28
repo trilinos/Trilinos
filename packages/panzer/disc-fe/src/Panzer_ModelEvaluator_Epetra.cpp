@@ -386,7 +386,7 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<double> > & x,
   thGlobalContainer->set_x_th(x);
 
   // evaluate dirichlet boundary conditions
-  RCP<panzer::LinearObjContainer> counter = ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluateOnlyDirichletBCs(ae_inargs);
+  RCP<panzer::LinearObjContainer> counter = ae_tm_.get<panzer::Traits::Residual>()->evaluateOnlyDirichletBCs(ae_inargs);
 
   // allocate the result container
   RCP<panzer::LinearObjContainer> result = lof_->buildLinearObjContainer(); // we use a new global container
@@ -555,7 +555,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     epGhostedContainer->get_f()->PutScalar(0.0);
     epGhostedContainer->get_A()->PutScalar(0.0);
 
-    ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
+    ae_tm_.get<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
   else if(!Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
 
@@ -566,7 +566,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     // Zero values in ghosted container objects
     epGhostedContainer->get_f()->PutScalar(0.0);
 
-    ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluate(ae_inargs);
+    ae_tm_.get<panzer::Traits::Residual>()->evaluate(ae_inargs);
 
     f_out->Update(1.0, *(epGlobalContainer->get_f()), 0.0);
   }
@@ -583,7 +583,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     // Zero values in ghosted container objects
     epGhostedContainer->get_A()->PutScalar(0.0);
 
-    ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
+    ae_tm_.get<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
   // HACK: set A to null before calling responses to avoid touching the
   // the Jacobian after it has been properly assembled.  Should be fixed
@@ -743,7 +743,7 @@ evalModel_basic_dfdp(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */,
    TEUCHOS_ASSERT(paramIndex==totalParameterCount);
 
    if(totalParameterCount>0) {
-     ae_tm_.getAsObject<panzer::Traits::Tangent>()->evaluate(ae_inargs);
+     ae_tm_.get<panzer::Traits::Tangent>()->evaluate(ae_inargs);
    }
 }
 

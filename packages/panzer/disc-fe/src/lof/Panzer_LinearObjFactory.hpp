@@ -286,10 +286,19 @@ public:
    { endFill(ghostContainer); }
 
 private:
+#ifdef PHALANX_HIDE_DEPRECATED_CODE
+   // The builders return a CloneableEvaluator, and that is all this class uses.
+   template <typename> using CloneableEvaluatorSlot = panzer::CloneableEvaluator;
+   typedef PHX::TemplateManager<typename Traits::EvalTypes,
+                                CloneableEvaluatorSlot,
+                                panzer::CloneableEvaluator>
+           Evaluator_TemplateManager;
+#else
    typedef PHX::TemplateManager<typename Traits::EvalTypes,
                                 panzer::CloneableEvaluator,
                                 PHX::EvaluatorDerived<_,Traits> >
            Evaluator_TemplateManager;
+#endif
 
    // managers to build the scatter/gather evaluators
    Teuchos::RCP<Evaluator_TemplateManager> scatterManager_;

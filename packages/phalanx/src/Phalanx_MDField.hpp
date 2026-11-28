@@ -28,9 +28,7 @@
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_ExtentTraits.hpp"
 #include "Sacado.hpp"
-#include "Sacado_mpl_vector.hpp"
-#include "Sacado_mpl_for_each.hpp"
-#include "Sacado_mpl_push_back.hpp"
+#include "Phalanx_TypeList.hpp"
 #include "Phalanx_DataLayout_DynamicLayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 
@@ -75,14 +73,14 @@ namespace PHX {
 
   template<> struct RankCount<void> : std::integral_constant<int,0>
   {
-    using vector_type = Sacado::mpl::vector<>;
+    using vector_type = PHX::mpl::type_list<>;
   };
 
   template<typename Extent, typename...Props>
   struct RankCount<typename std::enable_if<is_extent<Extent>::value>::type,Extent,Props...>
     : std::integral_constant<int,1+RankCount<void,Props...>::value>
   {
-    using vector_type = typename Sacado::mpl::push_back<typename RankCount<Props...>::vector_type,Extent>::type;
+    using vector_type = PHX::mpl::push_back_t<typename RankCount<Props...>::vector_type,Extent>;
   };
 
   template<typename NonExtent, typename...Props>
@@ -689,19 +687,11 @@ namespace PHX {
       }
     }
 
-    // Functor for mpl::for_each for printing dimensions
-    struct AddString {
-      std::vector<std::string>& names;
-      AddString(std::vector<std::string>& extent_names) : names(extent_names) {}
-      template<typename Extent> void operator()(Extent ) const
-      {names.push_back(PHX::print<Extent>());}
-    };
-
     template<int R> void print(ViewSpecialization<R>, std::ostream& os, bool printValues) const
     {
       std::vector<std::string> dim_names;
       using extent_vector = typename RankCount<Props...>::vector_type;
-      Sacado::mpl::for_each_no_kokkos<extent_vector>(AddString(dim_names));
+      PHX::mpl::for_each_type<extent_vector>([&]<typename Extent>() { dim_names.push_back(PHX::print<Extent>()); });
 
       os << "MDField<";
 

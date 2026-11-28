@@ -18,7 +18,7 @@
 
 namespace panzer {
 
-  /** \brief Builder functor used with Sacado::mpl::TemplateManager to
+  /** \brief Builder functor used with PHX::TemplateManager to
     * construct one panzer::ClosureModelFactoryComposite<EvalT> per
     * evaluation type, each delegating to the same list of constituent
     * factories.

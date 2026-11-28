@@ -13,7 +13,6 @@
 
 #include "Phalanx_config.hpp" // for std::vector
 #include "Phalanx_Traits.hpp"
-#include "Sacado_mpl_vector.hpp"
 
 namespace PHX {
 
@@ -26,7 +25,7 @@ namespace PHX {
     // *** Evaluation Types
     // ******************************************************************
     struct Residual { typedef double ScalarT; };
-    typedef Sacado::mpl::vector<Residual> EvalTypes;
+    typedef PHX::mpl::type_list<Residual> EvalTypes;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
@@ -44,7 +43,7 @@ namespace PHX {
 namespace PHX {
   template<>
   struct eval_scalar_types<PHX::MyTraits::Residual> 
-  { typedef Sacado::mpl::vector<double> type; };
+  { typedef PHX::mpl::type_list<double> type; };
 }
 
 #endif
