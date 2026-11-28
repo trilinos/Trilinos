@@ -121,7 +121,7 @@ int mm_read_banner(ZOLTAN_FILE* f, MM_typecode *matcode)
     if (ZOLTAN_FILE_gets(line, MM_MAX_LINE_LENGTH, f) == NULL)
 	return MM_PREMATURE_EOF;
 
-    if (sscanf(line, "%s %s %s %s %s", banner, mtx, crd, data_type,
+    if (sscanf(line, "%63s %63s %63s %63s %63s", banner, mtx, crd, data_type,
 	storage_scheme) != 5)
 	return MM_PREMATURE_EOF;
 

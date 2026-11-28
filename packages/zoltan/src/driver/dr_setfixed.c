@@ -107,8 +107,10 @@ FILE *fp;
           while (1){
             if (feof(fp)) break; 
             /* read (i, part) for each fixed vertex */
-            fscanf(fp, "%i%i\n", &i, &part);
-            if ((part >= 0) && (part < Num_Global_Parts)){
+            if (fscanf(fp, "%i%i\n", &i, &part) != 2) break;
+            if ((i < 0) || (i >= mesh->num_elems))
+              printf("Warning: Invalid vertex index %i ignored\n", i);
+            else if ((part >= 0) && (part < Num_Global_Parts)){
               /* printf("Debug: setting fixed[%i] = %i\n", i, part); */
               mesh->elements[i].fixed_part = part;
             }
