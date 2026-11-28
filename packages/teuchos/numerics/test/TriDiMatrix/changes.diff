@@ -1,0 +1,87 @@
+diff --git a/packages/teuchos/core/src/Teuchos_Array.hpp b/packages/teuchos/core/src/Teuchos_Array.hpp
+index fcb5b5a012e..30a36efb571 100644
+--- a/packages/teuchos/core/src/Teuchos_Array.hpp
++++ b/packages/teuchos/core/src/Teuchos_Array.hpp
+@@ -1635,9 +1635,8 @@ int Teuchos::hashCode(const Array<T>& array)
+     /* Convert the largest -ve int to zero and -1 to
+     * std::numeric_limits<int>::max()
+     * */
+-    size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+-    maxIntBeforeWrap ++;
+-    rtn += maxIntBeforeWrap;
++    long long offset = static_cast<long long>(std::numeric_limits<int>::max()) + 1LL;
++    rtn = static_cast<int>(static_cast<long long>(rtn) + offset);
+   }
+   return rtn;
+ }
+diff --git a/packages/teuchos/core/src/Teuchos_HashUtils.hpp b/packages/teuchos/core/src/Teuchos_HashUtils.hpp
+index d58e99b85f8..02e48abd13c 100644
+--- a/packages/teuchos/core/src/Teuchos_HashUtils.hpp
++++ b/packages/teuchos/core/src/Teuchos_HashUtils.hpp
+@@ -68,9 +68,8 @@ namespace Teuchos
+           /* Convert the largest -ve int to zero and -1 to
+            * std::numeric_limits<int>::max()
+            * */
+-          size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+-          maxIntBeforeWrap ++;
+-          rtn += maxIntBeforeWrap;
++          long long offset = static_cast<long long>(std::numeric_limits<int>::max()) + 1LL;
++          rtn = static_cast<int>(static_cast<long long>(rtn) + offset);
+       }
+       return rtn;
+     }
+@@ -146,9 +145,8 @@ namespace Teuchos
+           /* Convert the largest -ve int to zero and -1 to
+            * std::numeric_limits<int>::max()
+            * */
+-          size_t maxIntBeforeWrap = std::numeric_limits<int>::max();
+-          maxIntBeforeWrap ++;
+-          rtn += maxIntBeforeWrap;
++          long long offset = static_cast<long long>(std::numeric_limits<int>::max()) + 1LL;
++          rtn = static_cast<int>(static_cast<long long>(rtn) + offset);
+       }
+       return rtn;
+     }
+diff --git a/packages/teuchos/numerics/src/Teuchos_SerialTriDiMatrix.hpp b/packages/teuchos/numerics/src/Teuchos_SerialTriDiMatrix.hpp
+index 085054deb58..631fec46935 100644
+--- a/packages/teuchos/numerics/src/Teuchos_SerialTriDiMatrix.hpp
++++ b/packages/teuchos/numerics/src/Teuchos_SerialTriDiMatrix.hpp
+@@ -507,6 +507,12 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::shape( OrdinalType numRowsCols_i
+ {
+   deleteArrays(); // Get rid of anything that might be already allocated
+   numRowsCols_ = numRowsCols_in;
++  if (numRowsCols_ <= 0) {
++    values_ = 0;
++    DL_ = D_ = DU_ = DU2_ = 0;
++    valuesCopied_ = true;
++    return(0);
++  }
+   const OrdinalType numvals = ( numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
+   values_ = new ScalarType[numvals];
+   DL_  = values_;
+@@ -524,6 +530,12 @@ int SerialTriDiMatrix<OrdinalType, ScalarType>::shapeUninitialized(  OrdinalType
+ {
+   deleteArrays(); // Get rid of anything that might be already allocated
+   numRowsCols_ = numRowsCols_in;
++  if (numRowsCols_ <= 0) {
++    values_ = 0;
++    DL_ = D_ = DU_ = DU2_ = 0;
++    valuesCopied_ = true;
++    return(0);
++  }
+   const OrdinalType numvals = ( numRowsCols_ == 1) ? 1 :  4*(numRowsCols_-1);
+   values_ = new ScalarType[numvals];
+   DL_  = values_;
+diff --git a/packages/teuchos/numerics/test/CMakeLists.txt b/packages/teuchos/numerics/test/CMakeLists.txt
+index 97fc4dd6c92..8fe74fd1c27 100644
+--- a/packages/teuchos/numerics/test/CMakeLists.txt
++++ b/packages/teuchos/numerics/test/CMakeLists.txt
+@@ -4,6 +4,7 @@ ADD_SUBDIRECTORIES(
+   BLAS
+   DenseMatrix
+   LAPACK
+-  Polynomial
+   MatrixMarket
++  Polynomial
++  TriDiMatrix
+   )

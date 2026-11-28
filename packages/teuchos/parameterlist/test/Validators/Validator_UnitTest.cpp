@@ -513,6 +513,37 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, StringToIntegralParameterEntryValidator) {
   TEST_EQUALITY(strVals[0], getStringValue<int>(user_pl, "Param1"));
   TEST_EQUALITY(strVals[1], getStringValue<int>(user_pl, "Param2"));
   TEST_EQUALITY(strVals[2], getStringValue<int>(user_pl, "Param3"));
+
+  // Regression test: getStringValue() must reject integral values that are
+  // not present in the validator's inverse map.  Previously this path could
+  // dereference inv_map_.end().
+  {
+    ParameterList invalid_pl = ParameterList();
+    invalid_pl.set("BadParam", 99);
+
+    TEST_THROW(
+      validator2->getStringValue(
+        invalid_pl.getEntry("BadParam"),
+        "BadParam",
+        "Invalid List",
+        true),
+      Exceptions::InvalidParameterValue);
+  }
+
+  // validator1 maps strings to implicit values {0, 1, 2}.  Value 3 is
+  // therefore also invalid for reverse lookup.
+  {
+    ParameterList invalid_pl = ParameterList();
+    invalid_pl.set("BadParam", 3);
+
+    TEST_THROW(
+      validator1->getStringValue(
+        invalid_pl.getEntry("BadParam"),
+        "BadParam",
+        "Invalid List",
+        true),
+      Exceptions::InvalidParameterValue);
+  }
 }
 
 

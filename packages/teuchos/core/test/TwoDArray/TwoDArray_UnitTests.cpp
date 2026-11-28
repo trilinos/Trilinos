@@ -77,6 +77,54 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, stringFunctions){
     InvalidArrayStringRepresentation)
 }
 
+TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, fromStringRejectsMalformedDimensions){
+  /*
+   * Regression coverage for parsing dimensions from untrusted serialized
+   * TwoDArray strings.  These cases must be rejected before constructing a
+   * TwoDArray with dimensions that are inconsistent with the backing Array.
+   */
+
+  // Product wraps to 4 on 64-bit size_t:
+  //   (2^62 + 1) * 4 == 2^64 + 4 == 4 mod 2^64
+  const std::string wrappedProductString =
+    "4611686018427387905x4:{1,2,3,4}";
+  TEST_THROW(TwoDArray<int>::fromString(wrappedProductString),
+    InvalidArrayStringRepresentation)
+
+  // Signed dimension tokens must not be accepted as unsigned size_t values.
+  const std::string negativeRowString =
+    "-1x4:{1,2,3,4}";
+  TEST_THROW(TwoDArray<int>::fromString(negativeRowString),
+    InvalidArrayStringRepresentation)
+
+  const std::string negativeColString =
+    "1x-4:{1,2,3,4}";
+  TEST_THROW(TwoDArray<int>::fromString(negativeColString),
+    InvalidArrayStringRepresentation)
+
+  // Missing dimensions delimiter.
+  const std::string missingDimensionsDelimiterString =
+    "2:{1,2}";
+  TEST_THROW(TwoDArray<int>::fromString(missingDimensionsDelimiterString),
+    InvalidArrayStringRepresentation)
+
+  // Missing metadata separator between dimensions and payload.
+  const std::string missingMetadataSeparatorString =
+    "2x2";
+  TEST_THROW(TwoDArray<int>::fromString(missingMetadataSeparatorString),
+    InvalidArrayStringRepresentation)
+
+  // Valid control case.
+  const TwoDArray<int> validArray =
+    TwoDArray<int>::fromString("2x2:{1,2,3,4}");
+  TEST_EQUALITY_CONST(validArray.getNumRows(), 2)
+  TEST_EQUALITY_CONST(validArray.getNumCols(), 2)
+  TEST_EQUALITY_CONST(validArray(0,0), 1)
+  TEST_EQUALITY_CONST(validArray(0,1), 2)
+  TEST_EQUALITY_CONST(validArray(1,0), 3)
+  TEST_EQUALITY_CONST(validArray(1,1), 4)
+}
+
 TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, emptyTest){
   TwoDArray<int> emptyArray;
   TEST_EQUALITY_CONST(emptyArray.getNumRows(), 0)

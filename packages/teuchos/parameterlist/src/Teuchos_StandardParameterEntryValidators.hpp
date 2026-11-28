@@ -2571,8 +2571,16 @@ StringToIntegralParameterEntryValidator<IntegralType>::getStringValue(
   if (entry.isType<IntegralType>()){
     const IntegralType intVal = any_cast<IntegralType>(entry.getAny(activeQuery));
     typename inv_map_t::const_iterator itr = inv_map_.find(intVal);
-    // typename inv_map_t::const_iterator itr = inv_map_.find(intVal);
-    // TODO: Maybe do a test on intVal but it should be valid by construction
+    TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+      itr == inv_map_.end(), Exceptions::InvalidParameterValue
+      ,"Error, the integral value " << intVal << " is not recognized for the "
+      "parameter \"" << ( paramName.length() ? paramName : defaultParameterName_ )
+      << "\"\nin the sublist \"" << sublistName << "\"."
+      << "\n\nValid values include:"
+      << "\n  {\n"
+      << validValues_
+      << "  }"
+      );
     return (*itr).second;
   } else{
     // Validate the parameter's type and value

@@ -17,6 +17,7 @@
 */
 
 #include "Teuchos_Array.hpp"
+#include <cctype>
 #include <limits>
 
 
@@ -281,17 +282,79 @@ TwoDArray<T> TwoDArray<T>::fromString(const std::string& string_in){
   std::string curString = string_in;
   std::string metaSeperator = TwoDArray<T>::getMetaSeperator();
   size_t curPos = curString.find(metaSeperator);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(curPos == std::string::npos,
+    InvalidArrayStringRepresentation,
+    "Error: Invalid TwoDArray string representation.  Missing metadata "
+    "separator \"" << metaSeperator << "\"."
+  )
+
   std::string dimString = curString.substr(0, curPos);
   curString = curString.substr(curPos+1);
 
   //process dimensions
   size_t dimCharPos =
     dimString.find(TwoDArray<T>::getDimensionsDelimiter());
-  std::istringstream numRowsStream(dimString.substr(0,dimCharPos));
-  std::istringstream numColsStream(dimString.substr(dimCharPos+1));
+
+  TEUCHOS_TEST_FOR_EXCEPTION(dimCharPos == std::string::npos,
+    InvalidArrayStringRepresentation,
+    "Error: Invalid TwoDArray string representation.  Missing dimensions "
+    "delimiter \"" << TwoDArray<T>::getDimensionsDelimiter() << "\"."
+  )
+
+  const std::string numRowsString = dimString.substr(0,dimCharPos);
+  const std::string numColsString = dimString.substr(dimCharPos+1);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numRowsString.empty() || numColsString.empty(),
+    InvalidArrayStringRepresentation,
+    "Error: Invalid TwoDArray string representation.  Empty row or column "
+    "dimension."
+  )
+
+  /*
+   * Dimensions may come from untrusted XML ParameterList input.  Do not rely
+   * on operator>>(size_t) to reject signs or other non-decimal forms.  Some
+   * implementations accept "-1" for an unsigned destination, producing a huge
+   * value.  Require canonical non-empty decimal digit tokens here.
+   */
+  for (std::string::const_iterator it = numRowsString.begin();
+       it != numRowsString.end(); ++it) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !std::isdigit(static_cast<unsigned char>(*it)),
+      InvalidArrayStringRepresentation,
+      "Error: Invalid TwoDArray row dimension \"" << numRowsString
+      << "\".  Dimensions must be unsigned decimal integers."
+    )
+  }
+
+  for (std::string::const_iterator it = numColsString.begin();
+       it != numColsString.end(); ++it) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !std::isdigit(static_cast<unsigned char>(*it)),
+      InvalidArrayStringRepresentation,
+      "Error: Invalid TwoDArray column dimension \"" << numColsString
+      << "\".  Dimensions must be unsigned decimal integers."
+    )
+  }
+
+  std::istringstream numRowsStream(numRowsString);
+  std::istringstream numColsStream(numColsString);
+
   size_t numRows, numCols;
   numRowsStream >> numRows;
   numColsStream >> numCols;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numRowsStream.fail() || !numRowsStream.eof(),
+    InvalidArrayStringRepresentation,
+    "Error: Invalid TwoDArray row dimension \"" << numRowsString
+    << "\"."
+  )
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numColsStream.fail() || !numColsStream.eof(),
+    InvalidArrayStringRepresentation,
+    "Error: Invalid TwoDArray column dimension \"" << numColsString
+    << "\"."
+  )
 
   //determine symetry state
   bool symmetrical = false;
@@ -304,15 +367,48 @@ TwoDArray<T> TwoDArray<T>::fromString(const std::string& string_in){
   //Get actual data
   Array<T> array = fromStringToArray<T>(curString);
 
-  // Check for overflow in numRows*numCols
-  const size_t maxSize =
+  /*
+   * Validate dimensions before multiplying.
+   *
+   * The previous check compared array.size() against numRows*numCols after
+   * computing the product in size_t.  That multiplication can wrap modulo
+   * 2^N.  For example, on a 64-bit platform:
+   *
+   *   (2^62 + 1) * 4 == 4 mod 2^64
+   *
+   * A 4-element payload could therefore pass validation while the constructed
+   * TwoDArray stored enormous dimensions.  Later operator()(i,j) and
+   * operator[](i) calls index using those dimensions and can access outside
+   * the backing Array in release builds.
+   */
+  typedef typename Array<T>::size_type array_size_type;
+
+  const size_t maxArraySize =
     static_cast<size_t>(std::numeric_limits<typename Array<T>::size_type>::max());
-  TEUCHOS_TEST_FOR_EXCEPTION(numRows != 0 && numCols > maxSize / numRows,
+  const size_t maxDimSize =
+    static_cast<size_t>(std::numeric_limits<size_type>::max());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numRows > maxDimSize || numCols > maxDimSize,
     InvalidArrayStringRepresentation,
     "Error: TwoDArray dimensions " << numRows << "x" << numCols
-    << " exceed the maximum array size of " << maxSize << "."
+    << " exceed the maximum TwoDArray dimension of " << maxDimSize << "."
   )
-  typename Array<T>::size_type expectedSize = numRows * numCols;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numRows > maxArraySize || numCols > maxArraySize,
+    InvalidArrayStringRepresentation,
+    "Error: TwoDArray dimensions " << numRows << "x" << numCols
+    << " exceed the maximum array size of " << maxArraySize << "."
+  )
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numCols != 0 && numRows > maxArraySize / numCols,
+    InvalidArrayStringRepresentation,
+    "Error: TwoDArray dimensions " << numRows << "x" << numCols
+    << " exceed the maximum array size of " << maxArraySize << "."
+  )
+
+  const array_size_type expectedSize =
+    static_cast<array_size_type>(numRows * numCols);
+
   TEUCHOS_TEST_FOR_EXCEPTION(array.size() != expectedSize,
     InvalidArrayStringRepresentation,
     "Error: You've specified an TwoDArray as having the dimensions of "

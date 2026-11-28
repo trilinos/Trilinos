@@ -85,8 +85,20 @@ namespace Teuchos
  * \endcode
  */
 #define TEUCHOS_GET_RCP(Base)                                           \
-  virtual Teuchos::RCP<const Base > getConstRcp() const {return rcp(this);} \
-  virtual Teuchos::RCP<Base > getRcp() {return rcp(this);}
+  virtual Teuchos::RCP<const Base > getConstRcp() const {return teuchosSharedSelfRcp();} \
+  virtual Teuchos::RCP<Base > getRcp() {return teuchosSharedSelfRcp();} \
+private: \
+  mutable Teuchos::RCP<Base > teuchosSelfRcp_; \
+  Teuchos::RCP<Base > teuchosSharedSelfRcp() const { \
+    if (teuchosSelfRcp_.is_null()) { \
+      Teuchos::RCP<Base > self = \
+        Teuchos::rcp(const_cast<Base*>(static_cast<const Base*>(this))); \
+      teuchosSelfRcp_ = self.create_weak(); \
+      return self; \
+    } \
+    return teuchosSelfRcp_.create_strong(); \
+  } \
+public:
 
 /** \brief Use this macro as an easy way to implement the ConstHandleable
  * interface in a derived class. For example,
