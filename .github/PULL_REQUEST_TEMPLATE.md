@@ -7,6 +7,11 @@
 
 @trilinos/<teamName>
 
+## Was AI used to develop this PR?
+ * List model(s) used.
+ * Describe how/where AI was used.
+ * Assert that you (the human contributor) have reviewed the code.
+
 ## Motivation
  * Why is this change needed?  GitHub issue(s)?
 
