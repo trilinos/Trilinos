@@ -412,9 +412,11 @@ class TensorMaterialDistanceFunctor {
 /*!
 Method to compute ghosted distance Laplacian diagonal.
 */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class boundary_nodes_type, class DistanceFunctorType>
 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+            boundary_nodes_type& boundaryNodes,
+            boundary_nodes_type& boundaryNodesColMap,
             DistanceFunctorType& distFunctor) {
   using scalar_type        = Scalar;
   using local_ordinal_type = LocalOrdinal;
@@ -434,24 +436,28 @@ getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
         "MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag",
         range_type(0, lclA.numRows()),
         KOKKOS_LAMBDA(const local_ordinal_type& row) {
-          auto rowView = lclA.rowConst(row);
-          auto length  = rowView.length;
+          if (boundaryNodes(row)) {
+            lclDiag(row, 0) = implATS::one();
+          } else {
+            auto rowView = lclA.rowConst(row);
+            auto length  = rowView.length;
 
-          magnitudeType d;
-          impl_scalar_type d2  = implATS::zero();
-          bool haveAddedToDiag = false;
-          for (local_ordinal_type colID = 0; colID < length; colID++) {
-            auto col = rowView.colidx(colID);
-            if (row != col) {
-              d = distFunctor.distance2(row, col);
-              d2 += implATS::one() / d;
-              haveAddedToDiag = true;
+            magnitudeType d;
+            impl_scalar_type d2  = implATS::zero();
+            bool haveAddedToDiag = false;
+            for (local_ordinal_type colID = 0; colID < length; colID++) {
+              auto col = rowView.colidx(colID);
+              if ((row != col) && !boundaryNodesColMap(col)) {
+                d = distFunctor.distance2(row, col);
+                d2 += implATS::one() / d;
+                haveAddedToDiag = true;
+              }
             }
-          }
 
-          // Deal with the situation where boundary conditions have only been enforced on rows, but not on columns.
-          // We enforce dropping of these entries by assigning a very large number to the diagonal entries corresponding to BCs.
-          lclDiag(row, 0) = !haveAddedToDiag ? implATS::squareroot(implATS::rmax()) : d2;
+            // Deal with the situation where boundary conditions have only been enforced on rows, but not on columns.
+            // We enforce dropping of these entries by assigning a very large number to the diagonal entries corresponding to BCs.
+            lclDiag(row, 0) = !haveAddedToDiag ? implATS::squareroot(implATS::rmax()) : d2;
+          }
         });
   }
   auto importer = A.getCrsGraph()->getImporter();
@@ -464,9 +470,11 @@ getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   }
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class boundary_nodes_type, class DistanceFunctorType>
 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 getMaxMinusOffDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                       boundary_nodes_type& boundaryNodes,
+                       boundary_nodes_type& boundaryNodesColMap,
                        DistanceFunctorType& distFunctor) {
   using scalar_type        = Scalar;
   using local_ordinal_type = LocalOrdinal;
@@ -486,22 +494,26 @@ getMaxMinusOffDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
         "MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag",
         range_type(0, lclA.numRows()),
         KOKKOS_LAMBDA(const local_ordinal_type& row) {
-          auto rowView = lclA.rowConst(row);
-          auto length  = rowView.length;
+          if (boundaryNodes(row)) {
+            lclDiag(row, 0) = implATS::one();
+          } else {
+            auto rowView = lclA.rowConst(row);
+            auto length  = rowView.length;
 
-          impl_scalar_type mymax = implATS::zero();
-          magnitudeType d;
-          impl_scalar_type d2;
-          for (local_ordinal_type colID = 0; colID < length; colID++) {
-            auto col = rowView.colidx(colID);
-            if (row != col) {
-              d  = distFunctor.distance2(row, col);
-              d2 = implATS::one() / d;
-              if (implATS::magnitude(mymax) < implATS::magnitude(d2))
-                mymax = implATS::magnitude(d2);
+            impl_scalar_type mymax = implATS::zero();
+            magnitudeType d;
+            impl_scalar_type d2;
+            for (local_ordinal_type colID = 0; colID < length; colID++) {
+              auto col = rowView.colidx(colID);
+              if (row != col) {
+                d  = distFunctor.distance2(row, col);
+                d2 = implATS::one() / d;
+                if (implATS::magnitude(mymax) < implATS::magnitude(d2))
+                  mymax = implATS::magnitude(d2);
+              }
             }
+            lclDiag(row, 0) = mymax;
           }
-          lclDiag(row, 0) = mymax;
         });
   }
   auto importer = A.getCrsGraph()->getImporter();
@@ -552,17 +564,17 @@ class DropFunctor {
   const scalar_type one = ATS::one();
 
  public:
-  DropFunctor(matrix_type& A_, magnitudeType threshold, DistanceFunctorType& dist2_, results_view& results_)
+  DropFunctor(matrix_type& A_, magnitudeType threshold, DistanceFunctorType& dist2_, boundary_nodes_view& boundaryNodes, boundary_nodes_view& boundaryNodesColMap, results_view& results_)
     : A(A_.getLocalMatrixDevice())
     , eps(threshold)
     , dist2(dist2_)
     , results(results_) {
     if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
-      diagVec        = getDiagonal(A_, dist2);
+      diagVec        = getDiagonal(A_, boundaryNodes, boundaryNodesColMap, dist2);
       auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
-      diagVec        = getMaxMinusOffDiagonal(A_, dist2);
+      diagVec        = getMaxMinusOffDiagonal(A_, boundaryNodes, boundaryNodesColMap, dist2);
       auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     }
@@ -675,7 +687,7 @@ class VectorDropFunctor {
   const scalar_type one = ATS::one();
 
  public:
-  VectorDropFunctor(matrix_type& A_, matrix_type& mergedA_, magnitudeType threshold, DistanceFunctorType& dist2_, results_view& results_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
+  VectorDropFunctor(matrix_type& A_, matrix_type& mergedA_, magnitudeType threshold, DistanceFunctorType& dist2_, boundary_nodes_view& boundaryNodes, boundary_nodes_view& boundaryNodesColMap, results_view& results_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
     : A(A_.getLocalMatrixDevice())
     , eps(threshold)
     , dist2(dist2_)
@@ -683,11 +695,11 @@ class VectorDropFunctor {
     , point_to_block(point_to_block_)
     , ghosted_point_to_block(ghosted_point_to_block_) {
     if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
-      diagVec        = getDiagonal(mergedA_, dist2);
+      diagVec        = getDiagonal(mergedA_, boundaryNodes, boundaryNodesColMap, dist2);
       auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     } else if (measure == Misc::SignedRugeStuebenMeasure) {
-      diagVec        = getMaxMinusOffDiagonal(A_, dist2);
+      diagVec        = getMaxMinusOffDiagonal(A_, boundaryNodes, boundaryNodesColMap, dist2);
       auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     }
@@ -777,8 +789,10 @@ template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class
 auto make_drop_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
                        typename DropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::magnitudeType threshold,
                        DistanceFunctorType& dist2_,
+                       Kokkos::View<const bool*, typename Node::memory_space> boundaryNodes,
+                       Kokkos::View<const bool*, typename Node::memory_space> boundaryNodesColMap,
                        typename DropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::results_view& results_) {
-  auto functor = DropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, threshold, dist2_, results_);
+  auto functor = DropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, threshold, dist2_, boundaryNodes, boundaryNodesColMap, results_);
   return functor;
 }
 
@@ -787,10 +801,12 @@ auto make_vector_drop_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
                               Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mergedA_,
                               typename VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::magnitudeType threshold,
                               DistanceFunctorType& dist2_,
+                              Kokkos::View<const bool*, typename Node::memory_space> boundaryNodes,
+                              Kokkos::View<const bool*, typename Node::memory_space> boundaryNodesColMap,
                               typename VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::results_view& results_,
                               typename VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::block_indices_view_type point_to_block_,
                               typename VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::block_indices_view_type ghosted_point_to_block_) {
-  auto functor = VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, mergedA_, threshold, dist2_, results_, point_to_block_, ghosted_point_to_block_);
+  auto functor = VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, mergedA_, threshold, dist2_, boundaryNodes, boundaryNodesColMap, results_, point_to_block_, ghosted_point_to_block_);
   return functor;
 }
 

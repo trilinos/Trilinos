@@ -22,8 +22,11 @@
 #include "MueLu_DroppingCommon.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
+#include "Teuchos_LocalTestingHelpers.hpp"
 #include "Tpetra_Access.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_MatrixMatrix_decl.hpp"
 
 #include <Galeri_XpetraParameters.hpp>
 
@@ -3736,6 +3739,312 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, 2x2, Scalar, Local
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DirichletNodes, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib          = TestHelpers_kokkos::Parameters::getLib();
+
+  auto zero = Teuchos::ScalarTraits<Scalar>::zero();
+  auto one  = Teuchos::ScalarTraits<Scalar>::one();
+  auto two  = one + one;
+
+  auto mapDirichletIncluded                   = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 3 * comm->getSize(), 0, comm);
+  Teuchos::RCP<Matrix> mtxNoDirichlet         = MatrixFactory::Build(mapDirichletIncluded, 3);
+  std::vector<GlobalOrdinal> myGIDs           = {3 * comm->getRank(), 3 * comm->getRank() + 1};
+  auto mapDirichletEliminated                 = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), myGIDs, 0, comm);
+  Teuchos::RCP<Matrix> mtxDirichletEliminated = MatrixFactory::Build(mapDirichletEliminated, 3);
+
+  // We set up some artificial test matrices.
+  //
+  // tridiag(-1, 2, -1) of size 3*commSize
+  //
+  // with Dirichlet conditions enforced on the last unknown on each rank.
+
+  std::vector<GlobalOrdinal> Indices;
+  std::vector<Scalar> Values;
+
+  for (GlobalOrdinal row = 3 * comm->getRank(); row < 3 * (comm->getRank() + 1); ++row) {
+    // Generate the tridiagonal matrix without any Dirichlet conditions enforced
+    if (row == 0) {
+      Indices = {row, row + 1};
+      Values  = {two, -one};
+    } else if (row == 3 * comm->getSize() - 1) {
+      Indices = {row - 1, row};
+      Values  = {-one, two};
+    } else {
+      Indices = {row - 1, row, row + 1};
+      Values  = {-one, two, -one};
+    }
+    mtxNoDirichlet->insertGlobalValues(row,
+                                       ArrayView<GlobalOrdinal>(Indices.data(), Indices.size()),
+                                       ArrayView<Scalar>(Values.data(), Values.size()));
+
+    // Generate a matrix with Dirichlet conditions eliminated
+    if (row < 3 * (comm->getRank() + 1) - 1) {
+      if (row == 3 * (comm->getRank())) {
+        Indices = {row, row + 1};
+        Values  = {two, -one};
+      } else if (row == 3 * (comm->getRank() + 1) - 2) {
+        Indices = {row - 1, row};
+        Values  = {-one, two};
+      } else {
+        Indices = {row - 1, row, row + 1};
+        Values  = {-one, two, -one};
+      }
+      mtxDirichletEliminated->insertGlobalValues(row,
+                                                 ArrayView<GlobalOrdinal>(Indices.data(), Indices.size()),
+                                                 ArrayView<Scalar>(Values.data(), Values.size()));
+    }
+  }
+  mtxNoDirichlet->fillComplete();
+  mtxNoDirichlet->SetFixedBlockSize(1);
+  mtxDirichletEliminated->fillComplete();
+  mtxDirichletEliminated->SetFixedBlockSize(1);
+
+  // Generate matrix with Dirichlet conditions enforce by zeroing off-diagonal entries in Dirichlet rows and setting the diagonal ones to one.
+  auto mtxDirichletAppliedToRows = MatrixFactory::BuildCopy(mtxNoDirichlet);
+  mtxDirichletAppliedToRows->resumeFill();
+  {
+    auto row = 3 * (comm->getRank() + 1) - 1;
+    if (row == 3 * comm->getSize() - 1) {
+      Indices = {row - 1, row};
+      Values  = {zero, one};
+    } else {
+      Indices = {row - 1, row, row + 1};
+      Values  = {zero, one, zero};
+    }
+    mtxDirichletAppliedToRows->replaceGlobalValues(row,
+                                                   ArrayView<GlobalOrdinal>(Indices.data(), Indices.size()),
+                                                   ArrayView<Scalar>(Values.data(), Values.size()));
+  }
+  mtxDirichletAppliedToRows->fillComplete();
+
+  // Generate matrix with Dirichlet conditions enforce by zeroing off-diagonal entries in Dirichlet rows and columns and setting the diagonal ones to one.
+  auto mtxDirichletAppliedToRowsAndCols = MatrixFactory::BuildCopy(mtxDirichletAppliedToRows);
+  {
+    auto lclMtx    = mtxDirichletAppliedToRowsAndCols->getLocalMatrixHost();
+    auto lclRowMap = mtxDirichletAppliedToRowsAndCols->getRowMap()->getLocalMap();
+    auto lclColMap = mtxDirichletAppliedToRowsAndCols->getColMap()->getLocalMap();
+    for (LocalOrdinal rlid = 0; rlid < lclMtx.numRows(); ++rlid) {
+      auto rgid = lclRowMap.getGlobalElement(rlid);
+      auto row  = lclMtx.row(rlid);
+      for (LocalOrdinal k = 0; k < row.length; ++k) {
+        auto clid = row.colidx(k);
+        auto cgid = lclColMap.getGlobalElement(clid);
+        if (cgid % (3 * comm->getSize()) == 2) {
+          if (rgid == cgid)
+            row.value(k) = one;
+          else
+            row.value(k) = zero;
+        }
+      }
+    }
+  }
+  mtxDirichletEliminated->SetFixedBlockSize(1);
+
+  using magnitudeType            = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  auto coordsDirichletIncluded   = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(mapDirichletIncluded, 1);
+  auto coordsDirichletEliminated = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(mapDirichletEliminated, 1);
+  {
+    auto lclCoords  = coordsDirichletIncluded->getLocalViewHost(Tpetra::Access::OverwriteAll);
+    auto rank       = comm->getRank();
+    lclCoords(0, 0) = 3 * rank;
+    lclCoords(1, 0) = 3 * rank + 1;
+    lclCoords(1, 0) = 3 * rank + 2;
+  }
+  {
+    auto lclCoords  = coordsDirichletEliminated->getLocalViewHost(Tpetra::Access::OverwriteAll);
+    auto rank       = comm->getRank();
+    lclCoords(0, 0) = 3 * rank;
+    lclCoords(1, 0) = 3 * rank + 1;
+  }
+
+  using TF                = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
+  using local_matrix_type = typename Matrix::local_matrix_host_type;
+  using ATS               = KokkosKernels::ArithTraits<Scalar>;
+  using impl_scalar_type  = typename ATS::val_type;
+  using implATS           = KokkosKernels::ArithTraits<impl_scalar_type>;
+  using impl_mag_type     = implATS::magnitudeType;
+  using magATS            = KokkosKernels::ArithTraits<impl_mag_type>;
+
+  std::vector<Teuchos::ParameterList> params;
+
+  for (bool reuseGraph : {false, true}) {
+    // test case 0
+    Teuchos::ParameterList params0 = Teuchos::ParameterList();
+    params0.set("aggregation: Dirichlet threshold", 0.);
+    // dropFact.SetParameter("aggregation: row sum drop tol", Teuchos::ParameterEntry(0.2));
+
+    params0.set("aggregation: drop scheme", "classical");
+    params0.set("aggregation: use ml scaling of drop tol", false);
+    params0.set("aggregation: drop tol", 0.);
+    params0.set("aggregation: dropping may create Dirichlet", false);
+    params0.set("filtered matrix: reuse graph", reuseGraph);
+    params0.set("filtered matrix: use lumping", false);
+    params.push_back(params0);
+
+    // test case 1
+    Teuchos::ParameterList params1 = Teuchos::ParameterList(params0);
+    params1.set("aggregation: Dirichlet threshold", 0.2);
+    params.push_back(params1);
+
+    // test case 2
+    Teuchos::ParameterList params2 = Teuchos::ParameterList(params0);
+    params2.set("aggregation: Dirichlet threshold", 1.1);
+    params.push_back(params2);
+
+    // test case 3
+    Teuchos::ParameterList params3 = Teuchos::ParameterList(params0);
+    params3.set("aggregation: drop tol", 0.51);
+    params.push_back(params3);
+
+    // test case 4
+    Teuchos::ParameterList params4 = Teuchos::ParameterList(params0);
+    params4.set("aggregation: Dirichlet threshold", 1.1);
+    params4.set("aggregation: drop tol", 0.51);
+    params.push_back(params4);
+
+    // test case 5
+    Teuchos::ParameterList params5 = Teuchos::ParameterList(params0);
+    params5.set("aggregation: Dirichlet threshold", 1.1);
+    params5.set("aggregation: dropping may create Dirichlet", true);
+    params5.set("aggregation: drop tol", 0.51);
+    params.push_back(params5);
+
+    // test case 6
+    Teuchos::ParameterList params6 = Teuchos::ParameterList(params4);
+    params6.set("aggregation: Dirichlet threshold", 1.1);
+    params6.set("filtered matrix: use lumping", true);
+    params.push_back(params6);
+
+    // test case 7
+    Teuchos::ParameterList params7 = Teuchos::ParameterList(params0);
+    params7.set("aggregation: drop scheme", "distance laplacian");
+    params0.set("aggregation: dropping may create Dirichlet", true);
+    params.push_back(params7);
+
+    // test case 8
+    Teuchos::ParameterList params8 = Teuchos::ParameterList(params0);
+    params8.set("aggregation: drop scheme", "distance laplacian");
+    params8.set("aggregation: drop tol", 1.01);
+    params.push_back(params8);
+
+    // test case 9
+    Teuchos::ParameterList params9 = Teuchos::ParameterList(params0);
+    params9.set("aggregation: drop scheme", "classical");
+    params9.set("aggregation: classical algo", "unscaled cut");
+    params9.set("aggregation: drop tol", 1.0 / 3.6);
+    params.push_back(params9);
+  }
+
+  auto getFilteredMatrix = [=](Teuchos::RCP<Matrix> &mtx,
+                               Teuchos::RCP<Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>> &coords,
+                               Teuchos::ParameterList &pl) {
+    Level fineLevel;
+    TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
+    fineLevel.Set("A", mtx);
+    fineLevel.Set("Coordinates", coords);
+
+    RCP<MueLu::SingleLevelFactoryBase> dropFact;
+    RCP<MueLu::SingleLevelFactoryBase> filteredAFact;
+    dropFact = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetParameterList(pl);
+    filteredAFact = dropFact;
+    fineLevel.Request("A", filteredAFact.get());
+    fineLevel.Request("Graph", dropFact.get());
+    fineLevel.Request("DofsPerNode", dropFact.get());
+    dropFact->Build(fineLevel);
+
+    RCP<Matrix> filteredA;
+    Kokkos::View<bool *, Kokkos::HostSpace> boundaryNodes;
+    filteredA = fineLevel.Get<RCP<Matrix>>("A", filteredAFact.get());
+
+    {
+      auto graph           = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", dropFact.get());
+      auto boundaryNodes_d = graph->GetBoundaryNodeMap();
+      boundaryNodes        = Kokkos::View<bool *, Kokkos::HostSpace>("boundaryNodes_host", boundaryNodes_d.extent(0));
+      Kokkos::deep_copy(boundaryNodes, boundaryNodes_d);
+    }
+    return filteredA;
+  };
+
+  for (size_t testNo = 0; testNo < params.size(); ++testNo) {
+    out << "\n\nRunning test number " << testNo << std::endl
+        << std::endl;
+
+    auto param = params[testNo];
+
+    out << "\nparams:\n"
+        << param << "\n";
+    auto filteredADirichletAppliedToRows        = getFilteredMatrix(mtxDirichletAppliedToRows, coordsDirichletIncluded, param);
+    auto filteredADirichletAppliedToRowsAndCols = getFilteredMatrix(mtxDirichletAppliedToRowsAndCols, coordsDirichletIncluded, param);
+    auto filteredADirichletEliminated           = getFilteredMatrix(mtxDirichletEliminated, coordsDirichletEliminated, param);
+
+    // filteredADirichletAppliedToRows->describe(out, Teuchos::VERB_EXTREME);
+    // filteredADirichletAppliedToRowsAndCols->describe(out, Teuchos::VERB_EXTREME);
+    // filteredADirichletEliminated->describe(out, Teuchos::VERB_EXTREME);
+
+    RCP<Matrix> diff;
+    Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*filteredADirichletAppliedToRows, false, one,
+                                                                                  *filteredADirichletAppliedToRowsAndCols, false, -one,
+                                                                                  diff, out);
+    diff->fillComplete();
+    // diff->describe(out, Teuchos::VERB_EXTREME);
+
+    TEST_COMPARE(diff->getFrobeniusNorm(), <, Teuchos::ScalarTraits<magnitudeType>::eps());
+
+    magnitudeType fro = magATS::zero();
+    {
+      auto colMapRowsAndCols = filteredADirichletAppliedToRowsAndCols->getColMap()->getLocalMap();
+      auto lclRowsAndCols    = filteredADirichletAppliedToRowsAndCols->getLocalMatrixHost();
+      auto colMapEliminated  = filteredADirichletEliminated->getColMap()->getLocalMap();
+      auto lclEliminated     = filteredADirichletEliminated->getLocalMatrixHost();
+      for (LocalOrdinal rlid = 0; rlid < lclEliminated.numRows(); ++rlid) {
+        auto rowRowsAndCols = lclRowsAndCols.rowConst(rlid);
+        auto rowEliminated  = lclEliminated.rowConst(rlid);
+
+        for (LocalOrdinal k = 0; k < rowRowsAndCols.length; ++k) {
+          auto clidRowsAndCols = rowRowsAndCols.colidx(k);
+          auto cgidRowsAndCols = colMapRowsAndCols.getGlobalElement(clidRowsAndCols);
+          auto clidEliminated  = colMapEliminated.getLocalElement(cgidRowsAndCols);
+          bool match           = false;
+          for (LocalOrdinal k2 = 0; k2 < rowEliminated.length; ++k2) {
+            if (rowEliminated.colidx(k2) == clidEliminated) {
+              auto val  = rowRowsAndCols.value(k);
+              auto val2 = rowEliminated.value(k2);
+              fro += implATS::magnitude(val - val2) * implATS::magnitude(val - val2);
+              match = true;
+              break;
+            }
+          }
+          if (!match) {
+            auto val = rowRowsAndCols.value(k);
+            fro += implATS::magnitude(val) * implATS::magnitude(val);
+          }
+        }
+      }
+      for (LocalOrdinal rlid = lclEliminated.numRows(); rlid < lclRowsAndCols.numRows(); ++rlid) {
+        auto rowRowsAndCols = lclRowsAndCols.rowConst(rlid);
+        for (LocalOrdinal k = 0; k < rowRowsAndCols.length; ++k) {
+          auto clidRowsAndCols = rowRowsAndCols.colidx(k);
+          if (rlid != clidRowsAndCols) {
+            auto val = rowRowsAndCols.value(k);
+            fro += implATS::magnitude(val) * implATS::magnitude(val);
+          }
+        }
+      }
+    }
+
+    TEST_COMPARE(fro, <, Teuchos::ScalarTraits<magnitudeType>::eps());
+
+    out << "Done with test number " << testNo << std::endl;
+  }
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalDistanceLaplacian, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   typedef Teuchos::ScalarTraits<SC> STS;
@@ -3918,6 +4227,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, CountNegativeDiago
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicBlockWithoutFiltering, SC, LO, GO, NO)                \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, AggresiveDroppingIsMarkedAsBoundary, SC, LO, GO, NO)         \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, 2x2, SC, LO, GO, NO)                                         \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, DirichletNodes, SC, LO, GO, NO)                              \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, SignedClassicalDistanceLaplacian, SC, LO, GO, NO)            \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, SignedClassicalSADistanceLaplacian, SC, LO, GO, NO)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, MinvADropsTwoThirdsNNZ, SC, LO, GO, NO)                      \

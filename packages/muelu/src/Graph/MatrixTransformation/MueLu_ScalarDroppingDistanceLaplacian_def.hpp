@@ -19,10 +19,10 @@ void ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, 
                                                                                                                   rowptr_type& filtered_rowptr,
                                                                                                                   LocalOrdinal& nnz_filtered,
                                                                                                                   boundary_nodes_type& boundaryNodes,
+                                                                                                                  boundary_nodes_type& boundaryNodesColMap,
                                                                                                                   const std::string& droppingMethod,
                                                                                                                   const magnitudeType threshold,
                                                                                                                   const bool aggregationMayCreateDirichlet,
-                                                                                                                  const std::string& symmetrizeDroppedGraph,
                                                                                                                   const bool useBlocking,
                                                                                                                   const std::string& distanceLaplacianMetric,
                                                                                                                   Level& level,
@@ -31,7 +31,7 @@ void ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, 
   auto coords             = level.template Get<Teuchos::RCP<doubleMultiVector>>("Coordinates", factory.GetFactory("Coordinates").get());
   if (distanceLaplacianMetric == "unweighted") {
     auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(A, coords);
-    runDroppingFunctors_on_dlap_inner(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
+    runDroppingFunctors_on_dlap_inner(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, dist2, level, factory);
   } else if (distanceLaplacianMetric == "material") {
     auto material = level.template Get<Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>("Material", factory.GetFactory("Material").get());
 
@@ -62,10 +62,10 @@ void ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, 
 
     if (material->getNumVectors() == 1) {
       auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(A, coords, material);
-      runDroppingFunctors_on_dlap_inner(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
+      runDroppingFunctors_on_dlap_inner(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, dist2, level, factory);
     } else {
       auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(A, coords, material);
-      runDroppingFunctors_on_dlap_inner(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
+      runDroppingFunctors_on_dlap_inner(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, boundaryNodesColMap, droppingMethod, threshold, aggregationMayCreateDirichlet, useBlocking, dist2, level, factory);
     }
   }
 }

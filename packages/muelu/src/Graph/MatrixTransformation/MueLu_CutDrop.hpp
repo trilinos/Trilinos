@@ -281,14 +281,15 @@ auto make_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal,
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
 class UnscaledDistanceLaplacianComparison {
  public:
-  using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
-  using scalar_type        = typename local_matrix_type::value_type;
-  using local_ordinal_type = typename local_matrix_type::ordinal_type;
-  using memory_space       = typename local_matrix_type::memory_space;
-  using diag_vec_type      = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using diag_view_type     = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
-  using results_view       = Kokkos::View<DecisionType*, memory_space>;
+  using matrix_type         = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_matrix_type   = typename matrix_type::local_matrix_device_type;
+  using scalar_type         = typename local_matrix_type::value_type;
+  using local_ordinal_type  = typename local_matrix_type::ordinal_type;
+  using memory_space        = typename local_matrix_type::memory_space;
+  using diag_vec_type       = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using diag_view_type      = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
+  using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
+  using results_view        = Kokkos::View<DecisionType*, memory_space>;
 
   local_matrix_type A;
   results_view results;
@@ -304,13 +305,13 @@ class UnscaledDistanceLaplacianComparison {
   mutable values_view values;
 
  public:
-  UnscaledDistanceLaplacianComparison(matrix_type& A_, DistanceFunctorType& dist2_, results_view& results_)
+  UnscaledDistanceLaplacianComparison(matrix_type& A_, DistanceFunctorType& dist2_, const boundary_nodes_view& boundaryNodes, const boundary_nodes_view& boundaryNodesColMap, results_view& results_)
     : A(A_.getLocalMatrixDevice())
     , results(results_)
     , dist2(dist2_)
     , values("UnscaledDistanceLaplacianComparison::values", A.nnz()) {
     // Construct ghosted distance Laplacian diagonal
-    diagVec        = DistanceLaplacian::getDiagonal(A_, dist2);
+    diagVec        = DistanceLaplacian::getDiagonal(A_, boundaryNodes, boundaryNodesColMap, dist2);
     auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
     diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
   }
@@ -407,14 +408,15 @@ class UnscaledDistanceLaplacianComparison {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType, Misc::StrengthMeasure measure>
 class ScaledDistanceLaplacianComparison {
  public:
-  using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
-  using scalar_type        = typename local_matrix_type::value_type;
-  using local_ordinal_type = typename local_matrix_type::ordinal_type;
-  using memory_space       = typename local_matrix_type::memory_space;
-  using diag_vec_type      = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using diag_view_type     = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
-  using results_view       = Kokkos::View<DecisionType*, memory_space>;
+  using matrix_type         = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_matrix_type   = typename matrix_type::local_matrix_device_type;
+  using scalar_type         = typename local_matrix_type::value_type;
+  using local_ordinal_type  = typename local_matrix_type::ordinal_type;
+  using memory_space        = typename local_matrix_type::memory_space;
+  using diag_vec_type       = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using diag_view_type      = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
+  using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
+  using results_view        = Kokkos::View<DecisionType*, memory_space>;
 
   local_matrix_type A;
   results_view results;
@@ -431,18 +433,18 @@ class ScaledDistanceLaplacianComparison {
   mutable values_view values;
 
  public:
-  ScaledDistanceLaplacianComparison(matrix_type& A_, DistanceFunctorType& dist2_, results_view& results_)
+  ScaledDistanceLaplacianComparison(matrix_type& A_, DistanceFunctorType& dist2_, const boundary_nodes_view& boundaryNodes, const boundary_nodes_view& boundaryNodesColMap, results_view& results_)
     : A(A_.getLocalMatrixDevice())
     , results(results_)
     , dist2(dist2_)
     , values("ScaledDistanceLaplacianComparison::values", A.nnz()) {
     // Construct ghosted distance Laplacian diagonal
     if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
-      diagVec        = DistanceLaplacian::getDiagonal(A_, dist2);
+      diagVec        = DistanceLaplacian::getDiagonal(A_, boundaryNodes, boundaryNodesColMap, dist2);
       auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
-      diagVec        = DistanceLaplacian::getMaxMinusOffDiagonal(A_, dist2);
+      diagVec        = DistanceLaplacian::getMaxMinusOffDiagonal(A_, boundaryNodes, boundaryNodesColMap, dist2);
       auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     }
@@ -561,12 +563,14 @@ class ScaledDistanceLaplacianComparison {
 template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
 auto make_dlap_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
                                   DistanceFunctorType& dist2_,
+                                  const Kokkos::View<const bool*, typename Node::memory_space>& boundaryNodes,
+                                  const Kokkos::View<const bool*, typename Node::memory_space>& boundaryNodesColMap,
                                   typename ScaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::results_view& results_) {
   if constexpr (measure == Misc::UnscaledMeasure) {
-    auto functor = UnscaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType>(A_, dist2_, results_);
+    auto functor = UnscaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType>(A_, dist2_, boundaryNodes, boundaryNodesColMap, results_);
     return functor;
   } else {
-    auto functor = ScaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, dist2_, results_);
+    auto functor = ScaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, dist2_, boundaryNodes, boundaryNodesColMap, results_);
     return functor;
   }
 }
@@ -585,6 +589,7 @@ class UnscaledDistanceLaplacianVectorComparison {
   using memory_space            = typename local_matrix_type::memory_space;
   using diag_vec_type           = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using diag_view_type          = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
+  using boundary_nodes_view     = Kokkos::View<const bool*, memory_space>;
   using results_view            = Kokkos::View<DecisionType*, memory_space>;
   using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
 
@@ -604,7 +609,7 @@ class UnscaledDistanceLaplacianVectorComparison {
   mutable values_view values;
 
  public:
-  UnscaledDistanceLaplacianVectorComparison(matrix_type& A_, matrix_type& mergedA_, DistanceFunctorType& dist2_, results_view& results_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
+  UnscaledDistanceLaplacianVectorComparison(matrix_type& A_, matrix_type& mergedA_, DistanceFunctorType& dist2_, const boundary_nodes_view& boundaryNodes, const boundary_nodes_view& boundaryNodesColMap, results_view& results_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
     : A(A_.getLocalMatrixDevice())
     , results(results_)
     , dist2(dist2_)
@@ -612,7 +617,7 @@ class UnscaledDistanceLaplacianVectorComparison {
     , ghosted_point_to_block(ghosted_point_to_block_)
     , values("UnscaledDistanceLaplacianVectorComparison::values", A.nnz()) {
     // Construct ghosted distance Laplacian diagonal
-    diagVec        = DistanceLaplacian::getDiagonal(mergedA_, dist2);
+    diagVec        = DistanceLaplacian::getDiagonal(mergedA_, boundaryNodes, boundaryNodesColMap, dist2);
     auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
     diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
   }
@@ -724,6 +729,7 @@ class ScaledDistanceLaplacianVectorComparison {
   using memory_space            = typename local_matrix_type::memory_space;
   using diag_vec_type           = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using diag_view_type          = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
+  using boundary_nodes_view     = Kokkos::View<const bool*, memory_space>;
   using results_view            = Kokkos::View<DecisionType*, memory_space>;
   using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
 
@@ -745,7 +751,7 @@ class ScaledDistanceLaplacianVectorComparison {
   mutable values_view values;
 
  public:
-  ScaledDistanceLaplacianVectorComparison(matrix_type& A_, matrix_type& mergedA_, DistanceFunctorType& dist2_, results_view& results_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
+  ScaledDistanceLaplacianVectorComparison(matrix_type& A_, matrix_type& mergedA_, DistanceFunctorType& dist2_, const boundary_nodes_view& boundaryNodes, const boundary_nodes_view& boundaryNodesColMap, results_view& results_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
     : A(A_.getLocalMatrixDevice())
     , results(results_)
     , dist2(dist2_)
@@ -754,11 +760,11 @@ class ScaledDistanceLaplacianVectorComparison {
     , values("ScaledDistanceLaplacianVectorComparison::values", A.nnz()) {
     // Construct ghosted distance Laplacian diagonal
     if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
-      diagVec        = DistanceLaplacian::getDiagonal(mergedA_, dist2);
+      diagVec        = DistanceLaplacian::getDiagonal(mergedA_, boundaryNodes, boundaryNodesColMap, dist2);
       auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
-      diagVec        = DistanceLaplacian::getMaxMinusOffDiagonal(A_, dist2);
+      diagVec        = DistanceLaplacian::getMaxMinusOffDiagonal(A_, boundaryNodes, boundaryNodesColMap, dist2);
       auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     }
@@ -885,14 +891,16 @@ template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class
 auto make_dlap_vector_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
                                          Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mergedA_,
                                          DistanceFunctorType& dist2_,
+                                         const Kokkos::View<const bool*, typename Node::memory_space>& boundaryNodes,
+                                         const Kokkos::View<const bool*, typename Node::memory_space>& boundaryNodesColMap,
                                          typename ScaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::results_view& results_,
                                          typename ScaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::block_indices_view_type point_to_block_,
                                          typename ScaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::block_indices_view_type ghosted_point_to_block_) {
   if constexpr (measure == Misc::UnscaledMeasure) {
-    auto functor = UnscaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType>(A_, mergedA_, dist2_, results_, point_to_block_, ghosted_point_to_block_);
+    auto functor = UnscaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType>(A_, mergedA_, dist2_, boundaryNodes, boundaryNodesColMap, results_, point_to_block_, ghosted_point_to_block_);
     return functor;
   } else {
-    auto functor = ScaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, mergedA_, dist2_, results_, point_to_block_, ghosted_point_to_block_);
+    auto functor = ScaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, mergedA_, dist2_, boundaryNodes, boundaryNodesColMap, results_, point_to_block_, ghosted_point_to_block_);
     return functor;
   }
 }
